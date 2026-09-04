@@ -1,4 +1,8 @@
 # Makefile variables for libiconv/po.
+#
+# Copyright (C) 2003-2019 Free Software Foundation, Inc.
+# This file is free software; the Free Software Foundation gives
+# unlimited permission to use, copy, distribute, and modify it.
 
 # Usually the message domain is the same as the package name.
 DOMAIN = $(PACKAGE)
@@ -22,6 +26,13 @@ XGETTEXT_OPTIONS = \
 # the public domain; in this case the translators are expected to disclaim
 # their copyright.
 COPYRIGHT_HOLDER = Free Software Foundation, Inc.
+
+# This tells whether or not to prepend "GNU " prefix to the package
+# name that gets inserted into the header of the $(DOMAIN).pot file.
+# Possible values are "yes", "no", or empty.  If it is empty, try to
+# detect it automatically by scanning the files in $(top_srcdir) for
+# "GNU packagename" string.
+PACKAGE_GNU = yes
 
 # This is the email address or URL to which the translators shall report
 # bugs in the untranslated strings:
@@ -54,3 +65,15 @@ USE_MSGCTXT = no
 #   --previous            to keep previous msgids of translated messages,
 #   --quiet               to reduce the verbosity.
 MSGMERGE_OPTIONS =
+
+# These options get passed to msginit.
+# If you want to disable line wrapping when writing PO files, add
+# --no-wrap to MSGMERGE_OPTIONS, XGETTEXT_OPTIONS, and
+# MSGINIT_OPTIONS.
+MSGINIT_OPTIONS =
+
+# This tells whether or not to forcibly update $(DOMAIN).pot and
+# regenerate PO files on "make dist".  Possible values are "yes" and
+# "no".  Set this to no if the POT file and PO files are maintained
+# externally.
+DIST_DEPENDS_ON_UPDATE_PO = yes

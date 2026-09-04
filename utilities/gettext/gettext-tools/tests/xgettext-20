@@ -1,0 +1,75 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test checking for URL.
+# <https://savannah.gnu.org/bugs/?67000>
+
+cat <<\EOF > xg-test20.c
+  gettext ("Using the browser to open a mailto: URI");
+  gettext ("Report bugs to <mailto:foobar@example.com>");
+  gettext ("Report bugs to: bug-foobar@gnu.org");
+  gettext ("Report bugs in the bug tracker at <https://savannah.gnu.org/projects/foobar>");
+  /* xgettext: no-email-check */
+  gettext ("M2: Report bugs to <mailto:foobar@example.com>");
+  /* xgettext: no-email-check */
+  gettext ("M2: Report bugs to: bug-foobar@gnu.org");
+  /* xgettext: no-url-check */
+  gettext ("M2: Report bugs in the bug tracker at <https://savannah.gnu.org/projects/foobar>");
+  /* xgettext: no-url-check */
+  gettext ("M3: Report bugs to: bug-foobar@gnu.org");
+EOF
+
+: ${XGETTEXT=xgettext}
+LANGUAGE= LC_ALL=C ${XGETTEXT} --omit-header --add-comments -d xg-test20.tmp xg-test20.c 2>xg-test20.err \
+  || Exit 1
+cat xg-test20.err; echo
+
+if grep "xg-test20.c:1:.*No-embedded-URLs.html" xg-test20.err >/dev/null; then
+  Exit 1
+fi
+
+grep "xg-test20.c:2:.*No-embedded-URLs.html" xg-test20.err >/dev/null || Exit 1
+grep "xg-test20.c:3:.*No-embedded-URLs.html" xg-test20.err >/dev/null || Exit 1
+grep "xg-test20.c:4:.*No-embedded-URLs.html" xg-test20.err >/dev/null || Exit 1
+
+if grep "xg-test20.c:6:.*No-embedded-URLs.html" xg-test20.err >/dev/null; then
+  Exit 1
+fi
+if grep "xg-test20.c:8:.*No-embedded-URLs.html" xg-test20.err >/dev/null; then
+  Exit 1
+fi
+if grep "xg-test20.c:10:.*No-embedded-URLs.html" xg-test20.err >/dev/null; then
+  Exit 1
+fi
+
+grep "xg-test20.c:12:.*No-embedded-URLs.html" xg-test20.err >/dev/null || Exit 1
+
+# Likewise, with --no-check=url option:
+
+LANGUAGE= LC_ALL=C ${XGETTEXT} --omit-header --add-comments --no-check=url -d xg-test20.tmp xg-test20.c 2>xg-test20a.err \
+  || Exit 1
+cat xg-test20a.err; echo
+
+grep "xg-test20.c:2:.*No-embedded-URLs.html" xg-test20a.err >/dev/null || Exit 1
+grep "xg-test20.c:3:.*No-embedded-URLs.html" xg-test20a.err >/dev/null || Exit 1
+if grep "xg-test20.c:4:.*No-embedded-URLs.html" xg-test20a.err >/dev/null; then
+  Exit 1
+fi
+grep "xg-test20.c:12:.*No-embedded-URLs.html" xg-test20a.err >/dev/null || Exit 1
+
+# Likewise, with --no-check=email option:
+
+LANGUAGE= LC_ALL=C ${XGETTEXT} --omit-header --add-comments --no-check=email -d xg-test20.tmp xg-test20.c 2>xg-test20b.err \
+  || Exit 1
+cat xg-test20b.err; echo
+
+if grep "xg-test20.c:2:.*No-embedded-URLs.html" xg-test20b.err >/dev/null; then
+  Exit 1
+fi
+if grep "xg-test20.c:3:.*No-embedded-URLs.html" xg-test20b.err >/dev/null; then
+  Exit 1
+fi
+grep "xg-test20.c:4:.*No-embedded-URLs.html" xg-test20b.err >/dev/null || Exit 1
+if grep "xg-test20.c:12:.*No-embedded-URLs.html" xg-test20b.err >/dev/null; then
+  Exit 1
+fi

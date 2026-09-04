@@ -1,17 +1,15 @@
--- 3GPP TS 36.413 V13.1.0 (2015-12)
+-- 3GPP TS 36.413 V18.3.0 (2024-12)
 -- B.2	ASN.1 definition
 -- **************************************************************
 --
 -- IE definitions for the SON Transfer application
 -- The IEs in this ASN.1 module shall be defined and encoded
 -- using the same rules as applicable for the S1AP-IEs module.
--- 
+--
 -- **************************************************************
-
-
 SonTransfer-IEs
 
-DEFINITIONS AUTOMATIC TAGS ::= 
+DEFINITIONS AUTOMATIC TAGS ::=
 
 BEGIN
 
@@ -154,7 +152,7 @@ ReportingCellList ::= SEQUENCE (SIZE(1.. maxnoofIRATReportingCells)) OF Reportin
 
 MultiCellLoadReportingResponse ::= SEQUENCE (SIZE(1.. maxnoofIRATReportingCells)) OF MultiCellLoadReportingResponse-Item
 
-MultiCellLoadReportingResponse-Item ::= CHOICE{ 
+MultiCellLoadReportingResponse-Item ::= CHOICE{
 	eUTRANResponse							EUTRANResponse,
 	uTRANResponse							OCTET STRING,
 	gERANResponse							OCTET STRING,
@@ -288,11 +286,12 @@ FailureEventReport::= CHOICE {
 }
 
 TooEarlyInterRATHOReportReportFromEUTRAN ::= SEQUENCE {
-	uERLFReportContainer	OCTET STRING, -- as defined in TS 36.331 [16] --
+	uERLFReportContainer	OCTET STRING,
 	mobilityInformation		MobilityInformation		OPTIONAL,
 	...
 }
 
+-- WS modification, already defined in S1AP-IEs.asn
 --MobilityInformation ::= BIT STRING (SIZE(32))
 
 
@@ -334,6 +333,3 @@ maxnoofcandidateCells						INTEGER ::= 16
 maxnoofCellineNB							INTEGER ::= 256
 
 END
-
-
-

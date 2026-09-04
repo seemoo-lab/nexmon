@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * History:
  * ---------------------------------
@@ -39,23 +27,23 @@
 void proto_register_pw_fr(void);
 void proto_reg_handoff_pw_fr(void);
 
-static gint proto_encaps = -1;
-static gint ett_encaps = -1;
+static int proto_encaps;
+static int ett_encaps;
 
-/* static int hf_pw_fr = -1; */
-static int hf_cw_bits03 = -1;
-static int hf_cw_fecn = -1;
-static int hf_cw_becn = -1;
-static int hf_cw_de = -1;
-static int hf_cw_cr = -1;
-static int hf_cw_frg = -1;
-static int hf_cw_len = -1;
-static int hf_cw_seq = -1;
-static int hf_cw_padding = -1;
+/* static int hf_pw_fr; */
+static int hf_cw_bits03;
+static int hf_cw_fecn;
+static int hf_cw_becn;
+static int hf_cw_de;
+static int hf_cw_cr;
+static int hf_cw_frg;
+static int hf_cw_len;
+static int hf_cw_seq;
+static int hf_cw_padding;
 
-static expert_field ei_payload_size_invalid = EI_INIT;
-static expert_field ei_cw_bits03 = EI_INIT;
-static expert_field ei_cw_packet_size_too_small = EI_INIT;
+static expert_field ei_payload_size_invalid;
+static expert_field ei_cw_bits03;
+static expert_field ei_cw_packet_size_too_small;
 
 static const value_string vals_frg[] = {
 	{ 0x0,	"Unfragmented" },
@@ -67,14 +55,14 @@ static const value_string vals_frg[] = {
 
 
 static dissector_handle_t fr_stripped_address_handle;
-
+static dissector_handle_t pw_fr_mpls_handle;
 
 static int
 dissect_pw_fr( tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* data _U_ )
 {
-	gint packet_size;
-	gint payload_size;
-	gint payload_padding;
+	int packet_size;
+	int payload_size;
+	int payload_padding;
 	const int encaps_size = 4; /*encapsulation consists of mandatory CW only*/
 	enum {
 		PQ_CW_BAD		       = 0x001
@@ -109,7 +97,7 @@ dissect_pw_fr( tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* dat
 	/* check how "good" is this packet */
 	/* also decide payload length from packet size and CW */
 	packet_quality = 0;
-	if (0 != (tvb_get_guint8(tvb, 0) & 0xf0 /*bits03*/))
+	if (0 != (tvb_get_uint8(tvb, 0) & 0xf0 /*bits03*/))
 	{
 		packet_quality |= PQ_CW_BAD + PQ_CW_BAD_BITS03;
 	}
@@ -125,9 +113,9 @@ dissect_pw_fr( tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* dat
 		 * *plus* the length of the *PWMCW*. ]
 		 */
 		int cw_len;
-		gint payload_size_packet; /*derived from packet size*/
+		int payload_size_packet; /*derived from packet size*/
 
-		cw_len = tvb_get_guint8(tvb, 1) & 0x3f;
+		cw_len = tvb_get_uint8(tvb, 1) & 0x3f;
 		payload_size_packet = packet_size - encaps_size;
 
 		/*
@@ -138,7 +126,7 @@ dissect_pw_fr( tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* dat
 
 		if (payload_size_packet < 64)
 		{
-			gint payload_size_cw; /*derived from cw*/
+			int payload_size_cw; /*derived from cw*/
 			payload_size_cw = cw_len; /*RFC4619-specific*/
 			if (payload_size_cw == 0)
 			{
@@ -186,7 +174,7 @@ dissect_pw_fr( tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void* dat
 		proto_item* item;
 
 		item_headline = proto_tree_add_item(tree, proto_encaps, tvb, 0, 4, ENC_NA);
-		proto_item_append_text(item_headline, ": 0x%.8" G_GINT32_MODIFIER "x", tvb_get_ntohl(tvb, 0));
+		proto_item_append_text(item_headline, ": 0x%.8" PRIx32, tvb_get_ntohl(tvb, 0));
 		subtree = proto_item_add_subtree(item_headline, ett_encaps);
 
 		if (packet_quality & PQ_CW_BAD_BITS03) /*display only if value is wrong*/
@@ -278,7 +266,7 @@ static hf_register_info hf[] = {
 			  ,NULL			,0x3f		,NULL
 			  ,HFILL}},
 
-	{&hf_cw_seq	,{"Sequence number"	,"pwfr.length"	,FT_UINT16	,BASE_DEC
+	{&hf_cw_seq	,{"Sequence number"	,"pwfr.seqno"	,FT_UINT16	,BASE_DEC
 			  ,NULL			,0		,NULL
 			  ,HFILL}},
 
@@ -287,7 +275,7 @@ static hf_register_info hf[] = {
 			  ,HFILL}}
 };
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_encaps
 	};
 
@@ -305,22 +293,20 @@ static hf_register_info hf[] = {
 	proto_register_subtree_array(ett, array_length(ett));
 	expert_pwfr = expert_register_protocol(proto_encaps);
 	expert_register_field_array(expert_pwfr, ei, array_length(ei));
+	pw_fr_mpls_handle = register_dissector("pw_fr", dissect_pw_fr, proto_encaps );
 }
 
 
 void
 proto_reg_handoff_pw_fr(void)
 {
-	dissector_handle_t pw_fr_mpls_handle;
-
-	pw_fr_mpls_handle = create_dissector_handle( dissect_pw_fr, proto_encaps );
 	dissector_add_for_decode_as("mpls.label", pw_fr_mpls_handle);
-
+	dissector_add_for_decode_as("mpls.pfn", pw_fr_mpls_handle);
 	fr_stripped_address_handle = find_dissector_add_dependency("fr_stripped_address", proto_encaps);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

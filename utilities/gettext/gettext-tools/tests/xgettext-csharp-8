@@ -19,9 +19,8 @@ string i3 = "\uD840\uDE1";    // Unterminated after a high surrogate
 EOF
 
 : ${XGETTEXT=xgettext}
-${XGETTEXT} --output - --add-location xg-cs-8.cs -a 2>/dev/null | \
-  sed '/\"POT-Creation-Date:.*/d' | LC_ALL=C tr -d '\r' > xg-cs-8.po || \
-  Exit 1
+${XGETTEXT} --output xg-cs-8.tmp --add-location xg-cs-8.cs -a 2>/dev/null || Exit 1
+sed -e '/\"POT-Creation-Date:.*/d' < xg-cs-8.tmp | LC_ALL=C tr -d '\r' > xg-cs-8.po || Exit 1
 
 cat <<\EOF > xg-cs-8.ok
 # SOME DESCRIPTIVE TITLE.

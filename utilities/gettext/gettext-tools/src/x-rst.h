@@ -1,6 +1,5 @@
-/* xgettext RST backend.
-   Copyright (C) 2001-2003, 2006, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+/* xgettext RST/RSJ backend.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,13 +12,15 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 
 #include <stdio.h>
 
 #include "message.h"
-#include "xgettext.h"
+#include "xg-arglist-context.h"
 
 
 #ifdef __cplusplus
@@ -29,13 +30,22 @@ extern "C" {
 
 #define EXTENSIONS_RST \
   { "rst",    "RST"   },                                                \
+  { "rsj",    "RSJ"   },                                                \
 
 #define SCANNERS_RST \
-  { "RST",              extract_rst,                                    \
-                        NULL, &formatstring_pascal, NULL, NULL },             \
+  { "RST",              extract_rst, NULL,                              \
+                        NULL, &formatstring_pascal, NULL },             \
+  { "RSJ",              extract_rsj, NULL,                              \
+                        NULL, &formatstring_pascal, NULL },             \
 
 /* Scan an RST file and add its translatable strings to mdlp.  */
 extern void extract_rst (FILE *fp, const char *real_filename,
+                         const char *logical_filename,
+                         flag_context_list_table_ty *flag_table,
+                         msgdomain_list_ty *mdlp);
+
+/* Scan an RSJ file and add its translatable strings to mdlp.  */
+extern void extract_rsj (FILE *fp, const char *real_filename,
                          const char *logical_filename,
                          flag_context_list_table_ty *flag_table,
                          msgdomain_list_ty *mdlp);

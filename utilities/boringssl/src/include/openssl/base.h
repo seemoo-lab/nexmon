@@ -56,6 +56,18 @@
 
 /* This file should be the first included by all BoringSSL headers. */
 
+#if !defined(__clang__) || !defined(__has_feature) || !__has_feature(nullability)
+#ifndef _Nullable
+#define _Nullable
+#endif
+#ifndef _Nonnull
+#define _Nonnull
+#endif
+#ifndef _Null_unspecified
+#define _Null_unspecified
+#endif
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>

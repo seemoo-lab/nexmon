@@ -25,30 +25,47 @@ IMPORTS
 FROM ISO-8650-ACSE-1;
 
 
+-- WS additions for IEC 61850
+
+ReportedOptFlds ::= BIT STRING {
+    reserved(0),
+    sequence-number(1),
+    report-time-stamp(2),
+    reason-for-inclusion(3),
+    data-set-name(4),
+    data-reference(5),
+    buffer-overflow(6),
+    entryID(7),
+    conf-revision(8),
+    segmentation(9)
+    }
+
+-- End WS additions for IEC 61850
+
 MMSpdu ::= CHOICE
 	{
-	confirmed-RequestPDU	[0] 	IMPLICIT Confirmed-RequestPDU,
-	confirmed-ResponsePDU	[1] 	IMPLICIT Confirmed-ResponsePDU,
+	confirmed-RequestPDU		[0] 	IMPLICIT Confirmed-RequestPDU,
+	confirmed-ResponsePDU		[1] 	IMPLICIT Confirmed-ResponsePDU,
 	confirmed-ErrorPDU		[2] 	IMPLICIT Confirmed-ErrorPDU,
 	unconfirmed-PDU			[3] 	IMPLICIT Unconfirmed-PDU,
-	rejectPDU				[4] 	IMPLICIT RejectPDU,
+	rejectPDU			[4] 	IMPLICIT RejectPDU,
 	cancel-RequestPDU		[5] 	IMPLICIT Cancel-RequestPDU,
 	cancel-ResponsePDU		[6] 	IMPLICIT Cancel-ResponsePDU,
 	cancel-ErrorPDU			[7] 	IMPLICIT Cancel-ErrorPDU,
 	initiate-RequestPDU		[8] 	IMPLICIT Initiate-RequestPDU,
-	initiate-ResponsePDU	[9] 	IMPLICIT Initiate-ResponsePDU,
+	initiate-ResponsePDU		[9] 	IMPLICIT Initiate-ResponsePDU,
 	initiate-ErrorPDU		[10] 	IMPLICIT Initiate-ErrorPDU,
 	conclude-RequestPDU		[11] 	IMPLICIT Conclude-RequestPDU,
-	conclude-ResponsePDU	[12] 	IMPLICIT Conclude-ResponsePDU,
+	conclude-ResponsePDU		[12] 	IMPLICIT Conclude-ResponsePDU,
 	conclude-ErrorPDU		[13] 	IMPLICIT Conclude-ErrorPDU
 	}
 
 
 Confirmed-RequestPDU ::= SEQUENCE
 	{
-	invokeID				Unsigned32,
+	invokeID			Unsigned32,
 	listOfModifier			SEQUENCE OF Modifier OPTIONAL,
-	confirmedServiceRequest	ConfirmedServiceRequest,
+	confirmedServiceRequest		ConfirmedServiceRequest,
 	cs-request-detail		[79] CS-Request-Detail OPTIONAL
 	}
 
@@ -71,8 +88,8 @@ Confirmed-ResponsePDU ::= SEQUENCE
 Confirmed-ErrorPDU ::= SEQUENCE 
 	{
 	invokeID 			[0]	IMPLICIT Unsigned32,
-	modifierPosition	[1]	IMPLICIT Unsigned32 OPTIONAL,
-	serviceError		[2]	IMPLICIT ServiceError
+	modifierPosition		[1]	IMPLICIT Unsigned32 OPTIONAL,
+	serviceError			[2]	IMPLICIT ServiceError
 	}
 
 
@@ -88,93 +105,93 @@ UnconfirmedService ::= CHOICE
 
 Modifier ::= CHOICE
 	{
-	attach-To-Event-Condition	[0]	IMPLICIT AttachToEventCondition,
+	attach-To-Event-Condition		[0]	IMPLICIT AttachToEventCondition,
 	attach-To-Semaphore			[1]	IMPLICIT AttachToSemaphore
 	}
 
 
 ConfirmedServiceRequest  ::= CHOICE 
 	{
-        status						[0]	IMPLICIT Status-Request,
-	getNameList						[1] IMPLICIT GetNameList-Request,
-	identify						[2]	IMPLICIT Identify-Request,
-	rename							[3]	IMPLICIT Rename-Request,
-	read							[4]	IMPLICIT Read-Request,
-	write							[5]	IMPLICIT Write-Request,
-	getVariableAccessAttributes		[6]	GetVariableAccessAttributes-Request,
-	defineNamedVariable				[7]	IMPLICIT DefineNamedVariable-Request,
-	defineScatteredAccess			[8]	IMPLICIT DefineScatteredAccess-Request,
-	getScatteredAccessAttributes	[9]	IMPLICIT GetScatteredAccessAttributes-Request,
-	deleteVariableAccess			[10] IMPLICIT DeleteVariableAccess-Request,	
+	status					[0] IMPLICIT Status-Request,
+	getNameList				[1] IMPLICIT GetNameList-Request,
+	identify				[2] IMPLICIT Identify-Request,
+	rename					[3] IMPLICIT Rename-Request,
+	read					[4] IMPLICIT Read-Request,
+	write					[5] IMPLICIT Write-Request,
+	getVariableAccessAttributes		[6] GetVariableAccessAttributes-Request,
+	defineNamedVariable			[7] IMPLICIT DefineNamedVariable-Request,
+	defineScatteredAccess			[8] IMPLICIT DefineScatteredAccess-Request,
+	getScatteredAccessAttributes		[9] IMPLICIT GetScatteredAccessAttributes-Request,
+	deleteVariableAccess			[10] IMPLICIT DeleteVariableAccess-Request,
 	defineNamedVariableList			[11] IMPLICIT DefineNamedVariableList-Request,
-	getNamedVariableListAttributes	[12] IMPLICIT GetNamedVariableListAttributes-Request,
+	getNamedVariableListAttributes		[12] IMPLICIT GetNamedVariableListAttributes-Request,
 	deleteNamedVariableList			[13] IMPLICIT DeleteNamedVariableList-Request,
-	defineNamedType					[14] IMPLICIT DefineNamedType-Request,	
+	defineNamedType				[14] IMPLICIT DefineNamedType-Request,
 	getNamedTypeAttributes			[15] IMPLICIT GetNamedTypeAttributes-Request,
-	deleteNamedType					[16] IMPLICIT DeleteNamedType-Request,
-	input							[17] IMPLICIT Input-Request,
-	output							[18] IMPLICIT Output-Request,
-	takeControl						[19] IMPLICIT TakeControl-Request,
-	relinquishControl				[20] IMPLICIT RelinquishControl-Request,
-	defineSemaphore					[21] IMPLICIT DefineSemaphore-Request,
-	deleteSemaphore					[22] IMPLICIT DeleteSemaphore-Request,
+	deleteNamedType				[16] IMPLICIT DeleteNamedType-Request,
+	input					[17] IMPLICIT Input-Request,
+	output					[18] IMPLICIT Output-Request,
+	takeControl				[19] IMPLICIT TakeControl-Request,
+	relinquishControl			[20] IMPLICIT RelinquishControl-Request,
+	defineSemaphore				[21] IMPLICIT DefineSemaphore-Request,
+	deleteSemaphore				[22] IMPLICIT DeleteSemaphore-Request,
 	reportSemaphoreStatus			[23] IMPLICIT ReportSemaphoreStatus-Request,
 	reportPoolSemaphoreStatus		[24] IMPLICIT ReportPoolSemaphoreStatus-Request,
 	reportSemaphoreEntryStatus		[25] IMPLICIT ReportSemaphoreEntryStatus-Request,
 	initiateDownloadSequence		[26] IMPLICIT InitiateDownloadSequence-Request,
-	downloadSegment					[27] IMPLICIT DownloadSegment-Request,
+	downloadSegment				[27] IMPLICIT DownloadSegment-Request,
 	terminateDownloadSequence		[28] IMPLICIT TerminateDownloadSequence-Request,
 	initiateUploadSequence			[29] IMPLICIT InitiateUploadSequence-Request,
-	uploadSegment					[30] IMPLICIT UploadSegment-Request,
+	uploadSegment				[30] IMPLICIT UploadSegment-Request,
 	terminateUploadSequence			[31] IMPLICIT TerminateUploadSequence-Request,
 	requestDomainDownload			[32] IMPLICIT RequestDomainDownload-Request,
-	requestDomainUpload				[33] IMPLICIT RequestDomainUpload-Request,
-	loadDomainContent				[34] IMPLICIT LoadDomainContent-Request,
-	storeDomainContent				[35] IMPLICIT StoreDomainContent-Request,
-	deleteDomain					[36] IMPLICIT DeleteDomain-Request,
-	getDomainAttributes				[37] IMPLICIT GetDomainAttributes-Request,
+	requestDomainUpload			[33] IMPLICIT RequestDomainUpload-Request,
+	loadDomainContent			[34] IMPLICIT LoadDomainContent-Request,
+	storeDomainContent			[35] IMPLICIT StoreDomainContent-Request,
+	deleteDomain				[36] IMPLICIT DeleteDomain-Request,
+	getDomainAttributes			[37] IMPLICIT GetDomainAttributes-Request,
 	createProgramInvocation			[38] IMPLICIT CreateProgramInvocation-Request,
 	deleteProgramInvocation			[39] IMPLICIT DeleteProgramInvocation-Request,
-	start							[40] IMPLICIT Start-Request,
-	stop							[41] IMPLICIT Stop-Request,
-	resume							[42] IMPLICIT Resume-Request,
-	reset							[43] IMPLICIT Reset-Request,
-	kill							[44] IMPLICIT Kill-Request,
-	getProgramInvocationAttributes	[45] IMPLICIT GetProgramInvocationAttributes-Request,
-	obtainFile						[46] IMPLICIT ObtainFile-Request,
+	start					[40] IMPLICIT Start-Request,
+	stop					[41] IMPLICIT Stop-Request,
+	resume					[42] IMPLICIT Resume-Request,
+	reset					[43] IMPLICIT Reset-Request,
+	kill					[44] IMPLICIT Kill-Request,
+	getProgramInvocationAttributes		[45] IMPLICIT GetProgramInvocationAttributes-Request,
+	obtainFile				[46] IMPLICIT ObtainFile-Request,
 	defineEventCondition			[47] IMPLICIT DefineEventCondition-Request,
 	deleteEventCondition			[48] DeleteEventCondition-Request,
 	getEventConditionAttributes		[49] GetEventConditionAttributes-Request,
 	reportEventConditionStatus		[50] ReportEventConditionStatus-Request,
-	alterEventConditionMonitoring	[51] IMPLICIT AlterEventConditionMonitoring-Request,
-	triggerEvent					[52] IMPLICIT TriggerEvent-Request,
-	defineEventAction				[53] IMPLICIT DefineEventAction-Request,
-	deleteEventAction				[54] DeleteEventAction-Request,
+	alterEventConditionMonitoring		[51] IMPLICIT AlterEventConditionMonitoring-Request,
+	triggerEvent				[52] IMPLICIT TriggerEvent-Request,
+	defineEventAction			[53] IMPLICIT DefineEventAction-Request,
+	deleteEventAction			[54] DeleteEventAction-Request,
 	getEventActionAttributes		[55] GetEventActionAttributes-Request,
 	reportEventActionStatus			[56] ReportEventActionStatus-Request,
 	defineEventEnrollment			[57] IMPLICIT DefineEventEnrollment-Request,
 	deleteEventEnrollment			[58] DeleteEventEnrollment-Request,
 	alterEventEnrollment			[59] IMPLICIT AlterEventEnrollment-Request,
 	reportEventEnrollmentStatus		[60] ReportEventEnrollmentStatus-Request,
-	getEventEnrollmentAttributes	[61] IMPLICIT GetEventEnrollmentAttributes-Request,
-	acknowledgeEventNotification	[62] IMPLICIT AcknowledgeEventNotification-Request,
-	getAlarmSummary					[63] IMPLICIT GetAlarmSummary-Request,
+	getEventEnrollmentAttributes		[61] IMPLICIT GetEventEnrollmentAttributes-Request,
+	acknowledgeEventNotification		[62] IMPLICIT AcknowledgeEventNotification-Request,
+	getAlarmSummary				[63] IMPLICIT GetAlarmSummary-Request,
 	getAlarmEnrollmentSummary		[64] IMPLICIT GetAlarmEnrollmentSummary-Request,
-	readJournal						[65] IMPLICIT ReadJournal-Request,
-	writeJournal					[66] IMPLICIT WriteJournal-Request,
-	initializeJournal				[67] IMPLICIT InitializeJournal-Request,
-	reportJournalStatus				[68] IMPLICIT ReportJournalStatus-Request,
-	createJournal					[69] IMPLICIT CreateJournal-Request,
-	deleteJournal					[70] IMPLICIT DeleteJournal-Request,
-	getCapabilityList				[71] IMPLICIT GetCapabilityList-Request,
-	fileOpen						[72] IMPLICIT FileOpen-Request,
-	fileRead						[73] IMPLICIT FileRead-Request,
-	fileClose						[74] IMPLICIT FileClose-Request,
-	fileRename						[75] IMPLICIT FileRename-Request,
-	fileDelete						[76] IMPLICIT FileDelete-Request,
-	fileDirectory					[77] IMPLICIT FileDirectory-Request
+	readJournal				[65] IMPLICIT ReadJournal-Request,
+	writeJournal				[66] IMPLICIT WriteJournal-Request,
+	initializeJournal			[67] IMPLICIT InitializeJournal-Request,
+	reportJournalStatus			[68] IMPLICIT ReportJournalStatus-Request,
+	createJournal				[69] IMPLICIT CreateJournal-Request,
+	deleteJournal				[70] IMPLICIT DeleteJournal-Request,
+	getCapabilityList			[71] IMPLICIT GetCapabilityList-Request,
+	fileOpen				[72] IMPLICIT FileOpen-Request,
+	fileRead				[73] IMPLICIT FileRead-Request,
+	fileClose				[74] IMPLICIT FileClose-Request,
+	fileRename				[75] IMPLICIT FileRename-Request,
+	fileDelete				[76] IMPLICIT FileDelete-Request,
+	fileDirectory				[77] IMPLICIT FileDirectory-Request
 -- XXX this one is neither in this ASN nor in the IMPORTS
---	additionalService				[78] AdditionalService-Request
+--	additionalService			[78] AdditionalService-Request
 	}
 
 CS-Request-Detail ::= CHOICE {
@@ -186,86 +203,86 @@ CS-Request-Detail ::= CHOICE {
 
 ConfirmedServiceResponse  ::= CHOICE
 	{
-	status							[0]	IMPLICIT Status-Response,
-	getNameList						[1]	IMPLICIT GetNameList-Response,
-	identify						[2]	IMPLICIT Identify-Response,
-	rename							[3]	IMPLICIT Rename-Response,
-	read							[4]	IMPLICIT Read-Response,
-	write							[5]	IMPLICIT Write-Response,
+	status					[0]	IMPLICIT Status-Response,
+	getNameList				[1]	IMPLICIT GetNameList-Response,
+	identify				[2]	IMPLICIT Identify-Response,
+	rename					[3]	IMPLICIT Rename-Response,
+	read					[4]	IMPLICIT Read-Response,
+	write					[5]	IMPLICIT Write-Response,
 	getVariableAccessAttributes		[6]	IMPLICIT GetVariableAccessAttributes-Response,
-	defineNamedVariable				[7]	IMPLICIT DefineNamedVariable-Response,
+	defineNamedVariable			[7]	IMPLICIT DefineNamedVariable-Response,
 	defineScatteredAccess			[8]	IMPLICIT DefineScatteredAccess-Response,
-	getScatteredAccessAttributes	[9]	IMPLICIT GetScatteredAccessAttributes-Response,
-	deleteVariableAccess			[10]	IMPLICIT DeleteVariableAccess-Response,	
+	getScatteredAccessAttributes		[9]	IMPLICIT GetScatteredAccessAttributes-Response,
+	deleteVariableAccess			[10]	IMPLICIT DeleteVariableAccess-Response,
 	defineNamedVariableList			[11]	IMPLICIT DefineNamedVariableList-Response,
-	getNamedVariableListAttributes	[12]	IMPLICIT GetNamedVariableListAttributes-Response,
+	getNamedVariableListAttributes		[12]	IMPLICIT GetNamedVariableListAttributes-Response,
 	deleteNamedVariableList			[13]	IMPLICIT DeleteNamedVariableList-Response,
-	defineNamedType					[14]	IMPLICIT DefineNamedType-Response,	
+	defineNamedType				[14]	IMPLICIT DefineNamedType-Response,
 	getNamedTypeAttributes			[15]	IMPLICIT GetNamedTypeAttributes-Response,
-	deleteNamedType					[16]	IMPLICIT DeleteNamedType-Response,
-	input							[17]	IMPLICIT Input-Response,
-	output							[18]	IMPLICIT Output-Response,
-	takeControl						[19]	TakeControl-Response,
-	relinquishControl				[20]	IMPLICIT RelinquishControl-Response,
-	defineSemaphore					[21]	IMPLICIT DefineSemaphore-Response,
-	deleteSemaphore					[22]	IMPLICIT DeleteSemaphore-Response,
+	deleteNamedType				[16]	IMPLICIT DeleteNamedType-Response,
+	input					[17]	IMPLICIT Input-Response,
+	output					[18]	IMPLICIT Output-Response,
+	takeControl				[19]	TakeControl-Response,
+	relinquishControl			[20]	IMPLICIT RelinquishControl-Response,
+	defineSemaphore				[21]	IMPLICIT DefineSemaphore-Response,
+	deleteSemaphore				[22]	IMPLICIT DeleteSemaphore-Response,
 	reportSemaphoreStatus			[23]	IMPLICIT ReportSemaphoreStatus-Response,
 	reportPoolSemaphoreStatus		[24]	IMPLICIT ReportPoolSemaphoreStatus-Response,
 	reportSemaphoreEntryStatus		[25]	IMPLICIT ReportSemaphoreEntryStatus-Response,
 	initiateDownloadSequence		[26]	IMPLICIT InitiateDownloadSequence-Response,
-	downloadSegment					[27]	IMPLICIT DownloadSegment-Response,
+	downloadSegment				[27]	IMPLICIT DownloadSegment-Response,
 	terminateDownloadSequence		[28]	IMPLICIT TerminateDownloadSequence-Response,
 	initiateUploadSequence			[29]	IMPLICIT InitiateUploadSequence-Response,
-	uploadSegment					[30]	IMPLICIT UploadSegment-Response,
+	uploadSegment				[30]	IMPLICIT UploadSegment-Response,
 	terminateUploadSequence			[31]	IMPLICIT TerminateUploadSequence-Response,
 	requestDomainDownLoad			[32]	IMPLICIT RequestDomainDownload-Response,
-	requestDomainUpload				[33]	IMPLICIT RequestDomainUpload-Response,
-	loadDomainContent				[34]	IMPLICIT LoadDomainContent-Response,
-	storeDomainContent				[35]	IMPLICIT StoreDomainContent-Response,
-	deleteDomain					[36]	IMPLICIT DeleteDomain-Response,
-	getDomainAttributes				[37]	IMPLICIT GetDomainAttributes-Response,
+	requestDomainUpload			[33]	IMPLICIT RequestDomainUpload-Response,
+	loadDomainContent			[34]	IMPLICIT LoadDomainContent-Response,
+	storeDomainContent			[35]	IMPLICIT StoreDomainContent-Response,
+	deleteDomain				[36]	IMPLICIT DeleteDomain-Response,
+	getDomainAttributes			[37]	IMPLICIT GetDomainAttributes-Response,
 	createProgramInvocation			[38]	IMPLICIT CreateProgramInvocation-Response,
 	deleteProgramInvocation			[39]	IMPLICIT DeleteProgramInvocation-Response,
-	start							[40]	IMPLICIT Start-Response,
-	stop							[41]	IMPLICIT Stop-Response,
-	resume							[42]	IMPLICIT Resume-Response,
-	reset							[43]	IMPLICIT Reset-Response,
-	kill							[44]	IMPLICIT Kill-Response,
-	getProgramInvocationAttributes	[45]	IMPLICIT GetProgramInvocationAttributes-Response,
-	obtainFile						[46]	IMPLICIT ObtainFile-Response,
-	fileOpen						[72]	IMPLICIT FileOpen-Response,
+	start					[40]	IMPLICIT Start-Response,
+	stop					[41]	IMPLICIT Stop-Response,
+	resume					[42]	IMPLICIT Resume-Response,
+	reset					[43]	IMPLICIT Reset-Response,
+	kill					[44]	IMPLICIT Kill-Response,
+	getProgramInvocationAttributes		[45]	IMPLICIT GetProgramInvocationAttributes-Response,
+	obtainFile				[46]	IMPLICIT ObtainFile-Response,
+	fileOpen				[72]	IMPLICIT FileOpen-Response,
 	defineEventCondition			[47]	IMPLICIT DefineEventCondition-Response,
 	deleteEventCondition			[48]	IMPLICIT DeleteEventCondition-Response,
 	getEventConditionAttributes		[49]	IMPLICIT GetEventConditionAttributes-Response,
 	reportEventConditionStatus		[50]	IMPLICIT ReportEventConditionStatus-Response,
-	alterEventConditionMonitoring	[51]	IMPLICIT AlterEventConditionMonitoring-Response,
-	triggerEvent					[52]	IMPLICIT TriggerEvent-Response,
-	defineEventAction				[53]	IMPLICIT DefineEventAction-Response,
-	deleteEventAction				[54]	IMPLICIT DeleteEventAction-Response,
+	alterEventConditionMonitoring		[51]	IMPLICIT AlterEventConditionMonitoring-Response,
+	triggerEvent				[52]	IMPLICIT TriggerEvent-Response,
+	defineEventAction			[53]	IMPLICIT DefineEventAction-Response,
+	deleteEventAction			[54]	IMPLICIT DeleteEventAction-Response,
 	getEventActionAttributes		[55]	IMPLICIT GetEventActionAttributes-Response,
-	reportActionStatus				[56]	IMPLICIT ReportEventActionStatus-Response,
+	reportActionStatus			[56]	IMPLICIT ReportEventActionStatus-Response,
 	defineEventEnrollment			[57]	IMPLICIT DefineEventEnrollment-Response,
 	deleteEventEnrollment			[58]	IMPLICIT DeleteEventEnrollment-Response,
 	alterEventEnrollment			[59]	IMPLICIT AlterEventEnrollment-Response,
 	reportEventEnrollmentStatus		[60]	IMPLICIT ReportEventEnrollmentStatus-Response,
-	getEventEnrollmentAttributes	[61]	IMPLICIT GetEventEnrollmentAttributes-Response,
-	acknowledgeEventNotification	[62]	IMPLICIT AcknowledgeEventNotification-Response,
-	getAlarmSummary					[63]	IMPLICIT GetAlarmSummary-Response,
+	getEventEnrollmentAttributes		[61]	IMPLICIT GetEventEnrollmentAttributes-Response,
+	acknowledgeEventNotification		[62]	IMPLICIT AcknowledgeEventNotification-Response,
+	getAlarmSummary				[63]	IMPLICIT GetAlarmSummary-Response,
 	getAlarmEnrollmentSummary		[64]	IMPLICIT GetAlarmEnrollmentSummary-Response,
-	readJournal						[65]	IMPLICIT ReadJournal-Response,
-	writeJournal					[66]	IMPLICIT WriteJournal-Response,
-	initializeJournal				[67]	IMPLICIT InitializeJournal-Response,
-	reportJournalStatus				[68]	IMPLICIT ReportJournalStatus-Response,
-	createJournal					[69]	IMPLICIT CreateJournal-Response,
-	deleteJournal					[70]	IMPLICIT DeleteJournal-Response,
-	getCapabilityList				[71]	IMPLICIT GetCapabilityList-Response,
-	fileRead						[73]	IMPLICIT FileRead-Response,
-	fileClose						[74]	IMPLICIT FileClose-Response,
-	fileRename						[75]	IMPLICIT FileRename-Response,
-	fileDelete						[76]	IMPLICIT FileDelete-Response,
-	fileDirectory					[77]	IMPLICIT FileDirectory-Response
+	readJournal				[65]	IMPLICIT ReadJournal-Response,
+	writeJournal				[66]	IMPLICIT WriteJournal-Response,
+	initializeJournal			[67]	IMPLICIT InitializeJournal-Response,
+	reportJournalStatus			[68]	IMPLICIT ReportJournalStatus-Response,
+	createJournal				[69]	IMPLICIT CreateJournal-Response,
+	deleteJournal				[70]	IMPLICIT DeleteJournal-Response,
+	getCapabilityList			[71]	IMPLICIT GetCapabilityList-Response,
+	fileRead				[73]	IMPLICIT FileRead-Response,
+	fileClose				[74]	IMPLICIT FileClose-Response,
+	fileRename				[75]	IMPLICIT FileRename-Response,
+	fileDelete				[76]	IMPLICIT FileDelete-Response,
+	fileDirectory				[77]	IMPLICIT FileDirectory-Response
 -- XXX this one is neither in this ASN nor in the IMPORTS
---	additionalService				[78]	AdditionalService-Response
+--	additionalService			[78]	AdditionalService-Response
 	}
 
 --********************************** COMMON MMS TYPES ***********************************
@@ -291,7 +308,7 @@ Unsigned32 ::= INTEGER
 ObjectName ::= CHOICE 
 	{
 	vmd-specific		[0] IMPLICIT Identifier,
-	domain-specific	    [1] IMPLICIT SEQUENCE
+	domain-specific		[1] IMPLICIT SEQUENCE
 		{
 		domainId 	Identifier,
 		itemId		Identifier
@@ -302,7 +319,7 @@ ObjectName ::= CHOICE
 
 ApplicationReference ::= SEQUENCE
 	{
-	ap-title			[0] AP-title 	        OPTIONAL,
+	ap-title		[0] AP-title 	        OPTIONAL,
 	ap-invocation-id	[1] AP-invocation-identifier OPTIONAL,
 	ae-qualifier		[2] AE-qualifier	        OPTIONAL,
 	ae-invocation-id	[3] AE-invocation-identifier OPTIONAL
@@ -323,11 +340,11 @@ Initiate-ErrorPDU ::= ServiceError
 
 Initiate-RequestPDU ::= SEQUENCE
 	{
-	localDetailCalling	        		[0] IMPLICIT Integer32 OPTIONAL,
+	localDetailCalling	        	[0] IMPLICIT Integer32 OPTIONAL,
 	proposedMaxServOutstandingCalling	[1] IMPLICIT Integer16,
 	proposedMaxServOutstandingCalled	[2] IMPLICIT Integer16,
 	proposedDataStructureNestingLevel	[3] IMPLICIT Integer8 OPTIONAL,
-	mmsInitRequestDetail				[4] IMPLICIT InitRequestDetail
+	mmsInitRequestDetail			[4] IMPLICIT InitRequestDetail
 	}
 
 InitRequestDetail ::= SEQUENCE
@@ -339,7 +356,7 @@ InitRequestDetail ::= SEQUENCE
 
 Initiate-ResponsePDU ::= SEQUENCE
 	{
-	localDetailCalled					[0] IMPLICIT Integer32 OPTIONAL,
+	localDetailCalled			[0] IMPLICIT Integer32 OPTIONAL,
 	negociatedMaxServOutstandingCalling	[1] IMPLICIT Integer16,
 	negociatedMaxServOutstandingCalled	[2] IMPLICIT Integer16,
 	negociatedDataStructureNestingLevel	[3] IMPLICIT Integer8 OPTIONAL,
@@ -370,84 +387,84 @@ ParameterSupportOptions ::= BIT STRING {
 
 ServiceSupportOptions ::= BIT STRING 
 	{
-	status					(0),	
+	status					(0),
 	getNameList				(1), 	
 	identify				(2), 		
-	rename					(3),	
-	read					(4),	
-	write					(5),	
-	getVariableAccessAttributes		(6),	
-	defineNamedVariable			(7),	
-	defineScatteredAccess			(8),	
-	getScatteredAccessAttributes		(9),	
-	deleteVariableAccess			(10),		
-	defineNamedVariableList			(11),	
-	getNamedVariableListAttributes		(12),	
-	deleteNamedVariableList			(13),	
-	defineNamedType				(14),		
-	getNamedTypeAttributes			(15),	
-	deleteNamedType				(16),	
-	input					(17),	
-	output					(18),	
-	takeControl				(19),	
-	relinquishControl			(20),	
-	defineSemaphore				(21),	
-	deleteSemaphore				(22),	
-	reportSemaphoreStatus			(23),	
-	reportPoolSemaphoreStatus		(24),	
-	reportSemaphoreEntryStatus		(25),	
-	initiateDownloadSequence		(26),	
-	downloadSegment				(27),	
-	terminateDownloadSequence		(28),	
+	rename					(3),
+	read					(4),
+	write					(5),
+	getVariableAccessAttributes		(6),
+	defineNamedVariable			(7),
+	defineScatteredAccess			(8),
+	getScatteredAccessAttributes		(9),
+	deleteVariableAccess			(10),	
+	defineNamedVariableList			(11),
+	getNamedVariableListAttributes		(12),
+	deleteNamedVariableList			(13),
+	defineNamedType				(14),	
+	getNamedTypeAttributes			(15),
+	deleteNamedType				(16),
+	input					(17),
+	output					(18),
+	takeControl				(19),
+	relinquishControl			(20),
+	defineSemaphore				(21),
+	deleteSemaphore				(22),
+	reportSemaphoreStatus			(23),
+	reportPoolSemaphoreStatus		(24),
+	reportSemaphoreEntryStatus		(25),
+	initiateDownloadSequence		(26),
+	downloadSegment				(27),
+	terminateDownloadSequence		(28),
 	initiateUploadSequence			(29),
-	uploadSegment				(30),	
-	terminateUploadSequence			(31),	
-	requestDomainDownload			(32),	
-	requestDomainUpload			(33),	
-	loadDomainContent			(34),	
-	storeDomainContent			(35),	
-	deleteDomain				(36),	
-	getDomainAttributes			(37),	
-	createProgramInvocation			(38),	
-	deleteProgramInvocation			(39),	
-	start					(40),	
-	stop					(41),	
-	resume					(42),	
-	reset					(43),	
-	kill					(44),	
-	getProgramInvocationAttributes		(45),	
-	obtainFile				(46),	
-	defineEventCondition			(47),	
-	deleteEventCondition			(48),	
-	getEventConditionAttributes		(49),	
-	reportEventConditionStatus		(50),	
-	alterEventConditionMonitoring		(51),	
-	triggerEvent				(52),	
-	defineEventAction			(53),	
-	deleteEventAction			(54),	
-	getEventActionAttributes		(55),	
-	reportActionStatus			(56),	
-	defineEventEnrollment			(57),	
-	deleteEventEnrollment			(58),	
-	alterEventEnrollment			(59),	
-	reportEventEnrollmentStatus		(60),	
-	getEventEnrollmentAttributes		(61),	
-	acknowledgeEventNotification		(62),	
-	getAlarmSummary				(63),	
-	getAlarmEnrollmentSummary		(64),	
-	readJournal				(65),	
-	writeJournal				(66),	
-	initializeJournal			(67),	
-	reportJournalStatus			(68),	
-	createJournal				(69),	
-	deleteJournal				(70),	
-	getCapabilityList			(71),	
-	fileOpen				(72),	
-	fileRead				(73),	
-	fileClose				(74),	
-	fileRename				(75),	
-	fileDelete				(76),	
-	fileDirectory				(77),	
+	uploadSegment				(30),
+	terminateUploadSequence			(31),
+	requestDomainDownload			(32),
+	requestDomainUpload			(33),
+	loadDomainContent			(34),
+	storeDomainContent			(35),
+	deleteDomain				(36),
+	getDomainAttributes			(37),
+	createProgramInvocation			(38),
+	deleteProgramInvocation			(39),
+	start					(40),
+	stop					(41),
+	resume					(42),
+	reset					(43),
+	kill					(44),
+	getProgramInvocationAttributes		(45),
+	obtainFile				(46),
+	defineEventCondition			(47),
+	deleteEventCondition			(48),
+	getEventConditionAttributes		(49),
+	reportEventConditionStatus		(50),
+	alterEventConditionMonitoring		(51),
+	triggerEvent				(52),
+	defineEventAction			(53),
+	deleteEventAction			(54),
+	getEventActionAttributes		(55),
+	reportActionStatus			(56),
+	defineEventEnrollment			(57),
+	deleteEventEnrollment			(58),
+	alterEventEnrollment			(59),
+	reportEventEnrollmentStatus		(60),
+	getEventEnrollmentAttributes		(61),
+	acknowledgeEventNotification		(62),
+	getAlarmSummary				(63),
+	getAlarmEnrollmentSummary		(64),
+	readJournal				(65),
+	writeJournal				(66),
+	initializeJournal			(67),
+	reportJournalStatus			(68),
+	createJournal				(69),
+	deleteJournal				(70),
+	getCapabilityList			(71),
+	fileOpen				(72),
+	fileRead				(73),
+	fileClose				(74),
+	fileRename				(75),
+	fileDelete				(76),
+	fileDirectory				(77),
 	unsolicitedStatus			(78),
 	informationReport			(79),
 	eventNotification			(80),
@@ -485,10 +502,10 @@ ServiceError ::= SEQUENCE
 		{ 
 		vmd-state 	[0] IMPLICIT INTEGER  	
 			{	
-			other 					(0),			       
-			vmd-state-conflict 			(1),		
+			other 					(0),		       
+			vmd-state-conflict 			(1),	
 			vmd-operational-problem 		(2), 
-			domain-transfer-problem 		(3),	
+			domain-transfer-problem 		(3),
 			state-machine-id-invalid 		(4)	
                   	},
 		application-reference 	[1] IMPLICIT INTEGER
@@ -597,12 +614,66 @@ ServiceError ::= SEQUENCE
 			deleteNamedVariableList		[6] IMPLICIT DeleteNamedVariableList-Error,
 			deleteNamedType			[7] IMPLICIT DeleteNamedType-Error,
 			defineEventEnrollment-Error	[8] DefineEventEnrollment-Error,
-			fileRename			[9] IMPLICIT FileRename-Error
--- XXX this one is neither in this ASN nor in the IMPORTS
---			additionalService		[10] AdditionalServiceError
+			fileRename			[9] IMPLICIT FileRename-Error,
+			additionalService		[10] AdditionalService-Error,
+			changeAccessControl		[11] IMPLICIT ChangeAccessControl-Error
 			} OPTIONAL
 	}
 
+	AdditionalService-Error ::= CHOICE
+	{
+		defineEcl		[0] DefineEventConditionList-Error,
+		addECLReference		[1] AddEventConditionListReference-Error,
+		removeECLReference	[2] RemoveEventConditionListReference-Error,
+		initiateUC		[3] InitiateUnitControl-Error,
+		startUC			[4] IMPLICIT StartUnitControl-Error,
+		stopUC			[5] IMPLICIT StopUnitControl-Error,
+		deleteUC		[6] DeleteUnitControl-Error,
+		loadUCFromFile		[7] LoadUnitControlFromFile-Error
+	}
+
+	DefineEventConditionList-Error ::= ObjectName
+
+	AddEventConditionListReference-Error ::= ObjectName
+
+	RemoveEventConditionListReference-Error ::= CHOICE
+	{
+		eventCondition		[0] ObjectName,
+		eventConditionList	[1] ObjectName
+	}
+
+	InitiateUnitControl-Error ::= CHOICE
+	{
+		domain			[0] IMPLICIT Identifier,
+		programInvocation	[1] IMPLICIT Identifier
+	}
+
+	StartUnitControl-Error ::= SEQUENCE
+	{
+		programInvocationName	[0] IMPLICIT Identifier,
+		programInvocationState	[1] IMPLICIT ProgramInvocationState
+	}
+
+	StopUnitControl-Error ::= SEQUENCE
+	{
+		programInvocationName	[0] IMPLICIT Identifier,
+		programInvocationState	[1] IMPLICIT ProgramInvocationState
+	}
+
+	DeleteUnitControl-Error ::= CHOICE
+	{
+		domain			[0] IMPLICIT Identifier,
+		programInvocation	[1] IMPLICIT Identifier
+	}
+
+	LoadUnitControlFromFile-Error ::= CHOICE
+	{
+		none			[0] IMPLICIT NULL,
+		domain			[1] IMPLICIT Identifier,
+		programInvocation	[2] IMPLICIT Identifier
+	}
+
+	ChangeAccessControl-Error ::= Unsigned32
 
 ---------------------------------- REJECT --------------------------------
 
@@ -632,7 +703,7 @@ RejectPDU ::= SEQUENCE
 			invalid-result				(3),
 			max-recursion-exceeded			(5),
 			value-out-of-range			(6) 	
-			},	
+			},
 		
 		confirmed-errorPDU		[3] IMPLICIT INTEGER 
 			{
@@ -641,7 +712,7 @@ RejectPDU ::= SEQUENCE
 			invalid-invokeID			(2),
 			invalid-serviceError			(3),
 			value-out-of-range			(4) 	 
-			} ,			
+			} ,		
 			
 		unconfirmedPDU			[4] IMPLICIT INTEGER
 			{
@@ -663,7 +734,7 @@ RejectPDU ::= SEQUENCE
 			{
 			other					(0),
 			invalid-invokeID			(1)	
-			},	
+			},
 
 		cancel-responsePDU	        [7] IMPLICIT INTEGER
 			{
@@ -683,7 +754,7 @@ RejectPDU ::= SEQUENCE
 			{
 			other					(0),
 			invalid-argument			(1)	
-			},	
+			},
 
 		conclude-responsePDU	        [10] IMPLICIT INTEGER
 			{
@@ -728,34 +799,38 @@ Status-Response ::= SEQUENCE {
 UnsolicitedStatus ::= Status-Response
 
 -- GETNAMELIST
+ObjectClass ::= INTEGER
+	{
+	nammedVariable		(0),
+	scatteredAccess		(1),
+	namedVariableList	(2),
+	namedType		(3),
+	semaphore		(4),
+	eventCondition		(5),
+	eventAction		(6),
+	eventEnrollment		(7),
+	journal			(8),
+	domain			(9),
+	programInvocation	(10),
+	operatorStation		(11)
+	}
+
+ObjectScope ::= CHOICE
+	{
+	vmdSpecific		[0] IMPLICIT NULL,
+	domainSpecific		[1] IMPLICIT Identifier,
+	aaSpecific		[2] IMPLICIT NULL
+	}
+
 
 GetNameList-Request ::= SEQUENCE
 	{
 	extendedObjectClass [0] CHOICE
 		{
-		objectClass		[0] IMPLICIT INTEGER
-			{
-			nammedVariable		(0),
-			scatteredAccess		(1),
-			namedVariableList	(2),
-			namedType		(3),
-			semaphore		(4),
-			eventCondition		(5),
-			eventAction		(6),
-			eventEnrollment		(7),
-			journal			(8),
-			domain			(9),
-			programInvocation	(10),
-			operatorStation		(11)
-			}
+		objectClass		[0] IMPLICIT ObjectClass
 		},
-	objectScope 		[1] CHOICE
-		{
-		vmdSpecific		[0] IMPLICIT NULL,
-		domainSpecific		[1] IMPLICIT Identifier,
-		aaSpecific		[2] IMPLICIT NULL
-		},
-	continueAfter 	[2] IMPLICIT Identifier OPTIONAL
+	objectScope 	    [1] ObjectScope,
+	continueAfter 	    [2] IMPLICIT Identifier OPTIONAL
 	}
 
 GetNameList-Response ::= SEQUENCE
@@ -1058,7 +1133,7 @@ GetProgramInvocationAttributes-Request ::= Identifier	-- Program Invocation Name
 GetProgramInvocationAttributes-Response ::= SEQUENCE
 	{
 	state			[0] IMPLICIT ProgramInvocationState,
-	listOfDomainNames	[1] IMPLICIT SEQUENCE OF Identifier,				
+	listOfDomainNames	[1] IMPLICIT SEQUENCE OF Identifier,			
 	mmsDeletable		[2] IMPLICIT BOOLEAN,
 	reusable		[3] IMPLICIT BOOLEAN,
 	monitor			[4] IMPLICIT BOOLEAN,
@@ -1400,7 +1475,8 @@ DataAccessError ::= INTEGER
 	type-inconsistent		(7),
 	object-attribute-inconsistent	(8),
 	object-access-unsupported	(9),
-	object-non-existent		(10)
+	object-non-existent		(10),
+	object-value-invalid		(11)
 	}
 
 
@@ -1410,7 +1486,7 @@ Data ::= CHOICE
 	-- context tag 0 is reserved for AccessResult
 	array			    [1] IMPLICIT SEQUENCE OF Data,
 	structure		    [2] IMPLICIT SEQUENCE OF Data,
-	boolean			    [3] IMPLICIT BOOLEAN,	
+	boolean			    [3] IMPLICIT BOOLEAN,
 	bit-string		    [4] IMPLICIT BIT STRING,
 	integer			    [5] IMPLICIT INTEGER,
 	unsigned		    [6] IMPLICIT INTEGER,
@@ -2239,8 +2315,6 @@ FileAttributes ::= SEQUENCE {
 	sizeOfFile	[0] IMPLICIT Unsigned32,
 	lastModified	[1] IMPLICIT GeneralizedTime OPTIONAL
 	}
-
-
 
 END
 

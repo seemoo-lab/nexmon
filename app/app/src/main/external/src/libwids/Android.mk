@@ -1,6 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 UTILITIES_PATH := $(LOCAL_PATH)/../../../../../../../utilities
-MDK3_PATH := $(UTILITIES_PATH)/mdk3
+MDK3_PATH := $(UTILITIES_PATH)/mdk4/mdk3-compat
 
 
 include $(CLEAR_VARS)
@@ -35,8 +35,8 @@ include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE := libosdep
-LOCAL_SRC_FILES := $(MDK3_PATH)/../libosdep/local/armeabi/libosdep.a
-LOCAL_EXPORT_C_INCLUDES := $(MDK3_PATH)/../libosdep/src
+LOCAL_SRC_FILES := $(UTILITIES_PATH)/libosdep/local/armeabi/libosdep.a
+LOCAL_EXPORT_C_INCLUDES := $(UTILITIES_PATH)/libosdep/src
 include $(PREBUILT_STATIC_LIBRARY)
 
 

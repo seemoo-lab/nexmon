@@ -1,9 +1,9 @@
 /* Test of binary mode I/O.
-   Copyright (C) 2005, 2007-2016 Free Software Foundation, Inc.
+   Copyright (C) 2005, 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2005.  */
 
@@ -30,7 +30,7 @@
 #include "macros.h"
 
 int
-main (int argc, char *argv[])
+main (_GL_UNUSED int argc, char *argv[])
 {
   /* Test the O_BINARY macro.  */
   {
@@ -55,15 +55,9 @@ main (int argc, char *argv[])
       fputs ("Hello\n", stdout);
       break;
 
-    case '2':
-      /* Test the SET_BINARY macro.  */
-      SET_BINARY (1);
-      fputs ("Hello\n", stdout);
-      break;
-
     default:
       break;
     }
 
-  return 0;
+  return test_exit_status;
 }

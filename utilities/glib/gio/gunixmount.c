@@ -4,10 +4,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -113,18 +115,18 @@ _g_unix_mount_new (GVolumeMonitor  *volume_monitor,
   GUnixMount *mount;
   
   /* No volume for mount: Ignore internal things */
-  if (volume == NULL && !g_unix_mount_guess_should_display (mount_entry))
+  if (volume == NULL && !g_unix_mount_entry_guess_should_display (mount_entry))
     return NULL;
 
   mount = g_object_new (G_TYPE_UNIX_MOUNT, NULL);
   mount->volume_monitor = volume_monitor != NULL ? g_object_ref (volume_monitor) : NULL;
-  mount->device_path = g_strdup (g_unix_mount_get_device_path (mount_entry));
-  mount->mount_path = g_strdup (g_unix_mount_get_mount_path (mount_entry));
-  mount->can_eject = g_unix_mount_guess_can_eject (mount_entry);
+  mount->device_path = g_strdup (g_unix_mount_entry_get_device_path (mount_entry));
+  mount->mount_path = g_strdup (g_unix_mount_entry_get_mount_path (mount_entry));
+  mount->can_eject = g_unix_mount_entry_guess_can_eject (mount_entry);
 
-  mount->name = g_unix_mount_guess_name (mount_entry);
-  mount->icon = g_unix_mount_guess_icon (mount_entry);
-  mount->symbolic_icon = g_unix_mount_guess_symbolic_icon (mount_entry);
+  mount->name = g_unix_mount_entry_guess_name (mount_entry);
+  mount->icon = g_unix_mount_entry_guess_icon (mount_entry);
+  mount->symbolic_icon = g_unix_mount_entry_guess_symbolic_icon (mount_entry);
 
   /* need to do this last */
   mount->volume = volume;
@@ -260,7 +262,7 @@ eject_unmount_done (GObject      *source,
     {
       if (!g_subprocess_get_successful (subprocess))
         /* ...but bad exit code */
-        g_task_return_new_error (task, G_IO_ERROR, G_IO_ERROR_FAILED, "%s", stderr_str);
+        g_task_return_new_error_literal (task, G_IO_ERROR, G_IO_ERROR_FAILED, stderr_str);
       else
         /* ...and successful exit code */
         g_task_return_boolean (task, TRUE);
@@ -288,7 +290,12 @@ eject_unmount_do_cb (gpointer user_data)
     }
 
   subprocess = g_subprocess_newv (argv, G_SUBPROCESS_FLAGS_STDOUT_SILENCE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &error);
-  g_assert_no_error (error);
+  if (error != NULL)
+    {
+      g_task_return_error (task, g_steal_pointer (&error));
+      g_object_unref (task);
+      return G_SOURCE_REMOVE;
+    }
 
   g_subprocess_communicate_utf8_async (subprocess, NULL,
                                        g_task_get_cancellable (task),
@@ -302,13 +309,16 @@ eject_unmount_do (GMount              *mount,
                   GCancellable        *cancellable,
                   GAsyncReadyCallback  callback,
                   gpointer             user_data,
-                  char               **argv)
+                  char               **argv,
+                  const gchar         *task_name)
 {
   GUnixMount *unix_mount = G_UNIX_MOUNT (mount);
   GTask *task;
   GSource *timeout;
 
   task = g_task_new (mount, cancellable, callback, user_data);
+  g_task_set_source_tag (task, eject_unmount_do);
+  g_task_set_name (task, task_name);
   g_task_set_task_data (task, g_strdupv (argv), (GDestroyNotify) g_strfreev);
 
   if (unix_mount->volume_monitor != NULL)
@@ -336,7 +346,7 @@ g_unix_mount_unmount (GMount             *mount,
   else
     argv[1] = unix_mount->device_path;
 
-  eject_unmount_do (mount, cancellable, callback, user_data, argv);
+  eject_unmount_do (mount, cancellable, callback, user_data, argv, "[gio] unmount mount");
 }
 
 static gboolean
@@ -362,7 +372,7 @@ g_unix_mount_eject (GMount             *mount,
   else
     argv[1] = unix_mount->device_path;
 
-  eject_unmount_do (mount, cancellable, callback, user_data, argv);
+  eject_unmount_do (mount, cancellable, callback, user_data, argv, "[gio] eject mount");
 }
 
 static gboolean

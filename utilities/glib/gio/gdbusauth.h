@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -52,7 +54,7 @@ struct _GDBusAuth
   GDBusAuthPrivate *priv;
 };
 
-GType       _g_dbus_auth_get_type (void) G_GNUC_CONST;
+GType       _g_dbus_auth_get_type (void);
 GDBusAuth  *_g_dbus_auth_new      (GIOStream *stream);
 
 /* TODO: need a way to set allowed authentication mechanisms */
@@ -67,6 +69,7 @@ gboolean    _g_dbus_auth_run_server (GDBusAuth             *auth,
                                      GDBusAuthObserver     *observer,
                                      const gchar           *guid,
                                      gboolean               allow_anonymous,
+                                     gboolean               require_same_user,
                                      GDBusCapabilityFlags   offered_capabilities,
                                      GDBusCapabilityFlags  *out_negotiated_capabilities,
                                      GCredentials         **out_received_credentials,
@@ -75,6 +78,7 @@ gboolean    _g_dbus_auth_run_server (GDBusAuth             *auth,
 
 gchar      *_g_dbus_auth_run_client (GDBusAuth     *auth,
                                      GDBusAuthObserver     *observer,
+                                     GDBusConnectionFlags   conn_flags,
                                      GDBusCapabilityFlags offered_capabilities,
                                      GDBusCapabilityFlags *out_negotiated_capabilities,
                                      GCancellable  *cancellable,

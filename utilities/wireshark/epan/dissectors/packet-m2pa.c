@@ -1,9 +1,9 @@
 /* packet-m2pa.c
  * Routines for MTP2 Peer Adaptation Layer dissection
  * It is hopefully (needs testing) compliant to
- * http://www.ietf.org/internet-drafts/draft-ietf-sigtran-m2pa-02.txt
- * http://www.ietf.org/internet-drafts/draft-ietf-sigtran-m2pa-08.txt
- * http://tools.ietf.org/rfc/rfc4165.txt
+ * https://tools.ietf.org/html/draft-ietf-sigtran-m2pa-02
+ * https://tools.ietf.org/html/draft-ietf-sigtran-m2pa-08
+ * https://tools.ietf.org/html/rfc4165
  *
  * Copyright 2001, 2002, Jeff Morriss <jeff.morriss.ws [AT] gmail.com>,
  * updated by Michael Tuexen <tuexen [AT] fh-muenster.de>
@@ -14,19 +14,7 @@
  *
  * Copied from packet-m3ua.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
@@ -43,40 +31,39 @@ void proto_reg_handoff_m2pa(void);
 
 #define SCTP_PORT_M2PA              3565
 
-static guint global_sctp_port       = SCTP_PORT_M2PA;
-
-static int proto_m2pa      = -1;
+static int proto_m2pa;
 static module_t *m2pa_module;
 
-static int hf_version      = -1;
-static int hf_spare        = -1;
-static int hf_v2_type      = -1;
-static int hf_v8_type      = -1;
-static int hf_type         = -1;
-static int hf_class        = -1;
-static int hf_length       = -1;
-static int hf_unused       = -1;
-static int hf_bsn          = -1;
-static int hf_fsn          = -1;
-static int hf_v2_status    = -1;
-static int hf_v8_status    = -1;
-static int hf_status       = -1;
-static int hf_v2_li_spare  = -1;
-static int hf_v8_li_spare  = -1;
-static int hf_v2_li_prio   = -1;
-static int hf_v8_li_prio   = -1;
-static int hf_filler       = -1;
-static int hf_unknown_data = -1;
-static int hf_pri_prio     = -1;
-static int hf_pri_spare    = -1;
-static int hf_undecode_data   = -1;
+static int hf_version;
+static int hf_spare;
+static int hf_v2_type;
+static int hf_v8_type;
+static int hf_type;
+static int hf_class;
+static int hf_length;
+static int hf_unused;
+static int hf_bsn;
+static int hf_fsn;
+static int hf_v2_status;
+static int hf_v8_status;
+static int hf_status;
+static int hf_v2_li_spare;
+static int hf_v8_li_spare;
+static int hf_v2_li_prio;
+static int hf_v8_li_prio;
+static int hf_filler;
+static int hf_unknown_data;
+static int hf_pri_prio;
+static int hf_pri_spare;
+static int hf_undecode_data;
 
-static gint ett_m2pa       = -1;
-static gint ett_m2pa_li    = -1;
+static int ett_m2pa;
+static int ett_m2pa_li;
 
-static expert_field ei_undecode_data = EI_INIT;
-static expert_field ei_length = EI_INIT;
+static expert_field ei_undecode_data;
+static expert_field ei_length;
 
+static dissector_handle_t m2pa_handle;
 static dissector_handle_t mtp3_handle;
 
 typedef enum {
@@ -85,7 +72,7 @@ typedef enum {
   M2PA_RFC4165 = 3
 } Version_Type;
 
-static gint m2pa_version = M2PA_RFC4165;
+static int m2pa_version = M2PA_RFC4165;
 
 #define VERSION_LENGTH         1
 #define SPARE_LENGTH           1
@@ -157,7 +144,7 @@ static const value_string message_type_values[] = {
 static void
 dissect_v2_header(tvbuff_t *header_tvb, packet_info *pinfo, proto_tree *m2pa_tree)
 {
-  guint16 message_type;
+  uint16_t message_type;
 
   message_type  = tvb_get_ntohs(header_tvb, V2_TYPE_OFFSET);
 
@@ -172,9 +159,9 @@ dissect_v2_header(tvbuff_t *header_tvb, packet_info *pinfo, proto_tree *m2pa_tre
 static void
 dissect_v8_header(tvbuff_t *header_tvb, packet_info *pinfo, proto_tree *m2pa_tree)
 {
-  guint8 message_type;
+  uint8_t message_type;
 
-  message_type  = tvb_get_guint8(header_tvb, V8_TYPE_OFFSET);
+  message_type  = tvb_get_uint8(header_tvb, V8_TYPE_OFFSET);
 
   col_add_fstr(pinfo->cinfo, COL_INFO, "%s ", val_to_str_const(message_type, v8_message_type_values, "Unknown"));
 
@@ -192,9 +179,9 @@ dissect_v8_header(tvbuff_t *header_tvb, packet_info *pinfo, proto_tree *m2pa_tre
 static void
 dissect_header(tvbuff_t *header_tvb, packet_info *pinfo, proto_tree *m2pa_tree)
 {
-  guint8 message_type;
+  uint8_t message_type;
 
-  message_type  = tvb_get_guint8(header_tvb, V8_TYPE_OFFSET);
+  message_type  = tvb_get_uint8(header_tvb, V8_TYPE_OFFSET);
 
   col_add_fstr(pinfo->cinfo, COL_INFO, "%s ", val_to_str_const(message_type, v8_message_type_values, "Unknown"));
 
@@ -317,7 +304,7 @@ static const value_string v8_link_status_values[] = {
 static void
 dissect_v8_link_status_message(tvbuff_t *message_data_tvb, packet_info *pinfo, proto_tree *m2pa_tree)
 {
-  guint16 filler_length;
+  uint16_t filler_length;
 
   col_append_fstr(pinfo->cinfo, COL_INFO, "(%s) ", val_to_str_const(tvb_get_ntohl(message_data_tvb, STATUS_OFFSET), v8_link_status_values, "Unknown"));
 
@@ -343,7 +330,7 @@ static const value_string link_status_values[] = {
 static void
 dissect_link_status_message(tvbuff_t *message_data_tvb, packet_info *pinfo, proto_tree *m2pa_tree)
 {
-  guint16 filler_length;
+  uint16_t filler_length;
 
   col_append_fstr(pinfo->cinfo, COL_INFO, "(%s) ", val_to_str_const(tvb_get_ntohl(message_data_tvb, STATUS_OFFSET), link_status_values, "Unknown"));
 
@@ -357,7 +344,7 @@ dissect_link_status_message(tvbuff_t *message_data_tvb, packet_info *pinfo, prot
 static void
 dissect_unknown_message(tvbuff_t *message_data_tvb, proto_tree *m2pa_tree)
 {
-  guint length;
+  unsigned length;
 
   length = tvb_reported_length(message_data_tvb);
   if (length > 0)
@@ -369,12 +356,12 @@ dissect_unknown_message(tvbuff_t *message_data_tvb, proto_tree *m2pa_tree)
 static void
 dissect_v2_message_data(tvbuff_t *message_tvb, packet_info *pinfo, proto_item *m2pa_item, proto_tree *m2pa_tree, proto_tree *tree)
 {
-  guint32 message_data_length;
-  guint16 type;
+  uint32_t message_data_length;
+  uint16_t type;
   tvbuff_t *message_data_tvb;
 
-  message_data_length = (gint) tvb_get_ntohl(message_tvb, V2_LENGTH_OFFSET);
-  if ((gint) message_data_length < 1) {
+  message_data_length = tvb_get_ntohl(message_tvb, V2_LENGTH_OFFSET);
+  if (message_data_length < 1 || message_data_length > INT_MAX) {
     proto_tree_add_expert_format(m2pa_tree, pinfo, &ei_length, message_tvb, V2_LENGTH_OFFSET, 4,
         "Invalid message data length: %u", message_data_length);
     return;
@@ -400,18 +387,18 @@ dissect_v2_message_data(tvbuff_t *message_tvb, packet_info *pinfo, proto_item *m
 static void
 dissect_v8_message_data(tvbuff_t *message_tvb, packet_info *pinfo, proto_item *m2pa_item, proto_tree *m2pa_tree, proto_tree *tree)
 {
-  guint32 message_data_length;
-  guint8 type;
+  uint32_t message_data_length;
+  uint8_t type;
   tvbuff_t *message_data_tvb;
 
   message_data_length = tvb_get_ntohl(message_tvb, V8_LENGTH_OFFSET) - V8_HEADER_LENGTH;
-  if ((gint) message_data_length < 1) {
+  if (message_data_length < 1 || message_data_length > INT_MAX) {
     proto_tree_add_expert_format(m2pa_tree, pinfo, &ei_length, message_tvb, V8_LENGTH_OFFSET, 4,
         "Invalid message data length: %u", message_data_length);
     return;
   }
   message_data_tvb    = tvb_new_subset_length(message_tvb, V8_MESSAGE_DATA_OFFSET, message_data_length);
-  type                = tvb_get_guint8(message_tvb, V8_TYPE_OFFSET);
+  type                = tvb_get_uint8(message_tvb, V8_TYPE_OFFSET);
 
 
   switch(type) {
@@ -431,14 +418,14 @@ dissect_v8_message_data(tvbuff_t *message_tvb, packet_info *pinfo, proto_item *m
 static void
 dissect_message_data(tvbuff_t *message_tvb, packet_info *pinfo, proto_item *m2pa_item, proto_tree *m2pa_tree, proto_tree *tree)
 {
-  guint32 length, message_data_length, actual_length;
-  guint8 type;
+  uint32_t length, message_data_length, actual_length;
+  uint8_t type;
   tvbuff_t *message_data_tvb;
 
   length              = tvb_get_ntohl(message_tvb, LENGTH_OFFSET);
   message_data_length = length - HEADER_LENGTH;
   message_data_tvb    = tvb_new_subset_length(message_tvb, MESSAGE_DATA_OFFSET, message_data_length);
-  type                = tvb_get_guint8(message_tvb, TYPE_OFFSET);
+  type                = tvb_get_uint8(message_tvb, TYPE_OFFSET);
 
 
   switch(type) {
@@ -549,7 +536,7 @@ proto_register_m2pa(void)
     { &hf_undecode_data,{ "Undecoded data", "m2pa.undecoded_data", FT_BYTES,  BASE_NONE, NULL,                          0x0,                 NULL, HFILL} }
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_m2pa,
     &ett_m2pa_li
   };
@@ -576,44 +563,24 @@ proto_register_m2pa(void)
   expert_register_field_array(expert_m2pa, ei, array_length(ei));
 
   /* Allow other dissectors to find this one by name. */
-  register_dissector("m2pa", dissect_m2pa, proto_m2pa);
+  m2pa_handle = register_dissector("m2pa", dissect_m2pa, proto_m2pa);
 
-  m2pa_module = prefs_register_protocol(proto_m2pa, proto_reg_handoff_m2pa);
+  m2pa_module = prefs_register_protocol(proto_m2pa, NULL);
 
-  prefs_register_enum_preference(m2pa_module, "version", "M2PA version", "Version used by Wireshark", &m2pa_version, m2pa_version_options, FALSE);
-  prefs_register_uint_preference(m2pa_module, "port", "M2PA SCTP Port", "Set the port for M2PA messages (Default of 3565)", 10, &global_sctp_port);
+  prefs_register_enum_preference(m2pa_module, "version", "M2PA version", "Version used by Wireshark", &m2pa_version, m2pa_version_options, false);
 }
 
 void
 proto_reg_handoff_m2pa(void)
 {
-  static gboolean prefs_initialized = FALSE;
-  static dissector_handle_t m2pa_handle;
-  static guint sctp_port;
+  mtp3_handle   = find_dissector_add_dependency("mtp3", proto_m2pa);
 
-  /* Port preferences code shamelessly copied from packet-beep.c */
-  if (!prefs_initialized) {
-    m2pa_handle   = find_dissector("m2pa");
-    mtp3_handle   = find_dissector_add_dependency("mtp3", proto_m2pa);
-
-    dissector_add_uint("sctp.ppi", M2PA_PAYLOAD_PROTOCOL_ID, m2pa_handle);
-
-    prefs_initialized = TRUE;
-
-  } else {
-
-    dissector_delete_uint("sctp.port", sctp_port, m2pa_handle);
-
-  }
-
-  /* Set our port number for future use */
-  sctp_port = global_sctp_port;
-
-  dissector_add_uint("sctp.port", sctp_port, m2pa_handle);
+  dissector_add_uint("sctp.ppi", M2PA_PAYLOAD_PROTOCOL_ID, m2pa_handle);
+  dissector_add_uint_with_preference("sctp.port", SCTP_PORT_M2PA, m2pa_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

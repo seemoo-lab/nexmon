@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Ref: 3GPP TS 25.468 version 8.1.0 Release 8
  */
@@ -29,6 +17,7 @@
 #include <epan/sctpppids.h>
 #include <epan/asn1.h>
 #include <epan/prefs.h>
+#include <wsutil/array.h>
 
 #include "packet-per.h"
 
@@ -41,19 +30,19 @@
 #define PSNAME "RUA"
 #define PFNAME "rua"
 /* Dissector to use SCTP PPID 19 or a configured SCTP port. IANA assigned port = 29169*/
-#define SCTP_PORT_RUA              29169;
+#define SCTP_PORT_RUA              29169
 
 void proto_register_rua(void);
 
 #include "packet-rua-val.h"
 
 /* Initialize the protocol and registered fields */
-static int proto_rua = -1;
+static int proto_rua;
 
 #include "packet-rua-hf.c"
 
 /* Initialize the subtree pointers */
-static int ett_rua = -1;
+static int ett_rua;
 
  /* initialise sub-dissector handles */
  static dissector_handle_t ranap_handle = NULL;
@@ -61,9 +50,8 @@ static int ett_rua = -1;
 #include "packet-rua-ett.c"
 
 /* Global variables */
-static guint32 ProcedureCode;
-static guint32 ProtocolIE_ID;
-static guint global_sctp_port = SCTP_PORT_RUA
+static uint32_t ProcedureCode;
+static uint32_t ProtocolIE_ID;
 
 /* Dissector tables */
 static dissector_table_t rua_ies_dissector_table;
@@ -86,27 +74,27 @@ void proto_reg_handoff_rua(void);
 
 static int dissect_ProtocolIEFieldValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-  return (dissector_try_uint_new(rua_ies_dissector_table, ProtocolIE_ID, tvb, pinfo, tree, FALSE, NULL)) ? tvb_captured_length(tvb) : 0;
+  return (dissector_try_uint_with_data(rua_ies_dissector_table, ProtocolIE_ID, tvb, pinfo, tree, false, NULL)) ? tvb_captured_length(tvb) : 0;
 }
 
 static int dissect_ProtocolExtensionFieldExtensionValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-  return (dissector_try_uint_new(rua_extension_dissector_table, ProtocolIE_ID, tvb, pinfo, tree, FALSE, NULL)) ? tvb_captured_length(tvb) : 0;
+  return (dissector_try_uint_with_data(rua_extension_dissector_table, ProtocolIE_ID, tvb, pinfo, tree, false, NULL)) ? tvb_captured_length(tvb) : 0;
 }
 
 static int dissect_InitiatingMessageValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-  return (dissector_try_uint_new(rua_proc_imsg_dissector_table, ProcedureCode, tvb, pinfo, tree, FALSE, NULL)) ? tvb_captured_length(tvb) : 0;
+  return (dissector_try_uint_with_data(rua_proc_imsg_dissector_table, ProcedureCode, tvb, pinfo, tree, false, NULL)) ? tvb_captured_length(tvb) : 0;
 }
 
 static int dissect_SuccessfulOutcomeValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-  return (dissector_try_uint_new(rua_proc_sout_dissector_table, ProcedureCode, tvb, pinfo, tree, FALSE, NULL)) ? tvb_captured_length(tvb) : 0;
+  return (dissector_try_uint_with_data(rua_proc_sout_dissector_table, ProcedureCode, tvb, pinfo, tree, false, NULL)) ? tvb_captured_length(tvb) : 0;
 }
 
 static int dissect_UnsuccessfulOutcomeValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-  return (dissector_try_uint_new(rua_proc_uout_dissector_table, ProcedureCode, tvb, pinfo, tree, FALSE, NULL)) ? tvb_captured_length(tvb) : 0;
+  return (dissector_try_uint_with_data(rua_proc_uout_dissector_table, ProcedureCode, tvb, pinfo, tree, false, NULL)) ? tvb_captured_length(tvb) : 0;
 }
 
 static int
@@ -127,7 +115,6 @@ dissect_rua(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 
 /*--- proto_register_rua -------------------------------------------*/
 void proto_register_rua(void) {
-module_t *rua_module;
 
   /* List of fields */
 
@@ -137,7 +124,7 @@ module_t *rua_module;
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
           &ett_rua,
 #include "packet-rua-ettarr.c"
   };
@@ -159,8 +146,7 @@ module_t *rua_module;
   rua_proc_sout_dissector_table = register_dissector_table("rua.proc.sout", "RUA-ELEMENTARY-PROCEDURE SuccessfulOutcome", proto_rua, FT_UINT32, BASE_DEC);
   rua_proc_uout_dissector_table = register_dissector_table("rua.proc.uout", "RUA-ELEMENTARY-PROCEDURE UnsuccessfulOutcome", proto_rua, FT_UINT32, BASE_DEC);
 
-  rua_module = prefs_register_protocol(proto_rua, proto_reg_handoff_rua);
-  prefs_register_uint_preference(rua_module, "port", "RUA SCTP Port", "Set the port for RUA messages (Default of 29169)", 10, &global_sctp_port);
+  /* rua_module = prefs_register_protocol(proto_rua, NULL); */
 
 }
 
@@ -169,19 +155,8 @@ module_t *rua_module;
 void
 proto_reg_handoff_rua(void)
 {
-        static gboolean initialized = FALSE;
-        static guint sctp_port;
-
-        if (!initialized) {
-                ranap_handle = find_dissector_add_dependency("ranap", proto_rua);
-                dissector_add_uint("sctp.ppi", RUA_PAYLOAD_PROTOCOL_ID, rua_handle);
-                initialized = TRUE;
+        ranap_handle = find_dissector_add_dependency("ranap", proto_rua);
+        dissector_add_uint("sctp.ppi", RUA_PAYLOAD_PROTOCOL_ID, rua_handle);
+        dissector_add_uint_with_preference("sctp.port", SCTP_PORT_RUA, rua_handle);
 #include "packet-rua-dis-tab.c"
-
-        } else {
-                dissector_delete_uint("sctp.port", sctp_port, rua_handle);
-        }
-        /* Set our port number for future use */
-        sctp_port = global_sctp_port;
-        dissector_add_uint("sctp.port", sctp_port, rua_handle);
 }

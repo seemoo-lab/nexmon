@@ -1,0 +1,21 @@
+SAX.setDocumentLocator()
+SAX.startDocument()
+SAX.internalSubset(doc, , )
+SAX.entityDecl(e, 1, (null), (null), -)
+SAX.getEntity(e)
+SAX.externalSubset(doc, , )
+SAX.startElementNs(doc, NULL, NULL, 0, 0, 0)
+SAX.characters(
+    , 5)
+SAX.getEntity(e)
+SAX.startElementNs(e, NULL, 'foo:x&x&x'x-x', 1, xmlns='foo:x&x&x'x-x', 0, 0)
+SAX.endElementNs(e, NULL, 'foo:x&x&x'x-x')
+SAX.characters(
+    , 5)
+SAX.getEntity(e)
+SAX.startElementNs(e, NULL, NULL, 1, xmlns:ns='foo:x&x&x'x-x', 0, 0)
+SAX.endElementNs(e, NULL, NULL)
+SAX.characters(
+, 1)
+SAX.endElementNs(doc, NULL, NULL)
+SAX.endDocument()

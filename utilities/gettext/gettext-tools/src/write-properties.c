@@ -1,6 +1,5 @@
 /* Writing Java .properties files.
-   Copyright (C) 2003, 2005-2009, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2003.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "write-properties.h"
@@ -28,13 +27,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "error.h"
+#include <textstyle.h>
+
+#include <error.h>
 #include "message.h"
 #include "msgl-ascii.h"
 #include "msgl-iconv.h"
 #include "po-charset.h"
+#include "xerror-handler.h"
 #include "unistr.h"
-#include "ostream.h"
 #include "write-po.h"
 #include "xalloc.h"
 
@@ -57,13 +58,11 @@ conv_to_java (const char *string)
   /* We cannot use iconv to "JAVA" because not all iconv() implementations
      know about the "JAVA" encoding.  */
   static const char hexdigit[] = "0123456789abcdef";
-  size_t length;
-  char *result;
 
   if (is_ascii_string (string))
     return string;
 
-  length = 0;
+  size_t length = 0;
   {
     const char *str = string;
     const char *str_limit = str + strlen (str);
@@ -76,7 +75,7 @@ conv_to_java (const char *string)
       }
   }
 
-  result = XNMALLOC (length + 1, char);
+  char *result = XNMALLOC (length + 1, char);
 
   {
     char *newstr = result;
@@ -128,8 +127,8 @@ write_escaped_string (ostream_t stream, const char *str, bool in_key)
 {
   static const char hexdigit[] = "0123456789abcdef";
   const char *str_limit = str + strlen (str);
-  bool first = true;
 
+  bool first = true;
   while (str < str_limit)
     {
       ucs4_t uc;
@@ -216,7 +215,8 @@ write_message (ostream_t stream, const message_ty *mp,
   message_print_comment_dot (mp, stream);
 
   /* Print the file position comments.  */
-  message_print_comment_filepos (mp, stream, false, page_width);
+  message_print_comment_filepos (mp, stream, po_charset_utf8, false,
+                                 page_width);
 
   /* Print flag information in special comment.  */
   message_print_comment_flags (mp, stream, debug);
@@ -239,28 +239,26 @@ write_message (ostream_t stream, const message_ty *mp,
 /* Writes an entire message list to the stream.  */
 static void
 write_properties (ostream_t stream, message_list_ty *mlp,
-                  const char *canon_encoding, size_t page_width, bool debug)
+                  const char *canon_encoding, size_t page_width,
+                  xerror_handler_ty xeh, bool debug)
 {
-  bool blank_line;
-  size_t j, i;
-
   /* Convert the messages to Unicode.  */
-  iconv_message_list (mlp, canon_encoding, po_charset_utf8, NULL);
-  for (j = 0; j < mlp->nitems; ++j)
+  iconv_message_list (mlp, canon_encoding, po_charset_utf8, NULL, xeh);
+  for (size_t j = 0; j < mlp->nitems; ++j)
     {
       message_ty *mp = mlp->item[j];
 
       if (mp->comment != NULL)
-        for (i = 0; i < mp->comment->nitems; ++i)
+        for (size_t i = 0; i < mp->comment->nitems; ++i)
           mp->comment->item[i] = conv_to_java (mp->comment->item[i]);
       if (mp->comment_dot != NULL)
-        for (i = 0; i < mp->comment_dot->nitems; ++i)
+        for (size_t i = 0; i < mp->comment_dot->nitems; ++i)
           mp->comment_dot->item[i] = conv_to_java (mp->comment_dot->item[i]);
     }
 
   /* Loop through the messages.  */
-  blank_line = false;
-  for (j = 0; j < mlp->nitems; ++j)
+  bool blank_line = false;
+  for (size_t j = 0; j < mlp->nitems; ++j)
     {
       const message_ty *mp = mlp->item[j];
 
@@ -279,15 +277,16 @@ write_properties (ostream_t stream, message_list_ty *mlp,
 /* Output the contents of a PO file in Java .properties syntax.  */
 static void
 msgdomain_list_print_properties (msgdomain_list_ty *mdlp, ostream_t stream,
-                                 size_t page_width, bool debug)
+                                 size_t page_width, xerror_handler_ty xeh,
+                                 bool debug)
 {
   message_list_ty *mlp;
-
   if (mdlp->nitems == 1)
     mlp = mdlp->item[0]->messages;
   else
     mlp = message_list_alloc (false);
-  write_properties (stream, mlp, mdlp->encoding, page_width, debug);
+
+  write_properties (stream, mlp, mdlp->encoding, page_width, xeh, debug);
 }
 
 /* Describes a PO file in Java .properties syntax.  */
@@ -295,6 +294,7 @@ const struct catalog_output_format output_format_properties =
 {
   msgdomain_list_print_properties,      /* print */
   true,                                 /* requires_utf8 */
+  true,                                 /* requires_utf8_for_filenames_with_spaces */
   false,                                /* supports_color */
   false,                                /* supports_multiple_domains */
   false,                                /* supports_contexts */

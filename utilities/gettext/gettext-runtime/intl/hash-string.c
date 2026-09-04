@@ -1,5 +1,5 @@
 /* Implements a string hashing function.
-   Copyright (C) 1995-2016 Free Software Foundation, Inc.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
 
    The GNU C Library is free software; you can redistribute it and/or
@@ -14,7 +14,9 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, see
-   <http://www.gnu.org/licenses/>.  */
+   <https://www.gnu.org/licenses/>.  */
+
+/* Written by Ulrich Drepper.  */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>

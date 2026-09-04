@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -31,7 +19,7 @@
   - Things seen in traces
    Flags in the EDP Vlan field (value 0x01)
   - TLV type 0x0e (ESL) shared link managemnt
-   TLV type 0x15 (XOS only?)
+   TLV type 0x15 (XOS only?) Link bit details (eth autoneg)
    EAPS type 0x10 (ESL?)
    ESRP state 0x03
 
@@ -145,128 +133,144 @@ These are the structures you will see most often in EDP frames.
 #include <epan/to_str.h>
 #include <epan/strutil.h>
 #include <epan/in_cksum.h>
+#include <epan/tfs.h>
 #include "packet-llc.h"
 #include <epan/oui.h>
 
 void proto_register_edp(void);
 void proto_reg_handoff_edp(void);
 
-static int hf_llc_extreme_pid = -1;
+static int hf_llc_extreme_pid;
 
-static int proto_edp = -1;
+static dissector_handle_t edp_handle;
+
+static int proto_edp;
 /* EDP header */
-static int hf_edp_version = -1;
-static int hf_edp_reserved = -1;
-static int hf_edp_length = -1;
-static int hf_edp_checksum = -1;
-static int hf_edp_checksum_status = -1;
+static int hf_edp_version;
+static int hf_edp_reserved;
+static int hf_edp_length;
+static int hf_edp_checksum;
+static int hf_edp_checksum_status;
 
-static int hf_edp_seqno = -1;
-static int hf_edp_midtype = -1;
-static int hf_edp_midmac = -1;
+static int hf_edp_seqno;
+static int hf_edp_midtype;
+static int hf_edp_midmac;
 /* TLV header */
-static int hf_edp_tlv_marker = -1;
-static int hf_edp_tlv_type = -1;
-static int hf_edp_tlv_length = -1;
+static int hf_edp_tlv_marker;
+static int hf_edp_tlv_type;
+static int hf_edp_tlv_length;
 /* Display string */
-static int hf_edp_display = -1;
-static int hf_edp_display_string = -1;
+static int hf_edp_display;
+static int hf_edp_display_string;
 /* Info element */
-static int hf_edp_info = -1;
-static int hf_edp_info_slot = -1;
-static int hf_edp_info_port = -1;
-static int hf_edp_info_vchassid = -1;
-static int hf_edp_info_reserved = -1;
-static int hf_edp_info_version = -1;
-static int hf_edp_info_version_major1 = -1;
-static int hf_edp_info_version_major2 = -1;
-static int hf_edp_info_version_sustaining = -1;
-static int hf_edp_info_version_internal = -1;
-static int hf_edp_info_vchassconn = -1;
+static int hf_edp_info;
+static int hf_edp_info_slot;
+static int hf_edp_info_port;
+static int hf_edp_info_vchassid;
+static int hf_edp_info_reserved;
+static int hf_edp_info_version;
+static int hf_edp_info_version_major1;
+static int hf_edp_info_version_major2;
+static int hf_edp_info_version_sustaining;
+static int hf_edp_info_version_internal;
+static int hf_edp_info_vchassconn;
 /* Vlan element */
-static int hf_edp_vlan = -1;
-static int hf_edp_vlan_flags = -1;
-static int hf_edp_vlan_flags_ip = -1;
-static int hf_edp_vlan_flags_reserved = -1;
-static int hf_edp_vlan_flags_unknown = -1;
-static int hf_edp_vlan_reserved1 = -1;
-static int hf_edp_vlan_id = -1;
-static int hf_edp_vlan_reserved2 = -1;
-static int hf_edp_vlan_ip = -1;
-static int hf_edp_vlan_name = -1;
+static int hf_edp_vlan;
+static int hf_edp_vlan_flags;
+static int hf_edp_vlan_flags_ip;
+static int hf_edp_vlan_flags_reserved;
+static int hf_edp_vlan_flags_unknown;
+static int hf_edp_vlan_reserved1;
+static int hf_edp_vlan_id;
+static int hf_edp_vlan_reserved2;
+static int hf_edp_vlan_ip;
+static int hf_edp_vlan_name;
 /* ESRP element */
-static int hf_edp_esrp = -1;
-static int hf_edp_esrp_proto = -1;
-static int hf_edp_esrp_group = -1;
-static int hf_edp_esrp_prio = -1;
-static int hf_edp_esrp_state = -1;
-static int hf_edp_esrp_ports = -1;
-static int hf_edp_esrp_virtip = -1;
-static int hf_edp_esrp_sysmac = -1;
-static int hf_edp_esrp_hello = -1;
-static int hf_edp_esrp_reserved = -1;
+static int hf_edp_esrp;
+static int hf_edp_esrp_proto;
+static int hf_edp_esrp_group;
+static int hf_edp_esrp_prio;
+static int hf_edp_esrp_state;
+static int hf_edp_esrp_ports;
+static int hf_edp_esrp_virtip;
+static int hf_edp_esrp_sysmac;
+static int hf_edp_esrp_hello;
+static int hf_edp_esrp_reserved;
 /* EAPS element */
-static int hf_edp_eaps = -1;
-static int hf_edp_eaps_ver = -1;
-static int hf_edp_eaps_type = -1;
-static int hf_edp_eaps_ctrlvlanid = -1;
-static int hf_edp_eaps_reserved0 = -1;
-static int hf_edp_eaps_sysmac = -1;
-static int hf_edp_eaps_hello = -1;
-static int hf_edp_eaps_fail = -1;
-static int hf_edp_eaps_state = -1;
-static int hf_edp_eaps_reserved1 = -1;
-static int hf_edp_eaps_helloseq = -1;
-static int hf_edp_eaps_reserved2 = -1;
+static int hf_edp_eaps;
+static int hf_edp_eaps_ver;
+static int hf_edp_eaps_type;
+static int hf_edp_eaps_ctrlvlanid;
+static int hf_edp_eaps_reserved0;
+static int hf_edp_eaps_sysmac;
+static int hf_edp_eaps_hello;
+static int hf_edp_eaps_fail;
+static int hf_edp_eaps_state;
+static int hf_edp_eaps_reserved1;
+static int hf_edp_eaps_helloseq;
+static int hf_edp_eaps_reserved2;
 /* ESL element */
-static int hf_edp_esl = -1;
-static int hf_edp_esl_ver = -1;
-static int hf_edp_esl_type = -1;
-static int hf_edp_esl_ctrlvlanid = -1;
-static int hf_edp_esl_reserved0 = -1;
-static int hf_edp_esl_sysmac = -1;
-static int hf_edp_esl_reserved1 = -1;
-static int hf_edp_esl_state = -1;
-static int hf_edp_esl_linkrole = -1;
-static int hf_edp_esl_linkid1 = -1;
-static int hf_edp_esl_failed1 = -1;
-static int hf_edp_esl_failed2 = -1;
-static int hf_edp_esl_reserved4 = -1;
-static int hf_edp_esl_linkid2 = -1;
-static int hf_edp_esl_reserved5 = -1;
-static int hf_edp_esl_numlinks = -1;
-static int hf_edp_esl_linklist = -1;
-static int hf_edp_esl_rest = -1;
+static int hf_edp_esl;
+static int hf_edp_esl_ver;
+static int hf_edp_esl_type;
+static int hf_edp_esl_ctrlvlanid;
+static int hf_edp_esl_reserved0;
+static int hf_edp_esl_sysmac;
+static int hf_edp_esl_reserved1;
+static int hf_edp_esl_state;
+static int hf_edp_esl_linkrole;
+static int hf_edp_esl_linkid1;
+static int hf_edp_esl_failed1;
+static int hf_edp_esl_failed2;
+static int hf_edp_esl_reserved4;
+static int hf_edp_esl_linkid2;
+static int hf_edp_esl_reserved5;
+static int hf_edp_esl_numlinks;
+static int hf_edp_esl_linklist;
+static int hf_edp_esl_rest;
 /* ELSM (Extreme Link Status Monitoring) */
-static int hf_edp_elsm = -1;
-static int hf_edp_elsm_type = -1;
-static int hf_edp_elsm_subtype = -1;
-static int hf_edp_elsm_magic = -1;
+static int hf_edp_elsm;
+static int hf_edp_elsm_type;
+static int hf_edp_elsm_subtype;
+static int hf_edp_elsm_magic;
 /* ELRP (Extreme Loop Recognition Protocol)*/
-static int hf_edp_elrp = -1;
-static int hf_edp_elrp_unknown = -1;
+static int hf_edp_elrp;
+static int hf_edp_elrp_unknown;
+/* Link properties */
+static int hf_edp_link;
+static int hf_edp_link_flags;
+static int hf_edp_link_flags_autoneg;
+static int hf_edp_link_flags_flowcontrol;
+static int hf_edp_link_flags_unknown;
+static int hf_edp_link_conf;
+static int hf_edp_link_actual;
+static int hf_edp_link_zero;
+static int hf_edp_link_unknown;
 /* Unknown element */
-static int hf_edp_unknown = -1;
-static int hf_edp_unknown_data = -1;
+static int hf_edp_unknown;
+static int hf_edp_unknown_data;
 /* Null element */
-static int hf_edp_null = -1;
+static int hf_edp_null;
 
-static expert_field ei_edp_short_tlv = EI_INIT;
+static expert_field ei_edp_short_tlv;
+static expert_field ei_edp_checksum;
 
-static gint ett_edp = -1;
-static gint ett_edp_tlv_header = -1;
-static gint ett_edp_display = -1;
-static gint ett_edp_info = -1;
-static gint ett_edp_info_version = -1;
-static gint ett_edp_vlan = -1;
-static gint ett_edp_vlan_flags = -1;
-static gint ett_edp_esrp = -1;
-static gint ett_edp_eaps = -1;
-static gint ett_edp_esl = -1;
-static gint ett_edp_elrp = -1;
-static gint ett_edp_elsm = -1;
-static gint ett_edp_unknown = -1;
-static gint ett_edp_null = -1;
+static int ett_edp;
+static int ett_edp_tlv_header;
+static int ett_edp_display;
+static int ett_edp_info;
+static int ett_edp_info_version;
+static int ett_edp_vlan;
+static int ett_edp_vlan_flags;
+static int ett_edp_esrp;
+static int ett_edp_eaps;
+static int ett_edp_esl;
+static int ett_edp_elsm;
+static int ett_edp_elrp;
+static int ett_edp_link;
+static int ett_edp_link_flags;
+static int ett_edp_unknown;
+static int ett_edp_null;
 
 #define PROTO_SHORT_NAME "EDP"
 #define PROTO_LONG_NAME "Extreme Discovery Protocol"
@@ -294,15 +298,16 @@ static const value_string esrp_state_vals[] = {
 };
 
 typedef enum {
-	EDP_TYPE_NULL = 0,
+	EDP_TYPE_NULL = 0x00,
 	EDP_TYPE_DISPLAY,
 	EDP_TYPE_INFO,
-	EDP_TYPE_VLAN = 5,
-	EDP_TYPE_ESRP = 8,
-	EDP_TYPE_EAPS = 0xb,
-	EDP_TYPE_ELRP = 0xd,
+	EDP_TYPE_VLAN = 0x05,
+	EDP_TYPE_ESRP = 0x08,
+	EDP_TYPE_EAPS = 0x0b,
+	EDP_TYPE_ELRP = 0x0d,
 	EDP_TYPE_ESL,
-	EDP_TYPE_ELSM
+	EDP_TYPE_ELSM,
+	EDP_TYPE_LINK = 0x15
 } edp_type_t;
 
 static const value_string edp_type_vals[] = {
@@ -315,6 +320,7 @@ static const value_string edp_type_vals[] = {
 	{ EDP_TYPE_ELRP,	"ELRP"},
 	{ EDP_TYPE_ESL,		"ESL"},
 	{ EDP_TYPE_ELSM,	"ELSM"},
+	{ EDP_TYPE_LINK,	"Link"},
 
 	{ 0,	NULL }
 };
@@ -378,22 +384,31 @@ static const value_string elsm_subtype_vals[] = {
 	{ 0,		NULL }
 };
 
+static const value_string link_speed_vals[] = {
+	{ 0x00,		"Autoneg" },
+	{ 0x01,		"10M" },
+	{ 0x02,		"100M" },
+	{ 0x03,		"1G" },
+
+	{ 0,		NULL }
+};
+
 static int
 dissect_tlv_header(tvbuff_t *tvb, packet_info *pinfo _U_, int offset, int length _U_, proto_tree *tree)
 {
 	proto_tree	*tlv_tree;
-	guint8		tlv_marker;
-	guint8		tlv_type;
-	guint16		tlv_length;
+	uint8_t		tlv_marker;
+	uint8_t		tlv_type;
+	uint16_t		tlv_length;
 
-	tlv_marker = tvb_get_guint8(tvb, offset),
-	tlv_type = tvb_get_guint8(tvb, offset + 1);
+	tlv_marker = tvb_get_uint8(tvb, offset);
+	tlv_type = tvb_get_uint8(tvb, offset + 1);
 	tlv_length = tvb_get_ntohs(tvb, offset + 2);
 
 	tlv_tree = proto_tree_add_subtree_format(tree, tvb, offset, 4,
 		ett_edp_tlv_header, NULL, "Marker 0x%02x, length %d, type %d = %s",
 		tlv_marker, tlv_length, tlv_type,
-		val_to_str(tlv_type, edp_type_vals, "Unknown (0x%02x)"));
+		val_to_str(pinfo->pool, tlv_type, edp_type_vals, "Unknown (0x%02x)"));
 
 	proto_tree_add_item(tlv_tree, hf_edp_tlv_marker, tvb, offset, 1,
 		ENC_BIG_ENDIAN);
@@ -415,7 +430,7 @@ dissect_display_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, p
 {
 	proto_item	*display_item;
 	proto_tree	*display_tree;
-	const guint8	*display_name;
+	const uint8_t	*display_name;
 
 	display_item = proto_tree_add_item(tree, hf_edp_display,
 		tvb, offset, length, ENC_BIG_ENDIAN);
@@ -427,9 +442,9 @@ dissect_display_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, p
 	length -= 4;
 
 	proto_tree_add_item_ret_string(display_tree, hf_edp_display_string, tvb, offset, length,
-		ENC_ASCII, wmem_packet_scope(), &display_name);
+		ENC_ASCII, pinfo->pool, &display_name);
 	proto_item_append_text(display_item, ": \"%s\"",
-	        format_text(display_name, strlen(display_name)));
+		format_text(pinfo->pool, display_name, strlen((const char *)display_name)));
 }
 
 static int
@@ -453,8 +468,8 @@ static int
 dissect_info_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, proto_tree *tree)
 {
 	proto_tree *ver_tree;
-	guint8 major1, major2, sustaining, internal;
-	guint16 port, slot;
+	uint8_t major1, major2, sustaining, internal;
+	uint16_t port, slot;
 	proto_item	*info_item;
 	proto_tree	*info_tree;
 
@@ -464,10 +479,10 @@ dissect_info_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, prot
 	port = tvb_get_ntohs(tvb, offset + 2 + 4) + 1;
 
 	/* version */
-	major1 = tvb_get_guint8(tvb, offset + 12 + 4);
-	major2 = tvb_get_guint8(tvb, offset + 13 + 4);
-	sustaining = tvb_get_guint8(tvb, offset + 14 + 4);
-	internal = tvb_get_guint8(tvb, offset + 15 + 4);
+	major1 = tvb_get_uint8(tvb, offset + 12 + 4);
+	major2 = tvb_get_uint8(tvb, offset + 13 + 4);
+	sustaining = tvb_get_uint8(tvb, offset + 14 + 4);
+	internal = tvb_get_uint8(tvb, offset + 15 + 4);
 
 	info_item = proto_tree_add_protocol_format(tree, hf_edp_info,
 		tvb, offset, length,
@@ -534,8 +549,8 @@ dissect_vlan_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, prot
 	proto_tree	*flags_tree;
 	proto_item	*vlan_item;
 	proto_tree	*vlan_tree;
-	guint16		vlan_id;
-	const guint8	*vlan_name;
+	uint16_t		vlan_id;
+	const uint8_t	*vlan_name;
 
 	vlan_item = proto_tree_add_item(tree, hf_edp_vlan, tvb,
 		offset, length, ENC_BIG_ENDIAN);
@@ -606,9 +621,9 @@ dissect_vlan_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, prot
 	length -= 4;
 
 	proto_tree_add_item_ret_string(vlan_tree, hf_edp_vlan_name, tvb, offset, length,
-		ENC_ASCII, wmem_packet_scope(), &vlan_name);
+		ENC_ASCII, pinfo->pool, &vlan_name);
 	proto_item_append_text(vlan_item, ", Name \"%s\"",
-	        format_text(vlan_name, strlen(vlan_name)));
+		format_text(pinfo->pool, vlan_name, strlen((const char *)vlan_name)));
 	offset += length;
 
 
@@ -620,9 +635,9 @@ dissect_esrp_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, prot
 {
 	proto_item	*esrp_item;
 	proto_tree	*esrp_tree;
-	guint16		group;
+	uint16_t		group;
 
-	group = tvb_get_guint8(tvb, offset + 1 + 4);
+	group = tvb_get_uint8(tvb, offset + 1 + 4);
 	esrp_item = proto_tree_add_protocol_format(tree, hf_edp_esrp,
 		tvb, offset, length, "ESRP: Group %d", group);
 
@@ -677,11 +692,11 @@ dissect_eaps_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, prot
 {
 	proto_item	*eaps_item;
 	proto_tree	*eaps_tree;
-	guint16		ctrlvlanid;
-	const gchar	*sysmac_str;
+	uint16_t		ctrlvlanid;
+	const char	*sysmac_str;
 
 	ctrlvlanid = tvb_get_ntohs(tvb, offset + 1 + 1 + 4);
-	sysmac_str = tvb_ether_to_str(tvb, offset + 12);
+	sysmac_str = tvb_ether_to_str(pinfo->pool, tvb, offset + 12);
 
 	eaps_item = proto_tree_add_protocol_format(tree, hf_edp_eaps,
 		tvb, offset, length, "EAPS: Ctrlvlan %d, Sysmac %s",
@@ -748,12 +763,12 @@ dissect_esl_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, proto
 {
 	proto_item	*esl_item;
 	proto_tree	*esl_tree;
-	guint16		ctrlvlanid;
-	guint16		numlinks;
-	const gchar	*sysmac_str;
+	uint16_t		ctrlvlanid;
+	uint16_t		numlinks;
+	const char	*sysmac_str;
 
 	ctrlvlanid = tvb_get_ntohs(tvb, offset + 2 + 4);
-	sysmac_str = tvb_ether_to_str(tvb, offset + 12);
+	sysmac_str = tvb_ether_to_str(pinfo->pool, tvb, offset + 12);
 
 	esl_item = proto_tree_add_protocol_format(tree, hf_edp_esl,
 		tvb, offset, length, "ESL: Ctrlvlan %d, Sysmac %s",
@@ -861,24 +876,24 @@ dissect_esl_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, proto
 
 static int
 dissect_elsm_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length,
-	proto_tree *tree, guint16 seqno)
+	proto_tree *tree, uint16_t seqno)
 {
 	proto_item	*elsm_item;
 	proto_tree	*elsm_tree;
-	guint8		type, subtype;
+	uint8_t		type, subtype;
 
-	type = tvb_get_guint8(tvb, offset + 4);
-	subtype = tvb_get_guint8(tvb, offset + 4 + 1);
+	type = tvb_get_uint8(tvb, offset + 4);
+	subtype = tvb_get_uint8(tvb, offset + 4 + 1);
 
 	col_append_fstr(pinfo->cinfo, COL_INFO, " %s%s (#%d)",
-			val_to_str(type, elsm_type_vals, "Unknown (0x%02x)"),
-			val_to_str(subtype, elsm_subtype_vals, " Unknown (0x%02x)"),
+			val_to_str(pinfo->pool, type, elsm_type_vals, "Unknown (0x%02x)"),
+			val_to_str(pinfo->pool, subtype, elsm_subtype_vals, " Unknown (0x%02x)"),
 			seqno);
 
 	elsm_item = proto_tree_add_protocol_format(tree, hf_edp_elsm,
 		tvb, offset, length, "ELSM %s%s(#%d)",
-			val_to_str(type, elsm_type_vals, "Unknown (0x%02x)"),
-			val_to_str(subtype, elsm_subtype_vals, " Unknown (0x%02x)"),
+			val_to_str(pinfo->pool, type, elsm_type_vals, "Unknown (0x%02x)"),
+			val_to_str(pinfo->pool, subtype, elsm_subtype_vals, " Unknown (0x%02x)"),
 			seqno);
 
 	elsm_tree = proto_item_add_subtree(elsm_item, ett_edp_elsm);
@@ -922,13 +937,51 @@ dissect_elrp_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, prot
 }
 
 static void
+dissect_link_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, proto_tree *tree)
+{
+	proto_item	*link_item;
+	proto_tree	*link_tree;
+
+	link_item = proto_tree_add_protocol_format(tree, hf_edp_link,
+		tvb, offset, length, "Linkinfo");
+
+	link_tree = proto_item_add_subtree(link_item, ett_edp_link);
+
+	dissect_tlv_header(tvb, pinfo, offset, 4, link_tree);
+	offset += 4;
+	length -= 4;
+
+	/* TODO: Find out and decode the individual bits */
+	if ( length == 4 ) {
+		proto_item	*flags_item;
+		proto_tree	*flags_tree;
+
+		/* 0x80: Autonegotiation: 1: on, 0: off */
+		/* 0x40: Other side does EDP ??? */
+		/* 0x08: Flow Control:    1: Symmetric/on, 0: None/off */
+		flags_item = proto_tree_add_item(link_tree, hf_edp_link_flags, tvb, offset, 1, ENC_NA);
+		flags_tree = proto_item_add_subtree(flags_item, ett_edp_link_flags);
+		tree_expanded_set(ett_edp_link_flags, true);
+		proto_tree_add_item(flags_tree, hf_edp_link_flags_autoneg, tvb, offset, 1, ENC_NA);
+		proto_tree_add_item(flags_tree, hf_edp_link_flags_flowcontrol, tvb, offset, 1, ENC_NA);
+		proto_tree_add_item(flags_tree, hf_edp_link_flags_unknown, tvb, offset, 1, ENC_NA);
+
+		proto_tree_add_item(link_tree, hf_edp_link_conf, tvb, offset+1, 1, ENC_NA);
+		proto_tree_add_item(link_tree, hf_edp_link_actual, tvb, offset+2, 1, ENC_NA);
+		proto_tree_add_item(link_tree, hf_edp_link_zero, tvb, offset+3, 1, ENC_NA);
+	} else {
+		proto_tree_add_item(link_tree, hf_edp_link_unknown, tvb, offset, length, ENC_NA);
+	}
+}
+
+static void
 dissect_unknown_tlv(tvbuff_t *tvb, packet_info *pinfo, int offset, int length, proto_tree *tree)
 {
 	proto_item	*unknown_item;
 	proto_tree	*unknown_tree;
-	guint8		tlv_type;
+	uint8_t		tlv_type;
 
-	tlv_type = tvb_get_guint8(tvb, offset + 1);
+	tlv_type = tvb_get_uint8(tvb, offset + 1);
 
 	unknown_item = proto_tree_add_protocol_format(tree, hf_edp_unknown,
 		tvb, offset, length, "Unknown element [0x%02x]", tlv_type);
@@ -948,12 +1001,12 @@ dissect_edp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_item *ti;
 	proto_tree *edp_tree;
-	guint32 offset = 0;
-	gboolean last = FALSE;
-	guint8 tlv_type;
-	guint16 tlv_length;
-	guint16 data_length;
-	guint16 seqno;
+	uint32_t offset = 0;
+	bool last = false;
+	uint8_t tlv_type;
+	uint16_t tlv_length;
+	uint16_t data_length;
+	uint16_t seqno;
 	vec_t cksum_vec[1];
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_SHORT_NAME);
@@ -983,10 +1036,10 @@ dissect_edp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		/* Checksum from version to null tlv */
 		SET_CKSUM_VEC_TVB(cksum_vec[0], tvb, 0, data_length);
 
-		proto_tree_add_checksum(edp_tree, tvb, offset, hf_edp_checksum, hf_edp_checksum_status, NULL, pinfo, in_cksum(&cksum_vec[0], 1),
+		proto_tree_add_checksum(edp_tree, tvb, offset, hf_edp_checksum, hf_edp_checksum_status, &ei_edp_checksum, pinfo, in_cksum(&cksum_vec[0], 1),
 								ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY|PROTO_CHECKSUM_IN_CKSUM);
 	} else {
-		proto_tree_add_checksum(edp_tree, tvb, offset, hf_edp_checksum, hf_edp_checksum_status, NULL, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
+		proto_tree_add_checksum(edp_tree, tvb, offset, hf_edp_checksum, hf_edp_checksum_status, &ei_edp_checksum, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
 	}
 	offset += 2;
 
@@ -1013,7 +1066,7 @@ dissect_edp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 						     data_length - offset);
 			break;
 		}
-		tlv_type = tvb_get_guint8(tvb, offset + 1);
+		tlv_type = tvb_get_uint8(tvb, offset + 1);
 		tlv_length = tvb_get_ntohs(tvb, offset + 2);
 
 		if ((tlv_length < 4) || (tlv_length > (data_length - offset))) {
@@ -1023,12 +1076,12 @@ dissect_edp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 		}
 		if (tlv_type != EDP_TYPE_NULL)
 			col_append_fstr(pinfo->cinfo, COL_INFO, " %s",
-					val_to_str(tlv_type, edp_type_vals, "[0x%02x]"));
+					val_to_str(pinfo->pool, tlv_type, edp_type_vals, "[0x%02x]"));
 
 		switch (tlv_type) {
 		case EDP_TYPE_NULL: /* Last TLV */
 			dissect_null_tlv(tvb, pinfo, offset, tlv_length, edp_tree);
-			last = TRUE;
+			last = true;
 			break;
 		case EDP_TYPE_DISPLAY: /* MIB II display string */
 			dissect_display_tlv(tvb, pinfo, offset, tlv_length, edp_tree);
@@ -1053,6 +1106,9 @@ dissect_edp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 			break;
 		case EDP_TYPE_ELRP: /* Extreme Loop Recognition Protocol */
 			dissect_elrp_tlv(tvb, pinfo, offset, tlv_length, edp_tree);
+			break;
+		case EDP_TYPE_LINK: /* Extreme Link Properties */
+			dissect_link_tlv(tvb, pinfo, offset, tlv_length, edp_tree);
 			break;
 		default:
 			dissect_unknown_tlv(tvb, pinfo, offset, tlv_length, edp_tree);
@@ -1399,6 +1455,43 @@ proto_register_edp(void)
 		{ "Unknown",	"edp.elrp.unknown", FT_BYTES, BASE_NONE, NULL,
 			0x0, NULL, HFILL }},
 
+	/* Link element */
+		{ &hf_edp_link,
+		{ "Link",	"edp.link", FT_PROTOCOL, BASE_NONE, NULL,
+			0x0, "Link properties (physical)", HFILL }},
+
+		{ &hf_edp_link_flags,
+		{ "Flags",	"edp.link.flags", FT_UINT8, BASE_HEX, NULL,
+			0x0, NULL, HFILL }},
+
+		{ &hf_edp_link_flags_autoneg,
+		{ "Autonegotiation",	"edp.link.flags.autoneg", FT_BOOLEAN, 8, TFS(&tfs_set_notset),
+			0x80, NULL, HFILL }},
+
+		{ &hf_edp_link_flags_flowcontrol,
+		{ "Flow Control",	"edp.link.flags.flowcontrol", FT_BOOLEAN, 8, TFS(&tfs_set_notset),
+			0x08, NULL, HFILL }},
+
+		{ &hf_edp_link_flags_unknown,
+		{ "Unknown",	"edp.link.flags.unknown", FT_UINT8, BASE_HEX, NULL,
+			0x77, NULL, HFILL }},
+
+		{ &hf_edp_link_conf,
+		{ "Configured Speed",	"edp.link.conf", FT_UINT8, BASE_HEX, VALS(link_speed_vals),
+			0x0, NULL, HFILL }},
+
+		{ &hf_edp_link_actual,
+		{ "Actual Speed",	"edp.link.actual", FT_UINT8, BASE_HEX, VALS(link_speed_vals),
+			0x0, NULL, HFILL }},
+
+		{ &hf_edp_link_zero,
+		{ "Zero",	"edp.link.zero", FT_UINT8, BASE_DEC, NULL,
+			0x0, NULL, HFILL }},
+
+		{ &hf_edp_link_unknown,
+		{ "Unknown",	"edp.link.unknown", FT_BYTES, BASE_NONE, NULL,
+			0x0, NULL, HFILL }},
+
 	/* Unknown element */
 		{ &hf_edp_unknown,
 		{ "Unknown",	"edp.unknown", FT_PROTOCOL, BASE_NONE, NULL,
@@ -1417,11 +1510,11 @@ proto_register_edp(void)
 	static hf_register_info extreme_hf[] = {
 		{ &hf_llc_extreme_pid,
 		  { "PID",	"llc.extreme_pid",  FT_UINT16, BASE_HEX,
-		    VALS(extreme_pid_vals), 0x0, NULL, HFILL }
+			VALS(extreme_pid_vals), 0x0, NULL, HFILL }
 		}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_edp,
 		&ett_edp_tlv_header,
 		&ett_edp_vlan_flags,
@@ -1432,39 +1525,40 @@ proto_register_edp(void)
 		&ett_edp_esrp,
 		&ett_edp_eaps,
 		&ett_edp_esl,
-		&ett_edp_elrp,
 		&ett_edp_elsm,
+		&ett_edp_elrp,
+		&ett_edp_link,
+		&ett_edp_link_flags,
 		&ett_edp_unknown,
 		&ett_edp_null,
 	};
 
 	static ei_register_info ei[] = {
 		{ &ei_edp_short_tlv, { "edp.short_tlv", PI_MALFORMED, PI_ERROR, "TLV is too short", EXPFILL }},
+		{ &ei_edp_checksum, { "edp.bad_checksum", PI_CHECKSUM, PI_ERROR, "Bad checksum", EXPFILL }},
 	};
 
 	expert_module_t* expert_edp;
 
 	proto_edp = proto_register_protocol(PROTO_LONG_NAME, PROTO_SHORT_NAME, "edp");
+	edp_handle = register_dissector("edp", dissect_edp, proto_edp);
 	proto_register_field_array(proto_edp, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 	expert_edp = expert_register_protocol(proto_edp);
 	expert_register_field_array(expert_edp, ei, array_length(ei));
 
-    llc_add_oui(OUI_EXTREME, "llc.extreme_pid", "LLC Extreme OUI PID", extreme_hf, proto_edp);
+	llc_add_oui(OUI_EXTREME, "llc.extreme_pid", "LLC Extreme OUI PID", extreme_hf, proto_edp);
 
 }
 
 void
 proto_reg_handoff_edp(void)
 {
-	dissector_handle_t edp_handle;
-
-	edp_handle = create_dissector_handle(dissect_edp, proto_edp);
 	dissector_add_uint("llc.extreme_pid", 0x00bb, edp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

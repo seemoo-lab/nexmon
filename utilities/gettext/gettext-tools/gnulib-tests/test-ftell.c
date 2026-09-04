@@ -1,9 +1,9 @@
 /* Test of ftell() function.
-   Copyright (C) 2007-2016 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2007.  */
 
@@ -41,11 +41,11 @@ main (int argc, char **argv)
   if (argc == 1)
     {
       ASSERT (ftell (stdin) == -1);
-      return 0;
+      return test_exit_status;
     }
 
   /* mingw ftell is unreliable on text mode input.  */
-  SET_BINARY (0);
+  set_binary_mode (0, O_BINARY);
 
   /* Simple tests.  */
   ASSERT (ftell (stdin) == 0);
@@ -82,6 +82,8 @@ main (int argc, char **argv)
     {
       if (FUNC_UNGETC_BROKEN)
         {
+          if (test_exit_status != EXIT_SUCCESS)
+            return test_exit_status;
           fputs ("Skipping test: ungetc cannot handle arbitrary bytes\n",
                  stderr);
           return 77;
@@ -103,5 +105,5 @@ main (int argc, char **argv)
   ASSERT (ftell (stdin) == ch + 10);
 #endif
 
-  return 0;
+  return test_exit_status;
 }

@@ -17,7 +17,7 @@ ${XGETTEXT} --add-comments --omit-header --no-location \
   -d xg-st-2.tmp xg-st-2.st || Exit 1
 LC_ALL=C tr -d '\r' < xg-st-2.tmp.po > xg-st-2.po || Exit 1
 
-cat <<EOF > xg-st-2.ok
+cat <<\EOF > xg-st-2.ok
 #. a
 #. b
 #. c

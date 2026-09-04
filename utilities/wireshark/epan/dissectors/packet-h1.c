@@ -6,40 +6,27 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/exceptions.h>
 
 void proto_register_h1(void);
 void proto_reg_handoff_h1(void);
 
-static int proto_h1 = -1;
-static int hf_h1_header = -1;
-static int hf_h1_len = -1;
-static int hf_h1_block_type = -1;
-static int hf_h1_block_len = -1;
-static int hf_h1_opcode = -1;
-static int hf_h1_dbnr = -1;
-static int hf_h1_dwnr = -1;
-static int hf_h1_dlen = -1;
-static int hf_h1_org = -1;
-static int hf_h1_response_value = -1;
+static int proto_h1;
+static int hf_h1_header;
+static int hf_h1_len;
+static int hf_h1_block_type;
+static int hf_h1_block_len;
+static int hf_h1_opcode;
+static int hf_h1_dbnr;
+static int hf_h1_dwnr;
+static int hf_h1_dlen;
+static int hf_h1_org;
+static int hf_h1_response_value;
 
 
 #define EMPTY_BLOCK     0xFF
@@ -88,26 +75,26 @@ static const value_string returncode_vals[] = {
     {0, NULL}
 };
 
-static gint ett_h1 = -1;
-static gint ett_block = -1;
+static int ett_h1;
+static int ett_block;
 
-static gboolean dissect_h1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool dissect_h1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
     proto_tree *h1_tree, *block_tree;
     proto_item *h1_ti, *block_ti;
-    gint offset = 0, offset_block_start;
-    guint8 h1_len;
-    guint8 block_type, block_len;
+    int offset = 0, offset_block_start;
+    uint8_t h1_len;
+    uint8_t block_type, block_len;
     tvbuff_t *next_tvb;
 
     if (tvb_captured_length(tvb) < 2) {
         /* Not enough data captured to hold the "S5" header; don't try
            to interpret it as H1. */
-        return FALSE;
+        return false;
     }
 
-    if (!(tvb_get_guint8(tvb, 0) == 'S' && tvb_get_guint8(tvb, 1) == '5')) {
-        return FALSE;
+    if (!(tvb_get_uint8(tvb, 0) == 'S' && tvb_get_uint8(tvb, 1) == '5')) {
+        return false;
     }
 
     col_set_str (pinfo->cinfo, COL_PROTOCOL, "H1");
@@ -119,7 +106,7 @@ static gboolean dissect_h1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     proto_tree_add_item(h1_tree, hf_h1_header, tvb, offset, 2, ENC_BIG_ENDIAN);
     offset += 2;
 
-    h1_len = tvb_get_guint8(tvb, offset);
+    h1_len = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(h1_tree, hf_h1_len, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_item_set_len(h1_ti, h1_len);
     offset++;
@@ -127,12 +114,12 @@ static gboolean dissect_h1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     while (offset < h1_len) {
         offset_block_start = offset;
 
-        block_type = tvb_get_guint8(tvb, offset);
-        block_len = tvb_get_guint8(tvb, offset+1);
+        block_type = tvb_get_uint8(tvb, offset);
+        block_len = tvb_get_uint8(tvb, offset+1);
 
         if (!try_val_to_str(block_type, block_type_vals)) {
             /* XXX - should we skip unknown blocks? */
-            return FALSE;
+            return false;
         }
         if (block_len == 0) {
             /* XXX - expert info */
@@ -159,7 +146,7 @@ static gboolean dissect_h1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
                 proto_tree_add_item(block_tree, hf_h1_opcode,
                         tvb, offset, 1, ENC_BIG_ENDIAN);
                 col_append_str (pinfo->cinfo, COL_INFO,
-                        val_to_str (tvb_get_guint8(tvb,  offset),
+                        val_to_str(pinfo->pool, tvb_get_uint8(tvb,  offset),
                         opcode_vals, "Unknown Opcode (0x%2.2x)"));
                 break;
 
@@ -167,14 +154,14 @@ static gboolean dissect_h1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
                 proto_tree_add_item(block_tree, hf_h1_org, tvb,
                         offset, 1, ENC_BIG_ENDIAN);
                 col_append_fstr(pinfo->cinfo, COL_INFO, " %s",
-                        val_to_str (tvb_get_guint8(tvb,  offset),
+                        val_to_str(pinfo->pool, tvb_get_uint8(tvb,  offset),
                             org_vals,"Unknown Type (0x%2.2x)"));
                 offset++;
 
                 proto_tree_add_item(block_tree, hf_h1_dbnr, tvb,
                         offset, 1, ENC_BIG_ENDIAN);
                 col_append_fstr(pinfo->cinfo, COL_INFO, " %d",
-                        tvb_get_guint8(tvb,  offset));
+                        tvb_get_uint8(tvb,  offset));
                 offset++;
 
                 proto_tree_add_item(block_tree, hf_h1_dwnr, tvb,
@@ -193,7 +180,7 @@ static gboolean dissect_h1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
                 proto_tree_add_item(block_tree, hf_h1_response_value,
                         tvb, offset, 1, ENC_BIG_ENDIAN);
                 col_append_fstr (pinfo->cinfo, COL_INFO, " %s",
-                        val_to_str (tvb_get_guint8(tvb,  offset),
+                        val_to_str(pinfo->pool, tvb_get_uint8(tvb,  offset),
                             returncode_vals,"Unknown Returncode (0x%2.2x"));
                 break;
         }
@@ -206,7 +193,7 @@ static gboolean dissect_h1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
         call_data_dissector(next_tvb, pinfo, tree);
     }
 
-    return TRUE;
+    return true;
 }
 
 
@@ -243,7 +230,7 @@ proto_register_h1 (void)
                 VALS (returncode_vals), 0x0, NULL, HFILL }}
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_h1,
         &ett_block,
     };
@@ -265,7 +252,7 @@ proto_reg_handoff_h1(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 4

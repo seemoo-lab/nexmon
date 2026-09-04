@@ -1,6 +1,5 @@
 /* GNU gettext for C#
- * Copyright (C) 2003, 2005, 2007, 2015-2016 Free Software Foundation, Inc.
- * Written by Bruno Haible <bruno@clisp.org>, 2003.
+ * Copyright (C) 2003-2026 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -13,8 +12,10 @@
  * GNU Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
+/* Written by Bruno Haible.  */
 
 /*
  * Using the GNU gettext approach, compiled message catalogs are assemblies
@@ -45,11 +46,11 @@
  * program can be used.
  */
 
-using System; /* String, InvalidOperationException, Console */
+using System; /* String, InvalidOperationException, NotSupportedException, Console */
 using System.Globalization; /* CultureInfo */
 using System.Resources; /* ResourceManager, ResourceSet, IResourceReader */
 using System.Reflection; /* Assembly, ConstructorInfo */
-using System.Collections; /* Hashtable, ICollection, IEnumerator, IDictionaryEnumerator */
+using System.Collections; /* Hashtable, ICollection, IEnumerator, IDictionaryEnumerator, ArrayList */
 using System.IO; /* Path, FileNotFoundException, Stream */
 using System.Text; /* StringBuilder */
 
@@ -461,6 +462,48 @@ namespace GNU.Gettext {
     }
 
     /// <summary>
+    /// Contains the (key,value) pairs, in instances that override the
+    /// <c>ReadResources</c> method in a way that fills this table.
+    /// In other instances of this class, this field is <c>null</c>
+    /// and the methods from <c>ResourceSet</c> are relevant.
+    /// </summary>
+    // This property was defined in the superclass in .NET Framework, see
+    // https://learn.microsoft.com/en-us/dotnet/api/system.resources.resourceset?view=netframework-4.8.1 ,
+    // and in Mono, but has been dropped in .NET Core and .NET
+    // https://learn.microsoft.com/en-us/dotnet/api/system.resources.resourceset?view=netcore-2.0 .
+    protected Hashtable /* String -> Object */ Table;
+
+    public override IDictionaryEnumerator GetEnumerator () {
+      if (Table != null)
+        // An instance which uses the Table from this class.
+        return Table.GetEnumerator();
+      else
+        // An instance which behaves like the superclass.
+        return base.GetEnumerator();
+    }
+
+    public override Object GetObject (String msgid) {
+      if (Table != null)
+        // An instance which uses the Table from this class.
+        return Table[msgid];
+      else
+        // An instance which behaves like the superclass.
+        return base.GetObject(msgid);
+    }
+
+    public override Object GetObject (String msgid, bool ignoreCase) {
+      if (Table != null) {
+        // An instance which uses the Table from this class.
+        if (ignoreCase)
+          throw new NotSupportedException("only ignoreCase=false is supported in this subclass");
+        else
+          return Table[msgid];
+      } else
+        // An instance which behaves like the superclass.
+        return base.GetObject(msgid, ignoreCase);
+    }
+
+    /// <summary>
     /// Returns the translation of <paramref name="msgid"/>.
     /// </summary>
     /// <param name="msgid">the key string to be translated, an ASCII
@@ -468,7 +511,8 @@ namespace GNU.Gettext {
     /// <returns>the translation of <paramref name="msgid"/>, or <c>null</c> if
     ///          none is found</returns>
     // The default implementation essentially does (String)Table[msgid].
-    // Here we also catch the plural form case.
+    // Here we support using the Table from this class, and also catch the
+    // plural form case.
     public override String GetString (String msgid) {
       Object value = GetObject(msgid);
       if (value == null || value is String)
@@ -490,7 +534,8 @@ namespace GNU.Gettext {
     /// <returns>the translation of <paramref name="msgid"/>, or <c>null</c> if
     ///          none is found</returns>
     // The default implementation essentially does (String)Table[msgid].
-    // Here we also catch the plural form case.
+    // Here we support using the Table from this class, and also catch the
+    // plural form case.
     public override String GetString (String msgid, bool ignoreCase) {
       Object value = GetObject(msgid, ignoreCase);
       if (value == null || value is String)
@@ -535,13 +580,29 @@ namespace GNU.Gettext {
       return (n == 1 ? 0 : 1);
     }
 
+    // The keys of the (internal) table of the base class.
+    private ArrayList _baseKeys;
+
     /// <summary>
     /// Returns the keys of this resource set, i.e. the strings for which
     /// <c>GetObject()</c> can return a non-null value.
     /// </summary>
     public virtual ICollection Keys {
       get {
-        return Table.Keys;
+        if (Table != null)
+          // An instance which uses the Table from this class.
+          return Table.Keys;
+        else {
+          // An instance which behaves like the superclass.
+          if (_baseKeys == null) {
+            ArrayList keys = new ArrayList();
+            for (IDictionaryEnumerator enumerator = base.GetEnumerator(); enumerator.MoveNext(); ) {
+              keys.Add(enumerator.Key);
+            }
+            _baseKeys = keys;
+          }
+          return _baseKeys;
+        }
       }
     }
 

@@ -11,22 +11,23 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gettext-examples 0.19-rc1\n"
 "Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"POT-Creation-Date: 2016-06-11 22:10+0900\n"
+"POT-Creation-Date: 2014-05-10 13:38+0900\n"
 "PO-Revision-Date: 2014-05-10 16:34+0100\n"
 "Last-Translator: Leandro Regueiro <leandro.regueiro@gmail.com>\n"
 "Language-Team: Galician <proxecto@trasno.net>\n"
 "Language: gl\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
 
-#: hello-c/hello.c:30 hello-c-gnome/hello.c:46
-#: hello-c-gnome3/hello.desktop.in.in:5 hello-c++/hello.cc:39
-#: hello-c++-qt/hello.cc:45 hello-c++-kde/hellowindow.cc:42
-#: hello-c++-gnome/hello.cc:50 hello-c++-wxwidgets/hello.cc:68
-#: hello-objc/hello.m:30 hello-objc-gnustep/Hello.m:49
-#: hello-objc-gnome/hello.m:47 hello-sh/hello.sh:14 hello-python/hello.py.in:12
+#: hello-c/hello.c:30 hello-c-gnome/hello.c:46 hello-c-gnome3/hello.ui:22
+#: hello-c++/hello.cc:39 hello-c++-qt/hello.cc:45
+#: hello-c++-kde/hellowindow.cc:42 hello-c++-gnome/hello.cc:50
+#: hello-c++-wxwidgets/hello.cc:68 hello-objc/hello.m:30
+#: hello-objc-gnustep/Hello.m:49 hello-objc-gnome/hello.m:47
+#: hello-sh/hello.sh:14 hello-python/hello.py.in:12
 #: hello-clisp/hello.lisp.in:11 hello-librep/hello.jl.in:12
 #: hello-guile/hello.scm:15 hello-smalltalk/hello.st.in:31
 #: hello-java/Hello.java:14 hello-java-awt/Hello.java:23
@@ -39,50 +40,21 @@ msgstr ""
 msgid "Hello, world!"
 msgstr "Ola, mundo!"
 
-#: hello-c/hello.c:31 hello-c-gnome/hello.c:51 hello-c++/hello.cc:40
-#: hello-c++-gnome/hello.cc:55 hello-c++-wxwidgets/hello.cc:71
-#: hello-objc/hello.m:31 hello-objc-gnustep/Hello.m:58
-#: hello-objc-gnome/hello.m:52 hello-librep/hello.jl.in:14
-#: hello-gawk/hello.awk:12 hello-pascal/hello.running_as hello-tcl/hello.tcl:12
-#: hello-tcl-tk/hello.tcl:16 hello-perl/hello-1.pl.in:19 hello-php/hello.php:14
+#: hello-c/hello.c:31 hello-c-gnome/hello.c:51 hello-c-gnome3/hello.c:70
+#: hello-c++/hello.cc:40 hello-c++-gnome/hello.cc:55
+#: hello-c++-wxwidgets/hello.cc:71 hello-objc/hello.m:31
+#: hello-objc-gnustep/Hello.m:58 hello-objc-gnome/hello.m:52
+#: hello-librep/hello.jl.in:14 hello-gawk/hello.awk:12
+#: hello-pascal/hello.running_as hello-tcl/hello.tcl:12
+#: hello-tcl-tk/hello.tcl:16 hello-perl/hello-1.pl.in:19
+#: hello-php/hello.php:14
 #, php-format
 msgid "This program is running as process number %d."
 msgstr "Este programa estase executando como o proceso número %d."
 
-#: hello-c-gnome3/hello.c:79
-#, fuzzy, c-format
-msgid ""
-"<big>Hello world!</big>\n"
-"This program is running as process number <b>%d</b>."
-msgstr "Este programa estase executando como o proceso número %d."
-
-#: hello-c-gnome3/hello.c:84
-msgid "<big><u>This is another text</u></big>"
-msgstr ""
-
-#: hello-c-gnome3/hello.c:86
-msgid "<big><i>This is yet another text</i></big>"
-msgstr ""
-
-#: hello-c-gnome3/hello.desktop.in.in:4
-msgid "Hello"
-msgstr ""
-
 #: hello-c-gnome3/hello.ui:5
 msgid "Example Application"
 msgstr "Aplicativo de exemplo"
-
-#: hello-c-gnome3/hello.ui:33
-msgid "Update text"
-msgstr ""
-
-#: hello-c-gnome3/hello.gschema.xml:7
-msgid "Use XML markup"
-msgstr ""
-
-#: hello-c-gnome3/hello.gschema.xml:8
-msgid "Whether to use XML markup in the text."
-msgstr ""
 
 #: hello-c++-qt/hello.cc:52 hello-c++-kde/hellowindow.cc:49
 #: hello-smalltalk/hello.st.in:32 hello-ycp/hello.ycp:19

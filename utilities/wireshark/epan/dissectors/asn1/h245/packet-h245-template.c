@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * To quote the author of the previous H245 dissector:
  *   "This is a complete replacement of the previous limitied dissector
@@ -40,8 +28,10 @@
 #include <epan/t35.h>
 #include <epan/oids.h>
 #include <epan/asn1.h>
+#include <epan/proto_data.h>
 #include <epan/tap.h>
 #include <wsutil/pint.h>
+#include <wsutil/array.h>
 #include "packet-tpkt.h"
 #include "packet-per.h"
 #include "packet-h323.h"
@@ -57,7 +47,7 @@
 void proto_register_h245(void);
 void proto_reg_handoff_h245(void);
 
-static dissector_handle_t rtcp_handle=NULL;
+static dissector_handle_t rtcp_handle;
 static dissector_table_t nsp_object_dissector_table;
 static dissector_table_t nsp_h221_dissector_table;
 static dissector_table_t gef_name_dissector_table;
@@ -66,22 +56,22 @@ static dissector_handle_t h245_handle;
 static dissector_handle_t nsp_handle;
 static dissector_handle_t data_handle;
 static dissector_handle_t MultimediaSystemControlMessage_handle;
-static dissector_handle_t h263_handle = NULL;
-static dissector_handle_t amr_handle = NULL;
+static dissector_handle_t h263_handle;
+static dissector_handle_t amr_handle;
 
 static void init_h245_packet_info(h245_packet_info *pi);
-static int hf_h245_pdu_type = -1;
-static int hf_h245Manufacturer = -1;
-static int hf_h245_subMessageIdentifier_standard = -1;
-static int h245_tap = -1;
-static int h245dg_tap = -1;
-static int hf_h245_debug_dissector_try_string = -1;
+static int hf_h245_pdu_type;
+static int hf_h245Manufacturer;
+static int hf_h245_subMessageIdentifier_standard;
+static int h245_tap;
+static int h245dg_tap;
+static int hf_h245_debug_dissector_try_string;
 
 h245_packet_info *h245_pi=NULL;
 
-static gboolean h245_reassembly = TRUE;
-static gboolean h245_shorttypes = FALSE;
-static gboolean info_col_fmt_prepend = FALSE;
+static bool h245_reassembly = true;
+static bool h245_shorttypes;
+static bool info_col_fmt_prepend;
 
 #include "packet-h245-val.h"
 
@@ -207,42 +197,42 @@ static const value_string h245_AudioCapability_short_vals[] = {
 
 /* To put the codec type only in COL_INFO when
    an OLC is read */
-const char* codec_type = NULL;
-static guint32 rfc_number;
+const char* codec_type;
+static uint32_t rfc_number;
 
 typedef struct _unicast_addr_t {
   address addr;
-  guint8 addr_buf[16];
-  guint32 port;
+  uint8_t addr_buf[16];
+  uint32_t port;
 } unicast_addr_t;
 
 typedef struct _channel_info_t {
-  gchar data_type_str[32];
+  char data_type_str[32];
   unicast_addr_t *upcoming_addr;
   unicast_addr_t media_addr;
   unicast_addr_t media_control_addr;
   unsigned int rfc2198;
-  gboolean srtp_flag;
-  gboolean is_video;
+  bool srtp_flag;
+  bool is_video;
 } channel_info_t;
 
 typedef struct _olc_info_t {
-  guint16 fwd_lc_num;
+  uint16_t fwd_lc_num;
   channel_info_t fwd_lc;
   channel_info_t rev_lc;
 } olc_info_t;
 
-static GHashTable* h245_pending_olc_reqs = NULL;
-static gboolean fast_start = FALSE;
-static olc_info_t *upcoming_olc = NULL;
-static channel_info_t *upcoming_channel = NULL;
+static wmem_map_t* h245_pending_olc_reqs;
+static bool fast_start;
+static olc_info_t *upcoming_olc;
+static channel_info_t *upcoming_channel;
 
 /* NonStandardParameter */
 static const char *nsiOID;
-static guint32 h221NonStandard;
-static guint32 t35CountryCode;
-static guint32 t35Extension;
-static guint32 manufacturerCode;
+static uint32_t h221NonStandard;
+static uint32_t t35CountryCode;
+static uint32_t t35Extension;
+static uint32_t manufacturerCode;
 
 static const value_string h245_RFC_number_vals[] = {
 	{  2190,	"RFC 2190 - H.263 Video Streams" },
@@ -267,9 +257,9 @@ static const value_string h245_h239subMessageIdentifier_vals[] = {
 
 
 /* h223 multiplex codes */
-static h223_set_mc_handle_t h223_set_mc_handle = NULL;
+static h223_set_mc_handle_t h223_set_mc_handle;
 h223_mux_element *h223_me=NULL;
-guint8 h223_mc=0;
+uint8_t h223_mc=0;
 void h245_set_h223_set_mc_handle( h223_set_mc_handle_t handle )
 {
 	h223_set_mc_handle = handle;
@@ -281,42 +271,21 @@ typedef struct {
 	h223_lc_params *rev_channel_params;
 } h223_pending_olc;
 
-static GHashTable*          h223_pending_olc_reqs[] = { NULL, NULL };
+static wmem_map_t*          h223_pending_olc_reqs[2];
 static dissector_handle_t   h245_lc_dissector;
-static guint16              h245_lc_temp;
-static guint16              h223_fw_lc_num;
-static guint16              h223_rev_lc_num;
+static uint16_t             h245_lc_temp;
+static uint16_t             h223_fw_lc_num;
+static uint16_t             h223_rev_lc_num;
 static h223_lc_params      *h223_lc_params_temp;
 static h223_lc_params      *h223_fw_lc_params;
 static h223_lc_params      *h223_rev_lc_params;
-static h223_add_lc_handle_t h223_add_lc_handle = NULL;
-
-static void h223_lc_init_dir( int dir )
-{
-	if ( h223_pending_olc_reqs[dir] )
-		g_hash_table_destroy( h223_pending_olc_reqs[dir] );
-	h223_pending_olc_reqs[dir] = g_hash_table_new( g_direct_hash, g_direct_equal );
-}
+static h223_add_lc_handle_t h223_add_lc_handle;
 
 static void h223_lc_init( void )
 {
-	h223_lc_init_dir( P2P_DIR_SENT );
-	h223_lc_init_dir( P2P_DIR_RECV );
 	h223_lc_params_temp = NULL;
 	h245_lc_dissector = NULL;
 	h223_fw_lc_num = 0;
-}
-
-static void h245_init(void)
-{
-	h245_pending_olc_reqs = g_hash_table_new(g_str_hash, g_str_equal);
-
-	h223_lc_init();
-}
-
-static void h245_cleanup(void)
-{
-	g_hash_table_destroy(h245_pending_olc_reqs);
 }
 
 void h245_set_h223_add_lc_handle( h223_add_lc_handle_t handle )
@@ -324,11 +293,11 @@ void h245_set_h223_add_lc_handle( h223_add_lc_handle_t handle )
 	h223_add_lc_handle = handle;
 }
 
-static const gchar *gen_olc_key(guint16 lc_num, address *dst_addr, address *src_addr)
+static const char *gen_olc_key(uint16_t lc_num, address *dst_addr, address *src_addr, wmem_allocator_t *scope)
 {
-  return wmem_strdup_printf(wmem_packet_scope(), "%s/%s/%u",
-          address_to_str(wmem_packet_scope(), dst_addr),
-          address_to_str(wmem_packet_scope(), src_addr),
+  return wmem_strdup_printf(scope, "%s/%s/%u",
+          address_to_str(scope, dst_addr),
+          address_to_str(scope, src_addr),
           lc_num);
 }
 
@@ -361,19 +330,19 @@ static void h245_setup_channels(packet_info *pinfo, channel_info_t *upcoming_cha
 	/* (S)RTP, (S)RTCP */
 	if (upcoming_channel_lcl->rfc2198 > 0) {
 		rtp_dyn_payload = rtp_dyn_payload_new();
-		rtp_dyn_payload_insert(rtp_dyn_payload, upcoming_channel_lcl->rfc2198, "red", 8000);
+		rtp_dyn_payload_insert(rtp_dyn_payload, upcoming_channel_lcl->rfc2198, "red", 8000, 1);
 	}
 
 	if (upcoming_channel_lcl->srtp_flag) {
 		dummy_srtp_info = wmem_new0(wmem_file_scope(), struct srtp_info);
 	}
 
-	/* DEBUG 	g_warning("h245_setup_channels media_addr.addr.type %u port %u",upcoming_channel_lcl->media_addr.addr.type, upcoming_channel_lcl->media_addr.port );
+	/* DEBUG 	ws_warning("h245_setup_channels media_addr.addr.type %u port %u",upcoming_channel_lcl->media_addr.addr.type, upcoming_channel_lcl->media_addr.port );
 	*/
 	if (upcoming_channel_lcl->media_addr.addr.type!=AT_NONE && upcoming_channel_lcl->media_addr.port!=0) {
-		srtp_add_address(pinfo, &upcoming_channel_lcl->media_addr.addr,
+		srtp_add_address(pinfo, PT_UDP, &upcoming_channel_lcl->media_addr.addr,
 						upcoming_channel_lcl->media_addr.port, 0,
-						"H245", pinfo->num, upcoming_channel_lcl->is_video , rtp_dyn_payload, dummy_srtp_info);
+						"H245", pinfo->num, upcoming_channel_lcl->is_video , rtp_dyn_payload, dummy_srtp_info, NULL);
 	}
 	if (upcoming_channel_lcl->media_control_addr.addr.type!=AT_NONE && upcoming_channel_lcl->media_control_addr.port!=0 && rtcp_handle) {
 		srtcp_add_address(pinfo, &upcoming_channel_lcl->media_control_addr.addr,
@@ -384,38 +353,38 @@ static void h245_setup_channels(packet_info *pinfo, channel_info_t *upcoming_cha
 
 /* Prints formated information column of h245 messages. Note that global variables
  * "h245_shorttypes" and "info_col_fmt_prepend" are used to decide formating preferences */
-static void print_info_column(column_info *cinfo, const gint32 *value,
+static void print_info_column(column_info *cinfo, const int32_t *value,
     const value_string *msg_vals, const value_string *short_msg_vals)
 {
   const value_string *vals;
 
-  if (h245_shorttypes == FALSE || short_msg_vals == NULL) {
+  if (h245_shorttypes == false || short_msg_vals == NULL) {
     vals = msg_vals;
   } else {
     vals = short_msg_vals;
   }
 
-  if (info_col_fmt_prepend == FALSE) {
-    col_append_fstr(cinfo, COL_INFO, "%s ", val_to_str(*value, vals, "<unknown>"));
+  if (info_col_fmt_prepend == false) {
+    col_append_fstr(cinfo, COL_INFO, "%s ", val_to_str_const(*value, vals, "<unknown>"));
   } else {
-    col_prepend_fstr(cinfo, COL_INFO, "%s ", val_to_str(*value, vals, "<unknown>"));
+    col_prepend_fstr(cinfo, COL_INFO, "%s ", val_to_str_const(*value, vals, "<unknown>"));
   }
 }
 
 /* Initialize the protocol and registered fields */
-static int proto_h245 = -1;
+static int proto_h245;
 #include "packet-h245-hf.c"
 
 /* Initialize the subtree pointers */
-static int ett_h245 = -1;
-static int ett_h245_returnedFunction = -1;
+static int ett_h245;
+static int ett_h245_returnedFunction;
 #include "packet-h245-ett.c"
 
 /* Forward declarations */
 static int dissect_h245_MultimediaSystemControlMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
 static void reset_h245_pi(void *dummy _U_)
 {
-	h245_pi = NULL; /* Make sure we don't leave wmem_packet_scoped() memory lying around */
+	h245_pi = NULL; /* Make sure we don't leave pinfo->pool memory lying around */
 }
 
 #include "packet-h245-fn.c"
@@ -437,10 +406,10 @@ dissect_h245_h245(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, vo
 {
 	proto_item *it;
 	proto_tree *tr;
-	guint32 offset=0;
+	uint32_t offset=0;
 	asn1_ctx_t asn1_ctx;
 
-	fast_start = FALSE;
+	fast_start = false;
 	/* Clean up from any previous packet dissection */
 	upcoming_olc = NULL;
 	upcoming_channel = NULL;
@@ -454,9 +423,9 @@ dissect_h245_h245(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, vo
 	/* assume that whilst there is more tvb data, there are more h245 commands */
 	while ( tvb_reported_length_remaining( tvb, offset>>3 )>0 ){
 		CLEANUP_PUSH(reset_h245_pi, NULL);
-		h245_pi=wmem_new(wmem_packet_scope(), h245_packet_info);
+		h245_pi=wmem_new(pinfo->pool, h245_packet_info);
 		init_h245_packet_info(h245_pi);
-		asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+		asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
 		offset = dissect_h245_MultimediaSystemControlMessage(tvb, offset, &asn1_ctx, tr, hf_h245_pdu_type);
 		tap_queue_packet(h245dg_tap, pinfo, h245_pi);
 		offset = (offset+0x07) & 0xfffffff8;
@@ -468,7 +437,7 @@ dissect_h245_h245(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, vo
 void
 dissect_h245_FastStart_OLC(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, char *codec_str) {
 
-  fast_start = TRUE;
+  fast_start = true;
   /* Clean up from any previous packet dissection */
   upcoming_olc = NULL;
   upcoming_channel = NULL;
@@ -480,7 +449,7 @@ dissect_h245_FastStart_OLC(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tr
 	  h245_pi->msg_type = H245_OpenLogChn;
 
   if (codec_str && codec_type){
-        g_strlcpy(codec_str, codec_type, 50);
+        (void) g_strlcpy(codec_str, codec_type, 50);
   }
 
 }
@@ -508,7 +477,7 @@ void proto_register_h245(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
 	  &ett_h245,
 	  &ett_h245_returnedFunction,
 #include "packet-h245-ettarr.c"
@@ -517,8 +486,11 @@ void proto_register_h245(void) {
 
   /* Register protocol */
   proto_h245 = proto_register_protocol(PNAME, PSNAME, PFNAME);
-  register_init_routine(h245_init);
-  register_cleanup_routine(h245_cleanup);
+  h223_pending_olc_reqs[P2P_DIR_SENT] = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal );
+  h223_pending_olc_reqs[P2P_DIR_RECV] = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal );
+  h245_pending_olc_reqs = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), wmem_str_hash, g_str_equal);
+
+  register_init_routine(h223_lc_init);
   /* Register fields and subtrees */
   proto_register_field_array(proto_h245, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
@@ -542,10 +514,10 @@ void proto_register_h245(void) {
   MultimediaSystemControlMessage_handle = register_dissector("h245dg", dissect_h245_h245, proto_h245);
   h245_handle = register_dissector("h245", dissect_h245, proto_h245);
 
-  nsp_object_dissector_table = register_dissector_table("h245.nsp.object", "H.245 NonStandardParameter (object)", proto_h245, FT_STRING, BASE_NONE);
+  nsp_object_dissector_table = register_dissector_table("h245.nsp.object", "H.245 NonStandardParameter (object)", proto_h245, FT_STRING, STRING_CASE_SENSITIVE);
   nsp_h221_dissector_table = register_dissector_table("h245.nsp.h221", "H.245 NonStandardParameter (h221)", proto_h245, FT_UINT32, BASE_HEX);
-  gef_name_dissector_table = register_dissector_table("h245.gef.name", "H.245 Generic Extensible Framework (names)", proto_h245, FT_STRING, BASE_NONE);
-  gef_content_dissector_table = register_dissector_table("h245.gef.content", "H.245 Generic Extensible Framework", proto_h245, FT_STRING, BASE_NONE);
+  gef_name_dissector_table = register_dissector_table("h245.gef.name", "H.245 Generic Extensible Framework Name", proto_h245, FT_STRING, STRING_CASE_SENSITIVE);
+  gef_content_dissector_table = register_dissector_table("h245.gef.content", "H.245 Generic Extensible Framework Content", proto_h245, FT_STRING, STRING_CASE_SENSITIVE);
 
   h245_tap = register_tap("h245");
   h245dg_tap = register_tap("h245dg");
@@ -610,8 +582,8 @@ void proto_reg_handoff_h245(void) {
 	amr_handle = find_dissector("amr_if2_nb");
 
 
-	dissector_add_for_decode_as("tcp.port", h245_handle);
-	dissector_add_for_decode_as("udp.port", MultimediaSystemControlMessage_handle);
+	dissector_add_for_decode_as_with_preference("tcp.port", h245_handle);
+	dissector_add_for_decode_as_with_preference("udp.port", MultimediaSystemControlMessage_handle);
 }
 
 static void init_h245_packet_info(h245_packet_info *pi)
@@ -622,6 +594,6 @@ static void init_h245_packet_info(h245_packet_info *pi)
 
         pi->msg_type = H245_OTHER;
 		pi->frame_label[0] = '\0';
-		g_snprintf(pi->comment, sizeof(pi->comment), "H245 ");
+		snprintf(pi->comment, sizeof(pi->comment), "H245 ");
 }
 

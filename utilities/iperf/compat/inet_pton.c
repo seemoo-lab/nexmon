@@ -42,7 +42,7 @@ inet_pton(int af,
     switch ( af ) {
         case AF_INET:
             return(inet_pton4(src, dst));
-#ifdef HAVE_IPV6
+#if HAVE_IPV6
         case AF_INET6:
             return(inet_pton6(src, dst));
 #endif
@@ -115,7 +115,7 @@ unsigned char *dst;
  * author:
  *      Paul Vixie, 1996.
  */
-#ifdef HAVE_IPV6
+#if HAVE_IPV6
 int
 inet_pton6(src, dst)
 const char *src;

@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1998  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -42,13 +44,27 @@
 #include "gunicode.h"
 #include "gconvert.h"
 #include "gquark.h"
+#include "gthreadprivate.h"
 
 /* Environ array functions {{{1 */
+static gboolean
+g_environ_matches (const gchar *env, const gchar *variable, gsize len)
+{
+#ifdef G_OS_WIN32
+    /* TODO handle Unicode environment variable names */
+    /* Like filesystem paths, environment variables are case-insensitive. */
+    return g_ascii_strncasecmp (env, variable, len) == 0 && env[len] == '=';
+#else
+    return strncmp (env, variable, len) == 0 && env[len] == '=';
+#endif
+}
+
 static gint
 g_environ_find (gchar       **envp,
                 const gchar  *variable)
 {
-  gint len, i;
+  gsize len;
+  gint i;
 
   if (envp == NULL)
     return -1;
@@ -57,8 +73,7 @@ g_environ_find (gchar       **envp,
 
   for (i = 0; envp[i]; i++)
     {
-      if (strncmp (envp[i], variable, len) == 0 &&
-          envp[i][len] == '=')
+      if (g_environ_matches (envp[i], variable, len))
         return i;
     }
 
@@ -67,15 +82,15 @@ g_environ_find (gchar       **envp,
 
 /**
  * g_environ_getenv:
- * @envp: (allow-none) (array zero-terminated=1) (transfer none): an environment
- *     list (eg, as returned from g_get_environ()), or %NULL
+ * @envp: (nullable) (array zero-terminated=1) (transfer none) (element-type filename):
+ *     an environment list (eg, as returned from g_get_environ()), or %NULL
  *     for an empty environment list
- * @variable: the environment variable to get
+ * @variable: (type filename): the environment variable to get
  *
  * Returns the value of the environment variable @variable in the
  * provided list @envp.
  *
- * Returns: the value of the environment variable, or %NULL if
+ * Returns: (type filename) (nullable): the value of the environment variable, or %NULL if
  *     the environment variable is not set in @envp. The returned
  *     string is owned by @envp, and will be freed if @variable is
  *     set or unset again.
@@ -99,19 +114,20 @@ g_environ_getenv (gchar       **envp,
 
 /**
  * g_environ_setenv:
- * @envp: (allow-none) (array zero-terminated=1) (transfer full): an
- *     environment list that can be freed using g_strfreev() (e.g., as
+ * @envp: (nullable) (array zero-terminated=1) (element-type filename) (transfer full):
+ *     an environment list that can be freed using g_strfreev() (e.g., as
  *     returned from g_get_environ()), or %NULL for an empty
  *     environment list
- * @variable: the environment variable to set, must not contain '='
- * @value: the value for to set the variable to
+ * @variable: (type filename): the environment variable to set, must not
+ *     contain '='
+ * @value: (type filename): the value for to set the variable to
  * @overwrite: whether to change the variable if it already exists
  *
  * Sets the environment variable @variable in the provided list
  * @envp to @value.
  *
- * Returns: (array zero-terminated=1) (transfer full): the
- *     updated environment list. Free it using g_strfreev().
+ * Returns: (array zero-terminated=1) (element-type filename) (transfer full):
+ *     the updated environment list. Free it using g_strfreev().
  *
  * Since: 2.32
  */
@@ -138,7 +154,7 @@ g_environ_setenv (gchar       **envp,
     }
   else
     {
-      gint length;
+      guint length;
 
       length = envp ? g_strv_length (envp) : 0;
       envp = g_renew (gchar *, envp, length + 2);
@@ -154,7 +170,7 @@ g_environ_unsetenv_internal (gchar        **envp,
                              const gchar   *variable,
                              gboolean       free_value)
 {
-  gint len;
+  gsize len;
   gchar **e, **f;
 
   len = strlen (variable);
@@ -165,7 +181,7 @@ g_environ_unsetenv_internal (gchar        **envp,
   e = f = envp;
   while (*e != NULL)
     {
-      if (strncmp (*e, variable, len) != 0 || (*e)[len] != '=')
+      if (!g_environ_matches (*e, variable, len))
         {
           *f = *e;
           f++;
@@ -186,16 +202,17 @@ g_environ_unsetenv_internal (gchar        **envp,
 
 /**
  * g_environ_unsetenv:
- * @envp: (allow-none) (array zero-terminated=1) (transfer full): an environment
- *     list that can be freed using g_strfreev() (e.g., as returned from g_get_environ()), 
- *     or %NULL for an empty environment list
- * @variable: the environment variable to remove, must not contain '='
+ * @envp: (nullable) (array zero-terminated=1) (element-type filename) (transfer full):
+ *     an environment list that can be freed using g_strfreev() (e.g., as
+ *     returned from g_get_environ()), or %NULL for an empty environment list
+ * @variable: (type filename): the environment variable to remove, must not
+ *     contain '='
  *
  * Removes the environment variable @variable from the provided
  * environment @envp.
  *
- * Returns: (array zero-terminated=1) (transfer full): the
- *     updated environment list. Free it using g_strfreev().
+ * Returns: (array zero-terminated=1) (element-type filename) (transfer full):
+ *     the updated environment list. Free it using g_strfreev().
  *
  * Since: 2.32
  */
@@ -212,12 +229,12 @@ g_environ_unsetenv (gchar       **envp,
   return g_environ_unsetenv_internal (envp, variable, TRUE);
 }
 
-/* UNIX implemention {{{1 */
+/* UNIX implementation {{{1 */
 #ifndef G_OS_WIN32
 
 /**
  * g_getenv:
- * @variable: the environment variable to get
+ * @variable: (type filename): the environment variable to get
  *
  * Returns the value of an environment variable.
  *
@@ -227,7 +244,7 @@ g_environ_unsetenv (gchar       **envp,
  * On Windows, in case the environment variable's value contains
  * references to other environment variables, they are expanded.
  *
- * Returns: the value of the environment variable, or %NULL if
+ * Returns: (type filename) (nullable): the value of the environment variable, or %NULL if
  *     the environment variable is not found. The returned string
  *     may be overwritten by the next call to g_getenv(), g_setenv()
  *     or g_unsetenv().
@@ -242,8 +259,9 @@ g_getenv (const gchar *variable)
 
 /**
  * g_setenv:
- * @variable: the environment variable to set, must not contain '='.
- * @value: the value for to set the variable to.
+ * @variable: (type filename): the environment variable to set, must not
+ *     contain '='.
+ * @value: (type filename): the value for to set the variable to.
  * @overwrite: whether to change the variable if it already exists.
  *
  * Sets an environment variable. On UNIX, both the variable's name and
@@ -284,6 +302,13 @@ g_setenv (const gchar *variable,
   g_return_val_if_fail (strchr (variable, '=') == NULL, FALSE);
   g_return_val_if_fail (value != NULL, FALSE);
 
+#ifndef G_DISABLE_CHECKS
+  /* FIXME: This will be upgraded to a g_warning() in a future release of GLib.
+   * See https://gitlab.gnome.org/GNOME/glib/issues/715 */
+  if (g_thread_n_created () > 0)
+    g_debug ("setenv()/putenv() are not thread-safe and should not be used after threads are created");
+#endif
+
 #ifdef HAVE_SETENV
   result = setenv (variable, value, overwrite);
 #else
@@ -302,6 +327,13 @@ g_setenv (const gchar *variable,
 
 #ifdef HAVE__NSGETENVIRON
 #define environ (*_NSGetEnviron())
+#elif defined(__FreeBSD__)
+/* FreeBSD has environ in crt rather than libc. Using "extern char** environ"
+ * in the code of a shared library makes it fail to link with -Wl,--no-undefined
+ * See https://reviews.freebsd.org/D30842#840642
+ */
+#include <dlfcn.h>
+#define environ (*((char***)dlsym(RTLD_DEFAULT, "environ")))
 #else
 /* According to the Single Unix Specification, environ is not
  * in any system header, although unistd.h often declares it.
@@ -311,7 +343,8 @@ extern char **environ;
 
 /**
  * g_unsetenv:
- * @variable: the environment variable to remove, must not contain '='
+ * @variable: (type filename): the environment variable to remove, must
+ *     not contain '='
  *
  * Removes an environment variable from the environment.
  *
@@ -339,6 +372,13 @@ g_unsetenv (const gchar *variable)
   g_return_if_fail (variable != NULL);
   g_return_if_fail (strchr (variable, '=') == NULL);
 
+#ifndef G_DISABLE_CHECKS
+  /* FIXME: This will be upgraded to a g_warning() in a future release of GLib.
+   * See https://gitlab.gnome.org/GNOME/glib/issues/715 */
+  if (g_thread_n_created () > 0)
+    g_debug ("unsetenv() is not thread-safe and should not be used after threads are created");
+#endif
+
 #ifdef HAVE_UNSETENV
   unsetenv (variable);
 #else /* !HAVE_UNSETENV */
@@ -361,8 +401,9 @@ g_unsetenv (const gchar *variable)
  * use cases for environment variables in GLib-using programs you want
  * the UTF-8 encoding that this function and g_getenv() provide.
  *
- * Returns: (array zero-terminated=1) (transfer full): a %NULL-terminated
- *     list of strings which must be freed with g_strfreev().
+ * Returns: (array zero-terminated=1) (element-type filename) (transfer full):
+ *     a %NULL-terminated list of strings which must be freed with
+ *     g_strfreev().
  *
  * Since: 2.8
  */
@@ -370,7 +411,7 @@ gchar **
 g_listenv (void)
 {
   gchar **result, *eq;
-  gint len, i, j;
+  guint len, i, j;
 
   len = g_strv_length (environ);
   result = g_new0 (gchar *, len + 1);
@@ -402,8 +443,8 @@ g_listenv (void)
  * The return value is freshly allocated and it should be freed with
  * g_strfreev() when it is no longer needed.
  *
- * Returns: (array zero-terminated=1) (transfer full): the list of
- *     environment variables
+ * Returns: (array zero-terminated=1) (element-type filename) (transfer full):
+ *     the list of environment variables
  *
  * Since: 2.28
  */
@@ -414,81 +455,114 @@ g_get_environ (void)
 }
 
 /* Win32 implementation {{{1 */
-#else   /* G_OS_WIN32 */
+
+#else /* G_OS_WIN32 */
+
+static wchar_t *
+expand_environment_string (const wchar_t *string_utf16)
+{
+  wchar_t *expanded = NULL;
+  DWORD previous_wchars_count = 0;
+  DWORD wchars_count = 0;
+
+  do
+    {
+      previous_wchars_count = wchars_count;
+      expanded = g_renew (wchar_t, expanded, wchars_count);
+
+      /* Note: ExpandEnvironmentStrings is 1-pass only. In addition, placeholders
+       * referring to non-existing variables are kept as-is, they aren't removed.
+       * That differs e.g from CMD. */
+      wchars_count = ExpandEnvironmentStrings (string_utf16, expanded, wchars_count);
+    }
+  while (wchars_count > previous_wchars_count);
+
+  if (wchars_count == 0)
+    {
+      g_warning ("%s failed with error code %u",
+                 "ExpandEnvironmentStrings", (unsigned int) GetLastError ());
+      g_clear_pointer (&expanded, g_free);
+    }
+
+  return expanded;
+}
 
 const gchar *
 g_getenv (const gchar *variable)
 {
-  GQuark quark;
-  gchar *value;
-  wchar_t dummy[2], *wname, *wvalue;
-  int len;
+  wchar_t *name_utf16 = NULL;
+  wchar_t *value_utf16 = NULL;
+  DWORD previous_wchars_count = 0;
+  DWORD wchars_count = 0;
+  char *value_utf8 = NULL;
+  GQuark quark = 0;
 
   g_return_val_if_fail (variable != NULL, NULL);
   g_return_val_if_fail (g_utf8_validate (variable, -1, NULL), NULL);
 
-  /* On Windows NT, it is relatively typical that environment
-   * variables contain references to other environment variables. If
-   * so, use ExpandEnvironmentStrings(). (In an ideal world, such
-   * environment variables would be stored in the Registry as
-   * REG_EXPAND_SZ type values, and would then get automatically
-   * expanded before a program sees them. But there is broken software
-   * that stores environment variables as REG_SZ values even if they
-   * contain references to other environment variables.)
-   */
+  name_utf16 = g_utf8_to_utf16 (variable, -1, NULL, NULL, NULL);
+  g_assert (name_utf16);
 
-  wname = g_utf8_to_utf16 (variable, -1, NULL, NULL, NULL);
-
-  len = GetEnvironmentVariableW (wname, dummy, 2);
-
-  if (len == 0)
+  do
     {
-      g_free (wname);
-      if (GetLastError () == ERROR_ENVVAR_NOT_FOUND)
-        return NULL;
+      value_utf16 = g_renew (wchar_t, value_utf16, wchars_count);
 
-      quark = g_quark_from_static_string ("");
-      return g_quark_to_string (quark);
+      previous_wchars_count = wchars_count;
+
+      SetLastError (ERROR_SUCCESS);
+      wchars_count = GetEnvironmentVariable (name_utf16, value_utf16, wchars_count);
     }
-  else if (len == 1)
-    len = 2;
+  while (wchars_count > previous_wchars_count);
 
-  wvalue = g_new (wchar_t, len);
-
-  if (GetEnvironmentVariableW (wname, wvalue, len) != len - 1)
+  if (wchars_count == 0)
     {
-      g_free (wname);
-      g_free (wvalue);
-      return NULL;
-    }
+      DWORD code = GetLastError ();
 
-  if (wcschr (wvalue, L'%') != NULL)
-    {
-      wchar_t *tem = wvalue;
-
-      len = ExpandEnvironmentStringsW (wvalue, dummy, 2);
-
-      if (len > 0)
+      if (code == ERROR_SUCCESS)
         {
-          wvalue = g_new (wchar_t, len);
+          /* Value is an empty string */
+          quark = g_quark_from_static_string ("");
+        }
+      else if (code == ERROR_ENVVAR_NOT_FOUND)
+        {
+          /* The variable doesn't exist */
+        }
+      else
+        {
+          g_warning ("%s failed with error code %u",
+                     "GetEnvironmentVariable", (unsigned int) GetLastError ());
+        }
+    }
+  else
+    {
+      g_assert (wchars_count != previous_wchars_count);
+      g_assert (value_utf16[wchars_count] == L'\0');
 
-          if (ExpandEnvironmentStringsW (tem, wvalue, len) != len)
-            {
-              g_free (wvalue);
-              wvalue = tem;
-            }
+      /* On Windows NT, it is relatively typical that environment
+       * variables contain references to other environment variables.
+       * If so, use ExpandEnvironmentStrings() */
+      if (wcschr (value_utf16, L'%'))
+        {
+          wchar_t *expanded = expand_environment_string (value_utf16);
+
+          g_free (value_utf16);
+          value_utf16 = expanded;
+        }
+
+      if (value_utf16)
+        {
+          value_utf8 = g_utf16_to_utf8 (value_utf16, -1, NULL, NULL, NULL);
+
+          if (value_utf8 == NULL)
+            g_warning ("Environment variable `%s' contains invalid UTF-16", variable);
           else
-            g_free (tem);
+            quark = g_quark_from_string (value_utf8);
         }
     }
 
-  value = g_utf16_to_utf8 (wvalue, -1, NULL, NULL, NULL);
-
-  g_free (wname);
-  g_free (wvalue);
-
-  quark = g_quark_from_string (value);
-  g_free (value);
+  g_free (name_utf16);
+  g_free (value_utf16);
+  g_free (value_utf8);
 
   return g_quark_to_string (quark);
 }
@@ -569,7 +643,7 @@ gchar **
 g_listenv (void)
 {
   gchar **result, *eq;
-  gint len = 0, j;
+  size_t len = 0, j;
   wchar_t *p, *q;
 
   p = (wchar_t *) GetEnvironmentStringsW ();
@@ -613,7 +687,7 @@ g_get_environ (void)
 {
   gunichar2 *strings;
   gchar **result;
-  gint i, n;
+  size_t i, n;
 
   strings = GetEnvironmentStringsW ();
   for (n = 0, i = 0; strings[n]; i++)
@@ -631,61 +705,39 @@ g_get_environ (void)
   return result;
 }
 
-/* Win32 binary compatibility versions {{{1 */
-#ifndef _WIN64
+#endif  /* G_OS_WIN32 */
 
-#undef g_getenv
+#ifdef G_OS_WIN32
+
+/* Binary compatibility versions. Not for newly compiled code. */
+
+_GLIB_EXTERN const gchar *g_getenv_utf8   (const gchar  *variable);
+_GLIB_EXTERN gboolean     g_setenv_utf8   (const gchar  *variable,
+                                           const gchar  *value,
+                                           gboolean      overwrite);
+_GLIB_EXTERN void         g_unsetenv_utf8 (const gchar  *variable);
 
 const gchar *
-g_getenv (const gchar *variable)
+g_getenv_utf8 (const gchar *variable)
 {
-  gchar *utf8_variable = g_locale_to_utf8 (variable, -1, NULL, NULL, NULL);
-  const gchar *utf8_value = g_getenv_utf8 (utf8_variable);
-  gchar *value;
-  GQuark quark;
-
-  g_free (utf8_variable);
-  if (!utf8_value)
-    return NULL;
-  value = g_locale_from_utf8 (utf8_value, -1, NULL, NULL, NULL);
-  quark = g_quark_from_string (value);
-  g_free (value);
-
-  return g_quark_to_string (quark);
+  return g_getenv (variable);
 }
-
-#undef g_setenv
 
 gboolean
-g_setenv (const gchar *variable,
-          const gchar *value,
-          gboolean     overwrite)
+g_setenv_utf8 (const gchar *variable,
+               const gchar *value,
+               gboolean     overwrite)
 {
-  gchar *utf8_variable = g_locale_to_utf8 (variable, -1, NULL, NULL, NULL);
-  gchar *utf8_value = g_locale_to_utf8 (value, -1, NULL, NULL, NULL);
-  gboolean retval = g_setenv_utf8 (utf8_variable, utf8_value, overwrite);
-
-  g_free (utf8_variable);
-  g_free (utf8_value);
-
-  return retval;
+  return g_setenv (variable, value, overwrite);
 }
-
-#undef g_unsetenv
 
 void
-g_unsetenv (const gchar *variable)
+g_unsetenv_utf8 (const gchar *variable)
 {
-  gchar *utf8_variable = g_locale_to_utf8 (variable, -1, NULL, NULL, NULL);
-
-  g_unsetenv_utf8 (utf8_variable);
-
-  g_free (utf8_variable);
+  g_unsetenv (variable);
 }
 
-#endif  /* _WIN64 */
-
-#endif  /* G_OS_WIN32 */
+#endif
 
 /* Epilogue {{{1 */
 /* vim: set foldmethod=marker: */

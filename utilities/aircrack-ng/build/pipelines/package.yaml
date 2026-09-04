@@ -1,0 +1,278 @@
+---
+
+##
+# Aircrack-ng Pipeline Definition
+#
+# Built with the PyDeployer tool!
+#
+# https://github.com/jbenden/deployer
+##
+
+- name: Packaging Preparations
+  tags:
+    - pkg
+  stage:
+    scope: false
+    tasks:
+      - name: Set package metadata
+        set:
+          artifacts: artifacts/aircrack-ng
+          www: '{% if env.ARTIFACT_WWW_ROOT %}{{ env.ARTIFACT_WWW_ROOT }}{% else %}/tmp/www{% endif %}'
+          description: |
+            Aircrack-ng is a complete suite of tools to assess WiFi network
+            security.
+
+            It focuses on different areas of WiFi security:
+
+              - Monitoring: Packet capture and export of data to text files
+                for further processing by third party tools.
+              - Attacking: Replay attacks, deauthentication, fake access points
+                and others via packet injection.
+              - Testing: Checking WiFi cards and driver capabilities (capture
+                and injection).
+              - Cracking: WEP and WPA PSK (WPA 1 and 2).
+
+            All tools are command line which allows for heavy scripting. A lot
+            of GUIs have taken advantage of this feature. It works primarily with
+            Linux but also Windows, OS X, FreeBSD, OpenBSD, NetBSD, as well as
+            Solaris and even the eComStation 2.
+          fpm: |
+            [ -e "{{ item.pkg }}" ] && rm -f "{{ item.pkg }}"
+            fpm -s dir \
+                -t "{{ item.pkg_type }}" \
+                -n "{{ item.pkg_name }}" \
+                -v "{{ item.pkg_version }}" \
+                --epoch 1 \
+                -C "{{ destdir }}" \
+                --license GPLv2 \
+                -m "info@aircrack-ng.org" \
+                --vendor 'The Aircrack-ng Project' \
+                --url 'https://aircrack-ng.org/' \
+                --description "{{ description }}" \
+                -p "{{ item.pkg_template }}" \
+                -x *.la \
+                {{ item.pkg_deps }} \
+                {{ item.pkg_content }}
+            [ "{{ item.pkg_type }}" = deb ] && dpkg-deb -c "{{ item.pkg }}" || :
+            [ "{{ item.pkg_type }}" = deb ] && dpkg-deb -I "{{ item.pkg }}" || :
+            [ "{{ item.pkg_type }}" = rpm ] && rpm -qp "{{ item.pkg }}" --info || :
+          pkg:
+            - pkg: "aircrack-ng_{{ pkg_deb_revision }}_amd64.deb"
+              pkg_name: aircrack-ng
+              pkg_type: deb
+              pkg_template: "aircrack-ng_VERSION_ARCH.deb"
+              pkg_deps: "--category net --deb-priority optional -d iw -d wireless-tools -d ethtool -d usbutils -d rfkill -d libc6 -d libgcc1 -d libltdl7 -d libnl-3-200 -d libnl-genl-3-200 -d libstdc++6"
+              pkg_content: "usr/bin usr/include usr/lib usr/sbin usr/share/man"
+              pkg_version: "{{ pkg_deb_revision }}"
+            - pkg: "aircrack-ng-{{ pkg_rpm_revision }}.x86_64.rpm"
+              pkg_name: aircrack-ng
+              pkg_type: rpm
+              pkg_template: "aircrack-ng-VERSION.ARCH.rpm"
+              pkg_deps: "-d iw -d wireless-tools -d ethtool -d usbutils -d rfkill -d glibc -d libgcc -d libtool-ltdl -d libnl3 -d libstdc++"
+              pkg_content: "usr/bin usr/include usr/lib usr/sbin usr/share/man"
+              pkg_version: "{{ pkg_rpm_revision }}"
+      - command: mktemp -d
+        register: destdir
+      - shell:
+          script: ./evalrev | sed -e 's/_rev//g'
+        register: revision
+      - command: git rev-parse HEAD
+        register: commit_id
+      - command: git rev-parse --abbrev-ref HEAD
+        register: branch
+      - shell:
+          script: 'git describe --abbrev=0 --tags 2>/dev/null || echo unknown'
+        register: closest_tag
+      - shell:
+          script: 'git describe --abbrev=0 --tags --exact-match 2>/dev/null || echo'
+        register: exact_tag
+      - command: date -u +%Y%m%d%H%M%S
+        register: pkg_date
+
+      # Development package naming
+      - name: Calculating the Debian package version
+        command: echo {{ closest_tag }}+git{{ pkg_date }}-1
+        register: pkg_deb_revision
+        when: "exact_tag | trim | count == 0"
+      - name: Calculating the RPM package version
+        shell:
+          script: echo {{ closest_tag }}.{% print pkg_date.stdout[:8] %}git$(git rev-parse --short HEAD)
+        register: pkg_rpm_revision
+        when: "exact_tag | trim | count == 0"
+
+      # Stable package naming
+      - name: Calculating the Debian package version
+        command: echo {{ exact_tag }}-1
+        register: pkg_deb_revision
+        when: "exact_tag | trim | count > 0"
+      - name: Calculating the RPM package version
+        shell:
+          script: echo {{ exact_tag }}
+        register: pkg_rpm_revision
+        when: "exact_tag | trim | count > 0"
+
+      - name: Metadata Evaluation
+        echo: |
+          destdir         : {{ destdir }}
+          revision        : {{ revision }}
+          commit          : {{ commit_id }}
+          branch          : {{ branch }}
+          closest_tag     : {{ closest_tag }}
+          exact_tag       : {{ exact_tag }}
+          pkg_date        : {{ pkg_date }}
+          pkg_deb_revision: {{ pkg_deb_revision }}
+          pkg_rpm_revision: {{ pkg_rpm_revision }}
+
+- name: Packaging Build
+  tags:
+    - pkg
+  stage:
+    tasks:
+      - name: Clean build artifacts
+        shell:
+          script: |
+            find . -name '.deps' -a -type d -exec rm -fr {} ';' 2>/dev/null || :
+            find . -name '.libs' -a -type d -exec rm -fr {} ';' 2>/dev/null || :
+          silent: true
+
+      - name: Ensure configure is present
+        command: autoreconf -vi
+
+      - name: Configure
+        command: >
+          ./configure --prefix=/usr
+                      --with-experimental
+                      --enable-static-crypto
+                      --enable-static-hwloc
+                      --enable-static-sqlite3
+                      --enable-static-pcre
+                      --enable-static-pcap
+
+      - name: Make clean
+        shell:
+          script: make clean
+          silent: true
+
+      - name: Compile
+        shell:
+          script: make V=1
+          silent: true
+
+      - name: Run unit-tests
+        command: make check
+
+      - name: Staging Installation
+        command: "make install-strip DESTDIR={{ destdir }}"
+
+      - name: Produce dist artifacts
+        command: make dist
+
+      - name: Packaging
+        shell:
+          script: "{{ fpm }}"
+        with_items: "{{ pkg }}"
+
+- name: Packaging Deployment
+  tags:
+    - deploy
+  stage:
+    tasks:
+      - name: Deploying development packages to the web server
+        tags:
+          - www
+        stage:
+          tasks:
+            - shell:
+                script: |
+                  {% set path = "{{ www }}/{{ artifacts }}/development/{{ commit_id }}/{{ item.pkg_type }}" %}
+                  {% set prefix = "{{ www }}/{{ artifacts }}" %}
+                  mkdir -p "{{ path }}"
+                  chmod 777 "{{ www }}/{{ artifacts }}/development/{{ commit_id }}"
+                  chmod 777 "{{ path }}"
+                  ( cd "{{ prefix }}/development" && ln -sfnd "{{ commit_id }}" "{{ branch }}" )
+                  cp -p "{{ item.pkg }}" "{{ path }}"
+                  chmod 664 "{{ path }}/{{ item.pkg }}"
+              with_items: "{{ pkg }}"
+
+            - shell:
+                script: |
+                  {% set path = "{{ www }}/{{ artifacts }}/development/{{ commit_id }}" %}
+                  find . -name '*.zip' -o -name '*.tar.*' -print0 | xargs -0 -I {} cp -p {} "{{ path }}"
+
+            - name: Deploying development package manifest
+              tags:
+                - www
+              shell:
+                script: |
+                  mkdir -p "{{ www }}/{{ artifacts }}"
+                  cat > "{{ www }}/{{ artifacts }}/development.json" <<-EOF
+                  {
+                    "build": "development",
+                    "commit": "{{ commit_id }}",
+                    "tag": "{{ closest_tag }}",
+                    "date": "$(date -u)",
+                    "url": "https://packages.aircrack-ng.org/artifacts/aircrack-ng/development/{{ commit_id }}"
+                  }
+                  EOF
+
+            - name: Deploying stable packages to the web server
+              tags:
+                - www
+              shell:
+                script: |
+                  {% set prefix = "{{ www }}/{{ artifacts }}" %}
+                  mkdir -p "{{ prefix }}/stable"
+                  chmod 777 "{{ prefix }}/stable"
+                  ( cd "{{ prefix }}/stable" && ln -sfnd "../development/{{ commit_id }}" "{{ exact_tag }}" )
+              when: "exact_tag | trim | count > 0"
+
+            - name: Deploying stable package manifest
+              tags:
+                - www
+              shell:
+                script: |
+                  cat > "{{ www }}/{{ artifacts }}/stable.json" <<-EOF
+                  {
+                    "build": "stable",
+                    "commit": "{{ commit_id }}",
+                    "tag": "{{ exact_tag }}",
+                    "date": "$(date -u)",
+                    "url": "https://packages.aircrack-ng.org/artifacts/aircrack-ng/stable/{{ exact_tag }}"
+                  }
+                  EOF
+              when: "exact_tag | trim | count > 0"
+
+      - name: Deploying development packages to PackageCloud.io
+        tags:
+          - package_cloud
+        matrix:
+          tags:
+            - deb
+            - rpm
+          tasks:
+            - name: Deploy Debian Packages
+              when: "matrix_tag == 'deb'"
+              matrix:
+                tags:
+                  - any/any
+                tasks:
+                  - command: "package_cloud push --yes aircrack-ng/git/{{ matrix_tag }} {{ item.pkg }}"
+                    with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'deb') | list }}"
+
+                  - command: "package_cloud push --yes aircrack-ng/release/{{ matrix_tag }} {{ item.pkg }}"
+                    when: "exact_tag | trim | count > 0"
+                    with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'deb') | list }}"
+
+            - name: Deploy RPM Packages
+              when: "matrix_tag == 'rpm'"
+              matrix:
+                tags:
+                  - rpm_any/rpm_any
+                tasks:
+                  - command: "package_cloud push --yes aircrack-ng/git/{{ matrix_tag }} {{ item.pkg }}"
+                    with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'rpm') | list }}"
+
+                  - command: "package_cloud push --yes aircrack-ng/release/{{ matrix_tag }} {{ item.pkg }}"
+                    when: "exact_tag | trim | count > 0"
+                    with_items: "{{ pkg | selectattr('pkg_type', 'equalto', 'rpm') | list }}"
+

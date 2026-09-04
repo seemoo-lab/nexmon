@@ -10,19 +10,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
@@ -36,13 +24,15 @@
 void proto_register_cert(void);
 void proto_reg_handoff_cert(void);
 
-/* Initialize the protocol and registered fields */
-static int proto_cert = -1;
+static dissector_handle_t cert_handle;
 
-static gint hf_cert = -1;
+/* Initialize the protocol and registered fields */
+static int proto_cert;
+
+static int hf_cert;
 
 /* Initialize the subtree pointers */
-static gint ett_cert = -1;
+static int ett_cert;
 
 
 static int
@@ -51,16 +41,16 @@ dissect_cert(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         proto_tree *subtree = NULL;
         proto_item *ti;
         asn1_ctx_t asn1_ctx;
-        asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+        asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
-        col_append_sep_fstr(pinfo->cinfo, COL_INFO, " ", "(application/pkix-cert)");
+        col_append_sep_str(pinfo->cinfo, COL_INFO, " ", "(application/pkix-cert)");
 
         if (tree) {
                 ti = proto_tree_add_item(tree, proto_cert, tvb, 0, -1, ENC_NA);
                 subtree = proto_item_add_subtree(ti, ett_cert);
         }
 
-        dissect_x509af_Certificate(FALSE, tvb, 0, &asn1_ctx, subtree, hf_cert);
+        dissect_x509af_Certificate(false, tvb, 0, &asn1_ctx, subtree, hf_cert);
         return tvb_captured_length(tvb);
 }
 
@@ -83,39 +73,31 @@ proto_register_cert(void)
         };
 
         /* Setup protocol subtree array */
-        static gint *ett[] = {
+        static int *ett[] = {
                 &ett_cert,
         };
 
         /* Register the protocol name and description */
-        proto_cert = proto_register_protocol(
-                        "PKIX CERT File Format",
-                        "PKIX Certificate",
-                        "pkix-cert"
-        );
+        proto_cert = proto_register_protocol("PKIX CERT File Format", "PKIX Certificate", "pkix-cert");
 
         /* Required function calls to register the header fields
          * and subtrees used */
         proto_register_field_array(proto_cert, hf, array_length(hf));
         proto_register_subtree_array(ett, array_length(ett));
 
-        register_dissector("application/pkix-cert", dissect_cert, proto_cert);
+        cert_handle = register_dissector("pkix-cert", dissect_cert, proto_cert);
 }
 
 
 void
 proto_reg_handoff_cert(void)
 {
-        dissector_handle_t cert_handle;
-
-        cert_handle = create_dissector_handle(dissect_cert, proto_cert);
-
         /* Register the PKIX-CERT media type */
         dissector_add_string("media_type", "application/pkix-cert", cert_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

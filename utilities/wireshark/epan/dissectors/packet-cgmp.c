@@ -5,24 +5,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/cisco_pid.h>
 
 /*
  * See
@@ -34,15 +23,17 @@
 void proto_register_cgmp(void);
 void proto_reg_handoff_cgmp(void);
 
-static int proto_cgmp = -1;
-static int hf_cgmp_version = -1;
-static int hf_cgmp_type = -1;
-static int hf_cgmp_reserved = -1;
-static int hf_cgmp_count = -1;
-static int hf_cgmp_gda = -1;
-static int hf_cgmp_usa = -1;
+static dissector_handle_t cgmp_handle;
 
-static gint ett_cgmp = -1;
+static int proto_cgmp;
+static int hf_cgmp_version;
+static int hf_cgmp_type;
+static int hf_cgmp_reserved;
+static int hf_cgmp_count;
+static int hf_cgmp_gda;
+static int hf_cgmp_usa;
+
+static int ett_cgmp;
 
 static const value_string type_vals[] = {
 	{ 0, "Join" },
@@ -56,7 +47,7 @@ dissect_cgmp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 	proto_item *ti;
 	proto_tree *cgmp_tree = NULL;
 	int offset = 0;
-	guint8 count;
+	uint8_t count;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "CGMP");
 	col_set_str(pinfo->cinfo, COL_INFO, "Cisco Group Management Protocol");
@@ -76,7 +67,7 @@ dissect_cgmp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 		    ENC_BIG_ENDIAN);
 		offset += 2;
 
-		count = tvb_get_guint8(tvb, offset);
+		count = tvb_get_uint8(tvb, offset);
 		proto_tree_add_uint(cgmp_tree, hf_cgmp_count, tvb, offset, 1,
 		    count);
 		offset += 1;
@@ -109,7 +100,7 @@ proto_register_cgmp(void)
 			NULL, HFILL }},
 
 		{ &hf_cgmp_reserved,
-		{ "Reserved",	"cgmp.reserved", FT_UINT8, BASE_HEX, NULL, 0x0,
+		{ "Reserved",	"cgmp.reserved", FT_UINT16, BASE_HEX, NULL, 0x0,
 			NULL, HFILL }},
 
 		{ &hf_cgmp_count,
@@ -124,7 +115,7 @@ proto_register_cgmp(void)
 		{ "Unicast Source Address",	"cgmp.usa", FT_ETHER, BASE_NONE, NULL, 0x0,
 			NULL, HFILL }},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_cgmp,
 	};
 
@@ -132,20 +123,19 @@ proto_register_cgmp(void)
 	    "CGMP", "cgmp");
 	proto_register_field_array(proto_cgmp, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	cgmp_handle = register_dissector("cgmp", dissect_cgmp, proto_cgmp);
 }
 
 void
 proto_reg_handoff_cgmp(void)
 {
-	dissector_handle_t cgmp_handle;
-
-	cgmp_handle = create_dissector_handle(dissect_cgmp, proto_cgmp);
-	dissector_add_uint("llc.cisco_pid", 0x2001, cgmp_handle);
+	dissector_add_uint("llc.cisco_pid", CISCO_PID_CGMP, cgmp_handle);
 	dissector_add_uint("ethertype", 0x2001, cgmp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

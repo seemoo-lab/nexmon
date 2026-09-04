@@ -13,30 +13,22 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 TEST_TYPE="fuzz"
-. `dirname $0`/test-common.sh || exit 1
+# shellcheck source=tools/test-common.sh
+. "$( dirname "$0" )"/test-common.sh || exit 1
 
 # Sanity check to make sure we can find our plugins. Zero or less disables.
 MIN_PLUGINS=0
 
-# Did we catch a signal?
-DONE=0
+# Did we catch a signal or time out?
+DONE=false
 
-# Perform a two pass analysis on the capture file?
+# Currently running children
+RUNNER_PIDS=
+
+# Perform a two-pass analysis on the capture file?
 TWO_PASS=
 
 # Specific config profile ?
@@ -44,6 +36,9 @@ CONFIG_PROFILE=
 
 # Run under valgrind ?
 VALGRIND=0
+
+# Abort on UTF-8 encoding errors
+CHECK_UTF_8="--log-fatal-domains=UTF-8 "
 
 # Run under AddressSanitizer ?
 ASAN=$CONFIGURED_WITH_ASAN
@@ -54,10 +49,14 @@ CHANGE_OFFSET=0
 # The maximum permitted amount of memory leaked. Eventually this should be
 # worked down to zero, but right now that would fail on every single capture.
 # Only has effect when running under valgrind.
-MAX_LEAK=`expr 1024 \* 100`
+MAX_LEAK=$(( 1024 * 100 ))
+
+# Our maximum run time.
+RUN_START_SECONDS=$SECONDS
+RUN_MAX_SECONDS=$(( RUN_START_SECONDS + 86400 ))
 
 # To do: add options for file names and limits
-while getopts "2b:C:d:e:agp:P:o:" OPTCHAR ; do
+while getopts "2b:C:d:e:agp:P:o:t:U" OPTCHAR ; do
     case $OPTCHAR in
         a) ASAN=1 ;;
         2) TWO_PASS="-2 " ;;
@@ -65,28 +64,37 @@ while getopts "2b:C:d:e:agp:P:o:" OPTCHAR ; do
         C) CONFIG_PROFILE="-C $OPTARG " ;;
         d) TMP_DIR=$OPTARG ;;
         e) ERR_PROB=$OPTARG ;;
-        g) VALGRIND=1 ;;
+        g) VALGRIND=1 ; CHECK_UTF_8= ;;
         p) MAX_PASSES=$OPTARG ;;
         P) MIN_PLUGINS=$OPTARG ;;
         o) CHANGE_OFFSET=$OPTARG ;;
+        t) RUN_MAX_SECONDS=$(( RUN_START_SECONDS + OPTARG )) ;;
+        U) CHECK_UTF_8= ;; # disable
+        *) printf "Unknown option %s\n" "$OPTCHAR"
     esac
 done
-shift $(($OPTIND - 1))
+shift $((OPTIND - 1))
 
 ### usually you won't have to change anything below this line ###
 
 ws_bind_exec_paths
 ws_check_exec "$TSHARK" "$EDITCAP" "$CAPINFOS" "$DATE" "$TMP_DIR"
 
-COMMON_ARGS="${CONFIG_PROFILE}${TWO_PASS}"
+COMMON_ARGS="${CONFIG_PROFILE}${TWO_PASS}${CHECK_UTF_8}"
+KEEP=
+PACKET_RANGE=
 if [ $VALGRIND -eq 1 ]; then
-    RUNNER="`dirname $0`/valgrind-wireshark.sh"
+    RUNNER=$( dirname "$0" )"/valgrind-wireshark.sh"
     COMMON_ARGS="-b $WIRESHARK_BIN_DIR $COMMON_ARGS"
     declare -a RUNNER_ARGS=("" "-T")
     # Valgrind requires more resources, so permit 1.5x memory and 3x time
     # (1.5x time is too small for a few large captures in the menagerie)
-    MAX_CPU_TIME=`expr 3 \* $MAX_CPU_TIME`
-    MAX_VMEM=`expr 3 \* $MAX_VMEM / 2`
+    MAX_CPU_TIME=$(( 3 * MAX_CPU_TIME ))
+    MAX_VMEM=$(( 3 * MAX_VMEM / 2 ))
+    # Valgrind is slow. Trim captures to the first 10k packets so that
+    # we don't time out.
+    KEEP=-r
+    PACKET_RANGE=1-10000
 else
     # Not using valgrind, use regular tshark.
     # TShark arguments (you won't have to change these)
@@ -107,7 +115,7 @@ fi
 FOUND=0
 for CF in "$@" ; do
     if [ "$OSTYPE" == "cygwin" ] ; then
-        CF=`cygpath --windows "$CF"`
+        CF=$( cygpath --windows "$CF" )
     fi
     "$CAPINFOS" "$CF" > /dev/null 2>&1 && FOUND=1
     if [ $FOUND -eq 1 ] ; then break ; fi
@@ -117,13 +125,13 @@ if [ $FOUND -eq 0 ] ; then
     cat <<FIN
 Error: No valid capture files found.
 
-Usage: `basename $0` [-2] [-b bin_dir] [-C config_profile] [-d work_dir] [-e error probability] [-o changes offset] [-g] [-a] [-p passes] capture file 1 [capture file 2]...
+Usage: $( basename "$0" ) [-2] [-b bin_dir] [-C config_profile] [-d work_dir] [-e error probability] [-o changes offset] [-g] [-a] [-p passes] capture file 1 [capture file 2]...
 FIN
     exit 1
 fi
 
-PLUGIN_COUNT=`$TSHARK -G plugins | grep dissector | wc -l`
-if [ $MIN_PLUGINS -gt 0 -a $PLUGIN_COUNT -lt $MIN_PLUGINS ] ; then
+PLUGIN_COUNT=$( $TSHARK -G plugins | grep -c dissector )
+if [ "$MIN_PLUGINS" -gt 0 ] && [ "$PLUGIN_COUNT" -lt "$MIN_PLUGINS" ] ; then
     echo "Warning: Found fewer plugins than expected ($PLUGIN_COUNT vs $MIN_PLUGINS)."
     exit 1
 fi
@@ -136,75 +144,100 @@ else
 fi
 
 HOWMANY="forever"
-if [ $MAX_PASSES -gt 0 ]; then
+if [ "$MAX_PASSES" -gt 0 ]; then
     HOWMANY="$MAX_PASSES passes"
 fi
 echo -n "Running $RUNNER $COMMON_ARGS with args: "
-printf "\"%s\" " "${RUNNER_ARGS[@]}"
+printf "\"%s\"\n" "${RUNNER_ARGS[@]}"
 echo "($HOWMANY)"
 echo ""
 
 # Clean up on <ctrl>C, etc
-trap "DONE=1; echo 'Caught signal'" HUP INT TERM
+trap_all() {
+    printf '\n\nCaught signal. Exiting.\n'
+    rm -f "$TMP_DIR/$TMP_FILE" "$TMP_DIR/$ERR_FILE"*
+    exit 0
+}
 
+trap_abrt() {
+    for RUNNER_PID in $RUNNER_PIDS ; do
+        kill -ABRT "$RUNNER_PID"
+    done
+    trap_all
+}
+
+trap trap_all HUP INT TERM
+trap trap_abrt ABRT
 
 # Iterate over our capture files.
 PASS=0
-while [ \( $PASS -lt $MAX_PASSES -o $MAX_PASSES -lt 1 \) -a $DONE -ne 1 ] ; do
-    let PASS=$PASS+1
-    echo "Starting pass $PASS:"
+while { [ $PASS -lt "$MAX_PASSES" ] || [ "$MAX_PASSES" -lt 1 ]; } && ! $DONE ; do
+    PASS=$(( PASS+1 ))
+    echo "Pass $PASS:"
     RUN=0
 
     for CF in "$@" ; do
-        if [ $DONE -eq 1 ]; then
-            break # We caught a signal
+        if $DONE; then
+            break # We caught a signal or timed out
         fi
-        RUN=$(( $RUN + 1 ))
-        if [ $(( $RUN % 50 )) -eq 0 ] ; then
+        RUN=$(( RUN + 1 ))
+        if [ $(( RUN % 50 )) -eq 0 ] ; then
             echo "    [Pass $PASS]"
         fi
         if [ "$OSTYPE" == "cygwin" ] ; then
-            CF=`cygpath --windows "$CF"`
+            CF=$( cygpath --windows "$CF" )
         fi
-        echo -n "    $CF: "
 
-        "$CAPINFOS" "$CF" > /dev/null 2> $TMP_DIR/$ERR_FILE
+        "$CAPINFOS" "$CF" > /dev/null 2> "$TMP_DIR/$ERR_FILE"
         RETVAL=$?
-        if [ $RETVAL -eq 1 ] ; then
+        if [ $RETVAL -eq 1 ] || [ $RETVAL -eq 2 ] ; then
             echo "Not a valid capture file"
-            rm -f $TMP_DIR/$ERR_FILE
+            rm -f "$TMP_DIR/$ERR_FILE"
             continue
-        elif [ $RETVAL -ne 0 -a $DONE -ne 1 ] ; then
+        elif [ $RETVAL -ne 0 ] && ! $DONE ; then
             # Some other error
             ws_exit_error
         fi
 
-        if [ $VALGRIND -eq 1 -a `ls -s $CF | cut -d' ' -f1` -gt 8000 ]; then
-            echo "Too big for valgrind"
-            continue
+        # Choose a random subset of large captures.
+        KEEP=
+        PACKET_RANGE=
+        CF_PACKETS=$( "$CAPINFOS" -T -r -c "$CF" | cut -f2 )
+        if [[ CF_PACKETS -gt $MAX_FUZZ_PACKETS ]] ; then
+            START_PACKET=$(( CF_PACKETS - MAX_FUZZ_PACKETS ))
+            START_PACKET=$( shuf --input-range=1-$START_PACKET --head-count=1 )
+            END_PACKET=$(( START_PACKET + MAX_FUZZ_PACKETS ))
+            KEEP=-r
+            PACKET_RANGE="$START_PACKET-$END_PACKET"
+            printf "    Fuzzing packets %d-%d of %d\n" "$START_PACKET" "$END_PACKET" "$CF_PACKETS"
         fi
 
         DISSECTOR_BUG=0
         VG_ERR_CNT=0
 
-        "$EDITCAP" -E $ERR_PROB -o $CHANGE_OFFSET "$CF" $TMP_DIR/$TMP_FILE > /dev/null 2>&1
-        if [ $? -ne 0 ] ; then
-            "$EDITCAP" -E $ERR_PROB -o $CHANGE_OFFSET -T ether "$CF" $TMP_DIR/$TMP_FILE \
+        printf "    %s: " "$( basename "$CF" )"
+        # shellcheck disable=SC2086
+        "$EDITCAP" -E "$ERR_PROB" -o "$CHANGE_OFFSET" $KEEP "$CF" "$TMP_DIR/$TMP_FILE" $PACKET_RANGE > /dev/null 2>&1
+        RETVAL=$?
+        if [ $RETVAL -ne 0 ] ; then
+            # shellcheck disable=SC2086
+            "$EDITCAP" -E "$ERR_PROB" -o "$CHANGE_OFFSET" $KEEP -T ether "$CF" "$TMP_DIR/$TMP_FILE" $PACKET_RANGE \
                 > /dev/null 2>&1
-            if [ $? -ne 0 ] ; then
+            RETVAL=$?
+            if [ $RETVAL -ne 0 ] ; then
                 echo "Invalid format for editcap"
                 continue
             fi
         fi
 
+        FILE_START_SECONDS=$SECONDS
         RUNNER_PIDS=
         RUNNER_ERR_FILES=
         for ARGS in "${RUNNER_ARGS[@]}" ; do
-            if [ $DONE -eq 1 ]; then
+            if $DONE; then
                 break # We caught a signal
             fi
             echo -n "($ARGS) "
-            echo -e "Command and args: $RUNNER $ARGS\n" > $TMP_DIR/$ERR_FILE
 
             # Run in a child process with limits.
             (
@@ -213,7 +246,7 @@ while [ \( $PASS -lt $MAX_PASSES -o $MAX_PASSES -lt 1 \) -a $DONE -ne 1 ] ; do
                 # is not supported well on cygwin - it shows some warnings -
                 # and the features we use may not all be supported on some
                 # UN*X platforms.)
-                ulimit -S -t $MAX_CPU_TIME -s $MAX_STACK
+                ulimit -S -t "$MAX_CPU_TIME" -s "$MAX_STACK"
 
                 # Allow core files to be generated
                 ulimit -c unlimited
@@ -221,54 +254,64 @@ while [ \( $PASS -lt $MAX_PASSES -o $MAX_PASSES -lt 1 \) -a $DONE -ne 1 ] ; do
                 # Don't enable ulimit -v when using ASAN. See
                 # https://github.com/google/sanitizers/wiki/AddressSanitizer#ulimit--v
                 if [ $ASAN -eq 0 ]; then
-                    ulimit -S -v $MAX_VMEM
+                    ulimit -S -v "$MAX_VMEM"
                 fi
 
+                # shellcheck disable=SC2016
                 SUBSHELL_PID=$($SHELL -c 'echo $PPID')
 
-                "$RUNNER" $COMMON_ARGS $ARGS $TMP_DIR/$TMP_FILE \
-                    > /dev/null 2>> $TMP_DIR/$ERR_FILE.$SUBSHELL_PID
+                printf 'Command and args: %s %s %s\n' "$RUNNER" "$COMMON_ARGS" "$ARGS" > "$TMP_DIR/$ERR_FILE.$SUBSHELL_PID"
+                # shellcheck disable=SC2086
+                "$RUNNER" $COMMON_ARGS $ARGS "$TMP_DIR/$TMP_FILE" \
+                    > /dev/null 2>> "$TMP_DIR/$ERR_FILE.$SUBSHELL_PID"
             ) &
             RUNNER_PID=$!
             RUNNER_PIDS="$RUNNER_PIDS $RUNNER_PID"
             RUNNER_ERR_FILES="$RUNNER_ERR_FILES $TMP_DIR/$ERR_FILE.$RUNNER_PID"
+
+            if [ $SECONDS -ge $RUN_MAX_SECONDS ] ; then
+                printf "\nStopping after %d seconds.\n" $(( SECONDS - RUN_START_SECONDS ))
+                DONE=true
+            fi
         done
 
         for RUNNER_PID in $RUNNER_PIDS ; do
-            wait $RUNNER_PID
-            RETVAL=$?
-            mv $TMP_DIR/$ERR_FILE.$RUNNER_PID $TMP_DIR/$ERR_FILE
+            wait "$RUNNER_PID"
+            RUNNER_RETVAL=$?
+            mv "$TMP_DIR/$ERR_FILE.$RUNNER_PID" "$TMP_DIR/$ERR_FILE"
 
             # Uncomment the next two lines to enable dissector bug
             # checking.
             #grep -i "dissector bug" $TMP_DIR/$ERR_FILE \
                 #    > /dev/null 2>&1 && DISSECTOR_BUG=1
 
-            if [ $VALGRIND -eq 1 -a $DONE -ne 1 ]; then
-                VG_ERR_CNT=`grep "ERROR SUMMARY:" $TMP_DIR/$ERR_FILE | cut -f4 -d' '`
-                VG_DEF_LEAKED=`grep "definitely lost:" $TMP_DIR/$ERR_FILE | cut -f7 -d' ' | tr -d ,`
-                VG_IND_LEAKED=`grep "indirectly lost:" $TMP_DIR/$ERR_FILE | cut -f7 -d' ' | tr -d ,`
-                VG_TOTAL_LEAKED=`expr $VG_DEF_LEAKED + $VG_IND_LEAKED`
-                if [ $? -ne 0 ] ; then
+            if [ $VALGRIND -eq 1 ] && ! $DONE; then
+                VG_ERR_CNT=$( grep "ERROR SUMMARY:" "$TMP_DIR/$ERR_FILE" | cut -f4 -d' ' )
+                VG_DEF_LEAKED=$( grep "definitely lost:" "$TMP_DIR/$ERR_FILE" | cut -f7 -d' ' | tr -d , )
+                VG_IND_LEAKED=$( grep "indirectly lost:" "$TMP_DIR/$ERR_FILE" | cut -f7 -d' ' | tr -d , )
+                VG_TOTAL_LEAKED=$(( VG_DEF_LEAKED + VG_IND_LEAKED ))
+                if [ $RUNNER_RETVAL -ne 0 ] ; then
                     echo "General Valgrind failure."
                     VG_ERR_CNT=1
                 elif [ "$VG_TOTAL_LEAKED" -gt "$MAX_LEAK" ] ; then
                     echo "Definitely + indirectly ($VG_DEF_LEAKED + $VG_IND_LEAKED) exceeds max ($MAX_LEAK)."
+                    echo "Definitely + indirectly ($VG_DEF_LEAKED + $VG_IND_LEAKED) exceeds max ($MAX_LEAK)." >> "$TMP_DIR/$ERR_FILE"
                     VG_ERR_CNT=1
                 fi
-                if grep -q "Valgrind cannot continue" $TMP_DIR/$ERR_FILE; then
+                if grep -q "Valgrind cannot continue" "$TMP_DIR/$ERR_FILE" ; then
                     echo "Valgrind unable to continue."
                     VG_ERR_CNT=-1
                 fi
             fi
 
-            if [ $DONE -ne 1 -a \( $RETVAL -ne 0 -o $DISSECTOR_BUG -ne 0 -o $VG_ERR_CNT -ne 0 \) ] ; then
+            if ! $DONE && { [ $RUNNER_RETVAL -ne 0 ] || [ $DISSECTOR_BUG -ne 0 ] || [ "$VG_ERR_CNT" -ne 0 ]; } ; then
+                # shellcheck disable=SC2086
                 rm -f $RUNNER_ERR_FILES
                 ws_exit_error
             fi
         done
 
-        echo " OK"
-        rm -f $TMP_DIR/$TMP_FILE $TMP_DIR/$ERR_FILE
+        printf " OK (%s seconds)\\n" $(( SECONDS - FILE_START_SECONDS ))
+        rm -f "$TMP_DIR/$TMP_FILE" "$TMP_DIR/$ERR_FILE"
     done
 done

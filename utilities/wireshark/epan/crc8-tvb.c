@@ -14,19 +14,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
 */
 
@@ -39,7 +27,7 @@
 /**
  * Reversed CRC table
  *****************************************************************************/
-static const guint8 crctable[256] = { /*reversed, 8-bit, poly=0x07*/
+static const uint8_t crctable[256] = { /*reversed, 8-bit, poly=0x07*/
 	0x00, 0x91, 0xE3, 0x72, 0x07, 0x96, 0xE4, 0x75, 0x0E, 0x9F, 0xED, 0x7C, 0x09, 0x98, 0xEA, 0x7B,
 	0x1C, 0x8D, 0xFF, 0x6E, 0x1B, 0x8A, 0xF8, 0x69, 0x12, 0x83, 0xF1, 0x60, 0x15, 0x84, 0xF6, 0x67,
 	0x38, 0xA9, 0xDB, 0x4A, 0x3F, 0xAE, 0xDC, 0x4D, 0x36, 0xA7, 0xD5, 0x44, 0x31, 0xA0, 0xD2, 0x43,
@@ -59,13 +47,14 @@ static const guint8 crctable[256] = { /*reversed, 8-bit, poly=0x07*/
 };
 
 
-gboolean check_fcs(tvbuff_t *p, guint8 len, guint8 offset, guint8 received_fcs){
+bool check_fcs(tvbuff_t *p, uint8_t len, uint8_t offset, uint8_t received_fcs){
 	/*Init*/
-	guint8 FCS = 0xFF;
-	guint8 tmp = 0;
+	uint8_t FCS = 0xFF;
 	/*len is the number of bytes in the message, p points to message*/
 	while (len--) {
-		tmp = FCS^tvb_get_guint8(p,offset);
+		uint8_t tmp;
+
+		tmp = FCS^tvb_get_uint8(p,offset);
 		offset++;
 		FCS=crctable[tmp];
 	}
@@ -74,20 +63,21 @@ gboolean check_fcs(tvbuff_t *p, guint8 len, guint8 offset, guint8 received_fcs){
 	/*0xCF is the reversed order of 11110011.*/
 	if (FCS==0xCF) {
 		/*FCS is OK*/
-		return TRUE;
+		return true;
 	}
 	else {
 		/*FCS is not OK*/
-		return FALSE;
+		return false;
 	}
 }
 
-guint8 get_crc8_ieee8023_epon(tvbuff_t *p, guint8 len, guint8 offset) {
-	guint8 FCS = 0x00;
-	guint8 tmp = 0;
+uint8_t get_crc8_ieee8023_epon(tvbuff_t *p, uint8_t len, uint8_t offset) {
+	uint8_t FCS = 0x00;
 
-  while (len--) {
-		tmp = FCS^tvb_get_guint8(p,offset);
+	while (len--) {
+		uint8_t tmp;
+
+		tmp = FCS^tvb_get_uint8(p,offset);
 		offset++;
 		FCS=crctable[tmp];
 	}
@@ -96,7 +86,7 @@ guint8 get_crc8_ieee8023_epon(tvbuff_t *p, guint8 len, guint8 offset) {
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

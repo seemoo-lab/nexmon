@@ -3,7 +3,7 @@
 static void
 test_exact (void)
 {
-  char *exact_matches[] = {
+  const char *exact_matches[] = {
     "*",
     "a::*",
     "a::*,b::*",
@@ -29,8 +29,8 @@ static void
 test_equality (void)
 {
   struct {
-    char *expected;
-    char *actual;
+    const char *expected;
+    const char *actual;
   } equals[] = {
     /* star makes everything else go away */
     { "*", "*,*" },
@@ -70,9 +70,9 @@ static void
 test_subtract (void)
 {
   struct {
-    char *attributes;
-    char *subtract;
-    char *result;
+    const char *attributes;
+    const char *subtract;
+    const char *result;
   } subtractions[] = {
     /* * subtracts everything */
     { "*", "*", NULL },

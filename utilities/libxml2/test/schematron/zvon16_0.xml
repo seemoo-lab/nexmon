@@ -1,0 +1,5 @@
+<library>
+	<book title="Test Book" id="bk101">
+		<author>Test Author</author>
+	</book>
+</library>

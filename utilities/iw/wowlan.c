@@ -1,4 +1,3 @@
-#include <net/if.h>
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
@@ -160,8 +159,12 @@ static int wowlan_parse_tcp_file(struct nl_msg *msg, const char *fn)
 			tok->offset = atoi(offs);
 			memcpy(tok->token_stream, stream, stream_len);
 
-			NLA_PUT(msg, NL80211_WOWLAN_TCP_DATA_PAYLOAD_TOKEN,
-				sizeof(*tok) + stream_len, tok);
+			if (nla_put(msg, NL80211_WOWLAN_TCP_DATA_PAYLOAD_TOKEN,
+				sizeof(*tok) + stream_len, tok) < 0) {
+				free(stream);
+				free(tok);
+				goto nla_put_failure;
+			}
 			free(stream);
 			free(tok);
 		} else {
@@ -177,7 +180,8 @@ static int wowlan_parse_tcp_file(struct nl_msg *msg, const char *fn)
 	err = -ENOBUFS;
  close:
 	fclose(f);
-	nla_nest_end(msg, tcp);
+	if (tcp)
+		nla_nest_end(msg, tcp);
 	return err;
 }
 
@@ -197,7 +201,7 @@ static int wowlan_parse_net_detect(struct nl_msg *msg, int *argc, char ***argv)
 	return err;
 }
 
-static int handle_wowlan_enable(struct nl80211_state *state, struct nl_cb *cb,
+static int handle_wowlan_enable(struct nl80211_state *state,
 				struct nl_msg *msg, int argc, char **argv,
 				enum id_input id)
 {
@@ -334,7 +338,7 @@ COMMAND(wowlan, enable, "[any] [disconnect] [magic-packet] [gtk-rekey-failure] [
 	" iw phy0 wowlan enable net-detect interval 5000 delay 30 freqs 2412 2422 matches ssid foo ssid bar");
 
 
-static int handle_wowlan_disable(struct nl80211_state *state, struct nl_cb *cb,
+static int handle_wowlan_disable(struct nl80211_state *state,
 				 struct nl_msg *msg, int argc, char **argv,
 				 enum id_input id)
 {
@@ -388,9 +392,8 @@ static int print_wowlan_handler(struct nl_msg *msg, void *arg)
 		int rem_match;
 
 		printf(" * wake up on network detection\n");
-		nla_parse(nd, NUM_NL80211_ATTR,
-			  nla_data(trig[NL80211_WOWLAN_TRIG_NET_DETECT]),
-			  nla_len(trig[NL80211_WOWLAN_TRIG_NET_DETECT]), NULL);
+		nla_parse_nested(nd, NL80211_ATTR_MAX,
+				 trig[NL80211_WOWLAN_TRIG_NET_DETECT], NULL);
 
 		if (nd[NL80211_ATTR_SCHED_SCAN_INTERVAL])
 			printf("\tscan interval: %u msecs\n",
@@ -405,9 +408,8 @@ static int print_wowlan_handler(struct nl_msg *msg, void *arg)
 			nla_for_each_nested(match,
 					    nd[NL80211_ATTR_SCHED_SCAN_MATCH],
 					    rem_match) {
-				nla_parse(tb, NUM_NL80211_ATTR, nla_data(match),
-					  nla_len(match),
-					  NULL);
+				nla_parse_nested(tb, NL80211_ATTR_MAX, match,
+						 NULL);
 				printf("\t\tSSID: ");
 				print_ssid_escaped(
 					nla_len(tb[NL80211_SCHED_SCAN_MATCH_ATTR_SSID]),
@@ -470,12 +472,11 @@ static int print_wowlan_handler(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-static int handle_wowlan_show(struct nl80211_state *state, struct nl_cb *cb,
+static int handle_wowlan_show(struct nl80211_state *state,
 			      struct nl_msg *msg, int argc, char **argv,
 			      enum id_input id)
 {
-	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM,
-		  print_wowlan_handler, NULL);
+	register_handler(print_wowlan_handler, NULL);
 
 	return 0;
 }

@@ -1,0 +1,152 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: propagation of 'go-format'.
+
+cat <<\EOF > xg-go-10.go
+package main
+
+import (
+	"fmt"
+	"github.com/leonelquinteros/gotext"
+)
+
+func foo () string {
+	return "x"
+}
+
+func main () {
+	// Specify localedir, domain.
+	gotext.Configure(".", "fr_FR", "hello")
+
+	gotext.Get("Hello10")
+	(gotext.Get("Hello11"))
+	((gotext.Get("Hello12")))
+	gotext.Get(gotext.Get("Hello13"))
+	(gotext.Get(gotext.Get("Hello14")))
+	((gotext.Get(gotext.Get("Hello15"))))
+	gotext.Get((gotext.Get("Hello16")))
+	gotext.Get(((gotext.Get("Hello17"))))
+	gotext.Get(foo(), gotext.Get("Hello18"))
+
+	fmt.Sprintf(gotext.Get("Hello20"))
+	fmt.Sprintf((gotext.Get("Hello21")))
+	fmt.Sprintf(((gotext.Get("Hello22"))))
+	fmt.Sprintf(gotext.Get(gotext.Get("Hello23")))
+	fmt.Sprintf((gotext.Get(gotext.Get("Hello24"))))
+	fmt.Sprintf(((gotext.Get(gotext.Get("Hello25")))))
+	fmt.Sprintf(gotext.Get((gotext.Get("Hello26"))))
+	fmt.Sprintf(gotext.Get(((gotext.Get("Hello27")))))
+	fmt.Sprintf(gotext.Get(foo(), gotext.Get("Hello28")))
+
+	fmt.Println(gotext.Get("Hello30"))
+	fmt.Println((gotext.Get("Hello31")))
+	fmt.Println(((gotext.Get("Hello32"))))
+	fmt.Println(gotext.Get(gotext.Get("Hello33")))
+	fmt.Println((gotext.Get(gotext.Get("Hello34"))))
+	fmt.Println(((gotext.Get(gotext.Get("Hello35")))))
+	fmt.Println(gotext.Get((gotext.Get("Hello36"))))
+	fmt.Println(gotext.Get(((gotext.Get("Hello37")))))
+	fmt.Println(gotext.Get(foo(), gotext.Get("Hello38")))
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-go-10.tmp xg-go-10.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-10.tmp.po > xg-go-10.po || Exit 1
+
+cat <<\EOF > xg-go-10.ok
+msgid "Hello10"
+msgstr ""
+
+msgid "Hello11"
+msgstr ""
+
+msgid "Hello12"
+msgstr ""
+
+msgid "Hello13"
+msgstr ""
+
+msgid "Hello14"
+msgstr ""
+
+msgid "Hello15"
+msgstr ""
+
+msgid "Hello16"
+msgstr ""
+
+msgid "Hello17"
+msgstr ""
+
+msgid "Hello18"
+msgstr ""
+
+#, go-format
+msgid "Hello20"
+msgstr ""
+
+#, go-format
+msgid "Hello21"
+msgstr ""
+
+#, go-format
+msgid "Hello22"
+msgstr ""
+
+#, go-format
+msgid "Hello23"
+msgstr ""
+
+#, go-format
+msgid "Hello24"
+msgstr ""
+
+#, go-format
+msgid "Hello25"
+msgstr ""
+
+#, go-format
+msgid "Hello26"
+msgstr ""
+
+#, go-format
+msgid "Hello27"
+msgstr ""
+
+msgid "Hello28"
+msgstr ""
+
+msgid "Hello30"
+msgstr ""
+
+msgid "Hello31"
+msgstr ""
+
+msgid "Hello32"
+msgstr ""
+
+msgid "Hello33"
+msgstr ""
+
+msgid "Hello34"
+msgstr ""
+
+msgid "Hello35"
+msgstr ""
+
+msgid "Hello36"
+msgstr ""
+
+msgid "Hello37"
+msgstr ""
+
+msgid "Hello38"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-10.ok xg-go-10.po || Exit 1
+
+exit 0

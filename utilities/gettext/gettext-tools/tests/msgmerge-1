@@ -3,7 +3,7 @@
 
 # Test general operation and line wrapping.
 
-cat <<EOF > mm-test1.in1
+cat <<\EOF > mm-test1.in1
 # first
 #. this should be discarded
 msgid "1"
@@ -20,7 +20,7 @@ msgid "3"
 msgstr "3z"
 EOF
 
-cat <<EOF > mm-test1.in2
+cat <<\EOF > mm-test1.in2
 #. this is the first
 #: snark.c:345
 msgid "1"

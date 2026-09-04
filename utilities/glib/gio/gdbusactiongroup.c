@@ -2,10 +2,12 @@
  * Copyright © 2010 Codethink Limited
  * Copyright © 2011 Canonical Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,22 +29,13 @@
 #include "gactiongroup.h"
 
 /**
- * SECTION:gdbusactiongroup
- * @title: GDBusActionGroup
- * @short_description: A D-Bus GActionGroup implementation
- * @include: gio/gio.h
- * @see_also: [GActionGroup exporter][gio-GActionGroup-exporter]
- *
- * #GDBusActionGroup is an implementation of the #GActionGroup
- * interface that can be used as a proxy for an action group
- * that is exported over D-Bus with g_dbus_connection_export_action_group().
- */
-
-/**
  * GDBusActionGroup:
  *
- * #GDBusActionGroup is an opaque data structure and can only be accessed
- * using the following functions.
+ * `GDBusActionGroup` is an implementation of the [iface@Gio.ActionGroup]
+ * interface.
+ *
+ * `GDBusActionGroup` can be used as a proxy for an action group
+ * that is exported over D-Bus with [method@Gio.DBusConnection.export_action_group].
  */
 
 struct _GDBusActionGroup
@@ -71,8 +64,6 @@ struct _GDBusActionGroup
    */
   gboolean         strict;
 };
-
-typedef GObjectClass GDBusActionGroupClass;
 
 typedef struct
 {
@@ -303,7 +294,7 @@ g_dbus_action_group_list_actions (GActionGroup *g_group)
   if (group->actions != NULL)
     {
       GHashTableIter iter;
-      gint n, i = 0;
+      unsigned int n, i = 0;
       gpointer key;
 
       n = g_hash_table_size (group->actions);
@@ -312,7 +303,7 @@ g_dbus_action_group_list_actions (GActionGroup *g_group)
       g_hash_table_iter_init (&iter, group->actions);
       while (g_hash_table_iter_next (&iter, &key, NULL))
         keys[i++] = g_strdup (key);
-      g_assert_cmpint (i, ==, n);
+      g_assert (i == n);
       keys[n] = NULL;
     }
   else
@@ -383,7 +374,7 @@ g_dbus_action_group_activate_action_full (GRemoteActionGroup *remote,
   GDBusActionGroup *group = G_DBUS_ACTION_GROUP (remote);
   GVariantBuilder builder;
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("av"));
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("av"));
 
   if (parameter)
     g_variant_builder_add (&builder, "v", parameter);
@@ -430,7 +421,7 @@ g_dbus_action_group_finalize (GObject *object)
   GDBusActionGroup *group = G_DBUS_ACTION_GROUP (object);
 
   if (group->subscription_id)
-    g_dbus_connection_signal_unsubscribe (group->connection, group->subscription_id);
+    g_dbus_connection_signal_unsubscribe (group->connection, g_steal_handle_id (&group->subscription_id));
 
   if (group->actions)
     g_hash_table_unref (group->actions);
@@ -475,7 +466,8 @@ g_dbus_action_group_iface_init (GActionGroupInterface *iface)
 /**
  * g_dbus_action_group_get:
  * @connection: A #GDBusConnection
- * @bus_name: the bus name which exports the action group
+ * @bus_name: (nullable): the bus name which exports the action
+ *     group or %NULL if @connection is not a message bus connection
  * @object_path: the object path at which the action group is exported
  *
  * Obtains a #GDBusActionGroup for the action group which is exported at
@@ -502,6 +494,8 @@ g_dbus_action_group_get (GDBusConnection *connection,
                          const gchar     *object_path)
 {
   GDBusActionGroup *group;
+
+  g_return_val_if_fail (bus_name != NULL || g_dbus_connection_get_unique_name (connection) == NULL, NULL);
 
   group = g_object_new (G_TYPE_DBUS_ACTION_GROUP, NULL);
   group->connection = g_object_ref (connection);

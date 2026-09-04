@@ -84,18 +84,22 @@ dep_list* dl_create (char *path, ino_t inode)
 dep_list*
 dl_shallow_copy (const dep_list *dl)
 {
+    dep_list *head;
+    dep_list *cp;
+    const dep_list *it;
+
     if (dl == NULL) {
         return NULL;
     }
 
-    dep_list *head = calloc (1, sizeof (dep_list));
+    head = calloc (1, sizeof (dep_list));
     if (head == NULL) {
         perror_msg ("Failed to allocate head during shallow copy");
         return NULL;
     }
 
-    dep_list *cp = head;
-    const dep_list *it = dl;
+    cp = head;
+    it = dl;
 
     while (it != NULL) {
         cp->path = it->path;
@@ -162,15 +166,19 @@ dl_free (dep_list *dl)
 dep_list*
 dl_listing (const char *path)
 {
-    assert (path != NULL);
-
     dep_list *head = NULL;
     dep_list *prev = NULL;
-    DIR *dir = opendir (path);
+    DIR *dir;
+
+    assert (path != NULL);
+
+    dir = opendir (path);
     if (dir != NULL) {
         struct dirent *ent;
 
         while ((ent = readdir (dir)) != NULL) {
+            dep_list *iter;
+
             if (!strcmp (ent->d_name, ".") || !strcmp (ent->d_name, "..")) {
                 continue;
             }
@@ -183,7 +191,7 @@ dl_listing (const char *path)
                 }
             }
 
-            dep_list *iter = (prev == NULL) ? head : calloc (1, sizeof (dep_list));
+            iter = (prev == NULL) ? head : calloc (1, sizeof (dep_list));
             if (iter == NULL) {
                 perror_msg ("Failed to allocate a new element during listing");
                 goto error;
@@ -219,16 +227,19 @@ error:
  * Perform a diff on lists.
  *
  * This function performs something like a set intersection. The same items
- * will be removed from the both lists. Items are comapred by a filename.
+ * will be removed from the both lists. Items are compared by a filename.
  * 
  * @param[in,out] before A pointer to a pointer to a list. Will contain items
  *     which were not found in the 'after' list.
- * @param[in,out] after  A pointer to a pointer to a list. Will containt items
+ * @param[in,out] after  A pointer to a pointer to a list. Will contain items
  *     which were not found in the 'before' list.
  **/
 void
 dl_diff (dep_list **before, dep_list **after)
 {
+    dep_list *before_iter;
+    dep_list *before_prev;
+
     assert (before != NULL);
     assert (after != NULL);
 
@@ -236,12 +247,13 @@ dl_diff (dep_list **before, dep_list **after)
         return;
     }
 
-    dep_list *before_iter = *before;
-    dep_list *before_prev = NULL;
+    before_iter = *before;
+    before_prev = NULL;
 
     while (before_iter != NULL) {
         dep_list *after_iter = *after;
         dep_list *after_prev = NULL;
+        dep_list *oldptr;
 
         int matched = 0;
         while (after_iter != NULL) {
@@ -266,7 +278,7 @@ dl_diff (dep_list **before, dep_list **after)
             after_iter = after_iter->next;
         }
 
-        dep_list *oldptr = before_iter;
+        oldptr = before_iter;
         before_iter = before_iter->next;
         if (matched == 0) {
             before_prev = oldptr;
@@ -283,17 +295,21 @@ dl_diff (dep_list **before, dep_list **after)
  * from the both lists.
  **/
 #define EXCLUDE_SIMILAR(removed_list, added_list, match_expr, matched_code) \
+G_STMT_START {                                                          \
+    dep_list *removed_list##_iter;                                      \
+    dep_list *removed_list##_prev;                                      \
+    int productive = 0;                                                 \
+                                                                        \
     assert (removed_list != NULL);                                      \
     assert (added_list != NULL);                                        \
                                                                         \
-    dep_list *removed_list##_iter = *removed_list;                      \
-    dep_list *removed_list##_prev = NULL;                               \
-                                                                        \
-    int productive = 0;                                                 \
+    removed_list##_iter = *removed_list;                                \
+    removed_list##_prev = NULL;                                         \
                                                                         \
     while (removed_list##_iter != NULL) {                               \
         dep_list *added_list##_iter = *added_list;                      \
         dep_list *added_list##_prev = NULL;                             \
+        dep_list *oldptr;                                               \
                                                                         \
         int matched = 0;                                                \
         while (added_list##_iter != NULL) {                             \
@@ -317,7 +333,7 @@ dl_diff (dep_list **before, dep_list **after)
             }                                                           \
             added_list##_iter = added_list##_iter->next;                \
         }                                                               \
-        dep_list *oldptr = removed_list##_iter;                         \
+        oldptr = removed_list##_iter;                         \
         removed_list##_iter = removed_list##_iter->next;                \
         if (matched == 0) {                                             \
             removed_list##_prev = oldptr;                               \
@@ -325,7 +341,8 @@ dl_diff (dep_list **before, dep_list **after)
             free (oldptr);                                              \
         }                                                               \
     }                                                                   \
-    return (productive > 0);
+    return (productive > 0);                                            \
+} G_STMT_END
 
 
 #define cb_invoke(cbs, name, udata, ...) \
@@ -339,12 +356,12 @@ dl_diff (dep_list **before, dep_list **after)
  * Detect and notify about moves in the watched directory.
  *
  * A move is what happens when you rename a file in a directory, and
- * a new name is unique, i.e. you didnt overwrite any existing files
+ * a new name is unique, i.e. you didn't overwrite any existing files
  * with this one.
  *
  * @param[in,out] removed  A list of the removed files in the directory.
  * @param[in,out] added    A list of the added files of the directory.
- * @param[in]     cbs      A pointer to #traverse_cbs, an user-defined set of 
+ * @param[in]     cbs      A pointer to #traverse_cbs, a user-defined set of 
  *     traverse callbacks.
  * @param[in]     udata    A pointer to the user-defined data.
  * @return 0 if no files were renamed, >0 otherwise.
@@ -370,7 +387,7 @@ dl_detect_moves (dep_list           **removed,
 /**
  * Detect and notify about replacements in the watched directory.
  *
- * Consider you are watching a directory foo with the folloing files
+ * Consider you are watching a directory foo with the following files
  * insinde:
  *
  *    foo/bar
@@ -385,7 +402,7 @@ dl_detect_moves (dep_list           **removed,
  *
  * @param[in,out] removed  A list of the removed files in the directory.
  * @param[in,out] current  A list with the current contents of the directory.
- * @param[in]     cbs      A pointer to #traverse_cbs, an user-defined set of 
+ * @param[in]     cbs      A pointer to #traverse_cbs, a user-defined set of 
  *     traverse callbacks.
  * @param[in]     udata    A pointer to the user-defined data.
  * @return 0 if no files were renamed, >0 otherwise.
@@ -430,7 +447,7 @@ dl_detect_replacements (dep_list           **removed,
  *
  * @param[in,out] previous A list with the previous contents of the directory.
  * @param[in,out] current  A list with the current contents of the directory.
- * @param[in]     cbs      A pointer to #traverse_cbs, an user-defined set of 
+ * @param[in]     cbs      A pointer to #traverse_cbs, a user-defined set of 
  *     traverse callbacks.
  * @param[in]     udata    A pointer to the user-defined data.
  * @return 0 if no files were renamed, >0 otherwise.
@@ -488,14 +505,13 @@ dl_calculate (dep_list           *before,
               const traverse_cbs *cbs,
               void               *udata)
 {
-    assert (cbs != NULL);
-
     int need_update = 0;
-
     dep_list *was = dl_shallow_copy (before);
     dep_list *pre = dl_shallow_copy (before);
     dep_list *now = dl_shallow_copy (after);
     dep_list *lst = dl_shallow_copy (after);
+
+    assert (cbs != NULL);
 
     dl_diff (&was, &now); 
 
@@ -518,4 +534,3 @@ dl_calculate (dep_list           *before,
     dl_shallow_free (pre);
     dl_shallow_free (was);
 }
-

@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* This dissector processes a DVB Application Information Table (AIT) as
@@ -34,47 +22,49 @@
 void proto_register_dvb_ait(void);
 void proto_reg_handoff_dvb_ait(void);
 
-static int proto_dvb_ait = -1;
+static dissector_handle_t dvb_ait_handle;
 
-static gint ett_dvb_ait       = -1;
-static gint ett_dvb_ait_descr = -1;
-static gint ett_dvb_ait_app   = -1;
+static int proto_dvb_ait;
 
-static int hf_dvb_ait_test_app_flag = -1;
-static int hf_dvb_ait_app_type = -1;
-static int hf_dvb_ait_version_number = -1;
-static int hf_dvb_ait_current_next_indicator = -1;
-static int hf_dvb_ait_section_number = -1;
-static int hf_dvb_ait_last_section_number = -1;
-static int hf_dvb_ait_descr_loop_len = -1;
-static int hf_dvb_ait_descr_tag = -1;
-static int hf_dvb_ait_descr_len = -1;
-static int hf_dvb_ait_descr_data = -1;
-static int hf_dvb_ait_descr_app_prof_len = -1;
-static int hf_dvb_ait_descr_app_prof = -1;
-static int hf_dvb_ait_descr_app_ver = -1;
-static int hf_dvb_ait_descr_app_svc_bound = -1;
-static int hf_dvb_ait_descr_app_vis = -1;
-static int hf_dvb_ait_descr_app_prio = -1;
-static int hf_dvb_ait_descr_app_trpt_proto_label = -1;
-static int hf_dvb_ait_descr_app_name_lang = -1;
-static int hf_dvb_ait_descr_app_name_name = -1;
-static int hf_dvb_ait_descr_trpt_proto_id = -1;
-static int hf_dvb_ait_descr_trpt_proto_label = -1;
-static int hf_dvb_ait_descr_trpt_sel_remote = -1;
-static int hf_dvb_ait_descr_trpt_sel_onid = -1;
-static int hf_dvb_ait_descr_trpt_sel_tsid = -1;
-static int hf_dvb_ait_descr_trpt_sel_svcid = -1;
-static int hf_dvb_ait_descr_trpt_sel_comp = -1;
-static int hf_dvb_ait_descr_trpt_sel_url_base = -1;
-static int hf_dvb_ait_descr_trpt_sel_url_ext_cnt = -1;
-static int hf_dvb_ait_descr_trpt_sel_url_ext = -1;
-static int hf_dvb_ait_descr_trpt_sel_bytes = -1;
-static int hf_dvb_ait_descr_sal_init_path = -1;
-static int hf_dvb_ait_app_loop_len = -1;
-static int hf_dvb_ait_org_id = -1;
-static int hf_dvb_ait_app_id = -1;
-static int hf_dvb_ait_app_ctrl_code = -1;
+static int ett_dvb_ait;
+static int ett_dvb_ait_descr;
+static int ett_dvb_ait_app;
+
+static int hf_dvb_ait_test_app_flag;
+static int hf_dvb_ait_app_type;
+static int hf_dvb_ait_version_number;
+static int hf_dvb_ait_current_next_indicator;
+static int hf_dvb_ait_section_number;
+static int hf_dvb_ait_last_section_number;
+static int hf_dvb_ait_descr_loop_len;
+static int hf_dvb_ait_descr_tag;
+static int hf_dvb_ait_descr_len;
+static int hf_dvb_ait_descr_data;
+static int hf_dvb_ait_descr_app_prof_len;
+static int hf_dvb_ait_descr_app_prof;
+static int hf_dvb_ait_descr_app_ver;
+static int hf_dvb_ait_descr_app_svc_bound;
+static int hf_dvb_ait_descr_app_vis;
+static int hf_dvb_ait_descr_app_prio;
+static int hf_dvb_ait_descr_app_trpt_proto_label;
+static int hf_dvb_ait_descr_app_name_lang;
+static int hf_dvb_ait_descr_app_name_name;
+static int hf_dvb_ait_descr_trpt_proto_id;
+static int hf_dvb_ait_descr_trpt_proto_label;
+static int hf_dvb_ait_descr_trpt_sel_remote;
+static int hf_dvb_ait_descr_trpt_sel_onid;
+static int hf_dvb_ait_descr_trpt_sel_tsid;
+static int hf_dvb_ait_descr_trpt_sel_svcid;
+static int hf_dvb_ait_descr_trpt_sel_comp;
+static int hf_dvb_ait_descr_trpt_sel_url_base;
+static int hf_dvb_ait_descr_trpt_sel_url_ext_cnt;
+static int hf_dvb_ait_descr_trpt_sel_url_ext;
+static int hf_dvb_ait_descr_trpt_sel_bytes;
+static int hf_dvb_ait_descr_sal_init_path;
+static int hf_dvb_ait_app_loop_len;
+static int hf_dvb_ait_org_id;
+static int hf_dvb_ait_app_id;
+static int hf_dvb_ait_app_ctrl_code;
 
 static const value_string app_ctrl_code[] = {
     { 0x01,  "Autostart" },
@@ -139,17 +129,17 @@ static const value_string app_vis[] = {
 /* dissect the body of an application_descriptor
    offset points to the start of the body,
    i.e. to the first byte after the length field */
-static gint
-dissect_dvb_ait_app_desc_body(tvbuff_t *tvb, guint offset,
-        guint8 body_len, packet_info *pinfo _U_, proto_tree *tree)
+static int
+dissect_dvb_ait_app_desc_body(tvbuff_t *tvb, unsigned offset,
+        uint8_t body_len, packet_info *pinfo _U_, proto_tree *tree)
 {
-    guint   offset_start, offset_app_prof_start;
-    guint8  app_prof_len;
-    guint8  ver_maj, ver_min, ver_mic;
+    unsigned   offset_start, offset_app_prof_start;
+    uint8_t app_prof_len;
+    uint8_t ver_maj, ver_min, ver_mic;
 
     offset_start = offset;
 
-    app_prof_len = tvb_get_guint8(tvb, offset);
+    app_prof_len = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(tree, hf_dvb_ait_descr_app_prof_len,
             tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
@@ -158,9 +148,9 @@ dissect_dvb_ait_app_desc_body(tvbuff_t *tvb, guint offset,
         proto_tree_add_item(tree, hf_dvb_ait_descr_app_prof,
                 tvb, offset, 2, ENC_BIG_ENDIAN);
         offset += 2;
-        ver_maj = tvb_get_guint8(tvb, offset);
-        ver_min = tvb_get_guint8(tvb, offset+1);
-        ver_mic = tvb_get_guint8(tvb, offset+2);
+        ver_maj = tvb_get_uint8(tvb, offset);
+        ver_min = tvb_get_uint8(tvb, offset+1);
+        ver_mic = tvb_get_uint8(tvb, offset+2);
         proto_tree_add_uint_format(tree, hf_dvb_ait_descr_app_ver,
                 tvb, offset, 3, ver_maj<<16|ver_min<<8|ver_mic,
                 "Version %d.%d.%d", ver_maj, ver_min, ver_mic);
@@ -179,40 +169,40 @@ dissect_dvb_ait_app_desc_body(tvbuff_t *tvb, guint offset,
                 tvb, offset, 1, ENC_BIG_ENDIAN);
         offset++;
     }
-    return (gint)(offset-offset_start);
+    return (int)(offset-offset_start);
 }
 
 
-static gint
-dissect_dvb_ait_app_name_desc_body(tvbuff_t *tvb, guint offset,
-        guint8 body_len, packet_info *pinfo _U_, proto_tree *tree)
+static int
+dissect_dvb_ait_app_name_desc_body(tvbuff_t *tvb, unsigned offset,
+        uint8_t body_len, packet_info *pinfo _U_, proto_tree *tree)
 {
-    guint   offset_start;
-    guint8  len;
+    unsigned   offset_start;
+    uint8_t len;
 
     offset_start = offset;
     while (offset-offset_start < body_len) {
         proto_tree_add_item(tree, hf_dvb_ait_descr_app_name_lang,
-              tvb, offset, 3, ENC_ASCII|ENC_NA);
+              tvb, offset, 3, ENC_ASCII);
         offset += 3;
-        len = tvb_get_guint8(tvb, offset);
+        len = tvb_get_uint8(tvb, offset);
           /* FT_UINT_STRING with 1 leading len byte */
           proto_tree_add_item(tree, hf_dvb_ait_descr_app_name_name,
               tvb, offset, 1, ENC_ASCII|ENC_BIG_ENDIAN);
           offset += 1+len;
     }
 
-    return (gint)(offset-offset_start);
+    return (int)(offset-offset_start);
 }
 
 
-static gint
-dissect_dvb_ait_trpt_proto_desc_body(tvbuff_t *tvb, guint offset,
-        guint8 body_len, packet_info *pinfo _U_, proto_tree *tree)
+static int
+dissect_dvb_ait_trpt_proto_desc_body(tvbuff_t *tvb, unsigned offset,
+        uint8_t body_len, packet_info *pinfo _U_, proto_tree *tree)
 {
-    guint     offset_start;
-    guint16   proto_id;
-    gboolean  remote_connection;
+    unsigned  offset_start;
+    uint16_t  proto_id;
+    bool      remote_connection;
 
     offset_start = offset;
 
@@ -225,7 +215,7 @@ dissect_dvb_ait_trpt_proto_desc_body(tvbuff_t *tvb, guint offset,
     offset++;
     if (offset-offset_start < body_len) {
         if (proto_id == TRPT_OBJ_CAROUSEL) {
-            remote_connection = ((tvb_get_guint8(tvb, offset) & 0x80) == 0x80);
+            remote_connection = ((tvb_get_uint8(tvb, offset) & 0x80) == 0x80);
             proto_tree_add_item(tree, hf_dvb_ait_descr_trpt_sel_remote,
                 tvb, offset, 1, ENC_BIG_ENDIAN);
             offset++;
@@ -245,21 +235,21 @@ dissect_dvb_ait_trpt_proto_desc_body(tvbuff_t *tvb, guint offset,
             offset++;
         }
         else if (proto_id == TRPT_HTTP) {
-            guint8 url_base_len, url_ext_cnt, url_ext_len, i;
+            uint8_t url_base_len, url_ext_cnt, url_ext_len, i;
 
-            url_base_len = tvb_get_guint8(tvb, offset);
+            url_base_len = tvb_get_uint8(tvb, offset);
             /* FT_UINT_STRING with one leading length byte */
             proto_tree_add_item(tree, hf_dvb_ait_descr_trpt_sel_url_base,
                 tvb, offset, 1, ENC_ASCII|ENC_BIG_ENDIAN);
             offset += 1+url_base_len;
 
-            url_ext_cnt = tvb_get_guint8(tvb, offset);
+            url_ext_cnt = tvb_get_uint8(tvb, offset);
             proto_tree_add_item(tree, hf_dvb_ait_descr_trpt_sel_url_ext_cnt,
                 tvb, offset, 1, ENC_BIG_ENDIAN);
             offset++;
 
             for (i=0; i<url_ext_cnt; i++) {
-                url_ext_len = tvb_get_guint8(tvb, offset);
+                url_ext_len = tvb_get_uint8(tvb, offset);
                 proto_tree_add_item(tree, hf_dvb_ait_descr_trpt_sel_url_ext,
                         tvb, offset, 1, ENC_ASCII|ENC_BIG_ENDIAN);
                 offset += 1+url_ext_len;
@@ -272,21 +262,21 @@ dissect_dvb_ait_trpt_proto_desc_body(tvbuff_t *tvb, guint offset,
         }
     }
 
-    return (gint)(offset-offset_start);
+    return (int)(offset-offset_start);
 }
 
 
-static gint
-dissect_dvb_ait_descriptor(tvbuff_t *tvb, guint offset,
+static int
+dissect_dvb_ait_descriptor(tvbuff_t *tvb, unsigned offset,
         packet_info *pinfo, proto_tree *tree)
 {
-    gint        ret;
-    guint       offset_start;
-    guint8      tag, len;
+    int         ret;
+    unsigned    offset_start;
+    uint8_t     tag, len;
     proto_tree *descr_tree;
 
-    tag = tvb_get_guint8(tvb, offset);
-    len = tvb_get_guint8(tvb, offset+1);
+    tag = tvb_get_uint8(tvb, offset);
+    len = tvb_get_uint8(tvb, offset+1);
 
     /* if the descriptor is a special one that's defined in ETSI TS 102 809,
         we dissect it ourselves
@@ -327,7 +317,7 @@ dissect_dvb_ait_descriptor(tvbuff_t *tvb, guint offset,
             case AIT_DESCR_SIM_APP_LOC:
                 proto_tree_add_item(descr_tree,
                         hf_dvb_ait_descr_sal_init_path,
-                        tvb, offset, len, ENC_ASCII|ENC_NA);
+                        tvb, offset, len, ENC_ASCII);
                 offset += len;
                 break;
             default:
@@ -337,10 +327,10 @@ dissect_dvb_ait_descriptor(tvbuff_t *tvb, guint offset,
                 break;
         }
 
-        ret = (gint)(offset-offset_start);
+        ret = (int)(offset-offset_start);
     }
     else
-        ret = (gint)proto_mpeg_descriptor_dissect(tvb, offset, tree);
+        ret = (int)proto_mpeg_descriptor_dissect(tvb, pinfo, offset, tree);
 
     return ret;
 }
@@ -349,14 +339,14 @@ dissect_dvb_ait_descriptor(tvbuff_t *tvb, guint offset,
 static int
 dissect_dvb_ait(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    gint        offset=0;
+    int         offset=0;
     proto_item *ait_tree_ti = NULL, *app_tree_ti = NULL;
     proto_tree *ait_tree = NULL, *ait_app_tree = NULL;
-    gint        offset_loop_start, offset_inner_loop_start, offset_app_start;
-    guint16     descr_loop_len, app_loop_len;
-    gint        ret;
-    guint32     org_id;
-    guint16     app_id;
+    int         offset_loop_start, offset_inner_loop_start, offset_app_start;
+    uint16_t    descr_loop_len, app_loop_len;
+    int         ret;
+    uint32_t    org_id;
+    uint16_t    app_id;
 
     col_set_str(pinfo->cinfo, COL_INFO, "Application Information Table (AIT)");
 
@@ -446,7 +436,7 @@ dissect_dvb_ait(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data 
 void
 proto_register_dvb_ait(void)
 {
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_dvb_ait,
         &ett_dvb_ait_descr,
         &ett_dvb_ait_app
@@ -561,25 +551,23 @@ proto_register_dvb_ait(void)
                 FT_UINT8, BASE_HEX, VALS(app_ctrl_code), 0, NULL, HFILL } }
     };
 
-    proto_dvb_ait = proto_register_protocol(
-            "DVB Application Information Table", "DVB AIT", "dvb_ait");
+    proto_dvb_ait = proto_register_protocol("DVB Application Information Table", "DVB AIT", "dvb_ait");
 
     proto_register_field_array(proto_dvb_ait, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    dvb_ait_handle = register_dissector("dvb_ait", dissect_dvb_ait, proto_dvb_ait);
 }
 
 
 void
 proto_reg_handoff_dvb_ait(void)
 {
-    dissector_handle_t dvb_ait_handle;
-
-    dvb_ait_handle = create_dissector_handle(dissect_dvb_ait, proto_dvb_ait);
     dissector_add_uint("mpeg_sect.tid", DVB_AIT_TID, dvb_ait_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

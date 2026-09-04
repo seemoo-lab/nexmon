@@ -1,6 +1,5 @@
 /* Table of known plural form expressions.
-   Copyright (C) 2001-2006, 2009-2010, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2002.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "plural-table.h"
@@ -48,6 +47,7 @@ struct plural_table_entry plural_table[] =
     { "eo", "Esperanto",         "nplurals=2; plural=(n != 1);" },
     { "hu", "Hungarian",         "nplurals=2; plural=(n != 1);" },
     { "tr", "Turkish",           "nplurals=2; plural=(n != 1);" },
+    { "ca", "Catalan",           "nplurals=2; plural=(n != 1);" },
     { "pt_BR", "Brazilian",      "nplurals=2; plural=(n > 1);" },
     { "fr", "French",            "nplurals=2; plural=(n > 1);" },
     { "lv", "Latvian",           "nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : 2);" },

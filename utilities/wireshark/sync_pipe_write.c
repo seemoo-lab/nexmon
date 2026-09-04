@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include <config.h>
@@ -26,6 +14,8 @@
 #include <glib.h>
 
 #include <wsutil/file_util.h>
+#include <wsutil/ws_assert.h>
+#include <wsutil/pint.h>
 
 #include "sync_pipe.h"
 
@@ -34,36 +24,33 @@
 
 
 /* write a single message header to the recipient pipe */
-ssize_t
-pipe_write_header(int pipe_fd, char indicator, int length)
+static ssize_t
+sync_pipe_write_header(int pipe_fd, char indicator, unsigned int length)
 {
-    guchar header[1+3]; /* indicator + 3-byte len */
+    unsigned char header[1+3]; /* indicator + 3-byte len */
 
-
-    g_assert(length <= SP_MAX_MSG_LEN);
+    ws_assert(length <= SP_MAX_MSG_LEN);
 
     /* write header (indicator + 3-byte len) */
-    header[0] = indicator;
-    header[1] = (length >> 16) & 0xFF;
-    header[2] = (length >> 8) & 0xFF;
-    header[3] = (length >> 0) & 0xFF;
+    phtonu8(&header[0], indicator);
+    phtonu24(&header[1], length);
 
     /* write header */
     return ws_write(pipe_fd, header, sizeof header);
 }
 
 
-/* write a message to the recipient pipe in the standard format
-   (3 digit message length (excluding length and indicator field),
-   1 byte message indicator and the rest is the message).
+/* Write a message, with a string body, to the recipient pipe in the
+   standard format (1-byte message indicator, 3-byte message length
+   (excluding length and indicator field), and the string.
    If msg is NULL, the message has only a length and indicator. */
 void
-pipe_write_block(int pipe_fd, char indicator, const char *msg)
+sync_pipe_write_string_msg(int pipe_fd, char indicator, const char *msg)
 {
     ssize_t ret;
     int len;
 
-    /*g_warning("write %d enter", pipe_fd);*/
+    /*ws_warning("write %d enter", pipe_fd);*/
 
     if(msg != NULL) {
         len = (int) strlen(msg) + 1;    /* including the terminating '\0'! */
@@ -72,39 +59,75 @@ pipe_write_block(int pipe_fd, char indicator, const char *msg)
     }
 
     /* write header (indicator + 3-byte len) */
-    ret = pipe_write_header(pipe_fd, indicator, len);
+    ret = sync_pipe_write_header(pipe_fd, indicator, len);
     if(ret == -1) {
         return;
     }
 
     /* write value (if we have one) */
     if(len) {
-        /*g_warning("write %d indicator: %c value len: %u msg: %s", pipe_fd, indicator, len, msg);*/
+        /*ws_warning("write %d indicator: %c value len: %u msg: %s", pipe_fd, indicator, len, msg);*/
         ret = ws_write(pipe_fd, msg, len);
         if(ret == -1) {
             return;
         }
     } else {
-        /*g_warning("write %d indicator: %c no value", pipe_fd, indicator);*/
+        /*ws_warning("write %d indicator: %c no value", pipe_fd, indicator);*/
     }
 
-    /*g_warning("write %d leave", pipe_fd);*/
+    /*ws_warning("write %d leave", pipe_fd);*/
 }
 
 
-void
-sync_pipe_errmsg_to_parent(int pipe_fd, const char *error_msg,
-                           const char *secondary_error_msg)
-{
+/* Size of buffer to hold decimal representation of
+   signed/unsigned 64-bit int */
+#define SP_DECISIZE 20
 
-    /* first write a "master header" with the length of the two messages plus their "slave headers" */
-    pipe_write_header(pipe_fd, SP_ERROR_MSG, (int) (strlen(error_msg) + 1 + 4 + strlen(secondary_error_msg) + 1 + 4));
-    pipe_write_block(pipe_fd, SP_ERROR_MSG, error_msg);
-    pipe_write_block(pipe_fd, SP_ERROR_MSG, secondary_error_msg);
+/* Write a message, with an unsigned integer body, to the recipient
+   pipe in the standard format (1-byte message indicator, 3-byte
+   message length (excluding length and indicator field), and the
+   unsigned integer, as a string. */
+void
+sync_pipe_write_uint_msg(int pipe_fd, char indicator, unsigned int num)
+{
+    char count_str[SP_DECISIZE+1+1];
+
+    snprintf(count_str, sizeof(count_str), "%u", num);
+    sync_pipe_write_string_msg(pipe_fd, indicator, count_str);
+}
+
+/* Write a message, with an integer body, to the recipient pipe in the
+   standard format (1-byte message indicator, 3-byte message length
+   (excluding length and indicator field), and the unsigned integer,
+   as a string. */
+void
+sync_pipe_write_int_msg(int pipe_fd, char indicator, int num)
+{
+    char count_str[SP_DECISIZE+1+1];
+
+    snprintf(count_str, sizeof(count_str), "%d", num);
+    sync_pipe_write_string_msg(pipe_fd, indicator, count_str);
+}
+
+/* Write a message, with a primary and secondary error message as the body,
+   to the recipient pipe.  The header is an SP_ERROR_MSG header, with the
+   length being the length of two string submessages; the submessages
+   are the body of the message, with each submessage being a message
+   with an indicator of SP_ERROR_MSG, the first message having the
+   primary error message string and the second message having the secondary
+   error message string. */
+void
+sync_pipe_write_errmsgs_to_parent(int pipe_fd, const char *error_msg,
+                                  const char *secondary_error_msg)
+{
+    sync_pipe_write_header(pipe_fd, SP_ERROR_MSG,
+                           (unsigned int) (strlen(error_msg) + 1 + 4 + strlen(secondary_error_msg) + 1 + 4));
+    sync_pipe_write_string_msg(pipe_fd, SP_ERROR_MSG, error_msg);
+    sync_pipe_write_string_msg(pipe_fd, SP_ERROR_MSG, secondary_error_msg);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

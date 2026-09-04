@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,37 +18,40 @@
 #include <epan/expert.h>
 #include <epan/exceptions.h>
 #include <epan/show_exception.h>
-#include <epan/wmem/wmem.h>
+#include <wsutil/array.h>
 
-#include <epan/dissectors/packet-pcap_pktdata.h>
+#include "packet-pcap_pktdata.h"
 
-static int proto_pcap = -1;
+static int proto_pcap;
 
 static dissector_handle_t pcap_pktdata_handle;
 
-static int hf_pcap_header = -1;
-static int hf_pcap_header_magic_number = -1;
-static int hf_pcap_header_version_major = -1;
-static int hf_pcap_header_version_minor = -1;
-static int hf_pcap_header_this_zone = -1;
-static int hf_pcap_header_sigfigs = -1;
-static int hf_pcap_header_snapshot_length = -1;
-static int hf_pcap_header_link_type = -1;
-static int hf_pcap_packet = -1;
-static int hf_pcap_packet_timestamp = -1;
-static int hf_pcap_packet_timestamp_sec = -1;
-static int hf_pcap_packet_timestamp_usec = -1;
-static int hf_pcap_packet_included_length = -1;
-static int hf_pcap_packet_origin_length = -1;
-static int hf_pcap_packet_data = -1;
+static int hf_pcap_header;
+static int hf_pcap_header_magic_number;
+static int hf_pcap_header_version_major;
+static int hf_pcap_header_version_minor;
+static int hf_pcap_header_this_zone;
+static int hf_pcap_header_sigfigs;
+static int hf_pcap_header_snapshot_length;
+static int hf_pcap_header_link_type;
+static int hf_pcap_packet;
+static int hf_pcap_packet_timestamp;
+static int hf_pcap_packet_timestamp_sec;
+static int hf_pcap_packet_timestamp_usec;
+static int hf_pcap_packet_captured_length;
+static int hf_pcap_packet_original_length;
+static int hf_pcap_packet_data;
 
-static gint ett_pcap = -1;
-static gint ett_pcap_header = -1;
-static gint ett_pcap_packet = -1;
-static gint ett_pcap_packet_data = -1;
-static gint ett_pcap_timestamp = -1;
+static expert_field ei_pcap_capt_larger_than_orig;
+static expert_field ei_pcap_capt_larger_than_snap;
 
-static gboolean pref_dissect_next_layer = FALSE;
+static int ett_pcap;
+static int ett_pcap_header;
+static int ett_pcap_packet;
+static int ett_pcap_packet_data;
+static int ett_pcap_timestamp;
+
+static bool pref_dissect_next_layer;
 
 void proto_register_file_pcap(void);
 void proto_reg_handoff_file_pcap(void);
@@ -70,37 +61,39 @@ void proto_reg_handoff_file_pcap(void);
 static int
 dissect_pcap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    static const guint8 pcap_big_endian_magic[MAGIC_NUMBER_SIZE] = {
+    static const uint8_t pcap_big_endian_magic[MAGIC_NUMBER_SIZE] = {
         0xa1, 0xb2, 0xc3, 0xd4
     };
-    static const guint8 pcap_little_endian_magic[MAGIC_NUMBER_SIZE] = {
+    static const uint8_t pcap_little_endian_magic[MAGIC_NUMBER_SIZE] = {
         0xd4, 0xc3, 0xb2, 0xa1
     };
-    static const guint8 pcap_nsec_big_endian_magic[MAGIC_NUMBER_SIZE] = {
-        0xa1, 0xb2, 0x3c, 0xd4
+    static const uint8_t pcap_nsec_big_endian_magic[MAGIC_NUMBER_SIZE] = {
+        0xa1, 0xb2, 0x3c, 0x4d
     };
-    static const guint8 pcap_nsec_little_endian_magic[MAGIC_NUMBER_SIZE] = {
-        0xd4, 0x3c, 0xb2, 0xa1
+    static const uint8_t pcap_nsec_little_endian_magic[MAGIC_NUMBER_SIZE] = {
+        0x4d, 0x3c, 0xb2, 0xa1
     };
-    volatile gint    offset = 0;
+    volatile int     offset = 0;
     proto_tree      *main_tree;
     proto_item      *main_item;
     proto_tree      *header_tree;
     proto_item      *header_item;
     proto_item      *magic_number_item;
     proto_tree      *packet_tree;
-    proto_item      *packet_item;
+    proto_item      *volatile packet_item;
     proto_tree      *timestamp_tree;
     proto_item      *timestamp_item;
     proto_tree      *packet_data_tree;
     proto_item      *packet_data_item;
-    volatile guint32 encoding;
-    volatile guint   timestamp_scale_factor;
+    proto_item      *capt_len_item;
+    volatile uint32_t encoding;
+    volatile unsigned   timestamp_scale_factor;
     const char      *magic;
-    guint32          origin_length;
-    guint32          length;
-    guint32          link_type;
-    volatile guint32 frame_number = 1;
+    uint32_t         snap_length;
+    uint32_t         captured_length;
+    uint32_t         original_length;
+    uint32_t         link_type;
+    volatile uint32_t frame_number = 1;
     nstime_t         timestamp;
 
     if (tvb_memeql(tvb, 0, pcap_big_endian_magic, MAGIC_NUMBER_SIZE) == 0) {
@@ -149,20 +142,20 @@ dissect_pcap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
     proto_tree_add_item(header_tree, hf_pcap_header_sigfigs, tvb, offset, 4, encoding);
     offset += 4;
 
-    proto_tree_add_item(header_tree, hf_pcap_header_snapshot_length, tvb, offset, 4, encoding);
+    proto_tree_add_item_ret_uint(header_tree, hf_pcap_header_snapshot_length, tvb, offset, 4, encoding, &snap_length);
     offset += 4;
 
     proto_tree_add_item(header_tree, hf_pcap_header_link_type, tvb, offset, 4, encoding);
-    link_type = tvb_get_guint32(tvb, offset, encoding);
+    link_type = tvb_get_uint32(tvb, offset, encoding);
     offset += 4;
 
-    while (offset < (gint) tvb_reported_length(tvb)) {
+    while (offset < (int) tvb_reported_length(tvb)) {
         packet_item = proto_tree_add_item(main_tree, hf_pcap_packet, tvb, offset, 4 * 4, ENC_NA);
         packet_tree = proto_item_add_subtree(packet_item, ett_pcap_packet);
         proto_item_append_text(packet_item, " %u", frame_number);
 
-        timestamp.secs = tvb_get_guint32(tvb, offset, encoding);
-        timestamp.nsecs = tvb_get_guint32(tvb, offset + 4, encoding) * timestamp_scale_factor;
+        timestamp.secs = tvb_get_uint32(tvb, offset, encoding);
+        timestamp.nsecs = tvb_get_uint32(tvb, offset + 4, encoding) * timestamp_scale_factor;
 
         timestamp_item = proto_tree_add_time(packet_tree, hf_pcap_packet_timestamp, tvb, offset, 8, &timestamp);
         timestamp_tree = proto_item_add_subtree(timestamp_item, ett_pcap_timestamp);
@@ -173,13 +166,25 @@ dissect_pcap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
         proto_tree_add_item(timestamp_tree, hf_pcap_packet_timestamp_usec, tvb, offset, 4, encoding);
         offset += 4;
 
-        proto_tree_add_item_ret_uint(packet_tree, hf_pcap_packet_included_length, tvb, offset, 4, encoding, &length);
+        capt_len_item = proto_tree_add_item_ret_uint(packet_tree, hf_pcap_packet_captured_length, tvb, offset, 4, encoding, &captured_length);
         offset += 4;
 
-        proto_tree_add_item_ret_uint(packet_tree, hf_pcap_packet_origin_length, tvb, offset, 4, encoding, &origin_length);
+        proto_tree_add_item_ret_uint(packet_tree, hf_pcap_packet_original_length, tvb, offset, 4, encoding, &original_length);
         offset += 4;
 
-        packet_data_item = proto_tree_add_item(packet_tree, hf_pcap_packet_data, tvb, offset, length, ENC_NA);
+        if (captured_length > snap_length)
+        {
+            expert_add_info(pinfo, capt_len_item,
+                    &ei_pcap_capt_larger_than_snap);
+        }
+
+        if (captured_length > original_length) {
+            expert_add_info(pinfo, capt_len_item,
+                    &ei_pcap_capt_larger_than_orig);
+            break;
+        }
+
+        packet_data_item = proto_tree_add_item(packet_tree, hf_pcap_packet_data, tvb, offset, captured_length, ENC_NA);
         packet_data_tree = proto_item_add_subtree(packet_data_item, ett_pcap_packet_data);
 
         pinfo->num = frame_number;
@@ -187,32 +192,33 @@ dissect_pcap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 
         if (pref_dissect_next_layer) {
             TRY {
-                call_dissector_with_data(pcap_pktdata_handle, tvb_new_subset(tvb, offset, length, origin_length), pinfo, packet_data_tree, &link_type);
+                call_dissector_with_data(pcap_pktdata_handle, tvb_new_subset_length_caplen(tvb, offset, captured_length, original_length), pinfo, packet_data_tree, &link_type);
             }
             CATCH_BOUNDS_ERRORS {
                 show_exception(tvb, pinfo, packet_data_tree, EXCEPT_CODE, GET_MESSAGE);
             }
             ENDTRY;
         }
-        offset += length;
+        offset += captured_length;
 
-        proto_item_set_len(packet_item, 4 * 4 + length);
+        proto_item_set_len(packet_item, 4 * 4 + captured_length);
         frame_number += 1;
     }
 
     return offset;
 }
 
-static gboolean
-dissect_pcap_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool
+dissect_pcap_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    return dissect_pcap(tvb, pinfo, tree, NULL) > 0;
+    return dissect_pcap(tvb, pinfo, tree, data) > 0;
 }
 
 void
 proto_register_file_pcap(void)
 {
     module_t         *module;
+    expert_module_t  *expert_pcap;
 
     static hf_register_info hf[] = {
         { &hf_pcap_header,
@@ -275,13 +281,13 @@ proto_register_file_pcap(void)
             FT_UINT32, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
-        { &hf_pcap_packet_included_length,
-            { "Included Length",                           "pcap.packet.included_length",
+        { &hf_pcap_packet_captured_length,
+            { "Captured Packet Length",                    "pcap.packet.captured_length",
             FT_UINT32, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
-        { &hf_pcap_packet_origin_length,
-            { "Origin Length",                             "pcap.packet.origin_length",
+        { &hf_pcap_packet_original_length,
+            { "Original Packet Length",                    "pcap.packet.original_length",
             FT_UINT32, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
@@ -292,7 +298,18 @@ proto_register_file_pcap(void)
         },
     };
 
-    static gint *ett[] = {
+    static ei_register_info ei[] = {
+        { &ei_pcap_capt_larger_than_orig,
+            { "pcap.capt_len_larger_than_orig_len", PI_MALFORMED, PI_ERROR,
+                "captured length is larger than original length",
+                EXPFILL }},
+        { &ei_pcap_capt_larger_than_snap,
+            { "pcap.capt_len_larger_than_snap_len", PI_PROTOCOL, PI_WARN,
+                "captured length is larger than snapshot length",
+                EXPFILL }}
+    };
+
+    static int *ett[] = {
         &ett_pcap,
         &ett_pcap_header,
         &ett_pcap_packet,
@@ -303,6 +320,8 @@ proto_register_file_pcap(void)
     proto_pcap = proto_register_protocol("PCAP File Format", "File-PCAP", "file-pcap");
     proto_register_field_array(proto_pcap, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+    expert_pcap = expert_register_protocol(proto_pcap);
+    expert_register_field_array(expert_pcap, ei, array_length(ei));
 
     register_dissector("file-pcap", dissect_pcap, proto_pcap);
 
@@ -325,7 +344,7 @@ proto_reg_handoff_file_pcap(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -3,10 +3,12 @@
  * Copyright © 2008 Christian Kellner, Samuel Cormier-Iijima
  * Copyright © 2009 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * See the included COPYING file for more information.
  *
@@ -50,7 +52,7 @@ struct _GSocketOutputStream
   GSocketOutputStreamPrivate *priv;
 };
 
-GType                   _g_socket_output_stream_get_type                 (void) G_GNUC_CONST;
+GType                   _g_socket_output_stream_get_type                 (void);
 GSocketOutputStream *   _g_socket_output_stream_new                     (GSocket *socket);
 
 G_END_DECLS

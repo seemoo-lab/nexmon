@@ -27,7 +27,7 @@ int main (string[] args) {
     }
 
     var s4 = _("""Extract this
-    ""\a
+    ""\t\a
     fourth string""");
 
     var s5 = _("Extract this \u2464th string");
@@ -74,7 +74,13 @@ int main (string[] args) {
        multiline C style comment */
     var s7 = _("Extract this //sixth string");
 
-    var s8 = _(@"This is a template string, which cannot be extracted!");
+    // a
+    var s8 = /* b */
+             _("This" + " whole " // c
+               + "string" + // d
+               """ should""" + " be " + """extracted""");
+
+    var s9 = _(@"This is a template string, which cannot be extracted!");
 
     /* /= shouldn't start a regex literal */
     var i5 = 1000;
@@ -93,9 +99,7 @@ EOF
 
 ${XGETTEXT} --add-comments --no-location -o xg-vala-1.tmp xg-vala-1.vala 2>xg-vala-1.err
 test $? = 0 || { cat xg-vala-1.err; Exit 1; }
-# Don't simplify this to "grep ... < xg-vala-1.tmp", otherwise OpenBSD 4.0 grep
-# only outputs "Binary file (standard input) matches".
-cat xg-vala-1.tmp | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > xg-vala-1.pot
+func_filter_POT_Creation_Date xg-vala-1.tmp xg-vala-1.pot
 
 cat <<\EOF > xg-vala-1.ok
 # SOME DESCRIPTIVE TITLE.
@@ -128,7 +132,7 @@ msgstr ""
 
 msgid ""
 "Extract this\n"
-"    \"\"\\a\n"
+"    \"\"\\t\\a\n"
 "    fourth string"
 msgstr ""
 
@@ -138,6 +142,11 @@ msgstr ""
 #. This is a
 #. multiline C style comment
 msgid "Extract this //sixth string"
+msgstr ""
+
+#. a
+#. b
+msgid "This whole string should be extracted"
 msgstr ""
 EOF
 
@@ -149,9 +158,7 @@ test $result = 0 || exit $result
 # Test --extract-all option.
 ${XGETTEXT} --extract-all --add-comments --no-location -o xg-vala-1.tmp xg-vala-1.vala 2>xg-vala-1.err
 test $? = 0 || { cat xg-vala-1.err; Exit 1; }
-# Don't simplify this to "grep ... < xg-vala-1.tmp", otherwise OpenBSD 4.0 grep
-# only outputs "Binary file (standard input) matches".
-cat xg-vala-1.tmp | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > xg-vala-1.pot
+func_filter_POT_Creation_Date xg-vala-1.tmp xg-vala-1.pot
 
 cat <<\EOF > xg-vala-1.all.ok
 # SOME DESCRIPTIVE TITLE.
@@ -193,7 +200,7 @@ msgstr ""
 
 msgid ""
 "Extract this\n"
-"    \"\"\\a\n"
+"    \"\"\\t\\a\n"
 "    fourth string"
 msgstr ""
 
@@ -203,6 +210,11 @@ msgstr ""
 #. This is a
 #. multiline C style comment
 msgid "Extract this //sixth string"
+msgstr ""
+
+#. a
+#. b
+msgid "This whole string should be extracted"
 msgstr ""
 EOF
 

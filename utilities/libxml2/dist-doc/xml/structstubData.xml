@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="structstubData" kind="struct" language="C++" prot="public">
+    <compoundname>stubData</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structstubData_1adb0fb06e74502fcd815b276d712e01a5" prot="public" static="no" mutable="no">
+        <type><ref refid="hash_8h_1a6927639bfa78af7adb85a63b2eac148b" kindref="member">xmlHashScanner</ref></type>
+        <definition>xmlHashScanner scan</definition>
+        <argsstring></argsstring>
+        <name>scan</name>
+        <qualifiedname>stubData::scan</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="939" column="20" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="939" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structstubData_1a735984d41155bc1032e09bece8f8d66d" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* data</definition>
+        <argsstring></argsstring>
+        <name>data</name>
+        <qualifiedname>stubData::data</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="940" column="10" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="940" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/hash.c" line="938" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="938" bodyend="941"/>
+    <listofallmembers>
+      <member refid="structstubData_1a735984d41155bc1032e09bece8f8d66d" prot="public" virt="non-virtual"><scope>stubData</scope><name>data</name></member>
+      <member refid="structstubData_1adb0fb06e74502fcd815b276d712e01a5" prot="public" virt="non-virtual"><scope>stubData</scope><name>scan</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

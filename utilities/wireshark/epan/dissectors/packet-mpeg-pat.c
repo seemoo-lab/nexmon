@@ -6,44 +6,36 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-mpeg-sect.h"
 
 void proto_register_mpeg_pat(void);
 void proto_reg_handoff_mpeg_pat(void);
 
-static int proto_mpeg_pat = -1;
-static int hf_mpeg_pat_transport_stream_id = -1;
-static int hf_mpeg_pat_reserved = -1;
-static int hf_mpeg_pat_version_number = -1;
-static int hf_mpeg_pat_current_next_indicator = -1;
-static int hf_mpeg_pat_section_number = -1;
-static int hf_mpeg_pat_last_section_number = -1;
+static dissector_handle_t mpeg_pat_handle;
 
-static int hf_mpeg_pat_program_number = -1;
-static int hf_mpeg_pat_program_reserved = -1;
-static int hf_mpeg_pat_program_map_pid = -1;
+static int proto_mpeg_pat;
+static int hf_mpeg_pat_transport_stream_id;
+static int hf_mpeg_pat_reserved;
+static int hf_mpeg_pat_version_number;
+static int hf_mpeg_pat_current_next_indicator;
+static int hf_mpeg_pat_section_number;
+static int hf_mpeg_pat_last_section_number;
+
+static int hf_mpeg_pat_program_number;
+static int hf_mpeg_pat_program_reserved;
+static int hf_mpeg_pat_program_map_pid;
 
 
-static gint ett_mpeg_pat = -1;
-static gint ett_mpeg_pat_prog = -1;
+static int ett_mpeg_pat;
+static int ett_mpeg_pat_prog;
 
 #define MPEG_PAT_RESERVED_MASK                    0xC0
 #define MPEG_PAT_VERSION_NUMBER_MASK              0x3E
@@ -52,17 +44,11 @@ static gint ett_mpeg_pat_prog = -1;
 #define MPEG_PAT_PROGRAM_RESERVED_MASK          0xE000
 #define MPEG_PAT_PROGRAM_MAP_PID_MASK           0x1FFF
 
-static const true_false_string mpeg_pat_cur_next_vals = {
-
-    "Currently applicable", "Not yet applicable"
-
-};
-
 static int
 dissect_mpeg_pat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    guint offset = 0, length = 0;
-    guint16 prog_num, prog_pid;
+    unsigned offset = 0, length = 0;
+    uint16_t prog_num, prog_pid;
 
     proto_item *ti;
     proto_tree *mpeg_pat_tree;
@@ -91,10 +77,6 @@ dissect_mpeg_pat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 
     proto_tree_add_item(mpeg_pat_tree, hf_mpeg_pat_last_section_number, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
-
-    if (offset >= length)
-        return offset;
-
 
     /* Parse all the programs */
     while (offset < length) {
@@ -143,7 +125,7 @@ proto_register_mpeg_pat(void)
 
         { &hf_mpeg_pat_current_next_indicator, {
             "Current/Next Indicator", "mpeg_pat.cur_next_ind",
-            FT_BOOLEAN, 8, TFS(&mpeg_pat_cur_next_vals), MPEG_PAT_CURRENT_NEXT_INDICATOR_MASK, NULL, HFILL
+            FT_BOOLEAN, 8, TFS(&tfs_current_not_yet), MPEG_PAT_CURRENT_NEXT_INDICATOR_MASK, NULL, HFILL
         } },
 
         { &hf_mpeg_pat_section_number, {
@@ -173,7 +155,7 @@ proto_register_mpeg_pat(void)
 
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_mpeg_pat,
         &ett_mpeg_pat_prog
     };
@@ -183,19 +165,17 @@ proto_register_mpeg_pat(void)
     proto_register_field_array(proto_mpeg_pat, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
+    mpeg_pat_handle = register_dissector("mpeg_pat", dissect_mpeg_pat, proto_mpeg_pat);
 }
 
 
 void proto_reg_handoff_mpeg_pat(void)
 {
-    dissector_handle_t mpeg_pat_handle;
-
-    mpeg_pat_handle = create_dissector_handle(dissect_mpeg_pat, proto_mpeg_pat);
     dissector_add_uint("mpeg_sect.tid", MPEG_PAT_TID, mpeg_pat_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

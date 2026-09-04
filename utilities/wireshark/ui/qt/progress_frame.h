@@ -1,28 +1,14 @@
-/* progress_frame.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PROGRESS_FRAME_H
 #define PROGRESS_FRAME_H
-
-#include <glib.h>
 
 #include <QFrame>
 
@@ -30,7 +16,7 @@ namespace Ui {
 class ProgressFrame;
 }
 
-#if defined(Q_OS_WIN) && QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0)) && defined(Q_OS_WIN)
 #include <QWinTaskbarButton>
 #include <QWinTaskbarProgress>
 #endif
@@ -62,22 +48,20 @@ public:
     void captureFileClosing();
 
 public slots:
-    struct progdlg *showProgress(bool animate, bool terminate_is_stop, gboolean *stop_flag, int value = 0);
-    struct progdlg *showBusy(bool animate, bool terminate_is_stop, gboolean *stop_flag);
+    struct progdlg *showProgress(const QString &title, bool animate, bool terminate_is_stop, bool *stop_flag, int value = 0);
+    struct progdlg *showBusy(bool animate, bool terminate_is_stop, bool *stop_flag);
     void setValue(int value);
     void hide();
 
 signals:
-    void showRequested(bool animate, bool terminate_is_stop, gboolean *stop_flag);
+    void showRequested(bool animate, bool terminate_is_stop, bool *stop_flag);
     void valueChanged(int value);
     void maximumValueChanged(int value);
     void setHidden();
     void stopLoading();
 
 protected:
-#if !defined(Q_OS_MAC) || QT_VERSION > QT_VERSION_CHECK(5, 0, 0)
     void timerEvent(QTimerEvent *event);
-#endif
 
 private:
     Ui::ProgressFrame *ui;
@@ -86,12 +70,10 @@ private:
     QString message_;
     QString status_;
     bool terminate_is_stop_;
-    gboolean *stop_flag_;
-#if !defined(Q_OS_MAC) || QT_VERSION > QT_VERSION_CHECK(5, 0, 0)
+    bool *stop_flag_;
     int show_timer_;
     QGraphicsOpacityEffect *effect_;
     QPropertyAnimation *animation_;
-#endif
 #ifdef QWINTASKBARPROGRESS_H
     bool update_taskbar_;
     QWinTaskbarProgress *taskbar_progress_;
@@ -100,21 +82,8 @@ private:
 private slots:
     void on_stopButton_clicked();
 
-    void show(bool animate, bool terminate_is_stop, gboolean *stop_flag);
+    void show(bool animate, bool terminate_is_stop, bool *stop_flag);
     void setMaximumValue(int value);
 };
 
 #endif // PROGRESS_FRAME_H
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

@@ -16,7 +16,7 @@ ${AUTOCONF} >/dev/null 2>/dev/null \
 
 rm -f configure.ac
 
-gettext_datadir=$top_builddir/misc
+gettext_datadir=$top_builddir/autotools
 export gettext_datadir
 
 # Check for not copying libintl source.
@@ -46,9 +46,9 @@ test -f m4/po.m4 || Exit 1
 test -f po/Makefile.in.in || Exit 1
 test -f build-aux/config.rpath || Exit 1
 
-rm -fr m4 po
+rm -fr m4 po ABOUT-NLS build-aux/config.rpath
 
-# Check for copying libintl source.
+# Check for copying libintl source of the current version.
 cat <<EOF >configure.ac
 AC_INIT
 AC_CONFIG_SRCDIR(hello.c)
@@ -56,6 +56,25 @@ AC_CONFIG_SRCDIR(hello.c)
 AC_PROG_CC
 AM_GNU_GETTEXT
 AM_GNU_GETTEXT_VERSION([$ARCHIVE_VERSION])
+
+AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([po/Makefile.in])
+AC_OUTPUT
+EOF
+
+$gettext_datadir/autopoint >/dev/null 2>autopoint.err
+test $? = 1 || { cat autopoint.err; Exit 1; }
+
+rm -fr intl m4 po ABOUT-NLS config.rpath
+
+# Check for copying libintl source of an older version.
+cat <<\EOF >configure.ac
+AC_INIT
+AC_CONFIG_SRCDIR(hello.c)
+
+AC_PROG_CC
+AM_GNU_GETTEXT
+AM_GNU_GETTEXT_VERSION([0.19])
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([po/Makefile.in])
@@ -73,7 +92,7 @@ test -f intl/VERSION || Exit 1
 test -f m4/po.m4 || Exit 1
 test -f po/Makefile.in.in || Exit 1
 
-rm -fr intl m4 po
+rm -fr intl m4 po ABOUT-NLS config.rpath
 
 # Check for custom macro directory.
 cat <<EOF >configure.ac
@@ -106,7 +125,7 @@ test -d po || Exit 1
 test -f gettext-m4/po.m4 || Exit 1
 test -f po/Makefile.in.in || Exit 1
 
-rm -fr gettext-m4 po
+rm -fr gettext-m4 po ABOUT-NLS config.rpath
 
 # Check for multiple arguments to AM_GNU_GETTEXT
 # <https://savannah.gnu.org/bugs/?40082>
@@ -133,7 +152,7 @@ test -d po || Exit 1
 test -f m4/po.m4 || Exit 1
 test -f po/Makefile.in.in || Exit 1
 
-rm -fr m4 po
+rm -fr m4 po ABOUT-NLS config.rpath
 
 # Check for certain built-in macros are not in effect when tracing:
 # <https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=764580>
@@ -165,10 +184,10 @@ test -d po || Exit 1
 test -f m4/po.m4 || Exit 1
 test -f po/Makefile.in.in || Exit 1
 
-rm -fr m4 po
+rm -fr m4 po ABOUT-NLS config.rpath
 
 # Check for AM_GNU_GETTEXT_REQUIRE_VERSION.
-cat <<EOF >configure.ac
+cat <<\EOF >configure.ac
 AC_INIT
 AC_CONFIG_SRCDIR(hello.c)
 
@@ -192,8 +211,8 @@ test -f m4/po.m4 || Exit 1
 test -f po/Makefile.in.in || Exit 1
 
 # Check for the case where both AM_GNU_GETTEXT_REQUIRE_VERSION and
-# AM_GNU_GETTEXT_VERSION are used.
-cat <<EOF >configure.ac
+# AM_GNU_GETTEXT_VERSION are used. Once with libintl source.
+cat <<\EOF >configure.ac
 AC_INIT
 AC_CONFIG_SRCDIR(hello.c)
 
@@ -211,18 +230,35 @@ AC_OUTPUT
 EOF
 
 $gettext_datadir/autopoint >autopoint.out 2>autopoint.err
+test $? = 1 || { cat autopoint.err; Exit 1; }
+
+# Check for the case where both AM_GNU_GETTEXT_REQUIRE_VERSION and
+# AM_GNU_GETTEXT_VERSION are used. Once without libintl source.
+cat <<\EOF >configure.ac
+AC_INIT
+AC_CONFIG_SRCDIR(hello.c)
+
+AC_PROG_CC
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_REQUIRE_VERSION([0.19])
+# This shall be ignored when AM_GNU_GETTEXT_REQUIRE_VERSION is defined
+AM_GNU_GETTEXT_VERSION([0.19])
+
+AC_CONFIG_MACRO_DIR([m4])
+
+AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([po/Makefile.in])
+AC_OUTPUT
+EOF
+
+$gettext_datadir/autopoint >autopoint.out 2>autopoint.err
 test $? = 0 || { cat autopoint.err; Exit 1; }
 
 grep 'using AM_GNU_GETTEXT_REQUIRE_VERSION' autopoint.out 2>&1 >/dev/null || Exit 1
 
-test -d intl || Exit 1
+test ! -d intl || Exit 1
 test -d m4 || Exit 1
 test -d po || Exit 1
 
-cat >autopoint.ver <<EOF
-GNU gettext library from gettext-$ARCHIVE_VERSION
-EOF
-: ${DIFF=diff}
-${DIFF} autopoint.ver intl/VERSION || Exit 1
 test -f m4/po.m4 || Exit 1
 test -f po/Makefile.in.in || Exit 1

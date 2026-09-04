@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*  StarTeam in a nutshell
@@ -36,35 +24,35 @@
 void proto_register_starteam(void);
 void proto_reg_handoff_starteam(void);
 
-static int proto_starteam = -1;
+static int proto_starteam;
 
-static int hf_starteam_mdh_session_tag = -1;
-static int hf_starteam_mdh_ctimestamp = -1;
-static int hf_starteam_mdh_flags = -1;
-static int hf_starteam_mdh_keyid = -1;
-static int hf_starteam_mdh_reserved = -1;
-static int hf_starteam_ph_signature = -1;
-static int hf_starteam_ph_packet_size = -1;
-static int hf_starteam_ph_data_size = -1;
-static int hf_starteam_ph_data_flags = -1;
-static int hf_starteam_id_revision_level = -1;
-static int hf_starteam_id_client = -1;
-static int hf_starteam_id_connect = -1;
-static int hf_starteam_id_component = -1;
-static int hf_starteam_id_command = -1;
-static int hf_starteam_id_command_time = -1;
-static int hf_starteam_id_command_userid = -1;
-static int hf_starteam_data_data = -1;
+static int hf_starteam_mdh_session_tag;
+static int hf_starteam_mdh_ctimestamp;
+static int hf_starteam_mdh_flags;
+static int hf_starteam_mdh_keyid;
+static int hf_starteam_mdh_reserved;
+static int hf_starteam_ph_signature;
+static int hf_starteam_ph_packet_size;
+static int hf_starteam_ph_data_size;
+static int hf_starteam_ph_data_flags;
+static int hf_starteam_id_revision_level;
+static int hf_starteam_id_client;
+static int hf_starteam_id_connect;
+static int hf_starteam_id_component;
+static int hf_starteam_id_command;
+static int hf_starteam_id_command_time;
+static int hf_starteam_id_command_userid;
+static int hf_starteam_data_data;
 
-static gint ett_starteam = -1;
-static gint ett_starteam_mdh = -1;
-static gint ett_starteam_ph = -1;
-static gint ett_starteam_id = -1;
-static gint ett_starteam_data = -1;
+static int ett_starteam;
+static int ett_starteam_mdh;
+static int ett_starteam_ph;
+static int ett_starteam_id;
+static int ett_starteam_data;
 
 static dissector_handle_t starteam_tcp_handle;
 
-static gboolean starteam_desegment = TRUE;
+static bool starteam_desegment = true;
 
 #define STARTEAM_MAGIC    0x416C616E /* "Alan" */
 
@@ -89,7 +77,7 @@ static gboolean starteam_desegment = TRUE;
 #define STARTEAM_PROJ_CMD_MAIL_LIST_ITEMS                      1018
 #define STARTEAM_PROJ_CMD_LIST_ANY_NEWITEMS                    1020
 #define STARTEAM_PROJ_CMD_LIST_GET_NEWITEMS                    1021
-#define STARTEAM_SRVR_CMD_RELEASE_CLIENT                       1021 /* XXX: ?? */
+/* #define STARTEAM_SRVR_CMD_RELEASE_CLIENT                       1021 XXX: ?? */
 #define STARTEAM_SRVR_CMD_UPDATE_SERVER_INFO                   1022
 #define STARTEAM_SRVR_CMD_GET_USAGE_DATA                       1023
 #define STARTEAM_SRVR_CMD_GET_LICENSE_INFO                     1024
@@ -116,10 +104,10 @@ static gboolean starteam_desegment = TRUE;
 #define STARTEAM_PROJ_CMD_MODIFY_FIELD_CLASS_INFO              1162
 #define STARTEAM_PROJ_CMD_ADD_CUSTOM_FIELD_CLASS_INFO_EX       1163
 #define STARTEAM_PROJ_CMD_GET_FOLDER_ITEMS                     2001
-#define STARTEAM_SRVR_CMD_GET_USERS_AND_GROUPS                 2001 /* XXX: ?? */
+/* #define STARTEAM_SRVR_CMD_GET_USERS_AND_GROUPS                 2001 XXX: ?? */
 #define STARTEAM_PROJ_CMD_REFRESH_ITEMS                        2002
 #define STARTEAM_PROJ_CMD_GET_ITEM                             2003
-#define STARTEAM_SRVR_CMD_GET_EMAIL_USERS                      2003 /* XXX: ?? */
+/* #define STARTEAM_SRVR_CMD_GET_EMAIL_USERS                      2003  XXX: ?? */
 #define STARTEAM_PROJ_CMD_UPDATE_ITEM                          2004
 #define STARTEAM_PROJ_CMD_DELETE_ITEM                          2005
 #define STARTEAM_PROJ_CMD_SET_ITEM_LOCK                        2006
@@ -130,11 +118,11 @@ static gboolean starteam_desegment = TRUE;
 #define STARTEAM_SRVR_CMD_SET_USER_PASSWORD                    2013
 #define STARTEAM_PROJ_CMD_MOVE_ITEMS                           2020
 #define STARTEAM_PROJ_CMD_MOVE_TREE_ITEMS                      2021
-#define STARTEAM_SRVR_CMD_GET_GROUP_INFO                       2021 /* XXX: ?? */
+/* #define STARTEAM_SRVR_CMD_GET_GROUP_INFO                       2021 XXX: ?? */
 #define STARTEAM_PROJ_CMD_SHARE_ITEMS                          2022
-#define STARTEAM_SRVR_CMD_ADD_EDIT_GROUP_INFO                  2022 /* XXX: ?? */
+/* #define STARTEAM_SRVR_CMD_ADD_EDIT_GROUP_INFO                  2022 XXX: ?? */
 #define STARTEAM_PROJ_CMD_SHARE_TREE_ITEMS                     2023
-#define STARTEAM_SRVR_CMD_DROP_GROUP                           2023 /* XXX: ?? */
+/* #define STARTEAM_SRVR_CMD_DROP_GROUP                           2023 XXX: ?? */
 #define STARTEAM_SRVR_CMD_GET_USER_INFO                        2024
 #define STARTEAM_SRVR_CMD_ADD_EDIT_USER_INFO                   2025
 #define STARTEAM_SRVR_CMD_DROP_USER                            2026
@@ -142,9 +130,9 @@ static gboolean starteam_desegment = TRUE;
 #define STARTEAM_SRVR_CMD_USER_ADMIN_OPERATION                 2028
 #define STARTEAM_SRVR_CMD_ACCESS_CHECK                         2029
 #define STARTEAM_PROJ_CMD_GET_COMMON_ANCESTOR_ITEM             2030
-#define STARTEAM_SRVR_CMD_ACCESS_TEST                          2030 /* XXX: ?? */
+/* #define STARTEAM_SRVR_CMD_ACCESS_TEST                          2030 XXX: ?? */
 #define STARTEAM_PROJ_CMD_UPDATE_REVISION_COMMENT              2031
-#define STARTEAM_SRVR_CMD_GET_MAIN_LOG_LAST64K                 2031 /* XXX: ?? */
+/* #define STARTEAM_SRVR_CMD_GET_MAIN_LOG_LAST64K                 2031  XXX: ?? */
 #define STARTEAM_SRVR_CMD_GET_SERVER_CONFIG                    2032
 #define STARTEAM_SRVR_CMD_SET_SERVER_CONFIG                    2033
 #define STARTEAM_SRVR_CMD_GET_SERVER_ACL                       2034
@@ -293,7 +281,7 @@ static const value_string starteam_opcode_vals[] = {
   { STARTEAM_PROJ_CMD_MAIL_LIST_ITEMS,                      "PROJ_CMD_MAIL_LIST_ITEMS" },
   { STARTEAM_PROJ_CMD_LIST_ANY_NEWITEMS,                    "PROJ_CMD_LIST_ANY_NEWITEMS" },
   { STARTEAM_PROJ_CMD_LIST_GET_NEWITEMS,                    "PROJ_CMD_LIST_GET_NEWITEMS" },
-  { STARTEAM_SRVR_CMD_RELEASE_CLIENT,                       "SRVR_CMD_RELEASE_CLIENT" },
+/*  { STARTEAM_SRVR_CMD_RELEASE_CLIENT,                       "SRVR_CMD_RELEASE_CLIENT" }, */
   { STARTEAM_SRVR_CMD_UPDATE_SERVER_INFO,                   "SRVR_CMD_UPDATE_SERVER_INFO" },
   { STARTEAM_SRVR_CMD_GET_USAGE_DATA,                       "SRVR_CMD_GET_USAGE_DATA" },
   { STARTEAM_SRVR_CMD_GET_LICENSE_INFO,                     "SRVR_CMD_GET_LICENSE_INFO" },
@@ -320,10 +308,10 @@ static const value_string starteam_opcode_vals[] = {
   { STARTEAM_PROJ_CMD_MODIFY_FIELD_CLASS_INFO,              "PROJ_CMD_MODIFY_FIELD_CLASS_INFO" },
   { STARTEAM_PROJ_CMD_ADD_CUSTOM_FIELD_CLASS_INFO_EX,       "PROJ_CMD_ADD_CUSTOM_FIELD_CLASS_INFO_EX" },
   { STARTEAM_PROJ_CMD_GET_FOLDER_ITEMS,                     "PROJ_CMD_GET_FOLDER_ITEMS" },
-  { STARTEAM_SRVR_CMD_GET_USERS_AND_GROUPS,                 "SRVR_CMD_GET_USERS_AND_GROUPS" },
+/*  { STARTEAM_SRVR_CMD_GET_USERS_AND_GROUPS,                 "SRVR_CMD_GET_USERS_AND_GROUPS" }, */
   { STARTEAM_PROJ_CMD_REFRESH_ITEMS,                        "PROJ_CMD_REFRESH_ITEMS" },
   { STARTEAM_PROJ_CMD_GET_ITEM,                             "PROJ_CMD_GET_ITEM" },
-  { STARTEAM_SRVR_CMD_GET_EMAIL_USERS,                      "SRVR_CMD_GET_EMAIL_USERS" },
+/*  { STARTEAM_SRVR_CMD_GET_EMAIL_USERS,                      "SRVR_CMD_GET_EMAIL_USERS" }, */
   { STARTEAM_PROJ_CMD_UPDATE_ITEM,                          "PROJ_CMD_UPDATE_ITEM" },
   { STARTEAM_PROJ_CMD_DELETE_ITEM,                          "PROJ_CMD_DELETE_ITEM" },
   { STARTEAM_PROJ_CMD_SET_ITEM_LOCK,                        "PROJ_CMD_SET_ITEM_LOCK" },
@@ -334,11 +322,11 @@ static const value_string starteam_opcode_vals[] = {
   { STARTEAM_SRVR_CMD_SET_USER_PASSWORD,                    "SRVR_CMD_SET_USER_PASSWORD" },
   { STARTEAM_PROJ_CMD_MOVE_ITEMS,                           "PROJ_CMD_MOVE_ITEMS" },
   { STARTEAM_PROJ_CMD_MOVE_TREE_ITEMS,                      "PROJ_CMD_MOVE_TREE_ITEMS" },
-  { STARTEAM_SRVR_CMD_GET_GROUP_INFO,                       "SRVR_CMD_GET_GROUP_INFO" },
+/*  { STARTEAM_SRVR_CMD_GET_GROUP_INFO,                       "SRVR_CMD_GET_GROUP_INFO" }, */
   { STARTEAM_PROJ_CMD_SHARE_ITEMS,                          "PROJ_CMD_SHARE_ITEMS" },
-  { STARTEAM_SRVR_CMD_ADD_EDIT_GROUP_INFO,                  "SRVR_CMD_ADD_EDIT_GROUP_INFO" },
+/*  { STARTEAM_SRVR_CMD_ADD_EDIT_GROUP_INFO,                  "SRVR_CMD_ADD_EDIT_GROUP_INFO" }, */
   { STARTEAM_PROJ_CMD_SHARE_TREE_ITEMS,                     "PROJ_CMD_SHARE_TREE_ITEMS" },
-  { STARTEAM_SRVR_CMD_DROP_GROUP,                           "SRVR_CMD_DROP_GROUP" },
+/*  { STARTEAM_SRVR_CMD_DROP_GROUP,                           "SRVR_CMD_DROP_GROUP" }, */
   { STARTEAM_SRVR_CMD_GET_USER_INFO,                        "SRVR_CMD_GET_USER_INFO" },
   { STARTEAM_SRVR_CMD_ADD_EDIT_USER_INFO,                   "SRVR_CMD_ADD_EDIT_USER_INFO" },
   { STARTEAM_SRVR_CMD_DROP_USER,                            "SRVR_CMD_DROP_USER" },
@@ -346,9 +334,9 @@ static const value_string starteam_opcode_vals[] = {
   { STARTEAM_SRVR_CMD_USER_ADMIN_OPERATION,                 "SRVR_CMD_USER_ADMIN_OPERATION" },
   { STARTEAM_SRVR_CMD_ACCESS_CHECK,                         "SRVR_CMD_ACCESS_CHECK" },
   { STARTEAM_PROJ_CMD_GET_COMMON_ANCESTOR_ITEM,             "PROJ_CMD_GET_COMMON_ANCESTOR_ITEM" },
-  { STARTEAM_SRVR_CMD_ACCESS_TEST,                          "SRVR_CMD_ACCESS_TEST" },
+/*  { STARTEAM_SRVR_CMD_ACCESS_TEST,                          "SRVR_CMD_ACCESS_TEST" }, */
   { STARTEAM_PROJ_CMD_UPDATE_REVISION_COMMENT,              "PROJ_CMD_UPDATE_REVISION_COMMENT" },
-  { STARTEAM_SRVR_CMD_GET_MAIN_LOG_LAST64K,                 "SRVR_CMD_GET_MAIN_LOG_LAST64K" },
+/*  { STARTEAM_SRVR_CMD_GET_MAIN_LOG_LAST64K,                 "SRVR_CMD_GET_MAIN_LOG_LAST64K" }, */
   { STARTEAM_SRVR_CMD_GET_SERVER_CONFIG,                    "SRVR_CMD_GET_SERVER_CONFIG" },
   { STARTEAM_SRVR_CMD_SET_SERVER_CONFIG,                    "SRVR_CMD_SET_SERVER_CONFIG" },
   { STARTEAM_SRVR_CMD_GET_SERVER_ACL,                       "SRVR_CMD_GET_SERVER_ACL" },
@@ -474,7 +462,7 @@ static const value_string starteam_opcode_vals[] = {
 
 static value_string_ext starteam_opcode_vals_ext = VALUE_STRING_EXT_INIT(starteam_opcode_vals);
 
-static gint iPreviousFrameNumber = -1;
+static int iPreviousFrameNumber = -1;
 
 static void
 starteam_init(void)
@@ -485,12 +473,12 @@ starteam_init(void)
 static int
 dissect_starteam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  gint offset = 0;
+  int offset = 0;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "StarTeam");
 
   /* This is a trick to know whether this is the first PDU in this packet or not */
-  if(iPreviousFrameNumber != (gint) pinfo->num){
+  if(iPreviousFrameNumber != (int) pinfo->num){
     col_clear(pinfo->cinfo, COL_INFO);
   } else {
     col_append_str(pinfo->cinfo, COL_INFO, " | ");
@@ -498,21 +486,21 @@ dissect_starteam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 
   iPreviousFrameNumber = pinfo->num;
   if(tvb_captured_length(tvb) >= 16){
-    guint32 iCommand = 0;
-    gboolean bRequest = FALSE;
+    uint32_t iCommand = 0;
+    bool bRequest = false;
     if(tvb_get_ntohl(tvb, offset + 0) == STARTEAM_MAGIC){
       /* This packet is a response */
-      bRequest = FALSE;
+      bRequest = false;
       col_append_fstr(pinfo->cinfo, COL_INFO, "Reply: %d bytes", tvb_reported_length(tvb));
 
     } else if(tvb_captured_length_remaining(tvb, offset) >= 28 && tvb_get_ntohl(tvb, offset + 20) == STARTEAM_MAGIC){
       /* This packet is a request */
-      bRequest = TRUE;
+      bRequest = true;
       if(tvb_captured_length_remaining(tvb, offset) >= 66){
         iCommand = tvb_get_letohl(tvb, offset + 62);
       }
       col_append_str(pinfo->cinfo, COL_INFO,
-                       val_to_str_ext(iCommand, &starteam_opcode_vals_ext, "Unknown (0x%02x)"));
+                       val_to_str_ext(pinfo->pool, iCommand, &starteam_opcode_vals_ext, "Unknown (0x%02x)"));
     }
 
     if(tree){
@@ -522,7 +510,7 @@ dissect_starteam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 
       ti = proto_tree_add_item(tree, proto_starteam, tvb, offset, -1, ENC_NA);
       if (bRequest) proto_item_append_text(ti, " (%s)",
-                                           val_to_str_ext(iCommand, &starteam_opcode_vals_ext, "Unknown (0x%02x)"));
+                                           val_to_str_ext(pinfo->pool, iCommand, &starteam_opcode_vals_ext, "Unknown (0x%02x)"));
       starteamroot_tree = proto_item_add_subtree(ti, ett_starteam);
 
       if(bRequest){
@@ -541,7 +529,7 @@ dissect_starteam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
       if(tvb_reported_length_remaining(tvb, offset) >= 16){
         starteam_tree = proto_tree_add_subtree(starteamroot_tree, tvb, offset, 16, ett_starteam_ph, NULL, STARTEAM_TEXT_PH);
 
-        proto_tree_add_item(starteam_tree, hf_starteam_ph_signature,   tvb, offset + 0,  4,  ENC_ASCII|ENC_NA);
+        proto_tree_add_item(starteam_tree, hf_starteam_ph_signature,   tvb, offset + 0,  4,  ENC_ASCII);
         proto_tree_add_item(starteam_tree, hf_starteam_ph_packet_size, tvb, offset + 4,  4,  ENC_LITTLE_ENDIAN);
         proto_tree_add_item(starteam_tree, hf_starteam_ph_data_size,   tvb, offset + 8,  4,  ENC_LITTLE_ENDIAN);
         proto_tree_add_item(starteam_tree, hf_starteam_ph_data_flags,  tvb, offset + 12, 4, ENC_LITTLE_ENDIAN);
@@ -552,7 +540,7 @@ dissect_starteam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
             starteam_tree = proto_tree_add_subtree(starteamroot_tree, tvb, offset, 38, ett_starteam_id, NULL, STARTEAM_TEXT_ID);
 
             proto_tree_add_item(starteam_tree, hf_starteam_id_revision_level, tvb, offset + 0,  2, ENC_LITTLE_ENDIAN);
-            proto_tree_add_item(starteam_tree, hf_starteam_id_client,         tvb, offset + 2, 16, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(starteam_tree, hf_starteam_id_client,         tvb, offset + 2, 16, ENC_ASCII);
             proto_tree_add_item(starteam_tree, hf_starteam_id_connect,        tvb, offset + 18, 4, ENC_LITTLE_ENDIAN);
             proto_tree_add_item(starteam_tree, hf_starteam_id_component,      tvb, offset + 22, 4, ENC_LITTLE_ENDIAN);
             proto_tree_add_item(starteam_tree, hf_starteam_id_command,        tvb, offset + 26, 4, ENC_LITTLE_ENDIAN);
@@ -563,7 +551,7 @@ dissect_starteam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
         }
         if(tvb_reported_length_remaining(tvb, offset) > 0){
           starteam_tree = proto_tree_add_subtree(starteamroot_tree, tvb, offset, -1, ett_starteam_data, NULL, STARTEAM_TEXT_DATA);
-          proto_tree_add_item(starteam_tree, hf_starteam_data_data, tvb, offset, -1, ENC_ASCII|ENC_NA);
+          proto_tree_add_item(starteam_tree, hf_starteam_data_data, tvb, offset, -1, ENC_ASCII);
         }
       }
     }
@@ -572,11 +560,11 @@ dissect_starteam(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
   return tvb_captured_length(tvb);
 }
 
-static guint
+static unsigned
 get_starteam_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
                      int offset, void *data _U_)
 {
-  guint32 iPDULength = 0;
+  uint32_t iPDULength = 0;
   if(tvb_captured_length_remaining(tvb, offset) >= 8 && tvb_get_ntohl(tvb, offset + 0) == STARTEAM_MAGIC){
     /* Response */
     iPDULength = tvb_get_letohl(tvb, offset + 4) + 16;
@@ -595,19 +583,19 @@ dissect_starteam_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 }
 
 
-static gboolean
+static bool
 dissect_starteam_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
   if(tvb_captured_length(tvb) >= 32){
-    gint iOffsetLengths = -1;
+    int iOffsetLengths = -1;
     if(tvb_get_ntohl(tvb, 0) == STARTEAM_MAGIC){
       iOffsetLengths = 4;
     } else if(tvb_get_ntohl(tvb, 20) == STARTEAM_MAGIC){
       iOffsetLengths = 24;
     }
     if(iOffsetLengths != -1){
-      guint32 iLengthPacket;
-      guint32 iLengthData;
+      uint32_t iLengthPacket;
+      uint32_t iLengthData;
       iLengthPacket = tvb_get_letohl(tvb, iOffsetLengths);
       iLengthData   = tvb_get_letohl(tvb, iOffsetLengths + 4);
 
@@ -619,11 +607,11 @@ dissect_starteam_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
 
         /* Dissect the packet */
         dissect_starteam(tvb, pinfo, tree, data);
-        return TRUE;
+        return true;
       }
     }
   }
-  return FALSE;
+  return false;
 }
 
 void
@@ -681,7 +669,7 @@ proto_register_starteam(void)
    { &hf_starteam_data_data,
       { "Data", "starteam.data", FT_STRINGZ, BASE_NONE, NULL, 0x0, NULL, HFILL }}
   };
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_starteam,
     &ett_starteam_mdh,
     &ett_starteam_ph,
@@ -694,6 +682,8 @@ proto_register_starteam(void)
   proto_starteam = proto_register_protocol("StarTeam", "StarTeam", "starteam");
   proto_register_field_array(proto_starteam, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+
+  starteam_tcp_handle = register_dissector("starteam", dissect_starteam_tcp, proto_starteam);
 
   starteam_module = prefs_register_protocol(proto_starteam, NULL);
   prefs_register_bool_preference(starteam_module, "desegment",
@@ -708,11 +698,10 @@ void
 proto_reg_handoff_starteam(void)
 {
   heur_dissector_add("tcp", dissect_starteam_heur, "StarTeam over TCP", "starteam_tcp", proto_starteam, HEURISTIC_ENABLE);
-  starteam_tcp_handle = create_dissector_handle(dissect_starteam_tcp, proto_starteam);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

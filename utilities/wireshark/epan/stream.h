@@ -1,4 +1,4 @@
-/* stream.h
+/** @file
  *
  * Definititions for handling circuit-switched protocols
  * which are handled as streams, and don't have lengths
@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef STREAM_H
@@ -61,21 +49,18 @@ typedef struct stream stream_t;
 typedef struct stream_pdu_fragment stream_pdu_fragment_t;
 
 
-
-struct circuit;
 struct conversation;
 
 /* initialise a new stream. Call this when you first identify a distinct
- * stream. The circit pointer is just used as a key to look up the stream. */
-WS_DLL_PUBLIC stream_t *stream_new_circ ( const struct circuit *circuit, int p2p_dir );
-extern stream_t *stream_new_conv ( const struct conversation *conv, int p2p_dir );
+ * stream. The conversation pointer is just used as a key to look up the stream.
+ */
+WS_DLL_PUBLIC stream_t *stream_new ( const struct conversation *conv, int p2p_dir );
 
 /* retrieve a previously-created stream.
  *
  * Returns null if no matching stream was found.
  */
-WS_DLL_PUBLIC stream_t *find_stream_circ ( const struct circuit *circuit, int p2p_dir );
-extern stream_t *find_stream_conv ( const struct conversation *conv, int p2p_dir );
+WS_DLL_PUBLIC stream_t *find_stream ( const struct conversation *conv, int p2p_dir );
 
 
 
@@ -85,7 +70,7 @@ extern stream_t *find_stream_conv ( const struct conversation *conv, int p2p_dir
    to this frame, but the idea is that you use the number of the frame being
    disassembled, and the byte-offset within that frame.
 */
-WS_DLL_PUBLIC stream_pdu_fragment_t *stream_find_frag( stream_t *stream, guint32 framenum, guint32 offset );
+WS_DLL_PUBLIC stream_pdu_fragment_t *stream_find_frag( stream_t *stream, uint32_t framenum, uint32_t offset );
 
 /* add a new fragment to the fragment tables for the stream. The framenum and
  * offset are keys allowing future access with stream_find_frag(), tvb is the
@@ -100,12 +85,12 @@ WS_DLL_PUBLIC stream_pdu_fragment_t *stream_find_frag( stream_t *stream, guint32
  * This essentially means that you can only add fragments on the first pass
  * through the stream.
  */
-WS_DLL_PUBLIC stream_pdu_fragment_t *stream_add_frag( stream_t *stream, guint32 framenum, guint32 offset,
-					tvbuff_t *tvb, packet_info *pinfo, gboolean more_frags );
+WS_DLL_PUBLIC stream_pdu_fragment_t *stream_add_frag( stream_t *stream, uint32_t framenum, uint32_t offset,
+					tvbuff_t *tvb, packet_info *pinfo, bool more_frags );
 
 /* Get the length of a fragment previously found by stream_find_frag().
  */
-extern guint32 stream_get_frag_length( const stream_pdu_fragment_t *frag);
+extern uint32_t stream_get_frag_length( const stream_pdu_fragment_t *frag);
 
 /* Get a handle on the top of the chain of fragment_datas underlying this PDU
  * frag can be any fragment within a PDU, and it will always return the head of
@@ -125,12 +110,12 @@ WS_DLL_PUBLIC tvbuff_t *stream_process_reassembled(
     tvbuff_t *tvb, int offset, packet_info *pinfo,
     const char *name, const stream_pdu_fragment_t *frag,
     const struct _fragment_items *fit,
-    gboolean *update_col_infop, proto_tree *tree);
+    bool *update_col_infop, proto_tree *tree);
 
 /* Get the PDU number. PDUs are numbered from zero within a stream.
  * frag can be any fragment within a PDU.
  */
-extern guint32 stream_get_pdu_no( const stream_pdu_fragment_t *frag);
+extern uint32_t stream_get_pdu_no( const stream_pdu_fragment_t *frag);
 
 /* initialise the stream routines */
 void stream_init( void );

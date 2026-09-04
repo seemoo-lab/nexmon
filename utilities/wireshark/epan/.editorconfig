@@ -1,7 +1,7 @@
 #
 # Editor configuration
 #
-# http://editorconfig.org/
+# https://editorconfig.org/
 #
 
 [addr_and_mask.[ch]]
@@ -19,19 +19,11 @@ indent_size = tab
 [asn1.[ch]]
 indent_size = 2
 
-[circuit.[ch]]
-indent_style = tab
-indent_size = tab
-
 [column-utils.[ch]]
 indent_size = 2
 
 [column.[ch]]
 indent_size = 2
-
-[conversation.[ch]]
-indent_style = tab
-indent_size = tab
 
 [crc32-tvb.[ch]]
 indent_style = tab
@@ -44,7 +36,15 @@ indent_size = tab
 [disabled_protos.[ch]]
 indent_size = 2
 
+[dtd_grammar.lemon]
+indent_style = tab
+indent_size = tab
+
 [epan.[ch]]
+indent_style = tab
+indent_size = tab
+
+[exceptions.h]
 indent_style = tab
 indent_size = tab
 
@@ -77,10 +77,6 @@ indent_size = tab
 indent_style = tab
 indent_size = tab
 
-[ipv4.[ch]]
-indent_style = tab
-indent_size = tab
-
 [next_tvb.[ch]]
 indent_size = 2
 
@@ -95,7 +91,7 @@ indent_size = 2
 indent_style = tab
 indent_size = tab
 
-[proto.[ch]]
+[proto.c]
 indent_style = tab
 indent_size = tab
 
@@ -120,6 +116,10 @@ indent_size = tab
 indent_style = tab
 indent_size = tab
 
+[stats_tree_priv.h]
+indent_style = tab
+indent_size = tab
+
 [t35.[ch]]
 indent_style = tab
 indent_size = tab
@@ -133,10 +133,6 @@ indent_style = tab
 indent_size = tab
 
 [timestats.[ch]]
-indent_style = tab
-indent_size = tab
-
-[to_str.[ch]]
 indent_style = tab
 indent_size = tab
 

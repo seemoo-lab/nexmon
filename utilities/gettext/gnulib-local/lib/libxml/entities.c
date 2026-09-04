@@ -1,10 +1,44 @@
-/*
- * entities.c : implementation for the XML entities handling
+/* libxml2 - Library for parsing XML documents
+ * Copyright (C) 2006-2019 Free Software Foundation, Inc.
  *
- * See Copyright for the status of this software.
+ * This file is not part of the GNU gettext program, but is used with
+ * GNU gettext.
+ *
+ * The original copyright notice is as follows:
+ */
+
+/*
+ * Copyright (C) 1998-2012 Daniel Veillard.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is fur-
+ * nished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+ * NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
  * daniel@veillard.com
  */
+
+/*
+ * entities.c : implementation for the XML entities handling
+ */
+
+/* To avoid EBCDIC trouble when parsing on zOS */
+#if defined(__MVS__)
+#pragma convert("ISO8859-1")
+#endif
 
 #define IN_LIBXML
 #include "libxml.h"
@@ -83,7 +117,7 @@ xmlEntitiesErrMemory(const char *extra)
  *
  * Handle an out of memory condition
  */
-static void
+static void LIBXML_ATTR_FORMAT(2,0)
 xmlEntitiesErr(xmlParserErrors code, const char *msg)
 {
     __xmlSimpleError(XML_FROM_TREE, code, NULL, msg, NULL);
@@ -880,10 +914,9 @@ xmlCreateEntitiesTable(void) {
  * Deallocate the memory used by an entities in the hash table.
  */
 static void
-xmlFreeEntityWrapper(xmlEntityPtr entity,
-	               const xmlChar *name ATTRIBUTE_UNUSED) {
+xmlFreeEntityWrapper(void *entity, const xmlChar *name ATTRIBUTE_UNUSED) {
     if (entity != NULL)
-	xmlFreeEntity(entity);
+	xmlFreeEntity((xmlEntityPtr) entity);
 }
 
 /**
@@ -894,7 +927,7 @@ xmlFreeEntityWrapper(xmlEntityPtr entity,
  */
 void
 xmlFreeEntitiesTable(xmlEntitiesTablePtr table) {
-    xmlHashFree(table, (xmlHashDeallocator) xmlFreeEntityWrapper);
+    xmlHashFree(table, xmlFreeEntityWrapper);
 }
 
 #ifdef LIBXML_TREE_ENABLED
@@ -906,8 +939,9 @@ xmlFreeEntitiesTable(xmlEntitiesTablePtr table) {
  *
  * Returns the new xmlEntitiesPtr or NULL in case of error.
  */
-static xmlEntityPtr
-xmlCopyEntity(xmlEntityPtr ent) {
+static void *
+xmlCopyEntity(void *payload, const xmlChar *name ATTRIBUTE_UNUSED) {
+    xmlEntityPtr ent = (xmlEntityPtr) payload;
     xmlEntityPtr cur;
 
     cur = (xmlEntityPtr) xmlMalloc(sizeof(xmlEntity));
@@ -944,7 +978,7 @@ xmlCopyEntity(xmlEntityPtr ent) {
  */
 xmlEntitiesTablePtr
 xmlCopyEntitiesTable(xmlEntitiesTablePtr table) {
-    return(xmlHashCopy(table, (xmlHashCopier) xmlCopyEntity));
+    return(xmlHashCopy(table, xmlCopyEntity));
 }
 #endif /* LIBXML_TREE_ENABLED */
 
@@ -1085,8 +1119,9 @@ xmlDumpEntityDecl(xmlBufferPtr buf, xmlEntityPtr ent) {
  * When using the hash table scan function, arguments need to be reversed
  */
 static void
-xmlDumpEntityDeclScan(xmlEntityPtr ent, xmlBufferPtr buf) {
-    xmlDumpEntityDecl(buf, ent);
+xmlDumpEntityDeclScan(void *ent, void *buf,
+                      const xmlChar *name ATTRIBUTE_UNUSED) {
+    xmlDumpEntityDecl((xmlBufferPtr) buf, (xmlEntityPtr) ent);
 }
 
 /**
@@ -1098,7 +1133,7 @@ xmlDumpEntityDeclScan(xmlEntityPtr ent, xmlBufferPtr buf) {
  */
 void
 xmlDumpEntitiesTable(xmlBufferPtr buf, xmlEntitiesTablePtr table) {
-    xmlHashScan(table, (xmlHashScanner)xmlDumpEntityDeclScan, buf);
+    xmlHashScan(table, xmlDumpEntityDeclScan, buf);
 }
 #endif /* LIBXML_OUTPUT_ENABLED */
 #define bottom_entities

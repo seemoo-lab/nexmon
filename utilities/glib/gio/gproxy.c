@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2010 Collabora Ltd.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,16 +29,14 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gproxy
- * @short_description: Interface for proxy handling
- * @include: gio/gio.h
+ * GProxy:
  *
- * A #GProxy handles connecting to a remote host via a given type of
- * proxy server. It is implemented by the 'gio-proxy' extension point.
+ * A `GProxy` handles connecting to a remote host via a given type of
+ * proxy server. It is implemented by the `gio-proxy` extension point.
  * The extensions are named after their proxy protocol name. As an
  * example, a SOCKS5 proxy implementation can be retrieved with the
- * name 'socks5' using the function
- * g_io_extension_point_get_extension_by_name().
+ * name `socks5` using the function
+ * [method@Gio.IOExtensionPoint.get_extension_by_name].
  *
  * Since: 2.26
  **/
@@ -52,10 +52,10 @@ g_proxy_default_init (GProxyInterface *iface)
  * g_proxy_get_default_for_protocol:
  * @protocol: the proxy protocol name (e.g. http, socks, etc)
  *
- * Lookup "gio-proxy" extension point for a proxy implementation that supports
- * specified protocol.
+ * Find the `gio-proxy` extension point for a proxy implementation that supports
+ * the specified protocol.
  *
- * Returns: (transfer full): return a #GProxy or NULL if protocol
+ * Returns: (nullable) (transfer full): return a #GProxy or NULL if protocol
  *               is not supported.
  *
  * Since: 2.26
@@ -84,7 +84,7 @@ g_proxy_get_default_for_protocol (const gchar *protocol)
  * @proxy: a #GProxy
  * @connection: a #GIOStream
  * @proxy_address: a #GProxyAddress
- * @cancellable: (allow-none): a #GCancellable
+ * @cancellable: (nullable): a #GCancellable
  * @error: return #GError
  *
  * Given @connection to communicate with a proxy (eg, a
@@ -123,9 +123,9 @@ g_proxy_connect (GProxy            *proxy,
  * @proxy: a #GProxy
  * @connection: a #GIOStream
  * @proxy_address: a #GProxyAddress
- * @cancellable: (allow-none): a #GCancellable
+ * @cancellable: (nullable): a #GCancellable
  * @callback: (scope async): a #GAsyncReadyCallback
- * @user_data: (closure): callback data
+ * @user_data: callback data
  *
  * Asynchronous version of g_proxy_connect().
  *

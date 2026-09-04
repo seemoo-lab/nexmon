@@ -13,7 +13,7 @@ msgstr ""
 "PO-Revision-Date: 2005-08-27 16:20-0400\n"
 "Last-Translator: Ryan Lortie <desrt@desrt.ca>\n"
 "Language-Team: Canadian English <adamw@gnome.org>\n"
-"Language: Canadian English\n"
+"Language: en_CA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -3849,6 +3849,102 @@ msgstr "Need more input"
 #: ../gio/gzlibdecompressor.c:342
 msgid "Invalid compressed data"
 msgstr "Invalid compressed data"
+
+msgctxt "full month name with day"
+msgid "January"
+msgstr "January"
+
+msgctxt "full month name with day"
+msgid "February"
+msgstr "February"
+
+msgctxt "full month name with day"
+msgid "March"
+msgstr "March"
+
+msgctxt "full month name with day"
+msgid "April"
+msgstr "April"
+
+msgctxt "full month name with day"
+msgid "May"
+msgstr "May"
+
+msgctxt "full month name with day"
+msgid "June"
+msgstr "June"
+
+msgctxt "full month name with day"
+msgid "July"
+msgstr "July"
+
+msgctxt "full month name with day"
+msgid "August"
+msgstr "August"
+
+msgctxt "full month name with day"
+msgid "September"
+msgstr "September"
+
+msgctxt "full month name with day"
+msgid "October"
+msgstr "October"
+
+msgctxt "full month name with day"
+msgid "November"
+msgstr "November"
+
+msgctxt "full month name with day"
+msgid "December"
+msgstr "December"
+
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "Jan"
+
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "Feb"
+
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "Mar"
+
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "Apr"
+
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "May"
+
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "Jun"
+
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "Jul"
+
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "Aug"
+
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "Sep"
+
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "Oct"
+
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "Nov"
+
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "Dec"
 
 #, fuzzy
 #~ msgid "Do not give error for empty directory"

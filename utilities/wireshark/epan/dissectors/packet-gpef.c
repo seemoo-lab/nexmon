@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,18 +19,18 @@
 
 void proto_register_gpef(void);
 
-static int proto_gpef = -1;
-static int hf_gpef_keycount = -1;
-static int hf_gpef_efskey = -1;
-static int hf_gpef_efskey_length1 = -1;
-static int hf_gpef_efskey_length2 = -1;
-static int hf_gpef_efskey_sid_offset = -1;
-static int hf_gpef_efskey_cert_offset = -1;
-static int hf_gpef_efskey_cert_length = -1;
-static int hf_gpef_efskey_certificate = -1;
+static int proto_gpef;
+static int hf_gpef_keycount;
+static int hf_gpef_efskey;
+static int hf_gpef_efskey_length1;
+static int hf_gpef_efskey_length2;
+static int hf_gpef_efskey_sid_offset;
+static int hf_gpef_efskey_cert_offset;
+static int hf_gpef_efskey_cert_length;
+static int hf_gpef_efskey_certificate;
 
-static gint ett_gpef = -1;
-static gint ett_gpef_efskey = -1;
+static int ett_gpef;
+static int ett_gpef_efskey;
 
 
 /* MS-GPEF section 2.2.1.2.2 EfsKey*/
@@ -52,11 +40,11 @@ dissect_gpef_efskey(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *p
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
 	int old_offset = offset;
-	guint32 length1, sid_offset;
-	guint32 cert_length, cert_offset;
+	uint32_t length1, sid_offset;
+	uint32_t cert_length, cert_offset;
 	tvbuff_t *next_tvb;
 	asn1_ctx_t asn1_ctx;
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
 	if (parent_tree) {
 		item = proto_tree_add_item(parent_tree, hf_gpef_efskey, tvb, -1, -1, ENC_NA);
@@ -94,11 +82,11 @@ dissect_gpef_efskey(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *p
 	/*offset += 4;*/
 
 	/* sid */
-	dissect_nt_sid(tvb, old_offset+4+sid_offset, tree, "sid", NULL, -1);
+	dissect_nt_sid(tvb, pinfo, old_offset+4+sid_offset, tree, "sid", NULL, -1);
 
 	/* certificate */
 	next_tvb = tvb_new_subset_length(tvb, old_offset+4+cert_offset, cert_length);
-	(void)dissect_x509af_Certificate(FALSE, next_tvb, 0, &asn1_ctx, tree, hf_gpef_efskey_certificate);
+	(void)dissect_x509af_Certificate(false, next_tvb, 0, &asn1_ctx, tree, hf_gpef_efskey_certificate);
 
 
 	offset = old_offset + length1;
@@ -113,7 +101,7 @@ dissect_gpef_efsblob(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,
 	int offset = 0;
 	proto_tree *tree;
 	proto_item *item;
-	guint32 count;
+	uint32_t count;
 
 	item = proto_tree_add_item(parent_tree, proto_gpef, tvb, 0, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_gpef);
@@ -171,7 +159,7 @@ proto_register_gpef(void)
 
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_gpef,
 		&ett_gpef_efskey,
 	};
@@ -184,7 +172,7 @@ proto_register_gpef(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

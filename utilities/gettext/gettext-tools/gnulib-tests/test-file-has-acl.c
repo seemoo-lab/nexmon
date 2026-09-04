@@ -1,9 +1,9 @@
 /* Test for presence of ACL.
-   Copyright (C) 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2008.  */
 
@@ -20,6 +20,7 @@
 
 #include "acl.h"
 
+#include <dirent.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,11 +65,31 @@ main (int argc, char *argv[])
         fprintf (stderr, "could not access the ACL of file \"%s\"\n", file);
         exit (EXIT_FAILURE);
       }
+
+    struct aclinfo ai;
+    int reti = file_has_aclinfo (file, &ai, DT_UNKNOWN);
+    if (reti != ret)
+      {
+        fprintf (stderr, "file_has_aclinfo failed for \"%s\"\n", file);
+        exit (EXIT_FAILURE);
+      }
+    aclinfo_free (&ai);
+
+    int retj = file_has_aclinfo (file, &ai, ACL_SYMLINK_FOLLOW | DT_UNKNOWN);
+    if (retj != ret)
+      {
+        fprintf (stderr,
+                 "file_has_aclinfo with ACL_SYMLINK_FOLLOW failed for \"%s\"\n",
+                 file);
+        exit (EXIT_FAILURE);
+      }
+    aclinfo_free (&ai);
+
     printf ("%s\n", ret ? "yes" : "no");
   }
 #else
   printf ("no\n");
 #endif
 
-  return 0;
+  return test_exit_status;
 }

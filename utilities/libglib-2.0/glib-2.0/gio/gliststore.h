@@ -2,10 +2,12 @@
  * Copyright 2015 Lars Uebernickel
  * Copyright 2015 Ryan Lortie
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -32,45 +34,63 @@
 G_BEGIN_DECLS
 
 #define G_TYPE_LIST_STORE (g_list_store_get_type ())
-GLIB_AVAILABLE_IN_2_44
+GIO_AVAILABLE_IN_2_44
 G_DECLARE_FINAL_TYPE(GListStore, g_list_store, G, LIST_STORE, GObject)
 
-GLIB_AVAILABLE_IN_2_44
+GIO_AVAILABLE_IN_2_44
 GListStore *            g_list_store_new                                (GType       item_type);
 
-GLIB_AVAILABLE_IN_2_44
+GIO_AVAILABLE_IN_2_44
 void                    g_list_store_insert                             (GListStore *store,
                                                                          guint       position,
                                                                          gpointer    item);
 
-GLIB_AVAILABLE_IN_2_44
+GIO_AVAILABLE_IN_2_44
 guint                   g_list_store_insert_sorted                      (GListStore       *store,
                                                                          gpointer          item,
                                                                          GCompareDataFunc  compare_func,
                                                                          gpointer          user_data);
 
-GLIB_AVAILABLE_IN_2_46
+GIO_AVAILABLE_IN_2_46
 void                   g_list_store_sort                                (GListStore       *store,
                                                                          GCompareDataFunc  compare_func,
                                                                          gpointer          user_data);
 
-GLIB_AVAILABLE_IN_2_44
+GIO_AVAILABLE_IN_2_44
 void                    g_list_store_append                             (GListStore *store,
                                                                          gpointer    item);
 
-GLIB_AVAILABLE_IN_2_44
+GIO_AVAILABLE_IN_2_44
 void                    g_list_store_remove                             (GListStore *store,
                                                                          guint       position);
 
-GLIB_AVAILABLE_IN_2_44
+GIO_AVAILABLE_IN_2_44
 void                    g_list_store_remove_all                         (GListStore *store);
 
-GLIB_AVAILABLE_IN_2_44
+GIO_AVAILABLE_IN_2_44
 void                    g_list_store_splice                             (GListStore *store,
                                                                          guint       position,
                                                                          guint       n_removals,
                                                                          gpointer   *additions,
                                                                          guint       n_additions);
+
+GIO_AVAILABLE_IN_2_64
+gboolean                g_list_store_find                               (GListStore *store,
+                                                                         gpointer    item,
+                                                                         guint      *position);
+
+GIO_AVAILABLE_IN_2_64
+gboolean                g_list_store_find_with_equal_func               (GListStore *store,
+                                                                         gpointer    item,
+                                                                         GEqualFunc  equal_func,
+                                                                         guint      *position);
+
+GIO_AVAILABLE_IN_2_74
+gboolean                g_list_store_find_with_equal_func_full          (GListStore     *store,
+                                                                         gpointer        item,
+                                                                         GEqualFuncFull  equal_func,
+                                                                         gpointer        user_data,
+                                                                         guint          *position);
 
 G_END_DECLS
 

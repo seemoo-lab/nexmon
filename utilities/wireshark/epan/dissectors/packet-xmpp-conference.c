@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -46,8 +34,8 @@ xmpp_conferece_info_advert(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, 
     proto_tree *cinfo_tree;
 
     xmpp_attr_info attrs_info [] = {
-        {"xmlns", &hf_xmpp_xmlns, TRUE, TRUE, NULL, NULL},
-        {"isfocus", NULL, TRUE, TRUE, NULL, NULL}
+        {"xmlns", &hf_xmpp_xmlns, true, true, NULL, NULL},
+        {"isfocus", NULL, true, true, NULL, NULL}
     };
 
     cinfo_item = proto_tree_add_item(tree, hf_xmpp_conf_info, tvb, element->offset, element->length,
@@ -64,15 +52,15 @@ xmpp_conference_info(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, xmpp_e
     proto_item *cinfo_item;
     proto_tree *cinfo_tree;
 
-    static const gchar *state_enums[] = {"full", "partial", "deleted"};
-    xmpp_array_t *state_array = xmpp_ep_init_array_t(state_enums, array_length(state_enums));
+    static const char *state_enums[] = {"full", "partial", "deleted"};
+    xmpp_array_t *state_array = xmpp_ep_init_array_t(pinfo->pool, state_enums, array_length(state_enums));
 
     xmpp_attr_info attrs_info [] = {
-        {"xmlns", &hf_xmpp_xmlns, TRUE, TRUE, NULL, NULL},
-        {"entity", NULL, TRUE, TRUE, NULL, NULL},
-        {"state", NULL, FALSE, TRUE, xmpp_val_enum_list, state_array},
-        {"version", NULL, FALSE, TRUE, NULL, NULL},
-        {"sid", &hf_xmpp_conf_info_sid, FALSE, TRUE, NULL, NULL}
+        {"xmlns", &hf_xmpp_xmlns, true, true, NULL, NULL},
+        {"entity", NULL, true, true, NULL, NULL},
+        {"state", NULL, false, true, xmpp_val_enum_list, state_array},
+        {"version", NULL, false, true, NULL, NULL},
+        {"sid", &hf_xmpp_conf_info_sid, false, true, NULL, NULL}
     };
 
     xmpp_elem_info elems_info [] = {
@@ -100,10 +88,10 @@ xmpp_conf_desc(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, xmpp_element
     proto_tree *desc_tree;
 
     xmpp_attr_info attrs_info [] = {
-        {"subject", NULL, FALSE, TRUE, NULL, NULL},
-        {"display-text", NULL, FALSE, FALSE, NULL, NULL},
-        {"free-text", NULL, FALSE, FALSE, NULL, NULL},
-        {"max-user-count", NULL, FALSE, FALSE, NULL, NULL},
+        {"subject", NULL, false, true, NULL, NULL},
+        {"display-text", NULL, false, false, NULL, NULL},
+        {"free-text", NULL, false, false, NULL, NULL},
+        {"max-user-count", NULL, false, false, NULL, NULL},
     };
 
 /*
@@ -117,10 +105,10 @@ xmpp_conf_desc(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, xmpp_element
 
     desc_tree = proto_tree_add_subtree(tree, tvb, element->offset, element->length, ett_xmpp_conf_desc, NULL, "CONFERENCE DESCRIPTION");
 
-    xmpp_change_elem_to_attrib("subject", "subject", element, xmpp_transform_func_cdata);
-    xmpp_change_elem_to_attrib("display-text", "display-text", element, xmpp_transform_func_cdata);
-    xmpp_change_elem_to_attrib("free-text", "free-text", element, xmpp_transform_func_cdata);
-    xmpp_change_elem_to_attrib("maximum-user-count", "max-user-count", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "subject", "subject", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "display-text", "display-text", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "free-text", "free-text", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "maximum-user-count", "max-user-count", element, xmpp_transform_func_cdata);
 
     xmpp_display_attrs(desc_tree, element, pinfo, tvb, attrs_info, array_length(attrs_info));
     xmpp_display_elems(desc_tree, element, pinfo, tvb, NULL,0);
@@ -132,17 +120,17 @@ xmpp_conf_state(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, xmpp_elemen
     proto_tree *state_tree;
 
     xmpp_attr_info attrs_info [] = {
-        {"user-count", NULL, FALSE, TRUE, NULL, NULL},
-        {"active", NULL, FALSE, TRUE, NULL, NULL},
-        {"locked", NULL, FALSE, TRUE, NULL, NULL}
+        {"user-count", NULL, false, true, NULL, NULL},
+        {"active", NULL, false, true, NULL, NULL},
+        {"locked", NULL, false, true, NULL, NULL}
     };
 
     state_tree = proto_tree_add_subtree(tree, tvb, element->offset, element->length,
                                         ett_xmpp_conf_state, NULL, "CONFERENCE STATE");
 
-    xmpp_change_elem_to_attrib("user-count", "user-count", element, xmpp_transform_func_cdata);
-    xmpp_change_elem_to_attrib("active", "active", element, xmpp_transform_func_cdata);
-    xmpp_change_elem_to_attrib("locked", "locked", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "user-count", "user-count", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "active", "active", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "locked", "locked", element, xmpp_transform_func_cdata);
 
     xmpp_display_attrs(state_tree, element, pinfo, tvb, attrs_info, array_length(attrs_info));
     xmpp_display_elems(state_tree, element, pinfo, tvb, NULL,0);
@@ -155,7 +143,7 @@ xmpp_conf_users(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, xmpp_elemen
     proto_tree *users_tree;
 
     xmpp_attr_info attrs_info [] = {
-        {"state", NULL, FALSE, TRUE, NULL, NULL}
+        {"state", NULL, false, true, NULL, NULL}
     };
 
     xmpp_elem_info elems_info [] = {
@@ -173,10 +161,10 @@ xmpp_conf_user(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, xmpp_element
     proto_tree *user_tree;
 
     xmpp_attr_info attrs_info [] = {
-        {"entity", NULL, FALSE, TRUE, NULL, NULL},
-        {"state", NULL, FALSE, TRUE, NULL, NULL},
-        {"display-text", NULL, FALSE, TRUE, NULL, NULL},
-        {"cascaded-focus", NULL, FALSE, TRUE, NULL, NULL}
+        {"entity", NULL, false, true, NULL, NULL},
+        {"state", NULL, false, true, NULL, NULL},
+        {"display-text", NULL, false, true, NULL, NULL},
+        {"cascaded-focus", NULL, false, true, NULL, NULL}
     };
 
     xmpp_elem_info elems_info [] = {
@@ -188,8 +176,8 @@ xmpp_conf_user(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, xmpp_element
 
     user_tree = proto_tree_add_subtree(tree, tvb, element->offset, element->length, ett_xmpp_conf_user, NULL, "USERS");
 
-    xmpp_change_elem_to_attrib("display-text", "display-text", element, xmpp_transform_func_cdata);
-    xmpp_change_elem_to_attrib("cascaded-focus", "cascaded-focus", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "display-text", "display-text", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "cascaded-focus", "cascaded-focus", element, xmpp_transform_func_cdata);
 
     xmpp_display_attrs(user_tree, element, pinfo, tvb, attrs_info, array_length(attrs_info));
     xmpp_display_elems(user_tree, element, pinfo, tvb, elems_info, array_length(elems_info));
@@ -201,12 +189,12 @@ xmpp_conf_endpoint(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, xmpp_ele
     proto_tree *endpoint_tree;
 
     xmpp_attr_info attrs_info [] = {
-        {"entity", NULL, FALSE, TRUE, NULL, NULL},
-        {"state", NULL, FALSE, TRUE, NULL, NULL},
-        {"display-text", NULL, FALSE, TRUE, NULL, NULL},
-        {"status", NULL, FALSE, TRUE, NULL, NULL},
-        {"joining-method", NULL, FALSE, TRUE, NULL, NULL},
-        {"disconnection-method", NULL, FALSE, TRUE, NULL, NULL},
+        {"entity", NULL, false, true, NULL, NULL},
+        {"state", NULL, false, true, NULL, NULL},
+        {"display-text", NULL, false, true, NULL, NULL},
+        {"status", NULL, false, true, NULL, NULL},
+        {"joining-method", NULL, false, true, NULL, NULL},
+        {"disconnection-method", NULL, false, true, NULL, NULL},
     };
 
     xmpp_elem_info elems_info [] = {
@@ -220,10 +208,10 @@ xmpp_conf_endpoint(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, xmpp_ele
 
     endpoint_tree = proto_tree_add_subtree(tree, tvb, element->offset, element->length, ett_xmpp_conf_endpoint, NULL, "ENDPOINT");
 
-    xmpp_change_elem_to_attrib("display-text", "display-text", element, xmpp_transform_func_cdata);
-    xmpp_change_elem_to_attrib("status", "status", element, xmpp_transform_func_cdata);
-    xmpp_change_elem_to_attrib("joining-method", "joining-method", element, xmpp_transform_func_cdata);
-    xmpp_change_elem_to_attrib("disconnection-method", "disconnection-method", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "display-text", "display-text", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "status", "status", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "joining-method", "joining-method", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "disconnection-method", "disconnection-method", element, xmpp_transform_func_cdata);
 
 
     xmpp_display_attrs(endpoint_tree, element, pinfo, tvb, attrs_info, array_length(attrs_info));
@@ -236,27 +224,27 @@ xmpp_conf_media(proto_tree *tree, tvbuff_t *tvb, packet_info *pinfo, xmpp_elemen
     proto_tree *media_tree;
 
     xmpp_attr_info attrs_info[] = {
-        {"id", NULL, TRUE, TRUE, NULL, NULL},
-        {"display-text", NULL, FALSE, TRUE, NULL, NULL},
-        {"type", NULL, FALSE, TRUE, NULL, NULL},
-        {"label", NULL, FALSE, TRUE, NULL, NULL},
-        {"src-id", NULL, FALSE, TRUE, NULL, NULL},
-        {"status", NULL, FALSE, TRUE, NULL, NULL},
+        {"id", NULL, true, true, NULL, NULL},
+        {"display-text", NULL, false, true, NULL, NULL},
+        {"type", NULL, false, true, NULL, NULL},
+        {"label", NULL, false, true, NULL, NULL},
+        {"src-id", NULL, false, true, NULL, NULL},
+        {"status", NULL, false, true, NULL, NULL},
     };
 
     media_tree = proto_tree_add_subtree(tree, tvb, element->offset, element->length, ett_xmpp_conf_media, NULL, "MEDIA");
 
-    xmpp_change_elem_to_attrib("display-text", "display-text", element, xmpp_transform_func_cdata);
-    xmpp_change_elem_to_attrib("type", "type", element, xmpp_transform_func_cdata);
-    xmpp_change_elem_to_attrib("label", "label", element, xmpp_transform_func_cdata);
-    xmpp_change_elem_to_attrib("src-id", "src-id", element, xmpp_transform_func_cdata);
-    xmpp_change_elem_to_attrib("status", "status", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "display-text", "display-text", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "type", "type", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "label", "label", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "src-id", "src-id", element, xmpp_transform_func_cdata);
+    xmpp_change_elem_to_attrib(pinfo->pool, "status", "status", element, xmpp_transform_func_cdata);
 
     xmpp_display_attrs(media_tree, element, pinfo, tvb, attrs_info, array_length(attrs_info));
     xmpp_display_elems(media_tree, element, pinfo, tvb, NULL, 0);
 }
 /*
-* Editor modelines - http://www.wireshark.org/tools/modelines.html
+* Editor modelines - https://www.wireshark.org/tools/modelines.html
 *
 * Local variables:
 * c-basic-offset: 4

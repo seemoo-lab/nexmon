@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,69 +15,72 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
+#include <epan/unit_strings.h>
 
 void proto_register_forces(void);
 void proto_reg_handoff_forces(void);
 
+static dissector_handle_t  forces_handle_tcp, forces_handle;
+
 static dissector_handle_t ip_handle;
 
 /* Initialize the ForCES protocol and registered fields */
-static int proto_forces = -1;
+static int proto_forces;
 
 /*Main header*/
-static int hf_forces_version = -1;
-static int hf_forces_rsvd = -1;
-static int hf_forces_messagetype = -1;
-static int hf_forces_sid = -1;
-static int hf_forces_did = -1;
-static int hf_forces_correlator = -1;
-static int hf_forces_length = -1;
+static int hf_forces_version;
+static int hf_forces_rsvd;
+static int hf_forces_messagetype;
+static int hf_forces_sid;
+static int hf_forces_did;
+static int hf_forces_correlator;
+static int hf_forces_length;
 /*Flags*/
-static int hf_forces_flags= -1;
-static int hf_forces_flags_ack= -1;
-static int hf_forces_flags_pri= -1;
-static int hf_forces_flags_rsrvd= -1;
-static int hf_forces_flags_em= -1;
-static int hf_forces_flags_at= -1;
-static int hf_forces_flags_tp= -1;
-static int hf_forces_flags_reserved = -1;
+static int hf_forces_flags;
+static int hf_forces_flags_ack;
+static int hf_forces_flags_pri;
+static int hf_forces_flags_rsrvd;
+static int hf_forces_flags_em;
+static int hf_forces_flags_at;
+static int hf_forces_flags_tp;
+static int hf_forces_flags_reserved;
 
-static int hf_forces_tlv_type = -1;
-static int hf_forces_tlv_length = -1;
+static int hf_forces_tlv_type;
+static int hf_forces_tlv_length;
 
 /*Initiation of LFBSelect TLV*/
-static int hf_forces_lfbselect_tlv_type_lfb_classid = -1;
-static int hf_forces_lfbselect_tlv_type_lfb_instanceid = -1;
+static int hf_forces_lfbselect_tlv_type_lfb_classid;
+static int hf_forces_lfbselect_tlv_type_lfb_instanceid;
 
 /*Initiation of Operation TLV*/
-static int hf_forces_lfbselect_tlv_type_operation_type = -1;
-static int hf_forces_lfbselect_tlv_type_operation_length = -1;
-static int hf_forces_lfbselect_tlv_type_operation_path_type = -1;
-static int hf_forces_lfbselect_tlv_type_operation_path_length = -1;
-static int hf_forces_lfbselect_tlv_type_operation_path_flags = -1;
-static int hf_forces_lfbselect_tlv_type_operation_path_flags_selector = -1;
-static int hf_forces_lfbselect_tlv_type_operation_path_flags_reserved = -1;
-static int hf_forces_lfbselect_tlv_type_operation_path_IDcount = -1;
-static int hf_forces_lfbselect_tlv_type_operation_path_IDs = -1;
-static int hf_forces_lfbselect_tlv_type_operation_path_data = -1;
+static int hf_forces_lfbselect_tlv_type_operation_type;
+static int hf_forces_lfbselect_tlv_type_operation_length;
+static int hf_forces_lfbselect_tlv_type_operation_path_type;
+static int hf_forces_lfbselect_tlv_type_operation_path_length;
+static int hf_forces_lfbselect_tlv_type_operation_path_flags;
+static int hf_forces_lfbselect_tlv_type_operation_path_flags_selector;
+static int hf_forces_lfbselect_tlv_type_operation_path_flags_reserved;
+static int hf_forces_lfbselect_tlv_type_operation_path_IDcount;
+static int hf_forces_lfbselect_tlv_type_operation_path_IDs;
+static int hf_forces_lfbselect_tlv_type_operation_path_data;
 
 /*Initiation of Redirect TLV*/
-static int hf_forces_redirect_tlv_meta_data_tlv_type = -1;
-static int hf_forces_redirect_tlv_meta_data_tlv_length = -1;
-static int hf_forces_redirect_tlv_meta_data_tlv_meta_data_ilv = -1;
-static int hf_forces_redirect_tlv_meta_data_tlv_meta_data_ilv_id = -1;
-static int hf_forces_redirect_tlv_meta_data_tlv_meta_data_ilv_length = -1;
-static int hf_forces_redirect_tlv_redirect_data_tlv_type = -1;
-static int hf_forces_redirect_tlv_redirect_data_tlv_length = -1;
+static int hf_forces_redirect_tlv_meta_data_tlv_type;
+static int hf_forces_redirect_tlv_meta_data_tlv_length;
+static int hf_forces_redirect_tlv_meta_data_tlv_meta_data_ilv;
+static int hf_forces_redirect_tlv_meta_data_tlv_meta_data_ilv_id;
+static int hf_forces_redirect_tlv_meta_data_tlv_meta_data_ilv_length;
+static int hf_forces_redirect_tlv_redirect_data_tlv_type;
+static int hf_forces_redirect_tlv_redirect_data_tlv_length;
 
 /*Initiation of ASResult TLV*/
-static int hf_forces_asresult_association_setup_result = -1;
+static int hf_forces_asresult_association_setup_result;
 
 /*Initiation of ASTreason TLV*/
-static int hf_forces_astreason_tlv_teardown_reason = -1;
+static int hf_forces_astreason_tlv_teardown_reason;
 
 /*Main TLV may be unknown*/
-static int hf_forces_unknown_tlv = -1;
+static int hf_forces_unknown_tlv;
 
 /*Message Types */
 #define AssociationSetup            0x01
@@ -99,7 +90,7 @@ static int hf_forces_unknown_tlv = -1;
 #define EventNotification           0x05
 #define PacketRedirect              0x06
 #define Heartbeat                   0x0F
-#define AssociationSetupRepsonse    0x11
+#define AssociationSetupResponse    0x11
 #define ConfigResponse              0x13
 #define QueryResponse               0x14
 
@@ -144,54 +135,51 @@ static int hf_forces_unknown_tlv = -1;
   For other type TMLs,no need to add these 2 bytes.*/
 #define TCP_UDP_TML_FOCES_MESSAGE_OFFSET_TCP    2
 
-/*TCP+UDP TML*/
-static guint forces_alternate_tcp_port = 0;
-static guint forces_alternate_udp_port = 0;
 /*SCTP TML*/
-static guint forces_alternate_sctp_high_prio_channel_port = 0;
-static guint forces_alternate_sctp_med_prio_channel_port  = 0;
-static guint forces_alternate_sctp_low_prio_channel_port  = 0;
+static unsigned forces_alternate_sctp_high_prio_channel_port;
+static unsigned forces_alternate_sctp_med_prio_channel_port;
+static unsigned forces_alternate_sctp_low_prio_channel_port;
 
 /*Initialize the subtree pointers*/
-static gint  ett_forces = -1;
-static gint  ett_forces_main_header = -1;
-static gint  ett_forces_flags = -1;
-static gint  ett_forces_tlv = -1;
-static gint  ett_forces_lfbselect_tlv_type = -1;
+static int   ett_forces;
+static int   ett_forces_main_header;
+static int   ett_forces_flags;
+static int   ett_forces_tlv;
+static int   ett_forces_lfbselect_tlv_type;
 
 /*Operation TLV subtree*/
-static gint  ett_forces_lfbselect_tlv_type_operation = -1;
-static gint  ett_forces_lfbselect_tlv_type_operation_path = -1;
-static gint  ett_forces_lfbselect_tlv_type_operation_path_data = -1;
-static gint  ett_forces_lfbselect_tlv_type_operation_path_data_path = -1;
-static gint  ett_forces_path_data_tlv = -1;
-static gint  ett_forces_path_data_tlv_flags = -1;
+static int   ett_forces_lfbselect_tlv_type_operation;
+static int   ett_forces_lfbselect_tlv_type_operation_path;
+static int   ett_forces_lfbselect_tlv_type_operation_path_data;
+static int   ett_forces_lfbselect_tlv_type_operation_path_data_path;
+static int   ett_forces_path_data_tlv;
+static int   ett_forces_path_data_tlv_flags;
 
 /*Selector subtree*/
-static gint  ett_forces_lfbselect_tlv_type_operation_path_selector = -1;
+static int   ett_forces_lfbselect_tlv_type_operation_path_selector;
 
 /*Redirect TLV subtree*/
-static gint  ett_forces_redirect_tlv_type = -1;
-static gint  ett_forces_redirect_tlv_meta_data_tlv = -1;
-static gint  ett_forces_redirect_tlv_meta_data_tlv_meta_data_ilv = -1;
-static gint  ett_forces_redirect_tlv_redirect_data_tlv = -1;
+static int   ett_forces_redirect_tlv_type;
+static int   ett_forces_redirect_tlv_meta_data_tlv;
+static int   ett_forces_redirect_tlv_meta_data_tlv_meta_data_ilv;
+static int   ett_forces_redirect_tlv_redirect_data_tlv;
 
 /*ASResult TLV subtree*/
-static gint  ett_forces_asresult_tlv = -1;
+static int   ett_forces_asresult_tlv;
 
 /*ASReason subtree*/
-static gint  ett_forces_astreason_tlv = -1;
+static int   ett_forces_astreason_tlv;
 
 /*Main_TLV unknown subtree*/
-static gint  ett_forces_unknown_tlv = -1;
+static int   ett_forces_unknown_tlv;
 
 
-static expert_field ei_forces_length = EI_INIT;
-static expert_field ei_forces_tlv_type = EI_INIT;
-static expert_field ei_forces_tlv_length = EI_INIT;
-static expert_field ei_forces_lfbselect_tlv_type_operation_path_length = EI_INIT;
-static expert_field ei_forces_lfbselect_tlv_type_operation_type = EI_INIT;
-static expert_field ei_forces_redirect_tlv_redirect_data_tlv_length = EI_INIT;
+static expert_field ei_forces_length;
+static expert_field ei_forces_tlv_type;
+static expert_field ei_forces_tlv_length;
+static expert_field ei_forces_lfbselect_tlv_type_operation_path_length;
+static expert_field ei_forces_lfbselect_tlv_type_operation_type;
+static expert_field ei_forces_redirect_tlv_redirect_data_tlv_length;
 
 /*ACK values and the strings to be displayed*/
 static const value_string main_header_flags_ack_vals[] = {
@@ -254,7 +242,7 @@ static const value_string message_type_vals[] = {
     { EventNotification,        "EventNotification" },
     { PacketRedirect,           "PacketRedirect" },
     { Heartbeat,                "Heartbeat" },
-    { AssociationSetupRepsonse, "AssociationSetupRepsonse" },
+    { AssociationSetupResponse, "AssociationSetupResponse" },
     { ConfigResponse,           "ConfigResponse" },
     { QueryResponse,            "QueryResponse" },
     { 0,                        NULL},
@@ -295,11 +283,11 @@ static const value_string operation_type_vals[] = {
 };
 
 static void
-dissect_path_data_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint offset)
+dissect_path_data_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
     proto_item *ti, *flag_item;
-    guint       length_TLV, IDcount, i;
-    guint16     type, flag;
+    unsigned    length_TLV, IDcount, i;
+    uint16_t    type, flag;
     proto_tree *tlv_tree, *path_data_tree, *flag_tree;
 
     while (tvb_reported_length_remaining(tvb, offset) >= TLV_TL_LENGTH)
@@ -356,11 +344,11 @@ dissect_path_data_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint 
 }
 
 static void
-dissect_operation_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint offset, gint length_count)
+dissect_operation_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int length_count)
 {
     proto_item *ti;
     proto_tree *oper_tree;
-    guint       type, length;
+    unsigned    type, length;
 
     while (tvb_reported_length_remaining(tvb, offset) >= TLV_TL_LENGTH)
     {
@@ -374,9 +362,8 @@ dissect_operation_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint 
             expert_add_info_format(pinfo, ti, &ei_forces_lfbselect_tlv_type_operation_type,
                 "Bogus: ForCES Operation TLV (Type:0x%04x) is not supported", type);
 
-        length = tvb_get_ntohs(tvb, offset+2);
-        proto_tree_add_uint_format_value(oper_tree, hf_forces_lfbselect_tlv_type_operation_length,
-                                   tvb, offset+2, 2, length, "%u Bytes", length);
+        proto_tree_add_item_ret_uint(oper_tree, hf_forces_lfbselect_tlv_type_operation_length,
+                                   tvb, offset+2, 2, ENC_BIG_ENDIAN, &length);
 
         dissect_path_data_tlv(tvb, pinfo, oper_tree, offset+TLV_TL_LENGTH);
         if (length == 0)
@@ -386,9 +373,9 @@ dissect_operation_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint 
 }
 
 static void
-dissect_lfbselecttlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint offset, gint length_count)
+dissect_lfbselecttlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int length_count)
 {
-    guint tlv_length;
+    unsigned tlv_length;
 
     proto_tree_add_item(tree, hf_forces_lfbselect_tlv_type_lfb_classid,    tvb, offset,   4, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_forces_lfbselect_tlv_type_lfb_instanceid, tvb, offset+4, 4, ENC_BIG_ENDIAN);
@@ -405,11 +392,11 @@ dissect_lfbselecttlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint o
 }
 
 static void
-dissect_redirecttlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint offset)
+dissect_redirecttlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
     proto_tree *meta_data_tree, *meta_data_ilv_tree, *redirect_data_tree;
-    gint        start_offset;
-    gint        length_meta, length_ilv, length_redirect;
+    int         start_offset;
+    int         length_meta, length_ilv, length_redirect;
     proto_item *ti;
     address     src_addr, src_net_addr;
     address     dst_addr, dst_net_addr;
@@ -424,8 +411,7 @@ dissect_redirecttlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint of
     proto_tree_add_item(meta_data_tree, hf_forces_redirect_tlv_meta_data_tlv_type, tvb, offset, 2, ENC_BIG_ENDIAN);
 
     length_meta = tvb_get_ntohs(tvb, offset+2);
-    proto_tree_add_uint_format_value(meta_data_tree, hf_forces_redirect_tlv_meta_data_tlv_length, tvb, offset+2, 2,
-                               length_meta, "%u Bytes", length_meta);
+    proto_tree_add_uint(meta_data_tree, hf_forces_redirect_tlv_meta_data_tlv_length, tvb, offset+2, 2, length_meta);
     proto_item_set_len(ti, length_meta);
 
     start_offset = offset;
@@ -437,8 +423,8 @@ dissect_redirecttlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint of
         proto_tree_add_item(meta_data_ilv_tree, hf_forces_redirect_tlv_meta_data_tlv_meta_data_ilv_id,
                                    tvb, offset+8, 4, ENC_BIG_ENDIAN);
         length_ilv = tvb_get_ntohl(tvb, offset+12);
-        proto_tree_add_uint_format_value(meta_data_ilv_tree, hf_forces_redirect_tlv_meta_data_tlv_meta_data_ilv_length,
-                                   tvb,  offset+12, 4, length_ilv, "%u Bytes", length_ilv);
+        proto_tree_add_uint(meta_data_ilv_tree, hf_forces_redirect_tlv_meta_data_tlv_meta_data_ilv_length,
+                                   tvb, offset+12, 4, length_ilv);
         offset += 8;
         if (length_ilv > 0) {
             proto_tree_add_item(meta_data_ilv_tree, hf_forces_redirect_tlv_meta_data_tlv_meta_data_ilv,
@@ -460,8 +446,8 @@ dissect_redirecttlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint of
         proto_tree_add_item(redirect_data_tree, hf_forces_redirect_tlv_redirect_data_tlv_type,
                             tvb, offset, 2,  ENC_BIG_ENDIAN);
         length_redirect = tvb_get_ntohs(tvb, offset+2);
-        proto_tree_add_uint_format_value(redirect_data_tree, hf_forces_redirect_tlv_redirect_data_tlv_length,
-                            tvb, offset+2, 2, length_redirect, "%u Bytes", length_redirect);
+        proto_tree_add_uint(redirect_data_tree, hf_forces_redirect_tlv_redirect_data_tlv_length,
+                            tvb, offset+2, 2, length_redirect);
 
         if (tvb_reported_length_remaining(tvb, offset) < length_redirect)
         {
@@ -488,16 +474,16 @@ dissect_redirecttlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint of
 }
 
 static void
-dissect_forces(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 offset)
+dissect_forces(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint32_t offset)
 {
     /* Set up structures needed to add the protocol subtree and manage it */
     proto_item *ti, *tlv_item;
     proto_tree *forces_tree, *forces_flags_tree;
     proto_tree *forces_main_header_tree, *forces_tlv_tree, *tlv_tree;
-    gint        length_count;
+    int         length_count;
 
-    guint8      message_type;
-    guint16     tlv_type;
+    uint8_t     message_type;
+    uint16_t    tlv_type;
 
     /* Make entries in Protocol column and Info column on summary display */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "ForCES");
@@ -512,7 +498,7 @@ dissect_forces(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 offs
     proto_tree_add_item(forces_main_header_tree, hf_forces_version, tvb, 0, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(forces_main_header_tree, hf_forces_rsvd,    tvb, 0, 1, ENC_BIG_ENDIAN);
 
-    message_type = tvb_get_guint8(tvb, offset+1);
+    message_type = tvb_get_uint8(tvb, offset+1);
     proto_tree_add_item( forces_main_header_tree, hf_forces_messagetype, tvb, offset+1, 1, ENC_BIG_ENDIAN);
 
     length_count = tvb_get_ntohs(tvb, offset+2) * 4;  /*multiply 4 DWORD*/
@@ -525,7 +511,7 @@ dissect_forces(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 offs
         expert_add_info_format(pinfo, ti, &ei_forces_length, "Bogus: ForCES Header length (%u bytes) is less than 24bytes)", length_count);
 
     col_add_fstr(pinfo->cinfo, COL_INFO, "Message Type: %s, Total Length:  %u Bytes",
-            val_to_str(message_type, message_type_vals, "Unknown messagetype 0x%x"), length_count);
+            val_to_str(pinfo->pool, message_type, message_type_vals, "Unknown messagetype 0x%x"), length_count);
 
     proto_tree_add_item( forces_main_header_tree, hf_forces_sid,        tvb, offset+4,  4, ENC_BIG_ENDIAN);
     proto_tree_add_item( forces_main_header_tree, hf_forces_did,        tvb, offset+8,  4, ENC_BIG_ENDIAN);
@@ -552,8 +538,8 @@ dissect_forces(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint32 offs
         tlv_item = proto_tree_add_item(forces_tlv_tree, hf_forces_tlv_type, tvb, offset, 2, ENC_BIG_ENDIAN);
         length_count = tvb_get_ntohs(tvb, offset+2) * 4;
         proto_item_set_len(ti, length_count);
-        ti = proto_tree_add_uint_format_value(forces_tlv_tree, hf_forces_tlv_length,
-                                        tvb, offset+2, 2, length_count, "%u Bytes", length_count);
+        ti = proto_tree_add_uint(forces_tlv_tree, hf_forces_tlv_length,
+                                        tvb, offset+2, 2, length_count);
         if (tvb_reported_length_remaining(tvb, offset) < length_count)
             expert_add_info_format(pinfo, ti, &ei_forces_tlv_length, "Bogus: Main TLV length (%u bytes) is wrong", length_count);
 
@@ -662,7 +648,7 @@ proto_register_forces(void)
         },
         { &hf_forces_tlv_length,
             { "Length", "forces.tlv.length",
-            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0x0, NULL, HFILL }
         },
         /*flags*/
         { &hf_forces_flags,
@@ -678,7 +664,7 @@ proto_register_forces(void)
             FT_UINT32, BASE_DEC, NULL, 0x38000000, NULL, HFILL }
         },
         { &hf_forces_flags_rsrvd,
-            { "Rsrvd", "forces.Flags",
+            { "Rsrvd", "forces.flags.rsrvd",
             FT_UINT32, BASE_DEC,NULL, 0x07000000, NULL, HFILL }
         },
         { &hf_forces_flags_em,
@@ -713,7 +699,7 @@ proto_register_forces(void)
         },
         { &hf_forces_lfbselect_tlv_type_operation_length,
             { "Length", "forces.lfbselect.tlv.type.operation.length",
-            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0x0, NULL, HFILL }
         },
         { &hf_forces_lfbselect_tlv_type_operation_path_type,
             { "Type", "forces.lfbselect.tlv.type.operation.path.type",
@@ -754,7 +740,7 @@ proto_register_forces(void)
         },
         { &hf_forces_redirect_tlv_meta_data_tlv_length,
             { "Length", "forces.redirect.tlv.meta.data.tlv.length",
-            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0x0, NULL, HFILL }
         },
         { &hf_forces_redirect_tlv_meta_data_tlv_meta_data_ilv,
             { "Meta Data ILV", "forces.redirect.tlv.meta.data.tlv.meta.data.ilv",
@@ -766,7 +752,7 @@ proto_register_forces(void)
         },
         { &hf_forces_redirect_tlv_meta_data_tlv_meta_data_ilv_length,
             { "Length", "forces.redirect.tlv.meta.data.tlv.meta.data.ilv.length",
-            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
+            FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0x0, NULL, HFILL }
         },
         { &hf_forces_redirect_tlv_redirect_data_tlv_type,
             { "Type", "forces.redirect.tlv.redirect.data.tlv.type",
@@ -774,7 +760,7 @@ proto_register_forces(void)
         },
         { &hf_forces_redirect_tlv_redirect_data_tlv_length,
             { "Length", "forces.redirect.tlv.redirect.data.tlv.length",
-            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
+            FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0x0, NULL, HFILL }
         },
         { &hf_forces_asresult_association_setup_result,
             { "Association Setup Result", "forces.teardown.reason",
@@ -791,7 +777,7 @@ proto_register_forces(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_forces,
         &ett_forces_main_header,
         &ett_forces_flags,
@@ -831,17 +817,10 @@ proto_register_forces(void)
     expert_forces = expert_register_protocol(proto_forces);
     expert_register_field_array(expert_forces, ei, array_length(ei));
 
+    forces_handle_tcp = register_dissector("forces.tcp", dissect_forces_tcp,     proto_forces);
+    forces_handle     = register_dissector("forces",     dissect_forces_not_tcp, proto_forces);
+
     forces_module = prefs_register_protocol(proto_forces,proto_reg_handoff_forces);
-
-    prefs_register_uint_preference(forces_module, "tcp_alternate_port",
-                                   "TCP port",
-                                   "Decode packets on this TCP port as ForCES",
-                                   10, &forces_alternate_tcp_port);
-
-    prefs_register_uint_preference(forces_module, "udp_alternate_port",
-                                   "UDP port",
-                                   "Decode packets on this UDP port as ForCES",
-                                   10, &forces_alternate_udp_port);
 
     prefs_register_uint_preference(forces_module, "sctp_high_prio_port",
                                    "SCTP High Priority channel port",
@@ -849,7 +828,7 @@ proto_register_forces(void)
                                    10, &forces_alternate_sctp_high_prio_channel_port);
 
     prefs_register_uint_preference(forces_module, "sctp_med_prio_port",
-                                   "SCTP Meidium Priority channel port",
+                                   "SCTP Medium Priority channel port",
                                    "Decode packets on this sctp port as ForCES",
                                    10, &forces_alternate_sctp_med_prio_channel_port);
 
@@ -862,36 +841,21 @@ proto_register_forces(void)
 void
 proto_reg_handoff_forces(void)
 {
-    static gboolean inited = FALSE;
+    static bool inited = false;
 
-    static guint alternate_tcp_port = 0; /* 3000 */
-    static guint alternate_udp_port = 0;
-    static guint alternate_sctp_high_prio_channel_port = 0; /* 6700 */
-    static guint alternate_sctp_med_prio_channel_port  = 0;
-    static guint alternate_sctp_low_prio_channel_port  = 0;
-
-    static dissector_handle_t  forces_handle_tcp, forces_handle;
+    static unsigned alternate_sctp_high_prio_channel_port = 0; /* 6700 */
+    static unsigned alternate_sctp_med_prio_channel_port  = 0;
+    static unsigned alternate_sctp_low_prio_channel_port  = 0;
 
     if (!inited) {
-        forces_handle_tcp = create_dissector_handle(dissect_forces_tcp,     proto_forces);
-        forces_handle     = create_dissector_handle(dissect_forces_not_tcp, proto_forces);
         ip_handle = find_dissector_add_dependency("ip", proto_forces);
-        inited = TRUE;
+        /* Register TCP port for dissection */
+        dissector_add_for_decode_as_with_preference("tcp.port", forces_handle_tcp);
+        /* Register UDP port for dissection */
+        dissector_add_for_decode_as_with_preference("udp.port", forces_handle);
+
+        inited = true;
     }
-
-    /* Register TCP port for dissection */
-    if ((alternate_tcp_port != 0) && (alternate_tcp_port != forces_alternate_tcp_port))
-        dissector_delete_uint("tcp.port", alternate_tcp_port, forces_handle_tcp);
-    if ((forces_alternate_tcp_port != 0) && (alternate_tcp_port != forces_alternate_tcp_port))
-        dissector_add_uint("tcp.port", forces_alternate_tcp_port, forces_handle_tcp);
-    alternate_tcp_port = forces_alternate_tcp_port;
-
-    /* Register UDP port for dissection */
-    if ((alternate_udp_port != 0) && (alternate_udp_port != forces_alternate_udp_port))
-        dissector_delete_uint("udp.port", alternate_udp_port, forces_handle);
-    if ((forces_alternate_udp_port != 0) && (alternate_udp_port != forces_alternate_udp_port))
-        dissector_add_uint("udp.port", forces_alternate_udp_port, forces_handle);
-    alternate_udp_port = forces_alternate_udp_port;
 
     /* Register SCTP port for high priority dissection */
     if ((alternate_sctp_high_prio_channel_port != 0) &&
@@ -922,7 +886,7 @@ proto_reg_handoff_forces(void)
 }
 
 /*
-* Editor modelines - http://www.wireshark.org/tools/modelines.html
+* Editor modelines - https://www.wireshark.org/tools/modelines.html
 *
 * Local variables:
 * c-basic-offset: 4

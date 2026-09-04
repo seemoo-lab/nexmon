@@ -9,19 +9,7 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 #requires -version 2
 
@@ -30,17 +18,9 @@
 Creates NSIS "File" function calls required for Qt packaging.
 
 .DESCRIPTION
-This script creates an NSIS-compatible file based on the following Qt
-versions:
-
-  - 5.3 and later: A list of DLLs and directories based on the output of the
-    "windeployqt" utility. Windeployqt lists the DLLs required to run a Qt
-    application. (The initial version that shipped with Qt 5.2 is unusable.)
-
-  - 5.2 and earlier: A hard-coded list of Qt DLLs and directories appropriate
-    for earlier Qt versions.
-
-  - None: A dummy file.
+This script creates an NSIS-compatible file based on the output of
+windeployqt. If Qt is present, version 5.3 or later is required.
+Otherwise a dummy file will be created.
 
 If building with Qt, QMake must be in your PATH.
 
@@ -50,6 +30,9 @@ The path to a Qt application. It will be examined for dependent DLLs.
 .PARAMETER FilePath
 Output filename.
 
+.PARAMETER DebugConfig
+Assume debug binaries.
+
 .INPUTS
 -Executable Path to the Qt application.
 -FilePath Output NSIS file.
@@ -58,7 +41,7 @@ Output filename.
 List of NSIS commands required to package supporting DLLs.
 
 .EXAMPLE
-C:\PS> .\windeployqt-to-nsis.ps1 windeployqt.exe ..\..\staging\wireshark.exe qt-dll-manifest.nsh
+C:\PS> .\windeployqt-to-nsis.ps1 windeployqt.exe ..\..\staging\wireshark.exe wireshark-qt-manifest.nsh [-DebugConfig]
 #>
 
 Param(
@@ -66,7 +49,10 @@ Param(
     [String] $Executable,
 
     [Parameter(Position=1)]
-    [String] $FilePath = "qt-dll-manifest.nsh"
+    [String] $FilePath = "wireshark-qt-manifest.nsh",
+
+    [Parameter(Mandatory=$false)]
+    [Switch] $DebugConfig
 )
 
 
@@ -74,52 +60,38 @@ try {
     $qtVersion = [version](qmake -query QT_VERSION)
     $nsisCommands = @("# Qt version " + $qtVersion ; "#")
 
-    if ($qtVersion -ge "5.3") {
-        # Qt 5.3 or later. Windeployqt is present and works
+    if ($qtVersion -lt "5.3") {
+        Throw "Qt " + $qtVersion + " found. 5.3 or later is required."
+    }
 
-        $wdqtList = windeployqt `
-            --release `
-            --no-compiler-runtime `
-            --list relative `
-            $Executable
+    $DebugOrRelease = If ($DebugConfig) {"--debug"} Else {"--release"}
 
-        $dllPath = Split-Path -Parent $Executable
+    # windeployqt lists translation files that it don't exist (e.g.
+    # qtbase_ar.qm), so we handle those by hand.
+    # https://bugreports.qt.io/browse/QTBUG-65974
+    $wdqtList = windeployqt `
+        $DebugOrRelease `
+        --no-compiler-runtime `
+        --no-translations `
+        --list relative `
+        $Executable
 
-        $dllList = @()
-        $dirList = @()
+    $basePath = Split-Path -Parent $Executable
 
-        foreach ($entry in $wdqtList) {
-            $dir = Split-Path -Parent $entry
-            if ($dir) {
-                $dirList += "File /r `"$dllPath\$dir`""
-            } else {
-                $dllList += "File `"$dllPath\$entry`""
-            }
+    $currentDir = ""
+
+    foreach ($entry in $wdqtList) {
+        if ((Split-Path $entry -Leaf) -eq "icuuc.dll") {
+            # Work around a pre Qt 6.11.1 + Windows ICU issue
+            Write-Host "Skipping system library: $($entry)"
+            continue
         }
-
-        $dirList = $dirList | Sort-Object | Get-Unique
-
-        $nsisCommands += $dllList + $dirList
-
-    } elseif ($qtVersion -ge "5.0") {
-        # Qt 5.0 - 5.2. Windeployqt is buggy or not present
-
-        $nsisCommands += @"
-File "..\..\wireshark-qt-release\Qt5Core.dll"
-File "..\..\wireshark-qt-release\Qt5Gui.dll"
-File "..\..\wireshark-qt-release\Qt5Widgets.dll"
-File "..\..\wireshark-qt-release\Qt5PrintSupport.dll"
-File /r "..\..\wireshark-qt-release\platforms"
-"@
-
-    } else {
-        # Assume Qt 4
-
-        $nsisCommands += @"
-File "..\..\wireshark-qt-release\QtCore4.dll"
-File "..\..\wireshark-qt-release\QtGui4.dll"
-"@
-
+        $dir = Split-Path -Parent $entry
+        if ($dir -and $dir -ne $currentDir) {
+            $nsisCommands += "SetOutPath `"`$INSTDIR\$dir`""
+            $currentDir = $dir
+        }
+        $nsisCommands += "File `"$basePath\$entry`""
     }
 }
 

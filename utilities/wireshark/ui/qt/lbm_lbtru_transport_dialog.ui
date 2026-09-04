@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>LBTRU Transport Statistics</string>
+   <string>LBT-RU Transport Statistics</string>
   </property>
   <property name="sizeGripEnabled">
    <bool>true</bool>
@@ -1123,7 +1123,7 @@
   <customwidget>
    <class>DisplayFilterEdit</class>
    <extends>QLineEdit</extends>
-   <header>display_filter_edit.h</header>
+   <header>widgets/display_filter_edit.h</header>
   </customwidget>
  </customwidgets>
  <connections>

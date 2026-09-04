@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,13 +32,11 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gdbusobjectproxy
- * @short_description: Client-side D-Bus object
- * @include: gio/gio.h
+ * GDBusObjectProxy:
  *
- * A #GDBusObjectProxy is an object used to represent a remote object
- * with one or more D-Bus interfaces. Normally, you don't instantiate
- * a #GDBusObjectProxy yourself - typically #GDBusObjectManagerClient
+ * A `GDBusObjectProxy` is an object used to represent a remote object
+ * with one or more D-Bus interfaces. Normally, you don’t instantiate
+ * a `GDBusObjectProxy` yourself — typically [class@Gio.DBusObjectManagerClient]
  * is used to obtain it.
  *
  * Since: 2.30
@@ -152,16 +152,14 @@ g_dbus_object_proxy_class_init (GDBusObjectProxyClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_G_OBJECT_PATH,
-                                   g_param_spec_string ("g-object-path",
-                                                        "Object Path",
-                                                        "The object path of the proxy",
+                                   g_param_spec_string ("g-object-path", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_CONSTRUCT_ONLY |
                                                         G_PARAM_STATIC_STRINGS));
 
   /**
-   * GDBusObjectProxy:g-connection:
+   * GDBusObjectProxy:g-connection: (getter get-connection)
    *
    * The connection of the proxy.
    *
@@ -169,9 +167,7 @@ g_dbus_object_proxy_class_init (GDBusObjectProxyClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_G_CONNECTION,
-                                   g_param_spec_object ("g-connection",
-                                                        "Connection",
-                                                        "The connection of the proxy",
+                                   g_param_spec_object ("g-connection", NULL, NULL,
                                                         G_TYPE_DBUS_CONNECTION,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_CONSTRUCT_ONLY |
@@ -201,7 +197,7 @@ g_dbus_object_proxy_get_object_path (GDBusObject *object)
 }
 
 /**
- * g_dbus_object_proxy_get_connection:
+ * g_dbus_object_proxy_get_connection: (get-property g-connection)
  * @proxy: a #GDBusObjectProxy
  *
  * Gets the connection that @proxy is for.

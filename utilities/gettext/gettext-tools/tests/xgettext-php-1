@@ -1,9 +1,9 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test PHP support: --add-comments option.
+# Test PHP support: --add-comments option, strings with embedded expressions.
 
-cat <<EOF > xg-ph-1.php
+cat <<\EOF > xg-ph-1.php
 <?
 // This comment will not be extracted.
 echo _("help");
@@ -19,6 +19,40 @@ echo _("Hey Jude");
 echo _("The Fabulous Four");
 // This will not be extracted.
 echo _(table["key"]);
+// Strings with embedded expressions, a.k.a. variable parsing.
+echo _("embedded_1_$foo bar");
+echo _("embedded_2_${foo}bar");
+echo _("embedded_3_{$foo}bar");
+echo _("embedded_4_{$array[func(_('embedded_4_sub1'))]}_bar_{$array[func(_('embedded_4_sub2'))]}_baz");
+echo _("embedded_5_{$array[func(_("embedded_5_sub1"))]}_bar_{$array[func(_("embedded_5_sub2"))]}_baz");
+echo _("embedded_6_{$array[func(_("embedded_6_sub]}1"))]}_bar_{$array[func(_("embedded_6_sub]}2"))]}_baz");
+echo _("embedded_7_{$array[func(_("embedded_7_sub\"1"))]}_bar_{$array[func(_("embedded_7_sub\"2"))]}_baz");
+echo _("embedded_8");
+// Heredoc with with embedded expressions.
+echo _(<<<EOT
+embedded_11_$foo bar
+EOT);
+echo _(<<<EOT
+embedded_12_${foo}bar
+EOT);
+echo _(<<<EOT
+embedded_13_{$foo}bar
+EOT);
+echo _(<<<EOT
+embedded_14_{$array[func(_('embedded_14_sub1'))]}_bar_{$array[func(_('embedded_14_sub2'))]}_baz
+EOT);
+echo _(<<<EOT
+embedded_15_{$array[func(_("embedded_15_sub1"))]}_bar_{$array[func(_("embedded_15_sub2"))]}_baz
+EOT);
+echo _(<<<EOT
+embedded_16_{$array[func(_("embedded_16_sub]}1"))]}_bar_{$array[func(_("embedded_16_sub]}2"))]}_baz
+EOT);
+echo _(<<<EOT
+embedded_17_{$array[func(_("embedded_17_sub\"1"))]}_bar_{$array[func(_("embedded_17_sub\"2"))]}_baz
+EOT);
+echo _(<<<EOT
+embedded_18
+EOT);
 ?>
 EOF
 
@@ -27,7 +61,7 @@ ${XGETTEXT} --omit-header --no-location --add-comments=TRANSLATORS: \
   -d xg-ph-1.tmp xg-ph-1.php || Exit 1
 LC_ALL=C tr -d '\r' < xg-ph-1.tmp.po > xg-ph-1.po || Exit 1
 
-cat <<EOF > xg-ph-1.ok
+cat <<\EOF > xg-ph-1.ok
 msgid "help"
 msgstr ""
 
@@ -46,6 +80,60 @@ msgstr ""
 #. Nickname of the Beatles
 #.
 msgid "The Fabulous Four"
+msgstr ""
+
+msgid "embedded_4_sub1"
+msgstr ""
+
+msgid "embedded_4_sub2"
+msgstr ""
+
+msgid "embedded_5_sub1"
+msgstr ""
+
+msgid "embedded_5_sub2"
+msgstr ""
+
+msgid "embedded_6_sub]}1"
+msgstr ""
+
+msgid "embedded_6_sub]}2"
+msgstr ""
+
+msgid "embedded_7_sub\"1"
+msgstr ""
+
+msgid "embedded_7_sub\"2"
+msgstr ""
+
+msgid "embedded_8"
+msgstr ""
+
+msgid "embedded_14_sub1"
+msgstr ""
+
+msgid "embedded_14_sub2"
+msgstr ""
+
+msgid "embedded_15_sub1"
+msgstr ""
+
+msgid "embedded_15_sub2"
+msgstr ""
+
+msgid "embedded_16_sub]}1"
+msgstr ""
+
+msgid "embedded_16_sub]}2"
+msgstr ""
+
+msgid "embedded_17_sub\"1"
+msgstr ""
+
+msgid "embedded_17_sub\"2"
+msgstr ""
+
+msgid "embedded_18"
 msgstr ""
 EOF
 

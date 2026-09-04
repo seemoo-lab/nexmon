@@ -20,6 +20,31 @@ extern "C" {
  * WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+// support for hiding v4 addresses from outputs
+const char*
+inet_ntop_hide(int af, const void *src, char *dst, socklen_t size) {
+    switch ( af ) {
+        case AF_INET:
+            return(inet_ntop4_hide(src, dst, size));
+        default:
+            return NULL;
+    }
+    /* NOTREACHED */
+}
+const char*
+inet_ntop4_hide(const unsigned char *src, char *dst, socklen_t size) {
+    static const char *fmt = "%s.%s.%s.%u";
+    char tmp[sizeof "255.255.255.255"];
+
+    if ( (size_t)sprintf(tmp, fmt, "*","*","*", src[3]) >= size ) {
+        return NULL;
+    }
+    strcpy(dst, tmp);
+
+    return dst;
+}
+
+
 #ifndef HAVE_INET_NTOP
 #define NS_INT16SZ       2
 #define NS_INADDRSZ     4
@@ -39,12 +64,12 @@ extern "C" {
  * author:
  *      Paul Vixie, 1996.
  */
-const char* 
+const char*
 inet_ntop(int af, const void *src, char *dst, socklen_t size) {
     switch ( af ) {
         case AF_INET:
             return(inet_ntop4(src, dst, size));
-#ifdef HAVE_IPV6
+#if HAVE_IPV6
         case AF_INET6:
             return(inet_ntop6(src, dst, size));
 #endif
@@ -53,6 +78,7 @@ inet_ntop(int af, const void *src, char *dst, socklen_t size) {
     }
     /* NOTREACHED */
 }
+
 
 /* const char *
  * inet_ntop4(src, dst, size)
@@ -84,7 +110,7 @@ inet_ntop4(const unsigned char *src, char *dst, socklen_t size) {
  * author:
  *      Paul Vixie, 1996.
  */
-#ifdef HAVE_IPV6
+#if HAVE_IPV6
 const char*
 inet_ntop6(const unsigned char *src, char *dst, socklen_t size) {
     /*
@@ -110,7 +136,9 @@ inet_ntop6(const unsigned char *src, char *dst, socklen_t size) {
     for ( i = 0; i < NS_IN6ADDRSZ; i++ )
         words[i / 2] |= (src[i] << ((1 - (i % 2)) << 3));
     best.base = -1;
+    best.len = 0;
     cur.base = -1;
+    cur.len = 0;
     for ( i = 0; i < (NS_IN6ADDRSZ / NS_INT16SZ); i++ ) {
         if ( words[i] == 0 ) {
             if ( cur.base == -1 )
@@ -180,4 +208,3 @@ inet_ntop6(const unsigned char *src, char *dst, socklen_t size) {
 #ifdef __cplusplus
 } /* end extern "C" */
 #endif
-

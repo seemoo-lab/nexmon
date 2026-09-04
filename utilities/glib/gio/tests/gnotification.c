@@ -1,10 +1,12 @@
 /*
  * Copyright © 2013 Lars Uebernickel
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -69,7 +71,7 @@ notification_received (GNotificationServer *server,
     {
     case 0:
       g_assert_cmpstr (notification_id, ==, "test1");
-      g_assert (g_variant_lookup (notification, "title", "&s", &title));
+      g_assert_true (g_variant_lookup (notification, "title", "&s", &title));
       g_assert_cmpstr (title, ==, "Test");
       break;
 
@@ -86,7 +88,7 @@ notification_received (GNotificationServer *server,
       break;
 
     case 4:
-      g_assert (g_dbus_is_guid (notification_id));
+      g_assert_true (g_dbus_is_guid (notification_id));
  
       g_notification_server_stop (server);
       break;
@@ -121,7 +123,7 @@ server_notify_is_running (GObject    *object,
     {
       GApplication *app;
 
-      app = g_application_new ("org.gtk.TestApplication", G_APPLICATION_FLAGS_NONE);
+      app = g_application_new ("org.gtk.TestApplication", G_APPLICATION_DEFAULT_FLAGS);
       g_signal_connect (app, "activate", G_CALLBACK (activate_app), NULL);
 
       g_application_run (app, 0, NULL);
@@ -132,16 +134,6 @@ server_notify_is_running (GObject    *object,
     {
       g_main_loop_quit (loop);
     }
-}
-
-static gboolean
-timeout (gpointer user_data)
-{
-  GNotificationServer *server = user_data;
-
-  g_notification_server_stop (server);
-
-  return G_SOURCE_REMOVE;
 }
 
 static void
@@ -160,7 +152,6 @@ basic (void)
   g_signal_connect (server, "notification-received", G_CALLBACK (notification_received), &received_count);
   g_signal_connect (server, "notification-removed", G_CALLBACK (notification_removed), &removed_count);
   g_signal_connect (server, "notify::is-running", G_CALLBACK (server_notify_is_running), loop);
-  g_timeout_add_seconds (1, timeout, server);
 
   g_main_loop_run (loop);
 
@@ -180,6 +171,7 @@ struct _GNotification
   gchar *body;
   GIcon *icon;
   GNotificationPriority priority;
+  gchar *category;
   GPtrArray *buttons;
   gchar *default_action;
   GVariant *default_action_target;
@@ -205,10 +197,12 @@ test_properties (void)
 
   g_notification_set_title (n, "title");
   g_notification_set_body (n, "body");
+  g_notification_set_category (n, "cate.gory");
   icon = g_themed_icon_new ("i-c-o-n");
   g_notification_set_icon (n, icon);
   g_object_unref (icon);
   g_notification_set_priority (n, G_NOTIFICATION_PRIORITY_HIGH);
+  g_notification_set_category (n, "cate.gory");
   g_notification_add_button (n, "label1", "app.action1::target1");
   g_notification_set_default_action (n, "app.action2::target2");
 
@@ -216,11 +210,13 @@ test_properties (void)
 
   g_assert_cmpstr (rn->title, ==, "title");
   g_assert_cmpstr (rn->body, ==, "body");
-  g_assert (G_IS_THEMED_ICON (rn->icon));
+  g_assert_true (G_IS_THEMED_ICON (rn->icon));
   names = g_themed_icon_get_names (G_THEMED_ICON (rn->icon));
   g_assert_cmpstr (names[0], ==, "i-c-o-n");
-  g_assert (names[1] == NULL);
-  g_assert (rn->priority == G_NOTIFICATION_PRIORITY_HIGH);
+  g_assert_cmpstr (names[1], ==, "i-c-o-n-symbolic");
+  g_assert_null (names[2]);
+  g_assert_cmpint (rn->priority, ==, G_NOTIFICATION_PRIORITY_HIGH);
+  g_assert_cmpstr (rn->category, ==, "cate.gory");
 
   g_assert_cmpint (rn->buttons->len, ==, 1);
   b = (Button*)rn->buttons->pdata[0];

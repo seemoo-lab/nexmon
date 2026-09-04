@@ -100,9 +100,9 @@ __attribute__((weak))
 __attribute__((at(0x0082dbc0, "flashpatch")))
 unsigned int flash_patch_24[2] = {0x9c4bf7dc, 0x4605684b};
 
-/*__attribute__((weak))
+__attribute__((weak))
 __attribute__((at(0x0082ea60, "flashpatch")))
-unsigned int flash_patch_25[2] = {0x99d3f7dc, 0x68438997};*/
+unsigned int flash_patch_25[2] = {0x99d3f7dc, 0x68438997};
 
 __attribute__((weak))
 __attribute__((at(0x0082f4f0, "flashpatch")))

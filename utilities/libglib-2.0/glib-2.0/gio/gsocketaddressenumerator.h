@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -34,24 +36,28 @@ G_BEGIN_DECLS
 #define G_IS_SOCKET_ADDRESS_ENUMERATOR_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), G_TYPE_SOCKET_ADDRESS_ENUMERATOR))
 #define G_SOCKET_ADDRESS_ENUMERATOR_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), G_TYPE_SOCKET_ADDRESS_ENUMERATOR, GSocketAddressEnumeratorClass))
 
-/**
- * GSocketAddressEnumerator:
- *
- * Enumerator type for objects that contain or generate
- * #GSocketAddress<!-- -->es.
- */
 typedef struct _GSocketAddressEnumeratorClass GSocketAddressEnumeratorClass;
 
 struct _GSocketAddressEnumerator
 {
+  /*< private >*/
   GObject parent_instance;
-
 };
 
+/**
+ * GSocketAddressEnumeratorClass:
+ * @next: Virtual method for g_socket_address_enumerator_next().
+ * @next_async: Virtual method for g_socket_address_enumerator_next_async().
+ * @next_finish: Virtual method for g_socket_address_enumerator_next_finish().
+ *
+ * Class structure for #GSocketAddressEnumerator.
+ */
 struct _GSocketAddressEnumeratorClass
 {
+  /*< private >*/
   GObjectClass parent_class;
 
+  /*< public >*/
   /* Virtual Table */
 
   GSocketAddress * (* next)        (GSocketAddressEnumerator  *enumerator,
@@ -67,20 +73,20 @@ struct _GSocketAddressEnumeratorClass
 				    GError                   **error);
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType           g_socket_address_enumerator_get_type        (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType           g_socket_address_enumerator_get_type        (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GSocketAddress *g_socket_address_enumerator_next        (GSocketAddressEnumerator  *enumerator,
 							 GCancellable              *cancellable,
 							 GError                   **error);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void            g_socket_address_enumerator_next_async  (GSocketAddressEnumerator  *enumerator,
 							 GCancellable              *cancellable,
 							 GAsyncReadyCallback        callback,
 							 gpointer                   user_data);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GSocketAddress *g_socket_address_enumerator_next_finish (GSocketAddressEnumerator  *enumerator,
 							 GAsyncResult              *result,
 							 GError                   **error);

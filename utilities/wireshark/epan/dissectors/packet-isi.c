@@ -7,24 +7,11 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
-#include <glib.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
 #include <epan/packet.h>
@@ -226,7 +213,7 @@ static const value_string isi_sim_cause[] = {
 	{0x00, NULL }
 };
 
-value_string_ext isi_sim_cause_ext = VALUE_STRING_EXT_INIT(isi_sim_cause);
+static value_string_ext isi_sim_cause_ext = VALUE_STRING_EXT_INIT(isi_sim_cause);
 
 static const value_string isi_sim_pb_subblock[] = {
 	{0xE4, "SIM_PB_INFO_REQUEST"},
@@ -550,153 +537,153 @@ static const value_string isi_sms_common_message_id[] = {
 };
 
 
-static int proto_isi = -1;
+static int proto_isi;
 
-static int hf_isi_rdev = -1;
-static int hf_isi_sdev = -1;
-static int hf_isi_res  = -1;
-static int hf_isi_len  = -1;
-static int hf_isi_robj = -1;
-static int hf_isi_sobj = -1;
-static int hf_isi_id   = -1;
+static int hf_isi_rdev;
+static int hf_isi_sdev;
+static int hf_isi_res;
+static int hf_isi_len;
+static int hf_isi_robj;
+static int hf_isi_sobj;
+static int hf_isi_id;
 
-static int hf_isi_sim_auth_payload = -1;
-static int hf_isi_sim_auth_cmd = -1;
-static int hf_isi_sim_auth_status_rsp = -1;
-static int hf_isi_sim_auth_protection_req = -1;
-static int hf_isi_sim_auth_protection_rsp = -1;
-static int hf_isi_sim_auth_pin = -1;
-static int hf_isi_sim_auth_puk = -1;
-static int hf_isi_sim_auth_new_pin = -1;
-static int hf_isi_sim_auth_pw_type = -1;
-static int hf_isi_sim_auth_indication = -1;
-static int hf_isi_sim_auth_indication_cfg = -1;
+static int hf_isi_sim_auth_payload;
+static int hf_isi_sim_auth_cmd;
+static int hf_isi_sim_auth_status_rsp;
+static int hf_isi_sim_auth_protection_req;
+static int hf_isi_sim_auth_protection_rsp;
+static int hf_isi_sim_auth_pin;
+static int hf_isi_sim_auth_puk;
+static int hf_isi_sim_auth_new_pin;
+static int hf_isi_sim_auth_pw_type;
+static int hf_isi_sim_auth_indication;
+static int hf_isi_sim_auth_indication_cfg;
 
-static int hf_isi_sim_payload = -1;
-static int hf_isi_sim_message_id = -1;
-static int hf_isi_sim_service_type = -1;
-static int hf_isi_sim_cause = -1;
-static int hf_isi_sim_secondary_cause = -1;
-static int hf_isi_sim_subblock_count = -1;
-static int hf_isi_sim_subblock_size = -1;
-static int hf_isi_sim_pb_subblock = -1;
-static int hf_isi_sim_pb_type = -1;
-static int hf_isi_sim_pb_location = -1;
-static int hf_isi_sim_pb_tag_count = -1;
-static int hf_isi_sim_pb_tag = -1;
-static int hf_isi_sim_imsi_length = -1;
+static int hf_isi_sim_payload;
+static int hf_isi_sim_message_id;
+static int hf_isi_sim_service_type;
+static int hf_isi_sim_cause;
+static int hf_isi_sim_secondary_cause;
+static int hf_isi_sim_subblock_count;
+static int hf_isi_sim_subblock_size;
+static int hf_isi_sim_pb_subblock;
+static int hf_isi_sim_pb_type;
+static int hf_isi_sim_pb_location;
+static int hf_isi_sim_pb_tag_count;
+static int hf_isi_sim_pb_tag;
+static int hf_isi_sim_imsi_length;
 
-static int hf_isi_gss_payload = -1;
-static int hf_isi_gss_message_id = -1;
+static int hf_isi_gss_payload;
+static int hf_isi_gss_message_id;
 #if 0
-static int hf_isi_gss_subblock = -1;
+static int hf_isi_gss_subblock;
 #endif
-static int hf_isi_gss_operation = -1;
-static int hf_isi_gss_subblock_count = -1;
-static int hf_isi_gss_cause = -1;
-static int hf_isi_gss_common_message_id = -1;
+static int hf_isi_gss_operation;
+static int hf_isi_gss_subblock_count;
+static int hf_isi_gss_cause;
+static int hf_isi_gss_common_message_id;
 
-static int hf_isi_gps_payload = -1;
-static int hf_isi_gps_cmd = -1;
-static int hf_isi_gps_sub_pkgs = -1;
-static int hf_isi_gps_sub_type = -1;
-static int hf_isi_gps_sub_len = -1;
-static int hf_isi_gps_status = -1;
-static int hf_isi_gps_year = -1;
-static int hf_isi_gps_month = -1;
-static int hf_isi_gps_day = -1;
-static int hf_isi_gps_hour = -1;
-static int hf_isi_gps_minute = -1;
-static int hf_isi_gps_second = -1;
-static int hf_isi_gps_latitude = -1;
-static int hf_isi_gps_longitude = -1;
-static int hf_isi_gps_eph = -1;
-static int hf_isi_gps_altitude = -1;
-static int hf_isi_gps_epv = -1;
-static int hf_isi_gps_course = -1;
-static int hf_isi_gps_epd = -1;
-static int hf_isi_gps_speed = -1;
-static int hf_isi_gps_eps = -1;
-static int hf_isi_gps_climb = -1;
-static int hf_isi_gps_epc = -1;
-static int hf_isi_gps_mcc = -1;
-static int hf_isi_gps_mnc = -1;
-static int hf_isi_gps_lac = -1;
-static int hf_isi_gps_cid = -1;
-static int hf_isi_gps_ucid = -1;
-static int hf_isi_gps_satellites = -1;
-static int hf_isi_gps_prn = -1;
-static int hf_isi_gps_sat_used = -1;
-static int hf_isi_gps_sat_strength = -1;
-static int hf_isi_gps_sat_elevation = -1;
-static int hf_isi_gps_sat_azimuth = -1;
+static int hf_isi_gps_payload;
+static int hf_isi_gps_cmd;
+static int hf_isi_gps_sub_pkgs;
+static int hf_isi_gps_sub_type;
+static int hf_isi_gps_sub_len;
+static int hf_isi_gps_status;
+static int hf_isi_gps_year;
+static int hf_isi_gps_month;
+static int hf_isi_gps_day;
+static int hf_isi_gps_hour;
+static int hf_isi_gps_minute;
+static int hf_isi_gps_second;
+static int hf_isi_gps_latitude;
+static int hf_isi_gps_longitude;
+static int hf_isi_gps_eph;
+static int hf_isi_gps_altitude;
+static int hf_isi_gps_epv;
+static int hf_isi_gps_course;
+static int hf_isi_gps_epd;
+static int hf_isi_gps_speed;
+static int hf_isi_gps_eps;
+static int hf_isi_gps_climb;
+static int hf_isi_gps_epc;
+static int hf_isi_gps_mcc;
+static int hf_isi_gps_mnc;
+static int hf_isi_gps_lac;
+static int hf_isi_gps_cid;
+static int hf_isi_gps_ucid;
+static int hf_isi_gps_satellites;
+static int hf_isi_gps_prn;
+static int hf_isi_gps_sat_used;
+static int hf_isi_gps_sat_strength;
+static int hf_isi_gps_sat_elevation;
+static int hf_isi_gps_sat_azimuth;
 
-static int hf_isi_ss_payload = -1;
-static int hf_isi_ss_message_id = -1;
-static int hf_isi_ss_ussd_type = -1;
-static int hf_isi_ss_subblock_count = -1;
-static int hf_isi_ss_subblock = -1;
-static int hf_isi_ss_operation = -1;
-static int hf_isi_ss_service_code = -1;
-static int hf_isi_ss_status_indication = -1;
-static int hf_isi_ss_ussd_length = -1;
-static int hf_isi_ss_common_message_id = -1;
+static int hf_isi_ss_payload;
+static int hf_isi_ss_message_id;
+static int hf_isi_ss_ussd_type;
+static int hf_isi_ss_subblock_count;
+static int hf_isi_ss_subblock;
+static int hf_isi_ss_operation;
+static int hf_isi_ss_service_code;
+static int hf_isi_ss_status_indication;
+static int hf_isi_ss_ussd_length;
+static int hf_isi_ss_common_message_id;
 
-static int hf_isi_network_payload = -1;
-static int hf_isi_network_cmd = -1;
-static int hf_isi_network_data_sub_pkgs = -1;
-static int hf_isi_network_status_sub_type = -1;
-static int hf_isi_network_status_sub_len = -1;
-static int hf_isi_network_status_sub_lac = -1;
-static int hf_isi_network_status_sub_cid = -1;
-static int hf_isi_network_status_sub_msg = -1;
-static int hf_isi_network_status_sub_msg_len = -1;
-static int hf_isi_network_cell_info_sub_type = -1;
-static int hf_isi_network_cell_info_sub_len  = -1;
-static int hf_isi_network_cell_info_sub_operator = -1;
-static int hf_isi_network_gsm_band_900 = -1;
-static int hf_isi_network_gsm_band_1800 = -1;
-static int hf_isi_network_gsm_band_1900 = -1;
-static int hf_isi_network_gsm_band_850 = -1;
+static int hf_isi_network_payload;
+static int hf_isi_network_cmd;
+static int hf_isi_network_data_sub_pkgs;
+static int hf_isi_network_status_sub_type;
+static int hf_isi_network_status_sub_len;
+static int hf_isi_network_status_sub_lac;
+static int hf_isi_network_status_sub_cid;
+static int hf_isi_network_status_sub_msg;
+static int hf_isi_network_status_sub_msg_len;
+static int hf_isi_network_cell_info_sub_type;
+static int hf_isi_network_cell_info_sub_len;
+static int hf_isi_network_cell_info_sub_operator;
+static int hf_isi_network_gsm_band_900;
+static int hf_isi_network_gsm_band_1800;
+static int hf_isi_network_gsm_band_1900;
+static int hf_isi_network_gsm_band_850;
 
-static int hf_isi_sms_payload = -1;
-static int hf_isi_sms_message_id = -1;
-static int hf_isi_sms_routing_command = -1;
-static int hf_isi_sms_routing_mode = -1;
-static int hf_isi_sms_route = -1;
-static int hf_isi_sms_subblock_count = -1;
-static int hf_isi_sms_send_status = -1;
-static int hf_isi_sms_common_message_id = -1;
+static int hf_isi_sms_payload;
+static int hf_isi_sms_message_id;
+static int hf_isi_sms_routing_command;
+static int hf_isi_sms_routing_mode;
+static int hf_isi_sms_route;
+static int hf_isi_sms_subblock_count;
+static int hf_isi_sms_send_status;
+static int hf_isi_sms_common_message_id;
 
-static int ett_isi = -1;
-static int ett_isi_msg = -1;
-static int ett_isi_network_gsm_band_info = -1;
+static int ett_isi;
+static int ett_isi_msg;
+static int ett_isi_network_gsm_band_info;
 
-static expert_field ei_isi_len = EI_INIT;
-static expert_field ei_isi_unsupported_packet = EI_INIT;
+static expert_field ei_isi_len;
+static expert_field ei_isi_unsupported_packet;
 
 static int dissect_isi_sim_auth(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitree, void* data _U_) {
 	proto_item *item;
 	proto_tree *tree;
-	guint8 cmd, code;
+	uint8_t cmd, code;
 
 	item = proto_tree_add_item(isitree, hf_isi_sim_auth_payload, tvb, 0, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_isi_msg);
 
 	proto_tree_add_item(tree, hf_isi_sim_auth_cmd, tvb, 0, 1, ENC_BIG_ENDIAN);
-	cmd = tvb_get_guint8(tvb, 0);
+	cmd = tvb_get_uint8(tvb, 0);
 
 	switch(cmd) {
 		case 0x01: /* SIM_AUTH_PROTECTED_REQ */
 			proto_tree_add_item(tree, hf_isi_sim_auth_protection_req, tvb, 2, 1, ENC_BIG_ENDIAN);
-			cmd = tvb_get_guint8(tvb, 2);
+			cmd = tvb_get_uint8(tvb, 2);
 			switch(cmd) {
 				case 0x00: /* DISABLE */
-					proto_tree_add_item(tree, hf_isi_sim_auth_pin, tvb, 3, -1, ENC_ASCII|ENC_NA);
+					proto_tree_add_item(tree, hf_isi_sim_auth_pin, tvb, 3, -1, ENC_ASCII);
 					col_set_str(pinfo->cinfo, COL_INFO, "disable SIM startup protection");
 					break;
 				case 0x01: /* ENABLE */
-					proto_tree_add_item(tree, hf_isi_sim_auth_pin, tvb, 3, -1, ENC_ASCII|ENC_NA);
+					proto_tree_add_item(tree, hf_isi_sim_auth_pin, tvb, 3, -1, ENC_ASCII);
 					col_set_str(pinfo->cinfo, COL_INFO, "enable SIM startup protection");
 					break;
 				case 0x04: /* STATUS */
@@ -709,19 +696,19 @@ static int dissect_isi_sim_auth(tvbuff_t *tvb, packet_info *pinfo, proto_item *i
 			break;
 		case 0x02: /* SIM_AUTH_PROTECTED_RESP */
 			proto_tree_add_item(tree, hf_isi_sim_auth_protection_rsp, tvb, 1, 1, ENC_BIG_ENDIAN);
-			if(tvb_get_guint8(tvb, 1))
+			if(tvb_get_uint8(tvb, 1))
 				col_set_str(pinfo->cinfo, COL_INFO, "SIM startup protection enabled");
 			else
 				col_set_str(pinfo->cinfo, COL_INFO, "SIM startup protection disabled");
 			break;
 		case 0x04: /* SIM_AUTH_UPDATE_REQ */
 			proto_tree_add_item(tree, hf_isi_sim_auth_pw_type, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x02: /* PIN */
 					col_set_str(pinfo->cinfo, COL_INFO, "update SIM PIN");
-					proto_tree_add_item(tree, hf_isi_sim_auth_pin, tvb, 2, 11, ENC_ASCII|ENC_NA);
-					proto_tree_add_item(tree, hf_isi_sim_auth_new_pin, tvb, 13, 11, ENC_ASCII|ENC_NA);
+					proto_tree_add_item(tree, hf_isi_sim_auth_pin, tvb, 2, 11, ENC_ASCII);
+					proto_tree_add_item(tree, hf_isi_sim_auth_new_pin, tvb, 13, 11, ENC_ASCII);
 					break;
 				case 0x03: /* PUK */
 					col_set_str(pinfo->cinfo, COL_INFO, "update SIM PUK");
@@ -739,16 +726,16 @@ static int dissect_isi_sim_auth(tvbuff_t *tvb, packet_info *pinfo, proto_item *i
 			break;
 		case 0x07: /* SIM_AUTH_REQ */
 			proto_tree_add_item(tree, hf_isi_sim_auth_pw_type, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x02: /* PIN */
 					col_set_str(pinfo->cinfo, COL_INFO, "SIM Authentication with PIN");
-					proto_tree_add_item(tree, hf_isi_sim_auth_pin, tvb, 2, 11, ENC_ASCII|ENC_NA);
+					proto_tree_add_item(tree, hf_isi_sim_auth_pin, tvb, 2, 11, ENC_ASCII);
 					break;
 				case 0x03: /* PUK */
 					col_set_str(pinfo->cinfo, COL_INFO, "SIM Authentication with PUK");
-					proto_tree_add_item(tree, hf_isi_sim_auth_puk, tvb, 2, 11, ENC_ASCII|ENC_NA);
-					proto_tree_add_item(tree, hf_isi_sim_auth_new_pin, tvb, 13, 11, ENC_ASCII|ENC_NA);
+					proto_tree_add_item(tree, hf_isi_sim_auth_puk, tvb, 2, 11, ENC_ASCII);
+					proto_tree_add_item(tree, hf_isi_sim_auth_new_pin, tvb, 13, 11, ENC_ASCII);
 					break;
 				default:
 					col_set_str(pinfo->cinfo, COL_INFO, "unknown SIM Authentication request");
@@ -763,7 +750,7 @@ static int dissect_isi_sim_auth(tvbuff_t *tvb, packet_info *pinfo, proto_item *i
 			break;
 		case 0x10: /* SIM_AUTH_STATUS_IND */
 			proto_tree_add_item(tree, hf_isi_sim_auth_indication, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			proto_tree_add_item(tree, hf_isi_sim_auth_pw_type, tvb, 2, 1, ENC_BIG_ENDIAN);
 			switch(code) {
 				case 0x01:
@@ -795,7 +782,7 @@ static int dissect_isi_sim_auth(tvbuff_t *tvb, packet_info *pinfo, proto_item *i
 			break;
 		case 0x12: /* SIM_AUTH_STATUS_RESP */
 			proto_tree_add_item(tree, hf_isi_sim_auth_status_rsp, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x02:
 					col_set_str(pinfo->cinfo, COL_INFO, "SIM Authentication status: need PIN");
@@ -824,19 +811,19 @@ static int dissect_isi_sim_auth(tvbuff_t *tvb, packet_info *pinfo, proto_item *i
 static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitree, void* data _U_) {
 	proto_item *item;
 	proto_tree *tree;
-	guint8 cmd, code;
+	uint8_t cmd, code;
 
 	item = proto_tree_add_item(isitree, hf_isi_sim_payload, tvb, 0, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_isi_msg);
 
 	proto_tree_add_item(tree, hf_isi_sim_message_id, tvb, 0, 1, ENC_BIG_ENDIAN);
-	cmd = tvb_get_guint8(tvb, 0);
+	cmd = tvb_get_uint8(tvb, 0);
 
 	switch(cmd) {
 
 		case 0x19: /* SIM_NETWORK_INFO_REQ */
 			proto_tree_add_item(tree, hf_isi_sim_service_type, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x2F:
 					col_set_str(pinfo->cinfo, COL_INFO, "Network Information Request: Read Home PLMN");
@@ -851,10 +838,10 @@ static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 			proto_tree_add_item(tree, hf_isi_sim_service_type, tvb, 1, 1, ENC_BIG_ENDIAN);
 			proto_tree_add_item(tree, hf_isi_sim_cause, tvb, 2, 1, ENC_BIG_ENDIAN);
 
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x2F:
-					dissect_e212_mcc_mnc(tvb, pinfo, tree, 3, E212_LAI, FALSE);
+					dissect_e212_mcc_mnc(tvb, pinfo, tree, 3, E212_LAI, false);
 					col_set_str(pinfo->cinfo, COL_INFO, "Network Information Response: Home PLMN");
 					break;
 				default:
@@ -865,7 +852,7 @@ static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 
 		case 0x1D: /* SIM_IMSI_REQ_READ_IMSI */
 			proto_tree_add_item(tree, hf_isi_sim_service_type, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				default:
 					col_set_str(pinfo->cinfo, COL_INFO, "Read IMSI Request");
@@ -911,16 +898,16 @@ static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 
 			*/
 
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				default:
 					proto_tree_add_item(tree, hf_isi_sim_imsi_length, tvb, 3, 1, ENC_BIG_ENDIAN);
 
 					/*
-					next_tvb = tvb_new_subset(tvb, 0, -1, -1);
+					next_tvb = tvb_new_subset_remaining(tvb, 0);
 					proto_tree_add_item(tree, hf_isi_sim_imsi_byte_1, next_tvb, 4, 1, ENC_LITTLE_ENDIAN);
-					dissect_e212_mcc_mnc(next_tvb, pinfo, tree, 4, FALSE );
-					proto_tree_add_item(tree, hf_E212_msin, tvb, 2, 7, FALSE);
+					dissect_e212_mcc_mnc(next_tvb, pinfo, tree, 4, false );
+					proto_tree_add_item(tree, hf_E212_msin, tvb, 2, 7, ENC_BIG_ENDIAN);
 
 					*/
 
@@ -931,7 +918,7 @@ static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 
 		case 0x21: /* SIM_SERV_PROV_NAME_REQ */
 			proto_tree_add_item(tree, hf_isi_sim_service_type, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				default:
 					col_set_str(pinfo->cinfo, COL_INFO, "Service Provider Name Request");
@@ -940,7 +927,7 @@ static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 			break;
 
 		case 0x22: /* SIM_SERV_PROV_NAME_RESP */
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x2c:
 					proto_tree_add_item(tree, hf_isi_sim_cause, tvb, 1, 1, ENC_BIG_ENDIAN);
@@ -955,7 +942,7 @@ static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 
 		case 0xBA: /* SIM_READ_FIELD_REQ */
 			proto_tree_add_item(tree, hf_isi_sim_service_type, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x66:
 					col_set_str(pinfo->cinfo, COL_INFO, "Read Field Request: Integrated Circuit Card Identification (ICCID)");
@@ -968,7 +955,7 @@ static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 
 		case 0xBB: /* SIM_READ_FIELD_RESP */
 			proto_tree_add_item(tree, hf_isi_sim_service_type, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x66:
 					proto_tree_add_item(tree, hf_isi_sim_cause, tvb, 2, 1, ENC_BIG_ENDIAN);
@@ -982,7 +969,7 @@ static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 
 		case 0xBC: /* SIM_SMS_REQ */
 			proto_tree_add_item(tree, hf_isi_sim_service_type, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				default:
 					col_set_str(pinfo->cinfo, COL_INFO, "SMS Request");
@@ -992,7 +979,7 @@ static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 
 		case 0xBD: /* SIM_SMS_RESP */
 			proto_tree_add_item(tree, hf_isi_sim_service_type, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				default:
 					col_set_str(pinfo->cinfo, COL_INFO, "SMS Response");
@@ -1030,7 +1017,7 @@ static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 			proto_tree_add_item(tree, hf_isi_sim_pb_tag, tvb, 22, 1, ENC_BIG_ENDIAN);
 			proto_tree_add_item(tree, hf_isi_sim_pb_tag, tvb, 24, 1, ENC_BIG_ENDIAN);
 
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				default:
 					col_set_str(pinfo->cinfo, COL_INFO, "Phonebook Read Request");
@@ -1040,7 +1027,7 @@ static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 
 		case 0xDD: /* SIM_PB_RESP_SIM_PB_READ */
 			proto_tree_add_item(tree, hf_isi_sim_service_type, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				default:
 					col_set_str(pinfo->cinfo, COL_INFO, "Phonebook Read Response");
@@ -1049,7 +1036,7 @@ static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 			break;
 
 		case 0xEF: /* SIM_IND */
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				default:
 					col_set_str(pinfo->cinfo, COL_INFO, "Indicator");
@@ -1060,7 +1047,7 @@ static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 		case 0xF0: /* SIM_COMMON_MESSAGE */
 			proto_tree_add_item(tree, hf_isi_sim_cause, tvb, 1, 1, ENC_BIG_ENDIAN);
 			proto_tree_add_item(tree, hf_isi_sim_secondary_cause, tvb, 2, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x00:
 					col_set_str(pinfo->cinfo, COL_INFO, "Common Message: SIM Server Not Available");
@@ -1084,18 +1071,18 @@ static int dissect_isi_sim(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 static int dissect_isi_gss(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitree, void* data _U_) {
 	proto_item *item;
 	proto_tree *tree;
-	guint8 cmd, code;
+	uint8_t cmd, code;
 
 	item = proto_tree_add_item(isitree, hf_isi_gss_payload, tvb, 0, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_isi_msg);
 
 	proto_tree_add_item(tree, hf_isi_gss_message_id, tvb, 0, 1, ENC_BIG_ENDIAN);
-	cmd = tvb_get_guint8(tvb, 0);
+	cmd = tvb_get_uint8(tvb, 0);
 
 	switch(cmd) {
 		case 0x00: /* GSS_CS_SERVICE_REQ */
 			proto_tree_add_item(tree, hf_isi_gss_operation, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x0E:
 					col_set_str(pinfo->cinfo, COL_INFO, "Service Request: Radio Access Type Write");
@@ -1113,8 +1100,8 @@ static int dissect_isi_gss(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 			break;
 
 		case 0x01: /* GSS_CS_SERVICE_RESP */
-			/* proto_tree_add_item(tree, hf_isi_gss_service_type, tvb, 1, 1, FALSE); */
-			code = tvb_get_guint8(tvb, 1);
+			/* proto_tree_add_item(tree, hf_isi_gss_service_type, tvb, 1, 1, ENC_NA); */
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				/* case 0x9C:
 					col_set_str(pinfo->cinfo, COL_INFO, "Network Information Request: Read Home PLMN");
@@ -1128,7 +1115,7 @@ static int dissect_isi_gss(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 		case 0x02: /* GSS_CS_SERVICE_FAIL_RESP */
 			proto_tree_add_item(tree, hf_isi_gss_operation, tvb, 1, 1, ENC_BIG_ENDIAN);
 			proto_tree_add_item(tree, hf_isi_gss_cause, tvb, 2, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x9C:
 					col_set_str(pinfo->cinfo, COL_INFO, "Service Failed Response: Radio Access Type Read");
@@ -1142,7 +1129,7 @@ static int dissect_isi_gss(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 		case 0xF0: /* Common Message */
 			proto_tree_add_item(tree, hf_isi_gss_common_message_id, tvb, 1, 1, ENC_BIG_ENDIAN);
 			/* proto_tree_add_item(tree, hf_isi_gss_cause, tvb, 2, 1, ENC_BIG_ENDIAN); */
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x01: /* COMM_SERVICE_NOT_IDENTIFIED_RESP */
 					col_set_str(pinfo->cinfo, COL_INFO, "Common Message: Service Not Identified Response");
@@ -1178,13 +1165,13 @@ static void dissect_isi_gps_data(tvbuff_t *tvb, packet_info *pinfo _U_, proto_it
 	int tmp_int32;
 	int offset = 0x0b; /* subpackets start here */
 
-	guint8 pkgcount = tvb_get_guint8(tvb, 0x07);
+	uint8_t pkgcount = tvb_get_uint8(tvb, 0x07);
 	proto_tree_add_item(tree, hf_isi_gps_sub_pkgs, tvb, 0x07, 1, ENC_BIG_ENDIAN);
 
 	for(i=0; i<pkgcount; i++) {
-		guint8 sptype = tvb_get_guint8(tvb, offset+1);
-		guint8 splen = tvb_get_guint8(tvb, offset+3);
-		proto_tree *subtree = proto_tree_add_subtree_format(tree, tvb, offset, splen, ett_isi_msg, NULL, "Subpacket (%s)", val_to_str(sptype, isi_gps_sub_id, "unknown: 0x%x"));
+		uint8_t sptype = tvb_get_uint8(tvb, offset+1);
+		uint8_t splen = tvb_get_uint8(tvb, offset+3);
+		proto_tree *subtree = proto_tree_add_subtree_format(tree, tvb, offset, splen, ett_isi_msg, NULL, "Subpacket (%s)", val_to_str(pinfo->pool, sptype, isi_gps_sub_id, "unknown: 0x%x"));
 
 		proto_tree_add_item(subtree, hf_isi_gps_sub_type, tvb, offset+1, 1, ENC_BIG_ENDIAN);
 		proto_tree_add_item(subtree, hf_isi_gps_sub_len, tvb,  offset+3, 1, ENC_BIG_ENDIAN);
@@ -1243,7 +1230,7 @@ static void dissect_isi_gps_data(tvbuff_t *tvb, packet_info *pinfo _U_, proto_it
 				break;
 			case 0x05: /* Satellite Info */
 				{
-				guint8 satellites = tvb_get_guint8(tvb, offset+0);
+				uint8_t satellites = tvb_get_uint8(tvb, offset+0);
 				int sat;
 				proto_tree_add_item(subtree, hf_isi_gps_satellites, tvb, offset+0, 1, ENC_BIG_ENDIAN);
 
@@ -1287,18 +1274,18 @@ static int dissect_isi_gps(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 {
 	proto_item *item;
 	proto_tree *tree;
-	guint8 cmd;
+	uint8_t cmd;
 
 	item = proto_tree_add_item(isitree, hf_isi_gps_payload, tvb, 0, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_isi_msg);
 
 	proto_tree_add_item(tree, hf_isi_gps_cmd, tvb, 0, 1, ENC_BIG_ENDIAN);
-	cmd = tvb_get_guint8(tvb, 0);
+	cmd = tvb_get_uint8(tvb, 0);
 
 	switch(cmd) {
 		case 0x7d: /* GPS Status */
 			proto_tree_add_item(tree, hf_isi_gps_status, tvb, 2, 1, ENC_BIG_ENDIAN);
-			col_add_fstr(pinfo->cinfo, COL_INFO, "GPS Status Indication: %s", val_to_str(tvb_get_guint8(tvb, 2), isi_gps_status, "unknown (0x%x)"));
+			col_add_fstr(pinfo->cinfo, COL_INFO, "GPS Status Indication: %s", val_to_str(pinfo->pool, tvb_get_uint8(tvb, 2), isi_gps_status, "unknown (0x%x)"));
 			break;
 		case 0x84:
 		case 0x85:
@@ -1331,19 +1318,19 @@ static int dissect_isi_ss(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitree
 {
 	proto_item *item;
 	proto_tree *tree;
-	guint8 cmd, code;
+	uint8_t cmd, code;
 
 	item = proto_tree_add_item(isitree, hf_isi_ss_payload, tvb, 0, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_isi_msg);
 
 	proto_tree_add_item(tree, hf_isi_ss_message_id, tvb, 0, 1, ENC_BIG_ENDIAN);
-	cmd = tvb_get_guint8(tvb, 0);
+	cmd = tvb_get_uint8(tvb, 0);
 
 	switch(cmd) {
 		case 0x00: /* SS_SERVICE_REQ */
 			proto_tree_add_item(tree, hf_isi_ss_operation, tvb, 1, 1, ENC_BIG_ENDIAN);
 			proto_tree_add_item(tree, hf_isi_ss_service_code, tvb, 2, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x05:
 					col_set_str(pinfo->cinfo, COL_INFO, "Service Request: Interrogation");
@@ -1360,7 +1347,7 @@ static int dissect_isi_ss(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitree
 		case 0x01: /* SS_SERVICE_COMPLETED_RESP */
 			proto_tree_add_item(tree, hf_isi_ss_operation, tvb, 1, 1, ENC_BIG_ENDIAN);
 			proto_tree_add_item(tree, hf_isi_ss_service_code, tvb, 2, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x05:
 					col_set_str(pinfo->cinfo, COL_INFO, "Service Completed Response: Interrogation");
@@ -1372,8 +1359,8 @@ static int dissect_isi_ss(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitree
 			break;
 
 		case 0x02: /* SS_SERVICE_FAILED_RESP */
-			/* proto_tree_add_item(tree, hf_isi_ss_service_type, tvb, 1, 1, FALSE); */
-			code = tvb_get_guint8(tvb, 1);
+			/* proto_tree_add_item(tree, hf_isi_ss_service_type, tvb, 1, 1, ENC_NA); */
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				/* case 0x2F:
 				   col_set_str(pinfo->cinfo, COL_INFO, "Network Information Request: Read Home PLMN");
@@ -1389,7 +1376,7 @@ static int dissect_isi_ss(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitree
 			proto_tree_add_item(tree, hf_isi_ss_ussd_type, tvb, 1, 1, ENC_BIG_ENDIAN);
 			proto_tree_add_item(tree, hf_isi_ss_subblock_count, tvb, 2, 1, ENC_BIG_ENDIAN);
 
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x02: /* SS_GSM_USSD_COMMAND */
 					proto_tree_add_item(tree, hf_isi_ss_subblock, tvb, 3, 1, ENC_BIG_ENDIAN);
@@ -1402,8 +1389,8 @@ static int dissect_isi_ss(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitree
 			break;
 
 		case 0x05: /* SS_GSM_USSD_SEND_RESP */
-			/* proto_tree_add_item(tree, hf_isi_ss_service_type, tvb, 1, 1, FALSE); */
-			code = tvb_get_guint8(tvb, 1);
+			/* proto_tree_add_item(tree, hf_isi_ss_service_type, tvb, 1, 1, ENC_NA); */
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				/* case 0x2F:
 					col_set_str(pinfo->cinfo, COL_INFO, "Network Information Request: Read Home PLMN");
@@ -1419,7 +1406,7 @@ static int dissect_isi_ss(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitree
 			proto_tree_add_item(tree, hf_isi_ss_ussd_type, tvb, 2, 1, ENC_BIG_ENDIAN);
 			proto_tree_add_item(tree, hf_isi_ss_ussd_length, tvb, 3, 1, ENC_BIG_ENDIAN);
 
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x04:
 
@@ -1437,7 +1424,7 @@ static int dissect_isi_ss(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitree
 			proto_tree_add_item(tree, hf_isi_ss_status_indication, tvb, 1, 1, ENC_BIG_ENDIAN);
 			proto_tree_add_item(tree, hf_isi_ss_subblock_count, tvb, 2, 1, ENC_BIG_ENDIAN);
 			/* proto_tree_add_item(tree, hf_isi_ss_subblock, tvb, 3, 1, ENC_BIG_ENDIAN); */
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x00:
 					col_set_str(pinfo->cinfo, COL_INFO, "Status Indication: Request Service Start");
@@ -1460,7 +1447,7 @@ static int dissect_isi_ss(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitree
 		case 0x10: /* SS_SERVICE_COMPLETED_IND */
 			proto_tree_add_item(tree, hf_isi_ss_operation, tvb, 1, 1, ENC_BIG_ENDIAN);
 			proto_tree_add_item(tree, hf_isi_ss_service_code, tvb, 2, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x05:
 					col_set_str(pinfo->cinfo, COL_INFO, "Service Completed Indication: Interrogation");
@@ -1473,7 +1460,7 @@ static int dissect_isi_ss(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitree
 
 		case 0xF0: /* SS_COMMON_MESSAGE */
 			proto_tree_add_item(tree, hf_isi_ss_common_message_id, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x01: /* COMM_SERVICE_NOT_IDENTIFIED_RESP */
 					col_set_str(pinfo->cinfo, COL_INFO, "Common Message: Service Not Identified Response");
@@ -1505,16 +1492,16 @@ static void dissect_isi_network_status(tvbuff_t *tvb, packet_info *pinfo _U_, pr
 {
 	int i;
 	int offset = 0x03; /* subpackets start here */
-	guint16 len;
+	uint16_t len;
 
-	guint8 pkgcount = tvb_get_guint8(tvb, 0x02);
+	uint8_t pkgcount = tvb_get_uint8(tvb, 0x02);
 	proto_tree_add_item(tree, hf_isi_network_data_sub_pkgs, tvb, 0x02, 1, ENC_BIG_ENDIAN);
 
 	for(i=0; i<pkgcount; i++) {
-		guint8 sptype = tvb_get_guint8(tvb, offset+0);
-		guint8 splen = tvb_get_guint8(tvb, offset+1);
+		uint8_t sptype = tvb_get_uint8(tvb, offset+0);
+		uint8_t splen = tvb_get_uint8(tvb, offset+1);
 
-		proto_tree *subtree = proto_tree_add_subtree_format(tree, tvb, offset, splen, ett_isi_msg, NULL, "Subpacket (%s)", val_to_str(sptype, isi_network_status_sub_id, "unknown: 0x%x"));
+		proto_tree *subtree = proto_tree_add_subtree_format(tree, tvb, offset, splen, ett_isi_msg, NULL, "Subpacket (%s)", val_to_str(pinfo->pool, sptype, isi_network_status_sub_id, "unknown: 0x%x"));
 
 		proto_tree_add_item(subtree, hf_isi_network_status_sub_type, tvb, offset+0, 1, ENC_BIG_ENDIAN);
 		proto_tree_add_item(subtree, hf_isi_network_status_sub_len, tvb,  offset+1, 1, ENC_BIG_ENDIAN);
@@ -1549,9 +1536,9 @@ static void dissect_isi_network_status(tvbuff_t *tvb, packet_info *pinfo _U_, pr
 static void dissect_isi_network_cell_info_ind(tvbuff_t *tvb, packet_info *pinfo, proto_item *item, proto_tree *tree) {
 	int i;
 	int offset = 0x03;
-	guint8 pkgcount = tvb_get_guint8(tvb, 0x02);
+	uint8_t pkgcount = tvb_get_uint8(tvb, 0x02);
 
-	static const int *gsm_band_fields[] = {
+	static int * const gsm_band_fields[] = {
 		&hf_isi_network_gsm_band_900,
 		&hf_isi_network_gsm_band_1800,
 		&hf_isi_network_gsm_band_1900,
@@ -1562,10 +1549,10 @@ static void dissect_isi_network_cell_info_ind(tvbuff_t *tvb, packet_info *pinfo,
 	proto_tree_add_item(tree, hf_isi_network_data_sub_pkgs, tvb, 0x02, 1, ENC_BIG_ENDIAN);
 
 	for(i=0; i<pkgcount; i++) {
-		guint8 sptype = tvb_get_guint8(tvb, offset+0);
-		guint8 splen = tvb_get_guint8(tvb, offset+1);
+		uint8_t sptype = tvb_get_uint8(tvb, offset+0);
+		uint8_t splen = tvb_get_uint8(tvb, offset+1);
 
-		proto_tree *subtree = proto_tree_add_subtree_format(tree, tvb, offset, splen, ett_isi_msg, NULL, "Subpacket (%s)", val_to_str(sptype, isi_network_cell_info_sub_id, "unknown: 0x%x"));
+		proto_tree *subtree = proto_tree_add_subtree_format(tree, tvb, offset, splen, ett_isi_msg, NULL, "Subpacket (%s)", val_to_str(pinfo->pool, sptype, isi_network_cell_info_sub_id, "unknown: 0x%x"));
 
 		proto_tree_add_item(subtree, hf_isi_network_cell_info_sub_type, tvb, offset+0, 1, ENC_BIG_ENDIAN);
 		proto_tree_add_item(subtree, hf_isi_network_cell_info_sub_len, tvb,  offset+1, 1, ENC_BIG_ENDIAN);
@@ -1580,7 +1567,7 @@ static void dissect_isi_network_cell_info_ind(tvbuff_t *tvb, packet_info *pinfo,
 			case 0x46: /* NET_GSM_CELL_INFO */
 				proto_tree_add_item(subtree, hf_isi_network_status_sub_lac, tvb, offset+0, 2, ENC_BIG_ENDIAN);
 				proto_tree_add_item(subtree, hf_isi_network_status_sub_cid, tvb, offset+2, 4, ENC_BIG_ENDIAN);
-				proto_tree_add_bitmask_text(subtree, tvb, offset+6, 4, "GSM Bands: ", "all bands, since none is selected", ett_isi_network_gsm_band_info, gsm_band_fields, FALSE, BMT_NO_FALSE | BMT_NO_TFS);
+				proto_tree_add_bitmask_text(subtree, tvb, offset+6, 4, "GSM Bands: ", "all bands, since none is selected", ett_isi_network_gsm_band_info, gsm_band_fields, false, BMT_NO_FALSE | BMT_NO_TFS);
 				proto_tree_add_item(subtree, hf_isi_network_cell_info_sub_operator, tvb, offset+10, 3, ENC_BIG_ENDIAN);
 				/* TODO: analysis of the following 5 bytes (which were 0x00 in my dumps) */
 				break;
@@ -1600,13 +1587,13 @@ static void dissect_isi_network_cell_info_ind(tvbuff_t *tvb, packet_info *pinfo,
 static int dissect_isi_network(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitree, void* data _U_) {
 	proto_item *item;
 	proto_tree *tree;
-	guint8 cmd;
+	uint8_t cmd;
 
 	item = proto_tree_add_item(isitree, hf_isi_network_payload, tvb, 0, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_isi_msg);
 
 	proto_tree_add_item(tree, hf_isi_network_cmd, tvb, 0, 1, ENC_BIG_ENDIAN);
-	cmd = tvb_get_guint8(tvb, 0);
+	cmd = tvb_get_uint8(tvb, 0);
 
 	switch(cmd) {
 		case 0x07:
@@ -1636,18 +1623,18 @@ static int dissect_isi_network(tvbuff_t *tvb, packet_info *pinfo, proto_item *is
 static int dissect_isi_sms(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitree, void* data _U_) {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
-	guint8 cmd, code;
+	uint8_t cmd, code;
 
 	item = proto_tree_add_item(isitree, hf_isi_sms_payload, tvb, 0, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_isi_msg);
 
 	proto_tree_add_item(tree, hf_isi_sms_message_id, tvb, 0, 1, ENC_BIG_ENDIAN);
-	cmd = tvb_get_guint8(tvb, 0);
+	cmd = tvb_get_uint8(tvb, 0);
 
 	switch(cmd) {
 		case 0x03: /* SMS_MESSAGE_SEND_RESP */
 			proto_tree_add_item(tree, hf_isi_sms_subblock_count, tvb, 2, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 #if 0
 				case 0x05:
@@ -1666,7 +1653,7 @@ static int dissect_isi_sms(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 		case 0x06: /* SMS_PP_ROUTING_REQ */
 			proto_tree_add_item(tree, hf_isi_sms_routing_command, tvb, 1, 1, ENC_BIG_ENDIAN);
 			proto_tree_add_item(tree, hf_isi_sms_subblock_count, tvb, 2, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 #if 0
 				case 0x05:
@@ -1683,8 +1670,8 @@ static int dissect_isi_sms(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 			break;
 
 		case 0x07: /* SMS_PP_ROUTING_RESP */
-			/* proto_tree_add_item(tree, hf_isi_sms_service_type, tvb, 1, 1, FALSE); */
-			code = tvb_get_guint8(tvb, 1);
+			/* proto_tree_add_item(tree, hf_isi_sms_service_type, tvb, 1, 1, ENC_NA); */
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 					/* case 0x2F:
 						col_set_str(pinfo->cinfo, COL_INFO, "Network Information Request: Read Home PLMN");
@@ -1699,12 +1686,12 @@ static int dissect_isi_sms(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 			proto_tree_add_item(tree, hf_isi_sms_routing_command, tvb, 1, 1, ENC_BIG_ENDIAN);
 			proto_tree_add_item(tree, hf_isi_sms_routing_mode, tvb, 2, 1, ENC_BIG_ENDIAN);
 #if 0
-				proto_tree_add_item(tree, hf_isi_sms_cb_subject_list_type, tvb, 3, 1, FALSE);
-				proto_tree_add_item(tree, hf_isi_sms_cb_subject_count, tvb, 4, 1, FALSE);
-				proto_tree_add_item(tree, hf_isi_sms_cb_language_count, tvb, 5, 1, FALSE);
-				proto_tree_add_item(tree, hf_isi_sms_cb_range, tvb, 6, 1, FALSE);
+			proto_tree_add_item(tree, hf_isi_sms_cb_subject_list_type, tvb, 3, 1, ENC_BIG_ENDIAN);
+			proto_tree_add_item(tree, hf_isi_sms_cb_subject_count, tvb, 4, 1, ENC_BIG_ENDIAN);
+			proto_tree_add_item(tree, hf_isi_sms_cb_language_count, tvb, 5, 1, ENC_BIG_ENDIAN);
+			proto_tree_add_item(tree, hf_isi_sms_cb_range, tvb, 6, 1, ENC_BIG_ENDIAN);
 #endif
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x00:
 					col_set_str(pinfo->cinfo, COL_INFO, "SMS GSM Cell Broadcast Routing Release");
@@ -1720,10 +1707,10 @@ static int dissect_isi_sms(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 
 		case 0x0C: /* SMS_GSM_CB_ROUTING_RESP */
 #if 0
-				proto_tree_add_item(tree, hf_isi_sms_operation, tvb, 1, 1, FALSE);
-				proto_tree_add_item(tree, hf_isi_sms_service_code, tvb, 2, 1, FALSE);
+			proto_tree_add_item(tree, hf_isi_sms_operation, tvb, 1, 1, ENC_BIG_ENDIAN);
+			proto_tree_add_item(tree, hf_isi_sms_service_code, tvb, 2, 1, ENC_BIG_ENDIAN);
 #endif
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 					/* case 0x05:
 						col_set_str(pinfo->cinfo, COL_INFO, "Service Completed Response: Interrogation");
@@ -1738,7 +1725,7 @@ static int dissect_isi_sms(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 			proto_tree_add_item(tree, hf_isi_sms_send_status, tvb, 1, 1, ENC_BIG_ENDIAN);
 			/* The second byte is a "segment" identifier/"Message Reference" */
 			proto_tree_add_item(tree, hf_isi_sms_route, tvb, 3, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x02:
 					col_set_str(pinfo->cinfo, COL_INFO, "SMS Message Sending Status: Waiting for Network");
@@ -1754,7 +1741,7 @@ static int dissect_isi_sms(tvbuff_t *tvb, packet_info *pinfo, proto_item *isitre
 
 		case 0xF0: /* SS_COMMON_MESSAGE */
 			proto_tree_add_item(tree, hf_isi_sms_common_message_id, tvb, 1, 1, ENC_BIG_ENDIAN);
-			code = tvb_get_guint8(tvb, 1);
+			code = tvb_get_uint8(tvb, 1);
 			switch(code) {
 				case 0x01: /* COMM_SERVICE_NOT_IDENTIFIED_RESP */
 					col_set_str(pinfo->cinfo, COL_INFO, "Common Message: Service Not Identified Response");
@@ -1786,10 +1773,10 @@ static int dissect_isi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 	proto_item *item, *item_len;
 	tvbuff_t *content_tvb;
 
-	guint8 src;
-	guint8 dst;
-	guint8 resource;
-	guint16 length;
+	uint8_t src;
+	uint8_t dst;
+	uint8_t resource;
+	uint16_t length;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "ISI");
 	col_clear(pinfo->cinfo, COL_INFO);
@@ -1808,9 +1795,9 @@ static int dissect_isi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 	proto_tree_add_item(isi_tree, hf_isi_id,   tvb, 7, 1, ENC_NA);
 
 	length = tvb_get_ntohs(tvb, 3) - 3;
-	resource = tvb_get_guint8(tvb, 2);
-	dst = tvb_get_guint8(tvb, 0);
-	src = tvb_get_guint8(tvb, 1);
+	resource = tvb_get_uint8(tvb, 2);
+	dst = tvb_get_uint8(tvb, 0);
+	src = tvb_get_uint8(tvb, 1);
 
 	if (tvb_reported_length(tvb) - 8 < length) {
 		expert_add_info_format(pinfo, item_len, &ei_isi_len, "Broken Length (%d > %d)", length, tvb_reported_length(tvb)-8);
@@ -1830,17 +1817,17 @@ static int dissect_isi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 }
 
 /* Experimental approach based upon the one used for PPP*/
-static gboolean dissect_usb_isi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool dissect_usb_isi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
 	tvbuff_t *next_tvb;
 
-	if(tvb_get_guint8(tvb, 0) != 0x1B)
-		return FALSE;
+	if(tvb_get_uint8(tvb, 0) != 0x1B)
+		return false;
 
 	next_tvb = tvb_new_subset_remaining(tvb, 1);
 	dissect_isi(next_tvb, pinfo, tree, data);
 
-	return TRUE;
+	return true;
 }
 
 void
@@ -1886,7 +1873,7 @@ proto_register_isi(void)
 		{ &hf_isi_sim_auth_protection_req,
 		  { "Protection Request", "isi.sim.auth.request.protection", FT_UINT8, BASE_HEX, VALS(isi_sim_auth_protection_req), 0x0, NULL, HFILL }},
 		{ &hf_isi_sim_auth_protection_rsp,
-		  { "Protection Response", "isi.sim.auth.response.protection", FT_BOOLEAN, BASE_HEX, NULL, 0x0, NULL, HFILL }},
+		  { "Protection Response", "isi.sim.auth.response.protection", FT_BOOLEAN, BASE_NONE, NULL, 0x0, NULL, HFILL }},
 		{ &hf_isi_sim_auth_status_rsp,
 		  { "Status Response", "isi.sim.auth.response.status", FT_UINT8, BASE_HEX, VALS(isi_sim_auth_resp), 0x0, NULL, HFILL }},
 		{ &hf_isi_sim_auth_indication,
@@ -1907,15 +1894,15 @@ proto_register_isi(void)
 		{ &hf_isi_sim_secondary_cause,
 		  { "Secondary Cause", "isi.sim.secondary_cause", FT_UINT8, BASE_HEX|BASE_EXT_STRING, &isi_sim_cause_ext, 0x0, NULL, HFILL }},
 		{&hf_isi_sim_subblock_count,
-		  { "Subblock Count", "isi.sim.subblock_count", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+		  { "Subblock Count", "isi.sim.subblock_count", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }},
 		{&hf_isi_sim_subblock_size,
-		  { "Subblock Size", "isi.sim.subblock_size", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+		  { "Subblock Size", "isi.sim.subblock_size", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }},
 		{ &hf_isi_sim_pb_subblock,
 		  { "Subblock", "isi.sim.pb.subblock", FT_UINT8, BASE_HEX, VALS(isi_sim_pb_subblock), 0x0, NULL, HFILL }},
 		{ &hf_isi_sim_pb_type,
 		  { "Phonebook Type", "isi.sim.pb.type", FT_UINT8, BASE_HEX, VALS(isi_sim_pb_type), 0x0, NULL, HFILL }},
 		{&hf_isi_sim_pb_location,
-		  { "Phonebook Location", "isi.sim.pb.location", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+		  { "Phonebook Location", "isi.sim.pb.location", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }},
 		{&hf_isi_sim_pb_tag_count,
 		  { "Tag Count", "isi.sim.pb.tag.count", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }},
 		{ &hf_isi_sim_pb_tag,
@@ -2097,7 +2084,7 @@ proto_register_isi(void)
 		  { "Common Message ID", "isi.sms.common.msg_id", FT_UINT8, BASE_HEX, VALS(isi_sms_common_message_id), 0x0, NULL, HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_isi,
 		&ett_isi_msg,
 		&ett_isi_network_gsm_band_info
@@ -2133,7 +2120,7 @@ proto_register_isi(void)
 void
 proto_reg_handoff_isi(void)
 {
-	static gboolean initialized=FALSE;
+	static bool initialized=false;
 
 	if(!initialized) {
 		dissector_add_uint("sll.ltype", LINUX_SLL_P_ISI, create_dissector_handle(dissect_isi, proto_isi));
@@ -2151,7 +2138,7 @@ proto_reg_handoff_isi(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

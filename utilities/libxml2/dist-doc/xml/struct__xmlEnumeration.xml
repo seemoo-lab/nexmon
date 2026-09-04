@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlEnumeration" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlEnumeration</compoundname>
+    <includes local="no">tree.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlEnumeration_1a186a38cb1c96780b1928c336c63ab33a" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlEnumeration" kindref="compound">_xmlEnumeration</ref> *</type>
+        <definition>struct _xmlEnumeration* next</definition>
+        <argsstring></argsstring>
+        <name>next</name>
+        <qualifiedname>_xmlEnumeration::next</qualifiedname>
+        <briefdescription>
+<para>next enumeration </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="343" column="26" bodyfile="tree.h" bodystart="343" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlEnumeration_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlEnumeration::name</qualifiedname>
+        <briefdescription>
+<para>value </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="345" column="30" bodyfile="tree.h" bodystart="345" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>List structure used when there is an enumeration in DTDs. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>Should be treated as opaque. Accessing members directly is deprecated. </para>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>_xmlEnumeration</label>
+        <link refid="struct__xmlEnumeration"/>
+        <childnode refid="1" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="tree.h" line="341" column="1" bodyfile="tree.h" bodystart="341" bodyend="346"/>
+    <listofallmembers>
+      <member refid="struct__xmlEnumeration_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" virt="non-virtual"><scope>_xmlEnumeration</scope><name>name</name></member>
+      <member refid="struct__xmlEnumeration_1a186a38cb1c96780b1928c336c63ab33a" prot="public" virt="non-virtual"><scope>_xmlEnumeration</scope><name>next</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

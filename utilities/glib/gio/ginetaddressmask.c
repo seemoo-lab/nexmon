@@ -2,10 +2,12 @@
  *
  * Copyright 2011 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,21 +31,12 @@
 #include "glibintl.h"
 
 /**
- * SECTION:ginetaddressmask
- * @short_description: An IPv4/IPv6 address mask
- * @include: gio/gio.h
- *
- * #GInetAddressMask represents a range of IPv4 or IPv6 addresses
- * described by a base address and a length indicating how many bits
- * of the base address are relevant for matching purposes. These are
- * often given in string form. Eg, "10.0.0.0/8", or "fe80::/10".
- */
-
-/**
  * GInetAddressMask:
  *
- * A combination of an IPv4 or IPv6 base address and a length,
- * representing a range of IP addresses.
+ * `GInetAddressMask` represents a range of IPv4 or IPv6 addresses
+ * described by a base address and a length indicating how many bits
+ * of the base address are relevant for matching purposes. These are
+ * often given in string form. For example, `10.0.0.0/8`, or `fe80::/10`.
  *
  * Since: 2.32
  */
@@ -107,7 +100,7 @@ g_inet_address_mask_get_property (GObject    *object,
   switch (prop_id)
     {
     case PROP_FAMILY:
-      g_value_set_enum (value, g_inet_address_get_family (mask->priv->addr));
+      g_value_set_enum (value, (int) g_inet_address_get_family (mask->priv->addr));
       break;
 
     case PROP_ADDRESS:
@@ -142,25 +135,42 @@ g_inet_address_mask_class_init (GInetAddressMaskClass *klass)
   gobject_class->get_property = g_inet_address_mask_get_property;
   gobject_class->dispose = g_inet_address_mask_dispose;
 
+  /**
+   * GInetAddressMask:family:
+   *
+   * The address family (IPv4 or IPv6).
+   *
+   * Since: 2.32
+   */
   g_object_class_install_property (gobject_class, PROP_FAMILY,
-                                   g_param_spec_enum ("family",
-						      P_("Address family"),
-						      P_("The address family (IPv4 or IPv6)"),
+                                   g_param_spec_enum ("family", NULL, NULL,
 						      G_TYPE_SOCKET_FAMILY,
 						      G_SOCKET_FAMILY_INVALID,
 						      G_PARAM_READABLE |
                                                       G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GInetAddressMask:address:
+   *
+   * The base address.
+   *
+   * Since: 2.32
+   */
   g_object_class_install_property (gobject_class, PROP_ADDRESS,
-                                   g_param_spec_object ("address",
-							P_("Address"),
-							P_("The base address"),
+                                   g_param_spec_object ("address", NULL, NULL,
 							G_TYPE_INET_ADDRESS,
 							G_PARAM_READWRITE |
 							G_PARAM_STATIC_STRINGS));
+
+  /**
+   * GInetAddressMask:length:
+   *
+   * The prefix length, in bytes.
+   *
+   * Since: 2.32
+   */
   g_object_class_install_property (gobject_class, PROP_LENGTH,
-                                   g_param_spec_uint ("length",
-						      P_("Length"),
-						      P_("The prefix length"),
+                                   g_param_spec_uint ("length", NULL, NULL,
 						      0, 128, 0,
 						      G_PARAM_READWRITE |
 						      G_PARAM_STATIC_STRINGS));
@@ -284,7 +294,7 @@ g_inet_address_mask_new_from_string (const gchar  *mask_string,
 {
   GInetAddressMask *mask;
   GInetAddress *addr;
-  gchar *slash;
+  const gchar *slash;
   guint length;
 
   slash = strchr (mask_string, '/');
@@ -297,12 +307,12 @@ g_inet_address_mask_new_from_string (const gchar  *mask_string,
 	{
 	parse_error:
 	  g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT,
-		       _("Could not parse '%s' as IP address mask"),
+		       _("Could not parse “%s” as IP address mask"),
 		       mask_string);
 	  return NULL;
 	}
 
-      address = g_strndup (mask_string, slash - mask_string);
+      address = g_strndup (mask_string, (size_t) (slash - mask_string));
       addr = g_inet_address_new_from_string (address);
       g_free (address);
 
@@ -423,7 +433,7 @@ g_inet_address_mask_matches (GInetAddressMask *mask,
 			     GInetAddress     *address)
 {
   const guint8 *maskbytes, *addrbytes;
-  int nbytes, nbits;
+  size_t nbytes, nbits;
 
   g_return_val_if_fail (G_IS_INET_ADDRESS_MASK (mask), FALSE);
   g_return_val_if_fail (G_IS_INET_ADDRESS (address), FALSE);

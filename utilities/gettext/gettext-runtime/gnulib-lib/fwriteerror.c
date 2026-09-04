@@ -1,10 +1,10 @@
 /* Detect write error on a stream.
-   Copyright (C) 2003-2006, 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2003-2006, 2008-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2003.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,7 +13,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -21,7 +21,6 @@
 #include "fwriteerror.h"
 
 #include <errno.h>
-#include <stdbool.h>
 
 static int
 do_fwriteerror (FILE *fp, bool ignore_ebadf)
@@ -140,38 +139,36 @@ main ()
       8191, 8192, 8193
     };
   static char dummy[8193];
-  unsigned int i, j;
 
-  for (i = 0; i < sizeof (sizes) / sizeof (sizes[0]); i++)
+  for (unsigned int i = 0; i < sizeof (sizes) / sizeof (sizes[0]); i++)
     {
       size_t size = sizes[i];
 
-      for (j = 0; j < 2; j++)
+      for (unsigned int j = 0; j < 2; j++)
         {
           /* Run a test depending on i and j:
              Write size bytes and then calls fflush if j==1.  */
           FILE *stream = fopen (UNWRITABLE_FILE, "w");
 
           if (stream == NULL)
-            {
-              fprintf (stderr, "Test %u:%u: could not open file\n", i, j);
-              continue;
-            }
-
-          fwrite (dummy, 347, 1, stream);
-          fwrite (dummy, size - 347, 1, stream);
-          if (j)
-            fflush (stream);
-
-          if (fwriteerror (stream) == -1)
-            {
-              if (errno != ENOSPC)
-                fprintf (stderr, "Test %u:%u: fwriteerror ok, errno = %d\n",
-                         i, j, errno);
-            }
+            fprintf (stderr, "Test %u:%u: could not open file\n", i, j);
           else
-            fprintf (stderr, "Test %u:%u: fwriteerror found no error!\n",
-                     i, j);
+            {
+              fwrite (dummy, 347, 1, stream);
+              fwrite (dummy, size - 347, 1, stream);
+              if (j)
+                fflush (stream);
+
+              if (fwriteerror (stream) == -1)
+                {
+                  if (errno != ENOSPC)
+                    fprintf (stderr, "Test %u:%u: fwriteerror ok, errno = %d\n",
+                             i, j, errno);
+                }
+              else
+                fprintf (stderr, "Test %u:%u: fwriteerror found no error!\n",
+                         i, j);
+            }
         }
     }
 

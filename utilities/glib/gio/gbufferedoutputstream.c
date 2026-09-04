@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -28,26 +30,22 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gbufferedoutputstream
- * @short_description: Buffered Output Stream
- * @include: gio/gio.h
- * @see_also: #GFilterOutputStream, #GOutputStream
- * 
- * Buffered output stream implements #GFilterOutputStream and provides 
- * for buffered writes. 
- * 
- * By default, #GBufferedOutputStream's buffer size is set at 4 kilobytes.
- * 
- * To create a buffered output stream, use g_buffered_output_stream_new(), 
- * or g_buffered_output_stream_new_sized() to specify the buffer's size 
+ * GBufferedOutputStream:
+ *
+ * Buffered output stream implements [class@Gio.FilterOutputStream] and provides
+ * for buffered writes.
+ *
+ * By default, `GBufferedOutputStream`'s buffer size is set at 4 kilobytes.
+ *
+ * To create a buffered output stream, use [ctor@Gio.BufferedOutputStream.new],
+ * or [ctor@Gio.BufferedOutputStream.new_sized] to specify the buffer's size
  * at construction.
- * 
- * To get the size of a buffer within a buffered input stream, use 
- * g_buffered_output_stream_get_buffer_size(). To change the size of a 
- * buffered output stream's buffer, use 
- * g_buffered_output_stream_set_buffer_size(). Note that the buffer's 
- * size cannot be reduced below the size of the data within the buffer.
- **/
+ *
+ * To get the size of a buffer within a buffered input stream, use
+ * [method@Gio.BufferedOutputStream.get_buffer_size]. To change the size of a
+ * buffered output stream's buffer, use [method@Gio.BufferedOutputStream.set_buffer_size].
+ * Note that the buffer's size cannot be reduced below the size of the data within the buffer.
+ */
 
 #define DEFAULT_BUFFER_SIZE 4096
 
@@ -147,22 +145,28 @@ g_buffered_output_stream_class_init (GBufferedOutputStreamClass *klass)
   ostream_class->close_async  = g_buffered_output_stream_close_async;
   ostream_class->close_finish = g_buffered_output_stream_close_finish;
 
+  /**
+   * GBufferedOutputStream:buffer-size:
+   *
+   * The size of the backend buffer, in bytes.
+   */
   g_object_class_install_property (object_class,
                                    PROP_BUFSIZE,
-                                   g_param_spec_uint ("buffer-size",
-                                                      P_("Buffer Size"),
-                                                      P_("The size of the backend buffer"),
+                                   g_param_spec_uint ("buffer-size", NULL, NULL,
                                                       1,
                                                       G_MAXUINT,
                                                       DEFAULT_BUFFER_SIZE,
                                                       G_PARAM_READWRITE|G_PARAM_CONSTRUCT|
                                                       G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
 
+  /**
+   * GBufferedOutputStream:auto-grow:
+   *
+   * Whether the buffer should automatically grow.
+   */
   g_object_class_install_property (object_class,
                                    PROP_AUTO_GROW,
-                                   g_param_spec_boolean ("auto-grow",
-                                                         P_("Auto-grow"),
-                                                         P_("Whether the buffer should automatically grow"),
+                                   g_param_spec_boolean ("auto-grow", NULL, NULL,
                                                          FALSE,
                                                          G_PARAM_READWRITE|
                                                          G_PARAM_STATIC_NAME|G_PARAM_STATIC_NICK|G_PARAM_STATIC_BLURB));
@@ -171,7 +175,7 @@ g_buffered_output_stream_class_init (GBufferedOutputStreamClass *klass)
 
 /**
  * g_buffered_output_stream_get_buffer_size:
- * @stream: a #GBufferedOutputStream.
+ * @stream: a [class@Gio.BufferedOutputStream].
  * 
  * Gets the size of the buffer in the @stream.
  * 
@@ -180,14 +184,14 @@ g_buffered_output_stream_class_init (GBufferedOutputStreamClass *klass)
 gsize
 g_buffered_output_stream_get_buffer_size (GBufferedOutputStream *stream)
 {
-  g_return_val_if_fail (G_IS_BUFFERED_OUTPUT_STREAM (stream), -1);
+  g_return_val_if_fail (G_IS_BUFFERED_OUTPUT_STREAM (stream), 0);
 
   return stream->priv->len;
 }
 
 /**
  * g_buffered_output_stream_set_buffer_size:
- * @stream: a #GBufferedOutputStream.
+ * @stream: a [class@Gio.BufferedOutputStream].
  * @size: a #gsize.
  *
  * Sets the size of the internal buffer to @size.
@@ -208,7 +212,7 @@ g_buffered_output_stream_set_buffer_size (GBufferedOutputStream *stream,
 
   if (priv->buffer)
     {
-      size = MAX (size, priv->pos);
+      size = (priv->pos > 0) ? MAX (size, (gsize) priv->pos) : size;
 
       buffer = g_malloc (size);
       memcpy (buffer, priv->buffer, priv->pos);
@@ -229,12 +233,12 @@ g_buffered_output_stream_set_buffer_size (GBufferedOutputStream *stream,
 
 /**
  * g_buffered_output_stream_get_auto_grow:
- * @stream: a #GBufferedOutputStream.
+ * @stream: a [class@Gio.BufferedOutputStream].
  * 
  * Checks if the buffer automatically grows as data is added.
  * 
- * Returns: %TRUE if the @stream's buffer automatically grows,
- * %FALSE otherwise.
+ * Returns: `TRUE` if the @stream's buffer automatically grows,
+ * `FALSE` otherwise.
  **/  
 gboolean
 g_buffered_output_stream_get_auto_grow (GBufferedOutputStream *stream)
@@ -246,7 +250,7 @@ g_buffered_output_stream_get_auto_grow (GBufferedOutputStream *stream)
 
 /**
  * g_buffered_output_stream_set_auto_grow:
- * @stream: a #GBufferedOutputStream.
+ * @stream: a [class@Gio.BufferedOutputStream].
  * @auto_grow: a #gboolean.
  *
  * Sets whether or not the @stream's buffer should automatically grow.
@@ -357,11 +361,11 @@ g_buffered_output_stream_seekable_iface_init (GSeekableIface *iface)
 
 /**
  * g_buffered_output_stream_new:
- * @base_stream: a #GOutputStream.
+ * @base_stream: a [class@Gio.OutputStream].
  * 
  * Creates a new buffered output stream for a base stream.
  * 
- * Returns: a #GOutputStream for the given @base_stream.
+ * Returns: a [class@Gio.OutputStream] for the given @base_stream.
  **/  
 GOutputStream *
 g_buffered_output_stream_new (GOutputStream *base_stream)
@@ -379,12 +383,12 @@ g_buffered_output_stream_new (GOutputStream *base_stream)
 
 /**
  * g_buffered_output_stream_new_sized:
- * @base_stream: a #GOutputStream.
+ * @base_stream: a [class@Gio.OutputStream].
  * @size: a #gsize.
  * 
  * Creates a new buffered output stream with a given buffer size.
  * 
- * Returns: a #GOutputStream with an internal buffer set to @size.
+ * Returns: a [class@Gio.OutputStream] with an internal buffer set to @size.
  **/  
 GOutputStream *
 g_buffered_output_stream_new_sized (GOutputStream *base_stream,
@@ -699,11 +703,12 @@ g_buffered_output_stream_flush_async (GOutputStream        *stream,
   GTask *task;
   FlushData *fdata;
 
-  fdata = g_slice_new (FlushData);
+  fdata = g_slice_new0 (FlushData);
   fdata->flush_stream = TRUE;
   fdata->close_stream = FALSE;
 
   task = g_task_new (stream, cancellable, callback, data);
+  g_task_set_source_tag (task, g_buffered_output_stream_flush_async);
   g_task_set_task_data (task, fdata, free_flush_data);
   g_task_set_priority (task, io_priority);
 
@@ -731,10 +736,11 @@ g_buffered_output_stream_close_async (GOutputStream        *stream,
   GTask *task;
   FlushData *fdata;
 
-  fdata = g_slice_new (FlushData);
+  fdata = g_slice_new0 (FlushData);
   fdata->close_stream = TRUE;
 
   task = g_task_new (stream, cancellable, callback, data);
+  g_task_set_source_tag (task, g_buffered_output_stream_close_async);
   g_task_set_task_data (task, fdata, free_flush_data);
   g_task_set_priority (task, io_priority);
 

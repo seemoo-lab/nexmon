@@ -14,19 +14,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -34,73 +22,73 @@
 #include <stdlib.h>
 
 #include <epan/packet.h>
-
+#include <epan/tfs.h>
 
 void proto_register_gmr1_rach(void);
 
 /* GMR-1 RACH proto */
-static int proto_gmr1_rach = -1;
+static int proto_gmr1_rach;
 
 /* GMR-1 RACH subtrees */
-static gint ett_rach_msg = -1;
-static gint ett_rach_kls1 = -1;
-static gint ett_rach_kls2 = -1;
-static gint ett_rach_gmprs_type1_kls2 = -1;
-static gint ett_rach_gmprs_type2_kls2 = -1;
-static gint ett_rach_est_cause = -1;
-static gint ett_rach_dialed_num = -1;
-static gint ett_rach_gps_pos = -1;
-static gint ett_rach_gmprs_req_type = -1;
+static int ett_rach_msg;
+static int ett_rach_kls1;
+static int ett_rach_kls2;
+static int ett_rach_gmprs_type1_kls2;
+static int ett_rach_gmprs_type2_kls2;
+static int ett_rach_est_cause;
+static int ett_rach_dialed_num;
+static int ett_rach_gps_pos;
+static int ett_rach_gmprs_req_type;
 
 /* Fields */
-static int hf_rach_prio = -1;
-static int hf_rach_est_cause = -1;
-static int hf_rach_est_cause_moc = -1;
-static int hf_rach_est_cause_pag_resp = -1;
-static int hf_rach_num_plan = -1;
-static int hf_rach_chan_needed = -1;
-static int hf_rach_retry_cnt = -1;
-static int hf_rach_precorr = -1;
-static int hf_rach_rand_ref = -1;
+static int hf_rach_prio;
+static int hf_rach_est_cause;
+static int hf_rach_est_cause_moc;
+static int hf_rach_est_cause_pag_resp;
+static int hf_rach_num_plan;
+static int hf_rach_chan_needed;
+static int hf_rach_retry_cnt;
+static int hf_rach_precorr;
+static int hf_rach_rand_ref;
 
-static int hf_rach_gps_pos_cpi = -1;
-static int hf_rach_gps_pos_lat = -1;
-static int hf_rach_gps_pos_long = -1;
+static int hf_rach_gps_pos_cpi;
+static int hf_rach_gps_pos_lat;
+static int hf_rach_gps_pos_long;
 
-static int hf_rach_mes_pwr_class = -1;
-static int hf_rach_sp_hplmn_id = -1;
-static int hf_rach_pd = -1;
-static int hf_rach_number = -1;
-static int hf_rach_number_grp1 = -1;
-static int hf_rach_number_grp2 = -1;
-static int hf_rach_number_grp3 = -1;
-static int hf_rach_number_grp4 = -1;
-static int hf_rach_number_grp5 = -1;
-static int hf_rach_msc_id = -1;
-static int hf_rach_gps_timestamp = -1;
-static int hf_rach_software_version = -1;
-static int hf_rach_spare = -1;
-static int hf_rach_gci = -1;
-static int hf_rach_r = -1;
-static int hf_rach_o = -1;
-static int hf_rach_number_type = -1;
+static int hf_rach_mes_pwr_class;
+static int hf_rach_sp_hplmn_id;
+static int hf_rach_pd;
+static int hf_rach_number;
+static int hf_rach_number_grp1;
+static int hf_rach_number_grp2;
+static int hf_rach_number_grp3;
+static int hf_rach_number_grp4;
+static int hf_rach_number_grp5;
+static int hf_rach_msc_id;
+static int hf_rach_gps_timestamp;
+static int hf_rach_software_version;
+static int hf_rach_spare;
+static int hf_rach_gci;
+static int hf_rach_r;
+static int hf_rach_o;
+static int hf_rach_number_type;
 
-static int hf_rach_gmprs_term_type = -1;
-static int hf_rach_gmprs_radio_prio = -1;
-static int hf_rach_gmprs_tlli = -1;
-static int hf_rach_gmprs_num_rlc_blks = -1;
-static int hf_rach_gmprs_peak_tput = -1;
-static int hf_rach_gmprs_dl_peak_tput = -1;
-static int hf_rach_gmprs_ul_peak_tput = -1;
-static int hf_rach_gmprs_rlc_mode = -1;
-static int hf_rach_gmprs_llc_mode = -1;
-static int hf_rach_gmprs_spare1 = -1;
-static int hf_rach_gmprs_spare2 = -1;
-static int hf_rach_gmprs_spare3 = -1;
-static int hf_rach_gmprs_reserved1 = -1;
-static int hf_rach_gmprs_req_type = -1;
-static int hf_rach_gmprs_req_type_pag_resp = -1;
-static int hf_rach_gmprs_chan_needed = -1;
+static int hf_rach_gmprs_term_type;
+static int hf_rach_gmprs_radio_prio;
+static int hf_rach_gmprs_tlli;
+static int hf_rach_gmprs_num_rlc_blks;
+static int hf_rach_gmprs_peak_tput;
+static int hf_rach_gmprs_dl_peak_tput;
+static int hf_rach_gmprs_ul_peak_tput;
+static int hf_rach_gmprs_rlc_mode;
+static int hf_rach_gmprs_llc_mode;
+static int hf_rach_gmprs_spare1;
+static int hf_rach_gmprs_spare2;
+static int hf_rach_gmprs_spare3;
+static int hf_rach_gmprs_reserved1;
+static int hf_rach_gmprs_req_type;
+static int hf_rach_gmprs_req_type_pag_resp;
+static int hf_rach_gmprs_chan_needed;
 
 
 static const true_false_string rach_prio_tfs = {
@@ -171,7 +159,7 @@ dissect_gmr1_rach_kls1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree
 	proto_tree *tree = NULL;
 	proto_item *ec_item = NULL;
 	proto_tree *ec_tree = NULL;
-	guint8 ec;
+	uint8_t ec;
 
 	/* Tree */
 	tree = proto_tree_add_subtree(
@@ -183,7 +171,7 @@ dissect_gmr1_rach_kls1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree
 	                    tvb, offset, 1, ENC_BIG_ENDIAN);
 
 	/* Establishment Cause */
-	ec = (tvb_get_guint8(tvb, offset) >> 1) & 0x1f;
+	ec = (tvb_get_uint8(tvb, offset) >> 1) & 0x1f;
 
 	*is_moc = !!(ec & 0x10);
 	*is_pdt = (ec == 14);
@@ -228,8 +216,8 @@ dissect_gmr1_rach_kls1(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree
 		proto_tree_add_item(tree, hf_rach_est_cause,
 		                    tvb, offset, 1, ENC_BIG_ENDIAN);
 
-		col_append_fstr(pinfo->cinfo, COL_INFO, "%s",
-		                val_to_str(ec, rach_est_cause_vals, "Unknown (%u)"));
+		col_append_str(pinfo->cinfo, COL_INFO,
+		                val_to_str(pinfo->pool, ec, rach_est_cause_vals, "Unknown (%u)"));
 	}
 
 	/* Retry counter */
@@ -252,20 +240,20 @@ static const true_false_string rach_gps_pos_cpi_tfs = {
 };
 
 static void
-rach_gps_pos_lat_fmt(gchar *s, guint32 v)
+rach_gps_pos_lat_fmt(char *s, uint32_t v)
 {
-	gint32 sv = v;
+	int32_t sv = v;
 
-	g_snprintf(s, ITEM_LABEL_LENGTH, "%.5f %s (%d)",
+	snprintf(s, ITEM_LABEL_LENGTH, "%.5f %s (%d)",
 	           abs(sv) / 2912.7f, sv < 0 ? "S" : "N", sv);
 }
 
 static void
-rach_gps_pos_long_fmt(gchar *s, guint32 v)
+rach_gps_pos_long_fmt(char *s, uint32_t v)
 {
-	gint32 sv = v;
+	int32_t sv = v;
 
-	g_snprintf(s, ITEM_LABEL_LENGTH, "%.5f %s (%d)",
+	snprintf(s, ITEM_LABEL_LENGTH, "%.5f %s (%d)",
 	           abs(sv) / 2912.70555f, sv < 0 ? "W" : "E", sv);
 
 	/* FIXME: The specs says >0 is West ... but it doesn't seem to
@@ -276,7 +264,7 @@ rach_gps_pos_long_fmt(gchar *s, guint32 v)
 static void
 dissect_gmr1_rach_gps_pos(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree)
 {
-	guint32 lat, lng;
+	uint32_t lat, lng;
 
 	/* Check for NULL */
 		/* Spec says that NULL is latitude == 0x40000 and longitude
@@ -311,14 +299,14 @@ dissect_gmr1_rach_gps_pos(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, pro
 
 
 static void
-rach_sp_hplmn_id_fmt(gchar *s, guint32 v)
+rach_sp_hplmn_id_fmt(char *s, uint32_t v)
 {
 	if (v == 0xfffff) {
-		g_snprintf(s, ITEM_LABEL_LENGTH, "%05x (Null)", v);
+		snprintf(s, ITEM_LABEL_LENGTH, "%05x (Null)", v);
 	} else if ((v & 0xf8000) == 0xf8000) {
-		g_snprintf(s, ITEM_LABEL_LENGTH, "%05x (SP ID %4d)", v, v & 0x7fff);
+		snprintf(s, ITEM_LABEL_LENGTH, "%05x (SP ID %4d)", v, v & 0x7fff);
 	} else {
-		g_snprintf(s, ITEM_LABEL_LENGTH, "%05x (HPLMN ID)", v);
+		snprintf(s, ITEM_LABEL_LENGTH, "%05x (HPLMN ID)", v);
 	}
 }
 
@@ -331,45 +319,45 @@ static const value_string rach_pd_vals[] = {
 };
 
 static void
-rach_dialed_num_grp1234_fmt(gchar *s, guint32 v)
+rach_dialed_num_grp1234_fmt(char *s, uint32_t v)
 {
 	if (v <= 999) {
-		g_snprintf(s, ITEM_LABEL_LENGTH, "%03d", v);
+		snprintf(s, ITEM_LABEL_LENGTH, "%03d", v);
 	} else if (v == 1023) {
-		g_snprintf(s, ITEM_LABEL_LENGTH,
+		snprintf(s, ITEM_LABEL_LENGTH,
 			"All digits in the preceding group are valid (%d)", v);
 	} else if (v == 1022) {
-		g_snprintf(s, ITEM_LABEL_LENGTH,
+		snprintf(s, ITEM_LABEL_LENGTH,
 			"First two digits in the preceding group are valid, "
 			"and the third digit (i.e. 0) is padding (%d)", v);
 	} else if (v == 1021) {
-		g_snprintf(s, ITEM_LABEL_LENGTH,
+		snprintf(s, ITEM_LABEL_LENGTH,
 			"First digit in the preceding group is valid, and "
 			"the second and third 0s are padding (%d)", v);
 	} else {
-		g_snprintf(s, ITEM_LABEL_LENGTH, "Invalid (%d)", v);
+		snprintf(s, ITEM_LABEL_LENGTH, "Invalid (%d)", v);
 	}
 }
 
 static void
-rach_dialed_num_grp5_fmt(gchar *s, guint32 v)
+rach_dialed_num_grp5_fmt(char *s, uint32_t v)
 {
 	if (v >= 1100 && v <= 1199) {
-		g_snprintf(s, ITEM_LABEL_LENGTH, "%02d (%d)", v - 1100, v);
+		snprintf(s, ITEM_LABEL_LENGTH, "%02d (%d)", v - 1100, v);
 	} else if (v >= 1200 && v <= 1209) {
-		g_snprintf(s, ITEM_LABEL_LENGTH, "%01d (%d)", v - 1200, v);
+		snprintf(s, ITEM_LABEL_LENGTH, "%01d (%d)", v - 1200, v);
 	} else {
 		rach_dialed_num_grp1234_fmt(s, v);
 	}
 }
 
 static void
-rach_gps_timestamp_fmt(gchar *s, guint32 v)
+rach_gps_timestamp_fmt(char *s, uint32_t v)
 {
 	if (v == 0xffff) {
-		g_snprintf(s, ITEM_LABEL_LENGTH, ">= 65535 minutes or N/A (%04x)", v);
+		snprintf(s, ITEM_LABEL_LENGTH, ">= 65535 minutes or N/A (%04x)", v);
 	} else {
-		g_snprintf(s, ITEM_LABEL_LENGTH, "%d minutes (%04x)", v, v);
+		snprintf(s, ITEM_LABEL_LENGTH, "%d minutes (%04x)", v, v);
 	}
 }
 
@@ -463,21 +451,21 @@ static const value_string rach_gmprs_req_type_pag_resp_vals[] = {
 };
 
 static int
-_parse_dialed_number(gchar *s, int slen, tvbuff_t *tvb, int offset)
+_parse_dialed_number(char *s, int slen, tvbuff_t *tvb, int offset)
 {
-	guint16 grp[5];
+	uint16_t grp[5];
 	int rv, i, done;
 
-	grp[0] = ((tvb_get_guint8(tvb, offset+0) & 0x3f) << 4) |
-	         ((tvb_get_guint8(tvb, offset+1) & 0xf0) >> 4);
-	grp[1] = ((tvb_get_guint8(tvb, offset+1) & 0x0f) << 6) |
-	         ((tvb_get_guint8(tvb, offset+2) & 0xfc) >> 2);
-	grp[2] = ((tvb_get_guint8(tvb, offset+2) & 0x03) << 8) |
-	           tvb_get_guint8(tvb, offset+3);
-	grp[3] = ((tvb_get_guint8(tvb, offset+4) & 0xff) << 2) |
-	         ((tvb_get_guint8(tvb, offset+5) & 0xc0) >> 6);
-	grp[4] = ((tvb_get_guint8(tvb, offset+5) & 0x3f) << 5) |
-	         ((tvb_get_guint8(tvb, offset+6) & 0xf8) >> 3);
+	grp[0] = ((tvb_get_uint8(tvb, offset+0) & 0x3f) << 4) |
+	         ((tvb_get_uint8(tvb, offset+1) & 0xf0) >> 4);
+	grp[1] = ((tvb_get_uint8(tvb, offset+1) & 0x0f) << 6) |
+	         ((tvb_get_uint8(tvb, offset+2) & 0xfc) >> 2);
+	grp[2] = ((tvb_get_uint8(tvb, offset+2) & 0x03) << 8) |
+	           tvb_get_uint8(tvb, offset+3);
+	grp[3] = ((tvb_get_uint8(tvb, offset+4) & 0xff) << 2) |
+	         ((tvb_get_uint8(tvb, offset+5) & 0xc0) >> 6);
+	grp[4] = ((tvb_get_uint8(tvb, offset+5) & 0x3f) << 5) |
+	         ((tvb_get_uint8(tvb, offset+6) & 0xf8) >> 3);
 
 	rv = 0;
 	done = 0;
@@ -487,38 +475,38 @@ _parse_dialed_number(gchar *s, int slen, tvbuff_t *tvb, int offset)
 		if (grp[i+1] <= 999)
 		{
 			/* All digits of group are valid */
-			rv += g_snprintf(s + rv, slen - rv, "%03d", grp[i]);
+			rv += snprintf(s + rv, slen - rv, "%03d", grp[i]);
 		}
 		else if (grp[i+1] == 1023)
 		{
 			/* Last group and all digits are valid */
-			rv += g_snprintf(s + rv, slen - rv, "%03d", grp[i]);
+			rv += snprintf(s + rv, slen - rv, "%03d", grp[i]);
 			done = 1;
 			break;
 		}
 		else if (grp[i+1] == 1022)
 		{
 			/* Last group and first two digits are valid */
-			rv += g_snprintf(s + rv, slen - rv, "%02d", grp[i] / 10);
+			rv += snprintf(s + rv, slen - rv, "%02d", grp[i] / 10);
 			done = 1;
 			break;
 		}
 		else if (grp[i+1] == 1021)
 		{
 			/* Last group and first digit is valid */
-			rv += g_snprintf(s + rv, slen - rv, "%01d", grp[i] / 100);
+			rv += snprintf(s + rv, slen - rv, "%01d", grp[i] / 100);
 			done = 1;
 			break;
 		}
 		else if ((i==3) && (grp[i+1] >= 1100) && (grp[i+1] <= 1209))
 		{
 			/* All digits of group are valid */
-			rv += g_snprintf(s + rv, slen - rv, "%03d", grp[i]);
+			rv += snprintf(s + rv, slen - rv, "%03d", grp[i]);
 		}
 		else
 		{
 			/* Invalid */
-			return g_snprintf(s, slen, "(Invalid)");
+			return snprintf(s, slen, "(Invalid)");
 		}
 	}
 
@@ -526,22 +514,22 @@ _parse_dialed_number(gchar *s, int slen, tvbuff_t *tvb, int offset)
 		if (grp[4] <= 999)
 		{
 			/* All digits are valid */
-			rv += g_snprintf(s + rv, slen - rv, "%03d", grp[4]);
+			rv += snprintf(s + rv, slen - rv, "%03d", grp[4]);
 		}
 		else if (grp[4] >= 1100 && grp[4] <= 1199)
 		{
 			/* Only two digits are valid */
-			rv += g_snprintf(s + rv, slen - rv, "%02d", grp[4] - 1100);
+			rv += snprintf(s + rv, slen - rv, "%02d", grp[4] - 1100);
 		}
 		else if (grp[4] >= 1200 && grp[4] <= 1209)
 		{
 			/* Only one digit is valid */
-			rv += g_snprintf(s + rv, slen - rv, "%01d", grp[4] - 1200);
+			rv += snprintf(s + rv, slen - rv, "%01d", grp[4] - 1200);
 		}
 		else
 		{
 			/* Invalid */
-			return g_snprintf(s, slen, "(Invalid)");
+			return snprintf(s, slen, "(Invalid)");
 		}
 	}
 
@@ -576,7 +564,7 @@ dissect_gmr1_rach_kls2(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree
 
 	/* Is it a MO call ? */
 	if (is_moc) {
-		gchar s[32];
+		char s[32];
 
 		/* Dialed number */
 			/* Parse number */
@@ -670,7 +658,7 @@ dissect_gmprs_rach_type1_kls2(tvbuff_t *tvb, int offset,
 {
 	proto_tree *tree = NULL;
 	proto_tree *gps_pos_tree = NULL;
-	guint8 term_type;
+	uint8_t term_type;
 	int is_class_d;
 
 	/* Tree */
@@ -685,8 +673,8 @@ dissect_gmprs_rach_type1_kls2(tvbuff_t *tvb, int offset,
 		rach_gmprs_type1_term_type_crumbs,
 		NULL);
 
-	term_type = ((tvb_get_guint8(tvb, offset) >> 1) & 0x78 ) |
-	            ( tvb_get_guint8(tvb, offset + 3)   & 0x07);
+	term_type = ((tvb_get_uint8(tvb, offset) >> 1) & 0x78 ) |
+	            ( tvb_get_uint8(tvb, offset + 3)   & 0x07);
 
 	is_class_d = (term_type == 0x0d) ||
 	             (term_type == 0x0e) ||
@@ -783,7 +771,7 @@ dissect_gmprs_rach_type2_kls2(tvbuff_t *tvb, int offset,
 {
 	proto_tree *tree = NULL;
 	proto_tree *gps_pos_tree = NULL;
-	guint8 req_type;
+	uint8_t req_type;
 
 	/* Tree */
 	tree = proto_tree_add_subtree(
@@ -814,7 +802,7 @@ dissect_gmprs_rach_type2_kls2(tvbuff_t *tvb, int offset,
 	                    tvb, offset + 4, 4, ENC_BIG_ENDIAN);
 
 	/* Request type */
-	req_type = tvb_get_guint8(tvb, offset + 8) & 0x1f;
+	req_type = tvb_get_uint8(tvb, offset + 8) & 0x1f;
 
 	if ((req_type & 0x1c) == 0) {
 		/* Paging response */
@@ -834,8 +822,8 @@ dissect_gmprs_rach_type2_kls2(tvbuff_t *tvb, int offset,
 		proto_tree_add_item(tree, hf_rach_gmprs_req_type,
 				    tvb, offset + 8, 1, ENC_BIG_ENDIAN);
 
-		col_append_fstr(pinfo->cinfo, COL_INFO, "%s",
-		                val_to_str(req_type, rach_gmprs_req_type_vals, "Unknown (%u)"));
+		col_append_str(pinfo->cinfo, COL_INFO,
+		                val_to_str(pinfo->pool, req_type, rach_gmprs_req_type_vals, "Unknown (%u)"));
 	}
 
 	/* Software version number */
@@ -878,6 +866,8 @@ dissect_gmr1_rach(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 	proto_tree *rach_tree;
 	const char *desc;
 	int len, is_moc, is_pdt, ies;
+	is_moc = 0;
+	is_pdt = 0;
 
 	len = tvb_reported_length(tvb);
 
@@ -885,7 +875,7 @@ dissect_gmr1_rach(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 	ies  = 0;
 
 	if (len == 18) {
-		guint8 ec = (tvb_get_guint8(tvb, 0) >> 1) & 0x1f;
+		uint8_t ec = (tvb_get_uint8(tvb, 0) >> 1) & 0x1f;
 
 		ies |= RACH_IE_CLASS1;
 
@@ -895,11 +885,13 @@ dissect_gmr1_rach(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 		} else if (ec == 7) {
 			desc = "GMR-1 GmPRS Channel Request Type 2 (RACH)";
 			ies |= RACH_IE_CLASS2_GMPRS_TYPE2;
+#if 0 /* Fix -Wduplicated-branches */
 		} else if (ec == 12) {
 			/* Position verification exists in both GMR-1 and GmPRS-1
 			 * I have no idea how to differentiate them ... but from
 			 * off-the-air data, it seems it used the GMR-1 format */
 			ies |= RACH_IE_CLASS2_GMR1;
+#endif
 		} else {
 			ies |= RACH_IE_CLASS2_GMR1;
 		}
@@ -1164,7 +1156,7 @@ proto_register_gmr1_rach(void)
 		},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_rach_msg,
 		&ett_rach_kls1,
 		&ett_rach_kls2,
@@ -1185,7 +1177,7 @@ proto_register_gmr1_rach(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

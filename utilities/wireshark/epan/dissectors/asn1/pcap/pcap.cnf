@@ -56,11 +56,22 @@ ProtocolExtensionField/id ext_id
 PrivateIE-Field/value private_value
 ProtocolIE-Field/value ie_field_value
 
+AlmanacSatInfo/t-oa almanacSatInfo_t-oa
+ReqDataBitAssistanceList/ganssSignalID reqDataBitAssistanceList_ganssSignalID
+NetworkAssistedGANSSSupport/_item/ganssSignalID networkAssistedGANSSSupport_item_ganssSignalID
+GANSS-PositioningInstructions/additionalAssistanceDataRequest gANSS-PositioningInstructions_additionalAssistanceDataRequest
+
+#.FIELD_ATTR
+AlmanacSatInfo/t-oa					ABBREV=almanacSatInfo.t-oa
+ReqDataBitAssistanceList/ganssSignalID ABBREV=reqDataBitAssistanceList.ganssSignalID
+NetworkAssistedGANSSSupport/_item/ganssSignalID ABBREV=networkAssistedGANSSSupport.item.ganssSignalID
+GANSS-PositioningInstructions/additionalAssistanceDataRequest ABBREV=gANSS-PositioningInstructions.additionalAssistanceDataRequest
 
 #.FN_PARS ProtocolIE-ID  VAL_PTR=&ProtocolIE_ID
 #.FN_FTR ProtocolIE-ID
   if (tree) {
-    proto_item_append_text(proto_item_get_parent_nth(actx->created_item, 2), ": %s", val_to_str_ext(ProtocolIE_ID, &pcap_ProtocolIE_ID_vals_ext, "unknown (%d)"));
+    proto_item_append_text(proto_item_get_parent_nth(actx->created_item, 2), ": %s",
+                           val_to_str_ext(actx->pinfo->pool, ProtocolIE_ID, &pcap_ProtocolIE_ID_vals_ext, "unknown (%d)"));
   }
 #.END
 
@@ -73,8 +84,8 @@ ProtocolIE-Field/value ie_field_value
 #.FN_PARS  ProcedureCode  VAL_PTR = &ProcedureCode
 #.FN_FTR ProcedureCode
     col_add_fstr(actx->pinfo->cinfo, COL_INFO, "%s ",
-                val_to_str(ProcedureCode, pcap_ProcedureCode_vals,
-                            "unknown message"));
+                val_to_str_const(ProcedureCode, pcap_ProcedureCode_vals,
+                                 "unknown message"));
 #.END
 
 #.FN_PARS InitiatingMessage/value  FN_VARIANT=_pdu_new  TYPE_REF_FN=dissect_InitiatingMessageValue
@@ -264,6 +275,19 @@ id-requestedCellIDGERANMeasurements				ProtocolIE-ID
 id-CellId-IRATMeasuredResultsSets				ProtocolIE-ID
 id-IMSI											ProtocolIE-ID
 id-IMEI											ProtocolIE-ID
+id-GANSS-alm-keplerianBDSAlmanac				ProtocolIE-ID
+id-BDS-Ionospheric-Grid-Model					ProtocolIE-ID
+id-DBDS-Correction-Information					ProtocolIE-ID
+id-BDSIonosphericGridModel						ProtocolIE-ID
+id-DBDSCorrection								ProtocolIE-ID
+id-Confidence									ProtocolIE-ID
+id-ExtraDopplerInfoExtension					ProtocolIE-ID
+id-GANSS-Confidence								ProtocolIE-ID
+id-GANSS-ExtraDopplerExtension					ProtocolIE-ID
+id-Additional-PositioningDataSet				ProtocolIE-ID
+id-Additional-PositioningMethod					ProtocolIE-ID
+id-AddPos-MeasuredResults						ProtocolIE-ID
+id-AddPosSupport								ProtocolIE-ID
 
 #.END
 
@@ -306,6 +330,7 @@ UE-PositionEstimateInfo							N pcap.ies id-UE-PositionEstimateInfo
 OTDOA-MeasuredResultsSets						N pcap.ies id-OTDOA-MeasuredResultsSets
 PeriodicPosCalcInfo								N pcap.ies id-PeriodicPosCalcInfo
 PeriodicTerminationCause						N pcap.ies id-PeriodicTerminationCause
+GANSS-ALM-BDSKeplericanset						N pcap.ies id-GANSS-alm-keplerianBDSAlmanac
 
 #PCAP-PROTOCOL-EXTENSION
 CellId-MeasuredResultsSets						N pcap.extension id-CellId-MeasuredResultsSets
@@ -386,7 +411,18 @@ RequestedCellIDGERANMeasurements				N pcap.extension id-requestedCellIDGERANMeas
 CellId-IRATMeasuredResultsSets					N pcap.extension id-CellId-IRATMeasuredResultsSets
 IMSI											N pcap.extension id-IMSI
 IMEI											N pcap.extension id-IMEI
-
+BDS-Ionospheric-Grid-Model					N pcap.extension id-BDS-Ionospheric-Grid-Model
+DBDS-Correction-Information					N pcap.extension id-DBDS-Correction-Information
+BDSIonosphericGridModel						N pcap.extension id-BDSIonosphericGridModel
+DBDSCorrection							N pcap.extension id-DBDSCorrection
+Confidence							N pcap.extension id-Confidence
+ExtraDopplerInfoExtension					N pcap.extension id-ExtraDopplerInfoExtension
+Confidence							N pcap.extension id-GANSS-Confidence
+GANSS-ExtraDopplerExtension					N pcap.extension id-GANSS-ExtraDopplerExtension
+Additional-PositioningDataSet					N pcap.extension id-Additional-PositioningDataSet
+Additional-PositioningMethod					N pcap.extension id-Additional-PositioningMethod
+AddPos-MeasuredResults						N pcap.extension id-AddPos-MeasuredResults
+AddPosSupport							N pcap.extension id-AddPosSupport
 
 #PCAP-ELEMENTARY-PROCEDURE
 

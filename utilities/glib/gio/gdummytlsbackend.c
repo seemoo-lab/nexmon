@@ -3,10 +3,12 @@
  * Copyright (C) 2010 Red Hat, Inc.
  * Copyright © 2015 Collabora, Ltd.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -61,7 +63,7 @@ G_DEFINE_TYPE_WITH_CODE (GDummyTlsBackend, g_dummy_tls_backend, G_TYPE_OBJECT,
 			 g_io_extension_point_implement (G_TLS_BACKEND_EXTENSION_POINT_NAME,
 							 g_define_type_id,
 							 "dummy",
-							 -100))
+							 -100);)
 
 static void
 g_dummy_tls_backend_init (GDummyTlsBackend *dummy)
@@ -91,12 +93,12 @@ g_dummy_tls_backend_get_default_database (GTlsBackend *backend)
 {
   GDummyTlsBackend *dummy = G_DUMMY_TLS_BACKEND (backend);
 
-  if (g_once_init_enter (&dummy->database))
+  if (g_once_init_enter_pointer (&dummy->database))
     {
       GTlsDatabase *tlsdb;
 
       tlsdb = g_object_new (_g_dummy_tls_database_get_type (), NULL);
-      g_once_init_leave (&dummy->database, tlsdb);
+      g_once_init_leave_pointer (&dummy->database, tlsdb);
     }
 
   return g_object_ref (dummy->database);
@@ -143,7 +145,7 @@ static void g_dummy_tls_certificate_initable_iface_init (GInitableIface *iface);
 #define g_dummy_tls_certificate_get_type _g_dummy_tls_certificate_get_type
 G_DEFINE_TYPE_WITH_CODE (GDummyTlsCertificate, g_dummy_tls_certificate, G_TYPE_TLS_CERTIFICATE,
 			 G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
-						g_dummy_tls_certificate_initable_iface_init);)
+						g_dummy_tls_certificate_initable_iface_init))
 
 static void
 g_dummy_tls_certificate_get_property (GObject    *object,
@@ -235,17 +237,19 @@ enum
   PROP_CONN_SERVER_IDENTITY,
   PROP_CONN_USE_SSL3,
   PROP_CONN_ACCEPTED_CAS,
-  PROP_CONN_AUTHENTICATION_MODE
+  PROP_CONN_AUTHENTICATION_MODE,
+  PROP_CONN_ADVERTISED_PROTOCOLS,
+  PROP_CONN_NEGOTIATED_PROTOCOL,
 };
 
 static void g_dummy_tls_connection_initable_iface_init (GInitableIface *iface);
 
 #define g_dummy_tls_connection_get_type _g_dummy_tls_connection_get_type
 G_DEFINE_TYPE_WITH_CODE (GDummyTlsConnection, g_dummy_tls_connection, G_TYPE_TLS_CONNECTION,
-			 G_IMPLEMENT_INTERFACE (G_TYPE_TLS_CLIENT_CONNECTION, NULL);
-			 G_IMPLEMENT_INTERFACE (G_TYPE_TLS_SERVER_CONNECTION, NULL);
+			 G_IMPLEMENT_INTERFACE (G_TYPE_TLS_CLIENT_CONNECTION, NULL)
+			 G_IMPLEMENT_INTERFACE (G_TYPE_TLS_SERVER_CONNECTION, NULL)
 			 G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
-						g_dummy_tls_connection_initable_iface_init);)
+						g_dummy_tls_connection_initable_iface_init))
 
 static void
 g_dummy_tls_connection_get_property (GObject    *object,
@@ -301,6 +305,8 @@ g_dummy_tls_connection_class_init (GDummyTlsConnectionClass *connection_class)
   g_object_class_override_property (gobject_class, PROP_CONN_USE_SSL3, "use-ssl3");
   g_object_class_override_property (gobject_class, PROP_CONN_ACCEPTED_CAS, "accepted-cas");
   g_object_class_override_property (gobject_class, PROP_CONN_AUTHENTICATION_MODE, "authentication-mode");
+  g_object_class_override_property (gobject_class, PROP_CONN_ADVERTISED_PROTOCOLS, "advertised-protocols");
+  g_object_class_override_property (gobject_class, PROP_CONN_NEGOTIATED_PROTOCOL, "negotiated-protocol");
 }
 
 static void
@@ -453,9 +459,9 @@ static void g_dummy_tls_database_initable_iface_init (GInitableIface *iface);
 #define g_dummy_tls_database_get_type _g_dummy_tls_database_get_type
 G_DEFINE_TYPE_WITH_CODE (GDummyTlsDatabase, g_dummy_tls_database, G_TYPE_TLS_DATABASE,
                          G_IMPLEMENT_INTERFACE (G_TYPE_TLS_FILE_DATABASE,
-                                                g_dummy_tls_database_file_database_iface_init);
+                                                g_dummy_tls_database_file_database_iface_init)
                          G_IMPLEMENT_INTERFACE (G_TYPE_INITABLE,
-                                                g_dummy_tls_database_initable_iface_init);)
+                                                g_dummy_tls_database_initable_iface_init))
 
 
 static void

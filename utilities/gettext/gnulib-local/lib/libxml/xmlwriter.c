@@ -1,11 +1,38 @@
+/* libxml2 - Library for parsing XML documents
+ * Copyright (C) 2006-2019 Free Software Foundation, Inc.
+ *
+ * This file is not part of the GNU gettext program, but is used with
+ * GNU gettext.
+ *
+ * The original copyright notice is as follows:
+ */
+
+/*
+ * Copyright (C) 1998-2012 Daniel Veillard.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is fur-
+ * nished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+ * NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * alfred@mickautsch.de
+ */
 
 /*
  * xmlwriter.c: XML text writer implementation
- *
- * For license and disclaimer see the license and disclaimer of
- * libxml2.
- *
- * alfred@mickautsch.de
  */
 
 #define IN_LIBXML
@@ -110,10 +137,10 @@ static void xmlFreeTextWriterNsStackEntry(xmlLinkPtr lk);
 static int xmlCmpTextWriterNsStackEntry(const void *data0,
                                         const void *data1);
 static int xmlTextWriterWriteDocCallback(void *context,
-                                         const xmlChar * str, int len);
+                                         const char *str, int len);
 static int xmlTextWriterCloseDocCallback(void *context);
 
-static xmlChar *xmlTextWriterVSprintf(const char *format, va_list argptr);
+static xmlChar *xmlTextWriterVSprintf(const char *format, va_list argptr) LIBXML_ATTR_FORMAT(1,0);
 static int xmlOutputBufferWriteBase64(xmlOutputBufferPtr out, int len,
                                       const unsigned char *data);
 static void xmlTextWriterStartDocumentCallback(void *ctx);
@@ -153,7 +180,7 @@ xmlWriterErrMsg(xmlTextWriterPtr ctxt, xmlParserErrors error,
  *
  * Handle a writer error
  */
-static void
+static void LIBXML_ATTR_FORMAT(3,0)
 xmlWriterErrMsgInt(xmlTextWriterPtr ctxt, xmlParserErrors error,
                const char *msg, int val)
 {
@@ -190,9 +217,7 @@ xmlNewTextWriter(xmlOutputBufferPtr out)
     }
     memset(ret, 0, (size_t) sizeof(xmlTextWriter));
 
-    ret->nodes = xmlListCreate((xmlListDeallocator)
-                               xmlFreeTextWriterStackEntry,
-                               (xmlListDataCompare)
+    ret->nodes = xmlListCreate(xmlFreeTextWriterStackEntry,
                                xmlCmpTextWriterStackEntry);
     if (ret->nodes == NULL) {
         xmlWriterErrMsg(NULL, XML_ERR_NO_MEMORY,
@@ -201,9 +226,7 @@ xmlNewTextWriter(xmlOutputBufferPtr out)
         return NULL;
     }
 
-    ret->nsstack = xmlListCreate((xmlListDeallocator)
-                                 xmlFreeTextWriterNsStackEntry,
-                                 (xmlListDataCompare)
+    ret->nsstack = xmlListCreate(xmlFreeTextWriterNsStackEntry,
                                  xmlCmpTextWriterNsStackEntry);
     if (ret->nsstack == NULL) {
         xmlWriterErrMsg(NULL, XML_ERR_NO_MEMORY,
@@ -329,9 +352,7 @@ xmlNewTextWriterPushParser(xmlParserCtxtPtr ctxt,
         return NULL;
     }
 
-    out = xmlOutputBufferCreateIO((xmlOutputWriteCallback)
-                                  xmlTextWriterWriteDocCallback,
-                                  (xmlOutputCloseCallback)
+    out = xmlOutputBufferCreateIO(xmlTextWriterWriteDocCallback,
                                   xmlTextWriterCloseDocCallback,
                                   (void *) ctxt, NULL);
     if (out == NULL) {
@@ -3754,6 +3775,7 @@ xmlTextWriterEndDTDEntity(xmlTextWriterPtr writer)
             if (count < 0)
                 return -1;
             sum += count;
+            /* Falls through. */
         case XML_TEXTWRITER_DTD_ENTY:
         case XML_TEXTWRITER_DTD_PENT:
             count = xmlOutputBufferWriteString(writer->out, ">");
@@ -4421,12 +4443,12 @@ xmlCmpTextWriterNsStackEntry(const void *data0, const void *data1)
  * Returns -1, 0, 1
  */
 static int
-xmlTextWriterWriteDocCallback(void *context, const xmlChar * str, int len)
+xmlTextWriterWriteDocCallback(void *context, const char *str, int len)
 {
     xmlParserCtxtPtr ctxt = (xmlParserCtxtPtr) context;
     int rc;
 
-    if ((rc = xmlParseChunk(ctxt, (const char *) str, len, 0)) != 0) {
+    if ((rc = xmlParseChunk(ctxt, str, len, 0)) != 0) {
         xmlWriterErrMsgInt(NULL, XML_ERR_INTERNAL_ERROR,
                         "xmlTextWriterWriteDocCallback : XML error %d !\n",
                         rc);
@@ -4452,7 +4474,7 @@ xmlTextWriterCloseDocCallback(void *context)
 
     if ((rc = xmlParseChunk(ctxt, NULL, 0, 1)) != 0) {
         xmlWriterErrMsgInt(NULL, XML_ERR_INTERNAL_ERROR,
-                        "xmlTextWriterWriteDocCallback : XML error %d !\n",
+                        "xmlTextWriterCloseDocCallback : XML error %d !\n",
                         rc);
         return -1;
     }

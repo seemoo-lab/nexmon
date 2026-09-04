@@ -1,22 +1,10 @@
-/* wireshark_dialog.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef WIRESHARK_DIALOG_H
@@ -38,6 +26,8 @@
 // BaseCaptureDialog, CaptureHelperDialog (or rename CaptureFileDialog to something else - WiresharkFileDialog).
 // TapDialog might make sense as well.
 
+#include <epan/tap.h>
+
 #include "capture_file.h"
 #include "geometry_state_dialog.h"
 
@@ -49,9 +39,16 @@ public:
     // XXX Unlike the entire QWidget API, parent is mandatory here.
     explicit WiresharkDialog(QWidget &parent, CaptureFile &capture_file);
 
-signals:
+    /**
+     * @brief true if the file has been closed, false otherwise.
+     */
+    bool fileClosed() const { return file_closed_; }
 
-public slots:
+protected:
+    virtual void keyPressEvent(QKeyEvent *event) { QDialog::keyPressEvent(event); }
+    virtual void accept();
+    virtual void reject();
+
     /**
      * @brief Mark the start of a code block that retaps packets. If the user
      * closes the dialog while tapping, the dialog will not be destroyed until
@@ -62,7 +59,7 @@ public slots:
      * accessed after tapping is finished.
      */
 
-    void beginRetapPackets() { retap_depth_++; }
+    void beginRetapPackets();
     /**
      * @brief Mark the end of a code block that retaps packets. If the user
      * has closed the dialog it will be desroyed at this point.
@@ -72,11 +69,6 @@ public slots:
      * accessed after tapping is finished.
      */
     virtual void endRetapPackets();
-
-protected:
-    virtual void keyPressEvent(QKeyEvent *event) { QDialog::keyPressEvent(event); }
-    virtual void accept();
-    virtual void reject();
 
     /**
      * @brief Set the window subtitle, e.g. "Foo Timeouts". The subtitle and
@@ -106,41 +98,53 @@ protected:
      * @param tap_draw Draw callback.
      */
     bool registerTapListener(const char *tap_name, void *tap_data,
-                        const char *filter, guint flags,
-                        void (*tap_reset)(void *tapdata),
-                        gboolean (*tap_packet)(void *tapdata, struct _packet_info *pinfo, struct epan_dissect *edt, const void *data),
-                        void (*tap_draw)(void *tap_data));
+                        const char *filter, unsigned flags,
+                        tap_reset_cb tap_reset,
+                        tap_packet_cb tap_packet,
+                        tap_draw_cb tap_draw);
 
     /**
      * @brief Remove all tap listeners registered via registerTapListener.
      */
-    void removeTapListeners();
+    virtual void removeTapListeners();
 
-    /**
-     * @brief true if the file has been closed, false otherwise.
-     */
-    // XXX Needs a getter?
+    // XXX - Move this to private, have subclasses use the getter?
     bool file_closed_;
 
     /**
      * @brief Check to see if the user has closed (and not minimized) the dialog.
      * @return true if the dialog has been closed, false otherwise.
      */
-    bool dialogClosed() { return dialog_closed_; }
+    bool dialogClosed() const { return dialog_closed_; }
 
-protected slots:
+    /**
+     * @brief Check to see if we're currently retapping. If this is positive,
+     * tapping will fail in process_specified_records.
+     * @return The current retap depth. (In current implementation, 0 or 1.)
+     */
+    int retapDepth() const { return retap_depth_; }
+
     /**
      * @brief Called when the capture file is about to close. This can be
-     * used to enable or disable widgets according to the state of
-     * file_closed_.
+     * used to disconnect taps and similar actions.
+     * updateWidgets() is called at the end.
+     * To enable/disable widgets captureFileClosed() is more suitable.
      */
     virtual void captureFileClosing();
+
+    /**
+     * @brief Called when the capture file was closed. This can be
+     * used to enable or disable widgets according to the state of
+     * file_closed_.
+     * updateWidgets() is called at the end.
+     */
     virtual void captureFileClosed();
 
-private:
-    void setWindowTitleFromSubtitle();
+protected slots:
+    void captureEvent(CaptureEvent);
 
-    void tryDeleteLater();
+private:
+    void dialogCleanup(bool closeDialog = false);
 
     QString subtitle_;
     QList<void *> tap_listeners_;
@@ -151,16 +155,3 @@ private slots:
 };
 
 #endif // WIRESHARK_DIALOG_H
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
@@ -38,7 +26,11 @@ typedef enum LogicalChannelType
     Channel_DCCH=1,
     Channel_BCCH=2,
     Channel_CCCH=3,
-    Channel_PCCH=4
+    Channel_PCCH=4,
+    Channel_DCCH_NB=5,
+    Channel_BCCH_NB=6,
+    Channel_CCCH_NB=7,
+    Channel_PCCH_NB=8
 } LogicalChannelType;
 
 typedef enum
@@ -53,61 +45,64 @@ typedef enum
 #define PDCP_SN_LENGTH_15_BITS 15
 #define PDCP_SN_LENGTH_18_BITS 18
 
-enum security_integrity_algorithm_e { eia0, eia1, eia2, eia3 };
-enum security_ciphering_algorithm_e { eea0, eea1, eea2, eea3 };
+enum lte_security_integrity_algorithm_e { eia0, eia1, eia2, eia3 };
+enum lte_security_ciphering_algorithm_e { eea0, eea1, eea2, eea3 };
 
-typedef struct pdcp_security_info_t
+typedef struct pdcp_lte_security_info_t
 {
-    guint32                             configuration_frame;
-    gboolean                            seen_next_ul_pdu;  /* i.e. have we seen SecurityModeResponse */
-    enum security_integrity_algorithm_e integrity;
-    enum security_ciphering_algorithm_e ciphering;
+    uint32_t                                configuration_frame;
+    bool                                    seen_next_ul_pdu;  /* i.e. have we seen SecurityModeResponse */
+    enum lte_security_integrity_algorithm_e integrity;
+    enum lte_security_ciphering_algorithm_e ciphering;
 
     /* Store previous settings so can revert if get SecurityModeFailure */
-    guint32                             previous_configuration_frame;
-    enum security_integrity_algorithm_e previous_integrity;
-    enum security_ciphering_algorithm_e previous_ciphering;
-} pdcp_security_info_t;
+    uint32_t                                previous_configuration_frame;
+    enum lte_security_integrity_algorithm_e previous_integrity;
+    enum lte_security_ciphering_algorithm_e previous_ciphering;
+} pdcp_lte_security_info_t;
 
 
 /* Info attached to each LTE PDCP/RoHC packet */
 typedef struct pdcp_lte_info
 {
     /* Channel info is needed for RRC parsing */
-    guint8             direction;
-    guint16            ueid;
+    uint8_t            direction;
+    uint16_t           ueid;
     LogicalChannelType channelType;
-    guint16            channelId;
+    uint16_t           channelId;
     BCCHTransportType  BCCHTransport;
 
     /* Details of PDCP header */
-    gboolean           no_header_pdu;
+    bool               no_header_pdu;
     enum pdcp_plane    plane;
-    guint8             seqnum_length;
+    uint8_t            seqnum_length;
 
     /* RoHC settings */
     rohc_info          rohc;
 
-    guint8             is_retx;
+    uint8_t            is_retx;
+
+    /* Used by heuristic dissector only */
+    uint16_t           pdu_length;
 } pdcp_lte_info;
 
 
 
-/*****************************************************************/
-/* UDP framing format                                            */
-/* -----------------------                                       */
-/* Several people have asked about dissecting PDCP by framing    */
-/* PDUs over IP.  A suggested format over UDP has been defined   */
-/* and implemented by this dissector, using the definitions      */
-/* below. A link to an example program showing you how to encode */
-/* these headers and send LTE PDCP PDUs on a UDP socket is       */
-/* provided at https://wiki.wireshark.org/PDCP-LTE                */
-/*                                                               */
-/* A heuristic dissecter (enabled by a preference) will          */
-/* recognise a signature at the beginning of these frames.       */
-/* Until someone is using this format, suggestions for changes   */
-/* are welcome.                                                  */
-/*****************************************************************/
+/***********************************************************************/
+/* UDP framing format                                                  */
+/* -----------------------                                             */
+/* Several people have asked about dissecting PDCP by framing          */
+/* PDUs over IP.  A suggested format over UDP has been defined         */
+/* and implemented by this dissector, using the definitions            */
+/* below. A link to an example program showing you how to encode       */
+/* these headers and send LTE PDCP PDUs on a UDP socket is             */
+/* provided at https://gitlab.com/wireshark/wireshark/-/wikis/PDCP-LTE */
+/*                                                                     */
+/* A heuristic dissector (enabled by a preference) will                */
+/* recognise a signature at the beginning of these frames.             */
+/* Until someone is using this format, suggestions for changes         */
+/* are welcome.                                                        */
+/***********************************************************************/
 
 
 /* Signature.  Rather than try to define a port for this, or make the
@@ -179,19 +174,22 @@ typedef struct pdcp_lte_info
 /* Called by RRC, or other configuration protocols */
 
 /* Function to configure ciphering & integrity algorithms */
-void set_pdcp_lte_security_algorithms(guint16 ueid, pdcp_security_info_t *security_info);
+void set_pdcp_lte_security_algorithms(uint16_t ueid, pdcp_lte_security_info_t *security_info);
 
 /* Function to indicate securityModeCommand did not complete */
-void set_pdcp_lte_security_algorithms_failed(guint16 ueid);
+void set_pdcp_lte_security_algorithms_failed(uint16_t ueid);
 
 
 /* Called by external dissectors */
-void set_pdcp_lte_rrc_ciphering_key(guint16 ueid, const char *key);
-void set_pdcp_lte_rrc_integrity_key(guint16 ueid, const char *key);
-void set_pdcp_lte_up_ciphering_key(guint16 ueid, const char *key);
+void set_pdcp_lte_rrc_ciphering_key(uint16_t ueid, const char *key, uint32_t frame_num);
+void set_pdcp_lte_rrc_integrity_key(uint16_t ueid, const char *key, uint32_t frame_num);
+void set_pdcp_lte_up_ciphering_key(uint16_t ueid, const char *key, uint32_t frame_num);
+
+/* Reset UE's bearers */
+void pdcp_lte_reset_ue_bearers(packet_info *pinfo, uint16_t ueid, bool including_drb_am);
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

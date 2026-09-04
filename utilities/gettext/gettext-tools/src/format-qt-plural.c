@@ -1,7 +1,5 @@
 /* Qt plural format strings.
-   Copyright (C) 2003-2004, 2006-2007, 2009, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2009.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -41,7 +39,7 @@
 struct spec
 {
   /* Number of format directives.  */
-  unsigned int directives;
+  size_t directives;
 };
 
 
@@ -50,9 +48,8 @@ format_parse (const char *format, bool translated, char *fdi,
               char **invalid_reason)
 {
   const char *const format_start = format;
-  struct spec spec;
-  struct spec *result;
 
+  struct spec spec;
   spec.directives = 0;
 
   for (; *format != '\0';)
@@ -73,7 +70,7 @@ format_parse (const char *format, bool translated, char *fdi,
           }
       }
 
-  result = XMALLOC (struct spec);
+  struct spec *result = XMALLOC (struct spec);
   *result = spec;
   return result;
 }
@@ -96,7 +93,7 @@ format_get_number_of_directives (void *descr)
 
 static bool
 format_check (void *msgid_descr, void *msgstr_descr, bool equality,
-              formatstring_error_logger_t error_logger,
+              formatstring_error_logger_t error_logger, void *error_logger_data,
               const char *pretty_msgid, const char *pretty_msgstr)
 {
   struct spec *spec1 = (struct spec *) msgid_descr;
@@ -108,7 +105,8 @@ format_check (void *msgid_descr, void *msgstr_descr, bool equality,
       || (equality && spec1->directives > 0 && spec2->directives == 0))
     {
       if (error_logger)
-        error_logger (_("number of format specifications in '%s' and '%s' does not match"),
+        error_logger (error_logger_data,
+                      _("number of format specifications in '%s' and '%s' does not match"),
                       pretty_msgid, pretty_msgstr);
       err = true;
     }
@@ -160,18 +158,14 @@ main ()
     {
       char *line = NULL;
       size_t line_size = 0;
-      int line_len;
-      char *invalid_reason;
-      void *descr;
-
-      line_len = getline (&line, &line_size, stdin);
+      int line_len = getline (&line, &line_size, stdin);
       if (line_len < 0)
         break;
       if (line_len > 0 && line[line_len - 1] == '\n')
         line[--line_len] = '\0';
 
-      invalid_reason = NULL;
-      descr = format_parse (line, false, NULL, &invalid_reason);
+      char *invalid_reason = NULL;
+      void *descr = format_parse (line, false, NULL, &invalid_reason);
 
       format_print (descr);
       printf ("\n");
@@ -188,7 +182,7 @@ main ()
 /*
  * For Emacs M-x compile
  * Local Variables:
- * compile-command: "/bin/sh ../libtool --tag=CC --mode=link gcc -o a.out -static -O -g -Wall -I.. -I../gnulib-lib -I../intl -DHAVE_CONFIG_H -DTEST format-qt-plural.c ../gnulib-lib/libgettextlib.la"
+ * compile-command: "/bin/sh ../libtool --tag=CC --mode=link gcc -o a.out -static -O -g -Wall -I.. -I../gnulib-lib -I../../gettext-runtime/intl -DTEST format-qt-plural.c ../gnulib-lib/libgettextlib.la"
  * End:
  */
 

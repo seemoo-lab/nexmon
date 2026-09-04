@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>'
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * RTP-MIDI ( RFC 4695/6295 ) is a payload type for transmitting MIDI-data over
  * RTP-packets.  This payload type can be used on an RTP-conversation that has been
@@ -32,8 +20,8 @@
  * Here are some links:
  *
  * http://www.cs.berkeley.edu/~lazzaro/rtpmidi/
- * http://www.faqs.org/rfcs/rfc4695.html
- * http://www.faqs.org/rfcs/rfc6295.html
+ * https://tools.ietf.org/html/rfc4695
+ * https://tools.ietf.org/html/rfc6295
  * http://www.midi.org/
  *
  * 2012-02-24
@@ -49,7 +37,8 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/exceptions.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include <epan/prefs.h>
 
 void proto_register_rtp_midi(void);
@@ -1105,8 +1094,8 @@ void proto_register_rtp_midi(void);
 #define RTP_MIDI_SJ_CHAPTER_X_FLAG_D			0x08
 #define RTP_MIDI_SJ_CHAPTER_X_FLAG_L			0x04
 #define RTP_MIDI_SJ_CHAPTER_X_MASK_STA			0x03
-#define RTP_MIDI_SJ_CHAPTER_X_MASK_TCOUNT		0xff
-#define RTP_MIDI_SJ_CHAPTER_X_MASK_COUNT		0xff
+#define RTP_MIDI_SJ_CHAPTER_X_MASK_TCOUNT		0x0
+#define RTP_MIDI_SJ_CHAPTER_X_MASK_COUNT		0x0
 
 #define RTP_MIDI_CJ_FLAG_S				0x800000
 #define RTP_MIDI_CJ_FLAG_H				0x040000
@@ -1327,7 +1316,7 @@ static const value_string rtp_midi_controller_values[] = {
 	{ RTP_MIDI_CTRL_EFFECTS_2_DEPTH,				"Effects 2 Depth (formerly: Tremolo Depth)" },
 	{ RTP_MIDI_CTRL_EFFECTS_3_DEPTH,				"Effects 3 Depth (formerly: Chorus Depth)" },
 	{ RTP_MIDI_CTRL_EFFECTS_4_DEPTH,				"Effects 4 Depth (formerly: Celeste (Detune) Depth)" },
-	{ RTP_MIDI_CTRL_EFFECTS_5_DEPTH,				"Effects 5 Depth (formerly: Phaser Deptch)" },
+	{ RTP_MIDI_CTRL_EFFECTS_5_DEPTH,				"Effects 5 Depth (formerly: Phaser Depth)" },
 	{ RTP_MIDI_CTRL_DATA_INCREMENT,					"Data Increment" },
 	{ RTP_MIDI_CTRL_DATA_DECREMENT,					"Data Decrement" },
 	{ RTP_MIDI_CTRL_NON_REGISTERED_PARAM_LSB,			"Non-Registered Parameter (lsb)" },
@@ -1711,8 +1700,8 @@ static const value_string rtp_midi_manu_long_values[] = {
 	{ RTP_MIDI_MANU_LONG_ZERO_88_LIGHTING_LIMITED,			"Zero 88 Lighting Limited" },
 	{ RTP_MIDI_MANU_LONG_MICON_AUDIO_ELECTRONICS_GMBH,		"Micon Audio Electronics GmbH" },
 	{ RTP_MIDI_MANU_LONG_FOREFRONT_TECHNOLOGY,			"Forefront Technology" },
-	{ RTP_MIDI_MANU_LONG_STUDIO_AUDIO_AND_VIDEO_LTD,		"Stduio Audio and Video Ltd" },
-	{ RTP_MIDI_MANU_LONG_KENTON_ELECTRONICS,			"Kenton Electroncs" },
+	{ RTP_MIDI_MANU_LONG_STUDIO_AUDIO_AND_VIDEO_LTD,		"Studio Audio and Video Ltd" },
+	{ RTP_MIDI_MANU_LONG_KENTON_ELECTRONICS,			"Kenton Electronics" },
 	{ RTP_MIDI_MANU_LONG_CELCO_DIVISON_OF_ELECTRONICS,		"Celco Division of Electrosonic" },
 	{ RTP_MIDI_MANU_LONG_ADB,					"ADB" },
 	{ RTP_MIDI_MANU_LONG_MARSHALL_PRODUCTS,				"Marshall Products" },
@@ -2498,410 +2487,407 @@ static const true_false_string rtp_midi_sj_chapter_x_flag_l = {
 
 
 
-static int hf_rtp_midi_bflag					= -1;
-static int hf_rtp_midi_jflag					= -1;
-static int hf_rtp_midi_zflag					= -1;
-static int hf_rtp_midi_pflag					= -1;
-static int hf_rtp_midi_shortlen					= -1;
-static int hf_rtp_midi_longlen					= -1;
+static int hf_rtp_midi_bflag;
+static int hf_rtp_midi_jflag;
+static int hf_rtp_midi_zflag;
+static int hf_rtp_midi_pflag;
+static int hf_rtp_midi_shortlen;
+static int hf_rtp_midi_longlen;
 
-static int hf_rtp_midi_sflag					= -1;
-static int hf_rtp_midi_yflag					= -1;
-static int hf_rtp_midi_aflag					= -1;
-static int hf_rtp_midi_hflag					= -1;
-static int hf_rtp_midi_totchan					= -1;
-static int hf_rtp_midi_check_seq_num				= -1;
+static int hf_rtp_midi_sflag;
+static int hf_rtp_midi_yflag;
+static int hf_rtp_midi_aflag;
+static int hf_rtp_midi_hflag;
+static int hf_rtp_midi_totchan;
+static int hf_rtp_midi_check_seq_num;
 
-static int hf_rtp_midi_deltatime1				= -1;
-static int hf_rtp_midi_deltatime2				= -1;
-static int hf_rtp_midi_deltatime3				= -1;
-static int hf_rtp_midi_deltatime4				= -1;
+static int hf_rtp_midi_deltatime1;
+static int hf_rtp_midi_deltatime2;
+static int hf_rtp_midi_deltatime3;
+static int hf_rtp_midi_deltatime4;
 
-static int hf_rtp_midi_channel_status				= -1;
-static int hf_rtp_midi_common_status				= -1;
-static int hf_rtp_midi_channel					= -1;
-static int hf_rtp_midi_note					= -1;
-static int hf_rtp_midi_velocity					= -1;
-static int hf_rtp_midi_pressure					= -1;
-static int hf_rtp_midi_controller				= -1;
-static int hf_rtp_midi_controller_value				= -1;
-static int hf_rtp_midi_program					= -1;
-static int hf_rtp_midi_channel_pressure				= -1;
-static int hf_rtp_midi_pitch_bend				= -1;
-/* static int hf_rtp_midi_pitch_bend_truncated			= -1; */
+static int hf_rtp_midi_channel_status;
+static int hf_rtp_midi_common_status;
+static int hf_rtp_midi_channel;
+static int hf_rtp_midi_note;
+static int hf_rtp_midi_velocity;
+static int hf_rtp_midi_pressure;
+static int hf_rtp_midi_controller;
+static int hf_rtp_midi_controller_value;
+static int hf_rtp_midi_program;
+static int hf_rtp_midi_channel_pressure;
+static int hf_rtp_midi_pitch_bend;
+/* static int hf_rtp_midi_pitch_bend_truncated; */
 
-static int hf_rtp_midi_manu_short				= -1;
-static int hf_rtp_midi_manu_long				= -1;
+static int hf_rtp_midi_manu_short;
+static int hf_rtp_midi_manu_long;
 
-static int hf_rtp_midi_sysjour_toc_s				= -1;
-static int hf_rtp_midi_sysjour_toc_d				= -1;
-static int hf_rtp_midi_sysjour_toc_v				= -1;
-static int hf_rtp_midi_sysjour_toc_q				= -1;
-static int hf_rtp_midi_sysjour_toc_f				= -1;
-static int hf_rtp_midi_sysjour_toc_x				= -1;
-static int hf_rtp_midi_sysjour_len				= -1;
+static int hf_rtp_midi_sysjour_toc_s;
+static int hf_rtp_midi_sysjour_toc_d;
+static int hf_rtp_midi_sysjour_toc_v;
+static int hf_rtp_midi_sysjour_toc_q;
+static int hf_rtp_midi_sysjour_toc_f;
+static int hf_rtp_midi_sysjour_toc_x;
+static int hf_rtp_midi_sysjour_len;
 
-static int hf_rtp_midi_chanjour_sflag				= -1;
-static int hf_rtp_midi_chanjour_chan				= -1;
-static int hf_rtp_midi_chanjour_hflag				= -1;
-static int hf_rtp_midi_chanjour_len				= -1;
-static int hf_rtp_midi_chanjour_toc_p				= -1;
-static int hf_rtp_midi_chanjour_toc_c				= -1;
-static int hf_rtp_midi_chanjour_toc_m				= -1;
-static int hf_rtp_midi_chanjour_toc_w				= -1;
-static int hf_rtp_midi_chanjour_toc_n				= -1;
-static int hf_rtp_midi_chanjour_toc_e				= -1;
-static int hf_rtp_midi_chanjour_toc_t				= -1;
-static int hf_rtp_midi_chanjour_toc_a				= -1;
+static int hf_rtp_midi_chanjour_sflag;
+static int hf_rtp_midi_chanjour_chan;
+static int hf_rtp_midi_chanjour_hflag;
+static int hf_rtp_midi_chanjour_len;
+static int hf_rtp_midi_chanjour_toc_p;
+static int hf_rtp_midi_chanjour_toc_c;
+static int hf_rtp_midi_chanjour_toc_m;
+static int hf_rtp_midi_chanjour_toc_w;
+static int hf_rtp_midi_chanjour_toc_n;
+static int hf_rtp_midi_chanjour_toc_e;
+static int hf_rtp_midi_chanjour_toc_t;
+static int hf_rtp_midi_chanjour_toc_a;
 
-static int hf_rtp_midi_cj_chapter_p_sflag			= -1;
-static int hf_rtp_midi_cj_chapter_p_program			= -1;
-static int hf_rtp_midi_cj_chapter_p_bflag			= -1;
-static int hf_rtp_midi_cj_chapter_p_bank_msb			= -1;
-static int hf_rtp_midi_cj_chapter_p_xflag			= -1;
-static int hf_rtp_midi_cj_chapter_p_bank_lsb			= -1;
+static int hf_rtp_midi_cj_chapter_p_sflag;
+static int hf_rtp_midi_cj_chapter_p_program;
+static int hf_rtp_midi_cj_chapter_p_bflag;
+static int hf_rtp_midi_cj_chapter_p_bank_msb;
+static int hf_rtp_midi_cj_chapter_p_xflag;
+static int hf_rtp_midi_cj_chapter_p_bank_lsb;
 
-static int hf_rtp_midi_cj_chapter_c_sflag			= -1;
-static int hf_rtp_midi_cj_chapter_c_length			= -1;
-static int hf_rtp_midi_cj_chapter_c_number			= -1;
-static int hf_rtp_midi_cj_chapter_c_aflag			= -1;
-static int hf_rtp_midi_cj_chapter_c_value			= -1;
-static int hf_rtp_midi_cj_chapter_c_tflag			= -1;
-static int hf_rtp_midi_cj_chapter_c_alt				= -1;
+static int hf_rtp_midi_cj_chapter_c_sflag;
+static int hf_rtp_midi_cj_chapter_c_length;
+static int hf_rtp_midi_cj_chapter_c_number;
+static int hf_rtp_midi_cj_chapter_c_aflag;
+static int hf_rtp_midi_cj_chapter_c_value;
+static int hf_rtp_midi_cj_chapter_c_tflag;
+static int hf_rtp_midi_cj_chapter_c_alt;
 
-static int hf_rtp_midi_cj_chapter_m_sflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_pflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_eflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_uflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_wflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_zflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_length			= -1;
-static int hf_rtp_midi_cj_chapter_m_qflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_pending			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_sflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_pnum_lsb		= -1;
-static int hf_rtp_midi_cj_chapter_m_log_qflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_pnum_msb		= -1;
-static int hf_rtp_midi_cj_chapter_m_log_jflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_kflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_lflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_mflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_nflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_tflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_vflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_rflag			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_msb				= -1;
-static int hf_rtp_midi_cj_chapter_m_log_msb_x			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_msb_entry		= -1;
-static int hf_rtp_midi_cj_chapter_m_log_lsb				= -1;
-static int hf_rtp_midi_cj_chapter_m_log_lsb_x			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_lsb_entry		= -1;
-static int hf_rtp_midi_cj_chapter_m_log_a_button_g		= -1;
-static int hf_rtp_midi_cj_chapter_m_log_a_button_x		= -1;
-static int hf_rtp_midi_cj_chapter_m_log_a_button		= -1;
-static int hf_rtp_midi_cj_chapter_m_log_a_button_full	= -1;
-static int hf_rtp_midi_cj_chapter_m_log_c_button		= -1;
-static int hf_rtp_midi_cj_chapter_m_log_c_button_g		= -1;
-static int hf_rtp_midi_cj_chapter_m_log_c_button_r		= -1;
-static int hf_rtp_midi_cj_chapter_m_log_c_button_full	= -1;
-static int hf_rtp_midi_cj_chapter_m_log_count			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_count_x			= -1;
-static int hf_rtp_midi_cj_chapter_m_log_count_full		= -1;
+static int hf_rtp_midi_cj_chapter_m_sflag;
+static int hf_rtp_midi_cj_chapter_m_pflag;
+static int hf_rtp_midi_cj_chapter_m_eflag;
+static int hf_rtp_midi_cj_chapter_m_uflag;
+static int hf_rtp_midi_cj_chapter_m_wflag;
+static int hf_rtp_midi_cj_chapter_m_zflag;
+static int hf_rtp_midi_cj_chapter_m_length;
+static int hf_rtp_midi_cj_chapter_m_qflag;
+static int hf_rtp_midi_cj_chapter_m_pending;
+static int hf_rtp_midi_cj_chapter_m_log_sflag;
+static int hf_rtp_midi_cj_chapter_m_log_pnum_lsb;
+static int hf_rtp_midi_cj_chapter_m_log_qflag;
+static int hf_rtp_midi_cj_chapter_m_log_pnum_msb;
+static int hf_rtp_midi_cj_chapter_m_log_jflag;
+static int hf_rtp_midi_cj_chapter_m_log_kflag;
+static int hf_rtp_midi_cj_chapter_m_log_lflag;
+static int hf_rtp_midi_cj_chapter_m_log_mflag;
+static int hf_rtp_midi_cj_chapter_m_log_nflag;
+static int hf_rtp_midi_cj_chapter_m_log_tflag;
+static int hf_rtp_midi_cj_chapter_m_log_vflag;
+static int hf_rtp_midi_cj_chapter_m_log_rflag;
+static int hf_rtp_midi_cj_chapter_m_log_msb;
+static int hf_rtp_midi_cj_chapter_m_log_msb_x;
+static int hf_rtp_midi_cj_chapter_m_log_msb_entry;
+static int hf_rtp_midi_cj_chapter_m_log_lsb;
+static int hf_rtp_midi_cj_chapter_m_log_lsb_x;
+static int hf_rtp_midi_cj_chapter_m_log_lsb_entry;
+static int hf_rtp_midi_cj_chapter_m_log_a_button_g;
+static int hf_rtp_midi_cj_chapter_m_log_a_button_x;
+static int hf_rtp_midi_cj_chapter_m_log_a_button;
+static int hf_rtp_midi_cj_chapter_m_log_a_button_full;
+static int hf_rtp_midi_cj_chapter_m_log_c_button;
+static int hf_rtp_midi_cj_chapter_m_log_c_button_g;
+static int hf_rtp_midi_cj_chapter_m_log_c_button_r;
+static int hf_rtp_midi_cj_chapter_m_log_c_button_full;
+static int hf_rtp_midi_cj_chapter_m_log_count;
+static int hf_rtp_midi_cj_chapter_m_log_count_x;
+static int hf_rtp_midi_cj_chapter_m_log_count_full;
 
-static int hf_rtp_midi_cj_chapter_w_sflag			= -1;
-static int hf_rtp_midi_cj_chapter_w_first			= -1;
-static int hf_rtp_midi_cj_chapter_w_rflag			= -1;
-static int hf_rtp_midi_cj_chapter_w_second			= -1;
+static int hf_rtp_midi_cj_chapter_w_sflag;
+static int hf_rtp_midi_cj_chapter_w_first;
+static int hf_rtp_midi_cj_chapter_w_rflag;
+static int hf_rtp_midi_cj_chapter_w_second;
 
-static int hf_rtp_midi_cj_chapter_n_bflag			= -1;
-static int hf_rtp_midi_cj_chapter_n_len				= -1;
-static int hf_rtp_midi_cj_chapter_n_low				= -1;
-static int hf_rtp_midi_cj_chapter_n_high			= -1;
-static int hf_rtp_midi_cj_chapter_n_log_sflag			= -1;
-static int hf_rtp_midi_cj_chapter_n_log_notenum			= -1;
-static int hf_rtp_midi_cj_chapter_n_log_yflag			= -1;
-static int hf_rtp_midi_cj_chapter_n_log_velocity		= -1;
-static int hf_rtp_midi_cj_chapter_n_log_octet			= -1;
+static int hf_rtp_midi_cj_chapter_n_bflag;
+static int hf_rtp_midi_cj_chapter_n_len;
+static int hf_rtp_midi_cj_chapter_n_low;
+static int hf_rtp_midi_cj_chapter_n_high;
+static int hf_rtp_midi_cj_chapter_n_log_sflag;
+static int hf_rtp_midi_cj_chapter_n_log_notenum;
+static int hf_rtp_midi_cj_chapter_n_log_yflag;
+static int hf_rtp_midi_cj_chapter_n_log_velocity;
+static int hf_rtp_midi_cj_chapter_n_log_octet;
 
-static int hf_rtp_midi_cj_chapter_e_sflag			= -1;
-static int hf_rtp_midi_cj_chapter_e_len				= -1;
-static int hf_rtp_midi_cj_chapter_e_log_sflag			= -1;
-static int hf_rtp_midi_cj_chapter_e_log_notenum			= -1;
-static int hf_rtp_midi_cj_chapter_e_log_vflag			= -1;
-static int hf_rtp_midi_cj_chapter_e_log_velocity		= -1;
-static int hf_rtp_midi_cj_chapter_e_log_count			= -1;
+static int hf_rtp_midi_cj_chapter_e_sflag;
+static int hf_rtp_midi_cj_chapter_e_len;
+static int hf_rtp_midi_cj_chapter_e_log_sflag;
+static int hf_rtp_midi_cj_chapter_e_log_notenum;
+static int hf_rtp_midi_cj_chapter_e_log_vflag;
+static int hf_rtp_midi_cj_chapter_e_log_velocity;
+static int hf_rtp_midi_cj_chapter_e_log_count;
 
-static int hf_rtp_midi_cj_chapter_t_channel_aftertouch	= -1;
-static int hf_rtp_midi_cj_chapter_t_sflag				= -1;
-static int hf_rtp_midi_cj_chapter_t_pressure			= -1;
+static int hf_rtp_midi_cj_chapter_t_channel_aftertouch;
+static int hf_rtp_midi_cj_chapter_t_sflag;
+static int hf_rtp_midi_cj_chapter_t_pressure;
 
-static int hf_rtp_midi_cj_chapter_a_sflag			= -1;
-static int hf_rtp_midi_cj_chapter_a_len				= -1;
-static int hf_rtp_midi_cj_chapter_a_log_sflag			= -1;
-static int hf_rtp_midi_cj_chapter_a_log_notenum			= -1;
-static int hf_rtp_midi_cj_chapter_a_log_xflag			= -1;
-static int hf_rtp_midi_cj_chapter_a_log_pressure		= -1;
+static int hf_rtp_midi_cj_chapter_a_sflag;
+static int hf_rtp_midi_cj_chapter_a_len;
+static int hf_rtp_midi_cj_chapter_a_log_sflag;
+static int hf_rtp_midi_cj_chapter_a_log_notenum;
+static int hf_rtp_midi_cj_chapter_a_log_xflag;
+static int hf_rtp_midi_cj_chapter_a_log_pressure;
 
-static int hf_rtp_midi_sj_chapter_v					= -1;
-static int hf_rtp_midi_sj_chapter_v_sflag			= -1;
-static int hf_rtp_midi_sj_chapter_v_count			= -1;
+static int hf_rtp_midi_sj_chapter_v;
+static int hf_rtp_midi_sj_chapter_v_sflag;
+static int hf_rtp_midi_sj_chapter_v_count;
 
-static int hf_rtp_midi_sj_chapter_d_simple_system_commands  = -1;
-static int hf_rtp_midi_sj_chapter_d_sflag			= -1;
-static int hf_rtp_midi_sj_chapter_d_bflag			= -1;
-static int hf_rtp_midi_sj_chapter_d_gflag			= -1;
-static int hf_rtp_midi_sj_chapter_d_hflag			= -1;
-static int hf_rtp_midi_sj_chapter_d_jflag			= -1;
-static int hf_rtp_midi_sj_chapter_d_kflag			= -1;
-static int hf_rtp_midi_sj_chapter_d_yflag			= -1;
-static int hf_rtp_midi_sj_chapter_d_zflag			= -1;
+static int hf_rtp_midi_sj_chapter_d_simple_system_commands;
+static int hf_rtp_midi_sj_chapter_d_sflag;
+static int hf_rtp_midi_sj_chapter_d_bflag;
+static int hf_rtp_midi_sj_chapter_d_gflag;
+static int hf_rtp_midi_sj_chapter_d_hflag;
+static int hf_rtp_midi_sj_chapter_d_jflag;
+static int hf_rtp_midi_sj_chapter_d_kflag;
+static int hf_rtp_midi_sj_chapter_d_yflag;
+static int hf_rtp_midi_sj_chapter_d_zflag;
 
-static int hf_rtp_midi_sj_chapter_d_reset				= -1;
-static int hf_rtp_midi_sj_chapter_d_reset_sflag			= -1;
-static int hf_rtp_midi_sj_chapter_d_reset_count			= -1;
-static int hf_rtp_midi_sj_chapter_d_tune				= -1;
-static int hf_rtp_midi_sj_chapter_d_tune_sflag			= -1;
-static int hf_rtp_midi_sj_chapter_d_tune_count			= -1;
-static int hf_rtp_midi_sj_chapter_d_song_sel			= -1;
-static int hf_rtp_midi_sj_chapter_d_song_sel_sflag		= -1;
-static int hf_rtp_midi_sj_chapter_d_song_sel_value		= -1;
+static int hf_rtp_midi_sj_chapter_d_reset;
+static int hf_rtp_midi_sj_chapter_d_reset_sflag;
+static int hf_rtp_midi_sj_chapter_d_reset_count;
+static int hf_rtp_midi_sj_chapter_d_tune;
+static int hf_rtp_midi_sj_chapter_d_tune_sflag;
+static int hf_rtp_midi_sj_chapter_d_tune_count;
+static int hf_rtp_midi_sj_chapter_d_song_sel;
+static int hf_rtp_midi_sj_chapter_d_song_sel_sflag;
+static int hf_rtp_midi_sj_chapter_d_song_sel_value;
 
-static int hf_rtp_midi_sj_chapter_d_syscom_sflag		= -1;
-static int hf_rtp_midi_sj_chapter_d_syscom_cflag		= -1;
-static int hf_rtp_midi_sj_chapter_d_syscom_vflag		= -1;
-static int hf_rtp_midi_sj_chapter_d_syscom_lflag		= -1;
-static int hf_rtp_midi_sj_chapter_d_syscom_dsz			= -1;
-static int hf_rtp_midi_sj_chapter_d_syscom_length		= -1;
-static int hf_rtp_midi_sj_chapter_d_syscom_count		= -1;
-static int hf_rtp_midi_sj_chapter_d_syscom_value		= -1;
-static int hf_rtp_midi_sj_chapter_d_syscom_legal		= -1;
-static int hf_rtp_midi_sj_chapter_d_syscom_data			= -1;
+static int hf_rtp_midi_sj_chapter_d_syscom_sflag;
+static int hf_rtp_midi_sj_chapter_d_syscom_cflag;
+static int hf_rtp_midi_sj_chapter_d_syscom_vflag;
+static int hf_rtp_midi_sj_chapter_d_syscom_lflag;
+static int hf_rtp_midi_sj_chapter_d_syscom_dsz;
+static int hf_rtp_midi_sj_chapter_d_syscom_length;
+static int hf_rtp_midi_sj_chapter_d_syscom_count;
+static int hf_rtp_midi_sj_chapter_d_syscom_value;
+static int hf_rtp_midi_sj_chapter_d_syscom_legal;
+static int hf_rtp_midi_sj_chapter_d_syscom_data;
 
-static int hf_rtp_midi_sj_chapter_d_sysreal_sflag		= -1;
-static int hf_rtp_midi_sj_chapter_d_sysreal_cflag		= -1;
-static int hf_rtp_midi_sj_chapter_d_sysreal_lflag		= -1;
-static int hf_rtp_midi_sj_chapter_d_sysreal_length		= -1;
-static int hf_rtp_midi_sj_chapter_d_sysreal_count		= -1;
-static int hf_rtp_midi_sj_chapter_d_sysreal_legal		= -1;
-static int hf_rtp_midi_sj_chapter_d_sysreal_data		= -1;
+static int hf_rtp_midi_sj_chapter_d_sysreal_sflag;
+static int hf_rtp_midi_sj_chapter_d_sysreal_cflag;
+static int hf_rtp_midi_sj_chapter_d_sysreal_lflag;
+static int hf_rtp_midi_sj_chapter_d_sysreal_length;
+static int hf_rtp_midi_sj_chapter_d_sysreal_count;
+static int hf_rtp_midi_sj_chapter_d_sysreal_legal;
+static int hf_rtp_midi_sj_chapter_d_sysreal_data;
 
-static int hf_rtp_midi_sj_chapter_q_sflag			= -1;
-static int hf_rtp_midi_sj_chapter_q_nflag			= -1;
-static int hf_rtp_midi_sj_chapter_q_dflag			= -1;
-static int hf_rtp_midi_sj_chapter_q_cflag			= -1;
-static int hf_rtp_midi_sj_chapter_q_tflag			= -1;
-static int hf_rtp_midi_sj_chapter_q_top				= -1;
-static int hf_rtp_midi_sj_chapter_q_clock			= -1;
-static int hf_rtp_midi_sj_chapter_q_timetools			= -1;
+static int hf_rtp_midi_sj_chapter_q_sflag;
+static int hf_rtp_midi_sj_chapter_q_nflag;
+static int hf_rtp_midi_sj_chapter_q_dflag;
+static int hf_rtp_midi_sj_chapter_q_cflag;
+static int hf_rtp_midi_sj_chapter_q_tflag;
+static int hf_rtp_midi_sj_chapter_q_top;
+static int hf_rtp_midi_sj_chapter_q_clock;
+static int hf_rtp_midi_sj_chapter_q_timetools;
 
-static int hf_rtp_midi_sj_chapter_f_sflag			= -1;
-static int hf_rtp_midi_sj_chapter_f_cflag			= -1;
-static int hf_rtp_midi_sj_chapter_f_pflag			= -1;
-static int hf_rtp_midi_sj_chapter_f_qflag			= -1;
-static int hf_rtp_midi_sj_chapter_f_dflag			= -1;
-static int hf_rtp_midi_sj_chapter_f_point			= -1;
-static int hf_rtp_midi_sj_chapter_f_complete		= -1;
-static int hf_rtp_midi_sj_chapter_f_partial			= -1;
-static int hf_rtp_midi_sj_chapter_f_mt0				= -1;
-static int hf_rtp_midi_sj_chapter_f_mt1				= -1;
-static int hf_rtp_midi_sj_chapter_f_mt2				= -1;
-static int hf_rtp_midi_sj_chapter_f_mt3				= -1;
-static int hf_rtp_midi_sj_chapter_f_mt4				= -1;
-static int hf_rtp_midi_sj_chapter_f_mt5				= -1;
-static int hf_rtp_midi_sj_chapter_f_mt6				= -1;
-static int hf_rtp_midi_sj_chapter_f_mt7				= -1;
-static int hf_rtp_midi_sj_chapter_f_hr				= -1;
-static int hf_rtp_midi_sj_chapter_f_mn				= -1;
-static int hf_rtp_midi_sj_chapter_f_sc				= -1;
-static int hf_rtp_midi_sj_chapter_f_fr				= -1;
+static int hf_rtp_midi_sj_chapter_f_sflag;
+static int hf_rtp_midi_sj_chapter_f_cflag;
+static int hf_rtp_midi_sj_chapter_f_pflag;
+static int hf_rtp_midi_sj_chapter_f_qflag;
+static int hf_rtp_midi_sj_chapter_f_dflag;
+static int hf_rtp_midi_sj_chapter_f_point;
+static int hf_rtp_midi_sj_chapter_f_complete;
+static int hf_rtp_midi_sj_chapter_f_partial;
+static int hf_rtp_midi_sj_chapter_f_mt0;
+static int hf_rtp_midi_sj_chapter_f_mt1;
+static int hf_rtp_midi_sj_chapter_f_mt2;
+static int hf_rtp_midi_sj_chapter_f_mt3;
+static int hf_rtp_midi_sj_chapter_f_mt4;
+static int hf_rtp_midi_sj_chapter_f_mt5;
+static int hf_rtp_midi_sj_chapter_f_mt6;
+static int hf_rtp_midi_sj_chapter_f_mt7;
+static int hf_rtp_midi_sj_chapter_f_hr;
+static int hf_rtp_midi_sj_chapter_f_mn;
+static int hf_rtp_midi_sj_chapter_f_sc;
+static int hf_rtp_midi_sj_chapter_f_fr;
 
-static int hf_rtp_midi_sj_chapter_x_sflag			= -1;
-static int hf_rtp_midi_sj_chapter_x_tflag			= -1;
-static int hf_rtp_midi_sj_chapter_x_cflag			= -1;
-static int hf_rtp_midi_sj_chapter_x_fflag			= -1;
-static int hf_rtp_midi_sj_chapter_x_dflag			= -1;
-static int hf_rtp_midi_sj_chapter_x_lflag			= -1;
-static int hf_rtp_midi_sj_chapter_x_sta				= -1;
-static int hf_rtp_midi_sj_chapter_x_tcount			= -1;
-static int hf_rtp_midi_sj_chapter_x_count			= -1;
-static int hf_rtp_midi_sj_chapter_x_first1			= -1;
-static int hf_rtp_midi_sj_chapter_x_first2			= -1;
-static int hf_rtp_midi_sj_chapter_x_first3			= -1;
-static int hf_rtp_midi_sj_chapter_x_first4			= -1;
-static int hf_rtp_midi_sj_chapter_x_data			= -1;
-static int hf_rtp_midi_sj_chapter_x_invalid_data		= -1;
+static int hf_rtp_midi_sj_chapter_x_sflag;
+static int hf_rtp_midi_sj_chapter_x_tflag;
+static int hf_rtp_midi_sj_chapter_x_cflag;
+static int hf_rtp_midi_sj_chapter_x_fflag;
+static int hf_rtp_midi_sj_chapter_x_dflag;
+static int hf_rtp_midi_sj_chapter_x_lflag;
+static int hf_rtp_midi_sj_chapter_x_sta;
+static int hf_rtp_midi_sj_chapter_x_tcount;
+static int hf_rtp_midi_sj_chapter_x_count;
+static int hf_rtp_midi_sj_chapter_x_first1;
+static int hf_rtp_midi_sj_chapter_x_first2;
+static int hf_rtp_midi_sj_chapter_x_first3;
+static int hf_rtp_midi_sj_chapter_x_first4;
+static int hf_rtp_midi_sj_chapter_x_data;
+static int hf_rtp_midi_sj_chapter_x_invalid_data;
 
-static int hf_rtp_midi_quarter_frame_type			= -1;
-static int hf_rtp_midi_quarter_frame_value			= -1;
-/* static int hf_rtp_midi_spp_truncated				= -1; */
-static int hf_rtp_midi_spp					= -1;
-static int hf_rtp_midi_song_select				= -1;
-static int hf_rtp_midi_manu_data				= -1;
-static int hf_rtp_midi_edu_data					= -1;
-static int hf_rtp_midi_unknown_data				= -1;
-static int hf_rtp_midi_sysex_common_non_realtime		= -1;
-static int hf_rtp_midi_sysex_common_realtime			= -1;
-static int hf_rtp_midi_sysex_common_device_id			= -1;
+static int hf_rtp_midi_quarter_frame_type;
+static int hf_rtp_midi_quarter_frame_value;
+/* static int hf_rtp_midi_spp_truncated; */
+static int hf_rtp_midi_spp;
+static int hf_rtp_midi_song_select;
+static int hf_rtp_midi_manu_data;
+static int hf_rtp_midi_edu_data;
+static int hf_rtp_midi_unknown_data;
+static int hf_rtp_midi_sysex_common_non_realtime;
+static int hf_rtp_midi_sysex_common_realtime;
+static int hf_rtp_midi_sysex_common_device_id;
 
-static int hf_rtp_midi_sysex_common_nrt_mtc			= -1;
-static int hf_rtp_midi_sysex_common_nrt_sd_ext			= -1;
-static int hf_rtp_midi_sysex_common_nrt_gi			= -1;
-static int hf_rtp_midi_sysex_common_nrt_fd			= -1;
-static int hf_rtp_midi_sysex_common_tuning			= -1;
-static int hf_rtp_midi_sysex_common_nrt_gm			= -1;
-static int hf_rtp_midi_sysex_common_nrt_dls			= -1;
+static int hf_rtp_midi_sysex_common_nrt_mtc;
+static int hf_rtp_midi_sysex_common_nrt_sd_ext;
+static int hf_rtp_midi_sysex_common_nrt_gi;
+static int hf_rtp_midi_sysex_common_nrt_fd;
+static int hf_rtp_midi_sysex_common_tuning;
+static int hf_rtp_midi_sysex_common_nrt_gm;
+static int hf_rtp_midi_sysex_common_nrt_dls;
 
-static int hf_rtp_midi_sysex_common_rt_mtc			= -1;
-static int hf_rtp_midi_sysex_common_rt_sc			= -1;
-static int hf_rtp_midi_sysex_common_rt_ni			= -1;
-static int hf_rtp_midi_sysex_common_rt_dc			= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_cueing		= -1;
-static int hf_rtp_midi_sysex_common_rt_mmc_commands		= -1;
-static int hf_rtp_midi_sysex_common_rt_mmc_responses		= -1;
+static int hf_rtp_midi_sysex_common_rt_mtc;
+static int hf_rtp_midi_sysex_common_rt_sc;
+static int hf_rtp_midi_sysex_common_rt_ni;
+static int hf_rtp_midi_sysex_common_rt_dc;
+static int hf_rtp_midi_sysex_common_rt_mtc_cueing;
+static int hf_rtp_midi_sysex_common_rt_mmc_commands;
+static int hf_rtp_midi_sysex_common_rt_mmc_responses;
 
-static int hf_rtp_midi_sysex_common_nrt_gi_device_family	= -1;
-static int hf_rtp_midi_sysex_common_nrt_gi_device_family_member = -1;
-static int hf_rtp_midi_sysex_common_nrt_gi_software_rev		= -1;
+static int hf_rtp_midi_sysex_common_nrt_gi_device_family;
+static int hf_rtp_midi_sysex_common_nrt_gi_device_family_member;
+static int hf_rtp_midi_sysex_common_nrt_gi_software_rev;
 
-static int hf_rtp_midi_sysex_common_nrt_sd_packet_number	= -1;
+static int hf_rtp_midi_sysex_common_nrt_sd_packet_number;
 
-static int hf_rtp_midi_sysex_common_nrt_sd_header_sn		= -1;
-static int hf_rtp_midi_sysex_common_nrt_sd_header_sf		= -1;
-static int hf_rtp_midi_sysex_common_nrt_sd_header_sp		= -1;
-static int hf_rtp_midi_sysex_common_nrt_sd_header_sl		= -1;
-static int hf_rtp_midi_sysex_common_nrt_sd_header_ls		= -1;
-static int hf_rtp_midi_sysex_common_nrt_sd_header_le		= -1;
-static int hf_rtp_midi_sysex_common_nrt_sd_header_lt		= -1;
+static int hf_rtp_midi_sysex_common_nrt_sd_header_sn;
+static int hf_rtp_midi_sysex_common_nrt_sd_header_sf;
+static int hf_rtp_midi_sysex_common_nrt_sd_header_sp;
+static int hf_rtp_midi_sysex_common_nrt_sd_header_sl;
+static int hf_rtp_midi_sysex_common_nrt_sd_header_ls;
+static int hf_rtp_midi_sysex_common_nrt_sd_header_le;
+static int hf_rtp_midi_sysex_common_nrt_sd_header_lt;
 
-static int hf_rtp_midi_sysex_common_nrt_sd_packet_count		= -1;
-static int hf_rtp_midi_sysex_common_nrt_sd_packet_check		= -1;
-static int hf_rtp_midi_sysex_common_nrt_sd_packet_data		= -1;
+static int hf_rtp_midi_sysex_common_nrt_sd_packet_count;
+static int hf_rtp_midi_sysex_common_nrt_sd_packet_check;
+static int hf_rtp_midi_sysex_common_nrt_sd_packet_data;
 
-static int hf_rtp_midi_sysex_common_nrt_sd_ext_ln		= -1;
+static int hf_rtp_midi_sysex_common_nrt_sd_ext_ln;
 
-static int hf_rtp_midi_sysex_common_nrt_fd_device_id		= -1;
-static int hf_rtp_midi_sysex_common_nrt_fd_type			= -1;
-static int hf_rtp_midi_sysex_common_nrt_fd_name			= -1;
-static int hf_rtp_midi_sysex_common_nrt_fd_length		= -1;
-static int hf_rtp_midi_sysex_common_nrt_fd_packet_num		= -1;
-static int hf_rtp_midi_sysex_common_nrt_fd_byte_count		= -1;
-static int hf_rtp_midi_sysex_common_nrt_fd_packet_data		= -1;
-static int hf_rtp_midi_sysex_common_nrt_fd_checksum		= -1;
+static int hf_rtp_midi_sysex_common_nrt_fd_device_id;
+static int hf_rtp_midi_sysex_common_nrt_fd_type;
+static int hf_rtp_midi_sysex_common_nrt_fd_name;
+static int hf_rtp_midi_sysex_common_nrt_fd_length;
+static int hf_rtp_midi_sysex_common_nrt_fd_packet_num;
+static int hf_rtp_midi_sysex_common_nrt_fd_byte_count;
+static int hf_rtp_midi_sysex_common_nrt_fd_packet_data;
+static int hf_rtp_midi_sysex_common_nrt_fd_checksum;
 
-static int hf_rtp_midi_sysex_common_tune_program		= -1;
-static int hf_rtp_midi_sysex_common_tune_name			= -1;
-static int hf_rtp_midi_sysex_common_tune_freq			= -1;
-static int hf_rtp_midi_sysex_common_tune_checksum		= -1;
-static int hf_rtp_midi_sysex_common_tune_changes		= -1;
-static int hf_rtp_midi_sysex_common_tune_note			= -1;
+static int hf_rtp_midi_sysex_common_tune_program;
+static int hf_rtp_midi_sysex_common_tune_name;
+static int hf_rtp_midi_sysex_common_tune_freq;
+static int hf_rtp_midi_sysex_common_tune_checksum;
+static int hf_rtp_midi_sysex_common_tune_changes;
+static int hf_rtp_midi_sysex_common_tune_note;
 
-static int hf_rtp_midi_sysex_common_rt_mtc_fm_type		= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_fm_hr		= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_fm_mn		= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_fm_sc		= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_fm_fr		= -1;
+static int hf_rtp_midi_sysex_common_rt_mtc_fm_type;
+static int hf_rtp_midi_sysex_common_rt_mtc_fm_hr;
+static int hf_rtp_midi_sysex_common_rt_mtc_fm_mn;
+static int hf_rtp_midi_sysex_common_rt_mtc_fm_sc;
+static int hf_rtp_midi_sysex_common_rt_mtc_fm_fr;
 
-static int hf_rtp_midi_sysex_common_rt_mtc_ub_u1		= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_ub_u2		= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_ub_u3		= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_ub_u4		= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_ub_u5		= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_ub_u6		= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_ub_u7		= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_ub_u8		= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_ub_u9		= -1;
+static int hf_rtp_midi_sysex_common_rt_mtc_ub_u1;
+static int hf_rtp_midi_sysex_common_rt_mtc_ub_u2;
+static int hf_rtp_midi_sysex_common_rt_mtc_ub_u3;
+static int hf_rtp_midi_sysex_common_rt_mtc_ub_u4;
+static int hf_rtp_midi_sysex_common_rt_mtc_ub_u5;
+static int hf_rtp_midi_sysex_common_rt_mtc_ub_u6;
+static int hf_rtp_midi_sysex_common_rt_mtc_ub_u7;
+static int hf_rtp_midi_sysex_common_rt_mtc_ub_u8;
+static int hf_rtp_midi_sysex_common_rt_mtc_ub_u9;
 
-static int hf_rtp_midi_sysex_common_nrt_mtc_type		= -1;
-static int hf_rtp_midi_sysex_common_nrt_mtc_hr			= -1;
-static int hf_rtp_midi_sysex_common_nrt_mtc_mn			= -1;
-static int hf_rtp_midi_sysex_common_nrt_mtc_sc			= -1;
-static int hf_rtp_midi_sysex_common_nrt_mtc_fr			= -1;
-static int hf_rtp_midi_sysex_common_nrt_mtc_ff			= -1;
-static int hf_rtp_midi_sysex_common_nrt_mtc_enl			= -1;
-static int hf_rtp_midi_sysex_common_nrt_mtc_enm			= -1;
-static int hf_rtp_midi_sysex_common_nrt_mtc_add			= -1;
+static int hf_rtp_midi_sysex_common_nrt_mtc_type;
+static int hf_rtp_midi_sysex_common_nrt_mtc_hr;
+static int hf_rtp_midi_sysex_common_nrt_mtc_mn;
+static int hf_rtp_midi_sysex_common_nrt_mtc_sc;
+static int hf_rtp_midi_sysex_common_nrt_mtc_fr;
+static int hf_rtp_midi_sysex_common_nrt_mtc_ff;
+static int hf_rtp_midi_sysex_common_nrt_mtc_enl;
+static int hf_rtp_midi_sysex_common_nrt_mtc_enm;
+static int hf_rtp_midi_sysex_common_nrt_mtc_add;
 
-static int hf_rtp_midi_sysex_common_rt_mtc_cue_enl		= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_cue_enm		= -1;
-static int hf_rtp_midi_sysex_common_rt_mtc_cue_add		= -1;
+static int hf_rtp_midi_sysex_common_rt_mtc_cue_enl;
+static int hf_rtp_midi_sysex_common_rt_mtc_cue_enm;
+static int hf_rtp_midi_sysex_common_rt_mtc_cue_add;
 
-static int hf_rtp_midi_sysex_common_rt_ni_bar_num		= -1;
-static int hf_rtp_midi_sysex_common_rt_ni_bytes			= -1;
-static int hf_rtp_midi_sysex_common_rt_ni_numerator		= -1;
-static int hf_rtp_midi_sysex_common_rt_ni_denominator		= -1;
-static int hf_rtp_midi_sysex_common_rt_ni_midi_clocks		= -1;
-static int hf_rtp_midi_sysex_common_rt_ni_32nds			= -1;
+static int hf_rtp_midi_sysex_common_rt_ni_bar_num;
+static int hf_rtp_midi_sysex_common_rt_ni_bytes;
+static int hf_rtp_midi_sysex_common_rt_ni_numerator;
+static int hf_rtp_midi_sysex_common_rt_ni_denominator;
+static int hf_rtp_midi_sysex_common_rt_ni_midi_clocks;
+static int hf_rtp_midi_sysex_common_rt_ni_32nds;
 
-static int hf_rtp_midi_sysex_common_rt_dc_volume		= -1;
-static int hf_rtp_midi_sysex_common_rt_dc_balance		= -1;
+static int hf_rtp_midi_sysex_common_rt_dc_volume;
+static int hf_rtp_midi_sysex_common_rt_dc_balance;
 
 
 /* RTP MIDI fields defining a subtree */
 
-static gint ett_rtp_midi					= -1;
-static gint ett_rtp_midi_commands				= -1;
-static gint ett_rtp_midi_journal				= -1;
-static gint ett_rtp_midi_command				= -1;
-static gint ett_rtp_midi_systemjournal				= -1;
-static gint ett_rtp_midi_channeljournals			= -1;
-static gint ett_rtp_midi_systemchapters				= -1;
-static gint ett_rtp_midi_sj_chapter_d				= -1;
-static gint ett_rtp_midi_sj_chapter_d_field_b			= -1;
-static gint ett_rtp_midi_sj_chapter_d_field_g			= -1;
-static gint ett_rtp_midi_sj_chapter_d_field_h			= -1;
-static gint ett_rtp_midi_sj_chapter_d_field_j			= -1;
-static gint ett_rtp_midi_sj_chapter_d_field_k			= -1;
-static gint ett_rtp_midi_sj_chapter_d_field_y			= -1;
-static gint ett_rtp_midi_sj_chapter_d_field_z			= -1;
-static gint ett_rtp_midi_sj_chapter_v				= -1;
-static gint ett_rtp_midi_sj_chapter_q				= -1;
-static gint ett_rtp_midi_sj_chapter_f				= -1;
-static gint ett_rtp_midi_sj_chapter_f_complete			= -1;
-static gint ett_rtp_midi_sj_chapter_f_partial			= -1;
-static gint ett_rtp_midi_sj_chapter_x				= -1;
-static gint ett_rtp_midi_sj_chapter_x_first			= -1;
-static gint ett_rtp_midi_sj_chapter_x_data			= -1;
-static gint ett_rtp_midi_channeljournal				= -1;
-static gint ett_rtp_midi_channelchapters			= -1;
-static gint ett_rtp_midi_cj_chapter_p				= -1;
-static gint ett_rtp_midi_cj_chapter_c				= -1;
-static gint ett_rtp_midi_cj_chapter_c_loglist			= -1;
-static gint ett_rtp_midi_cj_chapter_c_logitem			= -1;
-static gint ett_rtp_midi_cj_chapter_m				= -1;
-static gint ett_rtp_midi_cj_chapter_m_loglist			= -1;
-static gint ett_rtp_midi_cj_chapter_m_logitem			= -1;
-static gint ett_rtp_midi_cj_chapter_m_log_msb			= -1;
-static gint ett_rtp_midi_cj_chapter_m_log_lsb			= -1;
-static gint ett_rtp_midi_cj_chapter_m_log_a_button		= -1;
-static gint ett_rtp_midi_cj_chapter_m_log_c_button		= -1;
-static gint ett_rtp_midi_cj_chapter_m_log_count			= -1;
-static gint ett_rtp_midi_cj_chapter_w				= -1;
-static gint ett_rtp_midi_cj_chapter_n				= -1;
-static gint ett_rtp_midi_cj_chapter_n_loglist			= -1;
-static gint ett_rtp_midi_cj_chapter_n_logitem			= -1;
-static gint ett_rtp_midi_cj_chapter_n_octets			= -1;
-static gint ett_rtp_midi_cj_chapter_e				= -1;
-static gint ett_rtp_midi_cj_chapter_e_loglist			= -1;
-static gint ett_rtp_midi_cj_chapter_e_logitem			= -1;
-static gint ett_rtp_midi_cj_chapter_t				= -1;
-static gint ett_rtp_midi_cj_chapter_a				= -1;
-static gint ett_rtp_midi_cj_chapter_a_loglist			= -1;
-static gint ett_rtp_midi_cj_chapter_a_logitem			= -1;
-static gint ett_rtp_midi_sysex_data				= -1;
-static gint ett_rtp_midi_sysex_edu				= -1;
-static gint ett_rtp_midi_sysex_manu				= -1;
-static gint ett_rtp_midi_sysex_common_rt			= -1;
-static gint ett_rtp_midi_sysex_common_nrt			= -1;
-static gint ett_rtp_midi_sysex_common_tune_note			= -1;
+static int ett_rtp_midi;
+static int ett_rtp_midi_commands;
+static int ett_rtp_midi_journal;
+static int ett_rtp_midi_command;
+static int ett_rtp_midi_systemjournal;
+static int ett_rtp_midi_channeljournals;
+static int ett_rtp_midi_systemchapters;
+static int ett_rtp_midi_sj_chapter_d;
+static int ett_rtp_midi_sj_chapter_d_field_b;
+static int ett_rtp_midi_sj_chapter_d_field_g;
+static int ett_rtp_midi_sj_chapter_d_field_h;
+static int ett_rtp_midi_sj_chapter_d_field_j;
+static int ett_rtp_midi_sj_chapter_d_field_k;
+static int ett_rtp_midi_sj_chapter_d_field_y;
+static int ett_rtp_midi_sj_chapter_d_field_z;
+static int ett_rtp_midi_sj_chapter_v;
+static int ett_rtp_midi_sj_chapter_q;
+static int ett_rtp_midi_sj_chapter_f;
+static int ett_rtp_midi_sj_chapter_f_complete;
+static int ett_rtp_midi_sj_chapter_f_partial;
+static int ett_rtp_midi_sj_chapter_x;
+static int ett_rtp_midi_sj_chapter_x_first;
+static int ett_rtp_midi_sj_chapter_x_data;
+static int ett_rtp_midi_channeljournal;
+static int ett_rtp_midi_channelchapters;
+static int ett_rtp_midi_cj_chapter_p;
+static int ett_rtp_midi_cj_chapter_c;
+static int ett_rtp_midi_cj_chapter_c_loglist;
+static int ett_rtp_midi_cj_chapter_c_logitem;
+static int ett_rtp_midi_cj_chapter_m;
+static int ett_rtp_midi_cj_chapter_m_loglist;
+static int ett_rtp_midi_cj_chapter_m_logitem;
+static int ett_rtp_midi_cj_chapter_m_log_msb;
+static int ett_rtp_midi_cj_chapter_m_log_lsb;
+static int ett_rtp_midi_cj_chapter_m_log_a_button;
+static int ett_rtp_midi_cj_chapter_m_log_c_button;
+static int ett_rtp_midi_cj_chapter_m_log_count;
+static int ett_rtp_midi_cj_chapter_w;
+static int ett_rtp_midi_cj_chapter_n;
+static int ett_rtp_midi_cj_chapter_n_loglist;
+static int ett_rtp_midi_cj_chapter_n_logitem;
+static int ett_rtp_midi_cj_chapter_n_octets;
+static int ett_rtp_midi_cj_chapter_e;
+static int ett_rtp_midi_cj_chapter_e_loglist;
+static int ett_rtp_midi_cj_chapter_e_logitem;
+static int ett_rtp_midi_cj_chapter_t;
+static int ett_rtp_midi_cj_chapter_a;
+static int ett_rtp_midi_cj_chapter_a_loglist;
+static int ett_rtp_midi_cj_chapter_a_logitem;
+static int ett_rtp_midi_sysex_data;
+static int ett_rtp_midi_sysex_edu;
+static int ett_rtp_midi_sysex_manu;
+static int ett_rtp_midi_sysex_common_rt;
+static int ett_rtp_midi_sysex_common_nrt;
+static int ett_rtp_midi_sysex_common_tune_note;
 
 
-static guint rtp_midi_payload_type_value	= 0;
-static guint saved_payload_type_value;
+static int proto_rtp_midi;
 
 
-static int proto_rtp_midi			= -1;
-
-
+static dissector_handle_t	rtp_midi_handle;
 
 
 void proto_reg_handoff_rtp_midi( void );
@@ -2913,7 +2899,7 @@ void proto_reg_handoff_rtp_midi( void );
 static int
 decodetime(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset)
 {
-	guint8		octet;
+	uint8_t		octet;
 	unsigned int	consumed;
 	unsigned int    i;
 	unsigned int    deltatime;
@@ -2925,7 +2911,7 @@ decodetime(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int
 	/* RTP-MIDI deltatime is "compressed" using only the necessary amount of octets */
 	for ( i=0; i < 4; i++ ) {
 
-		octet = tvb_get_guint8( tvb, offset + consumed );
+		octet = tvb_get_uint8( tvb, offset + consumed );
 		deltatime = ( deltatime << 7 ) | ( octet & RTP_MIDI_DELTA_TIME_OCTET_MASK );
 		consumed++;
 
@@ -2959,18 +2945,18 @@ decodetime(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int
  * Here a Note-Off command is decoded.
  */
 static int
-decode_note_off(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned int cmd_count, unsigned int offset, guint8 status, unsigned int rsoffset, gboolean using_rs ) {
+decode_note_off(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned int cmd_count, unsigned int offset, uint8_t status, unsigned int rsoffset, bool using_rs ) {
 
-	guint8		 note;
-	guint8		 velocity;
-	const gchar	*status_str;
-	const gchar	*note_str;
+	uint8_t		 note;
+	uint8_t		 velocity;
+	const char	*status_str;
+	const char	*note_str;
 	proto_tree	*command_tree;
 
-	status_str = val_to_str( status >> 4, rtp_midi_channel_status, rtp_midi_unknown_value_hex );
-	note = tvb_get_guint8( tvb, offset );
-	note_str = val_to_str_ext( note, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
-	velocity = tvb_get_guint8( tvb, offset + 1 );
+	status_str = val_to_str(pinfo->pool,  status >> 4, rtp_midi_channel_status, rtp_midi_unknown_value_hex );
+	note = tvb_get_uint8( tvb, offset );
+	note_str = val_to_str_ext(pinfo->pool, note, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
+	velocity = tvb_get_uint8( tvb, offset + 1 );
 
 	if ( using_rs ) {
 		command_tree = proto_tree_add_subtree_format( tree, tvb, offset, 2, ett_rtp_midi_command, NULL,
@@ -3001,18 +2987,18 @@ decode_note_off(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned in
  * Here a Note-On command is decoded.
  */
 static int
-decode_note_on(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned int cmd_count, unsigned int offset, guint8 status, unsigned int rsoffset, gboolean using_rs ) {
+decode_note_on(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned int cmd_count, unsigned int offset, uint8_t status, unsigned int rsoffset, bool using_rs ) {
 
-	guint8		 note;
-	guint8		 velocity;
-	const gchar	*status_str;
-	const gchar	*note_str;
+	uint8_t		 note;
+	uint8_t		 velocity;
+	const char	*status_str;
+	const char	*note_str;
 	proto_tree	*command_tree;
 
-	status_str = val_to_str( status >> 4, rtp_midi_channel_status, rtp_midi_unknown_value_hex );
-	note = tvb_get_guint8( tvb, offset );
-	note_str = val_to_str_ext( note, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
-	velocity = tvb_get_guint8( tvb, offset + 1 );
+	status_str = val_to_str(pinfo->pool,  status >> 4, rtp_midi_channel_status, rtp_midi_unknown_value_hex );
+	note = tvb_get_uint8( tvb, offset );
+	note_str = val_to_str_ext(pinfo->pool, note, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
+	velocity = tvb_get_uint8( tvb, offset + 1 );
 
 	/* special case velocity=0 for Note-On means Note-Off (to preserve running-status!) */
 	if ( velocity == 0 ) {
@@ -3050,18 +3036,18 @@ decode_note_on(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned int
  * Here polyphonic aftertouch is decoded.
  */
 static int
-decode_poly_pressure(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned int cmd_count, unsigned int offset, guint8 status, unsigned int rsoffset, gboolean using_rs ) {
+decode_poly_pressure(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned int cmd_count, unsigned int offset, uint8_t status, unsigned int rsoffset, bool using_rs ) {
 
-	guint8		 note;
-	guint8		 pressure;
-	const gchar	*status_str;
-	const gchar	*note_str;
+	uint8_t		 note;
+	uint8_t		 pressure;
+	const char	*status_str;
+	const char	*note_str;
 	proto_tree	*command_tree;
 
-	status_str = val_to_str( status >> 4, rtp_midi_channel_status, rtp_midi_unknown_value_hex );
-	note = tvb_get_guint8( tvb, offset );
-	note_str = val_to_str_ext( note, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
-	pressure = tvb_get_guint8( tvb, offset + 1 );
+	status_str = val_to_str(pinfo->pool,  status >> 4, rtp_midi_channel_status, rtp_midi_unknown_value_hex );
+	note = tvb_get_uint8( tvb, offset );
+	note_str = val_to_str_ext(pinfo->pool, note, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
+	pressure = tvb_get_uint8( tvb, offset + 1 );
 
 	if ( using_rs ) {
 		command_tree = proto_tree_add_subtree_format( tree, tvb, offset, 2, ett_rtp_midi_command, NULL,
@@ -3092,14 +3078,14 @@ decode_poly_pressure(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsign
  * Here channel aftertouch is decoded.
  */
 static int
-decode_channel_pressure(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned int cmd_count, unsigned int offset, guint8 status, unsigned int rsoffset, gboolean using_rs ) {
+decode_channel_pressure(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned int cmd_count, unsigned int offset, uint8_t status, unsigned int rsoffset, bool using_rs ) {
 
-	guint8		 pressure;
-	const gchar	*status_str;
+	uint8_t		 pressure;
+	const char	*status_str;
 	proto_tree	*command_tree;
 
-	status_str = val_to_str( status >> 4, rtp_midi_channel_status, rtp_midi_unknown_value_hex );
-	pressure = tvb_get_guint8( tvb, offset );
+	status_str = val_to_str(pinfo->pool,  status >> 4, rtp_midi_channel_status, rtp_midi_unknown_value_hex );
+	pressure = tvb_get_uint8( tvb, offset );
 
 	if ( using_rs ) {
 		command_tree = proto_tree_add_subtree_format( tree, tvb, offset, 1, ett_rtp_midi_command, NULL,
@@ -3129,17 +3115,17 @@ decode_channel_pressure(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uns
  * Here pitch-bend is decoded.
  */
 static int
-decode_pitch_bend_change(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int cmd_count, unsigned int offset, guint8 status, unsigned int rsoffset, gboolean using_rs ) {
+decode_pitch_bend_change(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int cmd_count, unsigned int offset, uint8_t status, unsigned int rsoffset, bool using_rs ) {
 
-	guint8		 octet1;
-	guint8		 octet2;
-	guint8		 pitch;
-	const gchar	*status_str;
+	uint8_t		 octet1;
+	uint8_t		 octet2;
+	uint8_t		 pitch;
+	const char	*status_str;
 	proto_tree	*command_tree;
 
-	status_str = val_to_str( status >> 4, rtp_midi_channel_status, rtp_midi_unknown_value_hex );
-	octet1 = tvb_get_guint8( tvb, offset );
-	octet2 = tvb_get_guint8( tvb, offset + 1 );
+	status_str = val_to_str(pinfo->pool,  status >> 4, rtp_midi_channel_status, rtp_midi_unknown_value_hex );
+	octet1 = tvb_get_uint8( tvb, offset );
+	octet2 = tvb_get_uint8( tvb, offset + 1 );
 	pitch = ( octet1 << 7 ) | octet2;
 
 	if ( using_rs ) {
@@ -3171,14 +3157,14 @@ decode_pitch_bend_change(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree
  * Here program_change is decoded.
  */
 static int
-decode_program_change(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned int cmd_count, unsigned int offset, guint8 status, unsigned int rsoffset, gboolean using_rs ) {
+decode_program_change(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned int cmd_count, unsigned int offset, uint8_t status, unsigned int rsoffset, bool using_rs ) {
 
-	guint8		 program;
-	const gchar	*status_str;
+	uint8_t		 program;
+	const char	*status_str;
 	proto_tree	*command_tree;
 
-	status_str = val_to_str( status >> 4, rtp_midi_channel_status, rtp_midi_unknown_value_hex );
-	program = tvb_get_guint8( tvb, offset );
+	status_str = val_to_str(pinfo->pool,  status >> 4, rtp_midi_channel_status, rtp_midi_unknown_value_hex );
+	program = tvb_get_uint8( tvb, offset );
 
 	if ( using_rs ) {
 		command_tree = proto_tree_add_subtree_format( tree, tvb, offset, 1, ett_rtp_midi_command, NULL,
@@ -3209,18 +3195,18 @@ decode_program_change(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsig
  * Here control change is decoded.
  */
 static int
-decode_control_change(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned int cmd_count, unsigned int offset, guint8 status, unsigned int rsoffset, gboolean using_rs ) {
+decode_control_change(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned int cmd_count, unsigned int offset, uint8_t status, unsigned int rsoffset, bool using_rs ) {
 
-	guint8		 controller;
-	guint8		 value;
-	const gchar	*status_str;
-	const gchar	*ctrl_str;
+	uint8_t		 controller;
+	uint8_t		 value;
+	const char	*status_str;
+	const char	*ctrl_str;
 	proto_tree	*command_tree;
 
-	status_str = val_to_str( status >> 4, rtp_midi_channel_status, rtp_midi_unknown_value_hex );
-	controller = tvb_get_guint8( tvb, offset );
-	ctrl_str = val_to_str_ext( controller, &rtp_midi_controller_values_ext, "Unknown: %d" );
-	value = tvb_get_guint8( tvb, offset + 1 );
+	status_str = val_to_str(pinfo->pool,  status >> 4, rtp_midi_channel_status, rtp_midi_unknown_value_hex );
+	controller = tvb_get_uint8( tvb, offset );
+	ctrl_str = val_to_str_ext(pinfo->pool, controller, &rtp_midi_controller_values_ext, "Unknown: %d" );
+	value = tvb_get_uint8( tvb, offset + 1 );
 
 	if ( using_rs ) {
 		command_tree = proto_tree_add_subtree_format( tree, tvb, offset, 2,  ett_rtp_midi_command, NULL,
@@ -3328,14 +3314,14 @@ decode_sysex_common_nrt_sd_req( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
  */
 static unsigned int
 decode_sysex_common_nrt_sd_ext( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset, unsigned int data_len ) {
-	guint8		 sub_id;
+	uint8_t		 sub_id;
 	unsigned int start_offset = offset;
 
 	if ( data_len < 1 )
 		return 0;
 
 	/* first we retrieve the sub-command */
-	sub_id = tvb_get_guint8( tvb, offset );
+	sub_id = tvb_get_uint8( tvb, offset );
 	proto_tree_add_item( tree, hf_rtp_midi_sysex_common_nrt_sd_ext, tvb, offset, 1, ENC_BIG_ENDIAN );
 	offset++;
 
@@ -3380,14 +3366,14 @@ decode_sysex_common_nrt_sd_ext( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
  */
 static unsigned int
 decode_sysex_common_nrt_gi( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset, unsigned int data_len ) {
-	guint8		 sub_id;
+	uint8_t		 sub_id;
 	int		 consumed	= 0;
 
 	if ( data_len < 1 )
 		return consumed;
 
 	/* first we retrieve the sub-command */
-	sub_id = tvb_get_guint8( tvb, offset );
+	sub_id = tvb_get_uint8( tvb, offset );
 	proto_tree_add_item( tree, hf_rtp_midi_sysex_common_nrt_gi, tvb, offset, 1, ENC_BIG_ENDIAN );
 	offset++;
 	data_len--;
@@ -3401,7 +3387,7 @@ decode_sysex_common_nrt_gi( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 		/* nothing more to do... */
 
 	} else if ( sub_id == RTP_MIDI_SYSEX_COMMON_NRT_GI_IDENTITY_REPLY ) {
-		guint8 manu_short;
+		uint8_t manu_short;
 
 		if ( data_len < 1 ) {
 			return consumed;
@@ -3409,7 +3395,7 @@ decode_sysex_common_nrt_gi( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 
 		/* the manu-id should follow */
 		proto_tree_add_item( tree, hf_rtp_midi_manu_short, tvb, offset, 1, ENC_BIG_ENDIAN );
-		manu_short = tvb_get_guint8( tvb, offset );
+		manu_short = tvb_get_uint8( tvb, offset );
 		offset++;
 		data_len--;
 		consumed++;
@@ -3459,14 +3445,14 @@ decode_sysex_common_nrt_gi( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
  */
 static unsigned int
 decode_sysex_common_nrt_fd( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset, unsigned int data_len ) {
-	guint8		 sub_id;
+	uint8_t		 sub_id;
 	unsigned int start_offset = offset;
 
 	if ( data_len < 1 )
 		return 0;
 
 	/* first we retrieve the sub-command */
-	sub_id = tvb_get_guint8( tvb, offset );
+	sub_id = tvb_get_uint8( tvb, offset );
 	proto_tree_add_item( tree, hf_rtp_midi_sysex_common_nrt_fd, tvb, offset, 1, ENC_BIG_ENDIAN );
 	offset++;
 	data_len--;
@@ -3479,7 +3465,7 @@ decode_sysex_common_nrt_fd( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 		data_len--;
 
 		/* file type */
-		proto_tree_add_item( tree, hf_rtp_midi_sysex_common_nrt_fd_type, tvb, offset, 4, ENC_ASCII|ENC_NA );
+		proto_tree_add_item( tree, hf_rtp_midi_sysex_common_nrt_fd_type, tvb, offset, 4, ENC_ASCII );
 		offset	 += 4;
 		data_len -= 4;
 
@@ -3491,7 +3477,7 @@ decode_sysex_common_nrt_fd( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 		if ( data_len ) {
 
 			/* file-name */
-			proto_tree_add_item( tree, hf_rtp_midi_sysex_common_nrt_fd_name, tvb, offset, data_len, ENC_ASCII|ENC_NA );
+			proto_tree_add_item( tree, hf_rtp_midi_sysex_common_nrt_fd_name, tvb, offset, data_len, ENC_ASCII );
 			offset	 += data_len;
 		}
 
@@ -3526,14 +3512,14 @@ decode_sysex_common_nrt_fd( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 		data_len--;
 
 		/* file type */
-		proto_tree_add_item( tree, hf_rtp_midi_sysex_common_nrt_fd_type, tvb, offset, 4, ENC_ASCII|ENC_NA );
+		proto_tree_add_item( tree, hf_rtp_midi_sysex_common_nrt_fd_type, tvb, offset, 4, ENC_ASCII );
 		offset	 += 4;
 		data_len -= 4;
 
 		if ( data_len ) {
 
 			/* file-name */
-			proto_tree_add_item( tree, hf_rtp_midi_sysex_common_nrt_fd_name, tvb, offset, data_len, ENC_ASCII|ENC_NA );
+			proto_tree_add_item( tree, hf_rtp_midi_sysex_common_nrt_fd_name, tvb, offset, data_len, ENC_ASCII );
 			offset += data_len;
 		}
 	}
@@ -3549,8 +3535,8 @@ static unsigned int
 decode_sysex_common_tuning( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset, unsigned int data_len ) {
 
 	proto_tree	*tune_tree;
-	const gchar	*note_str;
-	guint8		 sub_id;
+	const char	*note_str;
+	uint8_t		 sub_id;
 	unsigned int start_offset = offset;
 	unsigned int	 i;
 
@@ -3558,7 +3544,7 @@ decode_sysex_common_tuning( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 		return 0;
 
 	/* first we retrieve the sub-command */
-	sub_id = tvb_get_guint8( tvb, offset );
+	sub_id = tvb_get_uint8( tvb, offset );
 	proto_tree_add_item( tree, hf_rtp_midi_sysex_common_tuning, tvb, offset, 1, ENC_BIG_ENDIAN );
 	offset++;
 
@@ -3575,11 +3561,11 @@ decode_sysex_common_tuning( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 		offset++;
 
 		/* file length */
-		proto_tree_add_item( tree, hf_rtp_midi_sysex_common_tune_name, tvb, offset, 16, ENC_ASCII|ENC_NA );
+		proto_tree_add_item( tree, hf_rtp_midi_sysex_common_tune_name, tvb, offset, 16, ENC_ASCII );
 		offset	 += 16;
 
 		for ( i=0; i < 128; i++ ) {
-			note_str = val_to_str_ext( i, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
+			note_str = val_to_str_ext(pinfo->pool, i, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
 
 			tune_tree = proto_tree_add_subtree_format(tree, tvb, offset, 3, ett_rtp_midi_sysex_common_tune_note, NULL, "Note: %s", note_str );
 
@@ -3593,23 +3579,23 @@ decode_sysex_common_tuning( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 		offset++;
 
 	} else if ( sub_id == RTP_MIDI_SYSEX_COMMON_TUNING_NOTE_CHANGE ) {
-		guint8 changes;
+		uint8_t changes;
 
 		/* type */
 		proto_tree_add_item( tree, hf_rtp_midi_sysex_common_tune_program, tvb, offset, 1, ENC_BIG_ENDIAN );
 		offset++;
 
 		/* changes */
-		changes = tvb_get_guint8( tvb, offset );
+		changes = tvb_get_uint8( tvb, offset );
 		proto_tree_add_item( tree, hf_rtp_midi_sysex_common_tune_changes, tvb, offset, 1, ENC_BIG_ENDIAN );
 		offset++;
 
 		for ( i=0; i < changes; i++ ) {
-			guint8 note;
+			uint8_t note;
 
-			note = tvb_get_guint8( tvb, offset );
+			note = tvb_get_uint8( tvb, offset );
 
-			note_str = val_to_str_ext( note, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
+			note_str = val_to_str_ext(pinfo->pool, note, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
 
 			tune_tree = proto_tree_add_subtree_format(tree, tvb, offset, 3, ett_rtp_midi_sysex_common_tune_note, NULL, "Note: %s", note_str );
 
@@ -3829,8 +3815,8 @@ decode_sysex_common_rt_mtc_cue( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
  */
 static unsigned int
 decode_sysex_common_nrt( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset, unsigned int data_len ) {
-	guint8		 common_nrt;
-	const gchar	*nrt_str;
+	uint8_t		 common_nrt;
+	const char	*nrt_str;
 	proto_tree	*command_tree;
 	int		 consumed	= 0;
 	int		 ext_consumed	= 0;
@@ -3847,9 +3833,9 @@ decode_sysex_common_nrt( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree
 		return consumed;
 	}
 
-	common_nrt = tvb_get_guint8( tvb, offset );
+	common_nrt = tvb_get_uint8( tvb, offset );
 
-	nrt_str = val_to_str( common_nrt, rtp_midi_sysex_common_nrt, "Unknown 0x%02x" );
+	nrt_str = val_to_str(pinfo->pool,  common_nrt, rtp_midi_sysex_common_nrt, "Unknown 0x%02x" );
 
 	command_tree = proto_tree_add_subtree(tree, tvb, offset, data_len, ett_rtp_midi_sysex_common_nrt, NULL, nrt_str );
 	proto_tree_add_item( command_tree, hf_rtp_midi_sysex_common_non_realtime, tvb, offset, 1, ENC_BIG_ENDIAN );
@@ -3933,14 +3919,14 @@ decode_sysex_common_nrt( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree
  */
 static unsigned int
 decode_sysex_common_rt_mtc( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset, unsigned int data_len ) {
-	guint8		 sub_id;
+	uint8_t		 sub_id;
 	unsigned int start_offset = offset;
 
 	if ( data_len < 1 )
 		return 0;
 
 	/* first we retrieve the sub-command */
-	sub_id = tvb_get_guint8( tvb, offset );
+	sub_id = tvb_get_uint8( tvb, offset );
 	proto_tree_add_item( tree, hf_rtp_midi_sysex_common_rt_mtc, tvb, offset, 1, ENC_BIG_ENDIAN );
 	offset++;
 
@@ -4025,14 +4011,14 @@ decode_sysex_common_rt_sc( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tr
  */
 static unsigned int
 decode_sysex_common_rt_ni( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset, unsigned int data_len ) {
-	guint8		 sub_id;
+	uint8_t		 sub_id;
 	unsigned int start_offset = offset;
 
 	if ( data_len < 1 )
 		return 0;
 
 	/* first we retrieve the sub-command */
-	sub_id = tvb_get_guint8( tvb, offset );
+	sub_id = tvb_get_uint8( tvb, offset );
 	proto_tree_add_item( tree, hf_rtp_midi_sysex_common_rt_ni, tvb, offset, 1, ENC_BIG_ENDIAN );
 	offset++;
 
@@ -4047,7 +4033,7 @@ decode_sysex_common_rt_ni( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tr
 		int bytes;
 
 		/* bytes */
-		bytes = tvb_get_guint8( tvb, offset );
+		bytes = tvb_get_uint8( tvb, offset );
 		proto_tree_add_item( tree, hf_rtp_midi_sysex_common_rt_ni_bytes, tvb, offset, 1, ENC_BIG_ENDIAN );
 		offset++;
 
@@ -4093,14 +4079,14 @@ decode_sysex_common_rt_ni( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tr
  */
 static unsigned int
 decode_sysex_common_rt_dc( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset, unsigned int data_len ) {
-	guint8		 sub_id;
+	uint8_t		 sub_id;
 	unsigned int start_offset = offset;
 
 	if ( data_len < 1 )
 		return 0;
 
 	/* first we retrieve the sub-command */
-	sub_id = tvb_get_guint8( tvb, offset );
+	sub_id = tvb_get_uint8( tvb, offset );
 	proto_tree_add_item( tree, hf_rtp_midi_sysex_common_rt_dc, tvb, offset, 1, ENC_BIG_ENDIAN );
 	offset++;
 
@@ -4162,8 +4148,8 @@ decode_sysex_common_rt_mmc_response( tvbuff_t *tvb, packet_info *pinfo _U_, prot
  */
 static unsigned int
 decode_sysex_common_rt( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset, unsigned int data_len ) {
-	guint8		 common_rt;
-	const gchar	*rt_str;
+	uint8_t		 common_rt;
+	const char	*rt_str;
 	proto_tree	*command_tree;
 	int		 consumed	= 0;
 	int		 ext_consumed	= 0;
@@ -4180,8 +4166,8 @@ decode_sysex_common_rt( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 		return consumed;
 	}
 
-	common_rt = tvb_get_guint8( tvb, offset );
-	rt_str = val_to_str( common_rt, rtp_midi_sysex_common_rt, "Unknown 0x%02x" );
+	common_rt = tvb_get_uint8( tvb, offset );
+	rt_str = val_to_str(pinfo->pool,  common_rt, rtp_midi_sysex_common_rt, "Unknown 0x%02x" );
 
 	command_tree = proto_tree_add_subtree(tree, tvb, offset, data_len, ett_rtp_midi_sysex_common_rt, NULL, rt_str );
 	proto_tree_add_item( command_tree, hf_rtp_midi_sysex_common_realtime, tvb, offset, 1, ENC_BIG_ENDIAN );
@@ -4286,18 +4272,18 @@ decode_sysex_common_manufacturer( tvbuff_t *tvb, packet_info *pinfo _U_, proto_t
  */
 static unsigned int
 decode_sysex_start(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int cmd_count, unsigned int offset, unsigned int cmd_len ) {
-	const gchar	*status_str;
+	const char	*status_str;
 	proto_tree	*command_tree;
 	int		 consumed	= 0;
 	int		 data_len;
 	int		 ext_consumed	= 0;
 
-	status_str = val_to_str( RTP_MIDI_STATUS_COMMON_SYSEX_END, rtp_midi_common_status, rtp_midi_unknown_value_hex );
+	status_str = val_to_str(pinfo->pool,  RTP_MIDI_STATUS_COMMON_SYSEX_END, rtp_midi_common_status, rtp_midi_unknown_value_hex );
 
 	/* we need to parse "away" data until the next command */
 	while ( cmd_len ) {
-		guint8 octet;
-		octet = tvb_get_guint8( tvb, offset + consumed );
+		uint8_t octet;
+		octet = tvb_get_uint8( tvb, offset + consumed );
 		consumed++;
 
 		/*
@@ -4327,11 +4313,11 @@ decode_sysex_start(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsi
 
 	/* lets see if we have enough data for the sysex-id */
 	if ( data_len > 1 ) {
-		guint8  manu_short;
-		guint16 manufacturer;
-		manufacturer = tvb_get_guint8( tvb, offset );
+		uint8_t manu_short;
+		uint16_t manufacturer;
+		manufacturer = tvb_get_uint8( tvb, offset );
 		proto_tree_add_item( command_tree, hf_rtp_midi_manu_short, tvb, offset, 1, ENC_BIG_ENDIAN );
-		manu_short = tvb_get_guint8( tvb, offset );
+		manu_short = tvb_get_uint8( tvb, offset );
 		offset++;
 		data_len--;
 
@@ -4386,15 +4372,15 @@ decode_sysex_start(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsi
  */
 static int
 decode_mtc_quarter_frame(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int cmd_count, unsigned int offset) {
-	const gchar	*status_str;
+	const char	*status_str;
 	proto_tree	*command_tree;
 
-	status_str = val_to_str( RTP_MIDI_STATUS_COMMON_MTC_QUARTER_FRAME, rtp_midi_common_status, rtp_midi_unknown_value_hex );
+	status_str = val_to_str(pinfo->pool,  RTP_MIDI_STATUS_COMMON_MTC_QUARTER_FRAME, rtp_midi_common_status, rtp_midi_unknown_value_hex );
 
 	command_tree = proto_tree_add_subtree(tree, tvb, offset - 1, 2, ett_rtp_midi_command, NULL, status_str );
 	proto_tree_add_item( command_tree, hf_rtp_midi_common_status, tvb, offset - 1, 1, ENC_BIG_ENDIAN );
 	proto_tree_add_item( command_tree, hf_rtp_midi_quarter_frame_type, tvb, offset, 1, ENC_BIG_ENDIAN );
-	proto_tree_add_item( command_tree, hf_rtp_midi_quarter_frame_value, tvb, offset + 1, 1, ENC_BIG_ENDIAN );
+	proto_tree_add_item( command_tree, hf_rtp_midi_quarter_frame_value, tvb, offset, 1, ENC_BIG_ENDIAN );
 
 	if ( cmd_count ) {
 		col_append_fstr(pinfo->cinfo, COL_INFO, ", %s", status_str );
@@ -4409,15 +4395,15 @@ decode_mtc_quarter_frame(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree
  */
 static int
 decode_song_position_pointer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int cmd_count, unsigned int offset) {
-	guint8		 octet1;
-	guint8		 octet2;
-	guint8		 position;
-	const gchar	*status_str;
+	uint8_t		 octet1;
+	uint8_t		 octet2;
+	uint8_t		 position;
+	const char	*status_str;
 	proto_tree	*command_tree;
 
-	status_str = val_to_str( RTP_MIDI_STATUS_COMMON_SONG_POSITION_POINTER, rtp_midi_common_status, rtp_midi_unknown_value_hex );
-	octet1 = tvb_get_guint8( tvb, offset );
-	octet2 = tvb_get_guint8( tvb, offset + 1 );
+	status_str = val_to_str(pinfo->pool,  RTP_MIDI_STATUS_COMMON_SONG_POSITION_POINTER, rtp_midi_common_status, rtp_midi_unknown_value_hex );
+	octet1 = tvb_get_uint8( tvb, offset );
+	octet2 = tvb_get_uint8( tvb, offset + 1 );
 	position = ( octet1 << 7 ) | octet2;
 
 	command_tree = proto_tree_add_subtree_format(tree, tvb, offset - 1, 3, ett_rtp_midi_command, NULL, "%s (p=%d)", status_str, position );
@@ -4437,12 +4423,12 @@ decode_song_position_pointer(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *
  */
 static int
 decode_song_select(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int cmd_count, unsigned int offset) {
-	guint8		 song_nr;
-	const gchar	*status_str;
+	uint8_t		 song_nr;
+	const char	*status_str;
 	proto_tree	*command_tree;
 
-	status_str = val_to_str( RTP_MIDI_STATUS_COMMON_SONG_SELECT, rtp_midi_common_status, rtp_midi_unknown_value_hex );
-	song_nr = tvb_get_guint8( tvb, offset );
+	status_str = val_to_str(pinfo->pool,  RTP_MIDI_STATUS_COMMON_SONG_SELECT, rtp_midi_common_status, rtp_midi_unknown_value_hex );
+	song_nr = tvb_get_uint8( tvb, offset );
 
 	command_tree = proto_tree_add_subtree_format(tree, tvb, offset - 1, 2, ett_rtp_midi_command, NULL, "%s (s=%d)", status_str, song_nr );
 	proto_tree_add_item( command_tree, hf_rtp_midi_common_status, tvb, offset - 1, 1, ENC_BIG_ENDIAN );
@@ -4461,16 +4447,16 @@ decode_song_select(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsi
  */
 static int
 decode_undefined_f4(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int cmd_count, unsigned int offset, unsigned int cmd_len ) {
-	const gchar	*status_str;
+	const char	*status_str;
 	proto_tree	*command_tree;
 	int		 consumed	= 0;
 
-	status_str = val_to_str( RTP_MIDI_STATUS_COMMON_UNDEFINED_F4, rtp_midi_common_status, rtp_midi_unknown_value_hex );
+	status_str = val_to_str(pinfo->pool,  RTP_MIDI_STATUS_COMMON_UNDEFINED_F4, rtp_midi_common_status, rtp_midi_unknown_value_hex );
 
 	/* we need to parse "away" data until the next command */
 	while ( cmd_len ) {
-		guint8 octet;
-		octet = tvb_get_guint8( tvb, offset + consumed );
+		uint8_t octet;
+		octet = tvb_get_uint8( tvb, offset + consumed );
 		consumed++;
 
 		/* Is this command through? */
@@ -4498,16 +4484,16 @@ decode_undefined_f4(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, uns
  */
 static int
 decode_undefined_f5(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int cmd_count, unsigned int offset, unsigned int cmd_len ) {
-	const gchar	*status_str;
+	const char	*status_str;
 	proto_tree	*command_tree;
 	int		 consumed	= 0;
 
-	status_str = val_to_str( RTP_MIDI_STATUS_COMMON_UNDEFINED_F5, rtp_midi_common_status, rtp_midi_unknown_value_hex );
+	status_str = val_to_str(pinfo->pool,  RTP_MIDI_STATUS_COMMON_UNDEFINED_F5, rtp_midi_common_status, rtp_midi_unknown_value_hex );
 
 	/* we need to parse "away" data until the next command */
 	while ( cmd_len ) {
-		guint8 octet;
-		octet = tvb_get_guint8( tvb, offset + consumed );
+		uint8_t octet;
+		octet = tvb_get_uint8( tvb, offset + consumed );
 		consumed++;
 		/* Is this command done? */
 		if ( octet & RTP_MIDI_COMMAND_STATUS_FLAG ) {
@@ -4534,10 +4520,10 @@ decode_undefined_f5(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, uns
  */
 static int
 decode_tune_request(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int cmd_count, unsigned int offset, unsigned int cmd_len _U_ ) {
-	const gchar	*status_str;
+	const char	*status_str;
 	proto_tree	*command_tree;
 
-	status_str = val_to_str( RTP_MIDI_STATUS_COMMON_TUNE_REQUEST, rtp_midi_common_status, rtp_midi_unknown_value_hex );
+	status_str = val_to_str(pinfo->pool,  RTP_MIDI_STATUS_COMMON_TUNE_REQUEST, rtp_midi_common_status, rtp_midi_unknown_value_hex );
 	command_tree = proto_tree_add_subtree(tree, tvb, offset - 1, 1, ett_rtp_midi_command, NULL, status_str );
 	proto_tree_add_item( command_tree, hf_rtp_midi_common_status, tvb, offset - 1, 1, ENC_BIG_ENDIAN );
 
@@ -4554,16 +4540,16 @@ decode_tune_request(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, uns
  */
 static int
 decode_sysex_end(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int cmd_count, unsigned int offset, unsigned int cmd_len ) {
-	const gchar	*status_str;
+	const char	*status_str;
 	proto_tree	*command_tree;
 	int		 consumed = 0;
 
-	status_str = val_to_str( RTP_MIDI_STATUS_COMMON_SYSEX_END, rtp_midi_common_status, rtp_midi_unknown_value_hex );
+	status_str = val_to_str(pinfo->pool,  RTP_MIDI_STATUS_COMMON_SYSEX_END, rtp_midi_common_status, rtp_midi_unknown_value_hex );
 
 	/* we need to parse "away" data until the next command */
 	while ( cmd_len ) {
-		guint8 octet;
-		octet = tvb_get_guint8( tvb, offset + consumed );
+		uint8_t octet;
+		octet = tvb_get_uint8( tvb, offset + consumed );
 		consumed++;
 
 		/*
@@ -4610,42 +4596,42 @@ decode_sysex_end(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsign
  */
 
 static int
-decodemidi(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int cmd_count, unsigned int offset, unsigned int cmd_len, guint8 *runningstatus, unsigned int *rsoffset )
+decodemidi(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int cmd_count, unsigned int offset, unsigned int cmd_len, uint8_t *runningstatus, unsigned int *rsoffset )
 {
 	int		 consumed	= 0;
 	int		 ext_consumed	= 0;
-	guint8		 octet;
-	gboolean	 using_rs;
+	uint8_t		 octet;
+	bool	 using_rs;
 
 
 #if 0
-	guint8		octet2;
-	guint8		octet3;
-	guint8		cmd;
-	guint8		channel;
+	uint8_t		octet2;
+	uint8_t		octet3;
+	uint8_t		cmd;
+	uint8_t		channel;
 	proto_tree	*sysexdata_tree   = NULL;
-	gboolean	foundend;
-	guint16		wordvalue;
+	bool	foundend;
+	uint16_t		wordvalue;
 	char		helptext[200];
 	char		entry[200];
 	char		segtype[200];
-	guint8		manu1;
-	guint16		manu2;
-	guint8		subid1;
-	guint8		subid2;
-	guint8		sysexchan;
+	uint8_t		manu1;
+	uint16_t		manu2;
+	uint8_t		subid1;
+	uint8_t		subid2;
+	uint8_t		sysexchan;
 	unsigned int	helpoffset;
 #endif
 
-	octet = tvb_get_guint8( tvb, offset );
+	octet = tvb_get_uint8( tvb, offset );
 
 	/* midi realtime-data -> one octet  -- unlike serial-wired MIDI realtime-commands in RTP-MIDI will
 	 * not be intermingled with other MIDI-commands, so we handle this case right here and return */
 	if ( octet >= 0xf8 ) {
 		proto_tree  *command_tree;
-		const gchar *valstr;
+		const char *valstr;
 
-		valstr =  val_to_str( octet, rtp_midi_common_status, rtp_midi_unknown_value_hex );
+		valstr =  val_to_str(pinfo->pool,  octet, rtp_midi_common_status, rtp_midi_unknown_value_hex );
 		command_tree = proto_tree_add_subtree(tree, tvb, offset, 1, ett_rtp_midi_command, NULL, valstr );
 		proto_tree_add_item( command_tree, hf_rtp_midi_common_status, tvb, offset, 1, ENC_BIG_ENDIAN );
 
@@ -4668,10 +4654,10 @@ decodemidi(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int
 		/* our first octet is "virtual" coming from a preceding MIDI-command,
 		 * so actually we have not really consumed anything yet */
 		octet = *runningstatus;
-		using_rs = TRUE;
+		using_rs = true;
 	} else {
 		/* We have a "real" status-byte */
-		using_rs = FALSE;
+		using_rs = false;
 
 		/* Let's see how this octet influences our running-status */
 		/* if we have a "normal" MIDI-command then the new status replaces the current running-status */
@@ -4773,11 +4759,11 @@ decode_cj_chapter_c( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 	proto_tree			*rtp_midi_loglist_tree;
 	proto_tree			*loglist_tree;
 	unsigned int start_offset = offset;
-	guint8				 octet;
+	uint8_t				 octet;
 	int				 count;
 	int				 i;
 
-	octet = tvb_get_guint8( tvb, offset );
+	octet = tvb_get_uint8( tvb, offset );
 	count = octet & 0x7f;
 
 	/* count encoded is n+1 */
@@ -4804,7 +4790,7 @@ decode_cj_chapter_c( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 
 		offset++;
 
-		octet = tvb_get_guint8( tvb, offset );
+		octet = tvb_get_uint8( tvb, offset );
 		proto_tree_add_item(loglist_tree, hf_rtp_midi_cj_chapter_c_aflag, tvb, offset, 1, ENC_BIG_ENDIAN );
 
 		/* do we have a value or alternative coding? */
@@ -4830,12 +4816,12 @@ decode_cj_chapter_m( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 	proto_tree			*rtp_midi_cj_chapter_tree;
 	proto_tree			*rtp_midi_loglist_tree;
 	proto_tree			*rtp_midi_loglist_item_tree;
-	guint16				header;
-	guint8				logitemheader;
+	uint16_t				header;
+	uint8_t				logitemheader;
 	int				length;
 	int				logitemhdrlen;
 	int				logitemlen;
-	gboolean			no_pnum_msb;
+	bool			no_pnum_msb;
 	unsigned int start_offset = offset;
 
 	/* first we need to get the flags & length of this chapter */
@@ -4879,9 +4865,9 @@ decode_cj_chapter_m( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 	while ( length > 0 ) {
 
 		if ( no_pnum_msb ) {
-			logitemheader = tvb_get_guint8( tvb, offset + 1 );
+			logitemheader = tvb_get_uint8( tvb, offset + 1 );
 		} else {
-			logitemheader = tvb_get_guint8( tvb, offset + 2 );
+			logitemheader = tvb_get_uint8( tvb, offset + 2 );
 		}
 
 		logitemlen = logitemhdrlen;
@@ -4941,7 +4927,7 @@ decode_cj_chapter_m( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 
 		/* do we have a entry-msb field? */
 		if ( logitemheader & RTP_MIDI_CJ_CHAPTER_M_FLAG_J ) {
-			static const int * msb_flags[] = {
+			static int * const msb_flags[] = {
 				&hf_rtp_midi_cj_chapter_m_log_msb_x,
 				&hf_rtp_midi_cj_chapter_m_log_msb,
 				NULL
@@ -4955,7 +4941,7 @@ decode_cj_chapter_m( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 
 		/* do we have a entry-lsb field? */
 		if ( logitemheader & RTP_MIDI_CJ_CHAPTER_M_FLAG_K ) {
-			static const int * lsb_flags[] = {
+			static int * const lsb_flags[] = {
 				&hf_rtp_midi_cj_chapter_m_log_lsb_x,
 				&hf_rtp_midi_cj_chapter_m_log_lsb,
 				NULL
@@ -4968,7 +4954,7 @@ decode_cj_chapter_m( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 
 		/* do we have an a-button field? */
 		if ( logitemheader & RTP_MIDI_CJ_CHAPTER_M_FLAG_L ) {
-			static const int * button_flags[] = {
+			static int * const button_flags[] = {
 				&hf_rtp_midi_cj_chapter_m_log_a_button_g,
 				&hf_rtp_midi_cj_chapter_m_log_a_button_x,
 				&hf_rtp_midi_cj_chapter_m_log_a_button,
@@ -4983,7 +4969,7 @@ decode_cj_chapter_m( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 
 		/* do we have a c-button field? */
 		if ( logitemheader & RTP_MIDI_CJ_CHAPTER_M_FLAG_M ) {
-			static const int * button_flags[] = {
+			static int * const button_flags[] = {
 				&hf_rtp_midi_cj_chapter_m_log_c_button_g,
 				&hf_rtp_midi_cj_chapter_m_log_c_button_r,
 				&hf_rtp_midi_cj_chapter_m_log_c_button,
@@ -4998,7 +4984,7 @@ decode_cj_chapter_m( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 
 		/* do we have a count field? */
 		if ( logitemheader & RTP_MIDI_CJ_CHAPTER_M_FLAG_N ) {
-			static const int * log_flags[] = {
+			static int * const log_flags[] = {
 				&hf_rtp_midi_cj_chapter_m_log_count_x,
 				&hf_rtp_midi_cj_chapter_m_log_count,
 				NULL
@@ -5023,11 +5009,11 @@ static int
 decode_cj_chapter_n( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset ) {
 	proto_tree			*rtp_midi_cj_chapter_tree;
 	proto_tree			*rtp_midi_loglist_tree;
-	const gchar			*note_str;
+	const char			*note_str;
 	unsigned int start_offset = offset;
-	guint16				 header;
-	guint8				 note;
-	guint8				 velocity;
+	uint16_t				 header;
+	uint8_t				 note;
+	uint8_t				 velocity;
 	int				 log_count;
 	int				 octet_count;
 	int				 low;
@@ -5073,10 +5059,10 @@ decode_cj_chapter_n( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 
 		for ( i = 0; i < log_count; i++ ) {
 
-			note = tvb_get_guint8( tvb, offset ) & 0x7f;
-			velocity = tvb_get_guint8( tvb, offset + 1 ) & 0x7f;
+			note = tvb_get_uint8( tvb, offset ) & 0x7f;
+			velocity = tvb_get_uint8( tvb, offset + 1 ) & 0x7f;
 
-			note_str = val_to_str_ext( note, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
+			note_str = val_to_str_ext(pinfo->pool, note, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
 
 			rtp_midi_loglist_tree = proto_tree_add_subtree_format(rtp_midi_loglist_tree, tvb, offset, 2,
 						ett_rtp_midi_cj_chapter_n_logitem, NULL, "%s (n=%s, v=%d)", RTP_MIDI_TREE_NAME_CJ_CHAPTER_N_LOGITEM, note_str, velocity );
@@ -5118,17 +5104,17 @@ static int
 decode_cj_chapter_e( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset ) {
 	proto_tree			*rtp_midi_cj_chapter_tree;
 	proto_tree			*rtp_midi_loglist_tree, *log_tree;
-	const gchar			*note_str;
+	const char			*note_str;
 	unsigned int start_offset = offset;
-	guint8				 header;
-	guint8				 note;
-	guint8				 count_vel;
-	guint8				 octet;
+	uint8_t				 header;
+	uint8_t				 note;
+	uint8_t				 count_vel;
+	uint8_t				 octet;
 	int				 log_count;
 	int				 i;
 
 	/* first we need to get the flags & length of this chapter */
-	header = tvb_get_guint8( tvb, offset );
+	header = tvb_get_uint8( tvb, offset );
 	log_count = header & RTP_MIDI_CJ_CHAPTER_E_MASK_LENGTH;
 
 	/* count is encoded n+1 */
@@ -5138,7 +5124,7 @@ decode_cj_chapter_e( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 				ett_rtp_midi_cj_chapter_e, NULL, RTP_MIDI_TREE_NAME_CJ_CHAPTER_E );
 
 	proto_tree_add_item( rtp_midi_cj_chapter_tree, hf_rtp_midi_cj_chapter_e_sflag, tvb, offset, 1, ENC_BIG_ENDIAN );
-	proto_tree_add_item( rtp_midi_cj_chapter_tree, hf_rtp_midi_cj_chapter_e_len, tvb, offset, 2, ENC_BIG_ENDIAN );
+	proto_tree_add_item( rtp_midi_cj_chapter_tree, hf_rtp_midi_cj_chapter_e_len, tvb, offset, 1, ENC_BIG_ENDIAN );
 
 	offset++;
 
@@ -5147,11 +5133,11 @@ decode_cj_chapter_e( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 
 	for ( i = 0; i < log_count; i++ ) {
 
-		note = tvb_get_guint8( tvb, offset ) & 0x7f;
-		octet = tvb_get_guint8( tvb, offset + 1 );
+		note = tvb_get_uint8( tvb, offset ) & 0x7f;
+		octet = tvb_get_uint8( tvb, offset + 1 );
 		count_vel = octet & 0x7f;
 
-		note_str = val_to_str_ext( note, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
+		note_str = val_to_str_ext(pinfo->pool, note, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
 
 		if ( octet & 0x80 ) {
 			log_tree = proto_tree_add_subtree_format(rtp_midi_loglist_tree, tvb, offset, 2, ett_rtp_midi_cj_chapter_e_logitem, NULL,
@@ -5193,16 +5179,16 @@ static int
 decode_cj_chapter_a( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset ) {
 	proto_tree			*rtp_midi_cj_chapter_tree;
 	proto_tree			*rtp_midi_loglist_tree, *log_tree;
-	const gchar			*note_str;
+	const char			*note_str;
 	unsigned int start_offset = offset;
-	guint8				 header;
-	guint8				 note;
-	guint8				 pressure;
+	uint8_t				 header;
+	uint8_t				 note;
+	uint8_t				 pressure;
 	int				 log_count;
 	int				 i;
 
 	/* first we need to get the flags & length of this chapter */
-	header = tvb_get_guint8( tvb, offset );
+	header = tvb_get_uint8( tvb, offset );
 	log_count = header & RTP_MIDI_CJ_CHAPTER_A_MASK_LENGTH;
 
 	/* count is encoded n+1 */
@@ -5211,7 +5197,7 @@ decode_cj_chapter_a( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 	rtp_midi_cj_chapter_tree = proto_tree_add_subtree( tree, tvb, offset, 1 + ( log_count * 2 ), ett_rtp_midi_cj_chapter_a, NULL, RTP_MIDI_TREE_NAME_CJ_CHAPTER_A );
 
 	proto_tree_add_item( rtp_midi_cj_chapter_tree, hf_rtp_midi_cj_chapter_a_sflag, tvb, offset, 1, ENC_BIG_ENDIAN );
-	proto_tree_add_item( rtp_midi_cj_chapter_tree, hf_rtp_midi_cj_chapter_a_len, tvb, offset, 2, ENC_BIG_ENDIAN );
+	proto_tree_add_item( rtp_midi_cj_chapter_tree, hf_rtp_midi_cj_chapter_a_len, tvb, offset, 1, ENC_BIG_ENDIAN );
 
 	offset++;
 
@@ -5219,10 +5205,10 @@ decode_cj_chapter_a( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 
 	for ( i = 0; i < log_count; i++ ) {
 
-		note	 = tvb_get_guint8( tvb, offset ) & 0x7f;
-		pressure = tvb_get_guint8( tvb, offset + 1 ) & 0x7f;
+		note	 = tvb_get_uint8( tvb, offset ) & 0x7f;
+		pressure = tvb_get_uint8( tvb, offset + 1 ) & 0x7f;
 
-		note_str = val_to_str_ext( note, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
+		note_str = val_to_str_ext(pinfo->pool, note, &rtp_midi_note_values_ext, rtp_midi_unknown_value_dec );
 
 		log_tree = proto_tree_add_subtree_format(rtp_midi_loglist_tree, tvb, offset, 2, ett_rtp_midi_cj_chapter_a_logitem, NULL,
 				"%s (n=%s, p=%d)", RTP_MIDI_TREE_NAME_CJ_CHAPTER_A_LOGITEM, note_str, pressure );
@@ -5253,8 +5239,8 @@ decode_channel_journal( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 	proto_tree			*rtp_midi_chanjournal_tree;
 	proto_tree			*rtp_midi_cj_chapters_tree;
 	proto_tree			*rtp_midi_cj_chapter_tree;
-	guint32				chanflags;
-	guint16				chanjourlen;
+	uint32_t				chanflags;
+	uint16_t				chanjourlen;
 	int				consumed = 0;
 	int				ext_consumed = 0;
 
@@ -5263,7 +5249,7 @@ decode_channel_journal( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 	chanjourlen = ( chanflags & RTP_MIDI_CJ_MASK_LENGTH ) >> 8;
 
 	rtp_midi_chanjournal_tree = proto_tree_add_subtree( tree, tvb, offset, chanjourlen, ett_rtp_midi_channeljournal, NULL,
-			val_to_str( ( chanflags & RTP_MIDI_CJ_MASK_CHANNEL ) >> RTP_MIDI_CJ_CHANNEL_SHIFT, rtp_midi_channels, rtp_midi_unknown_value_hex ) );
+			val_to_str(pinfo->pool,  ( chanflags & RTP_MIDI_CJ_MASK_CHANNEL ) >> RTP_MIDI_CJ_CHANNEL_SHIFT, rtp_midi_channels, rtp_midi_unknown_value_hex ) );
 
 	proto_tree_add_item( rtp_midi_chanjournal_tree, hf_rtp_midi_chanjour_sflag, tvb, offset, 3, ENC_BIG_ENDIAN );
 	proto_tree_add_item( rtp_midi_chanjournal_tree, hf_rtp_midi_chanjour_chan, tvb, offset, 3, ENC_BIG_ENDIAN );
@@ -5364,7 +5350,7 @@ decode_channel_journal( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 
 	/* Do we have channel aftertouch chapter? */
 	if ( chanflags & RTP_MIDI_CJ_FLAG_T ) {
-		static const int * flags_t[] = {
+		static int * const flags_t[] = {
 			&hf_rtp_midi_cj_chapter_t_sflag,
 			&hf_rtp_midi_cj_chapter_t_pressure,
 			NULL
@@ -5401,8 +5387,8 @@ decode_sj_chapter_d_f4( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 
 	proto_tree	*rtp_midi_field_tree;
 	unsigned int start_offset = offset;
-	guint16		 f4flags;
-	guint16		 f4length;
+	uint16_t		 f4flags;
+	uint16_t		 f4length;
 
 	/* Get flags & length */
 	f4flags = tvb_get_ntohs( tvb, offset );
@@ -5432,11 +5418,11 @@ decode_sj_chapter_d_f4( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 	if ( f4flags & RTP_MIDI_SJ_CHAPTER_D_SYSCOM_FLAG_V ) {
 
 		int valuelen = 0;
-		guint8 octet;
+		uint8_t octet;
 
 		/* variable length field - ends with an octet with MSB set */
 		for (;;) {
-			octet = tvb_get_guint8( tvb, offset+valuelen );
+			octet = tvb_get_uint8( tvb, offset+valuelen );
 			valuelen++;
 			if ( octet & 0x80 ) {
 				break;
@@ -5474,8 +5460,8 @@ decode_sj_chapter_d_f5( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 
 	proto_tree	*rtp_midi_field_tree;
 	unsigned int start_offset = offset;
-	guint16		 f5flags;
-	guint16		 f5length;
+	uint16_t		 f5flags;
+	uint16_t		 f5length;
 
 	/* Get flags & length */
 	f5flags = tvb_get_ntohs( tvb, offset );
@@ -5505,11 +5491,11 @@ decode_sj_chapter_d_f5( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 	if ( f5flags & RTP_MIDI_SJ_CHAPTER_D_SYSCOM_FLAG_V ) {
 
 		int valuelen = 0;
-		guint8 octet;
+		uint8_t octet;
 
 		/* variable length field - ends with an octet with MSB set */
 		for (;;) {
-			octet = tvb_get_guint8( tvb, offset+valuelen );
+			octet = tvb_get_uint8( tvb, offset+valuelen );
 			valuelen++;
 			if ( octet & 0x80 ) {
 				break;
@@ -5546,11 +5532,11 @@ decode_sj_chapter_d_f9( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 
 	proto_tree	*rtp_midi_field_tree;
 	unsigned int start_offset = offset;
-	guint8		 f9flags;
-	guint8		 f9length;
+	uint8_t		 f9flags;
+	uint8_t		 f9length;
 
 	/* Get flags & length */
-	f9flags = tvb_get_guint8( tvb, offset );
+	f9flags = tvb_get_uint8( tvb, offset );
 	f9length = f9flags & RTP_MIDI_SJ_CHAPTER_D_SYSREAL_MASK_LENGTH;
 
 	/* now we can display our tree, as we now have the full length */
@@ -5600,11 +5586,11 @@ decode_sj_chapter_d_fd( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
 
 	proto_tree	*rtp_midi_field_tree;
 	unsigned int start_offset = offset;
-	guint8		 fdflags;
-	guint8		 fdlength;
+	uint8_t		 fdflags;
+	uint8_t		 fdlength;
 
 	/* Get flags & length */
-	fdflags  = tvb_get_guint8( tvb, offset );
+	fdflags  = tvb_get_uint8( tvb, offset );
 	fdlength = fdflags & RTP_MIDI_SJ_CHAPTER_D_SYSREAL_MASK_LENGTH;
 
 	/* now we can display our tree, as we now have the full length */
@@ -5655,11 +5641,11 @@ static int
 decode_sj_chapter_d( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset ) {
 	proto_item			*tix;
 	proto_tree			*rtp_midi_sj_chapter_tree;
-	guint8				header;
+	uint8_t				header;
 	unsigned int start_offset = offset;
 	int				ext_consumed;
 
-	static const int * chapter_d_flags[] = {
+	static int * const chapter_d_flags[] = {
 		&hf_rtp_midi_sj_chapter_d_sflag,
 		&hf_rtp_midi_sj_chapter_d_bflag,
 		&hf_rtp_midi_sj_chapter_d_gflag,
@@ -5672,7 +5658,7 @@ decode_sj_chapter_d( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 	};
 
 	/* first we need to get the flags of this chapter */
-	header = tvb_get_guint8( tvb, offset );
+	header = tvb_get_uint8( tvb, offset );
 
 	/*
 	 * we don't know the complete length yet - we know that we have at least the header -> 1.
@@ -5687,7 +5673,7 @@ decode_sj_chapter_d( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 	/* do we have Reset field? */
 	if ( header & RTP_MIDI_SJ_CHAPTER_D_FLAG_B ) {
 
-		static const int * reset_flags[] = {
+		static int * const reset_flags[] = {
 			&hf_rtp_midi_sj_chapter_d_reset_sflag,
 			&hf_rtp_midi_sj_chapter_d_reset_count,
 			NULL
@@ -5700,7 +5686,7 @@ decode_sj_chapter_d( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 	/* do we have Tune request field? */
 	if ( header & RTP_MIDI_SJ_CHAPTER_D_FLAG_G ) {
 
-		static const int * tune_flags[] = {
+		static int * const tune_flags[] = {
 			&hf_rtp_midi_sj_chapter_d_tune_sflag,
 			&hf_rtp_midi_sj_chapter_d_tune_count,
 			NULL
@@ -5713,7 +5699,7 @@ decode_sj_chapter_d( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 	/* do we have Song select field? */
 	if ( header & RTP_MIDI_SJ_CHAPTER_D_FLAG_H ) {
 
-		static const int * song_flags[] = {
+		static int * const song_flags[] = {
 			&hf_rtp_midi_sj_chapter_d_song_sel_sflag,
 			&hf_rtp_midi_sj_chapter_d_song_sel_value,
 			NULL
@@ -5771,12 +5757,12 @@ decode_sj_chapter_d( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 static int
 decode_sj_chapter_q( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset ) {
 	proto_tree			*rtp_midi_sj_chapter_tree;
-	guint8				header;
+	uint8_t				header;
 	unsigned int start_offset = offset;
 	int				len = 1;
 
 	/* first we need to get the flags of this chapter */
-	header = tvb_get_guint8( tvb, offset );
+	header = tvb_get_uint8( tvb, offset );
 
 	if ( header & RTP_MIDI_SJ_CHAPTER_Q_FLAG_C ) {
 		len += 2;
@@ -5822,12 +5808,12 @@ decode_sj_chapter_q( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 static int
 decode_sj_chapter_f( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset ) {
 	proto_tree			*rtp_midi_sj_chapter_tree;
-	guint8				header;
+	uint8_t				header;
 	unsigned int start_offset = offset;
 	int				len = 1;
 
 	/* first we need to get the flags of this chapter */
-	header = tvb_get_guint8( tvb, offset );
+	header = tvb_get_uint8( tvb, offset );
 
 	if ( header & RTP_MIDI_SJ_CHAPTER_F_FLAG_C ) {
 		len += 4;
@@ -5851,7 +5837,7 @@ decode_sj_chapter_f( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 	if ( header & RTP_MIDI_SJ_CHAPTER_F_FLAG_C ) {
 
 		if ( header & RTP_MIDI_SJ_CHAPTER_F_FLAG_Q ) {
-			static const int * fq_flags[] = {
+			static int * const fq_flags[] = {
 				&hf_rtp_midi_sj_chapter_f_mt0,
 				&hf_rtp_midi_sj_chapter_f_mt1,
 				&hf_rtp_midi_sj_chapter_f_mt2,
@@ -5865,7 +5851,7 @@ decode_sj_chapter_f( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 
 			proto_tree_add_bitmask(rtp_midi_sj_chapter_tree, tvb, offset, hf_rtp_midi_sj_chapter_f_complete, ett_rtp_midi_sj_chapter_f_complete, fq_flags, ENC_BIG_ENDIAN);
 		} else {
-			static const int * f_flags[] = {
+			static int * const f_flags[] = {
 				&hf_rtp_midi_sj_chapter_f_hr,
 				&hf_rtp_midi_sj_chapter_f_mn,
 				&hf_rtp_midi_sj_chapter_f_sc,
@@ -5880,7 +5866,7 @@ decode_sj_chapter_f( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 	}
 
 	if ( header & RTP_MIDI_SJ_CHAPTER_F_FLAG_P ) {
-		static const int * fp_flags[] = {
+		static int * const fp_flags[] = {
 			&hf_rtp_midi_sj_chapter_f_mt0,
 			&hf_rtp_midi_sj_chapter_f_mt1,
 			&hf_rtp_midi_sj_chapter_f_mt2,
@@ -5906,14 +5892,14 @@ static int
 decode_sj_chapter_x( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned int offset, unsigned int max_length ) {
 	proto_tree			*rtp_midi_sj_chapter_tree;
 	proto_tree			*rtp_midi_sj_data_tree;
-	guint8				header;
-	guint8				octet;
+	uint8_t				header;
+	uint8_t				octet;
 	unsigned int			consumed = 0;
 	unsigned int			cmdlen   = 0;
 	unsigned int			i;
 
 	/* first we need to get the flags of this chapter */
-	header = tvb_get_guint8( tvb, offset );
+	header = tvb_get_uint8( tvb, offset );
 
 	rtp_midi_sj_chapter_tree = proto_tree_add_subtree( tree, tvb, offset, max_length, ett_rtp_midi_sj_chapter_x, NULL, RTP_MIDI_TREE_NAME_SJ_CHAPTER_X );
 
@@ -5956,7 +5942,7 @@ decode_sj_chapter_x( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 				return -1;
 			}
 
-			octet = tvb_get_guint8( tvb, offset + fieldlen );
+			octet = tvb_get_uint8( tvb, offset + fieldlen );
 			field = ( field << 7 ) | ( octet & RTP_MIDI_DELTA_TIME_OCTET_MASK );
 			fieldlen++;
 
@@ -5989,7 +5975,7 @@ decode_sj_chapter_x( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, un
 		rtp_midi_sj_data_tree = proto_tree_add_subtree( rtp_midi_sj_chapter_tree, tvb, offset,  max_length - consumed,
 						ett_rtp_midi_sj_chapter_x_data, NULL, RTP_MIDI_TREE_NAME_SJ_CHAPTER_X_DATA );
 		while ( consumed < max_length ) {
-			octet = tvb_get_guint8( tvb, offset + cmdlen );
+			octet = tvb_get_uint8( tvb, offset + cmdlen );
 			if ( octet & 0x80 ) {
 				proto_tree_add_item( rtp_midi_sj_data_tree, hf_rtp_midi_sj_chapter_x_data, tvb, offset, cmdlen, ENC_NA );
 				offset += cmdlen;
@@ -6027,8 +6013,8 @@ decode_system_journal( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, 
 	proto_tree			*rtp_midi_sj_chapters_tree;
 	unsigned int start_offset = offset;
 	int				ext_consumed = 0;
-	guint16				sysjourlen;
-	guint16				systemflags;
+	uint16_t				sysjourlen;
+	uint16_t				systemflags;
 
 	systemflags = tvb_get_ntohs( tvb, offset );
 	sysjourlen  = systemflags & RTP_MIDI_SJ_MASK_LENGTH;
@@ -6055,7 +6041,7 @@ decode_system_journal( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, 
 
 	/* Do we have a active sensing chapter? */
 	if ( systemflags & RTP_MIDI_SJ_FLAG_V ) {
-		static const int * v_flags[] = {
+		static int * const v_flags[] = {
 			&hf_rtp_midi_sj_chapter_v_sflag,
 			&hf_rtp_midi_sj_chapter_v_count,
 			NULL
@@ -6113,15 +6099,15 @@ dissect_rtp_midi( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void*
 	proto_tree		*rtp_midi_tree;
 	unsigned int		 offset = 0;
 
-	guint8			flags;		/* used for command-section and journal-section*/
+	uint8_t			flags;		/* used for command-section and journal-section*/
 	unsigned int		cmd_len;
 	unsigned int		cmd_count;
-	guint8			runningstatus;
+	uint8_t			runningstatus;
 
 	int			consumed;
 	unsigned int		rsoffset = 0;
 
-	guint8			totchan;
+	uint8_t			totchan;
 
 	unsigned int		i;
 
@@ -6133,7 +6119,7 @@ dissect_rtp_midi( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void*
 	 */
 
 	/* RTP-MIDI starts with 4 bits of flags... */
-	flags = tvb_get_guint8( tvb, offset );
+	flags = tvb_get_uint8( tvb, offset );
 
 	ti = proto_tree_add_item( tree, proto_rtp_midi, tvb, 0, -1, ENC_NA );
 	rtp_midi_tree = proto_item_add_subtree( ti, ett_rtp_midi);
@@ -6212,7 +6198,7 @@ dissect_rtp_midi( tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void*
 		rtp_midi_journal_tree = proto_tree_add_subtree( rtp_midi_tree, tvb, offset, -1, ett_rtp_midi_journal, NULL, RTP_MIDI_TREE_NAME_JOURNAL );
 
 		/* lets get the main flags from the recovery journal header */
-		flags = tvb_get_guint8(     tvb, offset );
+		flags = tvb_get_uint8(     tvb, offset );
 
 		proto_tree_add_item( rtp_midi_journal_tree, hf_rtp_midi_sflag, tvb, offset, 1, ENC_BIG_ENDIAN );
 		proto_tree_add_item( rtp_midi_journal_tree, hf_rtp_midi_yflag, tvb, offset, 1, ENC_BIG_ENDIAN );
@@ -6487,7 +6473,7 @@ proto_register_rtp_midi( void )
 				FT_UINT8,
 				BASE_HEX,
 				VALS(rtp_midi_common_status),
-				0xff,
+				0x0,
 				NULL, HFILL
 			}
 		},
@@ -6777,7 +6763,7 @@ proto_register_rtp_midi( void )
 				FT_BOOLEAN,
 				24,
 				TFS(&rtp_midi_cj_flag_p),
-				0x80,
+				0x000080,
 				NULL, HFILL
 			}
 		},
@@ -6789,7 +6775,7 @@ proto_register_rtp_midi( void )
 				FT_BOOLEAN,
 				24,
 				TFS(&rtp_midi_cj_flag_c),
-				0x40,
+				0x000040,
 				NULL, HFILL
 			}
 		},
@@ -6801,7 +6787,7 @@ proto_register_rtp_midi( void )
 				FT_BOOLEAN,
 				24,
 				TFS(&rtp_midi_cj_flag_m),
-				0x20,
+				0x000020,
 				NULL, HFILL
 			}
 		},
@@ -6813,7 +6799,7 @@ proto_register_rtp_midi( void )
 				FT_BOOLEAN,
 				24,
 				TFS(&rtp_midi_cj_flag_w),
-				0x10,
+				0x000010,
 				NULL, HFILL
 			}
 		},
@@ -6825,7 +6811,7 @@ proto_register_rtp_midi( void )
 				FT_BOOLEAN,
 				24,
 				TFS(&rtp_midi_cj_flag_n),
-				0x08,
+				0x000008,
 				NULL, HFILL
 			}
 		},
@@ -6837,7 +6823,7 @@ proto_register_rtp_midi( void )
 				FT_BOOLEAN,
 				24,
 				TFS(&rtp_midi_cj_flag_e),
-				0x04,
+				0x000004,
 				NULL, HFILL
 			}
 		},
@@ -6849,7 +6835,7 @@ proto_register_rtp_midi( void )
 				FT_BOOLEAN,
 				24,
 				TFS(&rtp_midi_cj_flag_t),
-				0x02,
+				0x000002,
 				NULL, HFILL
 			}
 		},
@@ -6861,7 +6847,7 @@ proto_register_rtp_midi( void )
 				FT_BOOLEAN,
 				24,
 				TFS(&rtp_midi_cj_flag_a),
-				0x01,
+				0x000001,
 				NULL, HFILL
 			}
 		},
@@ -9354,7 +9340,7 @@ proto_register_rtp_midi( void )
 		{
 			&hf_rtp_midi_sysex_common_nrt_sd_packet_check,
 			{
-				"Sysex Common Non-Realtime Sample Dump Checkum",
+				"Sysex Common Non-Realtime Sample Dump Checksum",
 				"rtpmidi.sysex_common_non_realtime_sample_dump_checksum",
 				FT_UINT8,
 				BASE_HEX,
@@ -9970,7 +9956,7 @@ proto_register_rtp_midi( void )
 
 
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_rtp_midi,
 		&ett_rtp_midi_commands,
 		&ett_rtp_midi_journal,
@@ -10032,9 +10018,9 @@ proto_register_rtp_midi( void )
 	proto_register_field_array( proto_rtp_midi, hf, array_length( hf ) );
 	proto_register_subtree_array( ett, array_length( ett ) );
 
-	rtp_midi_module = prefs_register_protocol ( proto_rtp_midi, proto_reg_handoff_rtp_midi );
-	prefs_register_uint_preference ( rtp_midi_module, "midi_payload_type_value", "Payload Type for RFC 4695/6295 RTP-MIDI", "This is the value of the Payload Type field that specifies RTP-MIDI", 10, &rtp_midi_payload_type_value );
-	register_dissector( RTP_MIDI_DISSECTOR_ABBREVIATION, dissect_rtp_midi, proto_rtp_midi );
+	rtp_midi_module = prefs_register_protocol( proto_rtp_midi, NULL );
+	prefs_register_obsolete_preference( rtp_midi_module, "midi_payload_type_value");
+	rtp_midi_handle = register_dissector( RTP_MIDI_DISSECTOR_ABBREVIATION, dissect_rtp_midi, proto_rtp_midi );
 }
 
 
@@ -10042,27 +10028,13 @@ proto_register_rtp_midi( void )
 void
 proto_reg_handoff_rtp_midi( void )
 {
-	static dissector_handle_t	rtp_midi_handle;
-	static int			rtp_midi_prefs_initialized = FALSE;
-
-
-	if ( !rtp_midi_prefs_initialized ) {
-		rtp_midi_handle = find_dissector( RTP_MIDI_DISSECTOR_ABBREVIATION );
-		dissector_add_string("rtp_dyn_payload_type", "rtp-midi", rtp_midi_handle);
-		rtp_midi_prefs_initialized = TRUE;
-	}
-	else {
-		dissector_delete_uint( "rtp.pt", saved_payload_type_value, rtp_midi_handle );
-	}
-	if ( rtp_midi_payload_type_value > 95 ){
-		saved_payload_type_value = rtp_midi_payload_type_value;
-		dissector_add_uint( "rtp.pt", saved_payload_type_value, rtp_midi_handle );
-	}
+	dissector_add_string("rtp_dyn_payload_type", "rtp-midi", rtp_midi_handle);
+	dissector_add_uint_range_with_preference( "rtp.pt", "", rtp_midi_handle );
 
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

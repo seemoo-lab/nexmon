@@ -1,5 +1,13 @@
-#ifndef __LINUX_NETLINK_H
-#define __LINUX_NETLINK_H
+#ifndef __NETLINK_KERNEL_H_
+#define __NETLINK_KERNEL_H_
+
+#if 0
+
+/*
+ * FIXME: Goal is to preseve the documentation but make it simple
+ * to keep linux/netlink.h in sync. Maybe use named documentation
+ * sections.
+ */
 
 /**
  * Netlink socket address
@@ -21,34 +29,29 @@ struct sockaddr_nl
 };
 
 /**
+ * @addtogroup msg
+ * @{
+ */
+
+
+/**
  * Netlink message header
- * @ingroup msg
  */
 struct nlmsghdr
 {
-	/**
-	 * Length of message including header.
-	 */
+	/** Length of message including header and padding. */
 	uint32_t	nlmsg_len;
 
-	/**
-	 * Message type (content type)
-	 */
+	/** Message type (content type) */
 	uint16_t	nlmsg_type;
 
-	/**
-	 * Message flags
-	 */
+	/** Message flags */
 	uint16_t	nlmsg_flags;
 
-	/**
-	 * Sequence number
-	 */
+	/** Sequence number of message \see core_sk_seq_num. */
 	uint32_t	nlmsg_seq;
 
-	/**
-	 * Netlink PID of the proccess sending the message.
-	 */
+	/** Netlink port */
 	uint32_t	nlmsg_pid;
 };
 
@@ -60,7 +63,6 @@ struct nlmsghdr
 /**
  * Must be set on all request messages (typically from user space to
  * kernel space).
- * @ingroup msg
  */
 #define NLM_F_REQUEST		1
 
@@ -89,7 +91,6 @@ struct nlmsghdr
 
 /**
  * Return the complete table instead of a single entry.
- * @ingroup msg
  */
 #define NLM_F_ROOT	0x100
 
@@ -119,7 +120,6 @@ struct nlmsghdr
 
 /**
  * Replace existing matching config object with this request.
- * @ingroup msg
  */
 #define NLM_F_REPLACE	0x100
 
@@ -147,7 +147,6 @@ struct nlmsghdr
 
 /**
  * No operation, message must be ignored
- * @ingroup msg
  */
 #define NLMSG_NOOP		0x1
 
@@ -176,8 +175,7 @@ struct nlmsghdr
 /** @} */
 
 /**
- * Netlink error message
- * @ingroup msg
+ * Netlink error message header
  */
 struct nlmsgerr
 {
@@ -193,4 +191,103 @@ struct nl_pktinfo
 	__u32	group;
 };
 
+/**
+ * Netlink alignment constant, all boundries within messages must be align to this.
+ *
+ * See \ref core_msg_fmt_align for more information on message alignment.
+ */
+#define NLMSG_ALIGNTO	4
+
+/**
+ * Returns \p len properly aligned to NLMSG_ALIGNTO.
+ *
+ * See \ref core_msg_fmt_align for more information on message alignment.
+ */
+#define NLMSG_ALIGN(len) ( ((len)+NLMSG_ALIGNTO-1) & ~(NLMSG_ALIGNTO-1) )
+
+/**
+ * Length of a netlink message header including padding.
+ *
+ * See \ref core_msg_fmt_align for more information on message alignment.
+ */
+#define NLMSG_HDRLEN	 ((int) NLMSG_ALIGN(sizeof(struct nlmsghdr)))
+
+/** @} */
+
+/**
+ * @addtogroup attr
+ * @{
+ */
+
+/*
+ */
+
+/**
+ * Netlink attribute structure
+ *
+ * @code
+ *  <------- NLA_HDRLEN ------> <-- NLA_ALIGN(payload)-->
+ * +---------------------+- - -+- - - - - - - - - -+- - -+
+ * |        Header       | Pad |     Payload       | Pad |
+ * |   (struct nlattr)   | ing |                   | ing |
+ * +---------------------+- - -+- - - - - - - - - -+- - -+
+ *  <-------------- nlattr->nla_len -------------->
+ * @endcode
+ */
+struct nlattr {
+	/**
+	 * Attribute length in bytes including header
+	 */
+	__u16           nla_len;
+
+	/**
+	 * Netlink attribute type
+	 */
+	__u16           nla_type;
+};
+
+/**
+ * @name Attribute Type Flags
+ *
+ * @code
+ * nla_type (16 bits)
+ * +---+---+-------------------------------+
+ * | N | O | Attribute Type                |
+ * +---+---+-------------------------------+
+ * N := Carries nested attributes
+ * O := Payload stored in network byte order
+ * @endcode
+ *
+ * @note The N and O flag are mutually exclusive.
+ *
+ * @{
+ */
+
+/*
+ */
+#define NLA_F_NESTED		(1 << 15)
+#define NLA_F_NET_BYTEORDER	(1 << 14)
+#define NLA_TYPE_MASK		~(NLA_F_NESTED | NLA_F_NET_BYTEORDER)
+
+/** @} */
+
+#define NLA_ALIGNTO		4
+
+/**
+ * Returns \p len properly aligned to NLA_ALIGNTO.
+ *
+ * See \ref core_msg_fmt_align for more information on message alignment.
+ */
+#define NLA_ALIGN(len)		(((len) + NLA_ALIGNTO - 1) & ~(NLA_ALIGNTO - 1))
+
+/**
+ * Length of a netlink attribute header including padding.
+ *
+ * See \ref core_msg_fmt_align for more information on message alignment.
+ */
+#define NLA_HDRLEN		((int) NLA_ALIGN(sizeof(struct nlattr)))
+
+/** @} */
+
+#endif
 #endif	/* __LINUX_NETLINK_H */

@@ -5,21 +5,21 @@ the old 'emem' framework which was removed in Wireshark 2.0.
 
 In order to make memory management easier and to reduce the probability of
 memory leaks, Wireshark provides its own memory management API. This API is
-implemented inside epan/wmem/ and provides memory pools and functions that make
+implemented inside wsutil/wmem/ and provides memory pools and functions that make
 it easy to manage memory even in the face of exceptions (which many dissector
-functions can raise).
+functions can raise). Memory scopes for dissection are defined in epan/wmem_scopes.h.
 
 Correct use of these functions will make your code faster, and greatly reduce
 the chances that it will leak memory in exceptional cases.
 
 Wmem was originally conceived in this email to the wireshark-dev mailing list:
-https://www.wireshark.org/lists/wireshark-dev/201210/msg00178.html
+https://lists.wireshark.org/archives/wireshark-dev/201210/msg00178.html
 
 2. Usage for Consumers
 
 If you're writing a dissector, or other "userspace" code, then using wmem
 should be very similar to using malloc or g_malloc or whatever else you're used
-to. All you need to do is include the header (epan/wmem/wmem.h) and optionally
+to. All you need to do is include the header (epan/wmem_scopes.h) and optionally
 get a handle to a memory pool (if you want to *create* a memory pool, see the
 section "3. Usage for Producers" below).
 
@@ -53,19 +53,19 @@ changed without warning.
 
 2.2 Wireshark Global Pools
 
-Dissectors that include the wmem header file will have three pools available
-to them automatically: wmem_packet_scope(), wmem_file_scope() and
-wmem_epan_scope();
+Dissectors that include the wmem_scopes.h header file will have three pools available
+to them automatically: pinfo->pool, wmem_file_scope() and
+wmem_epan_scope().
 
-The packet pool is scoped to the dissection of each packet, meaning that any
+The pinfo pool is scoped to the dissection of each packet, meaning that any
 memory allocated in it will be automatically freed at the end of the current
 packet. The file pool is similarly scoped to the dissection of each file,
 meaning that any memory allocated in it will be automatically freed when the
 current capture file is closed.
 
-NB: Using these pools outside of the appropriate scope (e.g. using the packet
-    pool when there isn't a packet being dissected) will throw an assertion.
-    See the comment in epan/wmem/wmem_scopes.c for details.
+NB: Using these pools outside of the appropriate scope (e.g. using the file
+    pool when there isn't a file open) will throw an assertion.
+    See the comment in epan/wmem_scopes.c for details.
 
 The epan pool is scoped to the library's lifetime - memory allocated in it is
 not freed until epan_cleanup() is called, which is typically but not necessarily
@@ -111,6 +111,10 @@ wmem_list.h
 
 wmem_map.h
  - A hash map (AKA hash table) implementation.
+
+wmem_multimap.h
+ - A hash multimap (map that can store multiple values with the same key)
+   implementation.
 
 wmem_queue.h
  - A queue implementation (first-in, first-out).
@@ -169,7 +173,7 @@ To create a pool, include the regular wmem header and call the
 wmem_allocator_new() function with the appropriate type value.
 For example:
 
-    #include "wmem/wmem.h"
+    #include <wsutil/wmem/wmem.h>
 
     wmem_allocator_t *myPool;
     myPool = wmem_allocator_new(WMEM_ALLOCATOR_SIMPLE);
@@ -185,7 +189,7 @@ document.
 Regardless of which allocator you used to create a pool, it can be destroyed
 with a call to the function wmem_destroy_allocator(). For example:
 
-    #include "wmem/wmem.h"
+    #include <wsutil/wmem/wmem.h>
 
     wmem_allocator_t *myPool;
 
@@ -205,7 +209,7 @@ allowing it to be reused later. Depending on the type of allocator, doing this
 and recreating the pool. This method is therefore recommended, especially when
 the pool would otherwise be scoped to a single iteration of a loop. For example:
 
-    #include "wmem/wmem.h"
+    #include <wsutil/wmem/wmem.h>
 
     wmem_allocator_t *myPool;
 
@@ -316,7 +320,7 @@ pointer is stored internally with the data structure, and subsequent calls
 The primary debugging control for wmem is the WIRESHARK_DEBUG_WMEM_OVERRIDE
 environment variable. If set, this value forces all calls to
 wmem_allocator_new() to return the same type of allocator, regardless of which
-type is requested normally by the code. It currently has three valid values:
+type is requested normally by the code. It currently has four valid values:
 
  - The value "simple" forces the use of WMEM_ALLOCATOR_SIMPLE. The valgrind
    script currently sets this value, since the simple allocator is the only
@@ -344,7 +348,7 @@ There is a simple test suite for wmem that lives in the file wmem_test.c and
 should get automatically built into the binary 'wmem_test' when building
 Wireshark. It contains at least basic tests for all existing functionality.
 The suite is run automatically by the build-bots via the shell script
-test/test.sh which calls out to test/suite-unittests.sh.
+test/test.py which calls out to test/suite_unittests.py.
 
 New features added to wmem (allocators, data structures, utility
 functions, etc.) MUST also have tests added to this suite.

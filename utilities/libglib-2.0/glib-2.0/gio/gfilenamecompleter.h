@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -36,11 +38,6 @@ G_BEGIN_DECLS
 #define G_IS_FILENAME_COMPLETER(o)        (G_TYPE_CHECK_INSTANCE_TYPE ((o), G_TYPE_FILENAME_COMPLETER))
 #define G_IS_FILENAME_COMPLETER_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), G_TYPE_FILENAME_COMPLETER))
 
-/**
- * GFilenameCompleter:
- *
- * Completes filenames based on files that exist within the file system.
- **/
 typedef struct _GFilenameCompleterClass GFilenameCompleterClass;
 
 struct _GFilenameCompleterClass
@@ -58,19 +55,19 @@ struct _GFilenameCompleterClass
   void (*_g_reserved3) (void);
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType               g_filename_completer_get_type              (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType               g_filename_completer_get_type              (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GFilenameCompleter *g_filename_completer_new                   (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 char *              g_filename_completer_get_completion_suffix (GFilenameCompleter *completer,
                                                                 const char *initial_text);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 char **             g_filename_completer_get_completions       (GFilenameCompleter *completer,
                                                                 const char *initial_text);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                g_filename_completer_set_dirs_only         (GFilenameCompleter *completer,
                                                                 gboolean dirs_only);
 

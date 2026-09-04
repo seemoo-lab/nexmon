@@ -1,4 +1,4 @@
-/* media_params.h
+/** @file
  * Routines for parsing media type parameters as per RFC 822 and RFC 2045
  * Copyright 2004, Anders Broman.
  * Copyright 2004, Olivier Biot.
@@ -10,25 +10,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __MEDIA_PARAMS_H__
 #define __MEDIA_PARAMS_H__
 
-#include <glib.h>
+#include <epan/wmem_scopes.h>
 
 #include "ws_symbol_export.h"
 
@@ -37,7 +25,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 WS_DLL_PUBLIC char *
-ws_find_media_type_parameter(const char *parameters, const char *key);
+ws_find_media_type_parameter(wmem_allocator_t *scope, const char *parameters, const char *key);
 
 #ifdef __cplusplus
 }

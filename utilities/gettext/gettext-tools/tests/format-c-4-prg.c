@@ -1,5 +1,5 @@
 /* Test program, used by the format-c-4 test.
-   Copyright (C) 2002, 2009, 2015-2016 Free Software Foundation, Inc.
+   Copyright (C) 2002-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -12,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 #include <locale.h>
 #include <stdio.h>
@@ -25,22 +25,28 @@
 #ifdef HAVE_INTTYPES_H
 # include <inttypes.h>
 #endif
-#include "xsetenv.h"
 
+#if USE_SYSTEM_LIBINTL
+# define xsetenv setenv
+# include <libintl.h>
+#else
+# include "xsetenv.h"
 /* Make sure we use the included libintl, not the system's one. */
-#undef _LIBINTL_H
-#include "libgnuintl.h"
+# undef _LIBINTL_H
+# include "libgnuintl.h"
+#endif
 
 /* Disable the override of setlocale that libgnuintl.h activates on MacOS X
    and Windows.  This test relies on the fake setlocale function in
    setlocale.c.  */
 #undef setlocale
-
-#define _(string) gettext (string)
+#if defined _WIN32 && !defined __CYGWIN__
+# define setlocale fake_setlocale
+extern char *setlocale (int category, const char *locale);
+#endif
 
 /* Fallback definition.  */
-#if !defined PRId8 || PRI_MACROS_BROKEN
-# undef PRId8
+#if !defined PRId8
 # define PRId8 "d"
 #endif
 
@@ -62,6 +68,12 @@ main (int argc, char *argv[])
 
   textdomain ("fc4");
   bindtextdomain ("fc4", "fc4-dir");
+
+  if (strcmp (gettext ("the president"), "der Vorsitzende") != 0)
+    {
+      fprintf (stderr, "Simple messages not translated.\n");
+      exit (1);
+    }
 
   s = ngettext ("father of %"PRId8" child", "father of %"PRId8" children", n);
   c1 = "Vater von %"; c2 = " Kindern";

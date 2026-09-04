@@ -1,5 +1,5 @@
 This example relies on:
-  - a C# implementation: either pnet+pnetlib or mono+mcs
+  - a C# implementation: mono
 
 Installation:
   ./autogen.sh

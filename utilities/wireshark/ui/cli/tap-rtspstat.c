@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,10 +20,14 @@
 #include <glib.h>
 
 #include <epan/packet_info.h>
-#include <epan/value_string.h>
+#include <wsutil/value_string.h>
 #include <epan/tap.h>
 #include <epan/stat_tap_ui.h>
 #include <epan/dissectors/packet-rtsp.h>
+
+#include <wsutil/wslog.h>
+
+#include <wsutil/cmdarg_err.h>
 
 void register_tap_listener_rtspstat(void);
 
@@ -50,16 +42,16 @@ typedef struct _rtsp_stats_t {
  * for example it can be { 3, 404, "Not Found" ,...}
  * which means we captured 3 reply rtsp/1.1 404 Not Found */
 typedef struct _rtsp_response_code_t {
-	guint32 	 packets;		/* 3 */
-	guint	 	 response_code;	/* 404 */
-	const gchar	*name;			/* Not Found */
+	uint32_t 	 packets;		/* 3 */
+	unsigned	 	 response_code;	/* 404 */
+	const char	*name;			/* Not Found */
 	rtspstat_t	*sp;
 } rtsp_response_code_t;
 
 /* used to keep track of the stats for a specific request string */
 typedef struct _rtsp_request_methode_t {
-	gchar		*response;	/* eg. : SETUP */
-	guint32		 packets;
+	char		*response;	/* eg. : SETUP */
+	uint32_t		 packets;
 	rtspstat_t	*sp;
 } rtsp_request_methode_t;
 
@@ -69,38 +61,33 @@ static void
 rtsp_init_hash( rtspstat_t *sp)
 {
 	int i;
+	value_string* status_codes = get_external_value_string("rtsp_status_code_vals");
 
-	sp->hash_responses = g_hash_table_new( g_int_hash, g_int_equal);
+	sp->hash_responses = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
 
-	for (i=0 ; rtsp_status_code_vals[i].strptr ; i++ )
+	for (i=0 ; status_codes[i].strptr ; i++ )
 	{
-		gint *key = g_new (gint, 1);
 		rtsp_response_code_t *sc = g_new (rtsp_response_code_t, 1);
-		*key = rtsp_status_code_vals[i].value;
 		sc->packets = 0;
-		sc->response_code =  *key;
-		sc->name = rtsp_status_code_vals[i].strptr;
+		sc->response_code = status_codes[i].value;
+		sc->name = status_codes[i].strptr;
 		sc->sp = sp;
-		g_hash_table_insert( sc->sp->hash_responses, key, sc);
+		g_hash_table_insert( sc->sp->hash_responses, GINT_TO_POINTER(status_codes[i].value), sc);
 	}
-	sp->hash_requests = g_hash_table_new( g_str_hash, g_str_equal);
+	sp->hash_requests = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 }
 static void
-rtsp_draw_hash_requests( gchar *key _U_ , rtsp_request_methode_t *data, gchar * format)
+rtsp_draw_hash_requests( char *key _U_ , rtsp_request_methode_t *data, char * format)
 {
-	if (data->packets == 0)
+	if ((data == NULL) || (data->packets == 0))
 		return;
 	printf( format, data->response, data->packets);
 }
 
 static void
-rtsp_draw_hash_responses( gint * key _U_ , rtsp_response_code_t *data, char * format)
+rtsp_draw_hash_responses( void ** key _U_ , rtsp_response_code_t *data, char * format)
 {
-	if (data == NULL) {
-		g_warning("No data available, key=%d\n", *key);
-		exit(EXIT_FAILURE);
-	}
-	if (data->packets == 0)
+	if ((data == NULL) || (data->packets == 0))
 		return;
 	/* "     RTSP %3d %-35s %9d packets", */
 	printf(format,  data->response_code, data->name, data->packets );
@@ -111,25 +98,25 @@ rtsp_draw_hash_responses( gint * key _U_ , rtsp_response_code_t *data, char * fo
 /* NOT USED at this moment */
 /*
 static void
-rtsp_free_hash( gpointer key, gpointer value, gpointer user_data _U_ )
+rtsp_free_hash( void *key, void *value, void *user_data _U_ )
 {
 	g_free(key);
 	g_free(value);
 }
 */
 static void
-rtsp_reset_hash_responses(gchar *key _U_ , rtsp_response_code_t *data, gpointer ptr _U_ )
+rtsp_reset_hash_responses(char *key _U_ , rtsp_response_code_t *data, void *ptr _U_ )
 {
 	data->packets = 0;
 }
 static void
-rtsp_reset_hash_requests(gchar *key _U_ , rtsp_request_methode_t *data, gpointer ptr _U_ )
+rtsp_reset_hash_requests(char *key _U_ , rtsp_request_methode_t *data, void *ptr _U_ )
 {
 	data->packets = 0;
 }
 
 static void
-rtspstat_reset(void *psp  )
+rtspstat_reset(void *psp)
 {
 	rtspstat_t *sp = (rtspstat_t *)psp;
 
@@ -138,8 +125,20 @@ rtspstat_reset(void *psp  )
 
 }
 
-static int
-rtspstat_packet(void *psp , packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *pri)
+static void
+rtspstat_finish(void *psp)
+{
+	rtspstat_t *sp = (rtspstat_t *)psp;
+
+	g_hash_table_destroy( sp->hash_responses);
+	g_hash_table_destroy( sp->hash_requests);
+
+	g_free(sp->filter);
+	g_free(sp);
+}
+
+static tap_packet_status
+rtspstat_packet(void *psp , packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *pri, tap_flags_t flags _U_)
 {
 	const rtsp_info_value_t *value = (const rtsp_info_value_t *)pri;
 	rtspstat_t *sp = (rtspstat_t *) psp;
@@ -147,41 +146,40 @@ rtspstat_packet(void *psp , packet_info *pinfo _U_, epan_dissect_t *edt _U_, con
 	/* We are only interested in reply packets with a status code */
 	/* Request or reply packets ? */
 	if (value->response_code != 0) {
-		guint *key = g_new(guint, 1);
 		rtsp_response_code_t *sc;
 
-		*key = value->response_code;
 		sc =  (rtsp_response_code_t *)g_hash_table_lookup(
 				sp->hash_responses,
-				key);
+				GINT_TO_POINTER(value->response_code));
 		if (sc == NULL) {
+			int key;
 			/* non standard status code ; we classify it as others
 			 * in the relevant category (Informational,Success,Redirection,Client Error,Server Error)
 			 */
 			int i = value->response_code;
 			if ((i < 100) || (i >= 600)) {
-				return 0;
+				return TAP_PACKET_DONT_REDRAW;
 			}
 			else if (i < 200) {
-				*key = 199;	/* Hopefully, this status code will never be used */
+				key = 199;	/* Hopefully, this status code will never be used */
 			}
 			else if (i < 300) {
-				*key = 299;
+				key = 299;
 			}
 			else if (i < 400) {
-				*key = 399;
+				key = 399;
 			}
 			else if (i < 500) {
-				*key = 499;
+				key = 499;
 			}
 			else {
-				*key = 599;
+				key = 599;
 			}
 			sc =  (rtsp_response_code_t *)g_hash_table_lookup(
 				sp->hash_responses,
-				key);
+				GINT_TO_POINTER(key));
 			if (sc == NULL)
-				return 0;
+				return TAP_PACKET_DONT_REDRAW;
 		}
 		sc->packets++;
 	}
@@ -201,9 +199,9 @@ rtspstat_packet(void *psp , packet_info *pinfo _U_, epan_dissect_t *edt _U_, con
 			sc->packets++;
 		}
 	} else {
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
-	return 1;
+	return TAP_PACKET_REDRAW;
 }
 
 
@@ -213,17 +211,17 @@ rtspstat_draw(void *psp  )
 	rtspstat_t *sp = (rtspstat_t *)psp;
 	printf("\n");
 	printf("===================================================================\n");
-	if (! sp->filter[0])
+	if (!sp->filter || !sp->filter[0])
 		printf("RTSP Statistics\n");
 	else
 		printf("RTSP Statistics with filter %s\n", sp->filter);
 
-	printf(	"* RTSP Status Codes in reply packets\n");
+	printf("* RTSP Response Status Codes                Packets\n");
 	g_hash_table_foreach( sp->hash_responses, (GHFunc)rtsp_draw_hash_responses,
-		(gpointer)"    RTSP %3d %s\n");
-	printf("* List of RTSP Request methods\n");
+		(void *)"  %3d %-35s %9d\n");
+	printf("* RTSP Request Methods                      Packets\n");
 	g_hash_table_foreach( sp->hash_requests,  (GHFunc)rtsp_draw_hash_requests,
-		(gpointer)"    %9s %d \n");
+		(void *)"  %-39s %9d\n");
 	printf("===================================================================\n");
 }
 
@@ -231,7 +229,7 @@ rtspstat_draw(void *psp  )
 
 /* When called, this function will create a new instance of rtspstat.
  */
-static void
+static bool
 rtspstat_init(const char *opt_arg, void *userdata _U_)
 {
 	rtspstat_t *sp;
@@ -244,12 +242,8 @@ rtspstat_init(const char *opt_arg, void *userdata _U_)
 		filter = NULL;
 	}
 
-	sp = (rtspstat_t *)g_malloc( sizeof(rtspstat_t) );
-	if (filter) {
-		sp->filter = g_strdup(filter);
-	} else {
-		sp->filter = NULL;
-	}
+	sp = g_new(rtspstat_t, 1);
+	sp->filter = g_strdup(filter);
 	/*g_hash_table_foreach( rtsp_status, (GHFunc)rtsp_reset_hash_responses, NULL);*/
 
 
@@ -257,21 +251,23 @@ rtspstat_init(const char *opt_arg, void *userdata _U_)
 			"rtsp",
 			sp,
 			filter,
-			0,
+			TL_REQUIRES_NOTHING,
 			rtspstat_reset,
 			rtspstat_packet,
-			rtspstat_draw);
+			rtspstat_draw,
+			rtspstat_finish);
 	if (error_string) {
 		/* error, we failed to attach to the tap. clean up */
 		g_free(sp->filter);
 		g_free(sp);
-		fprintf (stderr, "tshark: Couldn't register rtsp,stat tap: %s\n",
+		cmdarg_err("Couldn't register rtsp,stat tap: %s",
 				error_string->str);
 		g_string_free(error_string, TRUE);
-		exit(1);
+		return false;
 	}
 
 	rtsp_init_hash(sp);
+	return true;
 }
 
 static stat_tap_ui rtspstat_ui = {
@@ -290,7 +286,7 @@ register_tap_listener_rtspstat(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

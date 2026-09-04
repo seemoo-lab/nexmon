@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,25 +15,27 @@
 #include <epan/prefs.h>
 #include <epan/crc32-tvb.h>
 #include <epan/expert.h>
+#include <epan/decode_as.h>
+#include <epan/proto_data.h>
 #include "packet-mpeg-sect.h"
 
 void proto_register_mpeg_sect(void);
 
-static int proto_mpeg_sect = -1;
-static int hf_mpeg_sect_table_id = -1;
-static int hf_mpeg_sect_syntax_indicator = -1;
-static int hf_mpeg_sect_reserved = -1;
-static int hf_mpeg_sect_length = -1;
-static int hf_mpeg_sect_crc = -1;
-static int hf_mpeg_sect_crc_status = -1;
+static int proto_mpeg_sect;
+static int hf_mpeg_sect_table_id;
+static int hf_mpeg_sect_syntax_indicator;
+static int hf_mpeg_sect_reserved;
+static int hf_mpeg_sect_length;
+static int hf_mpeg_sect_crc;
+static int hf_mpeg_sect_crc_status;
 
-static gint ett_mpeg_sect = -1;
+static int ett_mpeg_sect;
 
-static expert_field ei_mpeg_sect_crc = EI_INIT;
+static expert_field ei_mpeg_sect_crc;
 
 static dissector_table_t mpeg_sect_tid_dissector_table;
 
-static gboolean mpeg_sect_check_crc = FALSE;
+static bool mpeg_sect_check_crc;
 
 /* minimum length of the entire section ==
    bytes from table_id to section_length == 3 bytes */
@@ -77,12 +67,45 @@ enum {
     TID_SDT,
     TID_SDT_OTHER = 0x46,
     TID_BAT       = 0x4A,
-    TID_EIT       = 0x4E,
-    TID_EIT_OTHER,
+    TID_EIT_PF    = 0x4E,
+    TID_EIT_PF_OTHER,
+    TID_EIT_SC0   = 0x50,
+    TID_EIT_SC1,
+    TID_EIT_SC2,
+    TID_EIT_SC3,
+    TID_EIT_SC4,
+    TID_EIT_SC5,
+    TID_EIT_SC6,
+    TID_EIT_SC7,
+    TID_EIT_SC8,
+    TID_EIT_SC9,
+    TID_EIT_SCA,
+    TID_EIT_SCB,
+    TID_EIT_SCC,
+    TID_EIT_SCD,
+    TID_EIT_SCE,
+    TID_EIT_SCF,
+    TID_EIT_SC0_OTH = 0x60,
+    TID_EIT_SC1_OTH,
+    TID_EIT_SC2_OTH,
+    TID_EIT_SC3_OTH,
+    TID_EIT_SC4_OTH,
+    TID_EIT_SC5_OTH,
+    TID_EIT_SC6_OTH,
+    TID_EIT_SC7_OTH,
+    TID_EIT_SC8_OTH,
+    TID_EIT_SC9_OTH,
+    TID_EIT_SCA_OTH,
+    TID_EIT_SCB_OTH,
+    TID_EIT_SCC_OTH,
+    TID_EIT_SCD_OTH,
+    TID_EIT_SCE_OTH,
+    TID_EIT_SCF_OTH,
     TID_TDT       = 0x70,
     TID_RST,
     TID_ST,
-    TID_TOT
+    TID_TOT,
+    TID_SIT       = 0x7F
 };
 
 /* From ETSI EN 301 790 */
@@ -129,13 +152,46 @@ static const value_string mpeg_sect_table_id_vals[] = {
     { TID_SDT,         "Service Description Table (SDT), current network" },
     { TID_SDT_OTHER,   "Service Description (SDT), other network" },
     { TID_BAT,         "Bouquet Association Table (BAT)" },
-    { TID_EIT,         "Event Information Table (EIT), actual TS" },
-    { TID_EIT_OTHER,   "Event Information Table (EIT), other TS" },
+    { TID_EIT_PF,      "Event Information Table (EIT), present/following, actual TS" },
+    { TID_EIT_PF_OTHER,"Event Information Table (EIT), present/following, other TS" },
+    { TID_EIT_SC0,     "Event Information Table (EIT), schedule 0, actual TS" },
+    { TID_EIT_SC1,     "Event Information Table (EIT), schedule 1, actual TS" },
+    { TID_EIT_SC2,     "Event Information Table (EIT), schedule 2, actual TS" },
+    { TID_EIT_SC3,     "Event Information Table (EIT), schedule 3, actual TS" },
+    { TID_EIT_SC4,     "Event Information Table (EIT), schedule 4, actual TS" },
+    { TID_EIT_SC5,     "Event Information Table (EIT), schedule 5, actual TS" },
+    { TID_EIT_SC6,     "Event Information Table (EIT), schedule 6, actual TS" },
+    { TID_EIT_SC7,     "Event Information Table (EIT), schedule 7, actual TS" },
+    { TID_EIT_SC8,     "Event Information Table (EIT), schedule 8, actual TS" },
+    { TID_EIT_SC9,     "Event Information Table (EIT), schedule 9, actual TS" },
+    { TID_EIT_SCA,     "Event Information Table (EIT), schedule A, actual TS" },
+    { TID_EIT_SCB,     "Event Information Table (EIT), schedule B, actual TS" },
+    { TID_EIT_SCC,     "Event Information Table (EIT), schedule C, actual TS" },
+    { TID_EIT_SCD,     "Event Information Table (EIT), schedule D, actual TS" },
+    { TID_EIT_SCE,     "Event Information Table (EIT), schedule E, actual TS" },
+    { TID_EIT_SCF,     "Event Information Table (EIT), schedule F, actual TS" },
+    { TID_EIT_SC0_OTH, "Event Information Table (EIT), schedule 0, other TS" },
+    { TID_EIT_SC1_OTH, "Event Information Table (EIT), schedule 1, other TS" },
+    { TID_EIT_SC2_OTH, "Event Information Table (EIT), schedule 2, other TS" },
+    { TID_EIT_SC3_OTH, "Event Information Table (EIT), schedule 3, other TS" },
+    { TID_EIT_SC4_OTH, "Event Information Table (EIT), schedule 4, other TS" },
+    { TID_EIT_SC5_OTH, "Event Information Table (EIT), schedule 5, other TS" },
+    { TID_EIT_SC6_OTH, "Event Information Table (EIT), schedule 6, other TS" },
+    { TID_EIT_SC7_OTH, "Event Information Table (EIT), schedule 7, other TS" },
+    { TID_EIT_SC8_OTH, "Event Information Table (EIT), schedule 8, other TS" },
+    { TID_EIT_SC9_OTH, "Event Information Table (EIT), schedule 9, other TS" },
+    { TID_EIT_SCA_OTH, "Event Information Table (EIT), schedule A, other TS" },
+    { TID_EIT_SCB_OTH, "Event Information Table (EIT), schedule B, other TS" },
+    { TID_EIT_SCC_OTH, "Event Information Table (EIT), schedule C, other TS" },
+    { TID_EIT_SCD_OTH, "Event Information Table (EIT), schedule D, other TS" },
+    { TID_EIT_SCE_OTH, "Event Information Table (EIT), schedule E, other TS" },
+    { TID_EIT_SCF_OTH, "Event Information Table (EIT), schedule F, other TS" },
     { TID_TDT,         "Time and Date Table (TDT)" },
     { TID_RST,         "Running Status Table (RST)" },
     { TID_ST,          "Stuffing Table (ST)" },
     { TID_TOT,         "Time Offset Table (TOT)" },
     { TID_AIT,         "Application Information Table (AIT)" },
+    { TID_SIT,         "Selection Information Table (SIT)" },
     { TID_SCT,         "Superframe Composition Table (SCT)" },
     { TID_FCT,         "Frame Composition Table (FCT)" },
     { TID_TCT,         "Time-Slot Composition Table (TCT)" },
@@ -151,15 +207,26 @@ static const value_string mpeg_sect_table_id_vals[] = {
     { 0, NULL }
 };
 
+static void mpeg_sect_prompt(packet_info *pinfo, char* result)
+{
+    snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "Table ID %u as",
+        GPOINTER_TO_UINT(p_get_proto_data(pinfo->pool, pinfo, proto_mpeg_sect, MPEG_SECT_TID_KEY)));
+}
+
+static void *mpeg_sect_value(packet_info *pinfo)
+{
+    return p_get_proto_data(pinfo->pool, pinfo, proto_mpeg_sect, MPEG_SECT_TID_KEY);
+}
+
 /* read a utc_time field in a tvb and write it to the utc_time struct
    the encoding of the field is according to DVB-SI specification, section 5.2.5
    16bit modified julian day (MJD), 24bit 6*4bit BCD digits hhmmss
    return the length in bytes or -1 for error */
-gint
-packet_mpeg_sect_mjd_to_utc_time(tvbuff_t *tvb, gint offset, nstime_t *utc_time)
+int
+packet_mpeg_sect_mjd_to_utc_time(tvbuff_t *tvb, int offset, nstime_t *utc_time)
 {
-    gint   bcd_time_offset;     /* start offset of the bcd time in the tvbuff */
-    guint8 hour, min, sec;
+    int    bcd_time_offset;     /* start offset of the bcd time in the tvbuff */
+    uint8_t hour, min, sec;
 
     if (!utc_time)
         return -1;
@@ -167,9 +234,9 @@ packet_mpeg_sect_mjd_to_utc_time(tvbuff_t *tvb, gint offset, nstime_t *utc_time)
     nstime_set_zero(utc_time);
     utc_time->secs  = (tvb_get_ntohs(tvb, offset) - 40587) * 86400;
     bcd_time_offset = offset+2;
-    hour            = MPEG_SECT_BCD44_TO_DEC(tvb_get_guint8(tvb, bcd_time_offset));
-    min             = MPEG_SECT_BCD44_TO_DEC(tvb_get_guint8(tvb, bcd_time_offset+1));
-    sec             = MPEG_SECT_BCD44_TO_DEC(tvb_get_guint8(tvb, bcd_time_offset+2));
+    hour            = MPEG_SECT_BCD44_TO_DEC(tvb_get_uint8(tvb, bcd_time_offset));
+    min             = MPEG_SECT_BCD44_TO_DEC(tvb_get_uint8(tvb, bcd_time_offset+1));
+    sec             = MPEG_SECT_BCD44_TO_DEC(tvb_get_uint8(tvb, bcd_time_offset+2));
     if (hour>23 || min>59 || sec>59)
         return -1;
 
@@ -177,23 +244,23 @@ packet_mpeg_sect_mjd_to_utc_time(tvbuff_t *tvb, gint offset, nstime_t *utc_time)
     return 5;
 }
 
-guint
-packet_mpeg_sect_header(tvbuff_t *tvb, guint offset,
-            proto_tree *tree, guint *sect_len, gboolean *ssi)
+unsigned
+packet_mpeg_sect_header(tvbuff_t *tvb, unsigned offset,
+            proto_tree *tree, unsigned *sect_len, bool *ssi)
 {
     return packet_mpeg_sect_header_extra(tvb, offset, tree, sect_len,
                          NULL, ssi, NULL);
 }
 
-guint
-packet_mpeg_sect_header_extra(tvbuff_t *tvb, guint offset, proto_tree *tree,
-                guint *sect_len, guint *reserved, gboolean *ssi,
+unsigned
+packet_mpeg_sect_header_extra(tvbuff_t *tvb, unsigned offset, proto_tree *tree,
+                unsigned *sect_len, unsigned *reserved, bool *ssi,
                 proto_item **items)
 {
-    guint       tmp;
-    guint       len = 0;
+    unsigned    tmp;
+    unsigned    len = 0;
     proto_item *pi[PACKET_MPEG_SECT_PI__SIZE];
-    gint        i;
+    int         i;
 
     for (i = 0; i < PACKET_MPEG_SECT_PI__SIZE; i++) {
         pi[i] = NULL;
@@ -244,9 +311,9 @@ packet_mpeg_sect_header_extra(tvbuff_t *tvb, guint offset, proto_tree *tree,
 }
 
 
-guint
+unsigned
 packet_mpeg_sect_crc(tvbuff_t *tvb, packet_info *pinfo,
-             proto_tree *tree, guint start, guint end)
+             proto_tree *tree, unsigned start, unsigned end)
 {
     if (mpeg_sect_check_crc) {
         proto_tree_add_checksum(tree, tvb, end, hf_mpeg_sect_crc, hf_mpeg_sect_crc_status, &ei_mpeg_sect_crc, pinfo, crc32_mpeg2_tvb_offset(tvb, start, end),
@@ -264,22 +331,23 @@ static int
 dissect_mpeg_sect(tvbuff_t *tvb, packet_info *pinfo,
         proto_tree *tree, void *data _U_)
 {
-    gint     tvb_len;
-    gint     offset           = 0;
-    guint    section_length   = 0;
-    gboolean syntax_indicator = FALSE;
-    guint8   table_id;
+    int      tvb_len;
+    int      offset           = 0;
+    unsigned section_length   = 0;
+    bool     syntax_indicator = false;
+    uint8_t  table_id;
 
     proto_item *ti;
     proto_tree *mpeg_sect_tree;
 
     /* the incoming tvb contains only one section, no additional data */
 
-    tvb_len = (gint)tvb_reported_length(tvb);
+    tvb_len = (int)tvb_reported_length(tvb);
     if (tvb_len<MPEG_SECT_MIN_LEN || tvb_len>MPEG_SECT_MAX_LEN)
         return 0;
 
-    table_id = tvb_get_guint8(tvb, offset);
+    table_id = tvb_get_uint8(tvb, offset);
+    p_add_proto_data(pinfo->pool, pinfo, proto_mpeg_sect, MPEG_SECT_TID_KEY, GUINT_TO_POINTER(table_id));
 
     /* Check if a dissector can parse the current table */
     if (dissector_try_uint(mpeg_sect_tid_dissector_table, table_id, tvb, pinfo, tree))
@@ -340,13 +408,18 @@ proto_register_mpeg_sect(void)
 
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_mpeg_sect
     };
 
     static ei_register_info ei[] = {
         { &ei_mpeg_sect_crc, { "mpeg_sect.crc.invalid", PI_CHECKSUM, PI_WARN, "Invalid CRC", EXPFILL }},
     };
+
+    /* Decode As handling */
+    static build_valid_func mpeg_sect_da_build_value[1] = {mpeg_sect_value};
+    static decode_as_value_t mpeg_sect_da_values = {mpeg_sect_prompt, 1, mpeg_sect_da_build_value};
+    static decode_as_t mpeg_sect_da = {"mpeg_sect", "mpeg_sect.tid", 1, 0, &mpeg_sect_da_values, NULL, NULL, decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
 
     module_t *mpeg_sect_module;
     expert_module_t* expert_mpeg_sect;
@@ -371,10 +444,11 @@ proto_register_mpeg_sect(void)
                                  "MPEG SECT Table ID",
                                  proto_mpeg_sect, FT_UINT8, BASE_HEX);
 
+    register_decode_as(&mpeg_sect_da);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

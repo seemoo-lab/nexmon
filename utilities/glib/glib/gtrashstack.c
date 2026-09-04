@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1998  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,26 +26,12 @@
 
 #include "config.h"
 
-#include "gtrashstack.h"
+/* we know we are deprecated here, no need for warnings */
+#ifndef GLIB_DISABLE_DEPRECATION_WARNINGS
+#define GLIB_DISABLE_DEPRECATION_WARNINGS
+#endif
 
-/**
- * SECTION:trash_stack
- * @title: Trash Stacks
- * @short_description: maintain a stack of unused allocated memory chunks
- *
- * A #GTrashStack is an efficient way to keep a stack of unused allocated
- * memory chunks. Each memory chunk is required to be large enough to hold
- * a #gpointer. This allows the stack to be maintained without any space
- * overhead, since the stack pointers can be stored inside the memory chunks.
- *
- * There is no function to create a #GTrashStack. A %NULL #GTrashStack*
- * is a perfectly valid empty stack.
- *
- * There is no longer any good reason to use #GTrashStack.  If you have
- * extra pieces of memory, free() them and allocate them again later.
- *
- * Deprecated: 2.48: #GTrashStack is deprecated without replacement
- */
+#include "gtrashstack.h"
 
 /**
  * GTrashStack:
@@ -51,10 +39,21 @@
  *     gets stored in the first `sizeof (gpointer)`
  *     bytes of the element
  *
- * Each piece of memory that is pushed onto the stack
- * is cast to a GTrashStack*.
+ * A `GTrashStack` is an efficient way to keep a stack of unused allocated
+ * memory chunks. Each memory chunk is required to be large enough to hold
+ * a `gpointer`. This allows the stack to be maintained without any space
+ * overhead, since the stack pointers can be stored inside the memory chunks.
  *
- * Deprecated: 2.48: #GTrashStack is deprecated without replacement
+ * There is no function to create a `GTrashStack`. A `NULL` `GTrashStack*`
+ * is a perfectly valid empty stack.
+ *
+ * Each piece of memory that is pushed onto the stack is cast to a
+ * `GTrashStack*`.
+ *
+ * There is no longer any good reason to use `GTrashStack`.  If you have
+ * extra pieces of memory, `free()` them and allocate them again later.
+ *
+ * Deprecated: 2.48: `GTrashStack` is deprecated without replacement
  */
 
 /**

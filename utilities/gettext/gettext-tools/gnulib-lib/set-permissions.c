@@ -1,10 +1,10 @@
 /* Set permissions of a file.  -*- coding: utf-8 -*-
 
-   Copyright (C) 2002-2003, 2005-2016 Free Software Foundation, Inc.
+   Copyright (C) 2002-2003, 2005-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,7 +13,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
    Written by Paul Eggert, Andreas Grünbacher, and Bruno Haible.  */
 
@@ -22,19 +22,16 @@
 #include "acl.h"
 
 #include "acl-internal.h"
+#include "minmax.h"
 
 #if USE_ACL
-# if ! defined HAVE_ACL_FROM_MODE && defined HAVE_ACL_FROM_TEXT /* FreeBSD, IRIX, Tru64 */
+# if ! defined HAVE_ACL_FROM_MODE && defined HAVE_ACL_FROM_TEXT /* FreeBSD, Cygwin >= 2.5 */
 #  if HAVE_ACL_GET_FILE && !HAVE_ACL_TYPE_EXTENDED
 
 static acl_t
 acl_from_mode (mode_t mode)
 {
-#  if HAVE_ACL_FREE_TEXT /* Tru64 */
-  char acl_text[] = "u::---,g::---,o::---,";
-#  else /* FreeBSD, IRIX */
   char acl_text[] = "u::---,g::---,o::---";
-#  endif
 
   if (mode & S_IRUSR) acl_text[ 3] = 'r';
   if (mode & S_IWUSR) acl_text[ 4] = 'w';
@@ -51,7 +48,7 @@ acl_from_mode (mode_t mode)
 #  endif
 # endif
 
-# if HAVE_FACL && defined GETACL /* Solaris, Cygwin, not HP-UX */
+# if HAVE_FACL && defined GETACL /* Solaris, Cygwin < 2.5, not HP-UX */
 static int
 set_acls_from_mode (const char *name, int desc, mode_t mode, bool *must_chmod)
 {
@@ -102,19 +99,17 @@ set_acls_from_mode (const char *name, int desc, mode_t mode, bool *must_chmod)
                 errno = ENOMEM;
                 return -1;
               }
-            continue;
           }
-        break;
+        else
+          break;
       }
 
     if (count <= 0)
       convention = -1;
     else
       {
-        int i;
-
         convention = 0;
-        for (i = 0; i < count; i++)
+        for (int i = 0; i < count; i++)
           if (entries[i].a_flags & (OLD_ACE_OWNER | OLD_ACE_GROUP | OLD_ACE_OTHER))
             {
               convention = 1;
@@ -128,7 +123,6 @@ set_acls_from_mode (const char *name, int desc, mode_t mode, bool *must_chmod)
     {
       ace_t entries[6];
       int count;
-      int ret;
 
       if (convention)
         {
@@ -222,6 +216,8 @@ set_acls_from_mode (const char *name, int desc, mode_t mode, bool *must_chmod)
             entries[4].a_access_mask |= NEW_ACE_EXECUTE;
           count = 6;
         }
+
+      int ret;
       if (desc != -1)
         ret = facl (desc, ACE_SETACL, count, entries);
       else
@@ -229,20 +225,19 @@ set_acls_from_mode (const char *name, int desc, mode_t mode, bool *must_chmod)
       if (ret < 0 && errno != EINVAL && errno != ENOTSUP)
         {
           if (errno == ENOSYS)
-	    {
-	      *must_chmod = true;
-	      return 0;
-	    }
+            {
+              *must_chmod = true;
+              return 0;
+            }
           return -1;
         }
       if (ret == 0)
-	return 0;
+        return 0;
     }
 #  endif
 
   {
     aclent_t entries[3];
-    int ret;
 
     entries[0].a_type = USER_OBJ;
     entries[0].a_id = 0; /* irrelevant */
@@ -254,20 +249,21 @@ set_acls_from_mode (const char *name, int desc, mode_t mode, bool *must_chmod)
     entries[2].a_id = 0;
     entries[2].a_perm = mode & 7;
 
+    int ret;
     if (desc != -1)
       ret = facl (desc, SETACL,
-		  sizeof (entries) / sizeof (aclent_t), entries);
+                  sizeof (entries) / sizeof (aclent_t), entries);
     else
       ret = acl (name, SETACL,
-		 sizeof (entries) / sizeof (aclent_t), entries);
+                 sizeof (entries) / sizeof (aclent_t), entries);
     if (ret < 0)
       {
-	if (errno == ENOSYS || errno == EOPNOTSUPP)
-	  {
-	    *must_chmod = true;
-	    return 0;
-	  }
-	return -1;
+        if (errno == ENOSYS || errno == EOPNOTSUPP)
+          {
+            *must_chmod = true;
+            return 0;
+          }
+        return -1;
       }
     return 0;
   }
@@ -278,8 +274,8 @@ static int
 context_acl_from_mode (struct permission_context *ctx, const char *name, int desc)
 {
   struct stat statbuf;
-  int ret;
 
+  int ret;
   if (desc != -1)
     ret = fstat (desc, &statbuf);
   else
@@ -304,8 +300,6 @@ context_acl_from_mode (struct permission_context *ctx, const char *name, int des
 static int
 context_aclv_from_mode (struct permission_context *ctx)
 {
-  int ret;
-
   ctx->aclv_entries[0].a_type = USER_OBJ;
   ctx->aclv_entries[0].a_id = 0; /* irrelevant */
   ctx->aclv_entries[0].a_perm = (ctx->mode >> 6) & 7;
@@ -320,7 +314,7 @@ context_aclv_from_mode (struct permission_context *ctx)
   ctx->aclv_entries[3].a_perm = ctx->mode & 7;
   ctx->aclv_count = 4;
 
-  ret = aclsort (ctx->aclv_count, 1, ctx->aclv_entries);
+  int ret = aclsort (ctx->aclv_count, 1, ctx->aclv_entries);
   if (ret > 0)
     abort ();
   return ret;
@@ -333,7 +327,6 @@ set_acls_from_mode (const char *name, int desc, mode_t mode, bool *must_chmod)
 {
   acl_type_list_t types;
   size_t types_size = sizeof (types);
-  acl_type_t type;
 
   if (aclx_gettypes (name, &types, &types_size) < 0
       || types.num_entries == 0)
@@ -344,11 +337,10 @@ set_acls_from_mode (const char *name, int desc, mode_t mode, bool *must_chmod)
 
   /* XXX Do we need to clear all types of ACLs for the given file, or is it
      sufficient to clear the first one?  */
-  type = types.entries[0];
+  acl_type_t type = types.entries[0];
   if (type.u64 == ACL_AIXC)
     {
       union { struct acl a; char room[128]; } u;
-      int ret;
 
       u.a.acl_len = (char *) &u.a.acl_ext[0] - (char *) &u.a; /* no entries */
       u.a.acl_mode = mode & ~(S_IXACL | 0777);
@@ -356,6 +348,7 @@ set_acls_from_mode (const char *name, int desc, mode_t mode, bool *must_chmod)
       u.a.g_access = (mode >> 3) & 7;
       u.a.o_access = mode & 7;
 
+      int ret;
       if (desc != -1)
         ret = aclx_fput (desc, SET_ACL | SET_MODE_S_BITS,
                          type, &u.a, u.a.acl_len, mode);
@@ -368,12 +361,10 @@ set_acls_from_mode (const char *name, int desc, mode_t mode, bool *must_chmod)
   else if (type.u64 == ACL_NFS4)
     {
       union { nfs4_acl_int_t a; char room[128]; } u;
-      nfs4_ace_int_t *ace;
-      int ret;
-
       u.a.aclVersion = NFS4_ACL_INT_STRUCT_VERSION;
       u.a.aclEntryN = 0;
-      ace = &u.a.aclEntry[0];
+
+      nfs4_ace_int_t *ace = &u.a.aclEntry[0];
       {
         ace->flags = ACE4_ID_SPECIAL;
         ace->aceWho.special_whoid = ACE4_WHO_OWNER;
@@ -427,6 +418,7 @@ set_acls_from_mode (const char *name, int desc, mode_t mode, bool *must_chmod)
       }
       u.a.aclLength = (char *) ace - (char *) &u.a;
 
+      int ret;
       if (desc != -1)
         ret = aclx_fput (desc, SET_ACL | SET_MODE_S_BITS,
                          type, &u.a, u.a.aclLength, mode);
@@ -458,8 +450,6 @@ context_acl_from_mode (struct permission_context *ctx)
 static int
 context_acl_from_mode (struct permission_context *ctx)
 {
-  int ret;
-
   ctx->entries[0].a_type = USER_OBJ;
   ctx->entries[0].a_id = 0; /* irrelevant */
   ctx->entries[0].a_perm = (ctx->mode >> 6) & 7;
@@ -474,7 +464,7 @@ context_acl_from_mode (struct permission_context *ctx)
   ctx->entries[3].a_perm = ctx->mode & 7;
   ctx->count = 4;
 
-  ret = aclsort (ctx->count, 1, entries);
+  int ret = aclsort (ctx->count, 1, entries);
   if (ret > 0)
     abort ();
   return ret;
@@ -483,15 +473,15 @@ context_acl_from_mode (struct permission_context *ctx)
 
 static int
 set_acls (struct permission_context *ctx, const char *name, int desc,
-	  int from_mode, bool *must_chmod, bool *acls_set)
+          int from_mode, bool *must_chmod, bool *acls_set)
 {
   int ret = 0;
 
 # if HAVE_ACL_GET_FILE
   /* POSIX 1003.1e (draft 17 -- abandoned) specific version.  */
-  /* Linux, FreeBSD, Mac OS X, IRIX, Tru64 */
+  /* Linux, FreeBSD, Mac OS X, Cygwin >= 2.5 */
 #  if !HAVE_ACL_TYPE_EXTENDED
-  /* Linux, FreeBSD, IRIX, Tru64 */
+  /* Linux, FreeBSD, Cygwin >= 2.5 */
 
 #   ifndef HAVE_ACL_FROM_TEXT
 #    error Must have acl_from_text (see POSIX 1003.1e draft 17).
@@ -503,53 +493,53 @@ set_acls (struct permission_context *ctx, const char *name, int desc,
   if (! ctx->acls_not_supported)
     {
       if (ret == 0 && from_mode)
-	{
-	  if (ctx->acl)
-	    acl_free (ctx->acl);
-	  ctx->acl = acl_from_mode (ctx->mode);
-	  if (ctx->acl == NULL)
-	    ret = -1;
-	}
+        {
+          if (ctx->acl)
+            acl_free (ctx->acl);
+          ctx->acl = acl_from_mode (ctx->mode);
+          if (ctx->acl == NULL)
+            ret = -1;
+        }
 
       if (ret == 0 && ctx->acl)
-	{
-	  if (HAVE_ACL_SET_FD && desc != -1)
-	    ret = acl_set_fd (desc, ctx->acl);
-	  else
-	    ret = acl_set_file (name, ACL_TYPE_ACCESS, ctx->acl);
-	  if (ret != 0)
-	    {
-	      if (! acl_errno_valid (errno))
-		{
-		  ctx->acls_not_supported = true;
-		  if (from_mode || acl_access_nontrivial (ctx->acl) == 0)
-		    ret = 0;
-		}
-	    }
-	  else
-	    {
-	      *acls_set = true;
-	      if (S_ISDIR(ctx->mode))
-		{
-		  if (! from_mode && ctx->default_acl &&
-		      acl_default_nontrivial (ctx->default_acl))
-		    ret = acl_set_file (name, ACL_TYPE_DEFAULT,
-					ctx->default_acl);
-		  else
-		    ret = acl_delete_def_file (name);
-		}
-	    }
-	}
+        {
+          if (HAVE_ACL_SET_FD && desc != -1)
+            ret = acl_set_fd (desc, ctx->acl);
+          else
+            ret = acl_set_file (name, ACL_TYPE_ACCESS, ctx->acl);
+          if (ret != 0)
+            {
+              if (! acl_errno_valid (errno))
+                {
+                  ctx->acls_not_supported = true;
+                  if (from_mode || acl_access_nontrivial (ctx->acl) == 0)
+                    ret = 0;
+                }
+            }
+          else
+            {
+              *acls_set = true;
+              if (S_ISDIR(ctx->mode))
+                {
+                  if (! from_mode && ctx->default_acl &&
+                      acl_default_nontrivial (ctx->default_acl))
+                    ret = acl_set_file (name, ACL_TYPE_DEFAULT,
+                                        ctx->default_acl);
+                  else
+                    ret = acl_delete_def_file (name);
+                }
+            }
+        }
     }
 
-# if HAVE_ACL_TYPE_NFS4  /* FreeBSD */
+#   if HAVE_ACL_TYPE_NFS4  /* FreeBSD */
 
   /* File systems either support POSIX ACLs (for example, ufs) or NFS4 ACLs
      (for example, zfs). */
 
   /* TODO: Implement setting ACLs once get_permissions() reads them. */
 
-# endif
+#   endif
 
 #  else /* HAVE_ACL_TYPE_EXTENDED */
   /* Mac OS X */
@@ -569,42 +559,41 @@ set_acls (struct permission_context *ctx, const char *name, int desc,
 
   if (ctx->acl == NULL)
     {
-      acl_t acl;
-
       /* Remove ACLs if the file has ACLs.  */
+      acl_t acl;
       if (HAVE_ACL_GET_FD && desc != -1)
-	acl = acl_get_fd (desc);
+        acl = acl_get_fd (desc);
       else
-	acl = acl_get_file (name, ACL_TYPE_EXTENDED);
+        acl = acl_get_file (name, ACL_TYPE_EXTENDED);
       if (acl)
-	{
-	  acl_free (acl);
+        {
+          acl_free (acl);
 
-	  acl = acl_init (0);
-	  if (acl)
-	    {
-	      if (HAVE_ACL_SET_FD && desc != -1)
-		ret = acl_set_fd (desc, acl);
-	      else
-		ret = acl_set_file (name, ACL_TYPE_EXTENDED, acl);
-	      acl_free (acl);
-	    }
-	  else
-	    ret = -1;
-	}
+          acl = acl_init (0);
+          if (acl)
+            {
+              if (HAVE_ACL_SET_FD && desc != -1)
+                ret = acl_set_fd (desc, acl);
+              else
+                ret = acl_set_file (name, ACL_TYPE_EXTENDED, acl);
+              acl_free (acl);
+            }
+          else
+            ret = -1;
+        }
     }
   else
     {
       if (HAVE_ACL_SET_FD && desc != -1)
-	ret = acl_set_fd (desc, ctx->acl);
+        ret = acl_set_fd (desc, ctx->acl);
       else
-	ret = acl_set_file (name, ACL_TYPE_EXTENDED, ctx->acl);
+        ret = acl_set_file (name, ACL_TYPE_EXTENDED, ctx->acl);
       if (ret != 0)
-	{
-	  if (! acl_errno_valid (errno)
-	      && ! acl_extended_nontrivial (ctx->acl))
-	    ret = 0;
-	}
+        {
+          if (! acl_errno_valid (errno)
+              && ! acl_extended_nontrivial (ctx->acl))
+            ret = 0;
+        }
     }
   *acls_set = true;
 
@@ -626,34 +615,34 @@ set_acls (struct permission_context *ctx, const char *name, int desc,
   if (ret == 0 && ctx->count)
     {
       if (desc != -1)
-	ret = facl (desc, SETACL, ctx->count, ctx->entries);
+        ret = facl (desc, SETACL, ctx->count, ctx->entries);
       else
-	ret = acl (name, SETACL, ctx->count, ctx->entries);
+        ret = acl (name, SETACL, ctx->count, ctx->entries);
       if (ret < 0)
-	{
-	  if ((errno == ENOSYS || errno == EOPNOTSUPP || errno == EINVAL)
-	      && acl_nontrivial (ctx->count, ctx->entries) == 0)
-	    ret = 0;
-	}
+        {
+          if ((errno == ENOSYS || errno == EOPNOTSUPP || errno == EINVAL)
+              && acl_nontrivial (ctx->count, ctx->entries) == 0)
+            ret = 0;
+        }
       else
-	*acls_set = true;
+        *acls_set = true;
     }
 
 #  ifdef ACE_GETACL
   if (ret == 0 && ctx->ace_count)
     {
       if (desc != -1)
-	ret = facl (desc, ACE_SETACL, ctx->ace_count, ctx->ace_entries);
+        ret = facl (desc, ACE_SETACL, ctx->ace_count, ctx->ace_entries);
       else
-	ret = acl (name, ACE_SETACL, ctx->ace_count, ctx->ace_entries);
+        ret = acl (name, ACE_SETACL, ctx->ace_count, ctx->ace_entries);
       if (ret < 0)
-	{
-	  if ((errno == ENOSYS || errno == EINVAL || errno == ENOTSUP)
-	      && acl_ace_nontrivial (ctx->ace_count, ctx->ace_entries) == 0)
-	    ret = 0;
-	}
+        {
+          if ((errno == ENOSYS || errno == EINVAL || errno == ENOTSUP)
+              && acl_ace_nontrivial (ctx->ace_count, ctx->ace_entries) == 0)
+            ret = 0;
+        }
       else
-	*acls_set = true;
+        *acls_set = true;
     }
 #  endif
 
@@ -665,17 +654,17 @@ set_acls (struct permission_context *ctx, const char *name, int desc,
   if (ret == 0 && ctx->count > 0)
     {
       if (desc != -1)
-	ret = fsetacl (desc, ctx->count, ctx->entries);
+        ret = fsetacl (desc, ctx->count, ctx->entries);
       else
-	ret = setacl (name, ctx->count, ctx->entries);
+        ret = setacl (name, ctx->count, ctx->entries);
       if (ret < 0)
-	{
-	  if ((errno == ENOSYS || errno == EOPNOTSUPP || errno == ENOTSUP)
-	      && (from_mode || !acl_nontrivial (ctx->count, ctx->entries)))
-	    ret = 0;
-	}
+        {
+          if ((errno == ENOSYS || errno == EOPNOTSUPP || errno == ENOTSUP)
+              && (from_mode || !acl_nontrivial (ctx->count, ctx->entries)))
+            ret = 0;
+        }
       else
-	*acls_set = true;
+        *acls_set = true;
     }
 
 #  if HAVE_ACLV_H
@@ -686,13 +675,13 @@ set_acls (struct permission_context *ctx, const char *name, int desc,
     {
       ret = acl ((char *) name, ACL_SET, ctx->aclv_count, ctx->aclv_entries);
       if (ret < 0)
-	{
-	  if ((errno == ENOSYS || errno == EOPNOTSUPP || errno == EINVAL)
-	      && (from_mode || !aclv_nontrivial (ctx->aclv_count, ctx->aclv_entries)))
-	    ret = 0;
-	}
+        {
+          if ((errno == ENOSYS || errno == EOPNOTSUPP || errno == EINVAL)
+              && (from_mode || !aclv_nontrivial (ctx->aclv_count, ctx->aclv_entries)))
+            ret = 0;
+        }
       else
-	*acls_set = true;
+        *acls_set = true;
     }
 #  endif
 
@@ -711,16 +700,16 @@ set_acls (struct permission_context *ctx, const char *name, int desc,
   if (ret == 0 && ctx->have_u)
     {
       if (desc != -1)
-	ret = fchacl (desc, &ctx->u.a, ctx->u.a.acl_len);
+        ret = fchacl (desc, &ctx->u.a, ctx->u.a.acl_len);
       else
-	ret = chacl ((char *) name, &ctx->u.a, ctx->u.a.acl_len);
+        ret = chacl ((char *) name, &ctx->u.a, ctx->u.a.acl_len);
       if (ret < 0)
-	{
-	  if (errno == ENOSYS && from_mode)
-	    ret = 0;
-	}
+        {
+          if (errno == ENOSYS && from_mode)
+            ret = 0;
+        }
       else
-	*acls_set = true;
+        *acls_set = true;
     }
 
 # elif HAVE_ACLSORT /* NonStop Kernel */
@@ -732,12 +721,12 @@ set_acls (struct permission_context *ctx, const char *name, int desc,
     {
       ret = acl ((char *) name, ACL_SET, ctx->count, ctx->entries);
       if (ret != 0)
-	{
-	  if (!acl_nontrivial (ctx->count, ctx->entries))
-	    ret = 0;
-	}
+        {
+          if (!acl_nontrivial (ctx->count, ctx->entries))
+            ret = 0;
+        }
       else
-	*acls_set = true;
+        *acls_set = true;
     }
 
 # else  /* No ACLs */
@@ -775,10 +764,9 @@ chmod_or_fchmod (const char *name, int desc, mode_t mode)
 int
 set_permissions (struct permission_context *ctx, const char *name, int desc)
 {
-  bool acls_set _GL_UNUSED = false;
+  _GL_UNUSED bool acls_set = false;
   bool early_chmod;
   bool must_chmod = false;
-  int ret = 0;
 
 #if USE_ACL
 # if HAVE_STATACL
@@ -803,11 +791,12 @@ set_permissions (struct permission_context *ctx, const char *name, int desc)
 
   if (early_chmod)
     {
-      ret = chmod_or_fchmod (name, desc, ctx->mode);
+      int ret = chmod_or_fchmod (name, desc, ctx->mode);
       if (ret != 0)
-	return -1;
+        return -1;
     }
 
+  int ret = 0;
 #if USE_ACL
   ret = set_acls (ctx, name, desc, false, &must_chmod, &acls_set);
   if (! acls_set)
@@ -815,18 +804,18 @@ set_permissions (struct permission_context *ctx, const char *name, int desc)
       int saved_errno = ret ? errno : 0;
 
       /* If we can't set an acl which we expect to be able to set, try setting
-	 the permissions to ctx->mode. Due to possible inherited permissions,
-	 we cannot simply chmod.  */
+         the permissions to ctx->mode. Due to possible inherited permissions,
+         we cannot simply chmod.  */
 
       ret = set_acls (ctx, name, desc, true, &must_chmod, &acls_set);
       if (! acls_set)
-	must_chmod = true;
+        must_chmod = true;
 
       if (saved_errno)
-	{
-	  errno = saved_errno;
-	  ret = -1;
-	}
+        {
+          errno = saved_errno;
+          ret = -1;
+        }
     }
 #endif
 
@@ -837,10 +826,10 @@ set_permissions (struct permission_context *ctx, const char *name, int desc)
       ret = chmod_or_fchmod (name, desc, ctx->mode);
 
       if (saved_errno)
-	{
-	  errno = saved_errno;
-	  ret = -1;
-	}
+        {
+          errno = saved_errno;
+          ret = -1;
+        }
     }
 
   return ret;

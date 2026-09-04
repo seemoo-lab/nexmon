@@ -1,92 +1,62 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/nl.c		Core Netlink Interface
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
- * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
+ * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
 /**
- * @defgroup core Core
+ * @defgroup core Core Library (libnl)
  *
- * @details
- * @par 1) Connecting the socket
- * @code
- * // Bind and connect the socket to a protocol, NETLINK_ROUTE in this example.
- * nl_connect(sk, NETLINK_ROUTE);
- * @endcode
+ * Socket handling, connection management, sending and receiving of data,
+ * message construction and parsing, object caching system, ...
  *
- * @par 2) Sending data
- * @code
- * // The most rudimentary method is to use nl_sendto() simply pushing
- * // a piece of data to the other netlink peer. This method is not
- * // recommended.
- * const char buf[] = { 0x01, 0x02, 0x03, 0x04 };
- * nl_sendto(sk, buf, sizeof(buf));
+ * This is the API reference of the core library. It is not meant as a guide
+ * but as a reference. Please refer to the core library guide for detailed
+ * documentation on the library architecture and examples:
  *
- * // A more comfortable interface is nl_send() taking a pointer to
- * // a netlink message.
- * struct nl_msg *msg = my_msg_builder();
- * nl_send(sk, nlmsg_hdr(msg));
+ * * @ref_asciidoc{core,_,Netlink Core Library Development Guide}
  *
- * // nl_sendmsg() provides additional control over the sendmsg() message
- * // header in order to allow more specific addressing of multiple peers etc.
- * struct msghdr hdr = { ... };
- * nl_sendmsg(sk, nlmsg_hdr(msg), &hdr);
  *
- * // You're probably too lazy to fill out the netlink pid, sequence number
- * // and message flags all the time. nl_send_auto_complete() automatically
- * // extends your message header as needed with an appropriate sequence
- * // number, the netlink pid stored in the netlink socket and the message
- * // flags NLM_F_REQUEST and NLM_F_ACK (if not disabled in the socket)
- * nl_send_auto_complete(sk, nlmsg_hdr(msg));
- *
- * // Simple protocols don't require the complex message construction interface
- * // and may favour nl_send_simple() to easly send a bunch of payload
- * // encapsulated in a netlink message header.
- * nl_send_simple(sk, MY_MSG_TYPE, 0, buf, sizeof(buf));
- * @endcode
- *
- * @par 3) Receiving data
- * @code
- * // nl_recv() receives a single message allocating a buffer for the message
- * // content and gives back the pointer to you.
- * struct sockaddr_nl peer;
- * unsigned char *msg;
- * nl_recv(sk, &peer, &msg);
- *
- * // nl_recvmsgs() receives a bunch of messages until the callback system
- * // orders it to state, usually after receving a compolete multi part
- * // message series.
- * nl_recvmsgs(sk, my_callback_configuration);
- *
- * // nl_recvmsgs_default() acts just like nl_recvmsg() but uses the callback
- * // configuration stored in the socket.
- * nl_recvmsgs_default(sk);
- *
- * // In case you want to wait for the ACK to be recieved that you requested
- * // with your latest message, you can call nl_wait_for_ack()
- * nl_wait_for_ack(sk);
- * @endcode
- *
- * @par 4) Closing
- * @code
- * // Close the socket first to release kernel memory
- * nl_close(sk);
- * @endcode
- * 
  * @{
  */
 
-#include <netlink-local.h>
+#include "nl-default.h"
+
+#include <linux/socket.h>
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/handlers.h>
 #include <netlink/msg.h>
 #include <netlink/attr.h>
+
+#include "nl-core.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-aux-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
+
+/**
+ * @defgroup core_types Data Types
+ *
+ * Core library data types
+ * @{
+ * @}
+ *
+ * @defgroup send_recv Send & Receive Data
+ *
+ * Connection management, sending & receiving of data
+ *
+ * Related sections in the development guide:
+ * - @core_doc{core_send_recv, Sending & Receiving}
+ * - @core_doc{core_sockets, Sockets}
+ *
+ * @{
+ *
+ * Header
+ * ------
+ * ~~~~{.c}
+ * #include <netlink/netlink.h>
+ * ~~~~
+ */
 
 /**
  * @name Connection Management
@@ -94,70 +64,167 @@
  */
 
 /**
- * Create and connect netlink socket.
- * @arg sk		Netlink socket.
- * @arg protocol	Netlink protocol to use.
+ * Create file descriptor and bind socket.
+ * @arg sk		Netlink socket (required)
+ * @arg protocol	Netlink protocol to use (required)
  *
- * Creates a netlink socket using the specified protocol, binds the socket
- * and issues a connection attempt.
+ * Creates a new Netlink socket using `socket()` and binds the socket to the
+ * protocol and local port specified in the `sk` socket object. Fails if
+ * the socket is already connected.
+ *
+ * @note If available, the `close-on-exec` (`SOCK_CLOEXEC`) feature is enabled
+ *       automatically on the new file descriptor. This causes the socket to
+ *       be closed automatically if any of the `exec` family functions succeed.
+ *       This is essential for multi threaded programs.
+ *
+ * @note The local port (`nl_socket_get_local_port()`) is unspecified after
+ *       creating a new socket. It only gets determined when accessing the
+ *       port the first time or during `nl_connect()`. When nl_connect()
+ *       fails during `bind()` due to `ADDRINUSE`, it will retry with
+ *       different ports if the port is unspecified. Unless you want to enforce
+ *       the use of a specific local port, don't access the local port (or
+ *       reset it to `unspecified` by calling `nl_socket_set_local_port(sk, 0)`).
+ *       This capability is indicated by
+ *       `%NL_CAPABILITY_NL_CONNECT_RETRY_GENERATE_PORT_ON_ADDRINUSE`.
+ *
+ * @note nl_connect() creates and sets the file descriptor. You can setup the file
+ *       descriptor yourself by creating and binding it, and then calling
+ *       nl_socket_set_fd(). The result will be the same.
+ *
+ * @see nl_socket_alloc()
+ * @see nl_close()
+ * @see nl_socket_set_fd()
  *
  * @return 0 on success or a negative error code.
+ *
+ * @retval -NLE_BAD_SOCK Socket is already connected
  */
 int nl_connect(struct nl_sock *sk, int protocol)
 {
-	int err;
+	int err, flags = 0;
+	int errsv;
 	socklen_t addrlen;
+	struct sockaddr_nl local = { 0 };
+	int try_bind = 1;
 
-	sk->s_fd = socket(AF_NETLINK, SOCK_RAW, protocol);
+#ifdef SOCK_CLOEXEC
+	flags |= SOCK_CLOEXEC;
+#endif
+
+	if (sk->s_fd != -1)
+		return -NLE_BAD_SOCK;
+
+	sk->s_fd = socket(AF_NETLINK, SOCK_RAW | flags, protocol);
 	if (sk->s_fd < 0) {
-		err = -nl_syserr2nlerr(errno);
+		errsv = errno;
+		NL_DBG(4, "nl_connect(%p): socket() failed with %d (%s)\n", sk, errsv,
+			nl_strerror_l(errsv));
+		err = -nl_syserr2nlerr(errsv);
 		goto errout;
 	}
 
-	if (!(sk->s_flags & NL_SOCK_BUFSIZE_SET)) {
-		err = nl_socket_set_buffer_size(sk, 0, 0);
-		if (err < 0)
+	err = nl_socket_set_buffer_size(sk, 0, 0);
+	if (err < 0)
+		goto errout;
+
+	if (_nl_socket_is_local_port_unspecified (sk)) {
+		uint32_t port;
+		uint32_t used_ports[32] = { 0 };
+		int ntries = 0;
+
+		while (1) {
+			if (ntries++ > 5) {
+				/* try only a few times. We hit this only if many ports are already in
+				 * use but allocated *outside* libnl/generate_local_port(). */
+				_nl_socket_set_local_port_no_release (sk, 0);
+				break;
+			}
+
+			port = _nl_socket_set_local_port_no_release(sk, 1);
+			if (port == 0)
+				break;
+
+			err = bind(sk->s_fd, (struct sockaddr*) &sk->s_local,
+				   sizeof(sk->s_local));
+			if (err == 0) {
+				try_bind = 0;
+				break;
+			}
+
+			errsv = errno;
+			if (errsv == EADDRINUSE) {
+				NL_DBG(4, "nl_connect(%p): local port %u already in use. Retry.\n", sk, (unsigned) port);
+				_nl_socket_used_ports_set(used_ports, port);
+			} else {
+				NL_DBG(4, "nl_connect(%p): bind() for port %u failed with %d (%s)\n",
+					sk, (unsigned) port, errsv, nl_strerror_l(errsv));
+				_nl_socket_used_ports_release_all(used_ports);
+				err = -nl_syserr2nlerr(errsv);
+				goto errout;
+			}
+		}
+		_nl_socket_used_ports_release_all(used_ports);
+	}
+	if (try_bind) {
+		err = bind(sk->s_fd, (struct sockaddr*) &sk->s_local,
+			   sizeof(sk->s_local));
+		if (err != 0) {
+			errsv = errno;
+			NL_DBG(4, "nl_connect(%p): bind() failed with %d (%s)\n",
+				sk, errsv, nl_strerror_l(errsv));
+			err = -nl_syserr2nlerr(errsv);
 			goto errout;
+		}
 	}
 
-	err = bind(sk->s_fd, (struct sockaddr*) &sk->s_local,
-		   sizeof(sk->s_local));
-	if (err < 0) {
-		err = -nl_syserr2nlerr(errno);
-		goto errout;
-	}
-
-	addrlen = sizeof(sk->s_local);
-	err = getsockname(sk->s_fd, (struct sockaddr *) &sk->s_local,
+	addrlen = sizeof(local);
+	err = getsockname(sk->s_fd, (struct sockaddr *) &local,
 			  &addrlen);
 	if (err < 0) {
+		NL_DBG(4, "nl_connect(%p): getsockname() failed with %d (%s)\n",
+			sk, errno, nl_strerror_l(errno));
 		err = -nl_syserr2nlerr(errno);
 		goto errout;
 	}
 
-	if (addrlen != sizeof(sk->s_local)) {
+	if (addrlen != sizeof(local)) {
 		err = -NLE_NOADDR;
 		goto errout;
 	}
 
-	if (sk->s_local.nl_family != AF_NETLINK) {
+	if (local.nl_family != AF_NETLINK) {
 		err = -NLE_AF_NOSUPPORT;
 		goto errout;
 	}
 
+	if (sk->s_local.nl_pid != local.nl_pid) {
+		/* The port id is different. That can happen if the port id was zero
+		 * and kernel assigned a local port. */
+		nl_socket_set_local_port (sk, local.nl_pid);
+	}
+	sk->s_local = local;
 	sk->s_proto = protocol;
 
 	return 0;
 errout:
-	close(sk->s_fd);
-	sk->s_fd = -1;
+	if (sk->s_fd != -1) {
+		close(sk->s_fd);
+		sk->s_fd = -1;
+	}
 
 	return err;
 }
 
 /**
- * Close/Disconnect netlink socket.
- * @arg sk		Netlink socket.
+ * Close Netlink socket
+ * @arg sk		Netlink socket (required)
+ *
+ * Closes the Netlink socket using `close()`.
+ *
+ * @note The socket is closed automatically if a `struct nl_sock` object is
+ *       freed using `nl_socket_free()`.
+ *
+ * @see nl_connect()
  */
 void nl_close(struct nl_sock *sk)
 {
@@ -177,46 +244,106 @@ void nl_close(struct nl_sock *sk)
  */
 
 /**
- * Send raw data over netlink socket.
- * @arg sk		Netlink socket.
- * @arg buf		Data buffer.
- * @arg size		Size of data buffer.
- * @return Number of characters written on success or a negative error code.
+ * Transmit raw data over Netlink socket.
+ * @arg sk		Netlink socket (required)
+ * @arg buf		Buffer carrying data to send (required)
+ * @arg size		Size of buffer (required)
+ *
+ * Transmits "raw" data over the specified Netlink socket. Unlike the other
+ * transmit functions it does not modify the data in any way. It directly
+ * passes the buffer \c buf of \c size to sendto().
+ *
+ * The message is addressed to the peer as specified in the socket by either
+ * the nl_socket_set_peer_port() or nl_socket_set_peer_groups() function.
+ *
+ * @note Because there is no indication on the message boundaries of the data
+ *       being sent, the \c NL_CB_MSG_OUT callback handler will not be invoked
+ *       for data that is being sent using this function.
+ *
+ * @see nl_socket_set_peer_port()
+ * @see nl_socket_set_peer_groups()
+ * @see nl_sendmsg()
+ *
+ * @return Number of bytes sent or a negative error code.
  */
 int nl_sendto(struct nl_sock *sk, void *buf, size_t size)
 {
 	int ret;
 
+	if (!buf)
+		return -NLE_INVAL;
+
+	if (sk->s_fd < 0)
+		return -NLE_BAD_SOCK;
+
 	ret = sendto(sk->s_fd, buf, size, 0, (struct sockaddr *)
 		     &sk->s_peer, sizeof(sk->s_peer));
-	if (ret < 0)
+	if (ret < 0) {
+		NL_DBG(4, "nl_sendto(%p): sendto() failed with %d (%s)\n",
+			sk, errno, nl_strerror_l(errno));
 		return -nl_syserr2nlerr(errno);
+	}
 
 	return ret;
 }
 
 /**
- * Send netlink message with control over sendmsg() message header.
- * @arg sk		Netlink socket.
- * @arg msg		Netlink message to be sent.
- * @arg hdr		Sendmsg() message header.
- * @return Number of characters sent on sucess or a negative error code.
+ * Transmit Netlink message using sendmsg()
+ * @arg sk		Netlink socket (required)
+ * @arg msg		Netlink message to be sent (required)
+ * @arg hdr		sendmsg() message header (required)
+ *
+ * Transmits the message specified in \c hdr over the Netlink socket using the
+ * sendmsg() system call.
+ *
+ * @attention
+ * The `msg` argument will *not* be used to derive the message payload that
+ * is being sent out. The `msg` argument is *only* passed on to the
+ * `NL_CB_MSG_OUT` callback. The caller is responsible to initialize the
+ * `hdr` struct properly and have it point to the message payload and
+ * socket address.
+ *
+ * @note
+ * This function uses `nlmsg_set_src()` to modify the `msg` argument prior to
+ * invoking the `NL_CB_MSG_OUT` callback to provide the local port number.
+ *
+ * @callback This function triggers the `NL_CB_MSG_OUT` callback.
+ *
+ * @attention
+ * Think twice before using this function. It provides a low level access to
+ * the Netlink socket. Among other limitations, it does not add credentials
+ * even if enabled or respect the destination address specified in the `msg`
+ * object.
+ *
+ * @see nl_socket_set_local_port()
+ * @see nl_send_auto()
+ * @see nl_send_iovec()
+ *
+ * @return Number of bytes sent on success or a negative error code.
+ *
+ * @lowlevel
  */
 int nl_sendmsg(struct nl_sock *sk, struct nl_msg *msg, struct msghdr *hdr)
 {
 	struct nl_cb *cb;
 	int ret;
 
+	if (sk->s_fd < 0)
+		return -NLE_BAD_SOCK;
+
 	nlmsg_set_src(msg, &sk->s_local);
 
 	cb = sk->s_cb;
 	if (cb->cb_set[NL_CB_MSG_OUT])
-		if (nl_cb_call(cb, NL_CB_MSG_OUT, msg) != NL_OK)
-			return 0;
+		if ((ret = nl_cb_call(cb, NL_CB_MSG_OUT, msg)) != NL_OK)
+			return ret;
 
 	ret = sendmsg(sk->s_fd, hdr, 0);
-	if (ret < 0)
+	if (ret < 0) {
+		NL_DBG(4, "nl_sendmsg(%p): sendmsg() failed with %d (%s)\n",
+			sk, errno, nl_strerror_l(errno));
 		return -nl_syserr2nlerr(errno);
+	}
 
 	NL_DBG(4, "sent %d bytes\n", ret);
 	return ret;
@@ -224,13 +351,23 @@ int nl_sendmsg(struct nl_sock *sk, struct nl_msg *msg, struct msghdr *hdr)
 
 
 /**
- * Send netlink message.
- * @arg sk		Netlink socket.
- * @arg msg		Netlink message to be sent.
- * @arg iov		iovec to be sent.
- * @arg iovlen		number of struct iovec to be sent.
- * @see nl_sendmsg()
- * @return Number of characters sent on success or a negative error code.
+ * Transmit Netlink message (taking IO vector)
+ * @arg sk		Netlink socket (required)
+ * @arg msg		Netlink message to be sent (required)
+ * @arg iov		IO vector to be sent (required)
+ * @arg iovlen		Number of struct iovec to be sent (required)
+ *
+ * This function is identical to nl_send() except that instead of taking a
+ * `struct nl_msg` object it takes an IO vector. Please see the description
+ * of `nl_send()`.
+ *
+ * @callback This function triggers the `NL_CB_MSG_OUT` callback.
+ *
+ * @see nl_send()
+ *
+ * @return Number of bytes sent on success or a negative error code.
+ *
+ * @lowlevel
  */
 int nl_send_iovec(struct nl_sock *sk, struct nl_msg *msg, struct iovec *iov, unsigned iovlen)
 {
@@ -242,6 +379,7 @@ int nl_send_iovec(struct nl_sock *sk, struct nl_msg *msg, struct iovec *iov, uns
 		.msg_iov = iov,
 		.msg_iovlen = iovlen,
 	};
+	char buf[CMSG_SPACE(sizeof(struct ucred))];
 
 	/* Overwrite destination if specified in the message itself, defaults
 	 * to the peer address of the socket.
@@ -253,7 +391,6 @@ int nl_send_iovec(struct nl_sock *sk, struct nl_msg *msg, struct iovec *iov, uns
 	/* Add credentials if present. */
 	creds = nlmsg_get_creds(msg);
 	if (creds != NULL) {
-		char buf[CMSG_SPACE(sizeof(struct ucred))];
 		struct cmsghdr *cmsg;
 
 		hdr.msg_control = buf;
@@ -269,35 +406,87 @@ int nl_send_iovec(struct nl_sock *sk, struct nl_msg *msg, struct iovec *iov, uns
 	return nl_sendmsg(sk, msg, &hdr);
 }
 
-
-
 /**
-* Send netlink message.
-* @arg sk		Netlink socket.
-* @arg msg		Netlink message to be sent.
-* @see nl_sendmsg()
-* @return Number of characters sent on success or a negative error code.
+ * Transmit Netlink message
+ * @arg sk		Netlink socket (required)
+ * @arg msg		Netlink message (required)
+ *
+ * Transmits the Netlink message `msg` over the Netlink socket using the
+ * `sendmsg()` system call. This function is based on `nl_send_iovec()` but
+ * takes care of initializing a `struct iovec` based on the `msg` object.
+ *
+ * The message is addressed to the peer as specified in the socket by either
+ * the nl_socket_set_peer_port() or nl_socket_set_peer_groups() function.
+ * The peer address can be overwritten by specifying an address in the `msg`
+ * object using nlmsg_set_dst().
+ *
+ * If present in the `msg`, credentials set by the nlmsg_set_creds() function
+ * are added to the control buffer of the message.
+ *
+ * @par Overwriting Capability:
+ * Calls to this function can be overwritten by providing an alternative using
+ * the nl_cb_overwrite_send() function.
+ *
+ * @callback This function triggers the `NL_CB_MSG_OUT` callback.
+ *
+ * @attention
+ * Unlike `nl_send_auto()`, this function does *not* finalize the message in
+ * terms of automatically adding needed flags or filling out port numbers.
+ *
+ * @see nl_send_auto()
+ * @see nl_send_iovec()
+ * @see nl_socket_set_peer_port()
+ * @see nl_socket_set_peer_groups()
+ * @see nlmsg_set_dst()
+ * @see nlmsg_set_creds()
+ * @see nl_cb_overwrite_send()
+ *
+ * @return Number of bytes sent on success or a negative error code.
 */
 int nl_send(struct nl_sock *sk, struct nl_msg *msg)
 {
-	struct iovec iov = {
-		.iov_base = (void *) nlmsg_hdr(msg),
-		.iov_len = nlmsg_hdr(msg)->nlmsg_len,
-	};
+	struct nl_cb *cb = sk->s_cb;
 
-	return nl_send_iovec(sk, msg, &iov, 1);
+	if (cb->cb_send_ow)
+		return cb->cb_send_ow(sk, msg);
+	else {
+		struct iovec iov = {
+			.iov_base = (void *) nlmsg_hdr(msg),
+			.iov_len = nlmsg_hdr(msg)->nlmsg_len,
+		};
+
+		return nl_send_iovec(sk, msg, &iov, 1);
+	}
 }
 
-void nl_auto_complete(struct nl_sock *sk, struct nl_msg *msg)
+/**
+ * Finalize Netlink message
+ * @arg sk		Netlink socket (required)
+ * @arg msg		Netlink message (required)
+ *
+ * This function finalizes a Netlink message by completing the message with
+ * desirable flags and values depending on the socket configuration.
+ *
+ *  - If not yet filled out, the source address of the message (`nlmsg_pid`)
+ *    will be set to the local port number of the socket.
+ *  - If not yet specified, the next available sequence number is assigned
+ *    to the message (`nlmsg_seq`).
+ *  - If not yet specified, the protocol field of the message will be set to
+ *    the protocol field of the socket.
+ *  - The `NLM_F_REQUEST` Netlink message flag will be set.
+ *  - The `NLM_F_ACK` flag will be set if Auto-ACK mode is enabled on the
+ *    socket.
+ */
+void nl_complete_msg(struct nl_sock *sk, struct nl_msg *msg)
 {
 	struct nlmsghdr *nlh;
 
 	nlh = nlmsg_hdr(msg);
-	if (nlh->nlmsg_pid == 0)
-		nlh->nlmsg_pid = sk->s_local.nl_pid;
+	if (nlh->nlmsg_pid == NL_AUTO_PORT)
+		nlh->nlmsg_pid = nl_socket_get_local_port(sk);
 
-	if (nlh->nlmsg_seq == 0)
-		nlh->nlmsg_seq = sk->s_seq_next++;
+	if (nlh->nlmsg_seq == NL_AUTO_SEQ)
+		nlh->nlmsg_seq = nl_socket_use_seq(sk);
 
 	if (msg->nm_protocol == -1)
 		msg->nm_protocol = sk->s_proto;
@@ -309,42 +498,83 @@ void nl_auto_complete(struct nl_sock *sk, struct nl_msg *msg)
 }
 
 /**
- * Send netlink message and check & extend header values as needed.
- * @arg sk		Netlink socket.
- * @arg msg		Netlink message to be sent.
+ * Finalize and transmit Netlink message
+ * @arg sk		Netlink socket (required)
+ * @arg msg		Netlink message (required)
  *
- * Checks the netlink message \c nlh for completness and extends it
- * as required before sending it out. Checked fields include pid,
- * sequence nr, and flags.
+ * Finalizes the message by passing it to `nl_complete_msg()` and transmits it
+ * by passing it to `nl_send()`.
  *
+ * @callback This function triggers the `NL_CB_MSG_OUT` callback.
+ *
+ * @see nl_complete_msg()
  * @see nl_send()
- * @return Number of characters sent or a negative error code.
+ *
+ * @return Number of bytes sent or a negative error code.
  */
-int nl_send_auto_complete(struct nl_sock *sk, struct nl_msg *msg)
+int nl_send_auto(struct nl_sock *sk, struct nl_msg *msg)
 {
-	struct nl_cb *cb = sk->s_cb;
+	nl_complete_msg(sk, msg);
 
-	nl_auto_complete(sk, msg);
-
-	if (cb->cb_send_ow)
-		return cb->cb_send_ow(sk, msg);
-	else
-		return nl_send(sk, msg);
+	return nl_send(sk, msg);
 }
 
 /**
- * Send simple netlink message using nl_send_auto_complete()
- * @arg sk		Netlink socket.
- * @arg type		Netlink message type.
- * @arg flags		Netlink message flags.
- * @arg buf		Data buffer.
- * @arg size		Size of data buffer.
+ * Finalize and transmit Netlink message and wait for ACK or error message
+ * @arg sk		Netlink socket (required)
+ * @arg msg		Netlink message (required)
  *
- * Builds a netlink message with the specified type and flags and
- * appends the specified data as payload to the message.
+ * Passes the `msg` to `nl_send_auto()` to finalize and transmit it. Frees the
+ * message and waits (sleeps) for the ACK or error message to be received.
  *
- * @see nl_send_auto_complete()
+ * @attention
+ * Disabling Auto-ACK (nl_socket_disable_auto_ack()) will cause this function
+ * to return immediately after transmitting the message. However, the peer may
+ * still be returning an error message in response to the request. It is the
+ * responsibility of the caller to handle such messages.
+ *
+ * @callback This function triggers the `NL_CB_MSG_OUT` callback.
+ *
+ * @attention
+ * This function frees the `msg` object after transmitting it by calling
+ * `nlmsg_free()`.
+ *
+ * @see nl_send_auto().
+ * @see nl_wait_for_ack()
+ *
+ * @return 0 on success or a negative error code.
+ */
+int nl_send_sync(struct nl_sock *sk, struct nl_msg *msg)
+{
+	int err;
+
+	err = nl_send_auto(sk, msg);
+	nlmsg_free(msg);
+	if (err < 0)
+		return err;
+
+	return wait_for_ack(sk);
+}
+
+/**
+ * Construct and transmit a Netlink message
+ * @arg sk		Netlink socket (required)
+ * @arg type		Netlink message type (required)
+ * @arg flags		Netlink message flags (optional)
+ * @arg buf		Data buffer (optional)
+ * @arg size		Size of data buffer (optional)
+ *
+ * Allocates a new Netlink message based on `type` and `flags`. If `buf`
+ * points to payload of length `size` that payload will be appended to the
+ * message.
+ *
+ * Sends out the message using `nl_send_auto()` and frees the message
+ * afterwards.
+ *
+ * @see nl_send_auto()
+ *
  * @return Number of characters sent on success or a negative error code.
+ * @retval -NLE_NOMEM Unable to allocate Netlink message
  */
 int nl_send_simple(struct nl_sock *sk, int type, int flags, void *buf,
 		   size_t size)
@@ -361,9 +591,8 @@ int nl_send_simple(struct nl_sock *sk, int type, int flags, void *buf,
 		if (err < 0)
 			goto errout;
 	}
-	
 
-	err = nl_send_auto_complete(sk, msg);
+	err = nl_send_auto(sk, msg);
 errout:
 	nlmsg_free(msg);
 
@@ -379,114 +608,203 @@ errout:
 
 /**
  * Receive data from netlink socket
- * @arg sk		Netlink socket.
- * @arg nla		Destination pointer for peer's netlink address.
- * @arg buf		Destination pointer for message content.
- * @arg creds		Destination pointer for credentials.
+ * @arg sk		Netlink socket (required)
+ * @arg nla		Netlink socket structure to hold address of peer (required)
+ * @arg buf		Destination pointer for message content (required)
+ * @arg creds		Destination pointer for credentials (optional)
  *
- * Receives a netlink message, allocates a buffer in \c *buf and
- * stores the message content. The peer's netlink address is stored
- * in \c *nla. The caller is responsible for freeing the buffer allocated
- * in \c *buf if a positive value is returned.  Interruped system calls
- * are handled by repeating the read. The input buffer size is determined
- * by peeking before the actual read is done.
+ * Receives data from a connected netlink socket using recvmsg() and returns
+ * the number of bytes read. The read data is stored in a newly allocated
+ * buffer that is assigned to \c *buf. The peer's netlink address will be
+ * stored in \c *nla.
  *
- * A non-blocking sockets causes the function to return immediately with
- * a return value of 0 if no data is available.
+ * This function blocks until data is available to be read unless the socket
+ * has been put into non-blocking mode using nl_socket_set_nonblocking() in
+ * which case this function will return immediately with a return value of
+ * -NLA_AGAIN (versions before 3.2.22 returned instead 0, in which case you
+ * should check first clear errno and then check for errno EAGAIN).
  *
- * @return Number of octets read, 0 on EOF or a negative error code.
+ * The buffer size used when reading from the netlink socket and thus limiting
+ * the maximum size of a netlink message that can be read defaults to the size
+ * of a memory page (getpagesize()). The buffer size can be modified on a per
+ * socket level using the function nl_socket_set_msg_buf_size().
+ *
+ * If message peeking is enabled using nl_socket_enable_msg_peek() the size of
+ * the message to be read will be determined using the MSG_PEEK flag prior to
+ * performing the actual read. This leads to an additional recvmsg() call for
+ * every read operation which has performance implications and is not
+ * recommended for high throughput protocols.
+ *
+ * An eventual interruption of the recvmsg() system call is automatically
+ * handled by retrying the operation.
+ *
+ * If receiving of credentials has been enabled using the function
+ * nl_socket_set_passcred(), this function will allocate a new struct ucred
+ * filled with the received credentials and assign it to \c *creds. The caller
+ * is responsible for freeing the buffer.
+ *
+ * @note The caller is responsible to free the returned data buffer and if
+ *       enabled, the credentials buffer.
+ *
+ * @see nl_socket_set_nonblocking()
+ * @see nl_socket_set_msg_buf_size()
+ * @see nl_socket_enable_msg_peek()
+ * @see nl_socket_set_passcred()
+ *
+ * @return Number of bytes read, 0 on EOF, 0 on no data event (non-blocking
+ *         mode), or a negative error code.
  */
 int nl_recv(struct nl_sock *sk, struct sockaddr_nl *nla,
 	    unsigned char **buf, struct ucred **creds)
 {
-	int n;
+	ssize_t n;
 	int flags = 0;
-	static int page_size = 0;
+	static int page_size = 0; /* GLOBAL! */
 	struct iovec iov;
 	struct msghdr msg = {
 		.msg_name = (void *) nla,
 		.msg_namelen = sizeof(struct sockaddr_nl),
 		.msg_iov = &iov,
 		.msg_iovlen = 1,
-		.msg_control = NULL,
-		.msg_controllen = 0,
-		.msg_flags = 0,
 	};
-	struct cmsghdr *cmsg;
+	struct ucred* tmpcreds = NULL;
+	int retval = 0;
 
-	if (sk->s_flags & NL_MSG_PEEK)
-		flags |= MSG_PEEK;
+	if (!buf || !nla)
+		return -NLE_INVAL;
+
+	if (   (sk->s_flags & NL_MSG_PEEK)
+	    || (!(sk->s_flags & NL_MSG_PEEK_EXPLICIT) && sk->s_bufsize == 0))
+		flags |= MSG_PEEK | MSG_TRUNC;
 
 	if (page_size == 0)
-		page_size = getpagesize();
+		page_size = getpagesize() * 4;
 
-	iov.iov_len = page_size;
-	iov.iov_base = *buf = malloc(iov.iov_len);
+	iov.iov_len = sk->s_bufsize ? sk->s_bufsize : ((size_t)page_size);
+	iov.iov_base = malloc(iov.iov_len);
 
-	if (sk->s_flags & NL_SOCK_PASSCRED) {
+	if (!iov.iov_base) {
+		retval = -NLE_NOMEM;
+		goto abort;
+	}
+
+	if (creds && (sk->s_flags & NL_SOCK_PASSCRED)) {
 		msg.msg_controllen = CMSG_SPACE(sizeof(struct ucred));
-		msg.msg_control = calloc(1, msg.msg_controllen);
+		msg.msg_control = malloc(msg.msg_controllen);
+		if (!msg.msg_control) {
+			retval = -NLE_NOMEM;
+			goto abort;
+		}
 	}
 retry:
 
 	n = recvmsg(sk->s_fd, &msg, flags);
-	if (!n)
+	if (!n) {
+		retval = 0;
 		goto abort;
-	else if (n < 0) {
+	}
+	if (n < 0) {
 		if (errno == EINTR) {
 			NL_DBG(3, "recvmsg() returned EINTR, retrying\n");
 			goto retry;
-		} else if (errno == EAGAIN) {
-			NL_DBG(3, "recvmsg() returned EAGAIN, aborting\n");
-			goto abort;
-		} else {
-			free(msg.msg_control);
-			free(*buf);
-			return -nl_syserr2nlerr(errno);
 		}
+
+		NL_DBG(4, "recvmsg(%p): nl_recv() failed with %d (%s)\n",
+			sk, errno, nl_strerror_l(errno));
+		retval = -nl_syserr2nlerr(errno);
+		goto abort;
 	}
 
-	if (iov.iov_len < n ||
-	    msg.msg_flags & MSG_TRUNC) {
-		/* Provided buffer is not long enough, enlarge it
-		 * and try again. */
-		iov.iov_len *= 2;
-		iov.iov_base = *buf = realloc(*buf, iov.iov_len);
-		goto retry;
-	} else if (msg.msg_flags & MSG_CTRUNC) {
+	if (msg.msg_flags & MSG_CTRUNC) {
+		void *tmp;
+
+		if (msg.msg_controllen == 0) {
+			retval = -NLE_MSG_TRUNC;
+			NL_DBG(4, "recvmsg(%p): Received unexpected control data", sk);
+			goto abort;
+		}
+
 		msg.msg_controllen *= 2;
-		msg.msg_control = realloc(msg.msg_control, msg.msg_controllen);
+		tmp = realloc(msg.msg_control, msg.msg_controllen);
+		if (!tmp) {
+			retval = -NLE_NOMEM;
+			goto abort;
+		}
+		msg.msg_control = tmp;
 		goto retry;
-	} else if (flags != 0) {
+	}
+
+	if (iov.iov_len < ((size_t)n) || (msg.msg_flags & MSG_TRUNC)) {
+		void *tmp;
+
+		/* respond with error to an incomplete message */
+		if (flags == 0) {
+			retval = -NLE_MSG_TRUNC;
+			goto abort;
+		}
+
+		/* Provided buffer is not long enough, enlarge it
+		 * to size of n (which should be total length of the message)
+		 * and try again. */
+		iov.iov_len = n;
+		tmp = realloc(iov.iov_base, iov.iov_len);
+		if (!tmp) {
+			retval = -NLE_NOMEM;
+			goto abort;
+		}
+		iov.iov_base = tmp;
+		flags = 0;
+		goto retry;
+	}
+
+	if (flags != 0) {
 		/* Buffer is big enough, do the actual reading */
 		flags = 0;
 		goto retry;
 	}
 
 	if (msg.msg_namelen != sizeof(struct sockaddr_nl)) {
-		free(msg.msg_control);
-		free(*buf);
-		return -NLE_NOADDR;
+		retval =  -NLE_NOADDR;
+		goto abort;
 	}
 
-	for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-		if (cmsg->cmsg_level == SOL_SOCKET &&
-		    cmsg->cmsg_type == SCM_CREDENTIALS) {
-			*creds = calloc(1, sizeof(struct ucred));
-			memcpy(*creds, CMSG_DATA(cmsg), sizeof(struct ucred));
+	if (creds && (sk->s_flags & NL_SOCK_PASSCRED)) {
+		struct cmsghdr *cmsg;
+
+		for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
+			if (cmsg->cmsg_level != SOL_SOCKET)
+				continue;
+			if (cmsg->cmsg_type != SCM_CREDENTIALS)
+				continue;
+			tmpcreds = malloc(sizeof(*tmpcreds));
+			if (!tmpcreds) {
+				retval = -NLE_NOMEM;
+				goto abort;
+			}
+			memcpy(tmpcreds, CMSG_DATA(cmsg), sizeof(*tmpcreds));
 			break;
 		}
 	}
 
-	free(msg.msg_control);
-	return n;
-
+	retval = n;
 abort:
 	free(msg.msg_control);
-	free(*buf);
-	return 0;
+
+	if (retval <= 0) {
+		free(iov.iov_base);
+		iov.iov_base = NULL;
+		free(tmpcreds);
+		tmpcreds = NULL;
+	} else
+		*buf = iov.iov_base;
+
+	if (creds)
+		*creds = tmpcreds;
+
+	return retval;
 }
 
+/** @cond SKIP */
 #define NL_CB_CALL(cb, type, msg) \
 do { \
 	err = nl_cb_call(cb, type, msg); \
@@ -502,12 +820,19 @@ do { \
 		goto out; \
 	} \
 } while (0)
+/** @endcond */
 
 static int recvmsgs(struct nl_sock *sk, struct nl_cb *cb)
 {
-	int n, err = 0, multipart = 0;
+	int n, err = 0, multipart = 0, interrupted = 0, nrecv = 0;
 	unsigned char *buf = NULL;
 	struct nlmsghdr *hdr;
+
+	/*
+	nla is passed on to not only to nl_recv() but may also be passed
+	to a function pointer provided by the caller which may or may not
+	initialize the variable. Thomas Graf.
+	*/
 	struct sockaddr_nl nla = {0};
 	struct nl_msg *msg = NULL;
 	struct ucred *creds = NULL;
@@ -526,7 +851,7 @@ continue_reading:
 
 	hdr = (struct nlmsghdr *) buf;
 	while (nlmsg_ok(hdr, n)) {
-		NL_DBG(3, "recgmsgs(%p): Processing valid message...\n", sk);
+		NL_DBG(3, "recvmsgs(%p): Processing valid message...\n", sk);
 
 		nlmsg_free(msg);
 		msg = nlmsg_convert(hdr);
@@ -540,6 +865,8 @@ continue_reading:
 		if (creds)
 			nlmsg_set_creds(msg, creds);
 
+		nrecv++;
+
 		/* Raw callback is the first, it gives the most control
 		 * to the user and he can do his very own parsing. */
 		if (cb->cb_set[NL_CB_MSG_IN])
@@ -548,14 +875,18 @@ continue_reading:
 		/* Sequence number checking. The check may be done by
 		 * the user, otherwise a very simple check is applied
 		 * enforcing strict ordering */
-		if (cb->cb_set[NL_CB_SEQ_CHECK])
+		if (cb->cb_set[NL_CB_SEQ_CHECK]) {
 			NL_CB_CALL(cb, NL_CB_SEQ_CHECK, msg);
-		else if (hdr->nlmsg_seq != sk->s_seq_expect) {
-			if (cb->cb_set[NL_CB_INVALID])
-				NL_CB_CALL(cb, NL_CB_INVALID, msg);
-			else {
-				err = -NLE_SEQ_MISMATCH;
-				goto out;
+
+		/* Only do sequence checking if auto-ack mode is enabled */
+		} else if (!(sk->s_flags & NL_NO_AUTO_ACK)) {
+			if (hdr->nlmsg_seq != sk->s_seq_expect) {
+				if (cb->cb_set[NL_CB_INVALID])
+					NL_CB_CALL(cb, NL_CB_INVALID, msg);
+				else {
+					err = -NLE_SEQ_MISMATCH;
+					goto out;
+				}
 			}
 		}
 
@@ -565,7 +896,10 @@ continue_reading:
 		    hdr->nlmsg_type == NLMSG_OVERRUN) {
 			/* We can't check for !NLM_F_MULTI since some netlink
 			 * users in the kernel are broken. */
-			sk->s_seq_expect++;
+			if (sk->s_seq_expect != UINT_MAX)
+				sk->s_seq_expect++;
+			else
+				sk->s_seq_expect = 0;
 			NL_DBG(3, "recvmsgs(%p): Increased expected " \
 			       "sequence number to %d\n",
 			       sk, sk->s_seq_expect);
@@ -573,7 +907,20 @@ continue_reading:
 
 		if (hdr->nlmsg_flags & NLM_F_MULTI)
 			multipart = 1;
-	
+
+		if (hdr->nlmsg_flags & NLM_F_DUMP_INTR) {
+			if (cb->cb_set[NL_CB_DUMP_INTR])
+				NL_CB_CALL(cb, NL_CB_DUMP_INTR, msg);
+			else {
+				/*
+				 * We have to continue reading to clear
+				 * all messages until a NLMSG_DONE is
+				 * received and report the inconsistency.
+				 */
+				interrupted = 1;
+			}
+		}
+
 		/* Other side wishes to see an ack for this message */
 		if (hdr->nlmsg_flags & NLM_F_ACK) {
 			if (cb->cb_set[NL_CB_SEND_ACK])
@@ -583,7 +930,7 @@ continue_reading:
 			}
 		}
 
-		/* messages terminates a multpart message, this is
+		/* messages terminates a multipart message, this is
 		 * usually the end of a message and therefore we slip
 		 * out of the loop by default. the user may overrule
 		 * this action by skipping this packet. */
@@ -620,7 +967,8 @@ continue_reading:
 		else if (hdr->nlmsg_type == NLMSG_ERROR) {
 			struct nlmsgerr *e = nlmsg_data(hdr);
 
-			if (hdr->nlmsg_len < nlmsg_msg_size(sizeof(*e))) {
+			if (hdr->nlmsg_len <
+			    ((unsigned)nlmsg_size(sizeof(*e)))) {
 				/* Truncated error message, the default action
 				 * is to stop parsing. The user may overrule
 				 * this action by returning NL_SKIP or
@@ -632,10 +980,13 @@ continue_reading:
 					goto out;
 				}
 			} else if (e->error) {
+				NL_DBG(4, "recvmsgs(%p): RTNETLINK responded with %d (%s)\n",
+					sk, -e->error, nl_strerror_l(-e->error));
+
 				/* Error message reported back from kernel. */
 				if (cb->cb_err) {
 					err = cb->cb_err(&nla, e,
-							   cb->cb_err_arg);
+							 cb->cb_err_arg);
 					if (err < 0)
 						goto out;
 					else if (err == NL_SKIP)
@@ -661,7 +1012,7 @@ skip:
 		err = 0;
 		hdr = nlmsg_next(hdr, &n);
 	}
-	
+
 	nlmsg_free(msg);
 	free(buf);
 	free(creds);
@@ -680,7 +1031,33 @@ out:
 	free(buf);
 	free(creds);
 
+	if (interrupted)
+		err = -NLE_DUMP_INTR;
+
+	if (!err)
+		err = nrecv;
+
 	return err;
+}
+
+/**
+ * Receive a set of messages from a netlink socket and report parsed messages
+ * @arg sk		Netlink socket.
+ * @arg cb		set of callbacks to control behaviour.
+ *
+ * This function is identical to nl_recvmsgs() to the point that it will
+ * return the number of parsed messages instead of 0 on success.
+ *
+ * @see nl_recvmsgs()
+ *
+ * @return Number of received messages or a negative error code from nl_recv().
+ */
+int nl_recvmsgs_report(struct nl_sock *sk, struct nl_cb *cb)
+{
+	if (cb->cb_recvmsgs_ow)
+		return cb->cb_recvmsgs_ow(sk, cb);
+	else
+		return recvmsgs(sk, cb);
 }
 
 /**
@@ -696,14 +1073,18 @@ out:
  * A non-blocking sockets causes the function to return immediately if
  * no data is available.
  *
+ * @see nl_recvmsgs_report()
+ *
  * @return 0 on success or a negative error code from nl_recv().
  */
 int nl_recvmsgs(struct nl_sock *sk, struct nl_cb *cb)
 {
-	if (cb->cb_recvmsgs_ow)
-		return cb->cb_recvmsgs_ow(sk, cb);
-	else
-		return recvmsgs(sk, cb);
+	int err;
+
+	if ((err = nl_recvmsgs_report(sk, cb)) > 0)
+		err = 0;
+
+	return err;
 }
 
 /**
@@ -746,6 +1127,133 @@ int nl_wait_for_ack(struct nl_sock *sk)
 
 	return err;
 }
+
+/** @cond SKIP */
+struct pickup_param
+{
+	int (*parser)(struct nl_cache_ops *, struct sockaddr_nl *,
+		      struct nlmsghdr *, struct nl_parser_param *);
+	struct nl_object *result;
+	int *syserror;
+};
+
+static int __store_answer(struct nl_object *obj, struct nl_parser_param *p)
+{
+	struct pickup_param *pp = p->pp_arg;
+	/*
+	 * the parser will put() the object at the end, expecting the cache
+	 * to take the reference.
+	 */
+	nl_object_get(obj);
+	pp->result =  obj;
+
+	return 0;
+}
+
+static int __pickup_answer(struct nl_msg *msg, void *arg)
+{
+	struct pickup_param *pp = arg;
+	struct nl_parser_param parse_arg = {
+		.pp_cb = __store_answer,
+		.pp_arg = pp,
+	};
+
+	return pp->parser(NULL, &msg->nm_src, msg->nm_nlh, &parse_arg);
+}
+
+static int __pickup_answer_syserr(struct sockaddr_nl *nla, struct nlmsgerr *nlerr, void *arg)
+{
+	*(((struct pickup_param *) arg)->syserror) = nlerr->error;
+
+	return -nl_syserr2nlerr(nlerr->error);
+}
+
+/** @endcond */
+
+/**
+ * Pickup netlink answer, parse is and return object
+ * @arg sk              Netlink socket
+ * @arg parser          Parser function to parse answer
+ * @arg result          Result pointer to return parsed object
+ *
+ * @return 0 on success or a negative error code.
+ */
+int nl_pickup(struct nl_sock *sk,
+              int (*parser)(struct nl_cache_ops *, struct sockaddr_nl *,
+                            struct nlmsghdr *, struct nl_parser_param *),
+              struct nl_object **result)
+{
+	return nl_pickup_keep_syserr(sk, parser, result, NULL);
+}
+
+/**
+ * Pickup netlink answer, parse is and return object with preserving system error
+ * @arg sk              Netlink socket
+ * @arg parser          Parser function to parse answer
+ * @arg result          Result pointer to return parsed object
+ * @arg syserr          Result pointer for the system error in case of failure
+ *
+ * @return 0 on success or a negative error code.
+ */
+int nl_pickup_keep_syserr(struct nl_sock *sk,
+                          int (*parser)(struct nl_cache_ops *, struct sockaddr_nl *,
+                                        struct nlmsghdr *, struct nl_parser_param *),
+                          struct nl_object **result,
+                          int *syserror)
+{
+	struct nl_cb *cb;
+	int err;
+	struct pickup_param pp = {
+		.parser = parser,
+	};
+
+	cb = nl_cb_clone(sk->s_cb);
+	if (cb == NULL)
+		return -NLE_NOMEM;
+
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, __pickup_answer, &pp);
+	if (syserror) {
+		*syserror = 0;
+		pp.syserror = syserror;
+		nl_cb_err(cb, NL_CB_CUSTOM, __pickup_answer_syserr, &pp);
+	}
+
+	err = nl_recvmsgs(sk, cb);
+	if (err < 0)
+		goto errout;
+
+	*result = pp.result;
+errout:
+	nl_cb_put(cb);
+
+	return err;
+}
+
+/** @} */
+
+/**
+ * @name Deprecated
+ * @{
+ */
+
+/**
+ * @deprecated Please use nl_complete_msg()
+ */
+void nl_auto_complete(struct nl_sock *sk, struct nl_msg *msg)
+{
+	nl_complete_msg(sk, msg);
+}
+
+/**
+ * @deprecated Please use nl_send_auto()
+ */
+int nl_send_auto_complete(struct nl_sock *sk, struct nl_msg *msg)
+{
+	return nl_send_auto(sk, msg);
+}
+
+
+/** @} */
 
 /** @} */
 

@@ -79,7 +79,6 @@ main (int argc, char **argv)
 
 #ifdef G_OS_WIN32
   argv = g_win32_get_command_line ();
-  argc = g_strv_length (argv);
 #endif
 
   setlocale (LC_ALL, "");
@@ -113,7 +112,7 @@ main (int argc, char **argv)
         progress = report_progress;
       else
         {
-          g_printerr ("unrecognised flag %s\n", argv[i]);
+          g_printerr ("unrecognized flag %s\n", argv[i]);
         }
     }
 

@@ -6,43 +6,47 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_E212_H__
 #define __PACKET_E212_H__
 
-#include <epan/value_string.h>
+#include <wsutil/value_string.h>
 #include "ws_symbol_export.h"
 
 extern value_string_ext E212_codes_ext;
+
+extern value_string_ext mcc_mnc_2digits_codes_ext;
+
+extern value_string_ext mcc_mnc_3digits_codes_ext;
 
 typedef enum {
     E212_NONE,
     E212_LAI,
     E212_RAI,
-    E212_SAI
+    E212_SAI,
+    E212_CGI,
+    E212_ECGI,
+    E212_TAI,
+    E212_NRCGI,
+    E212_5GSTAI,
+    E212_GUMMEI,
+    E212_GUAMI,
+    E212_SERV_NET,
 } e212_number_type_t;
 
-gchar* dissect_e212_mcc_mnc_wmem_packet_str(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, e212_number_type_t number_type, gboolean little_endian);
+char* dissect_e212_mcc_mnc_wmem_packet_str(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, e212_number_type_t number_type, bool little_endian);
+void add_assoc_imsi_item(tvbuff_t *tvb _U_, proto_tree *tree, const char* imsi_str);
 
 WS_DLL_PUBLIC
-int dissect_e212_mcc_mnc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, e212_number_type_t number_type, gboolean little_endian);
+int dissect_e212_mcc_mnc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, e212_number_type_t number_type, bool little_endian);
 
 WS_DLL_PUBLIC
 int dissect_e212_mcc_mnc_in_address(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset);
+
+WS_DLL_PUBLIC
+int dissect_e212_mcc_mnc_in_utf8_address(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset);
 
 /**
  *
@@ -54,10 +58,14 @@ int dissect_e212_mcc_mnc_in_address(tvbuff_t *tvb, packet_info *pinfo, proto_tre
  *
  * Note a tvbuff content of 0xf is considered a 'filler' and will end the
  * conversion.
+ *
+ * When skip_first is true, the high bit of the skipped nibble is treated as a odd/even indicator,
+ * according to Figure 10.5.4/3GPP TS 24.008 Mobile Identity information element
+ *
  * A wmem allocated string will be returned.
  */
 WS_DLL_PUBLIC
-const gchar * dissect_e212_imsi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int length, gboolean skip_first);
+const char * dissect_e212_imsi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int length, bool skip_first);
 
 /**
  *
@@ -68,12 +76,12 @@ const gchar * dissect_e212_imsi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
  * The wmem allocated string will be returned.
  */
 WS_DLL_PUBLIC
-const gchar * dissect_e212_utf8_imsi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int length);
+const char * dissect_e212_utf8_imsi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int length);
 
 #endif /* __PACKET_E212_H__ */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -1,0 +1,57 @@
+<?xml version="1.0"?>
+<!--
+  Copyright (C) 2015-2026 Free Software Foundation, Inc.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+  Written by Daiki Ueno.
+-->
+<its:rules xmlns:its="http://www.w3.org/2005/11/its"
+           xmlns:gt="https://www.gnu.org/s/gettext/ns/its/extensions/1.0"
+           xmlns:metainfo="https://specifications.freedesktop.org/metainfo/1.0"
+           version="2.0">
+
+  <!-- Documentation of the *.metainfo.xml file format:
+       https://www.freedesktop.org/software/appstream/docs/chap-Quickstart.html
+  -->
+
+  <its:translateRule selector="/component" translate="no"/>
+  <its:translateRule selector="/component/name |
+                               /component/summary |
+                               /component/description |
+                               /component/developer_name |
+                               /component/screenshots/screenshot/caption"
+                     translate="yes"/>
+
+  <!-- A duplicate of the rules above, for files that use the metainfo
+       namespace.  Rationale:
+       https://www.freedesktop.org/software/appstream/docs/chap-Metadata.html
+       says
+       "The XML in metainfo files does not need any XML namespace, and adding
+       one should generally be avoided. If you want to use a namespace though
+       (maybe in case you want to embed the data in other contexts), the xmlns
+       should be https://specifications.freedesktop.org/metainfo/1.0."
+  -->
+
+  <its:translateRule selector="/metainfo:component" translate="no"/>
+  <its:translateRule selector="/metainfo:component/metainfo:name |
+                               /metainfo:component/metainfo:summary |
+                               /metainfo:component/metainfo:description |
+                               /metainfo:component/metainfo:developer_name |
+                               /metainfo:component/metainfo:screenshots/metainfo:screenshot/metainfo:caption"
+                     translate="yes"/>
+
+  <!-- This rule is redundant since gettext 0.23.  -->
+  <gt:escapeRule selector="/component" escape="no"/>
+</its:rules>

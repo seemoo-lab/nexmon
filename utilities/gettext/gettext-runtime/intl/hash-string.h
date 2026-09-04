@@ -1,5 +1,5 @@
 /* Description of GNU message catalog format: string hashing function.
-   Copyright (C) 1995-2016 Free Software Foundation, Inc.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -12,9 +12,15 @@
    GNU Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Ulrich Drepper and Bruno Haible.  */
 
 /* @@ end of prolog @@ */
+
+#ifndef attribute_hidden
+# define attribute_hidden
+#endif
 
 /* We assume to have `unsigned long int' value with at least 32 bits.  */
 #define HASHWORDBITS 32
@@ -22,7 +28,7 @@
 
 #ifndef _LIBC
 # ifdef IN_LIBINTL
-#  define __hash_string libintl_hash_string
+#  define __hash_string _libintl_hash_string
 # else
 #  define __hash_string hash_string
 # endif
@@ -31,4 +37,5 @@
 /* Defines the so called `hashpjw' function by P.J. Weinberger
    [see Aho/Sethi/Ullman, COMPILERS: Principles, Techniques and Tools,
    1986, 1987 Bell Telephone Laboratories, Inc.]  */
-extern unsigned long int __hash_string (const char *str_param);
+extern unsigned long int __hash_string (const char *str_param)
+     attribute_hidden;

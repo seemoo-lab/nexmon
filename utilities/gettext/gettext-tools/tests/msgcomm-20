@@ -4,14 +4,14 @@
 # Test --more-than=0; identical message are wanted once only.
 # If the first occurrence is not fuzzy, don't make the result fuzzy.
 
-cat <<EOF > mcomm-test20.in1
+cat <<\EOF > mcomm-test20.in1
 # Sure.
 #: first.c:123
 msgid "1"
 msgstr "1x"
 EOF
 
-cat <<EOF > mcomm-test20.in2
+cat <<\EOF > mcomm-test20.in2
 # Not sure.
 #: hunt.c:759
 #, fuzzy

@@ -1,0 +1,184 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test D support: Simple things.
+
+cat <<\EOF > xg-d-2.d
+void main ()
+{
+  // A C++ syntax one-line comment.
+  string test1 = gettext("Test String 1");
+  /* A C syntax one-line comment. */
+  string test2 = gettext("Test String 2");
+  // A C++ syntax multi-line
+  // comment.
+  string test3 = gettext("Test String 3");
+  /* A C syntax multi-line
+     comment. */
+  string test4 = gettext("Test String 4");
+  /+ A D syntax /* nesting */ /+ one-line +/ comment. +/
+  string test5 = gettext("Test String 5");
+  /+ A D syntax /*
+     nesting
+     */
+     /+
+     multi-line +/
+     comment. +/
+  string test6 = gettext("Test String 6");
+  // D has string literal concatenation.
+  string test7 = gettext("Test " ~
+  "String "
+  ~ "7");
+  // a
+  string test8 = /* b */ gettext /* c */ ( /* d */ "Test " /* e */ ~ /* f */
+  /* g */ "String " /* h */
+  ~ "8");
+  // Empty string.
+  string test9 = gettext("");
+
+  // printf expects a C format string.
+  printf(gettext("depth %f"), 3.4);
+  // format expects a D format string.
+  format(gettext("weight %f"), 5.6);
+  gettext("height %f").format(5.6);
+  // This can be used as a C or D format string.
+  string test9 = gettext("length %f");
+  // This can be used as a C or D format string, but is not a D format string.
+  string test10 = gettext("%lu");
+  // This can be used as a C or D format string, but is not a C format string.
+  string test11 = gettext("%(%s%)");
+
+  // Plain call syntax.
+  writeln(gettext("Test string 12"));
+  // Method-like call syntax.
+  "Test string 13"."/*A*/./*B*/gettext/*C*/(/*D*/)/*E*/./*F*/to!string.writeln;
+  "Test string 14".gettext().to!string.writeln;
+  "Test string 15".gettext.to!string.writeln;
+
+  // Plain call syntax for plural.
+  writeln(ngettext("%.0sa piece of cake", "%s pieces of cake", n).format(text(s)));
+  // Method-like call syntax for plural.
+  writeln("%.0sa piece of wood".ngettext("%s pieces of wood", n).format(text(s)));
+}
+
+@safe pure unittest
+{
+    gettext("Not extracted");
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -c -d xg-d-2.tmp xg-d-2.d || Exit 1
+LC_ALL=C tr -d '\r' < xg-d-2.tmp.po > xg-d-2.po || Exit 1
+
+cat <<\EOF > xg-d-2.ok
+#. A C++ syntax one-line comment.
+msgid "Test String 1"
+msgstr ""
+
+#. A C syntax one-line comment.
+msgid "Test String 2"
+msgstr ""
+
+#. A C++ syntax multi-line
+#. comment.
+msgid "Test String 3"
+msgstr ""
+
+#. A C syntax multi-line
+#. comment.
+msgid "Test String 4"
+msgstr ""
+
+#. A D syntax /* nesting */ /+ one-line +/ comment.
+msgid "Test String 5"
+msgstr ""
+
+#. A D syntax /*
+#. nesting
+#. */
+#. /+
+#. multi-line +/
+#. comment.
+msgid "Test String 6"
+msgstr ""
+
+#. D has string literal concatenation.
+msgid "Test String 7"
+msgstr ""
+
+#. a
+#. b
+#. c
+#. d
+msgid "Test String 8"
+msgstr ""
+
+#. Empty string.
+msgid ""
+msgstr ""
+
+#. printf expects a C format string.
+#, c-format
+msgid "depth %f"
+msgstr ""
+
+#. format expects a D format string.
+#, d-format
+msgid "weight %f"
+msgstr ""
+
+#, d-format
+msgid "height %f"
+msgstr ""
+
+#. This can be used as a C or D format string.
+#, c-format, d-format
+msgid "length %f"
+msgstr ""
+
+#. This can be used as a C or D format string, but is not a D format string.
+#, c-format
+msgid "%lu"
+msgstr ""
+
+#. This can be used as a C or D format string, but is not a C format string.
+#, d-format
+msgid "%(%s%)"
+msgstr ""
+
+#. Plain call syntax.
+msgid "Test string 12"
+msgstr ""
+
+#. Method-like call syntax.
+msgid "Test string 13"
+msgstr ""
+
+#. E
+#. F
+msgid "Test string 14"
+msgstr ""
+
+msgid "Test string 15"
+msgstr ""
+
+#. Plain call syntax for plural.
+#, d-format
+msgid "%.0sa piece of cake"
+msgid_plural "%s pieces of cake"
+msgstr[0] ""
+msgstr[1] ""
+
+#. Method-like call syntax for plural.
+#, d-format
+msgid "%.0sa piece of wood"
+msgid_plural "%s pieces of wood"
+msgstr[0] ""
+msgstr[1] ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-d-2.ok xg-d-2.po || Exit 1
+
+exit 0

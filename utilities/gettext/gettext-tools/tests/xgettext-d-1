@@ -1,0 +1,67 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test D support: Source file encodings
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --no-location -a -d xg-d-1a.tmp "$wabs_srcdir"/testdata/dprog.utf-8.d || Exit 1
+func_filter_POT_Creation_Date xg-d-1a.tmp.po xg-d-1a.pot
+
+cat <<\EOF > xg-d-1.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Hello world!"
+msgstr ""
+
+msgid "It costs €20."
+msgstr ""
+
+msgid "Stay healthy 😷."
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-d-1.ok xg-d-1a.pot || Exit 1
+
+${XGETTEXT} --no-location -a -d xg-d-1b.tmp "$wabs_srcdir"/testdata/dprog.utf-8+bom.d || Exit 1
+func_filter_POT_Creation_Date xg-d-1b.tmp.po xg-d-1b.pot
+
+${DIFF} xg-d-1.ok xg-d-1b.pot || Exit 1
+
+${XGETTEXT} --no-location -a -d xg-d-1c.tmp "$wabs_srcdir"/testdata/dprog.utf-16le.d || Exit 1
+func_filter_POT_Creation_Date xg-d-1c.tmp.po xg-d-1c.pot
+
+${DIFF} xg-d-1.ok xg-d-1c.pot || Exit 1
+
+${XGETTEXT} --no-location -a -d xg-d-1d.tmp "$wabs_srcdir"/testdata/dprog.utf-16be.d || Exit 1
+func_filter_POT_Creation_Date xg-d-1d.tmp.po xg-d-1d.pot
+
+${DIFF} xg-d-1.ok xg-d-1d.pot || Exit 1
+
+${XGETTEXT} --no-location -a -d xg-d-1e.tmp "$wabs_srcdir"/testdata/dprog.utf-32le.d || Exit 1
+func_filter_POT_Creation_Date xg-d-1e.tmp.po xg-d-1e.pot
+
+${DIFF} xg-d-1.ok xg-d-1e.pot || Exit 1
+
+${XGETTEXT} --no-location -a -d xg-d-1f.tmp "$wabs_srcdir"/testdata/dprog.utf-32be.d || Exit 1
+func_filter_POT_Creation_Date xg-d-1f.tmp.po xg-d-1f.pot
+
+${DIFF} xg-d-1.ok xg-d-1f.pot || Exit 1
+
+exit 0

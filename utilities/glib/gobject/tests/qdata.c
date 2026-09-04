@@ -1,10 +1,12 @@
 /*
  * Copyright 2012 Red Hat, Inc.
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * See the included COPYING file for more information.
  */
@@ -17,7 +19,7 @@ gboolean fail;
 #define ROUNDS 10000
 
 GObject *object;
-volatile gint bucket[THREADS];
+gint bucket[THREADS];  /* accessed from multiple threads, but should never be contested due to the sequence of thread operations */
 
 static gpointer
 thread_func (gpointer data)

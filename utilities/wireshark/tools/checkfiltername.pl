@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 my $debug = 0;
 # 0: off
@@ -19,19 +19,7 @@ my $debug = 0;
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 #
 # Example:
@@ -208,14 +196,14 @@ sub checkprotoabbrev {
 
 			#now check the acceptable "fields from a different protocol"
 			if ($errorline == 1) {
-				if (is_from_other_protocol_whitelist($_[0], $currfile) == 1) {
+				if (is_from_other_protocol_allowed($_[0], $currfile) == 1) {
 					$errorline = 0;
 				}
 			}
 
 			#now check the acceptable "fields that include a version number"
 			if ($errorline == 1) {
-				if (is_protocol_version_whitelist($_[0], $currfile) == 1) {
+				if (is_protocol_version_allowed($_[0], $currfile) == 1) {
 					$errorline = 0;
 				}
 			}
@@ -231,10 +219,10 @@ sub checkprotoabbrev {
 		}
 
 		if (($abbrev ne "") && (lc($abbrev) eq lc($afterabbrev))) {
-			#Allow ASN.1 generated files to duplicate part of proto name
+			# Allow ASN.1 generated files to duplicate part of proto name
 			if ((!(grep {$currfile eq $_ } @asn1automatedfilelist))   &&
-				#Check "approved" whitelist
-				(is_proto_dup_whitelist($abbrev, $check_dup_abbrev) == 0)) {
+				# Check allowed list
+				(is_proto_dup_allowed($abbrev, $check_dup_abbrev) == 0)) {
 				if ($showlinenoFlag) {
 					push(@elements_dup, "$_[1] $_[0] duplicates PROTOABBREV of $abbrev\n");
 				} else {
@@ -334,12 +322,13 @@ sub printprevfile {
 # to be provided to add to it. Acknowledge these dissectors aren't
 # a problem for the pre-commit script
 #--------------------------------------------------------------------
-sub is_proto_dup_whitelist {
+sub is_proto_dup_allowed {
 	if (($_[0] eq "amf") && (index($_[1], "amf0") >= 0)) {return 1;}
 	if (($_[0] eq "amf") && (index($_[1], "amf3") >= 0)) {return 1;}
 	if (($_[0] eq "amqp") && (index($_[1], "amqp") >= 0)) {return 1;}
 	if (($_[0] eq "bat") && (index($_[1], "batman") >= 0)) {return 1;}
 	if (($_[0] eq "browser") && (index($_[1], "browser_") >= 0)) {return 1;}
+	if (($_[0] eq "data") && (index($_[1], "data") >= 0)) {return 1;}
 	if (($_[0] eq "dlsw") && (index($_[1], "dlsw_version") >= 0)) {return 1;}
 	if (($_[0] eq "dns") && (index($_[1], "dnskey") >= 0)) {return 1;}
 	if (($_[0] eq "ecmp") && (index($_[1], "ecmp_") >= 0)) {return 1;}
@@ -348,6 +337,8 @@ sub is_proto_dup_whitelist {
 	if (($_[0] eq "fcs") && (index($_[1], "fcsmask") >= 0)) {return 1;}
 	if (($_[0] eq "fmp") && (index($_[1], "fmp") >= 0)) {return 1;}
 	if (($_[0] eq "fr") && (index($_[1], "frame_relay") >= 0)) {return 1;}
+	if (($_[0] eq "http") && (index($_[1], "http2_") >= 0)) {return 1;}
+	if (($_[0] eq "lustre") && (index($_[1], "lustre_") >= 0)) {return 1;}
 	if (($_[0] eq "mac") && (index($_[1], "macd") >= 0)) {return 1;}
 	if (($_[0] eq "mac") && (index($_[1], "macis") >= 0)) {return 1;}
 	if (($_[0] eq "mih") && (index($_[1], "mihf") >= 0)) {return 1;}
@@ -356,14 +347,18 @@ sub is_proto_dup_whitelist {
 	if (($_[0] eq "nfs") && (index($_[1], "nfs") >= 0)) {return 1;}
 	if (($_[0] eq "oxid") && (index($_[1], "oxid") >= 0)) {return 1;}
 	if (($_[0] eq "rquota") && (index($_[1], "rquota") >= 0)) {return 1;}
+	if (($_[0] eq "pfcp") && (index($_[1], "pfcp") >= 0)) {return 1;}
 	if (($_[0] eq "sm") && (index($_[1], "sm_") >= 0)) {return 1;}
 	if (($_[0] eq "smpp") && (index($_[1], "smppplus") >= 0)) {return 1;}
 	if (($_[0] eq "spray") && (index($_[1], "sprayarr") >= 0)) {return 1;}
+	if (($_[0] eq "stat") && (index($_[1], "stat_") >= 0)) {return 1;}
+	if (($_[0] eq "stat") && (index($_[1], "state") >= 0)) {return 1;}
 	if (($_[0] eq "tds") && (index($_[1], "tds_") >= 0)) {return 1;}
 	if (($_[0] eq "time") && (index($_[1], "time") >= 0)) {return 1;}
 	if (($_[0] eq "tn3270") && (index($_[1], "tn3270e") >= 0)) {return 1;}
 	if (($_[0] eq "usb") && (index($_[1], "usb") >= 0)) {return 1;}
 	if (($_[0] eq "xml") && (index($_[1], "xml") >= 0)) {return 1;}
+	if (($_[0] eq "dns") && (index($_[1], "dnscrypt") >= 0)) {return 1;}
 
 	return 0;
 }
@@ -374,7 +369,7 @@ sub is_proto_dup_whitelist {
 # justification will need to be provided to add to it.
 # Acknowledge these dissectors aren't a problem for the pre-commit script
 #--------------------------------------------------------------------
-sub is_from_other_protocol_whitelist {
+sub is_from_other_protocol_allowed {
 	my $proto_filename;
 	my $dir_index = rindex($_[1], "\\");
 
@@ -391,11 +386,16 @@ sub is_from_other_protocol_whitelist {
 	}
 
 	# XXX - may be faster to hash this (note 1-many relationship)?
+	if (($proto_filename eq "packet-atalk.c") && (index($_[0], "llc") >= 0)) {return 1;}
+	if (($proto_filename eq "packet-awdl.c") && (index($_[0], "llc") >= 0)) {return 1;}
+	if (($proto_filename eq "packet-bblog.c") && (index($_[0], "bblog") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-bpdu.c") && (index($_[0], "mstp") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-bssap.c") && (index($_[0], "bsap") >= 0)) {return 1;}
+	if (($proto_filename eq "packet-caneth.c") && (index($_[0], "can") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-cimetrics.c") && (index($_[0], "llc") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-cipsafety.c") && (index($_[0], "cip") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-cipsafety.c") && (index($_[0], "enip") >= 0)) {return 1;}
+	if (($proto_filename eq "packet-darwin.c") && (index($_[0], "darwin") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-dcerpc-netlogon.c") && (index($_[0], "ntlmssp") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-dcom-oxid.c") && (index($_[0], "dcom") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-dvb-data-mpe.c") && (index($_[0], "mpeg_sect") >= 0)) {return 1;}
@@ -407,6 +407,7 @@ sub is_from_other_protocol_whitelist {
 	if (($proto_filename eq "packet-glusterfs.c") && (index($_[0], "gluster") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-h248_annex_e.c") && (index($_[0], "h248") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-h248_q1950.c") && (index($_[0], "h248") >= 0)) {return 1;}
+	if (($proto_filename eq "packet-ieee1722.c") && (index($_[0], "can") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-ieee80211.c") && (index($_[0], "eapol") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-ieee80211-radio.c") && (index($_[0], "wlan") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-ieee80211-wlancap.c") && (index($_[0], "wlan") >= 0)) {return 1;}
@@ -420,9 +421,11 @@ sub is_from_other_protocol_whitelist {
 	if (($proto_filename eq "packet-k12.c") && (index($_[0], "aal2") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-k12.c") && (index($_[0], "atm") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-m3ua.c") && (index($_[0], "mtp3") >= 0)) {return 1;}
+	if (($proto_filename eq "packet-mle.c") && (index($_[0], "wpan") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-mpeg-dsmcc.c") && (index($_[0], "mpeg_sect") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-mpeg-dsmcc.c") && (index($_[0], "etv.dsmcc") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-mpeg1.c") && (index($_[0], "rtp.payload_mpeg_") >= 0)) {return 1;}
+	if (($proto_filename eq "packet-mysql.c") && (index($_[0], "mariadb") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-ndps.c") && (index($_[0], "spx.ndps_") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-pw-atm.c") && (index($_[0], "atm") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-pw-atm.c") && (index($_[0], "pw") >= 0)) {return 1;}
@@ -451,10 +454,10 @@ sub is_from_other_protocol_whitelist {
 #--------------------------------------------------------------------
 # This is a list of dissectors that use their (protocol) version number
 # as part of the first display filter segment, which checkfiltername
-# usually complains about.  Whitelist them so it can pass
+# usually complains about. Manually allow them so that they can pass
 # pre-commit script
 #--------------------------------------------------------------------
-sub is_protocol_version_whitelist {
+sub is_protocol_version_allowed {
 	my $proto_filename;
 	my $dir_index = rindex($_[1], "\\");
 
@@ -480,7 +483,7 @@ sub is_protocol_version_whitelist {
 	if (($proto_filename eq "packet-sflow.c") && (index($_[0], "sflow_5") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-sflow.c") && (index($_[0], "sflow_245") >= 0)) {return 1;}
 	if (($proto_filename eq "packet-tipc.c") && (index($_[0], "tipcv2") >= 0)) {return 1;}
-
+	if (($proto_filename eq "packet-bluetooth.c") && (index($_[0], "llc.bluetooth_pid") >= 0)) {return 1;}
 
 	return 0;
 }
@@ -598,7 +601,8 @@ while (<>) {
 	}
 
 	until ($more_tokens == 0) {
-		if ($restofline =~ /proto_register_protocol\s*\((.*)/) {
+		if (($restofline =~ /proto_register_protocol\s*\((.*)/) ||
+			($restofline =~ /proto_register_protocol_in_name_only\s*\((.*)/)) {
 			$noregprotocol = 0;
 			$restofline = $1;
 			$state = "s_proto_start";

@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <argp-extern.h>
 #include <string.h>
+#include <ctype.h>
 #include <byteswap.h>
 
 #include <sys/types.h>
@@ -74,20 +75,7 @@ typedef uint32_t uint;
 
 #define IPADDR(a,b,c,d) ((d) << 24 | (c) << 16 | (b) << 8 | (a))
 
-struct nexio {
-    struct ifreq *ifr;
-    int sock_rx_ioctl;
-    int sock_rx_frame;
-    int sock_tx;
-};
-
-extern int nex_ioctl(struct nexio *nexio, int cmd, void *buf, int len, bool set);
-extern struct nexio *nex_init_ioctl(const char *ifname);
-extern struct nexio *nex_init_udp(unsigned int securitycookie, unsigned int txip);
-extern struct nexio *nex_init_netlink(void);
-#ifdef USE_VENDOR_CMD
-extern struct nexio *nex_init_vendor_cmd(const char *ifname);
-#endif
+#include <libnexio.h>
 
 char            *ifname = "wlan0";
 unsigned char   set_monitor = 0;
@@ -201,7 +189,18 @@ parse_opt(int key, char *arg, struct argp_state *state)
             break;
         
         case 'l':
-            custom_cmd_buf_len = strtol(arg, NULL, 0);
+            {
+                char *endptr = NULL;
+                long v = strtol(arg, &endptr, 0);
+                /* reject negative, non-numeric, or oversized lengths: the value
+                 * later sizes malloc() and is passed to nex_ioctl(int len), so a
+                 * negative or huge value would wrap or overrun downstream. */
+                if (endptr == arg || *endptr != '\0' || v < 0 || v > 0x100000) {
+                    fprintf(stderr, "ERR: invalid -l length '%s' (expected 0..1048576)\n", arg);
+                    exit(EXIT_FAILURE);
+                }
+                custom_cmd_buf_len = (unsigned int) v;
+            }
             break;
 
         case 'k':
@@ -349,12 +348,17 @@ main(int argc, char **argv)
         nexio = nex_init_udp(use_udp_tunneling, txip);
     else
 #ifdef USE_NETLINK
-        nexio = nex_init_netlink();
+        nexio = nex_init_netlink_ifname(ifname);
 #elif defined(USE_VENDOR_CMD)
         nexio = nex_init_vendor_cmd(ifname);
 #else
         nexio = nex_init_ioctl(ifname);
 #endif
+
+    if (!nexio) {
+        fprintf(stderr, "ERR: could not initialise nexio interface\n");
+        exit(EXIT_FAILURE);
+    }
 
     if (set_monitor) {
         buf = set_monitor_value;
@@ -435,17 +439,33 @@ main(int argc, char **argv)
         } else {
             if (custom_cmd_value) {
                 if (custom_cmd_value_int) {
+                    /* writing a 4-byte integer needs a buffer of at least 4 bytes */
+                    if (custom_cmd_buf_len < sizeof(uint32)) {
+                        fprintf(stderr, "ERR: -v integer needs -l >= 4\n");
+                        free(custom_cmd_buf);
+                        return -1;
+                    }
                     *(uint32 *) custom_cmd_buf = strtoul(custom_cmd_value, NULL, 0);
                 } else if (custom_cmd_value_base64) {
                     size_t decoded_len = 0;
                     unsigned char *decoded = b64_decode_ex(custom_cmd_value, strlen(custom_cmd_value), &decoded_len);
+                    if (!decoded) {
+                        fprintf(stderr, "ERR: base64 decode of -v failed\n");
+                        free(custom_cmd_buf);
+                        return -1;
+                    }
                     memcpy(custom_cmd_buf, decoded, MIN(decoded_len, custom_cmd_buf_len));
+                    free(decoded);
                 } else {
                     strncpy(custom_cmd_buf, custom_cmd_value, custom_cmd_buf_len);
                 }
             } else {
+                /* no -v supplied: there is no integer to write. Requesting an
+                 * integer set here would strtoul(NULL) and crash. */
                 if (custom_cmd_value_int) {
-                    *(uint32 *) custom_cmd_buf = strtoul(custom_cmd_value, NULL, 0);
+                    fprintf(stderr, "ERR: -i given without a -v value\n");
+                    free(custom_cmd_buf);
+                    return -1;
                 }
             }
         }
@@ -488,7 +508,10 @@ main(int argc, char **argv)
             ret = nex_ioctl(nexio, 406, custom_cmd_buf_pos, 0x2000, false);    
             custom_cmd_buf_pos += 0x2000 / 4;
         }
-        if (custom_cmd_buf_len % 0x2000 != 0) {
+        /* Only seed the address word into the tail if the remainder is at least
+         * a full word; a 1-3 byte remainder has no room for the 4-byte write and
+         * would overrun the allocation. */
+        if (custom_cmd_buf_len % 0x2000 >= sizeof(unsigned int)) {
             *(unsigned int *) custom_cmd_buf_pos = dump_objmem_addr + i * 0x2000 / 4;
             ret = nex_ioctl(nexio, 406, custom_cmd_buf_pos, custom_cmd_buf_len % 0x2000, false);
         }
@@ -499,6 +522,9 @@ main(int argc, char **argv)
         } else {
             hexdump(custom_cmd_buf, custom_cmd_buf_len);
         }
+
+        free(custom_cmd_buf);
+        custom_cmd_buf = NULL;
     }
 
     if (disassociate) {
@@ -557,8 +583,15 @@ main(int argc, char **argv)
 #endif
         char fw_ver[256] = "ver\0";
         nex_ioctl(nexio, WLC_GET_VAR, fw_ver, sizeof(fw_ver), false);
-        char *fw_ver2 = strstr(fw_ver, "version") + 8;
-        fw_ver2[strlen(fw_ver2) - 1] = 0;
+        fw_ver[sizeof(fw_ver) - 1] = 0;
+        char *fw_ver2 = strstr(fw_ver, "version");
+        if (fw_ver2 != NULL) {
+            fw_ver2 += 8;
+            if (*fw_ver2 != '\0')
+                fw_ver2[strlen(fw_ver2) - 1] = 0;
+        } else {
+            fw_ver2 = fw_ver;
+        }
 
         snprintf(str[0], sizeof(str[0]), "0x%x", revinfo.vendorid);
         snprintf(str[1], sizeof(str[0]), "0x%x", revinfo.deviceid);

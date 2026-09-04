@@ -55,8 +55,8 @@
 		DFS_VOLUME_STATE_INCONSISTENT 	= 0x2,
 		DFS_VOLUME_STATE_OFFLINE 	= 0x4,
 		DFS_VOLUME_STATE_ONLINE		= 0x8,
-		DFS_VOLUME_STATE_STANDALONE	= DFS_VOLUME_FLAVOR_STANDALONE,
-		DFS_VOLUME_STATE_AD_BLOB	= DFS_VOLUME_FLAVOR_AD_BLOB
+		DFS_VOLUME_STATE_STANDALONE	= 0x100, // DFS_VOLUME_FLAVOR_STANDALONE,
+		DFS_VOLUME_STATE_AD_BLOB	= 0x200  // DFS_VOLUME_FLAVOR_AD_BLOB
 	} dfs_VolumeState;
 
 	typedef struct {
@@ -101,11 +101,11 @@
 
 	/* verified with dfsutil */
 	typedef [public,bitmap32bit] bitmap {
-		DFS_PROPERTY_FLAG_INSITE_REFERRALS	= 0x01,
-		DFS_PROPERTY_FLAG_ROOT_SCALABILITY	= 0x02,
-		DFS_PROPERTY_FLAG_SITE_COSTING 		= 0x04,
-		DFS_PROPERTY_FLAG_TARGET_FAILBACK	= 0x08,
-		DFS_PROPERTY_FLAG_CLUSTER_ENABLED	= 0x10	/* untested */
+                DFS_PROPERTY_FLAG_INSITE_REFERRALS	= 0x00000001,
+                DFS_PROPERTY_FLAG_ROOT_SCALABILITY	= 0x00000002,
+                DFS_PROPERTY_FLAG_SITE_COSTING 		= 0x00000004,
+                DFS_PROPERTY_FLAG_TARGET_FAILBACK	= 0x00000008,
+                DFS_PROPERTY_FLAG_CLUSTER_ENABLED	= 0x00000010	/* untested */
 	} dfs_PropertyFlags;
 
 	typedef struct {
@@ -333,21 +333,21 @@
 		[in,out,unique]	dfs_UnknownStruct **unknown
 		);
 
-	/* Function 0x0c */ 
+	/* Function 0x0c */
 	WERROR dfs_AddStdRoot(
 		[in]		[string,charset(UTF16)] uint16 servername[],
 		[in]		[string,charset(UTF16)] uint16 rootshare[],
 		[in]		[string,charset(UTF16)] uint16 comment[],
 		[in]		uint32 flags
 		);
- 
+
 	/* Function 0x0d */
 	WERROR dfs_RemoveStdRoot(
 		[in]		[string,charset(UTF16)] uint16 servername[],
 		[in]		[string,charset(UTF16)] uint16 rootshare[],
 		[in]		uint32 flags
 		);
- 
+
 	/* Function 0x0e */
 	WERROR dfs_ManagerInitialize(
 		[in]		[string,charset(UTF16)] uint16 *servername,

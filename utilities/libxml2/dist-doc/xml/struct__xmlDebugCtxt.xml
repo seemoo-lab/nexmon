@@ -1,0 +1,298 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlDebugCtxt" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlDebugCtxt</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlDebugCtxt_1ab41bf19330e50c3c7bf3544c53f30971" prot="public" static="no" mutable="no">
+        <type>FILE *</type>
+        <definition>FILE* output</definition>
+        <argsstring></argsstring>
+        <name>output</name>
+        <qualifiedname>_xmlDebugCtxt::output</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="33" column="10" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="33" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDebugCtxt_1a037b9d22d1ee3a335be741c11d9c2bd3" prot="public" static="no" mutable="no">
+        <type>char</type>
+        <definition>char shift[101]</definition>
+        <argsstring>[101]</argsstring>
+        <name>shift</name>
+        <qualifiedname>_xmlDebugCtxt::shift</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="34" column="10" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="34" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDebugCtxt_1acb5ba97551079e0b072c62c21d784ac5" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int depth</definition>
+        <argsstring></argsstring>
+        <name>depth</name>
+        <qualifiedname>_xmlDebugCtxt::depth</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="35" column="9" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="35" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDebugCtxt_1acb7e0779c02127031b073502aca38a8c" prot="public" static="no" mutable="no">
+        <type>xmlDocPtr</type>
+        <definition>xmlDocPtr doc</definition>
+        <argsstring></argsstring>
+        <name>doc</name>
+        <qualifiedname>_xmlDebugCtxt::doc</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="36" column="15" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="36" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDebugCtxt_1af22243a9342e852a5bcc0b878913a289" prot="public" static="no" mutable="no">
+        <type>xmlNodePtr</type>
+        <definition>xmlNodePtr node</definition>
+        <argsstring></argsstring>
+        <name>node</name>
+        <qualifiedname>_xmlDebugCtxt::node</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="37" column="16" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="37" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDebugCtxt_1a2f89a426c195c2ad019b65e822791a21" prot="public" static="no" mutable="no">
+        <type>xmlDictPtr</type>
+        <definition>xmlDictPtr dict</definition>
+        <argsstring></argsstring>
+        <name>dict</name>
+        <qualifiedname>_xmlDebugCtxt::dict</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="38" column="16" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="38" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDebugCtxt_1a5aa1731610537e057191db627c19f1ca" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int check</definition>
+        <argsstring></argsstring>
+        <name>check</name>
+        <qualifiedname>_xmlDebugCtxt::check</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="39" column="9" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="39" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDebugCtxt_1a433c7fadd13f3a906e01c9d9f5c8fb09" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int errors</definition>
+        <argsstring></argsstring>
+        <name>errors</name>
+        <qualifiedname>_xmlDebugCtxt::errors</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="40" column="9" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="40" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDebugCtxt_1a60d1fc6607a1391bd261c6a702eb842f" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nodict</definition>
+        <argsstring></argsstring>
+        <name>nodict</name>
+        <qualifiedname>_xmlDebugCtxt::nodict</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="41" column="9" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="41" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlDebugCtxt_1a849fa981f121eb25a67e4e14392840ba" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int options</definition>
+        <argsstring></argsstring>
+        <name>options</name>
+        <qualifiedname>_xmlDebugCtxt::options</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/debugXML.c" line="42" column="9" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="42" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="5">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlDebugCtxt</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlDict</label>
+        <childnode refid="9" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlDictStrings</label>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/debugXML.c" line="32" column="1" bodyfile="/builds/GNOME/libxml2/debugXML.c" bodystart="32" bodyend="43"/>
+    <listofallmembers>
+      <member refid="struct__xmlDebugCtxt_1a5aa1731610537e057191db627c19f1ca" prot="public" virt="non-virtual"><scope>_xmlDebugCtxt</scope><name>check</name></member>
+      <member refid="struct__xmlDebugCtxt_1acb5ba97551079e0b072c62c21d784ac5" prot="public" virt="non-virtual"><scope>_xmlDebugCtxt</scope><name>depth</name></member>
+      <member refid="struct__xmlDebugCtxt_1a2f89a426c195c2ad019b65e822791a21" prot="public" virt="non-virtual"><scope>_xmlDebugCtxt</scope><name>dict</name></member>
+      <member refid="struct__xmlDebugCtxt_1acb7e0779c02127031b073502aca38a8c" prot="public" virt="non-virtual"><scope>_xmlDebugCtxt</scope><name>doc</name></member>
+      <member refid="struct__xmlDebugCtxt_1a433c7fadd13f3a906e01c9d9f5c8fb09" prot="public" virt="non-virtual"><scope>_xmlDebugCtxt</scope><name>errors</name></member>
+      <member refid="struct__xmlDebugCtxt_1af22243a9342e852a5bcc0b878913a289" prot="public" virt="non-virtual"><scope>_xmlDebugCtxt</scope><name>node</name></member>
+      <member refid="struct__xmlDebugCtxt_1a60d1fc6607a1391bd261c6a702eb842f" prot="public" virt="non-virtual"><scope>_xmlDebugCtxt</scope><name>nodict</name></member>
+      <member refid="struct__xmlDebugCtxt_1a849fa981f121eb25a67e4e14392840ba" prot="public" virt="non-virtual"><scope>_xmlDebugCtxt</scope><name>options</name></member>
+      <member refid="struct__xmlDebugCtxt_1ab41bf19330e50c3c7bf3544c53f30971" prot="public" virt="non-virtual"><scope>_xmlDebugCtxt</scope><name>output</name></member>
+      <member refid="struct__xmlDebugCtxt_1a037b9d22d1ee3a335be741c11d9c2bd3" prot="public" virt="non-virtual"><scope>_xmlDebugCtxt</scope><name>shift</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

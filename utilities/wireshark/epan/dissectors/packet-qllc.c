@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 2001 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,11 +16,11 @@
 void proto_register_qllc(void);
 void proto_reg_handoff_qllc(void);
 
-static int proto_qllc = -1;
-static int hf_qllc_address = -1;
-static int hf_qllc_control = -1;
+static int proto_qllc;
+static int hf_qllc_address;
+static int hf_qllc_control;
 
-static gint ett_qllc = -1;
+static int ett_qllc;
 
 static dissector_handle_t sna_handle;
 
@@ -65,8 +53,7 @@ static const value_string qllc_control_vals[] = {
     { QXID,         "QXID" },
     { QRR,          "QRR" },
     { QTEST,        "QTEST" },
-    { QDISC,        QDISC_TEXT },
-    { QRD,          QRD_TEXT },
+    { QDISC,        "QDISC / QRD" }, /* Same value for QDISC and QRD (following it is a COMMAND or RESPONSE) */
     { 0x00, NULL },
 };
 
@@ -76,14 +63,14 @@ dissect_qllc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
     proto_tree *qllc_tree;
     proto_item *qllc_ti;
-    gboolean   *q_bit_set;
-    guint8      addr, ctrl;
-    gboolean    command = FALSE;
+    bool       *q_bit_set;
+    uint8_t     addr, ctrl;
+    bool        command = false;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
         return 0;
-    q_bit_set = (gboolean *)data;
+    q_bit_set = (bool *)data;
 
     /*
      * If the Q bit isn't set, this is just SNA data.
@@ -102,14 +89,14 @@ dissect_qllc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 
     /* Get the address; we need it to determine if this is a
      * COMMAND or a RESPONSE */
-    addr = tvb_get_guint8(tvb, 0);
+    addr = tvb_get_uint8(tvb, 0);
     proto_tree_add_item(qllc_tree, hf_qllc_address, tvb, 0, 1, ENC_BIG_ENDIAN);
 
     /* The address field equals X'FF' in commands (except QRR)
      * and anything in responses. */
-    ctrl = tvb_get_guint8(tvb, 1);
+    ctrl = tvb_get_uint8(tvb, 1);
     if (ctrl != QRR && addr == 0xff) {
-        command = TRUE;
+        command = true;
     }
 
 
@@ -130,7 +117,7 @@ dissect_qllc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
     else {
         /* Non-ambiguous control field value */
         col_add_str(pinfo->cinfo, COL_INFO,
-                    val_to_str(ctrl, qllc_control_vals,
+                    val_to_str(pinfo->pool, ctrl, qllc_control_vals,
                         "Control Field: 0x%02x (unknown)"));
 
         proto_tree_add_uint(qllc_tree, hf_qllc_control, tvb,
@@ -160,7 +147,7 @@ proto_register_qllc(void)
             VALS(qllc_control_vals), 0x0, NULL, HFILL }},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_qllc,
     };
 
@@ -177,7 +164,7 @@ proto_reg_handoff_qllc(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

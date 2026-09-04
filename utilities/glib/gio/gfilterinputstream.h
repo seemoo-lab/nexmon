@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -36,11 +38,6 @@ G_BEGIN_DECLS
 #define G_IS_FILTER_INPUT_STREAM_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), G_TYPE_FILTER_INPUT_STREAM))
 #define G_FILTER_INPUT_STREAM_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), G_TYPE_FILTER_INPUT_STREAM, GFilterInputStreamClass))
 
-/**
- * GFilterInputStream:
- *
- * A base class for all input streams that work on an underlying stream.
- **/
 typedef struct _GFilterInputStreamClass    GFilterInputStreamClass;
 
 struct _GFilterInputStream
@@ -63,13 +60,13 @@ struct _GFilterInputStreamClass
 };
 
 
-GLIB_AVAILABLE_IN_ALL
-GType          g_filter_input_stream_get_type              (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
+GType          g_filter_input_stream_get_type              (void);
+GIO_AVAILABLE_IN_ALL
 GInputStream * g_filter_input_stream_get_base_stream       (GFilterInputStream *stream);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gboolean       g_filter_input_stream_get_close_base_stream (GFilterInputStream *stream);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void           g_filter_input_stream_set_close_base_stream (GFilterInputStream *stream,
                                                             gboolean            close_base);
 

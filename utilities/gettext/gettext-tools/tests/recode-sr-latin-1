@@ -33,8 +33,9 @@ EOF
 
 : ${RECODE=recode}
 LC_ALL=$LOCALE_FR_UTF8 \
-${RECODE}-sr-latin < rec-srl-1.in > rec-srl-1.out \
+${RECODE}-sr-latin < rec-srl-1.in > rec-srl-1.tmp.out \
   || { Exit 1; }
+LC_ALL=C tr -d '\r' < rec-srl-1.tmp.out > rec-srl-1.out || Exit 1
 
 cat <<\EOF > rec-srl-1.ok
 Ispravni argumenti su

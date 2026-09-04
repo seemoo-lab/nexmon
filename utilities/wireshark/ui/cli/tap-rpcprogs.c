@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* This module provides rpc call/reply SRT statistics to tshark.
@@ -37,6 +25,8 @@
 #include <epan/stat_tap_ui.h>
 #include <epan/dissectors/packet-rpc.h>
 
+#include <wsutil/cmdarg_err.h>
+
 #define MICROSECS_PER_SEC   1000000
 #define NANOSECS_PER_SEC    1000000000
 
@@ -45,25 +35,27 @@ void register_tap_listener_rpcprogs(void);
 /* used to keep track of statistics for a specific program/version */
 typedef struct _rpc_program_t {
 	struct _rpc_program_t *next;
-	guint32 program;
-	guint32 version;
+	uint32_t program;
+	uint32_t version;
 	int num;
 	nstime_t min;
 	nstime_t max;
 	nstime_t tot;
 } rpc_program_t;
 
-static rpc_program_t *prog_list = NULL;
-static int already_enabled = 0;
+typedef struct _rpc_tapdata_t {
+	rpc_program_t *prog_list;
+} rpc_tapdata_t;
 
-static int
-rpcprogs_packet(void *dummy1 _U_, packet_info *pinfo, epan_dissect_t *edt _U_, const void *pri)
+static tap_packet_status
+rpcprogs_packet(void *tapdata, packet_info *pinfo, epan_dissect_t *edt _U_, const void *pri, tap_flags_t flags _U_)
 {
+	rpc_tapdata_t *rtd = (rpc_tapdata_t *)tapdata;
 	const rpc_call_info_value *ri = (const rpc_call_info_value *)pri;
 	nstime_t delta;
 	rpc_program_t *rp = NULL;
 
-	if (!prog_list) {
+	if (!rtd->prog_list) {
 		/* the list was empty */
 		rp = g_new(rpc_program_t, 1);
 		rp->next      =	NULL;
@@ -76,15 +68,15 @@ rpcprogs_packet(void *dummy1 _U_, packet_info *pinfo, epan_dissect_t *edt _U_, c
 		rp->max.nsecs =	0;
 		rp->tot.secs  =	0;
 		rp->tot.nsecs =	0;
-		prog_list = rp;
-	} else if ((ri->prog == prog_list->program)
-		&& (ri->vers == prog_list->version)) {
-		rp = prog_list;
-	} else if ( (ri->prog < prog_list->program)
-		|| ((ri->prog == prog_list->program) && (ri->vers < prog_list->version))) {
+		rtd->prog_list = rp;
+	} else if ((ri->prog == rtd->prog_list->program)
+		&& (ri->vers == rtd->prog_list->version)) {
+		rp = rtd->prog_list;
+	} else if ( (ri->prog < rtd->prog_list->program)
+		|| ((ri->prog == rtd->prog_list->program) && (ri->vers < rtd->prog_list->version))) {
 		/* we should be first entry in list */
 		rp = g_new(rpc_program_t, 1);
-		rp->next      = prog_list;
+		rp->next      = rtd->prog_list;
 		rp->program   = ri->prog;
 		rp->version   = ri->vers;
 		rp->num	      = 0;
@@ -94,10 +86,10 @@ rpcprogs_packet(void *dummy1 _U_, packet_info *pinfo, epan_dissect_t *edt _U_, c
 		rp->max.nsecs =	0;
 		rp->tot.secs  =	0;
 		rp->tot.nsecs =	0;
-		prog_list = rp;
+		rtd->prog_list = rp;
 	} else {
 		/* we go somewhere else in the list */
-		for (rp=prog_list; rp; rp=rp->next) {
+		for (rp=rtd->prog_list; rp; rp=rp->next) {
 			if ((rp->next)
 			 && (rp->next->program == ri->prog)
 		         && (rp->next->version == ri->vers)) {
@@ -130,7 +122,7 @@ rpcprogs_packet(void *dummy1 _U_, packet_info *pinfo, epan_dissect_t *edt _U_, c
 
 	/* we are only interested in reply packets */
 	if (ri->request || !rp) {
-		return 0;
+		return TAP_PACKET_DONT_REDRAW;
 	}
 
 	/* calculate time delta between request and reply */
@@ -170,14 +162,15 @@ rpcprogs_packet(void *dummy1 _U_, packet_info *pinfo, epan_dissect_t *edt _U_, c
 	}
 	rp->num++;
 
-	return 1;
+	return TAP_PACKET_REDRAW;
 }
 
 
 static void
-rpcprogs_draw(void *dummy _U_)
+rpcprogs_draw(void *tapdata)
 {
-	guint64 td;
+	rpc_tapdata_t *rtd = (rpc_tapdata_t *)tapdata;
+	uint64_t td;
 	rpc_program_t *rp;
 	char str[64];
 
@@ -185,17 +178,17 @@ rpcprogs_draw(void *dummy _U_)
 	printf("==========================================================\n");
 	printf("ONC-RPC Program Statistics:\n");
 	printf("Program    Version  Calls    Min SRT    Max SRT    Avg SRT\n");
-	for (rp = prog_list;rp;rp = rp->next) {
+	for (rp = rtd->prog_list; rp; rp = rp->next) {
 		/* Only display procs with non-zero calls */
 		if (rp->num == 0) {
 			continue;
 		}
 		/* Scale the average SRT in units of 1us and round to the nearest us. */
-		td = ((guint64)(rp->tot.secs)) * NANOSECS_PER_SEC + rp->tot.nsecs;
+		td = ((uint64_t)(rp->tot.secs)) * NANOSECS_PER_SEC + rp->tot.nsecs;
 		td = ((td / rp->num) + 500) / 1000;
 
-		g_snprintf(str, sizeof(str), "%s(%d)", rpc_prog_name(rp->program), rp->program);
-		printf("%-15s %2u %6d %3d.%06d %3d.%06d %3" G_GINT64_MODIFIER "u.%06" G_GINT64_MODIFIER "u\n",
+		snprintf(str, sizeof(str), "%s(%d)", rpc_prog_name(rp->program), rp->program);
+		printf("%-15s %2u %6d %3d.%06d %3d.%06d %3" PRIu64 ".%06" PRIu64 "\n",
 		       str,
 		       rp->version,
 		       rp->num,
@@ -207,24 +200,43 @@ rpcprogs_draw(void *dummy _U_)
 	printf("===================================================================\n");
 }
 
+static void
+rpcprogs_reset(void *tapdata)
+{
+	rpc_tapdata_t *rtd = (rpc_tapdata_t *)tapdata;
+	rpc_program_t *rp = rtd->prog_list;
+	while (rp != NULL) {
+		rpc_program_t *next = rp->next;
+		g_free(rp);
+		rp = next;
+	}
+	rtd->prog_list = NULL;
+}
 
 static void
+rpcprogs_finish(void *tapdata)
+{
+	rpcprogs_reset(tapdata);
+	g_free((rpc_tapdata_t *)tapdata);
+}
+
+static bool
 rpcprogs_init(const char *opt_arg _U_, void *userdata _U_)
 {
 	GString *error_string;
 
-	if (already_enabled) {
-		return;
-	}
-	already_enabled = 1;
+	rpc_tapdata_t *tapdata = g_new0(rpc_tapdata_t, 1);
 
-	error_string = register_tap_listener("rpc", NULL, NULL, 0, NULL, rpcprogs_packet, rpcprogs_draw);
+	error_string = register_tap_listener("rpc", tapdata, NULL, TL_REQUIRES_NOTHING,
+					rpcprogs_reset, rpcprogs_packet, rpcprogs_draw, rpcprogs_finish);
 	if (error_string) {
-		fprintf(stderr, "tshark: Couldn't register rpc,programs tap: %s\n",
+		cmdarg_err("Couldn't register rpc,programs tap: %s",
 			error_string->str);
 		g_string_free(error_string, TRUE);
-		exit(1);
+		return false;
 	}
+
+	return true;
 }
 
 static stat_tap_ui rpcprogs_ui = {
@@ -243,7 +255,7 @@ register_tap_listener_rpcprogs(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

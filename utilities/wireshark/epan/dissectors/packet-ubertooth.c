@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,319 +20,319 @@
 #include "packet-bluetooth.h"
 #include "packet-ubertooth.h"
 
-static int proto_ubertooth = -1;
+static int proto_ubertooth;
 
-static int hf_command = -1;
-static int hf_response = -1;
-static int hf_argument_0 = -1;
-static int hf_argument_1 = -1;
-static int hf_estimated_length = -1;
-static int hf_board_id = -1;
-static int hf_reserved = -1;
-static int hf_length = -1;
-static int hf_firmware_revision = -1;
-static int hf_firmware_compile_info = -1;
-static int hf_user_led = -1;
-static int hf_rx_led = -1;
-static int hf_tx_led = -1;
-static int hf_1v8_led = -1;
-static int hf_channel = -1;
-static int hf_status = -1;
-static int hf_serial_number = -1;
-static int hf_part_number = -1;
-static int hf_packet_type = -1;
-static int hf_chip_status_dma_overflow = -1;
-static int hf_chip_status_dma_error = -1;
-static int hf_chip_status_cs_trigger = -1;
-static int hf_chip_status_fifo_overflow = -1;
-static int hf_chip_status_rssi_trigger = -1;
-static int hf_chip_status_reserved = -1;
-static int hf_clock_ns = -1;
-static int hf_clock_100ns = -1;
-static int hf_rssi_min = -1;
-static int hf_rssi_max = -1;
-static int hf_rssi_avg = -1;
-static int hf_rssi_count = -1;
-static int hf_data = -1;
-static int hf_crc_verify = -1;
-static int hf_paen = -1;
-static int hf_hgm = -1;
-static int hf_modulation = -1;
-static int hf_power_amplifier_reserved = -1;
-static int hf_power_amplifier_level = -1;
-static int hf_range_test_valid = -1;
-static int hf_range_test_request_power_amplifier = -1;
-static int hf_range_test_request_number = -1;
-static int hf_range_test_reply_power_amplifier = -1;
-static int hf_range_test_reply_number = -1;
-static int hf_squelch = -1;
-static int hf_register = -1;
-static int hf_register_value = -1;
-static int hf_access_address = -1;
-static int hf_high_frequency = -1;
-static int hf_low_frequency = -1;
-static int hf_rx_packets = -1;
-static int hf_rssi_threshold = -1;
-static int hf_clock_offset = -1;
-static int hf_afh_map = -1;
-static int hf_bdaddr = -1;
-static int hf_usb_rx_packet = -1;
-static int hf_state = -1;
-static int hf_crc_init = -1;
-static int hf_hop_interval = -1;
-static int hf_hop_increment = -1;
-static int hf_usb_rx_packet_channel = -1;
-static int hf_spectrum_entry = -1;
-static int hf_frequency = -1;
-static int hf_rssi = -1;
-static int hf_jam_mode = -1;
-static int hf_ego_mode = -1;
-static int hf_cc2400_value = -1;
-static int hf_cc2400_main_resetn = -1;
-static int hf_cc2400_main_reserved_14_10 = -1;
-static int hf_cc2400_main_fs_force_en = -1;
-static int hf_cc2400_main_rxn_tx = -1;
-static int hf_cc2400_main_reserved_7_4 = -1;
-static int hf_cc2400_main_reserved_3 = -1;
-static int hf_cc2400_main_reserved_2 = -1;
-static int hf_cc2400_main_xosc16m_bypass = -1;
-static int hf_cc2400_main_xosc16m_en = -1;
-static int hf_cc2400_fsctrl_reserved = -1;
-static int hf_cc2400_fsctrl_lock_threshold = -1;
-static int hf_cc2400_fsctrl_cal_done = -1;
-static int hf_cc2400_fsctrl_cal_running = -1;
-static int hf_cc2400_fsctrl_lock_length = -1;
-static int hf_cc2400_fsctrl_lock_status = -1;
-static int hf_cc2400_fsdiv_reserved = -1;
-static int hf_cc2400_fsdiv_frequency = -1;
-static int hf_cc2400_fsdiv_freq_high = -1;
-static int hf_cc2400_fsdiv_freq = -1;
-static int hf_cc2400_mdmctrl_reserved = -1;
-static int hf_cc2400_mdmctrl_mod_offset = -1;
-static int hf_cc2400_mdmctrl_mod_dev = -1;
-static int hf_cc2400_agcctrl_vga_gain = -1;
-static int hf_cc2400_agcctrl_reserved = -1;
-static int hf_cc2400_agcctrl_agc_locked = -1;
-static int hf_cc2400_agcctrl_agc_lock = -1;
-static int hf_cc2400_agcctrl_agc_sync_lock = -1;
-static int hf_cc2400_agcctrl_vga_gain_oe = -1;
-static int hf_cc2400_frend_reserved_15_4 = -1;
-static int hf_cc2400_frend_reserved_3 = -1;
-static int hf_cc2400_frend_pa_level = -1;
-static int hf_cc2400_rssi_rssi_val = -1;
-static int hf_cc2400_rssi_rssi_cs_thres = -1;
-static int hf_cc2400_rssi_rssi_filt = -1;
-static int hf_cc2400_freqest_rx_freq_offset = -1;
-static int hf_cc2400_freqest_reserved = -1;
-static int hf_cc2400_iocfg_reserved = -1;
-static int hf_cc2400_iocfg_gio6_cfg = -1;
-static int hf_cc2400_iocfg_gio1_cfg = -1;
-static int hf_cc2400_iocfg_hssd_src = -1;
-static int hf_cc2400_fsmtc_tc_rxon2agcen = -1;
-static int hf_cc2400_fsmtc_tc_paon2switch = -1;
-static int hf_cc2400_fsmtc_res = -1;
-static int hf_cc2400_fsmtc_tc_txend2switch = -1;
-static int hf_cc2400_fsmtc_tc_txend2paoff = -1;
-static int hf_cc2400_reserved_0x0C_res_15_5 = -1;
-static int hf_cc2400_reserved_0x0C_res_4_0 = -1;
-static int hf_cc2400_manand_vga_reset_n = -1;
-static int hf_cc2400_manand_lock_status = -1;
-static int hf_cc2400_manand_balun_ctrl = -1;
-static int hf_cc2400_manand_rxtx = -1;
-static int hf_cc2400_manand_pre_pd = -1;
-static int hf_cc2400_manand_pa_n_pd = -1;
-static int hf_cc2400_manand_pa_p_pd = -1;
-static int hf_cc2400_manand_dac_lpf_pd = -1;
-static int hf_cc2400_manand_bias_pd = -1;
-static int hf_cc2400_manand_xosc16m_pd = -1;
-static int hf_cc2400_manand_chp_pd = -1;
-static int hf_cc2400_manand_fs_pd = -1;
-static int hf_cc2400_manand_adc_pd = -1;
-static int hf_cc2400_manand_vga_pd = -1;
-static int hf_cc2400_manand_rxbpf_pd = -1;
-static int hf_cc2400_manand_lnamix_pd = -1;
-static int hf_cc2400_fsmstate_reserved_15_13 = -1;
-static int hf_cc2400_fsmstate_fsm_state_bkpt = -1;
-static int hf_cc2400_fsmstate_reserved_7_5 = -1;
-static int hf_cc2400_fsmstate_fsm_cur_state = -1;
-static int hf_cc2400_adctst_reserved_15 = -1;
-static int hf_cc2400_adctst_adc_i = -1;
-static int hf_cc2400_adctst_reserved_7 = -1;
-static int hf_cc2400_adctst_adc_q = -1;
-static int hf_cc2400_rxbpftst_reserved = -1;
-static int hf_cc2400_rxbpftst_rxbpf_cap_oe = -1;
-static int hf_cc2400_rxbpftst_rxbpf_cap_o = -1;
-static int hf_cc2400_rxbpftst_rxbpf_cap_res = -1;
-static int hf_cc2400_pamtst_reserved_15_13 = -1;
-static int hf_cc2400_pamtst_vc_in_test_en = -1;
-static int hf_cc2400_pamtst_atestmod_pd = -1;
-static int hf_cc2400_pamtst_atestmod_mode = -1;
-static int hf_cc2400_pamtst_reserved_7 = -1;
-static int hf_cc2400_pamtst_txmix_cap_array = -1;
-static int hf_cc2400_pamtst_txmix_current = -1;
-static int hf_cc2400_pamtst_pa_current = -1;
-static int hf_cc2400_lmtst_reserved = -1;
-static int hf_cc2400_lmtst_rxmix_hgm = -1;
-static int hf_cc2400_lmtst_rxmix_tail = -1;
-static int hf_cc2400_lmtst_rxmix_vcm = -1;
-static int hf_cc2400_lmtst_rxmix_current = -1;
-static int hf_cc2400_lmtst_lna_cap_array = -1;
-static int hf_cc2400_lmtst_lna_lowgain = -1;
-static int hf_cc2400_lmtst_lna_gain = -1;
-static int hf_cc2400_lmtst_lna_current = -1;
-static int hf_cc2400_manor_vga_reset_n = -1;
-static int hf_cc2400_manor_lock_status = -1;
-static int hf_cc2400_manor_balun_ctrl = -1;
-static int hf_cc2400_manor_rxtx = -1;
-static int hf_cc2400_manor_pre_pd = -1;
-static int hf_cc2400_manor_pa_n_pd = -1;
-static int hf_cc2400_manor_pa_p_pd = -1;
-static int hf_cc2400_manor_dac_lpf_pd = -1;
-static int hf_cc2400_manor_bias_pd = -1;
-static int hf_cc2400_manor_xosc16m_pd = -1;
-static int hf_cc2400_manor_chp_pd = -1;
-static int hf_cc2400_manor_fs_pd = -1;
-static int hf_cc2400_manor_adc_pd = -1;
-static int hf_cc2400_manor_vga_pd = -1;
-static int hf_cc2400_manor_rxbpf_pd = -1;
-static int hf_cc2400_manor_lnamix_pd = -1;
-static int hf_cc2400_mdmtst0_reserved = -1;
-static int hf_cc2400_mdmtst0_tx_prng = -1;
-static int hf_cc2400_mdmtst0_tx_1mhz_offset_n = -1;
-static int hf_cc2400_mdmtst0_invert_data = -1;
-static int hf_cc2400_mdmtst0_afc_adjust_on_packet = -1;
-static int hf_cc2400_mdmtst0_afc_settling = -1;
-static int hf_cc2400_mdmtst0_afc_delta = -1;
-static int hf_cc2400_mdmtst1_reserved = -1;
-static int hf_cc2400_mdmtst1_bsync_threshold = -1;
-static int hf_cc2400_dactst_reserved = -1;
-static int hf_cc2400_dactst_dac_src = -1;
-static int hf_cc2400_dactst_dac_i_o = -1;
-static int hf_cc2400_dactst_dac_q_o = -1;
-static int hf_cc2400_agctst0_agc_settle_blank_dn = -1;
-static int hf_cc2400_agctst0_agc_win_size = -1;
-static int hf_cc2400_agctst0_agc_settle_peak = -1;
-static int hf_cc2400_agctst0_agc_settle_adc = -1;
-static int hf_cc2400_agctst0_agc_attempts = -1;
-static int hf_cc2400_agctst1_reserved = -1;
-static int hf_cc2400_agctst1_agc_var_gain_sat = -1;
-static int hf_cc2400_agctst1_agc_settle_blank_up = -1;
-static int hf_cc2400_agctst1_peakdet_cur_boost = -1;
-static int hf_cc2400_agctst1_agc_mult_slow = -1;
-static int hf_cc2400_agctst1_agc_settle_fixed = -1;
-static int hf_cc2400_agctst1_agc_settle_var = -1;
-static int hf_cc2400_agctst2_reserved = -1;
-static int hf_cc2400_agctst2_agc_backend_blanking = -1;
-static int hf_cc2400_agctst2_agc_adjust_m3db = -1;
-static int hf_cc2400_agctst2_agc_adjust_m1db = -1;
-static int hf_cc2400_agctst2_agc_adjust_p3db = -1;
-static int hf_cc2400_agctst2_agc_adjust_p1db = -1;
-static int hf_cc2400_fstst0_rxmixbuf_cur = -1;
-static int hf_cc2400_fstst0_txmixbuf_cur = -1;
-static int hf_cc2400_fstst0_vco_array_settle_long = -1;
-static int hf_cc2400_fstst0_vco_array_oe = -1;
-static int hf_cc2400_fstst0_vco_array_o = -1;
-static int hf_cc2400_fstst0_vco_array_res = -1;
-static int hf_cc2400_fstst1_rxbpf_locur = -1;
-static int hf_cc2400_fstst1_rxbpf_midcur = -1;
-static int hf_cc2400_fstst1_vco_current_ref = -1;
-static int hf_cc2400_fstst1_vco_current_k = -1;
-static int hf_cc2400_fstst1_vc_dac_en = -1;
-static int hf_cc2400_fstst1_vc_dac_val = -1;
-static int hf_cc2400_fstst2_reserved = -1;
-static int hf_cc2400_fstst2_vco_curcal_speed = -1;
-static int hf_cc2400_fstst2_vco_current_oe = -1;
-static int hf_cc2400_fstst2_vco_current_o = -1;
-static int hf_cc2400_fstst2_vco_current_res = -1;
-static int hf_cc2400_fstst3_reserved = -1;
-static int hf_cc2400_fstst3_chp_test_up = -1;
-static int hf_cc2400_fstst3_chp_test_dn = -1;
-static int hf_cc2400_fstst3_chp_disable = -1;
-static int hf_cc2400_fstst3_pd_delay = -1;
-static int hf_cc2400_fstst3_chp_step_period = -1;
-static int hf_cc2400_fstst3_stop_chp_current = -1;
-static int hf_cc2400_fstst3_start_chp_current = -1;
-static int hf_cc2400_manfidl_partnum = -1;
-static int hf_cc2400_manfidl_manfid = -1;
-static int hf_cc2400_manfidh_version = -1;
-static int hf_cc2400_manfidh_partnum = -1;
-static int hf_cc2400_grmdm_reserved = -1;
-static int hf_cc2400_grmdm_sync_errbits_allowed = -1;
-static int hf_cc2400_grmdm_pin_mode = -1;
-static int hf_cc2400_grmdm_packet_mode = -1;
-static int hf_cc2400_grmdm_pre_bytes = -1;
-static int hf_cc2400_grmdm_sync_word_size = -1;
-static int hf_cc2400_grmdm_crc_on = -1;
-static int hf_cc2400_grmdm_data_format = -1;
-static int hf_cc2400_grmdm_modulation_format = -1;
-static int hf_cc2400_grmdm_tx_gaussian_filter = -1;
-static int hf_cc2400_grdec_reserved = -1;
-static int hf_cc2400_grdec_ind_saturation = -1;
-static int hf_cc2400_grdec_dec_shift = -1;
-static int hf_cc2400_grdec_channel_dec = -1;
-static int hf_cc2400_grdec_dec_val = -1;
-static int hf_cc2400_pktstatus_reserved_15_11 = -1;
-static int hf_cc2400_pktstatus_sync_word_received = -1;
-static int hf_cc2400_pktstatus_crc_ok = -1;
-static int hf_cc2400_pktstatus_reserved_8 = -1;
-static int hf_cc2400_pktstatus_reserved_7_0 = -1;
-static int hf_cc2400_int_reserved_15_8 = -1;
-static int hf_cc2400_int_reserved_7 = -1;
-static int hf_cc2400_int_pkt_polarity = -1;
-static int hf_cc2400_int_fifo_polarity = -1;
-static int hf_cc2400_int_fifo_threshold = -1;
-static int hf_cc2400_reserved_0x24_res_15_14 = -1;
-static int hf_cc2400_reserved_0x24_res_13_10 = -1;
-static int hf_cc2400_reserved_0x24_res_9_7 = -1;
-static int hf_cc2400_reserved_0x24_res_6_0 = -1;
-static int hf_cc2400_reserved_0x25_res_15_12 = -1;
-static int hf_cc2400_reserved_0x25_res_11_0 = -1;
-static int hf_cc2400_reserved_0x26_res_15_10 = -1;
-static int hf_cc2400_reserved_0x26_res_9_0 = -1;
-static int hf_cc2400_reserved_0x27_res_15_8 = -1;
-static int hf_cc2400_reserved_0x27_res_7_3 = -1;
-static int hf_cc2400_reserved_0x27_res_2_0 = -1;
-static int hf_cc2400_reserved_0x28_res_15 = -1;
-static int hf_cc2400_reserved_0x28_res_14_13 = -1;
-static int hf_cc2400_reserved_0x28_res_12_7 = -1;
-static int hf_cc2400_reserved_0x28_res_6_0 = -1;
-static int hf_cc2400_reserved_0x29_res_15_8 = -1;
-static int hf_cc2400_reserved_0x29_res_7_3 = -1;
-static int hf_cc2400_reserved_0x29_res_2_0 = -1;
-static int hf_cc2400_reserved_0x2A_res_15_11 = -1;
-static int hf_cc2400_reserved_0x2A_res_10 = -1;
-static int hf_cc2400_reserved_0x2A_res_9_0 = -1;
-static int hf_cc2400_reserved_0x2B_res_15_14 = -1;
-static int hf_cc2400_reserved_0x2B_res_13 = -1;
-static int hf_cc2400_reserved_0x2B_res_12 = -1;
-static int hf_cc2400_reserved_0x2B_res_11_0 = -1;
-static int hf_cc2400_syncl = -1;
-static int hf_cc2400_synch = -1;
+static int hf_command;
+static int hf_response;
+static int hf_argument_0;
+static int hf_argument_1;
+static int hf_estimated_length;
+static int hf_board_id;
+static int hf_reserved;
+static int hf_length;
+static int hf_firmware_revision;
+static int hf_firmware_compile_info;
+static int hf_user_led;
+static int hf_rx_led;
+static int hf_tx_led;
+static int hf_1v8_led;
+static int hf_channel;
+static int hf_status;
+static int hf_serial_number;
+static int hf_part_number;
+static int hf_packet_type;
+static int hf_chip_status_dma_overflow;
+static int hf_chip_status_dma_error;
+static int hf_chip_status_cs_trigger;
+static int hf_chip_status_fifo_overflow;
+static int hf_chip_status_rssi_trigger;
+static int hf_chip_status_reserved;
+static int hf_clock_ns;
+static int hf_clock_100ns;
+static int hf_rssi_min;
+static int hf_rssi_max;
+static int hf_rssi_avg;
+static int hf_rssi_count;
+static int hf_data;
+static int hf_crc_verify;
+static int hf_paen;
+static int hf_hgm;
+static int hf_modulation;
+static int hf_power_amplifier_reserved;
+static int hf_power_amplifier_level;
+static int hf_range_test_valid;
+static int hf_range_test_request_power_amplifier;
+static int hf_range_test_request_number;
+static int hf_range_test_reply_power_amplifier;
+static int hf_range_test_reply_number;
+static int hf_squelch;
+static int hf_register;
+static int hf_register_value;
+static int hf_access_address;
+static int hf_high_frequency;
+static int hf_low_frequency;
+static int hf_rx_packets;
+static int hf_rssi_threshold;
+static int hf_clock_offset;
+static int hf_afh_map;
+static int hf_bdaddr;
+static int hf_usb_rx_packet;
+static int hf_state;
+static int hf_crc_init;
+static int hf_hop_interval;
+static int hf_hop_increment;
+static int hf_usb_rx_packet_channel;
+static int hf_spectrum_entry;
+static int hf_frequency;
+static int hf_rssi;
+static int hf_jam_mode;
+static int hf_ego_mode;
+static int hf_cc2400_value;
+static int hf_cc2400_main_resetn;
+static int hf_cc2400_main_reserved_14_10;
+static int hf_cc2400_main_fs_force_en;
+static int hf_cc2400_main_rxn_tx;
+static int hf_cc2400_main_reserved_7_4;
+static int hf_cc2400_main_reserved_3;
+static int hf_cc2400_main_reserved_2;
+static int hf_cc2400_main_xosc16m_bypass;
+static int hf_cc2400_main_xosc16m_en;
+static int hf_cc2400_fsctrl_reserved;
+static int hf_cc2400_fsctrl_lock_threshold;
+static int hf_cc2400_fsctrl_cal_done;
+static int hf_cc2400_fsctrl_cal_running;
+static int hf_cc2400_fsctrl_lock_length;
+static int hf_cc2400_fsctrl_lock_status;
+static int hf_cc2400_fsdiv_reserved;
+static int hf_cc2400_fsdiv_frequency;
+static int hf_cc2400_fsdiv_freq_high;
+static int hf_cc2400_fsdiv_freq;
+static int hf_cc2400_mdmctrl_reserved;
+static int hf_cc2400_mdmctrl_mod_offset;
+static int hf_cc2400_mdmctrl_mod_dev;
+static int hf_cc2400_agcctrl_vga_gain;
+static int hf_cc2400_agcctrl_reserved;
+static int hf_cc2400_agcctrl_agc_locked;
+static int hf_cc2400_agcctrl_agc_lock;
+static int hf_cc2400_agcctrl_agc_sync_lock;
+static int hf_cc2400_agcctrl_vga_gain_oe;
+static int hf_cc2400_frend_reserved_15_4;
+static int hf_cc2400_frend_reserved_3;
+static int hf_cc2400_frend_pa_level;
+static int hf_cc2400_rssi_rssi_val;
+static int hf_cc2400_rssi_rssi_cs_thres;
+static int hf_cc2400_rssi_rssi_filt;
+static int hf_cc2400_freqest_rx_freq_offset;
+static int hf_cc2400_freqest_reserved;
+static int hf_cc2400_iocfg_reserved;
+static int hf_cc2400_iocfg_gio6_cfg;
+static int hf_cc2400_iocfg_gio1_cfg;
+static int hf_cc2400_iocfg_hssd_src;
+static int hf_cc2400_fsmtc_tc_rxon2agcen;
+static int hf_cc2400_fsmtc_tc_paon2switch;
+static int hf_cc2400_fsmtc_res;
+static int hf_cc2400_fsmtc_tc_txend2switch;
+static int hf_cc2400_fsmtc_tc_txend2paoff;
+static int hf_cc2400_reserved_0x0C_res_15_5;
+static int hf_cc2400_reserved_0x0C_res_4_0;
+static int hf_cc2400_manand_vga_reset_n;
+static int hf_cc2400_manand_lock_status;
+static int hf_cc2400_manand_balun_ctrl;
+static int hf_cc2400_manand_rxtx;
+static int hf_cc2400_manand_pre_pd;
+static int hf_cc2400_manand_pa_n_pd;
+static int hf_cc2400_manand_pa_p_pd;
+static int hf_cc2400_manand_dac_lpf_pd;
+static int hf_cc2400_manand_bias_pd;
+static int hf_cc2400_manand_xosc16m_pd;
+static int hf_cc2400_manand_chp_pd;
+static int hf_cc2400_manand_fs_pd;
+static int hf_cc2400_manand_adc_pd;
+static int hf_cc2400_manand_vga_pd;
+static int hf_cc2400_manand_rxbpf_pd;
+static int hf_cc2400_manand_lnamix_pd;
+static int hf_cc2400_fsmstate_reserved_15_13;
+static int hf_cc2400_fsmstate_fsm_state_bkpt;
+static int hf_cc2400_fsmstate_reserved_7_5;
+static int hf_cc2400_fsmstate_fsm_cur_state;
+static int hf_cc2400_adctst_reserved_15;
+static int hf_cc2400_adctst_adc_i;
+static int hf_cc2400_adctst_reserved_7;
+static int hf_cc2400_adctst_adc_q;
+static int hf_cc2400_rxbpftst_reserved;
+static int hf_cc2400_rxbpftst_rxbpf_cap_oe;
+static int hf_cc2400_rxbpftst_rxbpf_cap_o;
+static int hf_cc2400_rxbpftst_rxbpf_cap_res;
+static int hf_cc2400_pamtst_reserved_15_13;
+static int hf_cc2400_pamtst_vc_in_test_en;
+static int hf_cc2400_pamtst_atestmod_pd;
+static int hf_cc2400_pamtst_atestmod_mode;
+static int hf_cc2400_pamtst_reserved_7;
+static int hf_cc2400_pamtst_txmix_cap_array;
+static int hf_cc2400_pamtst_txmix_current;
+static int hf_cc2400_pamtst_pa_current;
+static int hf_cc2400_lmtst_reserved;
+static int hf_cc2400_lmtst_rxmix_hgm;
+static int hf_cc2400_lmtst_rxmix_tail;
+static int hf_cc2400_lmtst_rxmix_vcm;
+static int hf_cc2400_lmtst_rxmix_current;
+static int hf_cc2400_lmtst_lna_cap_array;
+static int hf_cc2400_lmtst_lna_lowgain;
+static int hf_cc2400_lmtst_lna_gain;
+static int hf_cc2400_lmtst_lna_current;
+static int hf_cc2400_manor_vga_reset_n;
+static int hf_cc2400_manor_lock_status;
+static int hf_cc2400_manor_balun_ctrl;
+static int hf_cc2400_manor_rxtx;
+static int hf_cc2400_manor_pre_pd;
+static int hf_cc2400_manor_pa_n_pd;
+static int hf_cc2400_manor_pa_p_pd;
+static int hf_cc2400_manor_dac_lpf_pd;
+static int hf_cc2400_manor_bias_pd;
+static int hf_cc2400_manor_xosc16m_pd;
+static int hf_cc2400_manor_chp_pd;
+static int hf_cc2400_manor_fs_pd;
+static int hf_cc2400_manor_adc_pd;
+static int hf_cc2400_manor_vga_pd;
+static int hf_cc2400_manor_rxbpf_pd;
+static int hf_cc2400_manor_lnamix_pd;
+static int hf_cc2400_mdmtst0_reserved;
+static int hf_cc2400_mdmtst0_tx_prng;
+static int hf_cc2400_mdmtst0_tx_1mhz_offset_n;
+static int hf_cc2400_mdmtst0_invert_data;
+static int hf_cc2400_mdmtst0_afc_adjust_on_packet;
+static int hf_cc2400_mdmtst0_afc_settling;
+static int hf_cc2400_mdmtst0_afc_delta;
+static int hf_cc2400_mdmtst1_reserved;
+static int hf_cc2400_mdmtst1_bsync_threshold;
+static int hf_cc2400_dactst_reserved;
+static int hf_cc2400_dactst_dac_src;
+static int hf_cc2400_dactst_dac_i_o;
+static int hf_cc2400_dactst_dac_q_o;
+static int hf_cc2400_agctst0_agc_settle_blank_dn;
+static int hf_cc2400_agctst0_agc_win_size;
+static int hf_cc2400_agctst0_agc_settle_peak;
+static int hf_cc2400_agctst0_agc_settle_adc;
+static int hf_cc2400_agctst0_agc_attempts;
+static int hf_cc2400_agctst1_reserved;
+static int hf_cc2400_agctst1_agc_var_gain_sat;
+static int hf_cc2400_agctst1_agc_settle_blank_up;
+static int hf_cc2400_agctst1_peakdet_cur_boost;
+static int hf_cc2400_agctst1_agc_mult_slow;
+static int hf_cc2400_agctst1_agc_settle_fixed;
+static int hf_cc2400_agctst1_agc_settle_var;
+static int hf_cc2400_agctst2_reserved;
+static int hf_cc2400_agctst2_agc_backend_blanking;
+static int hf_cc2400_agctst2_agc_adjust_m3db;
+static int hf_cc2400_agctst2_agc_adjust_m1db;
+static int hf_cc2400_agctst2_agc_adjust_p3db;
+static int hf_cc2400_agctst2_agc_adjust_p1db;
+static int hf_cc2400_fstst0_rxmixbuf_cur;
+static int hf_cc2400_fstst0_txmixbuf_cur;
+static int hf_cc2400_fstst0_vco_array_settle_long;
+static int hf_cc2400_fstst0_vco_array_oe;
+static int hf_cc2400_fstst0_vco_array_o;
+static int hf_cc2400_fstst0_vco_array_res;
+static int hf_cc2400_fstst1_rxbpf_locur;
+static int hf_cc2400_fstst1_rxbpf_midcur;
+static int hf_cc2400_fstst1_vco_current_ref;
+static int hf_cc2400_fstst1_vco_current_k;
+static int hf_cc2400_fstst1_vc_dac_en;
+static int hf_cc2400_fstst1_vc_dac_val;
+static int hf_cc2400_fstst2_reserved;
+static int hf_cc2400_fstst2_vco_curcal_speed;
+static int hf_cc2400_fstst2_vco_current_oe;
+static int hf_cc2400_fstst2_vco_current_o;
+static int hf_cc2400_fstst2_vco_current_res;
+static int hf_cc2400_fstst3_reserved;
+static int hf_cc2400_fstst3_chp_test_up;
+static int hf_cc2400_fstst3_chp_test_dn;
+static int hf_cc2400_fstst3_chp_disable;
+static int hf_cc2400_fstst3_pd_delay;
+static int hf_cc2400_fstst3_chp_step_period;
+static int hf_cc2400_fstst3_stop_chp_current;
+static int hf_cc2400_fstst3_start_chp_current;
+static int hf_cc2400_manfidl_partnum;
+static int hf_cc2400_manfidl_manfid;
+static int hf_cc2400_manfidh_version;
+static int hf_cc2400_manfidh_partnum;
+static int hf_cc2400_grmdm_reserved;
+static int hf_cc2400_grmdm_sync_errbits_allowed;
+static int hf_cc2400_grmdm_pin_mode;
+static int hf_cc2400_grmdm_packet_mode;
+static int hf_cc2400_grmdm_pre_bytes;
+static int hf_cc2400_grmdm_sync_word_size;
+static int hf_cc2400_grmdm_crc_on;
+static int hf_cc2400_grmdm_data_format;
+static int hf_cc2400_grmdm_modulation_format;
+static int hf_cc2400_grmdm_tx_gaussian_filter;
+static int hf_cc2400_grdec_reserved;
+static int hf_cc2400_grdec_ind_saturation;
+static int hf_cc2400_grdec_dec_shift;
+static int hf_cc2400_grdec_channel_dec;
+static int hf_cc2400_grdec_dec_val;
+static int hf_cc2400_pktstatus_reserved_15_11;
+static int hf_cc2400_pktstatus_sync_word_received;
+static int hf_cc2400_pktstatus_crc_ok;
+static int hf_cc2400_pktstatus_reserved_8;
+static int hf_cc2400_pktstatus_reserved_7_0;
+static int hf_cc2400_int_reserved_15_8;
+static int hf_cc2400_int_reserved_7;
+static int hf_cc2400_int_pkt_polarity;
+static int hf_cc2400_int_fifo_polarity;
+static int hf_cc2400_int_fifo_threshold;
+static int hf_cc2400_reserved_0x24_res_15_14;
+static int hf_cc2400_reserved_0x24_res_13_10;
+static int hf_cc2400_reserved_0x24_res_9_7;
+static int hf_cc2400_reserved_0x24_res_6_0;
+static int hf_cc2400_reserved_0x25_res_15_12;
+static int hf_cc2400_reserved_0x25_res_11_0;
+static int hf_cc2400_reserved_0x26_res_15_10;
+static int hf_cc2400_reserved_0x26_res_9_0;
+static int hf_cc2400_reserved_0x27_res_15_8;
+static int hf_cc2400_reserved_0x27_res_7_3;
+static int hf_cc2400_reserved_0x27_res_2_0;
+static int hf_cc2400_reserved_0x28_res_15;
+static int hf_cc2400_reserved_0x28_res_14_13;
+static int hf_cc2400_reserved_0x28_res_12_7;
+static int hf_cc2400_reserved_0x28_res_6_0;
+static int hf_cc2400_reserved_0x29_res_15_8;
+static int hf_cc2400_reserved_0x29_res_7_3;
+static int hf_cc2400_reserved_0x29_res_2_0;
+static int hf_cc2400_reserved_0x2A_res_15_11;
+static int hf_cc2400_reserved_0x2A_res_10;
+static int hf_cc2400_reserved_0x2A_res_9_0;
+static int hf_cc2400_reserved_0x2B_res_15_14;
+static int hf_cc2400_reserved_0x2B_res_13;
+static int hf_cc2400_reserved_0x2B_res_12;
+static int hf_cc2400_reserved_0x2B_res_11_0;
+static int hf_cc2400_syncl;
+static int hf_cc2400_synch;
 
-static gint ett_ubertooth = -1;
-static gint ett_command = -1;
-static gint ett_usb_rx_packet = -1;
-static gint ett_usb_rx_packet_data = -1;
-static gint ett_entry = -1;
-static gint ett_register_value = -1;
-static gint ett_fsdiv_frequency = -1;
+static int ett_ubertooth;
+static int ett_command;
+static int ett_usb_rx_packet;
+static int ett_usb_rx_packet_data;
+static int ett_entry;
+static int ett_register_value;
+static int ett_fsdiv_frequency;
 
-static expert_field ei_unexpected_response = EI_INIT;
-static expert_field ei_unknown_data = EI_INIT;
-static expert_field ei_unexpected_data = EI_INIT;
+static expert_field ei_unexpected_response;
+static expert_field ei_unknown_data;
+static expert_field ei_unexpected_data;
 
 static dissector_handle_t ubertooth_handle;
 static dissector_handle_t bluetooth_ubertooth_handle;
 
-static wmem_tree_t *command_info = NULL;
+static wmem_tree_t *command_info;
 
 typedef struct _command_data {
-    guint32  bus_id;
-    guint32  device_address;
+    uint32_t bus_id;
+    uint32_t device_address;
 
-    guint8   command;
-    guint32  command_frame_number;
-    gint32   register_id;
+    uint8_t  command;
+    uint32_t command_frame_number;
+    int32_t  register_id;
 } command_data_t;
 
 
@@ -721,7 +709,7 @@ static const value_string cc2400_agctst1_agc_var_gain_sat_vals[] = {
 static value_string_ext(cc2400_agctst1_agc_var_gain_sat_vals_ext) = VALUE_STRING_EXT_INIT(cc2400_agctst1_agc_var_gain_sat_vals);
 
 static const value_string cc2400_dactst_dac_src_vals[] = {
-    { 0x00,  "Normal Operation (from Mudulator)" },
+    { 0x00,  "Normal Operation (from Modulator)" },
     { 0x01,  "The DAC_I_O and DAC_Q_O override values below" },
     { 0x02,  "From ADC" },
     { 0x03,  "I/Q after digital down-mixing and channel filtering" },
@@ -880,8 +868,9 @@ void proto_register_ubertooth(void);
 void proto_reg_handoff_ubertooth(void);
 
 
+/* TODO: rewrite to use e.g. proto_tree_add_bitmask() ? */
 static void
-dissect_cc2400_register(proto_tree *tree, tvbuff_t *tvb, gint offset, guint8 register_id)
+dissect_cc2400_register(proto_tree *tree, tvbuff_t *tvb, int offset, uint8_t register_id)
 {
     proto_item  *sub_item;
     proto_item  *sub_tree;
@@ -1202,9 +1191,9 @@ dissect_cc2400_register(proto_tree *tree, tvbuff_t *tvb, gint offset, guint8 reg
     }
 }
 
-static gint
+static int
 dissect_usb_rx_packet(proto_tree *main_tree, proto_tree *tree, packet_info *pinfo,
-        tvbuff_t *tvb, gint offset, gint16 command, usb_conv_info_t *usb_conv_info)
+        tvbuff_t *tvb, int offset, int16_t command, urb_info_t *urb)
 {
     proto_item  *sub_item;
     proto_tree  *sub_tree;
@@ -1213,13 +1202,13 @@ dissect_usb_rx_packet(proto_tree *main_tree, proto_tree *tree, packet_info *pinf
     proto_tree  *data_tree;
     proto_item  *entry_item;
     proto_tree  *entry_tree;
-    gint         i_spec;
-    gint         length;
+    int          i_spec;
+    int          length;
     tvbuff_t    *next_tvb;
-    guint8       packet_type;
-    guint32      start_offset;
-    guint32      clock_100ns;
-    guint8       channel;
+    uint8_t      packet_type;
+    uint32_t     start_offset;
+    uint32_t     clock_100ns;
+    uint8_t      channel;
     ubertooth_data_t  *ubertooth_data;
 
     sub_item = proto_tree_add_item(tree, hf_usb_rx_packet, tvb, offset, 64, ENC_NA);
@@ -1228,14 +1217,14 @@ dissect_usb_rx_packet(proto_tree *main_tree, proto_tree *tree, packet_info *pinf
     start_offset = offset;
 
     proto_tree_add_item(sub_tree, hf_packet_type, tvb, offset, 1, ENC_NA);
-    packet_type = tvb_get_guint8(tvb, offset);
+    packet_type = tvb_get_uint8(tvb, offset);
     offset += 1;
 
     if (packet_type == 0x05) { /* LE_PROMISC */
-        guint8  state;
+        uint8_t state;
 
         proto_tree_add_item(sub_tree, hf_state, tvb, offset, 1, ENC_NA);
-        state = tvb_get_guint8(tvb, offset);
+        state = tvb_get_uint8(tvb, offset);
         col_append_fstr(pinfo->cinfo, COL_INFO, " LE Promiscuous - %s", val_to_str_const(state, usb_rx_packet_state_vals, "Unknown"));
         offset += 1;
 
@@ -1258,7 +1247,7 @@ dissect_usb_rx_packet(proto_tree *main_tree, proto_tree *tree, packet_info *pinf
             break;
         case 3: /* Hop Increment */
             proto_tree_add_item(sub_tree, hf_hop_increment, tvb, offset, 1, ENC_NA);
-            col_append_fstr(pinfo->cinfo, COL_INFO, " %u", tvb_get_guint8(tvb, offset));
+            col_append_fstr(pinfo->cinfo, COL_INFO, " %u", tvb_get_uint8(tvb, offset));
             offset += 1;
             break;
         }
@@ -1278,7 +1267,7 @@ dissect_usb_rx_packet(proto_tree *main_tree, proto_tree *tree, packet_info *pinf
     offset += 1;
 
     proto_tree_add_item(sub_tree, hf_usb_rx_packet_channel, tvb, offset, 1, ENC_NA);
-    channel = tvb_get_guint8(tvb, offset);
+    channel = tvb_get_uint8(tvb, offset);
     offset += 1;
 
     proto_tree_add_item(sub_tree, hf_clock_ns, tvb, offset, 1, ENC_NA);
@@ -1318,7 +1307,7 @@ dissect_usb_rx_packet(proto_tree *main_tree, proto_tree *tree, packet_info *pinf
             proto_tree_add_item(entry_tree, hf_rssi, tvb, offset, 1, ENC_NA);
             offset += 1;
 
-            proto_item_append_text(entry_item, " Frequency = %u MHz, RSSI = %i", tvb_get_ntohs(tvb, offset - 3), (gint8) tvb_get_guint8(tvb, offset - 1));
+            proto_item_append_text(entry_item, " Frequency = %u MHz, RSSI = %i", tvb_get_ntohs(tvb, offset - 3), tvb_get_int8(tvb, offset - 1));
         }
 
         proto_tree_add_item(data_tree, hf_reserved, tvb, offset, 2, ENC_NA);
@@ -1332,13 +1321,13 @@ dissect_usb_rx_packet(proto_tree *main_tree, proto_tree *tree, packet_info *pinf
             length = 9; /* From BTLE: AccessAddress (4) + Header (2) + Length from Header (below) + CRC (3) */
 
             if (tvb_get_letohl(tvb, offset) == ACCESS_ADDRESS_ADVERTISING)
-                length += tvb_get_guint8(tvb, offset + 5) & 0x3f;
+                length += tvb_get_uint8(tvb, offset + 5) & 0x3f;
             else
-                length += tvb_get_guint8(tvb, offset + 5) & 0x1f;
+                length += tvb_get_uint8(tvb, offset + 5) & 0x1f;
 
-            ubertooth_data = wmem_new(wmem_packet_scope(), ubertooth_data_t);
-            ubertooth_data->bus_id = usb_conv_info->bus_id;
-            ubertooth_data->device_address = usb_conv_info->device_address;
+            ubertooth_data = wmem_new(pinfo->pool, ubertooth_data_t);
+            ubertooth_data->bus_id = urb->bus_id;
+            ubertooth_data->device_address = urb->device_address;
             ubertooth_data->clock_100ns = clock_100ns;
             ubertooth_data->channel = channel;
 
@@ -1366,7 +1355,7 @@ dissect_usb_rx_packet(proto_tree *main_tree, proto_tree *tree, packet_info *pinf
     return offset;
 }
 
-static gint
+static int
 dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     proto_item       *main_tree = NULL;
@@ -1375,42 +1364,42 @@ dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     proto_item       *command_tree;
     proto_item       *sub_item;
     proto_item       *sub_tree;
-    gint              offset = 0;
-    usb_conv_info_t  *usb_conv_info = (usb_conv_info_t *)data;
-    gint              p2p_dir_save;
-    guint8            command;
-    gint16            command_response = -1;
+    int               offset = 0;
+    urb_info_t       *urb = (urb_info_t *)data;
+    int               p2p_dir_save;
+    uint8_t           command;
+    int16_t           command_response = -1;
     command_data_t   *command_data = NULL;
     wmem_tree_t      *wmem_tree;
     wmem_tree_key_t   key[5];
-    guint32           bus_id;
-    guint32           device_address;
-    guint32           k_bus_id;
-    guint32           k_device_address;
-    guint32           k_frame_number;
-    guint8            length;
-    guint32          *serial;
-    guint8            status;
-    gint32            register_id = -1;
+    uint32_t          bus_id;
+    uint32_t          device_address;
+    uint32_t          k_bus_id;
+    uint32_t          k_device_address;
+    uint32_t          k_frame_number;
+    uint8_t           length;
+    uint32_t         *serial;
+    uint8_t           status;
+    int32_t           register_id = -1;
 
     main_item = proto_tree_add_item(tree, proto_ubertooth, tvb, offset, -1, ENC_NA);
     main_tree = proto_item_add_subtree(main_item, ett_ubertooth);
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "UBERTOOTH");
 
-    if (!usb_conv_info) return offset;
+    if (!urb) return offset;
 
     p2p_dir_save = pinfo->p2p_dir;
-    pinfo->p2p_dir = (usb_conv_info->is_request) ? P2P_DIR_SENT : P2P_DIR_RECV;
+    pinfo->p2p_dir = (urb->is_request) ? P2P_DIR_SENT : P2P_DIR_RECV;
 
     switch (pinfo->p2p_dir) {
 
     case P2P_DIR_SENT:
-        col_add_str(pinfo->cinfo, COL_INFO, "Sent ");
+        col_set_str(pinfo->cinfo, COL_INFO, "Sent ");
         break;
 
     case P2P_DIR_RECV:
-        col_add_str(pinfo->cinfo, COL_INFO, "Rcvd ");
+        col_set_str(pinfo->cinfo, COL_INFO, "Rcvd ");
         break;
 
     default:
@@ -1419,8 +1408,8 @@ dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         break;
     }
 
-    bus_id         = usb_conv_info->bus_id;
-    device_address = usb_conv_info->device_address;
+    bus_id         = urb->bus_id;
+    device_address = urb->device_address;
 
     k_bus_id          = bus_id;
     k_device_address  = device_address;
@@ -1432,9 +1421,9 @@ dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     key[1].key = &k_device_address;
 
 
-    if (usb_conv_info->is_setup) {
+    if (urb->is_setup) {
         proto_tree_add_item(main_tree, hf_command, tvb, offset, 1, ENC_NA);
-        command = tvb_get_guint8(tvb, offset);
+        command = tvb_get_uint8(tvb, offset);
         offset += 1;
 
         col_append_fstr(pinfo->cinfo, COL_INFO, "Command: %s",
@@ -1528,14 +1517,14 @@ dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
 
                 break;
             case 34: /* LED Spectrum Analyzer */
-                proto_tree_add_int(main_tree, hf_rssi_threshold, tvb, offset, 2, (gint8) tvb_get_letohs(tvb, offset));
-                col_append_fstr(pinfo->cinfo, COL_INFO, " = %i", (gint8) tvb_get_letohs(tvb, offset));
+                proto_tree_add_item(main_tree, hf_rssi_threshold, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+                col_append_fstr(pinfo->cinfo, COL_INFO, " = %i", tvb_get_letohis(tvb, offset));
                 offset += 2;
 
                 break;
             case 36: /* Set Squelch */
                 proto_tree_add_item(main_tree, hf_squelch, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-                col_append_fstr(pinfo->cinfo, COL_INFO, " = %i", (gint16) tvb_get_letohs(tvb, offset));
+                col_append_fstr(pinfo->cinfo, COL_INFO, " = %i", tvb_get_letohis(tvb, offset));
                 offset += 2;
 
                 break;
@@ -1689,7 +1678,7 @@ dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
                 break;
             case 51: /* Set AFH Map */
                 proto_tree_add_item(main_tree, hf_afh_map, tvb, offset, 10, ENC_NA);
-                col_append_fstr(pinfo->cinfo, COL_INFO, " - %s", tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, 10));
+                col_append_fstr(pinfo->cinfo, COL_INFO, " - %s", tvb_bytes_to_str(pinfo->pool, tvb, offset, 10));
 
                 offset += 10;
                 break;
@@ -1701,7 +1690,7 @@ dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         }
 
         /* Save request info (command_data) */
-        if (!pinfo->fd->flags.visited && command != 21) {
+        if (!pinfo->fd->visited && command != 21) {
             key[2].length = 1;
             key[2].key = &k_frame_number;
             key[3].length = 0;
@@ -1751,18 +1740,19 @@ dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
 
     command_item = proto_tree_add_uint(main_tree, hf_response, tvb, offset, 0, command_response);
     command_tree = proto_item_add_subtree(command_item, ett_command);
-    PROTO_ITEM_SET_GENERATED(command_item);
+    proto_item_set_generated(command_item);
     switch (command_response) {
 
     case 1: /* Rx Symbols */
     case 27: /* Spectrum Analyzer */
-        if (usb_conv_info->transfer_type == URB_BULK) {
+        if (urb->transfer_type == URB_BULK) {
 
             while (tvb_reported_length_remaining(tvb, offset) > 0) {
-                offset = dissect_usb_rx_packet(tree, main_tree, pinfo, tvb, offset, command_response, usb_conv_info);
+                offset = dissect_usb_rx_packet(tree, main_tree, pinfo, tvb, offset, command_response, urb);
             }
             break;
         }
+    /* FALLTHROUGH */
     case 0: /* Ping */
     case 2: /* Tx Symbols */        /* NOTE: This one seems to be not implemented in firmware at all*/
     case 26: /* Bootloader Flash */ /* NOTE: This one seems to be not implemented in firmware at all*/
@@ -1804,26 +1794,26 @@ dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         }
         break;
     case 3: /* Get User LED */
-        proto_tree_add_item(main_tree, hf_user_led, tvb, offset, 1, ENC_NA);
-        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_guint8(tvb, offset), &led_state_vals_ext, "Unknown"));
+        proto_tree_add_item(main_tree, hf_user_led, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_uint8(tvb, offset), &led_state_vals_ext, "Unknown"));
         offset += 1;
 
         break;
     case 5: /* Get Rx LED */
-        proto_tree_add_item(main_tree, hf_rx_led, tvb, offset, 1, ENC_NA);
-        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_guint8(tvb, offset), &led_state_vals_ext, "Unknown"));
+        proto_tree_add_item(main_tree, hf_rx_led, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_uint8(tvb, offset), &led_state_vals_ext, "Unknown"));
         offset += 1;
 
         break;
     case 7: /* Get Tx LED */
-        proto_tree_add_item(main_tree, hf_tx_led, tvb, offset, 1, ENC_NA);
-        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_guint8(tvb, offset), &led_state_vals_ext, "Unknown"));
+        proto_tree_add_item(main_tree, hf_tx_led, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_uint8(tvb, offset), &led_state_vals_ext, "Unknown"));
         offset += 1;
 
         break;
     case 9: /* Get 1V8 */
-        proto_tree_add_item(main_tree, hf_1v8_led, tvb, offset, 1, ENC_NA);
-        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_guint8(tvb, offset), &led_state_vals_ext, "Unknown"));
+        proto_tree_add_item(main_tree, hf_1v8_led, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_uint8(tvb, offset), &led_state_vals_ext, "Unknown"));
         offset += 1;
 
         break;
@@ -1835,27 +1825,27 @@ dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         break;
     case 14: /* Get Microcontroller Serial Number */
         proto_tree_add_item(main_tree, hf_status, tvb, offset, 1, ENC_NA);
-        status = tvb_get_guint8(tvb, offset);
+        status = tvb_get_uint8(tvb, offset);
         offset += 1;
 
         if (status) break;
 
-        serial = (guint32 *) wmem_alloc(wmem_packet_scope(), 16);
+        serial = (uint32_t *) wmem_alloc(pinfo->pool, 16);
         serial[0] = tvb_get_ntohl(tvb, offset);
         serial[1] = tvb_get_ntohl(tvb, offset + 4);
         serial[2] = tvb_get_ntohl(tvb, offset + 8);
         serial[3] = tvb_get_ntohl(tvb, offset + 12);
 
         proto_tree_add_bytes(main_tree, hf_serial_number, tvb,
-                offset, 16, (guint8 *) serial);
+                offset, 16, (uint8_t *) serial);
         col_append_fstr(pinfo->cinfo, COL_INFO, " = %s",
-                bytes_to_str(wmem_packet_scope(), (guint8 *) serial, 16));
+                bytes_to_str(pinfo->pool, (uint8_t *) serial, 16));
         offset += 16;
 
         break;
     case 15: /* Get Microcontroller Part Number */
         proto_tree_add_item(main_tree, hf_status, tvb, offset, 1, ENC_NA);
-        status = tvb_get_guint8(tvb, offset);
+        status = tvb_get_uint8(tvb, offset);
         offset += 1;
 
         if (status) break;
@@ -1866,27 +1856,27 @@ dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
 
         break;
     case 16: /* Get PAEN */
-        proto_tree_add_item(main_tree, hf_paen, tvb, offset, 1, ENC_NA);
-        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_guint8(tvb, offset), &state_vals_ext, "Unknown"));
+        proto_tree_add_item(main_tree, hf_paen, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_uint8(tvb, offset), &state_vals_ext, "Unknown"));
         offset += 1;
 
         break;
     case 18: /* Get HGM */
-        proto_tree_add_item(main_tree, hf_hgm, tvb, offset, 1, ENC_NA);
-        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_guint8(tvb, offset), &state_vals_ext, "Unknown"));
+        proto_tree_add_item(main_tree, hf_hgm, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_uint8(tvb, offset), &state_vals_ext, "Unknown"));
         offset += 1;
 
         break;
     case 22: /* Get Modulation */
-        proto_tree_add_item(main_tree, hf_modulation, tvb, offset, 1, ENC_NA);
-        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_guint8(tvb, offset), &modulation_vals_ext, "Unknown"));
+        proto_tree_add_item(main_tree, hf_modulation, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_uint8(tvb, offset), &modulation_vals_ext, "Unknown"));
         offset += 1;
 
         break;
     case 28: /* Get Power Amplifier Level */
         proto_tree_add_item(main_tree, hf_power_amplifier_reserved, tvb, offset, 1, ENC_NA);
         proto_tree_add_item(main_tree, hf_power_amplifier_level, tvb, offset, 1, ENC_NA);
-        col_append_fstr(pinfo->cinfo, COL_INFO, " = %u", tvb_get_guint8(tvb, offset) & 0x7);
+        col_append_fstr(pinfo->cinfo, COL_INFO, " = %u", tvb_get_uint8(tvb, offset) & 0x7);
         offset += 1;
 
         break;
@@ -1909,34 +1899,34 @@ dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         break;
     case 33: /* Get Firmware Revision Number */
         {
-        const guint8* firmware;
+        const uint8_t* firmware;
         proto_tree_add_item(main_tree, hf_reserved, tvb, offset, 2, ENC_NA);
         offset += 2;
 
         proto_tree_add_item(main_tree, hf_length, tvb, offset, 1, ENC_NA);
-        length = tvb_get_guint8(tvb, offset);
+        length = tvb_get_uint8(tvb, offset);
         offset += 1;
 
-        proto_tree_add_item_ret_string(main_tree, hf_firmware_revision, tvb, offset, length, ENC_NA | ENC_ASCII, wmem_packet_scope(), &firmware);
+        proto_tree_add_item_ret_string(main_tree, hf_firmware_revision, tvb, offset, length, ENC_NA | ENC_ASCII, pinfo->pool, &firmware);
         col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", firmware);
         offset += length;
         }
         break;
     case 35: /* Get Hardware Board ID */
         proto_tree_add_item(main_tree, hf_board_id, tvb, offset, 1, ENC_NA);
-        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_guint8(tvb, offset), &board_id_vals_ext, "Unknown"));
+        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_uint8(tvb, offset), &board_id_vals_ext, "Unknown"));
         offset += 1;
 
         break;
     case 37: /* Get Squelch */
-        proto_tree_add_item(main_tree, hf_squelch, tvb, offset, 1, ENC_NA);
-        col_append_fstr(pinfo->cinfo, COL_INFO, " = %i", (gint8) tvb_get_guint8(tvb, offset));
+        proto_tree_add_item(main_tree, hf_squelch, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, " = %i", tvb_get_int8(tvb, offset));
         offset += 1;
 
         break;
     case 41: /* Get Clock */
         proto_tree_add_item(main_tree, hf_clock_ns, tvb, offset, 1, ENC_NA);
-        col_append_fstr(pinfo->cinfo, COL_INFO, " = %u", tvb_get_guint8(tvb, offset));
+        col_append_fstr(pinfo->cinfo, COL_INFO, " = %u", tvb_get_uint8(tvb, offset));
         offset += 1;
 
         break;
@@ -1952,8 +1942,8 @@ dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
 
         break;
     case 47: /* Get CRC Verify */
-        proto_tree_add_item(main_tree, hf_crc_verify, tvb, offset, 1, ENC_NA);
-        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_guint8(tvb, offset), &state_vals_ext, "Unknown"));
+        proto_tree_add_item(main_tree, hf_crc_verify, tvb, offset, 1, ENC_LITTLE_ENDIAN);
+        col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", val_to_str_ext_const(tvb_get_uint8(tvb, offset), &state_vals_ext, "Unknown"));
         offset += 1;
 
         break;
@@ -1966,12 +1956,12 @@ dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
             break;
         }
 
-        offset = dissect_usb_rx_packet(tree, main_tree, pinfo, tvb, offset, command_response, usb_conv_info);
+        offset = dissect_usb_rx_packet(tree, main_tree, pinfo, tvb, offset, command_response, urb);
 
         break;
     case 53: /* Read Register */
         sub_item = proto_tree_add_uint(main_tree, hf_register, tvb, offset, 0, register_id);
-        PROTO_ITEM_SET_GENERATED(sub_item);
+        proto_item_set_generated(sub_item);
         if (try_val_to_str_ext(register_id, &register_vals_ext))
             proto_item_append_text(sub_item, " [%s]", val_to_str_ext_const(register_id, &register_description_vals_ext, "Unknown"));
 
@@ -1988,12 +1978,12 @@ dissect_ubertooth(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         break;
     case 55: /* Get Compile Info */
         {
-        const guint8* compile;
+        const uint8_t* compile;
         proto_tree_add_item(main_tree, hf_length, tvb, offset, 1, ENC_NA);
-        length = tvb_get_guint8(tvb, offset);
+        length = tvb_get_uint8(tvb, offset);
         offset += 1;
 
-        proto_tree_add_item_ret_string(main_tree, hf_firmware_compile_info, tvb, offset, length, ENC_NA | ENC_ASCII, wmem_packet_scope(), &compile);
+        proto_tree_add_item_ret_string(main_tree, hf_firmware_compile_info, tvb, offset, length, ENC_NA | ENC_ASCII, pinfo->pool, &compile);
         col_append_fstr(pinfo->cinfo, COL_INFO, " = %s", compile);
         offset += length;
         }
@@ -2019,126 +2009,126 @@ proto_register_ubertooth(void)
     static hf_register_info hf[] = {
         { &hf_command,
             { "Command",                         "ubertooth.command",
-            FT_UINT8, BASE_DEC | BASE_EXT_STRING, &command_vals_ext, 0x00,
+            FT_UINT8, BASE_DEC | BASE_EXT_STRING, &command_vals_ext, 0x0,
             NULL, HFILL }
         },
         { &hf_response,
             { "Response",                        "ubertooth.response",
-            FT_UINT8, BASE_DEC | BASE_EXT_STRING, &command_vals_ext, 0x00,
+            FT_UINT8, BASE_DEC | BASE_EXT_STRING, &command_vals_ext, 0x0,
             NULL, HFILL }
         },
         { &hf_argument_0,
             { "Unused Argument 0",               "ubertooth.argument.0",
-            FT_UINT16, BASE_HEX, NULL, 0x00,
+            FT_UINT16, BASE_HEX, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_argument_1,
             { "Unused Argument 1",               "ubertooth.argument.1",
-            FT_UINT16, BASE_HEX, NULL, 0x00,
+            FT_UINT16, BASE_HEX, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_estimated_length,
             { "Estimated Length",                "ubertooth.estimated_length",
-            FT_UINT16, BASE_DEC, NULL, 0x00,
+            FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_board_id,
             { "Board ID",                        "ubertooth.board_id",
-            FT_UINT8, BASE_HEX | BASE_EXT_STRING, &board_id_vals_ext, 0x00,
+            FT_UINT8, BASE_HEX | BASE_EXT_STRING, &board_id_vals_ext, 0x0,
             NULL, HFILL }
         },
         { &hf_reserved,
             { "Reserved",                        "ubertooth.reserved",
-            FT_BYTES, BASE_NONE, NULL, 0x00,
+            FT_BYTES, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_length,
             { "Length",                          "ubertooth.length",
-            FT_UINT8, BASE_DEC, NULL, 0x00,
+            FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_firmware_revision,
             { "Firmware Revision",               "ubertooth.firmware.reversion",
-            FT_STRING, BASE_NONE, NULL, 0x00,
+            FT_STRING, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_firmware_compile_info,
             { "Firmware Compile Info",           "ubertooth.firmware.compile_info",
-            FT_STRING, BASE_NONE, NULL, 0x00,
+            FT_STRING, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_user_led,
             { "User LED State",                  "ubertooth.user_led",
-            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &led_state_vals_ext, 0x00,
+            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &led_state_vals_ext, 0x0,
             NULL, HFILL }
         },
         { &hf_rx_led,
             { "Rx LED State",                    "ubertooth.rx_led",
-            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &led_state_vals_ext, 0x00,
+            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &led_state_vals_ext, 0x0,
             NULL, HFILL }
         },
         { &hf_tx_led,
             { "Tx LED State",                    "ubertooth.tx_led",
-            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &led_state_vals_ext, 0x00,
+            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &led_state_vals_ext, 0x0,
             NULL, HFILL }
         },
         { &hf_1v8_led,
             { "1V8 LED State",                   "ubertooth.1v8_led",
-            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &led_state_vals_ext, 0x00,
+            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &led_state_vals_ext, 0x0,
             NULL, HFILL }
         },
         { &hf_channel,
             { "Channel",                         "ubertooth.channel",
-            FT_UINT16, BASE_DEC, NULL, 0x00,
+            FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_usb_rx_packet_channel,
             { "Channel",                         "ubertooth.usb_rx_packet.channel",
-            FT_UINT8, BASE_DEC, NULL, 0x00,
+            FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_serial_number,
             { "Serial Number",                   "ubertooth.serial_number",
-            FT_BYTES, BASE_NONE, NULL, 0x00,
+            FT_BYTES, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_status,
             { "Status",                          "ubertooth.status",
-            FT_UINT8, BASE_HEX, NULL, 0x00,
+            FT_UINT8, BASE_HEX, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_part_number,
             { "Part Number",                     "ubertooth.part_number",
-            FT_UINT32, BASE_HEX, NULL, 0x00,
+            FT_UINT32, BASE_HEX, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_packet_type,
             { "Packet Type",                     "ubertooth.packet_type",
-            FT_UINT8, BASE_HEX | BASE_EXT_STRING, &packet_type_vals_ext, 0x00,
+            FT_UINT8, BASE_HEX | BASE_EXT_STRING, &packet_type_vals_ext, 0x0,
             NULL, HFILL }
         },
         { &hf_state,
             { "State",                           "ubertooth.state",
-            FT_UINT8, BASE_HEX, VALS(usb_rx_packet_state_vals), 0x00,
+            FT_UINT8, BASE_HEX, VALS(usb_rx_packet_state_vals), 0x0,
             NULL, HFILL }
         },
         { &hf_crc_init,
             { "CRC Init",                        "ubertooth.crc_init",
-            FT_UINT24, BASE_HEX, NULL, 0x00,
+            FT_UINT24, BASE_HEX, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_hop_interval,
             { "Hop Interval",                    "ubertooth.hop_interval",
-            FT_UINT16, BASE_DEC, NULL, 0x00,
+            FT_UINT16, BASE_DEC, NULL, 0x0,
             "Hop Interval in unit 1.25ms", HFILL }
         },
         { &hf_hop_increment,
             { "Hop Increment",                    "ubertooth.hop_increment",
-            FT_UINT8, BASE_DEC, NULL, 0x00,
+            FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_chip_status_reserved,
-            { "Reserved",                        "ubertooth.status.resered",
+            { "Reserved",                        "ubertooth.status.reserved",
             FT_BOOLEAN, 8, NULL, 0xE0,
             NULL, HFILL }
         },
@@ -2169,52 +2159,52 @@ proto_register_ubertooth(void)
         },
         { &hf_clock_ns,
             { "Clock 1ns",                      "ubertooth.clock_ns",
-            FT_UINT8, BASE_DEC, NULL, 0x00,
+            FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_clock_100ns,
             { "Clock 100ns",                    "ubertooth.clock_100ns",
-            FT_UINT32, BASE_DEC, NULL, 0x00,
+            FT_UINT32, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_rssi_min,
             { "RSSI Min",                        "ubertooth.rssi_min",
-            FT_INT8, BASE_DEC, NULL, 0x00,
+            FT_INT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_rssi_max,
             { "RSSI Max",                        "ubertooth.rssi_max",
-            FT_INT8, BASE_DEC, NULL, 0x00,
+            FT_INT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_rssi_avg,
             { "RSSI Avg",                        "ubertooth.rssi_avg",
-            FT_INT8, BASE_DEC, NULL, 0x00,
+            FT_INT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_rssi_count,
             { "RSSI Count",                      "ubertooth.rssi_count",
-            FT_UINT8, BASE_DEC, NULL, 0x00,
+            FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_paen,
             { "PAEN",                            "ubertooth.paen",
-            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &state_vals_ext, 0x00,
+            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &state_vals_ext, 0x0,
             NULL, HFILL }
         },
         { &hf_hgm,
             { "HGM",                             "ubertooth.hgm",
-            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &state_vals_ext, 0x00,
+            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &state_vals_ext, 0x0,
             NULL, HFILL }
         },
         { &hf_crc_verify,
             { "CRC Verify",                      "ubertooth.crc_verify",
-            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &state_vals_ext, 0x00,
+            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &state_vals_ext, 0x0,
             NULL, HFILL }
         },
         { &hf_modulation,
             { "Modulation",                      "ubertooth.modulation",
-            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &modulation_vals_ext, 0x00,
+            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &modulation_vals_ext, 0x0,
             NULL, HFILL }
         },
         { &hf_power_amplifier_reserved,
@@ -2229,87 +2219,87 @@ proto_register_ubertooth(void)
         },
         { &hf_range_test_valid,
             { "Valid",                           "ubertooth.range_test.valid",
-            FT_UINT8, BASE_DEC, NULL, 0x00,
+            FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_range_test_request_power_amplifier,
             { "Request Power Amplifier",         "ubertooth.range_test.request_power_amplifier",
-            FT_UINT8, BASE_DEC, NULL, 0x00,
+            FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_range_test_request_number,
             { "Request Power Amplifier",         "ubertooth.range_test.request_number",
-            FT_UINT8, BASE_DEC, NULL, 0x00,
+            FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_range_test_reply_power_amplifier,
             { "Request Power Amplifier",         "ubertooth.range_test.reply_power_amplifier",
-            FT_UINT8, BASE_DEC, NULL, 0x00,
+            FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_range_test_reply_number,
             { "Reply Power Amplifier",           "ubertooth.range_test.reply_number",
-            FT_UINT8, BASE_DEC, NULL, 0x00,
+            FT_UINT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_squelch,
             { "Squelch",                         "ubertooth.squelch",
-            FT_INT16, BASE_DEC, NULL, 0x00,
+            FT_INT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_access_address,
             { "Access Address",                  "ubertooth.access_address",
-            FT_UINT32, BASE_HEX, NULL, 0x00,
+            FT_UINT32, BASE_HEX, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_jam_mode,
             { "Jam Mode",                        "ubertooth.jam_mode",
-            FT_UINT16, BASE_HEX, VALS(jam_mode_vals), 0x00,
+            FT_UINT16, BASE_HEX, VALS(jam_mode_vals), 0x0,
             NULL, HFILL }
         },
         { &hf_ego_mode,
             { "Ego Mode",                        "ubertooth.ego_mode",
-            FT_UINT16, BASE_HEX, VALS(ego_mode_vals), 0x00,
+            FT_UINT16, BASE_HEX, VALS(ego_mode_vals), 0x0,
             NULL, HFILL }
         },
         { &hf_register,
             { "Register",                        "ubertooth.register",
-            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &register_vals_ext, 0x00,
+            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &register_vals_ext, 0x0,
             NULL, HFILL }
         },
         { &hf_register_value,
             { "Register Value",                  "ubertooth.register.value",
-            FT_UINT16, BASE_HEX, NULL, 0x00,
+            FT_UINT16, BASE_HEX, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_low_frequency,
             { "Low Frequency",                   "ubertooth.low_frequency",
-            FT_UINT16, BASE_DEC, NULL, 0x00,
+            FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_high_frequency,
             { "High Frequency",                  "ubertooth.high_frequency",
-            FT_UINT16, BASE_DEC, NULL, 0x00,
+            FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_rx_packets,
             { "Rx Packets",                      "ubertooth.rx_packets",
-            FT_UINT16, BASE_DEC, NULL, 0x00,
+            FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_rssi_threshold,
             { "RSSI Threshold",                  "ubertooth.rssi_threshold",
-            FT_INT16, BASE_DEC, NULL, 0x00,
+            FT_INT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_clock_offset,
             { "Clock Offset",                    "ubertooth.clock_offset",
-            FT_UINT32, BASE_DEC, NULL, 0x00,
+            FT_UINT32, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_afh_map,
             { "AFH Map",                         "ubertooth.afh_map",
-            FT_BYTES, BASE_NONE, NULL, 0x00,
+            FT_BYTES, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_bdaddr,
@@ -2319,27 +2309,27 @@ proto_register_ubertooth(void)
         },
         { &hf_usb_rx_packet,
             { "USB Rx Packet",                   "ubertooth.usb_rx_packet",
-            FT_NONE, BASE_NONE, NULL, 0x00,
+            FT_NONE, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_spectrum_entry,
             { "Spectrum Entry",                  "ubertooth.spectrum_entry",
-            FT_NONE, BASE_NONE, NULL, 0x00,
+            FT_NONE, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_frequency,
             { "Frequency",                       "ubertooth.spectrum_entry.frequency",
-            FT_UINT16, BASE_DEC, NULL, 0x00,
+            FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_rssi,
             { "RSSI",                            "ubertooth.spectrum_entry.rssi",
-            FT_INT8, BASE_DEC, NULL, 0x00,
+            FT_INT8, BASE_DEC, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_data,
             { "Data",                            "ubertooth.data",
-            FT_NONE, BASE_NONE, NULL, 0x00,
+            FT_NONE, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_cc2400_value,
@@ -2349,12 +2339,12 @@ proto_register_ubertooth(void)
         },
         { &hf_cc2400_syncl,
             { "Synchronisation Word, lower 16 bit",        "ubertooth.register.value.syncl",
-            FT_UINT16, BASE_HEX, NULL, 0x00,
+            FT_UINT16, BASE_HEX, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_cc2400_synch,
             { "Synchronisation Word, upper 16 bit",        "ubertooth.register.value.synch",
-            FT_UINT16, BASE_HEX, NULL, 0x00,
+            FT_UINT16, BASE_HEX, NULL, 0x0,
             NULL, HFILL }
         },
         { &hf_cc2400_reserved_0x2B_res_15_14,
@@ -2664,8 +2654,8 @@ proto_register_ubertooth(void)
             NULL, HFILL }
         },
         { &hf_cc2400_rssi_rssi_val,
-            { "Avarage RSSI Value",                        "ubertooth.register.value.rssi.rssi_val",
-            FT_INT8, BASE_DEC, NULL, 0xFF00,
+            { "Average RSSI Value",                        "ubertooth.register.value.rssi.rssi_val",
+            FT_INT16, BASE_DEC, NULL, 0xFF00,
             NULL, HFILL }
         },
         { &hf_cc2400_rssi_rssi_cs_thres,
@@ -2679,7 +2669,7 @@ proto_register_ubertooth(void)
             NULL, HFILL }
         },
         { &hf_cc2400_freqest_rx_freq_offset,
-            { "Rx Frequence Offset",                       "ubertooth.register.value.freqest.rx_freq_offset",
+            { "Rx Frequency Offset",                       "ubertooth.register.value.freqest.rx_freq_offset",
             FT_INT16, BASE_DEC, NULL, 0xFF00,
             NULL, HFILL }
         },
@@ -2965,7 +2955,7 @@ proto_register_ubertooth(void)
         },
         { &hf_cc2400_lmtst_lna_current,
             { "Main current in the LNA",                   "ubertooth.register.value.lmtst.lna_current",
-            FT_UINT16, BASE_DEC | BASE_EXT_STRING, &cc2400_lmtst_lna_current_vals_ext, 0x003,
+            FT_UINT16, BASE_DEC | BASE_EXT_STRING, &cc2400_lmtst_lna_current_vals_ext, 0x0003,
             NULL, HFILL }
         },
         { &hf_cc2400_manor_vga_reset_n,
@@ -3090,7 +3080,7 @@ proto_register_ubertooth(void)
         },
         { &hf_cc2400_mdmtst1_bsync_threshold,
             { "B-Sync Threshold",                          "ubertooth.register.value.mdmtst1.bsync_threshold",
-            FT_UINT16, BASE_DEC, NULL, 0x07F,
+            FT_UINT16, BASE_DEC, NULL, 0x007F,
             NULL, HFILL }
         },
         { &hf_cc2400_dactst_reserved,
@@ -3457,7 +3447,7 @@ proto_register_ubertooth(void)
         { &ei_unexpected_data, { "ubertooth.unexpected_data", PI_PROTOCOL, PI_WARN, "Unexpected data", EXPFILL }},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_ubertooth,
         &ett_command,
         &ett_usb_rx_packet,
@@ -3496,7 +3486,7 @@ proto_reg_handoff_ubertooth(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

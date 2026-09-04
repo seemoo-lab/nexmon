@@ -30,7 +30,7 @@
  *
  * removed some functions we don't use at all
  * add code to start the service immediately after service is installed
- * 
+ *
  * $Id: service.c,v 1.1.1.1 2004/05/18 01:50:44 kgibbs Exp $
  */
 
@@ -440,7 +440,7 @@ BOOL CmdStartService(int argc, char **argv) {
                 if ( rc != 0 )
                     _tprintf(TEXT("%s started.\n"), TEXT(SZSERVICEDISPLAYNAME) );
             }
-            CloseServiceHandle(schService);            
+            CloseServiceHandle(schService);
         }
         CloseServiceHandle(schSCManager);
     } else

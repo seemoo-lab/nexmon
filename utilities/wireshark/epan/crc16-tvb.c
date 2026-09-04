@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * References:
  *  "A Painless Guide to CRC Error Detection Algorithms", Ross Williams
@@ -38,9 +26,9 @@
 #include <wsutil/crc16-plain.h>
 
 
-guint16 crc16_ccitt_tvb(tvbuff_t *tvb, guint len)
+uint16_t crc16_ccitt_tvb(tvbuff_t *tvb, unsigned len)
 {
-    const guint8 *buf;
+    const uint8_t *buf;
 
     tvb_ensure_bytes_exist(tvb, 0, len);  /* len == -1 not allowed */
     buf = tvb_get_ptr(tvb, 0, len);
@@ -48,9 +36,9 @@ guint16 crc16_ccitt_tvb(tvbuff_t *tvb, guint len)
     return crc16_ccitt(buf, len);
 }
 
-guint16 crc16_x25_ccitt_tvb(tvbuff_t *tvb, guint len)
+uint16_t crc16_x25_ccitt_tvb(tvbuff_t *tvb, unsigned len)
 {
-    const guint8 *buf;
+    const uint8_t *buf;
 
     tvb_ensure_bytes_exist(tvb, 0, len);  /* len == -1 not allowed */
     buf = tvb_get_ptr(tvb, 0, len);
@@ -58,9 +46,9 @@ guint16 crc16_x25_ccitt_tvb(tvbuff_t *tvb, guint len)
     return crc16_x25_ccitt_seed(buf, len, 0xFFFF);
 }
 
-guint16 crc16_r3_ccitt_tvb(tvbuff_t *tvb, int offset, guint len)
+uint16_t crc16_r3_ccitt_tvb(tvbuff_t *tvb, int offset, unsigned len)
 {
-    const guint8 *buf;
+    const uint8_t *buf;
 
     tvb_ensure_bytes_exist(tvb, offset, len);  /* len == -1 not allowed */
     buf = tvb_get_ptr(tvb, offset, len);
@@ -68,9 +56,9 @@ guint16 crc16_r3_ccitt_tvb(tvbuff_t *tvb, int offset, guint len)
     return crc16_x25_ccitt_seed(buf, len, 0);
 }
 
-guint16 crc16_ccitt_tvb_offset(tvbuff_t *tvb, guint offset, guint len)
+uint16_t crc16_ccitt_tvb_offset(tvbuff_t *tvb, unsigned offset, unsigned len)
 {
-    const guint8 *buf;
+    const uint8_t *buf;
 
     tvb_ensure_bytes_exist(tvb, offset, len);  /* len == -1 not allowed */
     buf = tvb_get_ptr(tvb, offset, len);
@@ -78,9 +66,9 @@ guint16 crc16_ccitt_tvb_offset(tvbuff_t *tvb, guint offset, guint len)
     return crc16_ccitt(buf, len);
 }
 
-guint16 crc16_ccitt_tvb_seed(tvbuff_t *tvb, guint len, guint16 seed)
+uint16_t crc16_ccitt_tvb_seed(tvbuff_t *tvb, unsigned len, uint16_t seed)
 {
-    const guint8 *buf;
+    const uint8_t *buf;
 
     tvb_ensure_bytes_exist(tvb, 0, len);  /* len == -1 not allowed */
     buf = tvb_get_ptr(tvb, 0, len);
@@ -88,9 +76,9 @@ guint16 crc16_ccitt_tvb_seed(tvbuff_t *tvb, guint len, guint16 seed)
     return crc16_ccitt_seed(buf, len, seed);
 }
 
-guint16 crc16_ccitt_tvb_offset_seed(tvbuff_t *tvb, guint offset, guint len, guint16 seed)
+uint16_t crc16_ccitt_tvb_offset_seed(tvbuff_t *tvb, unsigned offset, unsigned len, uint16_t seed)
 {
-    const guint8 *buf;
+    const uint8_t *buf;
 
     tvb_ensure_bytes_exist(tvb, offset, len);  /* len == -1 not allowed */
     buf = tvb_get_ptr(tvb, offset, len);
@@ -98,9 +86,9 @@ guint16 crc16_ccitt_tvb_offset_seed(tvbuff_t *tvb, guint offset, guint len, guin
     return crc16_ccitt_seed(buf, len, seed);
 }
 
-guint16 crc16_iso14443a_tvb_offset(tvbuff_t *tvb, guint offset, guint len)
+uint16_t crc16_iso14443a_tvb_offset(tvbuff_t *tvb, unsigned offset, unsigned len)
 {
-    const guint8 *buf;
+    const uint8_t *buf;
 
     tvb_ensure_bytes_exist(tvb, offset, len);  /* len == -1 not allowed */
     buf = tvb_get_ptr(tvb, offset, len);
@@ -108,10 +96,20 @@ guint16 crc16_iso14443a_tvb_offset(tvbuff_t *tvb, guint offset, guint len)
     return crc16_iso14443a(buf, len);
 }
 
-guint16 crc16_plain_tvb_offset(tvbuff_t *tvb, guint offset, guint len)
+uint16_t crc16_usb_tvb_offset(tvbuff_t *tvb, unsigned offset, unsigned len)
 {
-    guint16 crc = crc16_plain_init();
-    const guint8 *buf;
+    const uint8_t *buf;
+
+    tvb_ensure_bytes_exist(tvb, offset, len);  /* len == -1 not allowed */
+    buf = tvb_get_ptr(tvb, offset, len);
+
+    return crc16_usb(buf, len);
+}
+
+uint16_t crc16_plain_tvb_offset(tvbuff_t *tvb, unsigned offset, unsigned len)
+{
+    uint16_t crc = crc16_plain_init();
+    const uint8_t *buf;
 
     tvb_ensure_bytes_exist(tvb, offset, len);  /* len == -1 not allowed */
     buf = tvb_get_ptr(tvb, offset, len);
@@ -121,9 +119,9 @@ guint16 crc16_plain_tvb_offset(tvbuff_t *tvb, guint offset, guint len)
     return crc16_plain_finalize(crc);
 }
 
-guint16 crc16_plain_tvb_offset_seed(tvbuff_t *tvb, guint offset, guint len, guint16 crc)
+uint16_t crc16_plain_tvb_offset_seed(tvbuff_t *tvb, unsigned offset, unsigned len, uint16_t crc)
 {
-    const guint8 *buf;
+    const uint8_t *buf;
 
     tvb_ensure_bytes_exist(tvb, offset, len);  /* len == -1 not allowed */
     buf = tvb_get_ptr(tvb, offset, len);
@@ -133,9 +131,9 @@ guint16 crc16_plain_tvb_offset_seed(tvbuff_t *tvb, guint offset, guint len, guin
     return crc16_plain_finalize(crc);
 }
 
-guint16 crc16_0x9949_tvb_offset_seed(tvbuff_t *tvb, guint offset, guint len, guint16 seed)
+uint16_t crc16_0x9949_tvb_offset_seed(tvbuff_t *tvb, unsigned offset, unsigned len, uint16_t seed)
 {
-    const guint8 *buf;
+    const uint8_t *buf;
 
     tvb_ensure_bytes_exist(tvb, offset, len);  /* len == -1 not allowed */
     buf = tvb_get_ptr(tvb, offset, len);
@@ -143,9 +141,9 @@ guint16 crc16_0x9949_tvb_offset_seed(tvbuff_t *tvb, guint offset, guint len, gui
     return crc16_0x9949_seed(buf, len, seed);
 }
 
-guint16 crc16_0x3D65_tvb_offset_seed(tvbuff_t *tvb, guint offset, guint len, guint16 seed)
+uint16_t crc16_0x3D65_tvb_offset_seed(tvbuff_t *tvb, unsigned offset, unsigned len, uint16_t seed)
 {
-    const guint8 *buf;
+    const uint8_t *buf;
 
     tvb_ensure_bytes_exist(tvb, offset, len);  /* len == -1 not allowed */
     buf = tvb_get_ptr(tvb, offset, len);
@@ -154,7 +152,7 @@ guint16 crc16_0x3D65_tvb_offset_seed(tvbuff_t *tvb, guint offset, guint len, gui
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

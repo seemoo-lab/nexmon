@@ -7,54 +7,57 @@
 #       mm-ko.ascii.pot   mm-ko.euc-kr.po   mm-ko-comp.euc-kr.po
 #       mm-ko.utf-8.pot   mm-ko.utf-8.po    mm-ko-comp.utf-8.po
 
-: ${MSGCONV=msgconv}
-${MSGCONV} --to-code=UTF-8 -o mm-ko.utf-8.pot "$abs_srcdir"/mm-ko.ascii.pot
+# Note: This test fails on Linux with musl libc versions and on Solaris 11
+# (OpenIndiana, OmniOS) that don't support the EUC-KR encoding in 'iconv'.
 
 : ${MSGCONV=msgconv}
-${MSGCONV} --to-code=UTF-8 -o mm-ko.utf-8.po "$abs_srcdir"/mm-ko.euc-kr.po
+${MSGCONV} --to-code=UTF-8 -o mm-ko.utf-8.pot "$wabs_srcdir"/mm-ko.ascii.pot
 
 : ${MSGCONV=msgconv}
-${MSGCONV} --to-code=UTF-8 -o mm-ko-comp.utf-8.po "$abs_srcdir"/mm-ko-comp.euc-kr.po
+${MSGCONV} --to-code=UTF-8 -o mm-ko.utf-8.po "$wabs_srcdir"/mm-ko.euc-kr.po
+
+: ${MSGCONV=msgconv}
+${MSGCONV} --to-code=UTF-8 -o mm-ko-comp.utf-8.po "$wabs_srcdir"/mm-ko-comp.euc-kr.po
 
 : ${MSGMERGE=msgmerge}
 ${MSGMERGE} -q -o mm-c-6-AEE.tmp \
-  --compendium "$abs_srcdir"/mm-ko-comp.euc-kr.po \
-  "$abs_srcdir"/mm-ko.euc-kr.po "$abs_srcdir"/mm-ko.ascii.pot || Exit 1
+  --compendium "$wabs_srcdir"/mm-ko-comp.euc-kr.po \
+  "$wabs_srcdir"/mm-ko.euc-kr.po "$wabs_srcdir"/mm-ko.ascii.pot || Exit 1
 LC_ALL=C tr -d '\r' < mm-c-6-AEE.tmp > mm-c-6-AEE.out || Exit 1
 
 : ${MSGMERGE=msgmerge}
 ${MSGMERGE} -q -o mm-c-6-AEU.tmp \
   --compendium mm-ko-comp.utf-8.po \
-  "$abs_srcdir"/mm-ko.euc-kr.po "$abs_srcdir"/mm-ko.ascii.pot || Exit 1
+  "$wabs_srcdir"/mm-ko.euc-kr.po "$wabs_srcdir"/mm-ko.ascii.pot || Exit 1
 LC_ALL=C tr -d '\r' < mm-c-6-AEU.tmp > mm-c-6-AEU.out || Exit 1
 
 : ${MSGMERGE=msgmerge}
 ${MSGMERGE} -q -o mm-c-6-AUE.tmp \
-  --compendium "$abs_srcdir"/mm-ko-comp.euc-kr.po \
-  mm-ko.utf-8.po "$abs_srcdir"/mm-ko.ascii.pot || Exit 1
+  --compendium "$wabs_srcdir"/mm-ko-comp.euc-kr.po \
+  mm-ko.utf-8.po "$wabs_srcdir"/mm-ko.ascii.pot || Exit 1
 LC_ALL=C tr -d '\r' < mm-c-6-AUE.tmp > mm-c-6-AUE.out || Exit 1
 
 : ${MSGMERGE=msgmerge}
 ${MSGMERGE} -q -o mm-c-6-AUU.tmp \
   --compendium mm-ko-comp.utf-8.po \
-  mm-ko.utf-8.po "$abs_srcdir"/mm-ko.ascii.pot || Exit 1
+  mm-ko.utf-8.po "$wabs_srcdir"/mm-ko.ascii.pot || Exit 1
 LC_ALL=C tr -d '\r' < mm-c-6-AUU.tmp > mm-c-6-AUU.out || Exit 1
 
 : ${MSGMERGE=msgmerge}
 ${MSGMERGE} -q -o mm-c-6-UEE.tmp \
-  --compendium "$abs_srcdir"/mm-ko-comp.euc-kr.po \
-  "$abs_srcdir"/mm-ko.euc-kr.po mm-ko.utf-8.pot || Exit 1
+  --compendium "$wabs_srcdir"/mm-ko-comp.euc-kr.po \
+  "$wabs_srcdir"/mm-ko.euc-kr.po mm-ko.utf-8.pot || Exit 1
 LC_ALL=C tr -d '\r' < mm-c-6-UEE.tmp > mm-c-6-UEE.out || Exit 1
 
 : ${MSGMERGE=msgmerge}
 ${MSGMERGE} -q -o mm-c-6-UEU.tmp \
   --compendium mm-ko-comp.utf-8.po \
-  "$abs_srcdir"/mm-ko.euc-kr.po mm-ko.utf-8.pot || Exit 1
+  "$wabs_srcdir"/mm-ko.euc-kr.po mm-ko.utf-8.pot || Exit 1
 LC_ALL=C tr -d '\r' < mm-c-6-UEU.tmp > mm-c-6-UEU.out || Exit 1
 
 : ${MSGMERGE=msgmerge}
 ${MSGMERGE} -q -o mm-c-6-UUE.tmp \
-  --compendium "$abs_srcdir"/mm-ko-comp.euc-kr.po \
+  --compendium "$wabs_srcdir"/mm-ko-comp.euc-kr.po \
   mm-ko.utf-8.po mm-ko.utf-8.pot || Exit 1
 LC_ALL=C tr -d '\r' < mm-c-6-UUE.tmp > mm-c-6-UUE.out || Exit 1
 

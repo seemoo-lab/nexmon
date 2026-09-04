@@ -8,19 +8,7 @@
  *
  * Copied from packet-pop.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,6 +18,7 @@
 #include <epan/strutil.h>
 
 #include "packet-tcp.h"
+#include "packet-bt-utp.h"
 
 void proto_register_bittorrent(void);
 void proto_reg_handoff_bittorrent(void);
@@ -42,6 +31,8 @@ void proto_reg_handoff_bittorrent(void);
  * http://bitconjurer.org/BitTorrent/protocol.html
  */
 
+#define DEFAULT_TCP_PORT_RANGE  "6881-6889" /* Not IANA registered */
+
 #define BITTORRENT_MESSAGE_CHOKE            0
 #define BITTORRENT_MESSAGE_UNCHOKE          1
 #define BITTORRENT_MESSAGE_INTERESTED       2
@@ -52,6 +43,16 @@ void proto_reg_handoff_bittorrent(void);
 #define BITTORRENT_MESSAGE_PIECE            7
 #define BITTORRENT_MESSAGE_CANCEL           8
 #define BITTORRENT_MESSAGE_PORT             9
+/*
+ * BitTorrent BEP 06
+ * Fast Extension message type
+ *
+ */
+#define BITT_FAST_EX_SUGGEST_PIECE         13
+#define BITT_FAST_EX_HAVE_ALL              14
+#define BITT_FAST_EX_HAVE_NONE             15
+#define BITT_FAST_EX_REJECT_REQUEST        16
+#define BITT_FAST_EX_ALLOWED_FAST          17
 #define BITTORRENT_MESSAGE_EXTENDED        20
 
 #define BITTORRENT_HEADER_LENGTH            4
@@ -81,6 +82,11 @@ static const value_string bittorrent_messages[] = {
    { BITTORRENT_MESSAGE_PIECE,          "Piece" },
    { BITTORRENT_MESSAGE_CANCEL,         "Cancel" },
    { BITTORRENT_MESSAGE_PORT,           "Port" },
+   { BITT_FAST_EX_SUGGEST_PIECE,        "Suggest Piece" },
+   { BITT_FAST_EX_HAVE_ALL,             "Have All" },
+   { BITT_FAST_EX_HAVE_NONE,            "Have None" },
+   { BITT_FAST_EX_REJECT_REQUEST,       "Reject Request" },
+   { BITT_FAST_EX_ALLOWED_FAST,         "Allowed Fast" },
    { BITTORRENT_MESSAGE_EXTENDED,       "Extended" },
    { AZUREUS_MESSAGE_KEEP_ALIVE,        "Keepalive" },
    { AZUREUS_MESSAGE_HANDSHAKE,         "Azureus Handshake" },
@@ -101,7 +107,7 @@ static const value_string azureus_priorities[] = {
 
 struct amp_message {
    const char *name;
-   guint32     value;
+   uint32_t    value;
 };
 
 static const struct amp_message amp_messages[] = {
@@ -116,6 +122,11 @@ static const struct amp_message amp_messages[] = {
    { "BT_PIECE",         BITTORRENT_MESSAGE_PIECE },
    { "BT_CANCEL",        BITTORRENT_MESSAGE_CANCEL },
    { "BT_PORT",          BITTORRENT_MESSAGE_PORT },
+   { "BT_SUGGEST",       BITT_FAST_EX_SUGGEST_PIECE },
+   { "BT_HAVE_ALL",      BITT_FAST_EX_HAVE_ALL },
+   { "BT_HAVE_NONE",     BITT_FAST_EX_HAVE_NONE },
+   { "BT_REJECT_REQUEST",BITT_FAST_EX_REJECT_REQUEST },
+   { "BT_ALLOWED_FAST",  BITT_FAST_EX_ALLOWED_FAST },
    { "BT_EXTENDED",      BITTORRENT_MESSAGE_EXTENDED },
    { "AZ_HANDSHAKE",     AZUREUS_MESSAGE_HANDSHAKE },
    { "BT_HANDSHAKE",     AZUREUS_MESSAGE_BT_HANDSHAKE },
@@ -127,41 +138,42 @@ static const struct amp_message amp_messages[] = {
 
 static dissector_handle_t dissector_handle;
 static dissector_handle_t bencode_handle;
-static int proto_bittorrent = -1;
+static int proto_bittorrent;
 
-/* static gint hf_bittorrent_field_length  = -1; */
-static gint hf_bittorrent_prot_name_len = -1;
-static gint hf_bittorrent_prot_name     = -1;
-static gint hf_bittorrent_reserved      = -1;
-static gint hf_bittorrent_sha1_hash     = -1;
-static gint hf_bittorrent_peer_id       = -1;
-static gint hf_bittorrent_msg           = -1;
-static gint hf_bittorrent_msg_len       = -1;
-static gint hf_bittorrent_msg_type      = -1;
-static gint hf_azureus_msg              = -1;
-static gint hf_azureus_msg_type_len     = -1;
-static gint hf_azureus_msg_type         = -1;
-static gint hf_azureus_msg_prio         = -1;
-static gint hf_bittorrent_bitfield_data = -1;
-static gint hf_bittorrent_piece_index   = -1;
-static gint hf_bittorrent_piece_begin   = -1;
-static gint hf_bittorrent_piece_length  = -1;
-static gint hf_bittorrent_piece_data    = -1;
-static gint hf_azureus_jpc_addrlen      = -1;
-static gint hf_azureus_jpc_addr         = -1;
-static gint hf_azureus_jpc_port         = -1;
-static gint hf_azureus_jpc_session      = -1;
-static gint hf_bittorrent_port          = -1;
-static gint hf_bittorrent_extended      = -1;
-static gint hf_bittorrent_continuous_data = -1;
-static gint hf_bittorrent_version       = -1;
+/* static int hf_bittorrent_field_length; */
+static int hf_bittorrent_prot_name_len;
+static int hf_bittorrent_prot_name;
+static int hf_bittorrent_reserved;
+static int hf_bittorrent_sha1_hash;
+static int hf_bittorrent_peer_id;
+static int hf_bittorrent_msg;
+static int hf_bittorrent_msg_len;
+static int hf_bittorrent_msg_type;
+static int hf_azureus_msg;
+static int hf_azureus_msg_type_len;
+static int hf_azureus_msg_type;
+static int hf_azureus_msg_prio;
+static int hf_bittorrent_bitfield_data;
+static int hf_bittorrent_piece_index;
+static int hf_bittorrent_piece_begin;
+static int hf_bittorrent_piece_length;
+static int hf_bittorrent_piece_data;
+static int hf_azureus_jpc_addrlen;
+static int hf_azureus_jpc_addr;
+static int hf_azureus_jpc_port;
+static int hf_azureus_jpc_session;
+static int hf_bittorrent_port;
+static int hf_bittorrent_extended_id;
+static int hf_bittorrent_extended;
+static int hf_bittorrent_continuous_data;
+static int hf_bittorrent_version;
 
-static gint ett_bittorrent              = -1;
-static gint ett_bittorrent_msg          = -1;
-static gint ett_peer_id                 = -1;
+static int ett_bittorrent;
+static int ett_bittorrent_msg;
+static int ett_peer_id;
 
-static gboolean bittorrent_desegment      = TRUE;
-static gboolean decode_client_information = FALSE;
+static bool bittorrent_desegment      = true;
+static bool decode_client_information;
 
 struct client_information {
    char        id[5];     /* string length must be <= 4 to allow space for NUL termination byte */
@@ -256,15 +268,116 @@ static struct client_information peer_id[] = {
    {"",     0, NULL}
 };
 
-static guint
+/* Tests a given length for a message type to see if it looks valid.
+ * The exact length is known for many message types, which prevents us
+ * from returning a false positive match based on a single byte when
+ * we're in the middle of Continuation Data or an encrypted transfer.
+ */
+static bool
+test_type_length(uint16_t type, uint32_t length)
+{
+   switch (type) {
+
+   case BITTORRENT_MESSAGE_UNCHOKE:
+   case BITTORRENT_MESSAGE_INTERESTED:
+   case BITTORRENT_MESSAGE_NOT_INTERESTED:
+   case BITT_FAST_EX_HAVE_ALL:
+   case BITT_FAST_EX_HAVE_NONE:
+      /* No payload */
+      if (length != 1) {
+         return false;
+      }
+      return true;
+
+   case BITTORRENT_MESSAGE_PORT:
+      if (length != 3) {
+         return false;
+      }
+      return true;
+
+   case BITTORRENT_MESSAGE_HAVE:
+   case BITT_FAST_EX_SUGGEST_PIECE:
+   case BITT_FAST_EX_ALLOWED_FAST:
+      if (length != 5) {
+         return false;
+      }
+      return true;
+
+   case BITTORRENT_MESSAGE_REQUEST:
+   case BITTORRENT_MESSAGE_CANCEL:
+   case BITT_FAST_EX_REJECT_REQUEST:
+      if (length != 13) {
+         return false;
+      }
+      return true;
+
+   /* Now to the messages that can have variable and longer lengths. */
+
+   case BITTORRENT_MESSAGE_EXTENDED:
+   case BITTORRENT_MESSAGE_PIECE:
+      /* All known implementations use 0x4000 for the piece length by default
+       * (only smaller for the last piece at EOF), and disconnect from clients
+       * that use a larger value, which is mentioned in BEP-3. Including the
+       * other parts of the message, that yields a length of 0x4009. There
+       * might exist some non-standard traffic somewhere, I suppose.
+       *
+       * This is excessively long for any extension message.
+       */
+      if (length > 0x4009) {
+         return false;
+      }
+      return true;
+
+   case BITTORRENT_MESSAGE_CHOKE:
+      /* Choke could be an Azureus message instead, which could be any
+       * of the other messages, so it has to be as long as our longest
+       * message. XXX: To reduce false positives (since 0 is a common
+       * byte to see), a pref to disable Azureus support could be useful.
+       * Alternatively, if we tracked conversations, we could disable
+       * support for AMP if the extension bits in the handshake (if seen)
+       * indicated that it's not supported.
+       */
+   case AZUREUS_MESSAGE_HANDSHAKE:
+   case AZUREUS_MESSAGE_KEEP_ALIVE:
+   case AZUREUS_MESSAGE_BT_HANDSHAKE:
+   case AZUREUS_MESSAGE_PEER_EXCHANGE:
+   case AZUREUS_MESSAGE_JPC_HELLO:
+   case AZUREUS_MESSAGE_JPC_REPLY:
+   case BITTORRENT_MESSAGE_BITFIELD:
+      /* A bitfield length is N bits, where N is the number of pieces
+       * in the torrent. The absolute boundary is 2^32 pieces (because
+       * it has to fit in the piece message). In practice the piece
+       * length varies to balance a number of factors. (Some clients
+       * don't work with too many pieces; at one point 2^16 was a common
+       * maximum.) The minimum common piece length is 2^18 bytes, and higher
+       * powers of two are also frequently used.
+       *
+       * 0x20000 allows 0x100000 pieces, or over a million. That's more
+       * than most clients support, and cuts down on false positives.
+       */
+      if (length > 0x20000) {
+         return false;
+      }
+      return true;
+
+   default:
+      if (!try_val_to_str(type, bittorrent_messages)) {
+         return false;
+      }
+   }
+
+   return true;
+}
+
+static unsigned
 get_bittorrent_pdu_length(packet_info *pinfo _U_, tvbuff_t *tvb,
                           int offset, void *data _U_)
 {
-   guint8  type;
-   guint32 length;
+   uint8_t type;
+   uint32_t length;
 
-   if (tvb_get_guint8(tvb, offset) == 19 &&
-       tvb_memeql(tvb, offset + 1, "BitTorrent protocol", 19) == 0) {
+   if (tvb_get_uint8(tvb, offset) == 19 &&
+       tvb_memeql(tvb, offset + 1, (const uint8_t*)"BitTorrent protocol", 19) == 0) {
       /* Return the length of a Handshake message */
       return  1 + /* pstrlen */
              19 + /* pstr */
@@ -280,10 +393,10 @@ get_bittorrent_pdu_length(packet_info *pinfo _U_, tvbuff_t *tvb,
       }
       /* Do some sanity checking of the message, if we have the ID byte */
       if(tvb_offset_exists(tvb, offset + BITTORRENT_HEADER_LENGTH)) {
-         type = tvb_get_guint8(tvb, offset + BITTORRENT_HEADER_LENGTH);
-         if((type <= BITTORRENT_MESSAGE_PORT || type == BITTORRENT_MESSAGE_EXTENDED) && length<0x1000000) {
+         type = tvb_get_uint8(tvb, offset + BITTORRENT_HEADER_LENGTH);
+         if (test_type_length(type, length)) {
             /* This seems to be a valid BitTorrent header with a known
-               type identifier */
+               type identifier and valid length */
             return BITTORRENT_HEADER_LENGTH + length;
          } else {
             /* The type is not known, so this message cannot be decoded
@@ -295,37 +408,47 @@ get_bittorrent_pdu_length(packet_info *pinfo _U_, tvbuff_t *tvb,
          }
       } else {
          /* We don't have the type field, so we can't determine
-            whether this is a valid message.  For now, we assume
-            it's continuation data from the middle of a message,
-            and just return the remaining length in the tvbuff so
-            the rest of the tvbuff is displayed as continuation
-            data. */
-         return tvb_reported_length_remaining(tvb, offset);
+            whether this is a valid message.  Return 0, which
+            tcp_dissect_pdus (and utp_dissect_pdus) treats as
+            "variable length, needs one more segment". */
+         return 0;
       }
    }
 }
 
 static void
-dissect_bittorrent_message (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
+dissect_bittorrent_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
    int         offset  = 0;
    int         i;
    int         isamp   = 0;
    proto_tree *mtree;
-   guint16     type    = 0;
-   guint32     typelen = 0;
-   guint8      prio    = 0;
-   guint32     length;
+   uint16_t    type    = 0;
+   uint32_t    typelen = 0;
+   uint8_t     prio    = 0;
+   uint32_t    ext_id  = 0;
+   uint32_t    length;
    const char *msgtype = NULL;
    proto_item *ti;
-   guint32     piece_index, piece_begin, piece_length;
-   guint32     stringlen;
+   uint32_t    piece_index, piece_begin, piece_length;
+   uint32_t    stringlen;
    tvbuff_t   *subtvb;
+
+   /* Guaranteed BITTORRENT_HEADER_LENGTH by tcp_dissect_pdus */
+   length = tvb_get_ntohl(tvb, offset);
+
+   /* Keepalive message */
+   if (length == 0) {
+      ti = proto_tree_add_item(tree, hf_bittorrent_msg, tvb, offset, length + BITTORRENT_HEADER_LENGTH, ENC_NA);
+      mtree = proto_item_add_subtree(ti, ett_bittorrent_msg);
+      proto_tree_add_item(mtree, hf_bittorrent_msg_len, tvb, offset, BITTORRENT_HEADER_LENGTH, ENC_BIG_ENDIAN);
+      col_set_str(pinfo->cinfo, COL_INFO, "KeepAlive");
+      return;
+   }
 
    if (tvb_bytes_exist(tvb, offset + BITTORRENT_HEADER_LENGTH, 1)) {
       /* Check for data from the middle of a message. */
-      length = tvb_get_ntohl(tvb, offset);
-      type = tvb_get_guint8(tvb, offset + BITTORRENT_HEADER_LENGTH);
+      type = tvb_get_uint8(tvb, offset + BITTORRENT_HEADER_LENGTH);
 
       if (type==BITTORRENT_MESSAGE_CHOKE && length>4) {
          /*
@@ -345,7 +468,7 @@ dissect_bittorrent_message (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                    tvb_memeql(tvb, offset + BITTORRENT_HEADER_LENGTH + 4,
                               amp_messages[i].name, (int)strlen(amp_messages[i].name))==0) {
 
-                  prio = tvb_get_guint8(tvb, offset + BITTORRENT_HEADER_LENGTH + 4 + typelen);
+                  prio = tvb_get_uint8(tvb, offset + BITTORRENT_HEADER_LENGTH + 4 + typelen);
                   if (prio==0 || prio==1 || prio==2) {
                      type = amp_messages[i].value;
                      isamp = 1;
@@ -362,7 +485,12 @@ dissect_bittorrent_message (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
          msgtype = try_val_to_str(type, azureus_messages);
       }
 #endif
-      if (msgtype == NULL) {
+      if (msgtype == NULL || !(test_type_length(type, length))) {
+         /* In modern captures, this is likely Protocol Encryption/
+          * Message Stream Encryption, particularly if we're actually
+          * desegmenting and have the whole connection starting from
+          * the SYN. We don't try to do that yet.
+          */
          proto_tree_add_item(tree, hf_bittorrent_continuous_data, tvb, offset, -1, ENC_NA);
          col_set_str(pinfo->cinfo, COL_INFO, "Continuation data");
          return;
@@ -379,21 +507,14 @@ dissect_bittorrent_message (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
    }
    mtree = proto_item_add_subtree(ti, ett_bittorrent_msg);
 
-   /* Keepalive message */
-   if (length == 0) {
-      proto_tree_add_item(mtree, hf_bittorrent_msg_len, tvb, offset, BITTORRENT_HEADER_LENGTH, ENC_BIG_ENDIAN);
-      col_set_str(pinfo->cinfo, COL_INFO, "KeepAlive");
-      return;
-   }
-
    proto_tree_add_item(mtree, hf_bittorrent_msg_len, tvb, offset, BITTORRENT_HEADER_LENGTH, ENC_BIG_ENDIAN);
    offset += BITTORRENT_HEADER_LENGTH;
 
-   /* If the tvb_bytes_exist() call above returned FALSE, this will
+   /* If the tvb_bytes_exist() call above returned false, this will
       throw an exception, so we won't use msgtype or type. */
    if (isamp) {
       proto_tree_add_item(mtree, hf_azureus_msg_type_len, tvb, offset, 4, ENC_BIG_ENDIAN);
-      proto_tree_add_item(mtree, hf_azureus_msg_type, tvb, offset+4, typelen, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(mtree, hf_azureus_msg_type, tvb, offset+4, typelen, ENC_ASCII);
       proto_item_append_text(ti, ": Len %u, %s", length, msgtype);
       proto_tree_add_item(mtree, hf_azureus_msg_prio, tvb, offset+4+typelen, 1, ENC_BIG_ENDIAN);
       offset += 4+typelen+1;
@@ -411,11 +532,14 @@ dissect_bittorrent_message (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
    case BITTORRENT_MESSAGE_UNCHOKE:
    case BITTORRENT_MESSAGE_INTERESTED:
    case BITTORRENT_MESSAGE_NOT_INTERESTED:
+   case BITT_FAST_EX_HAVE_ALL:
+   case BITT_FAST_EX_HAVE_NONE:
       /* No payload */
       break;
 
    case BITTORRENT_MESSAGE_REQUEST:
    case BITTORRENT_MESSAGE_CANCEL:
+   case BITT_FAST_EX_REJECT_REQUEST:
       piece_index = tvb_get_ntohl(tvb, offset);
       proto_tree_add_uint(mtree, hf_bittorrent_piece_index, tvb, offset, 4, piece_index); offset += 4;
       piece_begin = tvb_get_ntohl(tvb, offset);
@@ -435,10 +559,19 @@ dissect_bittorrent_message (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 
    case BITTORRENT_MESSAGE_EXTENDED:
       /* extended message content */
-      proto_tree_add_item(mtree, hf_bittorrent_extended, tvb, offset, length, ENC_NA);
+      proto_tree_add_item_ret_uint(mtree, hf_bittorrent_extended_id, tvb, offset, 1, ENC_NA, &ext_id);
+      offset += 1;
+      length -= 1;
+      if (ext_id == 0) {
+         call_dissector(bencode_handle, tvb_new_subset_length(tvb, offset, length), pinfo, mtree);
+      } else {
+         proto_tree_add_item(mtree, hf_bittorrent_extended, tvb, offset, length, ENC_NA);
+      }
       break;
 
    case BITTORRENT_MESSAGE_HAVE:
+   case BITT_FAST_EX_SUGGEST_PIECE:
+   case BITT_FAST_EX_ALLOWED_FAST:
       piece_index = tvb_get_ntohl(tvb, offset);
       proto_tree_add_item(mtree, hf_bittorrent_piece_index, tvb, offset, 4, ENC_BIG_ENDIAN);
       proto_item_append_text(ti, ", Piece (Idx:0x%x)", piece_index);
@@ -478,7 +611,7 @@ dissect_bittorrent_message (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
    case AZUREUS_MESSAGE_JPC_HELLO:
       stringlen = tvb_get_ntohl(tvb, offset);
       proto_tree_add_item(mtree, hf_azureus_jpc_addrlen, tvb, offset, 4, ENC_BIG_ENDIAN);
-      proto_tree_add_item(mtree, hf_azureus_jpc_addr, tvb, offset+4, stringlen, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(mtree, hf_azureus_jpc_addr, tvb, offset+4, stringlen, ENC_ASCII);
       proto_tree_add_item(mtree, hf_azureus_jpc_port, tvb, offset+4+stringlen, 4, ENC_BIG_ENDIAN);
       proto_tree_add_item(mtree, hf_azureus_jpc_session, tvb, offset+4+stringlen+4, 4, ENC_BIG_ENDIAN);
       break;
@@ -502,7 +635,7 @@ dissect_bittorrent_welcome (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
    col_set_str(pinfo->cinfo, COL_INFO, "Handshake");
 
    proto_tree_add_item(tree, hf_bittorrent_prot_name_len, tvb, offset, 1, ENC_BIG_ENDIAN); offset+=1;
-   proto_tree_add_item(tree, hf_bittorrent_prot_name, tvb, offset, 19, ENC_ASCII|ENC_NA); offset += 19;
+   proto_tree_add_item(tree, hf_bittorrent_prot_name, tvb, offset, 19, ENC_ASCII); offset += 19;
    proto_tree_add_item(tree, hf_bittorrent_reserved, tvb, offset, 8, ENC_NA); offset += 8;
 
    proto_tree_add_item(tree, hf_bittorrent_sha1_hash, tvb, offset, 20, ENC_NA);
@@ -512,11 +645,11 @@ dissect_bittorrent_welcome (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
    if(decode_client_information) {
       for(i = 0; peer_id[i].name != NULL; ++i)
       {
-         if(tvb_memeql(tvb, offset, peer_id[i].id, (int)strlen(peer_id[i].id)) == 0) {
-            version = tvb_get_string_enc(wmem_packet_scope(), tvb, offset + (int)strlen(peer_id[i].id),
+         if(tvb_memeql(tvb, offset, (const uint8_t*)peer_id[i].id, (int)strlen(peer_id[i].id)) == 0) {
+            version = tvb_get_string_enc(pinfo->pool, tvb, offset + (int)strlen(peer_id[i].id),
                                      peer_id[i].ver_len, ENC_ASCII);
             proto_tree_add_string_format(tree, hf_bittorrent_version, tvb, offset, 20, version, "Client is %s v%s",
-                                peer_id[i].name, format_text((guchar*)version, peer_id[i].ver_len));
+                                peer_id[i].name, format_text(pinfo->pool, (unsigned char*)version, peer_id[i].ver_len));
             break;
          }
       }
@@ -537,8 +670,8 @@ int dissect_bittorrent_tcp_pdu (tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
    ti = proto_tree_add_item (tree, proto_bittorrent, tvb, 0, -1, ENC_NA);
    tree = proto_item_add_subtree(ti, ett_bittorrent);
 
-   if (tvb_get_guint8(tvb, 0) == 19 &&
-       tvb_memeql(tvb, 1, "BitTorrent protocol", 19) == 0) {
+   if (tvb_get_uint8(tvb, 0) == 19 &&
+       tvb_memeql(tvb, 1, (const uint8_t*)"BitTorrent protocol", 19) == 0) {
       dissect_bittorrent_welcome(tvb, pinfo, tree);
    } else {
       dissect_bittorrent_message(tvb, pinfo, tree);
@@ -559,23 +692,31 @@ int dissect_bittorrent (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 }
 
 static
-gboolean test_bittorrent_packet (tvbuff_t *tvb, packet_info *pinfo,
+int dissect_bittorrent_utp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
+{
+   utp_dissect_pdus(tvb, pinfo, tree, bittorrent_desegment, BITTORRENT_HEADER_LENGTH,
+                    get_bittorrent_pdu_length, dissect_bittorrent_tcp_pdu, data);
+   return tvb_reported_length(tvb);
+}
+
+static
+bool test_bittorrent_packet (tvbuff_t *tvb, packet_info *pinfo,
                                  proto_tree *tree, void *data)
 {
    conversation_t *conversation;
 
    if (tvb_captured_length(tvb) >= 20 &&
-       tvb_get_guint8(tvb, 0) == 19 &&
-       tvb_memeql(tvb, 1, "BitTorrent protocol", 19) == 0) {
+       tvb_get_uint8(tvb, 0) == 19 &&
+       tvb_memeql(tvb, 1, (const uint8_t*)"BitTorrent protocol", 19) == 0) {
       conversation = find_or_create_conversation(pinfo);
       conversation_set_dissector(conversation, dissector_handle);
 
       dissect_bittorrent(tvb, pinfo, tree, data);
 
-      return TRUE;
+      return true;
    }
 
-   return FALSE;
+   return false;
 }
 
 void
@@ -653,6 +794,9 @@ proto_register_bittorrent(void)
       { &hf_bittorrent_port,
         { "Port", "bittorrent.port", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
+      { &hf_bittorrent_extended_id,
+        { "Extended Message ID", "bittorrent.extended.id", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
+      },
       { &hf_bittorrent_extended,
         { "Extended Message", "bittorrent.extended", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
@@ -664,7 +808,7 @@ proto_register_bittorrent(void)
       },
    };
 
-   static gint *ett[] = {
+   static int *ett[] = {
       &ett_bittorrent,
       &ett_bittorrent_msg,
       &ett_peer_id,
@@ -676,7 +820,8 @@ proto_register_bittorrent(void)
    proto_register_field_array(proto_bittorrent, hf, array_length(hf));
    proto_register_subtree_array(ett, array_length(ett));
 
-   register_dissector("bittorrent.tcp", dissect_bittorrent, proto_bittorrent);
+   dissector_handle = register_dissector("bittorrent.tcp", dissect_bittorrent, proto_bittorrent);
+   register_dissector("bittorrent.utp", dissect_bittorrent_utp, proto_bittorrent);
 
    bittorrent_module = prefs_register_protocol(proto_bittorrent, NULL);
    prefs_register_bool_preference(bittorrent_module, "desegment",
@@ -696,18 +841,8 @@ proto_reg_handoff_bittorrent(void)
 {
    bencode_handle = find_dissector_add_dependency("bencode", proto_bittorrent);
 
-   dissector_handle = find_dissector("bittorrent.tcp");
-#if 0
-   dissector_add_uint("tcp.port", 6881, dissector_handle);
-   dissector_add_uint("tcp.port", 6882, dissector_handle);
-   dissector_add_uint("tcp.port", 6883, dissector_handle);
-   dissector_add_uint("tcp.port", 6884, dissector_handle);
-   dissector_add_uint("tcp.port", 6885, dissector_handle);
-   dissector_add_uint("tcp.port", 6886, dissector_handle);
-   dissector_add_uint("tcp.port", 6887, dissector_handle);
-   dissector_add_uint("tcp.port", 6888, dissector_handle);
-   dissector_add_uint("tcp.port", 6889, dissector_handle);
-#endif
+   dissector_add_uint_range_with_preference("tcp.port", DEFAULT_TCP_PORT_RANGE, dissector_handle);
+
    heur_dissector_add("tcp", test_bittorrent_packet, "BitTorrent over TCP", "bittorrent_tcp", proto_bittorrent, HEURISTIC_ENABLE);
 }
 

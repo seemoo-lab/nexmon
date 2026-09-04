@@ -1,8 +1,5 @@
 /* GNU gettext - internationalization aids
-   Copyright (C) 1996, 1998, 2000-2003, 2015-2016 Free Software Foundation,
-   Inc.
-
-   This file was written by Peter Miller <millerp@canb.auug.org.au>
+   Copyright (C) 1996-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,7 +12,9 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Peter Miller, Ulrich Drepper, and Bruno Haible.  */
 
 #ifndef _DIR_LIST_H
 #define _DIR_LIST_H

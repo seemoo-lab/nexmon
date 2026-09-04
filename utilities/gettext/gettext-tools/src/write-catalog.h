@@ -1,6 +1,5 @@
 /* GNU gettext - internationalization aids
-   Copyright (C) 1995-1998, 2000-2003, 2006, 2008, 2015-2016 Free Software
-   Foundation, Inc.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,15 +12,19 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 #ifndef _WRITE_CATALOG_H
 #define _WRITE_CATALOG_H
 
 #include <stdbool.h>
 
-#include "ostream.h"
+#include <textstyle.h>
+
 #include "message.h"
+#include "xerror-handler.h"
 
 
 #ifdef __cplusplus
@@ -33,11 +36,16 @@ extern "C" {
 struct catalog_output_format
 {
   /* Outputs a list of domains of messages to a stream.  */
-  void (*print) (msgdomain_list_ty *mdlp, ostream_t stream, size_t page_width, bool debug);
+  void (*print) (msgdomain_list_ty *mdlp, ostream_t stream, size_t page_width,
+                 xerror_handler_ty xerror_handler, bool debug);
 
   /* Whether the print function requires the MDLP to be encoded in UTF-8
      encoding.  */
   bool requires_utf8;
+
+  /* Whether the print function uses Unicode control characters to protect
+     against filenames with spaces.  */
+  bool requires_utf8_for_filenames_with_spaces;
 
   /* Whether the print function supports styled output.  */
   bool supports_color;
@@ -75,6 +83,7 @@ extern void
        msgdomain_list_print (msgdomain_list_ty *mdlp,
                              const char *filename,
                              catalog_output_format_ty output_syntax,
+                             xerror_handler_ty xerror_handler,
                              bool force, bool debug);
 
 /* Sort MDLP destructively according to the given criterion.  */

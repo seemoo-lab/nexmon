@@ -5,22 +5,12 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
+
+#include <wsutil/os_version_info.h>
 
 #include <string.h>
 #include <errno.h>
@@ -29,27 +19,19 @@
 #include <sys/utsname.h>
 #endif
 
-#ifdef HAVE_OS_X_FRAMEWORKS
+#ifdef HAVE_MACOS_FRAMEWORKS
 #include <CoreFoundation/CoreFoundation.h>
 #include <wsutil/cfutils.h>
 #endif
 
-#include <glib.h>
-
 #include <wsutil/unicode-utils.h>
-
-#include <wsutil/os_version_info.h>
-
-#ifdef _WIN32
-typedef void (WINAPI *nativesi_func_ptr)(LPSYSTEM_INFO);
-#endif
 
 /*
  * Handles the rather elaborate process of getting OS version information
- * from OS X (we want the OS X version, not the Darwin version, the latter
+ * from macOS (we want the macOS version, not the Darwin version, the latter
  * being easy to get with uname()).
  */
-#ifdef HAVE_OS_X_FRAMEWORKS
+#ifdef HAVE_MACOS_FRAMEWORKS
 
 /*
  * Fetch a string, as a UTF-8 C string, from a dictionary, given a key.
@@ -71,11 +53,14 @@ get_string_from_dictionary(CFPropertyListRef dict, CFStringRef key)
 }
 
 /*
- * Get the OS X version information, and append it to the GString.
- * Return TRUE if we succeed, FALSE if we fail.
+ * Get the macOS version information, and append it to the GString.
+ * Return true if we succeed, false if we fail.
+ *
+ * XXX - this gives the OS name as "Mac OS X" even if Apple called/calls
+ * it "OS X" or "macOS".
  */
-static gboolean
-get_os_x_version_info(GString *str)
+static bool
+get_macos_version_info(GString *str)
 {
 	static const UInt8 server_version_plist_path[] =
 	    "/System/Library/CoreServices/ServerVersion.plist";
@@ -87,7 +72,7 @@ get_os_x_version_info(GString *str)
 	char *string;
 
 	/*
-	 * On OS X, report the OS X version number as the OS, and put
+	 * On macOS, report the macOS version number as the OS, and put
 	 * the Darwin information in parentheses.
 	 *
 	 * Alas, Gestalt() is deprecated in Mountain Lion, so the build
@@ -103,12 +88,12 @@ get_os_x_version_info(GString *str)
 	    server_version_plist_path, sizeof server_version_plist_path - 1,
 	    false);
 	if (version_plist_file_url == NULL)
-		return FALSE;
+		return false;
 	version_plist_stream = CFReadStreamCreateWithFile(NULL,
 	    version_plist_file_url);
 	CFRelease(version_plist_file_url);
 	if (version_plist_stream == NULL)
-		return FALSE;
+		return false;
 	if (!CFReadStreamOpen(version_plist_stream)) {
 		CFRelease(version_plist_stream);
 
@@ -119,15 +104,15 @@ get_os_x_version_info(GString *str)
 		    system_version_plist_path, sizeof system_version_plist_path - 1,
 		    false);
 		if (version_plist_file_url == NULL)
-			return FALSE;
+			return false;
 		version_plist_stream = CFReadStreamCreateWithFile(NULL,
 		    version_plist_file_url);
 		CFRelease(version_plist_file_url);
 		if (version_plist_stream == NULL)
-			return FALSE;
+			return false;
 		if (!CFReadStreamOpen(version_plist_stream)) {
 			CFRelease(version_plist_stream);
-			return FALSE;
+			return false;
 		}
 	}
 #ifdef HAVE_CFPROPERTYLISTCREATEWITHSTREAM
@@ -141,14 +126,14 @@ get_os_x_version_info(GString *str)
 #endif
 	if (version_dict == NULL) {
 		CFRelease(version_plist_stream);
-		return FALSE;
+		return false;
 	}
 	if (CFGetTypeID(version_dict) != CFDictionaryGetTypeID()) {
 		/* This is *supposed* to be a dictionary.  Punt. */
 		CFRelease(version_dict);
 		CFReadStreamClose(version_plist_stream);
 		CFRelease(version_plist_stream);
-		return FALSE;
+		return false;
 	}
 	/* Get the product name string. */
 	string = get_string_from_dictionary(version_dict,
@@ -157,7 +142,7 @@ get_os_x_version_info(GString *str)
 		CFRelease(version_dict);
 		CFReadStreamClose(version_plist_stream);
 		CFRelease(version_plist_stream);
-		return FALSE;
+		return false;
 	}
 	g_string_append_printf(str, "%s", string);
 	g_free(string);
@@ -169,7 +154,7 @@ get_os_x_version_info(GString *str)
 		CFRelease(version_dict);
 		CFReadStreamClose(version_plist_stream);
 		CFRelease(version_plist_stream);
-		return FALSE;
+		return false;
 	}
 	g_string_append_printf(str, " %s", string);
 	g_free(string);
@@ -181,16 +166,57 @@ get_os_x_version_info(GString *str)
 		CFRelease(version_dict);
 		CFReadStreamClose(version_plist_stream);
 		CFRelease(version_plist_stream);
-		return FALSE;
+		return false;
 	}
 	g_string_append_printf(str, ", build %s", string);
 	g_free(string);
 	CFRelease(version_dict);
 	CFReadStreamClose(version_plist_stream);
 	CFRelease(version_plist_stream);
-	return TRUE;
+	return true;
 }
 #endif
+
+#ifdef _WIN32
+typedef LONG (WINAPI * RtlGetVersionProc) (OSVERSIONINFOEX *);
+#ifndef STATUS_SUCCESS
+#define STATUS_SUCCESS 0
+#endif
+#include <stdlib.h>
+
+/*
+ * Determine whether it's 32-bit or 64-bit Windows based on the
+ * instruction set; this only tests for the instruction sets
+ * that we currently support for Windows, it doesn't bother with MIPS,
+ * PowerPC, Alpha, or IA-64, nor does it bother wieth 32-bit ARM.
+ */
+static void
+add_os_bitsize(GString *str, SYSTEM_INFO *system_info)
+{
+	switch (system_info->wProcessorArchitecture) {
+	case PROCESSOR_ARCHITECTURE_AMD64:
+#ifdef PROCESSOR_ARCHITECTURE_ARM64
+	case PROCESSOR_ARCHITECTURE_ARM64:
+#endif
+		g_string_append(str, "64-bit ");
+		break;
+	case PROCESSOR_ARCHITECTURE_INTEL:
+		g_string_append(str, "32-bit ");
+		break;
+	default:
+		break;
+	}
+}
+
+/*
+ * Test whether the OS an "NT Workstation" version, meaning "not server".
+ */
+static bool
+is_nt_workstation(OSVERSIONINFOEX *win_version_info)
+{
+	return win_version_info->wProductType == VER_NT_WORKSTATION;
+}
+#endif // _WIN32
 
 /*
  * Get the OS version, and append it to the GString
@@ -199,36 +225,35 @@ void
 get_os_version_info(GString *str)
 {
 #if defined(_WIN32)
-	HMODULE kernel_dll_handle;
-	OSVERSIONINFOEX info;
-	SYSTEM_INFO system_info;
-	nativesi_func_ptr nativesi_func;
-#elif defined(HAVE_SYS_UTSNAME_H)
-	struct utsname name;
-#endif
 
-#if defined(_WIN32)
+	OSVERSIONINFOEX win_version_info = {0};
+	RtlGetVersionProc RtlGetVersionP = 0;
+	LONG version_status = STATUS_ENTRYPOINT_NOT_FOUND; // Any nonzero value should work.
+
 	/*
-	 * See
-	 *
-	 *	http://msdn.microsoft.com/library/default.asp?url=/library/en-us/sysinfo/base/getting_the_system_version.asp
-	 *
-	 * for more than you ever wanted to know about determining the
-	 * flavor of Windows on which you're running.  Implementing more
-	 * of that is left as an exercise to the reader - who should
-	 * check any copyright information about code samples on MSDN
-	 * before cutting and pasting into Wireshark.
-	 *
-	 * They should also note that you need an OSVERSIONINFOEX structure
-	 * to get some of that information, and that not only is that
-	 * structure not supported on older versions of Windows, you might
-	 * not even be able to compile code that *uses* that structure with
-	 * older versions of the SDK.
+	 * We want the major and minor Windows version along with other
+	 * information. GetVersionEx provides this, but is deprecated.
+	 * We use RtlGetVersion instead, which requires a bit of extra
+	 * effort.
 	 */
 
-	memset(&info, '\0', sizeof info);
-	info.dwOSVersionInfoSize = sizeof info;
-	if (!GetVersionEx((OSVERSIONINFO *)&info)) {
+	HMODULE ntdll_module = LoadLibrary(_T("ntdll.dll"));
+	if (ntdll_module) {
+DIAG_OFF(cast-function-type)
+		RtlGetVersionP = (RtlGetVersionProc) GetProcAddress(ntdll_module, "RtlGetVersion");
+DIAG_ON(cast-function-type)
+	}
+
+	if (RtlGetVersionP) {
+		win_version_info.dwOSVersionInfoSize = sizeof(win_version_info);
+		version_status = RtlGetVersionP(&win_version_info);
+	}
+
+	if (ntdll_module) {
+		FreeLibrary(ntdll_module);
+	}
+
+	if (version_status != STATUS_SUCCESS) {
 		/*
 		 * XXX - get the failure reason.
 		 */
@@ -236,24 +261,38 @@ get_os_version_info(GString *str)
 		return;
 	}
 
+	SYSTEM_INFO system_info;
 	memset(&system_info, '\0', sizeof system_info);
-	/* Look for and use the GetNativeSystemInfo() function if available to get the correct processor
-	 * architecture even when running 32-bit Wireshark in WOW64 (x86 emulation on 64-bit Windows) */
-	kernel_dll_handle = GetModuleHandle(_T("kernel32.dll"));
-	if (kernel_dll_handle == NULL) {
-		/*
-		 * XXX - get the failure reason.
-		 */
-		g_string_append(str, "unknown Windows version");
-		return;
-	}
-	nativesi_func = (nativesi_func_ptr)GetProcAddress(kernel_dll_handle, "GetNativeSystemInfo");
-	if(nativesi_func)
-		nativesi_func(&system_info);
-	else
-		GetSystemInfo(&system_info);
+	/*
+	 * Look for and use the GetNativeSystemInfo() function to get the
+	 * correct processor architecture even when running 32-bit Wireshark
+	 * in WOW64 (x86 emulation on 64-bit Windows).
+	 *
+	 * However, the documentation for GetNativeSystemInfo() says
+	 *
+	 *   If the function is called from an x86 or x64 application
+	 *   running on a 64-bit system that does not have an Intel64
+	 *   or x64 processor (such as ARM64), it will return information
+	 *   as if the system is x86 only if x86 emulation is supported
+	 *   (or x64 if x64 emulation is also supported).
+	 *
+	 * so it appears that it will *not* return the correct processor
+	 * architecture if running x86-64 Wireshark on ARM64 with
+	 * x86-64 emulation - it will presumably say "x86-64", not "ARM64".
+	 *
+	 * So we use it to say "32-bit" or "64-bit", but we don't use
+	 * it to say "N-bit x86" or "N-bit ARM".
+	 *
+	 * It Would Be Nice if there were some way to report that
+	 * Wireshark is running in emulation on an ARM64 system;
+	 * that might be important if, for example, a user is
+	 * reporting a capture problem, as there currently isn't
+	 * a version of Npcap that can support x86-64 programs on
+	 * an ARM64 system.
+	 */
+	GetNativeSystemInfo(&system_info);
 
-	switch (info.dwPlatformId) {
+	switch (win_version_info.dwPlatformId) {
 
 	case VER_PLATFORM_WIN32s:
 		/* Shyeah, right. */
@@ -261,12 +300,23 @@ get_os_version_info(GString *str)
 		break;
 
 	case VER_PLATFORM_WIN32_WINDOWS:
-		/* Windows OT */
-		switch (info.dwMajorVersion) {
+		/*
+		 * Windows OT.
+		 *
+		 *   https://nsis-dev.github.io/NSIS-Forums/html/t-128527.html
+		 *
+		 * claims that
+		 *
+		 *   HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion
+		 *
+		 * has a key ProductName, at least in Windows M3, the
+		 * value of that key appears to be an OS product name.
+		 */
+		switch (win_version_info.dwMajorVersion) {
 
 		case 4:
 			/* 3 cheers for Microsoft marketing! */
-			switch (info.dwMinorVersion) {
+			switch (win_version_info.dwMinorVersion) {
 
 			case 0:
 				g_string_append_printf(str, "Windows 95");
@@ -282,31 +332,69 @@ get_os_version_info(GString *str)
 
 			default:
 				g_string_append_printf(str, "Windows OT, unknown version %lu.%lu",
-				    info.dwMajorVersion, info.dwMinorVersion);
+				    win_version_info.dwMajorVersion, win_version_info.dwMinorVersion);
 				break;
 			}
 			break;
 
 		default:
 			g_string_append_printf(str, "Windows OT, unknown version %lu.%lu",
-			    info.dwMajorVersion, info.dwMinorVersion);
+			    win_version_info.dwMajorVersion, win_version_info.dwMinorVersion);
 			break;
 		}
 		break;
 
 	case VER_PLATFORM_WIN32_NT:
-		/* Windows NT */
-		switch (info.dwMajorVersion) {
+		/*
+		 * Windows NT.
+		 *
+		 *   https://stackoverflow.com/a/19778234/16139739
+		 *
+		 * claims that
+		 *
+		 *   HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion
+		 *
+		 * has a key ProductName that is "present for Windows XP
+		 * and aboeve[sic]".  The value of that key gives a
+		 * "product name"...
+		 *
+		 * ...at least until Windows 11, which it insists is
+		 * Windows 10.  So we don't bother with it.  (It may
+		 * indicate whether it's Home or Pro or..., but that's
+		 * not worth the effort of fixing the "Windows 11 is
+		 * Windows 10" nonsense.)
+		 *
+		 *   https://patents.google.com/patent/EP1517235A2/en
+		 *
+		 * is a Microsoft patent that mentions the
+		 * BrandingFormatString() routine, and seems to suggest
+		 * that it dates back to at least Windows XP.
+		 *
+		 *   https://dennisbabkin.com/blog/?t=how-to-tell-the-real-version-of-windows-your-app-is-running-on
+		 *
+		 * says that routine is in an undocumented winbrand.dll DLL,
+		 * but is used by Microsoft's own code to put the OS
+		 * product name into messages.  It, unlike ProductName,
+		 * appears to make a distinction between Windows 10 and
+		 * Windows 11, and, when handed the string "%WINDOWS_LONG%",
+		 * gives the same edition decoration that I suspect
+		 * ProductName does.
+		 */
+		switch (win_version_info.dwMajorVersion) {
 
 		case 3:
 		case 4:
+			/* NT 3.x and 4.x. */
 			g_string_append_printf(str, "Windows NT %lu.%lu",
-			    info.dwMajorVersion, info.dwMinorVersion);
+			    win_version_info.dwMajorVersion, win_version_info.dwMinorVersion);
 			break;
 
 		case 5:
-			/* 3 cheers for Microsoft marketing! */
-			switch (info.dwMinorVersion) {
+			/*
+			 * W2K, WXP, and their server versions.
+			 * 3 cheers for Microsoft marketing!
+			 */
+			switch (win_version_info.dwMinorVersion) {
 
 			case 0:
 				g_string_append_printf(str, "Windows 2000");
@@ -317,7 +405,7 @@ get_os_version_info(GString *str)
 				break;
 
 			case 2:
-				if ((info.wProductType == VER_NT_WORKSTATION) &&
+				if (is_nt_workstation(&win_version_info) &&
 				    (system_info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)) {
 					g_string_append_printf(str, "Windows XP Professional x64 Edition");
 				} else {
@@ -329,60 +417,170 @@ get_os_version_info(GString *str)
 
 			default:
 				g_string_append_printf(str, "Windows NT, unknown version %lu.%lu",
-						       info.dwMajorVersion, info.dwMinorVersion);
+						       win_version_info.dwMajorVersion, win_version_info.dwMinorVersion);
 				break;
 			}
 			break;
 
 		case 6: {
-			gboolean is_nt_workstation;
-
-			if (system_info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-				g_string_append(str, "64-bit ");
-			else if (system_info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL)
-				g_string_append(str, "32-bit ");
-#ifndef VER_NT_WORKSTATION
-#define VER_NT_WORKSTATION 0x01
-			is_nt_workstation = ((info.wReserved[1] & 0xff) == VER_NT_WORKSTATION);
-#else
-			is_nt_workstation = (info.wProductType == VER_NT_WORKSTATION);
-#endif
-			switch (info.dwMinorVersion) {
+			/*
+			 * Vista, W7, W8, W8.1, and their server versions.
+			 */
+			add_os_bitsize(str, &system_info);
+			switch (win_version_info.dwMinorVersion) {
 			case 0:
-				g_string_append_printf(str, is_nt_workstation ? "Windows Vista" : "Windows Server 2008");
+				g_string_append_printf(str, is_nt_workstation(&win_version_info) ? "Windows Vista" : "Windows Server 2008");
 				break;
 			case 1:
-				g_string_append_printf(str, is_nt_workstation ? "Windows 7" : "Windows Server 2008 R2");
+				g_string_append_printf(str, is_nt_workstation(&win_version_info) ? "Windows 7" : "Windows Server 2008 R2");
 				break;
 			case 2:
-				g_string_append_printf(str, is_nt_workstation ? "Windows 8" : "Windows Server 2012");
+				g_string_append_printf(str, is_nt_workstation(&win_version_info) ? "Windows 8" : "Windows Server 2012");
 				break;
 			case 3:
-				g_string_append_printf(str, is_nt_workstation ? "Windows 8.1" : "Windows Server 2012 R2");
+				g_string_append_printf(str, is_nt_workstation(&win_version_info) ? "Windows 8.1" : "Windows Server 2012 R2");
 				break;
 			default:
 				g_string_append_printf(str, "Windows NT, unknown version %lu.%lu",
-						       info.dwMajorVersion, info.dwMinorVersion);
+						       win_version_info.dwMajorVersion, win_version_info.dwMinorVersion);
 				break;
 			}
 			break;
 		}  /* case 6 */
 
 		case 10: {
-			gboolean is_nt_workstation;
+			/*
+			 * W10, W11, and their server versions.
+			 */
+                        TCHAR ReleaseId[10];
+                        DWORD ridSize = _countof(ReleaseId);
 
-			if (system_info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64)
-				g_string_append(str, "64-bit ");
-			else if (system_info.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL)
-				g_string_append(str, "32-bit ");
-			is_nt_workstation = (info.wProductType == VER_NT_WORKSTATION);
-			switch (info.dwMinorVersion) {
+			add_os_bitsize(str, &system_info);
+			switch (win_version_info.dwMinorVersion) {
 			case 0:
-				g_string_append_printf(str, is_nt_workstation ? "Windows 10" : "Windows Server 2016");
+				/* List of BuildNumber from https://en.wikipedia.org/wiki/List_of_Microsoft_Windows_versions
+				 * and https://docs.microsoft.com/en-us/windows/release-health/windows11-release-information */
+				if (is_nt_workstation(&win_version_info)) {
+					if (win_version_info.dwBuildNumber < 10240) {
+						/* XXX - W10 builds before 10240? */
+						g_string_append_printf(str, "Windows");
+					} else if (win_version_info.dwBuildNumber < 22000){
+						/* W10 builds sstart at 10240 and end before 22000 */
+						g_string_append_printf(str, "Windows 10");
+					} else {
+						/* Builds 22000 and later are W11 (until there's W12...). */
+						g_string_append_printf(str, "Windows 11");
+					}
+				} else {
+					switch (win_version_info.dwBuildNumber) {
+					case 14393:
+						g_string_append_printf(str, "Windows Server 2016");
+						break;
+					case 17763:
+						g_string_append_printf(str, "Windows Server 2019");
+						break;
+					case 20348:
+						g_string_append_printf(str, "Windows Server 2022");
+						break;
+					default:
+						g_string_append_printf(str, "Windows Server");
+						break;
+					}
+				}
+
+				/*
+				 * Windows 10 and 11 have had multiple
+				 * releases, with different build numbers.
+				 *
+				 * The build number *could* be used to
+				 * determine the release string, but
+				 * that would require a table of releases
+				 * and strings, and that would have to
+				 * get updated whenever a new release
+				 * comes out, and that seems to happen
+				 * twice a year these days.
+				 *
+				 * The good news is that, under
+				 *
+				 *   HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion
+				 *
+				 * there are two keys, DisplayVersion and
+				 * ReleaseId.  If DisplayVersion is present,
+				 * it's a string that gives the release
+				 * string; if not, ReleaseId gives the
+				 * release string.
+				 *
+				 * The DisplayVersion value is currently
+				 * of the form YYHN, where YY is the
+				 * last two digits of the year, H stands
+				 * for "half", and N is the half of the
+				 * year in which it came out.
+				 *
+				 * The ReleaseId is just a numeric string
+				 * and for all the YYHN releases, it's
+				 * stuck at the same value.
+				 *
+				 * Note further that
+				 *
+				 *   https://github.com/nvaccess/nvda/blob/master/source/winVersion.py
+				 *
+				 * has a comment claiming that
+				 *
+				 *   From Version 1511 (build 10586), release
+				 *   Id/display version comes from Windows
+				 *   Registry.
+				 *   However there are builds with no release
+				 *   name (Version 1507/10240) or releases
+				 *   with different builds.
+				 *   Look these up first before asking
+				 *   Windows Registry.
+				 *
+				 * "Look these up first" means "look them
+				 * up in a table that goes from
+				 *
+				 *   10240: Windows 10 1507
+				 *
+				 * to
+				 *
+				 *   22621: Windows 11 22H2
+				 *
+				 * and also includes
+				 *
+				 *   20348: Windows Server 2022
+				 *
+				 * I'm not sure why any Windows 10 builds
+				 * after 10240 are in the table; what does
+				 * "releases with different builds" mean?
+				 * does it mean that those particular
+				 * builds have bogus ReleaseId or
+				 * DisplayVersion values?  Those builds
+				 * appear to be official release builds
+				 * for W10/W11, according to the table
+				 * in
+				 *
+				 *   https://en.wikipedia.org/wiki/Windows_NT
+				 *
+				 * so, if those are all necessary, why
+				 * should ReleaseId or DisplayVersion be
+				 * trusted at all?
+				 *
+				 * As for the Windows Server 2022 entry,
+				 * is that just because that script doesn't
+				 * bother checking for "workstation" vs.
+				 * "server"?
+				 */
+				if (RegGetValue(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
+				                L"DisplayVersion", RRF_RT_REG_SZ, NULL, &ReleaseId, &ridSize) == ERROR_SUCCESS) {
+					g_string_append_printf(str, " (%s)", utf_16to8(ReleaseId));
+				}
+				else if (RegGetValue(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
+				                L"ReleaseId", RRF_RT_REG_SZ, NULL, &ReleaseId, &ridSize) == ERROR_SUCCESS) {
+					g_string_append_printf(str, " (%s)", utf_16to8(ReleaseId));
+				}
 				break;
 			default:
 				g_string_append_printf(str, "Windows NT, unknown version %lu.%lu",
-						       info.dwMajorVersion, info.dwMinorVersion);
+						       win_version_info.dwMajorVersion, win_version_info.dwMinorVersion);
 				break;
 			}
 			break;
@@ -390,20 +588,21 @@ get_os_version_info(GString *str)
 
 		default:
 			g_string_append_printf(str, "Windows NT, unknown version %lu.%lu",
-			    info.dwMajorVersion, info.dwMinorVersion);
+			    win_version_info.dwMajorVersion, win_version_info.dwMinorVersion);
 			break;
 		} /* info.dwMajorVersion */
 		break;
 
 	default:
 		g_string_append_printf(str, "Unknown Windows platform %lu version %lu.%lu",
-		    info.dwPlatformId, info.dwMajorVersion, info.dwMinorVersion);
+		    win_version_info.dwPlatformId, win_version_info.dwMajorVersion, win_version_info.dwMinorVersion);
 		break;
 	}
-	if (info.szCSDVersion[0] != '\0')
-		g_string_append_printf(str, " %s", utf_16to8(info.szCSDVersion));
-	g_string_append_printf(str, ", build %lu", info.dwBuildNumber);
+	if (win_version_info.szCSDVersion[0] != '\0')
+		g_string_append_printf(str, " %s", utf_16to8(win_version_info.szCSDVersion));
+	g_string_append_printf(str, ", build %lu", win_version_info.dwBuildNumber);
 #elif defined(HAVE_SYS_UTSNAME_H)
+	struct utsname name;
 	/*
 	 * We have <sys/utsname.h>, so we assume we have "uname()".
 	 */
@@ -431,23 +630,23 @@ get_os_version_info(GString *str)
 		 * On Solaris, it's some kind of build information.
 		 * On HP-UX, it appears to be some sort of subrevision
 		 * thing.
-		 * On *BSD and Darwin/OS X, it's a long string giving
+		 * On *BSD and Darwin/macOS, it's a long string giving
 		 * a build date, config file name, etc., etc., etc..
 		 */
-#ifdef HAVE_OS_X_FRAMEWORKS
+#ifdef HAVE_MACOS_FRAMEWORKS
 		/*
-		 * On Mac OS X, report the Mac OS X version number as
-		 * the OS version if we can, and put the Darwin information
+		 * On macOS, report the macOS version number as the OS
+		 * version if we can, and put the Darwin information
 		 * in parentheses.
 		 */
-		if (get_os_x_version_info(str)) {
+		if (get_macos_version_info(str)) {
 			/* Success - append the Darwin information. */
 			g_string_append_printf(str, " (%s %s)", name.sysname, name.release);
 		} else {
 			/* Failure - just use the Darwin information. */
 			g_string_append_printf(str, "%s %s", name.sysname, name.release);
 		}
-#else /* HAVE_OS_X_FRAMEWORKS */
+#else /* HAVE_MACOS_FRAMEWORKS */
 		/*
 		 * XXX - on Linux, are there any APIs to get the distribution
 		 * name and version number?  I think some distributions have
@@ -484,10 +683,6 @@ get_os_version_info(GString *str)
 		 *
 		 * I've seen references to /etc/redhat-release as well.
 		 *
-		 * At least on my Ubuntu 7 system, /etc/debian_version
-		 * doesn't contain anything interesting (just some Debian
-		 * codenames).
-		 *
 		 * See also
 		 *
 		 *	http://bugs.python.org/issue1322
@@ -498,41 +693,107 @@ get_os_version_info(GString *str)
 		 *
 		 * and the Lib/Platform.py file in recent Python 2.x
 		 * releases.
+		 *
+		 * And then there's /etc/os-release:
+		 *
+		 *	https://0pointer.de/blog/projects/os-release
+		 *
+		 * which, apparently, is something that all distributions
+		 * with systemd have, which seems to mean "most distributions"
+		 * these days.  It also has a list of several of the assorted
+		 * *other* such files that various distributions have.
+		 *
+		 * Maybe look at what pre-version-43 systemd does?  43
+		 * removed support for the old files, but I guess that
+		 * means older versions *did* support them:
+		 *
+		 *	https://lists.freedesktop.org/archives/systemd-devel/2012-February/004475.html
+		 *
+		 * At least on my Ubuntu 7 system, /etc/debian_version
+		 * doesn't contain anything interesting (just some Debian
+		 * codenames).  It does have /etc/lsb-release.  My Ubuntu
+		 * 22.04 system has /etc/lsb-release and /etc/os-release.
+		 *
+		 * My Fedora 9 system has /etc/fedora-release, with
+		 * /etc/redhat-release and /etc/system-release as symlinks
+		 * to it.  They all just contain a one-line relase
+		 * description.  My Fedora 38 system has that, plus
+		 * /etc/os-release.
+		 *
+		 * A quick Debian 3.1a installation I did has only
+		 * /etc/debian_version. My Debian 11.3 system has
+		 * /etc/os-release.
+		 *
+		 * See
+		 *
+		 *	https://gist.github.com/natefoo/814c5bf936922dad97ff
+		 *
+		 * for descriptions of what some versions of some
+		 * distributions offer.
+		 *
+		 * So maybe have a table of files to try, with each
+		 * entry having a pathname, a pointer to a file parser
+		 * routine, and a pointer to a string giving a
+		 * parameter name passed to that routine, with entries
+		 * for:
+		 *
+		 *   /etc/os-release, regular parser, "PRETTY_NAME"
+		 *   /etc/lsb-release, regular parser, "DISTRIB_DESCRIPTION"
+		 *   /etc/system-release, first line parser, NULL
+		 *   /etc/redhat-release, first line parser, NULL
+		 *   /etc/fedora-release, first line parser, NULL
+		 *   /etc/centos-release, first line parser, NULL
+		 *   /etc/debian_version, first line parser, "Debian"
+		 *   /etc/SuSE-release, first line parser, NULL
+		 *   /etc/slackware-version:, first line parser, NULL
+		 *   /etc/gentoo-release, first line parser, NULL
+		 *   /etc/antix-version, first line parser, NULL
+		 *
+		 * Each line is tried in order.  If the open fails, go to
+		 * the next one.  If the open succeeds but the parser
+		 * fails, close the file and go on to the next one.
+		 *
+		 * The regular parser parses files of the form
+		 * <param>="value".  It's passed the value of <param>
+		 * for which to look; if not found, it fails.
+		 *
+		 * The first line parser reads the first line of the file.
+		 * If a string is passed to it, it constructs a distribution
+		 * name string by concatenating the parameter, a space,
+		 * and the contents of that line (with the newline removed),
+		 * otherwise it constructs it from the contents of the line.
+		 *
+		 * Fall back on just "Linux" if nothing works.
+		 *
+		 * Then use the uname() information to indicate what
+		 * kernel version the machine is running.
+		 *
+		 * XXX - for Gentoo, PRETTY_NAME might not give a version,
+		 * so fall back on /etc/gentoo-release?  Gentoo is
+		 * a rolling-release distribution, so what *is* the
+		 * significance of the contents of /etc/gentoo-release?
+		 *
+		 * XXX - MX appears to be a Debian-based distribution
+		 * whose /etc/os-release gives its Debian version and
+		 * whose /etc/mx-version and /etc/antix-version give
+		 * the MX version.  Are there any other Debian derivatives
+		 * that do this?  (The Big One calls itself "Ubuntu"
+		 * in PRETTY_NAME.)
+		 *
+		 * XXX - use ID_LIKE in /etc/os-release to check for,
+		 * for example, Debian-like distributions, e.g. when
+		 * suggesting how to give dumpcap capture privileges?
 		 */
 		g_string_append_printf(str, "%s %s", name.sysname, name.release);
-#endif /* HAVE_OS_X_FRAMEWORKS */
+#endif /* HAVE_MACOS_FRAMEWORKS */
 	}
 #else
 	g_string_append(str, "an unknown OS");
 #endif
 }
 
-#if defined(_WIN32)
 /*
- * Get the Windows major OS version.
- *
- * XXX - Should this return the minor version as well, e.g. 0x00050002?
- *
- * XXX - I think Microsoft have now stuck it at 6 forever, so it really
- * distinguishes, on the versions of Windows we currently support and
- * future Windows versions between Windows 2000/XP (major version 5) and
- * everything after it (major version 6).
- */
-guint32
-get_windows_major_version(void)
-{
-	OSVERSIONINFO info;
-
-	info.dwOSVersionInfoSize = sizeof info;
-	if (GetVersionEx(&info)) {
-		return info.dwMajorVersion;
-	}
-	return 0;
-}
-#endif
-
-/*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

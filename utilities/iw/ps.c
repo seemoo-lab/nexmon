@@ -9,17 +9,14 @@
 #include "iw.h"
 
 static int set_power_save(struct nl80211_state *state,
-			  struct nl_cb *cb,
 			  struct nl_msg *msg,
 			  int argc, char **argv,
 			  enum id_input id)
 {
 	enum nl80211_ps_state ps_state;
 
-	if (argc != 1) {
-		printf("Invalid parameters!\n");
-		return 2;
-	}
+	if (argc != 1)
+		return 1;
 
 	if (strcmp(argv[0], "on") == 0)
 		ps_state = NL80211_PS_ENABLED;
@@ -70,16 +67,14 @@ static int print_power_save_handler(struct nl_msg *msg, void *arg)
 }
 
 static int get_power_save(struct nl80211_state *state,
-				   struct nl_cb *cb,
-				   struct nl_msg *msg,
-				   int argc, char **argv,
-				   enum id_input id)
+			  struct nl_msg *msg,
+			  int argc, char **argv,
+			  enum id_input id)
 {
-	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM,
-		  print_power_save_handler, NULL);
+	register_handler(print_power_save_handler, NULL);
 	return 0;
 }
 
-COMMAND(get, power_save, "<param>",
+COMMAND(get, power_save, "",
 	NL80211_CMD_GET_POWER_SAVE, 0, CIB_NETDEV, get_power_save,
 	"Retrieve power save state.");

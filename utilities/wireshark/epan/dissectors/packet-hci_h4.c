@@ -11,19 +11,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,11 +20,11 @@
 #include <wiretap/wtap.h>
 #include "packet-bluetooth.h"
 
-static int proto_hci_h4 = -1;
-static int hf_hci_h4_type = -1;
-static int hf_hci_h4_direction = -1;
+static int proto_hci_h4;
+static int hf_hci_h4_type;
+static int hf_hci_h4_direction;
 
-static gint ett_hci_h4 = -1;
+static int ett_hci_h4;
 
 static dissector_handle_t hci_h4_handle;
 
@@ -47,6 +35,7 @@ static const value_string hci_h4_type_vals[] = {
     {HCI_H4_TYPE_ACL, "ACL Data"},
     {HCI_H4_TYPE_SCO, "SCO Data"},
     {HCI_H4_TYPE_EVT, "HCI Event"},
+    {HCI_H4_TYPE_ISO, "ISO Data"},
     {0, NULL }
 };
 static const value_string hci_h4_direction_vals[] = {
@@ -59,10 +48,10 @@ static const value_string hci_h4_direction_vals[] = {
 void proto_register_hci_h4(void);
 void proto_reg_handoff_hci_h4(void);
 
-static gint
+static int
 dissect_hci_h4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    guint8             type;
+    uint8_t            type;
     tvbuff_t          *next_tvb;
     proto_item        *main_item;
     proto_tree        *main_tree;
@@ -75,11 +64,11 @@ dissect_hci_h4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     switch (pinfo->p2p_dir) {
 
     case P2P_DIR_SENT:
-        col_add_fstr(pinfo->cinfo, COL_INFO, "Sent ");
+        col_set_str(pinfo->cinfo, COL_INFO, "Sent ");
         break;
 
     case P2P_DIR_RECV:
-        col_add_fstr(pinfo->cinfo, COL_INFO, "Rcvd ");
+        col_set_str(pinfo->cinfo, COL_INFO, "Rcvd ");
         break;
 
     case P2P_DIR_UNKNOWN:
@@ -91,21 +80,21 @@ dissect_hci_h4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
         break;
     }
 
-    type = tvb_get_guint8(tvb, 0);
+    type = tvb_get_uint8(tvb, 0);
 
     main_item = proto_tree_add_item(tree, proto_hci_h4, tvb, 0, 1, ENC_NA);
     main_tree = proto_item_add_subtree(main_item, ett_hci_h4);
 
     sub_item = proto_tree_add_uint(main_tree, hf_hci_h4_direction, tvb, 0, 0, pinfo->p2p_dir);
-    PROTO_ITEM_SET_GENERATED(sub_item);
+    proto_item_set_generated(sub_item);
 
     proto_tree_add_item(main_tree, hf_hci_h4_type,
         tvb, 0, 1, ENC_LITTLE_ENDIAN);
-    col_append_fstr(pinfo->cinfo, COL_INFO, "%s",
-            val_to_str(type, hci_h4_type_vals, "Unknown HCI packet type 0x%02x"));
+    col_append_str(pinfo->cinfo, COL_INFO,
+            val_to_str(pinfo->pool, type, hci_h4_type_vals, "Unknown HCI packet type 0x%02x"));
 
     next_tvb = tvb_new_subset_remaining(tvb, 1);
-    if (!dissector_try_uint_new(hci_h4_table, type, next_tvb, pinfo, tree, TRUE, bluetooth_data)) {
+    if (!dissector_try_uint_with_data(hci_h4_table, type, next_tvb, pinfo, tree, true, bluetooth_data)) {
         call_data_dissector(next_tvb, pinfo, tree);
     }
 
@@ -129,12 +118,11 @@ proto_register_hci_h4(void)
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_hci_h4,
     };
 
-    proto_hci_h4 = proto_register_protocol("Bluetooth HCI H4",
-            "HCI_H4", "hci_h4");
+    proto_hci_h4 = proto_register_protocol("Bluetooth HCI H4", "HCI_H4", "hci_h4");
 
     hci_h4_handle = register_dissector("hci_h4", dissect_hci_h4, proto_hci_h4);
 
@@ -153,7 +141,7 @@ proto_reg_handoff_hci_h4(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

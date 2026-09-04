@@ -14,19 +14,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -34,7 +22,9 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/prefs.h>
+#include <epan/proto_data.h>
 #include <wsutil/str_util.h>
+#include <epan/tfs.h>
 #include "packet-bssap.h"
 #include "packet-gsm_a_common.h"
 #include "packet-e212.h"
@@ -42,15 +32,16 @@
 void proto_register_bssap(void);
 void proto_reg_handoff_bssap(void);
 
-#define BSSAP 0
-#define BSAP  1
+static dissector_handle_t bssap_handle;
+static dissector_handle_t bssap_plus_handle;
+static dissector_handle_t bsap_handle;
+static dissector_handle_t bssap_le_handle;
 
-#define GSM_INTERFACE 0
-#define LB_INTERFACE  1
-
-#define BSSAP_OR_BSAP_DEFAULT BSSAP
-
-#define GSM_OR_LB_INTERFACE_DEFAULT GSM_INTERFACE
+enum bssap_proto {
+    BSSAP,
+    BSAP,
+    BSSAP_LE,
+};
 
 #define PDU_TYPE_OFFSET 0
 #define PDU_TYPE_LENGTH 1
@@ -90,12 +81,12 @@ static const value_string bsap_pdu_type_acro_values[] = {
 #define SPARE_MASK      0x38
 #define SAPI_MASK       0x07
 
-static guint global_bssap_ssn = 98;
+#define BSSAP_PLUS_SSN 98
 
 static const value_string bssap_cc_values[] = {
     { 0x00,     "not further specified" },
-    { 0x80,     "FACCH or SDCCH" },
-    { 0xc0,     "SACCH" },
+    { 0x02,     "FACCH or SDCCH" },
+    { 0x03,     "SACCH" },
     { 0,        NULL } };
 
 static const value_string bsap_cc_values[] = {
@@ -239,168 +230,163 @@ static const value_string bssap_plus_ie_id_values[] = {
 static value_string_ext bssap_plus_ie_id_values_ext = VALUE_STRING_EXT_INIT(bssap_plus_ie_id_values);
 
 /* Initialize the protocol and registered fields */
-static int proto_bssap = -1;
-static int proto_bssap_plus = -1;
-static int hf_bssap_pdu_type = -1;
-static int hf_bsap_pdu_type = -1;
-static int hf_bssap_dlci_cc = -1;
-static int hf_bsap_dlci_cc = -1;
-static int hf_bssap_dlci_spare = -1;
-static int hf_bsap_dlci_rsvd = -1;
-static int hf_bssap_dlci_sapi = -1;
-static int hf_bsap_dlci_sapi = -1;
-static int hf_bssap_length = -1;
-static int hf_bssap_plus_ie = -1;
-static int hf_bssap_plus_ie_len = -1;
+static int proto_bssap;
+static int proto_bsap;
+static int proto_bssap_le;
+static int proto_bssap_plus;
+static int hf_bssap_pdu_type;
+static int hf_bsap_pdu_type;
+static int hf_bssap_dlci_cc;
+static int hf_bsap_dlci_cc;
+static int hf_bssap_dlci_spare;
+static int hf_bsap_dlci_rsvd;
+static int hf_bssap_dlci_sapi;
+static int hf_bsap_dlci_sapi;
+static int hf_bssap_length;
+static int hf_bssap_plus_ie;
+static int hf_bssap_plus_ie_len;
 
-static int hf_bssap_plus_message_type = -1;
-static int hf_bssap_imsi_ie = -1;
-static int hf_bssap_imsi_det_from_gprs_serv_type_ie = -1;
-static int hf_bssap_imsi_det_from_non_gprs_serv_type_ie = -1;
-static int hf_bssap_info_req_ie = -1;
-static int hf_bssap_loc_area_id_ie = -1;
-static int hf_bssap_loc_inf_age_ie = -1;
-static int hf_bssap_mm_information_ie = -1;
-static int hf_bssap_mobile_id_ie = -1;
-static int hf_bssap_mobile_stn_cls_mrk1_ie = -1;
-static int hf_bssap_mobile_station_state_ie = -1;
-static int hf_bssap_ptmsi_ie = -1;
-static int hf_bssap_reject_cause_ie = -1;
-static int hf_bssap_service_area_id_ie = -1;
-static int hf_bssap_sgsn_nr_ie = -1;
-static int hf_bssap_tmsi_ie = -1;
-static int hf_bssap_tmsi_status_ie = -1;
-static int hf_bssap_vlr_number_ie = -1;
-static int hf_bssap_global_cn_id_ie = -1;
-static int hf_bssap_plus_ie_data = -1;
+static int hf_bssap_plus_message_type;
+static int hf_bssap_imsi_ie;
+static int hf_bssap_imsi_det_from_gprs_serv_type_ie;
+static int hf_bssap_imsi_det_from_non_gprs_serv_type_ie;
+static int hf_bssap_info_req_ie;
+static int hf_bssap_loc_area_id_ie;
+static int hf_bssap_loc_inf_age_ie;
+static int hf_bssap_mm_information_ie;
+static int hf_bssap_mobile_id_ie;
+static int hf_bssap_mobile_stn_cls_mrk1_ie;
+static int hf_bssap_mobile_station_state_ie;
+static int hf_bssap_ptmsi_ie;
+static int hf_bssap_reject_cause_ie;
+static int hf_bssap_service_area_id_ie;
+static int hf_bssap_sgsn_nr_ie;
+static int hf_bssap_tmsi_ie;
+static int hf_bssap_tmsi_status_ie;
+static int hf_bssap_vlr_number_ie;
+static int hf_bssap_global_cn_id_ie;
+static int hf_bssap_plus_ie_data;
 
-static int hf_bssap_extension = -1;
-static int hf_bssap_type_of_number = -1;
-static int hf_bssap_numbering_plan_id = -1;
-static int hf_bssap_sgsn_number = -1;
-/* static int hf_bssap_vlr_number = -1; */
-static int hf_bssap_call_priority = -1;
-static int hf_bssap_gprs_loc_upd_type_ie = -1;
-static int hf_bssap_Gs_cause_ie = -1;
-static int hf_bssap_imei_ie = -1;
-static int hf_bssap_imesiv_ie = -1;
-static int hf_bssap_cell_global_id_ie = -1;
-static int hf_bssap_channel_needed_ie = -1;
-static int hf_bssap_dlink_tnl_pld_cntrl_amd_inf_ie = -1;
-static int hf_bssap_ulink_tnl_pld_cntrl_amd_inf_ie = -1;
-static int hf_bssap_emlpp_prio_ie = -1;
-static int hf_bssap_gprs_erroneous_msg_ie = -1;
+static int hf_bssap_extension;
+static int hf_bssap_type_of_number;
+static int hf_bssap_numbering_plan_id;
+static int hf_bssap_sgsn_number;
+static int hf_bssap_vlr_number;
+static int hf_bssap_call_priority;
+static int hf_bssap_gprs_loc_upd_type_ie;
+static int hf_bssap_Gs_cause_ie;
+static int hf_bssap_imei_ie;
+static int hf_bssap_imeisv_ie;
+static int hf_bssap_cell_global_id_ie;
+static int hf_bssap_channel_needed_ie;
+static int hf_bssap_dlink_tnl_pld_cntrl_amd_inf_ie;
+static int hf_bssap_ulink_tnl_pld_cntrl_amd_inf_ie;
+static int hf_bssap_emlpp_prio_ie;
+static int hf_bssap_gprs_erroneous_msg_ie;
 
-static int hf_bssap_gprs_loc_upd_type = -1;
-static int hf_bssap_Gs_cause = -1;
-static int hf_bssap_imei = -1;
-static int hf_bssap_imeisv = -1;
-static int hf_bssap_imsi_det_from_gprs_serv_type = -1;
-static int hf_bssap_info_req = -1;
-static int hf_bssap_loc_inf_age = -1;
-static int hf_bssap_mobile_station_state = -1;
-static int hf_bssap_ptmsi = -1;
-static int hf_bssap_tmsi = -1;
-static int hf_bssap_tmsi_status = -1;
-static int hf_bssap_tom_prot_disc = -1;
-static int hf_bssap_e_bit = -1;
-static int hf_bssap_tunnel_prio = -1;
-static int hf_bssap_global_cn_id = -1;
-static int hf_bssap_plmn_id = -1;
-static int hf_bssap_cn_id = -1;
-static int hf_bssap_cell_global_id = -1;
-static int hf_bssap_extraneous_data = -1;
-static int hf_bssap_conditional_ie = -1;
+static int hf_bssap_gprs_loc_upd_type;
+static int hf_bssap_Gs_cause;
+static int hf_bssap_imei;
+static int hf_bssap_imeisv;
+static int hf_bssap_imsi_det_from_gprs_serv_type;
+static int hf_bssap_info_req;
+static int hf_bssap_loc_inf_age;
+static int hf_bssap_mobile_station_state;
+static int hf_bssap_ptmsi;
+static int hf_bssap_tmsi;
+static int hf_bssap_tmsi_status;
+static int hf_bssap_tom_prot_disc;
+static int hf_bssap_e_bit;
+static int hf_bssap_tunnel_prio;
+static int hf_bssap_global_cn_id;
+static int hf_bssap_plmn_id;
+static int hf_bssap_cn_id;
+static int hf_bssap_cell_global_id;
+static int hf_bssap_extraneous_data;
+static int hf_bssap_conditional_ie;
 
 /* Initialize the subtree pointers */
-static gint ett_bssap = -1;
-static gint ett_bssap_dlci = -1;
-static gint ett_bssap_imsi = -1;
-static gint ett_bssap_imsi_det_from_gprs_serv_type = -1;
-static gint ett_bssap_imsi_det_from_non_gprs_serv_type = -1;
-static gint ett_bssap_info_req = -1;
-static gint ett_bssap_loc_area_id = -1;
-static gint ett_bssap_loc_inf_age = -1;
-static gint ett_bssap_mm_information = -1;
-static gint ett_bssap_mobile_id = -1;
-static gint ett_bssap_sgsn_nr = -1;
-static gint ett_bssap_tmsi = -1;
-static gint ett_bssap_tmsi_status = -1;
-static gint ett_bssap_vlr_number = -1;
-static gint ett_bssap_global_cn = -1;
-static gint ett_bssap_gprs_loc_upd = -1;
-static gint ett_bassp_Gs_cause = -1;
-static gint ett_bassp_imei = -1;
-static gint ett_bassp_imesiv = -1;
-static gint ett_bssap_cell_global_id = -1;
-static gint ett_bssap_cgi = -1;
-static gint ett_bssap_channel_needed = -1;
-static gint ett_bssap_dlink_tnl_pld_cntrl_amd_inf = -1;
-static gint ett_bssap_ulink_tnl_pld_cntrl_amd_inf = -1;
-static gint ett_bssap_emlpp_prio = -1;
-static gint ett_bssap_erroneous_msg = -1;
-static gint ett_bssap_mobile_stn_cls_mrk1 = -1;
-static gint ett_bssap_mobile_station_state = -1;
-static gint ett_bssap_ptmsi = -1;
-static gint ett_bssap_reject_cause = -1;
-static gint ett_bssap_service_area_id =-1;
-static gint ett_bssap_global_cn_id = -1;
-static gint ett_bssap_plmn = -1;
+static int ett_bssap;
+static int ett_bssap_dlci;
+static int ett_bssap_imsi;
+static int ett_bssap_imsi_det_from_gprs_serv_type;
+static int ett_bssap_imsi_det_from_non_gprs_serv_type;
+static int ett_bssap_info_req;
+static int ett_bssap_loc_area_id;
+static int ett_bssap_loc_inf_age;
+static int ett_bssap_mm_information;
+static int ett_bssap_mobile_id;
+static int ett_bssap_sgsn_nr;
+static int ett_bssap_tmsi;
+static int ett_bssap_tmsi_status;
+static int ett_bssap_vlr_number;
+static int ett_bssap_global_cn;
+static int ett_bssap_gprs_loc_upd;
+static int ett_bassp_Gs_cause;
+static int ett_bassp_imei;
+static int ett_bassp_imeisv;
+static int ett_bssap_cell_global_id;
+static int ett_bssap_cgi;
+static int ett_bssap_channel_needed;
+static int ett_bssap_dlink_tnl_pld_cntrl_amd_inf;
+static int ett_bssap_ulink_tnl_pld_cntrl_amd_inf;
+static int ett_bssap_emlpp_prio;
+static int ett_bssap_erroneous_msg;
+static int ett_bssap_mobile_stn_cls_mrk1;
+static int ett_bssap_mobile_station_state;
+static int ett_bssap_ptmsi;
+static int ett_bssap_reject_cause;
+static int ett_bssap_service_area_id;
+static int ett_bssap_global_cn_id;
+static int ett_bssap_plmn;
 
-static expert_field ei_bssap_unknown_message = EI_INIT;
-static expert_field ei_bssap_unknown_parameter = EI_INIT;
-static expert_field ei_bssap_mandatory_ie = EI_INIT;
+static expert_field ei_bssap_unknown_message;
+static expert_field ei_bssap_unknown_parameter;
+static expert_field ei_bssap_mandatory_ie;
 
 
 static dissector_handle_t rrlp_handle;
 
 static dissector_table_t bssap_dissector_table;
 static dissector_table_t bsap_dissector_table;
+static dissector_table_t bssap_le_dissector_table;
 
 static dissector_handle_t gsm_bssmap_le_dissector_handle;
 static dissector_handle_t gsm_a_bssmap_dissector_handle;
 
-/*
- * Keep track of pdu_type so we can call appropriate sub-dissector
- */
-static guint8   pdu_type = 0xFF;
 
-static gint bssap_or_bsap_global = BSSAP_OR_BSAP_DEFAULT;
+typedef struct {
+    uint8_t pdu_type;
+    enum bssap_proto proto;
+} bssap_info_t;
 
-static gint    gsm_or_lb_interface_global = GSM_OR_LB_INTERFACE_DEFAULT;
+static int default_protocol_global = BSSAP;
 
 static void
 dissect_bssap_data_param(tvbuff_t *tvb, packet_info *pinfo,
             proto_tree *bssap_tree, proto_tree *tree, struct _sccp_msg_info_t* sccp_info)
 {
-    if ((pdu_type <= 0x01))
-    {
-        if (bssap_or_bsap_global == BSSAP)
-        {
-            /* BSSAP */
-            if((gsm_or_lb_interface_global == LB_INTERFACE) && (pdu_type == BSSAP_PDU_TYPE_BSSMAP))
-            {
-                call_dissector_with_data(gsm_bssmap_le_dissector_handle, tvb, pinfo, tree, sccp_info);
+    bssap_info_t* bssap_info;
 
-                return;
-            }
-            else if((gsm_or_lb_interface_global == GSM_INTERFACE) && (pdu_type == BSSAP_PDU_TYPE_BSSMAP))
-            {
-                call_dissector_with_data(gsm_a_bssmap_dissector_handle, tvb, pinfo, tree, sccp_info);
+    bssap_info = (bssap_info_t *)p_get_proto_data(pinfo->pool, pinfo, proto_bssap, 0);
+    uint8_t pdu_type = bssap_info->pdu_type;
 
-                return;
-            }
-            else
-            {
-                if (dissector_try_uint_new(bssap_dissector_table, pdu_type, tvb, pinfo, tree, TRUE, sccp_info)) return;
-            }
-        }
-        else
-        {
-            /* BSAP */
-            if (dissector_try_uint_new(bsap_dissector_table, pdu_type, tvb, pinfo, tree, TRUE, sccp_info))
-                return;
-        }
+    switch (bssap_info->proto) {
+
+    case BSSAP:
+        if (dissector_try_uint_with_data(bssap_dissector_table, pdu_type, tvb, pinfo, tree, true, sccp_info))
+            return;
+        break;
+
+    case BSSAP_LE:
+        if (dissector_try_uint_with_data(bssap_le_dissector_table, pdu_type, tvb, pinfo, tree, true, sccp_info))
+            return;
+        break;
+
+    case BSAP:
+        if (dissector_try_uint_with_data(bsap_dissector_table, pdu_type, tvb, pinfo, tree, true, sccp_info))
+            return;
+        break;
     }
 
     /* No sub-dissection occurred, treat it as raw data */
@@ -408,18 +394,21 @@ dissect_bssap_data_param(tvbuff_t *tvb, packet_info *pinfo,
 }
 
 static void
-dissect_bssap_dlci_param(tvbuff_t *tvb, proto_tree *tree, guint16 length)
+dissect_bssap_dlci_param(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, uint16_t length)
 {
     proto_tree *dlci_tree;
-    guint8      oct;
+    uint8_t     oct;
+    bssap_info_t* bssap_info;
+
+    bssap_info = (bssap_info_t *)p_get_proto_data(pinfo->pool, pinfo, proto_bssap, 0);
 
     dlci_tree =
         proto_tree_add_subtree(tree, tvb, 0, length,
                     ett_bssap_dlci, NULL, "Data Link Connection Identifier");
 
-    oct = tvb_get_guint8(tvb, 0);
+    oct = tvb_get_uint8(tvb, 0);
 
-    if (bssap_or_bsap_global == BSSAP)
+    if (bssap_info->proto != BSAP)
     {
         proto_tree_add_uint(dlci_tree, hf_bssap_dlci_cc, tvb, 0, length, oct);
         proto_tree_add_uint(dlci_tree, hf_bssap_dlci_spare, tvb, 0, length, oct);
@@ -434,21 +423,21 @@ dissect_bssap_dlci_param(tvbuff_t *tvb, proto_tree *tree, guint16 length)
 }
 
 static void
-dissect_bssap_length_param(tvbuff_t *tvb, proto_tree *tree, guint16 length)
+dissect_bssap_length_param(tvbuff_t *tvb, proto_tree *tree, uint16_t length)
 {
-    guint8 data_length;
+    uint8_t data_length;
 
-    data_length = tvb_get_guint8(tvb, 0);
+    data_length = tvb_get_uint8(tvb, 0);
     proto_tree_add_uint(tree, hf_bssap_length, tvb, 0, length, data_length);
 }
 
 /*
  * Dissect a parameter given its type, offset into tvb, and length.
  */
-static guint16
+static uint16_t
 dissect_bssap_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *bssap_tree,
-               proto_tree *tree, guint8 parameter_type, gint offset,
-               guint16 parameter_length, struct _sccp_msg_info_t* sccp_info)
+               proto_tree *tree, uint8_t parameter_type, int offset,
+               uint16_t parameter_length, struct _sccp_msg_info_t* sccp_info)
 {
     tvbuff_t *parameter_tvb;
 
@@ -457,7 +446,7 @@ dissect_bssap_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *bssap_tre
     switch (parameter_type)
     {
     case PARAMETER_DLCI:
-        dissect_bssap_dlci_param(parameter_tvb, bssap_tree, parameter_length);
+        dissect_bssap_dlci_param(parameter_tvb, pinfo, bssap_tree, parameter_length);
         break;
 
     case PARAMETER_LENGTH:
@@ -474,18 +463,18 @@ dissect_bssap_parameter(tvbuff_t *tvb, packet_info *pinfo, proto_tree *bssap_tre
         break;
     }
 
-    return(parameter_length);
+    return parameter_length;
 }
 
-static guint16
+static uint16_t
 dissect_bssap_var_parameter(tvbuff_t *tvb, packet_info *pinfo,
                 proto_tree *bssap_tree, proto_tree *tree,
-                guint8 parameter_type, gint offset, struct _sccp_msg_info_t* sccp_info)
+                uint8_t parameter_type, int offset, struct _sccp_msg_info_t* sccp_info)
 {
-    guint16 parameter_length;
-    guint8  length_length;
+    uint16_t parameter_length;
+    uint8_t length_length;
 
-    parameter_length = tvb_get_guint8(tvb, offset);
+    parameter_length = tvb_get_uint8(tvb, offset);
     length_length = LENGTH_LENGTH;
 
     offset += length_length;
@@ -493,32 +482,35 @@ dissect_bssap_var_parameter(tvbuff_t *tvb, packet_info *pinfo,
     dissect_bssap_parameter(tvb, pinfo, bssap_tree, tree, parameter_type,
                 offset, parameter_length, sccp_info);
 
-    return(parameter_length + length_length);
+    return parameter_length + length_length;
 }
 
 static int
 dissect_bssap_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *bssap_tree,
              proto_tree *tree, struct _sccp_msg_info_t* sccp_info)
 {
-    gint offset;
+    int offset;
     proto_item* type_item;
+    bssap_info_t* bssap_info;
+
+    bssap_info = (bssap_info_t *)p_get_proto_data(pinfo->pool, pinfo, proto_bssap, 0);
 
     /*
      * Extract the PDU type
      */
-    pdu_type = tvb_get_guint8(tvb, PDU_TYPE_OFFSET);
+    bssap_info->pdu_type = tvb_get_uint8(tvb, PDU_TYPE_OFFSET);
     offset = PDU_TYPE_LENGTH;
 
     /*
         * add the message type to the protocol tree
         */
     type_item = proto_tree_add_uint(bssap_tree,
-                (bssap_or_bsap_global == BSSAP) ? hf_bssap_pdu_type : hf_bsap_pdu_type,
-                tvb, PDU_TYPE_OFFSET, PDU_TYPE_LENGTH, pdu_type);
+                (bssap_info->proto != BSAP) ? hf_bssap_pdu_type : hf_bsap_pdu_type,
+                tvb, PDU_TYPE_OFFSET, PDU_TYPE_LENGTH, bssap_info->pdu_type);
 
     /* Starting a new message dissection */
 
-    switch (pdu_type)
+    switch (bssap_info->pdu_type)
     {
     case BSSAP_PDU_TYPE_BSSMAP:
         offset += dissect_bssap_parameter(tvb, pinfo, bssap_tree, tree,
@@ -543,11 +535,11 @@ dissect_bssap_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *bssap_tree,
 
     default:
         {
-        guint32 message_length;
+        uint32_t message_length;
 
         col_append_fstr(pinfo->cinfo, COL_INFO, "%s ",
-                val_to_str_const(pdu_type,
-                                 ((bssap_or_bsap_global == BSSAP) ?
+                val_to_str_const(bssap_info->pdu_type,
+                                 ((bssap_info->proto != BSAP) ?
                                   bssap_pdu_type_acro_values : bsap_pdu_type_acro_values),
                                  "Unknown"));
 
@@ -567,11 +559,12 @@ dissect_bssap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     proto_item  *bssap_item;
     proto_tree  *bssap_tree;
     struct _sccp_msg_info_t* sccp_info = (struct _sccp_msg_info_t*)data;
+    bssap_info_t *bssap_info;
 
     /*
      * Make entry in the Protocol column on summary display
      */
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, ((bssap_or_bsap_global == BSSAP) ? "BSSAP" : "BSAP"));
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "BSSAP");
 
     if (sccp_info && sccp_info->data.co.assoc )
         sccp_info->data.co.assoc->payload = SCCP_PLOAD_BSSAP;
@@ -579,60 +572,115 @@ dissect_bssap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
     /*
      * create the bssap protocol tree
      */
-    bssap_item = proto_tree_add_protocol_format(tree, proto_bssap, tvb, 0, -1,
-        (bssap_or_bsap_global == BSSAP) ? "BSSAP" : "BSAP");
+    bssap_item = proto_tree_add_item(tree, proto_bssap, tvb, 0, -1, ENC_NA);
     bssap_tree = proto_item_add_subtree(bssap_item, ett_bssap);
+
+    bssap_info = wmem_new(pinfo->pool, bssap_info_t);
+    bssap_info->proto = BSSAP;
+    p_add_proto_data(pinfo->pool, pinfo, proto_bssap, 0, bssap_info);
 
     /* dissect the message */
 
     return dissect_bssap_message(tvb, pinfo, bssap_tree, tree, sccp_info);
 }
 
+static int
+dissect_bsap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    proto_item  *bssap_item;
+    proto_tree  *bssap_tree;
+    struct _sccp_msg_info_t* sccp_info = (struct _sccp_msg_info_t*)data;
+    bssap_info_t *bssap_info;
+
+    /*
+     * Make entry in the Protocol column on summary display
+     */
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "BSAP");
+
+    if (sccp_info && sccp_info->data.co.assoc )
+        sccp_info->data.co.assoc->payload = SCCP_PLOAD_BSSAP;
+
+    /*
+     * create the bsap protocol tree
+     */
+    bssap_item = proto_tree_add_protocol_format(tree, proto_bssap, tvb, 0, -1, "BSAP");
+    bssap_tree = proto_item_add_subtree(bssap_item, ett_bssap);
+
+    bssap_info = wmem_new(pinfo->pool, bssap_info_t);
+    bssap_info->proto = BSAP;
+    p_add_proto_data(pinfo->pool, pinfo, proto_bssap, 0, bssap_info);
+
+    /* dissect the message */
+
+    return dissect_bssap_message(tvb, pinfo, bssap_tree, tree, sccp_info);
+}
+
+static int
+dissect_bssap_le(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    proto_item  *bssap_item;
+    proto_tree  *bssap_tree;
+    struct _sccp_msg_info_t* sccp_info = (struct _sccp_msg_info_t*)data;
+    bssap_info_t *bssap_info;
+
+    /*
+     * Make entry in the Protocol column on summary display
+     */
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "BSSAP-LE");
+
+    if (sccp_info && sccp_info->data.co.assoc )
+        sccp_info->data.co.assoc->payload = SCCP_PLOAD_BSSAP;
+
+    /*
+     * create the bssap_le protocol tree
+     */
+    bssap_item = proto_tree_add_protocol_format(tree, proto_bssap, tvb, 0, -1, "BSSAP-LE");
+    bssap_tree = proto_item_add_subtree(bssap_item, ett_bssap);
+
+    bssap_info = wmem_new(pinfo->pool, bssap_info_t);
+    bssap_info->proto = BSSAP_LE;
+    p_add_proto_data(pinfo->pool, pinfo, proto_bssap, 0, bssap_info);
+
+    /* dissect the message */
+
+    return dissect_bssap_message(tvb, pinfo, bssap_tree, tree, sccp_info);
+}
 
 /*
  * BSSAP+ Routines
  */
 
-#ifdef REMOVED
-static dgt_set_t Dgt_tbcd = {
-    {
-  /*  0   1   2   3   4   5   6   7   8   9   a   b   c   d   e */
-     '0','1','2','3','4','5','6','7','8','9','?','B','C','*','#','?'
-    }
-};
-#endif
-
-static gboolean
-check_ie(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int *offset, guint8 expected_ie)
+static bool
+check_ie(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int *offset, uint8_t expected_ie)
 {
-    guint8 ie_type;
-    guint8 ie_len;
+    uint8_t ie_type;
+    uint8_t ie_len;
 
-    ie_type = tvb_get_guint8(tvb, *offset);
+    ie_type = tvb_get_uint8(tvb, *offset);
     if (ie_type != expected_ie) {
         proto_tree_add_expert_format(tree, pinfo, &ei_bssap_mandatory_ie, tvb, *offset, 1, "Mandatory IE %s expected but IE %s Found",
-                            val_to_str_ext(expected_ie, &bssap_plus_ie_id_values_ext, "Unknown %u"),
-                            val_to_str_ext(ie_type, &bssap_plus_ie_id_values_ext, "Unknown %u"));
+                            val_to_str_ext(pinfo->pool, expected_ie, &bssap_plus_ie_id_values_ext, "Unknown %u"),
+                            val_to_str_ext(pinfo->pool, ie_type, &bssap_plus_ie_id_values_ext, "Unknown %u"));
         (*offset)++;
-        ie_len = tvb_get_guint8(tvb, *offset);
+        ie_len = tvb_get_uint8(tvb, *offset);
         *offset = *offset + ie_len;
-        return FALSE;
+        return false;
     }
 
-    return TRUE;
+    return true;
 
 }
 
-static gboolean
-check_optional_ie(tvbuff_t *tvb, int offset, guint8 expected_ie)
+static bool
+check_optional_ie(tvbuff_t *tvb, int offset, uint8_t expected_ie)
 {
-    guint8 ie_type;
+    uint8_t ie_type;
 
-    ie_type = tvb_get_guint8(tvb, offset);
+    ie_type = tvb_get_uint8(tvb, offset);
     if (ie_type != expected_ie) {
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 
 }
 
@@ -644,9 +692,9 @@ dissect_bssap_cell_global_id(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo
     proto_tree *ie_tree;
     proto_item *cgi_item;
     proto_tree *cgi_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_cell_global_id_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_cell_global_id);
 
@@ -655,7 +703,7 @@ dissect_bssap_cell_global_id(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo
     proto_tree_add_item(ie_tree, hf_bssap_plus_ie_len, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
     /*
-     * The rest of the information element is coded as the the value part
+     * The rest of the information element is coded as the value part
      * of the cell global id IE defined in 3GPP TS 48.018 (not including
      * 3GPP TS 48.018 IEI and 3GPP TS 48.018 length indicator).
      */
@@ -683,9 +731,9 @@ dissect_bssap_channel_needed(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_channel_needed_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_channel_needed);
 
@@ -710,11 +758,11 @@ dissect_bssap_dlink_tunnel_payload_control_and_info(tvbuff_t *tvb, packet_info *
     proto_item *item;
     proto_tree *ie_tree;
     tvbuff_t   *next_tvb;
-    guint8      ie_len;
-    guint8      octet;
-    guint8      prot_disc;
+    uint8_t     ie_len;
+    uint8_t     octet;
+    uint8_t     prot_disc;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_dlink_tnl_pld_cntrl_amd_inf_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_dlink_tnl_pld_cntrl_amd_inf);
 
@@ -729,7 +777,7 @@ dissect_bssap_dlink_tunnel_payload_control_and_info(tvbuff_t *tvb, packet_info *
      */
 
     proto_tree_add_item(ie_tree, hf_bssap_tom_prot_disc, tvb, offset, 1, ENC_BIG_ENDIAN);
-    octet = tvb_get_guint8(tvb, offset);
+    octet = tvb_get_uint8(tvb, offset);
     prot_disc = (octet&0x78)>>3;
 
     /* octet 3 bit 3 E: Cipher Request. When set to 1 indicates that the SGSN received the payload in ciphered form,
@@ -773,9 +821,9 @@ dissect_bssap_emlpp_priority(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_emlpp_prio_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_emlpp_prio);
 
@@ -804,9 +852,9 @@ dissect_bssap_gprs_erroneous_msg(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_gprs_erroneous_msg_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_erroneous_msg);
 
@@ -835,9 +883,9 @@ dissect_bssap_gprs_location_update_type(tvbuff_t *tvb, proto_tree *tree, int off
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_gprs_loc_upd_type_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_gprs_loc_upd);
 
@@ -880,9 +928,9 @@ dissect_bssap_Gs_cause(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_Gs_cause_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bassp_Gs_cause);
 
@@ -903,11 +951,10 @@ dissect_bssap_imei(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
     tvbuff_t   *ie_tvb;
-    const char *digit_str;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_imei_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bassp_imei);
 
@@ -919,25 +966,28 @@ dissect_bssap_imei(tvbuff_t *tvb, proto_tree *tree, int offset)
      * The IMEI consists of 15 digits (see 3GPP TS 23.003).
      */
     ie_tvb = tvb_new_subset_length(tvb, offset, ie_len);
-    digit_str = tvb_bcd_dig_to_wmem_packet_str(ie_tvb, 0, -1, NULL, FALSE);
-    proto_tree_add_string(ie_tree, hf_bssap_imei, ie_tvb, 0, -1, digit_str);
+    proto_tree_add_item(ie_tree, hf_bssap_imei, ie_tvb, 0, -1, ENC_BCD_DIGITS_0_9|ENC_LITTLE_ENDIAN);
 
     return offset + ie_len;
 
 }
+static int
+dissect_bssap_imei_dissector(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void *data _U_)
+{
+    return dissect_bssap_imei(tvb, tree, 0);
+}
 /* 18.4.9 IMEISV */
 static int
-dissect_bssap_imesiv(tvbuff_t *tvb, proto_tree *tree, int offset)
+dissect_bssap_imeisv(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
     tvbuff_t   *ie_tvb;
-    const char *digit_str;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
-    item    = proto_tree_add_item(tree, hf_bssap_imesiv_ie, tvb, offset, ie_len+2, ENC_NA);
-    ie_tree = proto_item_add_subtree(item, ett_bassp_imesiv);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
+    item    = proto_tree_add_item(tree, hf_bssap_imeisv_ie, tvb, offset, ie_len+2, ENC_NA);
+    ie_tree = proto_item_add_subtree(item, ett_bassp_imeisv);
 
     proto_tree_add_item(ie_tree, hf_bssap_plus_ie,     tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
@@ -947,8 +997,7 @@ dissect_bssap_imesiv(tvbuff_t *tvb, proto_tree *tree, int offset)
      *  The IMEISV consists of 16 digits (see 3GPP TS 23.003).
      */
     ie_tvb = tvb_new_subset_length(tvb, offset, ie_len);
-    digit_str = tvb_bcd_dig_to_wmem_packet_str(ie_tvb, 0, -1, NULL, FALSE);
-    proto_tree_add_string(ie_tree, hf_bssap_imeisv, ie_tvb, 0, -1, digit_str);
+    proto_tree_add_item(ie_tree, hf_bssap_imeisv, ie_tvb, 0, -1, ENC_BCD_DIGITS_0_9|ENC_LITTLE_ENDIAN);
 
     return offset + ie_len;
 
@@ -965,10 +1014,10 @@ dissect_bssap_imsi(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int offs
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
     tvbuff_t   *ie_tvb;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_imsi_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_imsi);
 
@@ -977,7 +1026,7 @@ dissect_bssap_imsi(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int offs
     proto_tree_add_item(ie_tree, hf_bssap_plus_ie_len, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
     ie_tvb = tvb_new_subset_length(tvb, offset, ie_len);
-    dissect_e212_imsi(ie_tvb, pinfo, tree,  0, ie_len, TRUE);
+    dissect_e212_imsi(ie_tvb, pinfo, tree,  0, ie_len, true);
 
     return offset + ie_len;
 
@@ -996,9 +1045,9 @@ dissect_bssap_imsi_det_from_gprs_serv_type(tvbuff_t *tvb, proto_tree *tree, int 
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_imsi_det_from_gprs_serv_type_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_imsi_det_from_gprs_serv_type);
 
@@ -1019,9 +1068,9 @@ dissect_bssap_imsi_det_from_non_gprs_serv_type(tvbuff_t *tvb, proto_tree *tree, 
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_imsi_det_from_non_gprs_serv_type_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_imsi_det_from_non_gprs_serv_type);
 
@@ -1054,9 +1103,9 @@ dissect_bssap_info_req(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_info_req_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_info_req);
 
@@ -1077,9 +1126,9 @@ dissect_bssap_loc_area_id(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, i
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_loc_area_id_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_loc_area_id);
 
@@ -1103,9 +1152,9 @@ dissect_bssap_location_information_age(tvbuff_t *tvb, proto_tree *tree, int offs
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_loc_inf_age_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_loc_inf_age);
 
@@ -1136,9 +1185,9 @@ dissect_bssap_MM_information(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_mm_information_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_mm_information);
 
@@ -1164,9 +1213,9 @@ dissect_bssap_mobile_id(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint       ie_len;
+    unsigned    ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_mobile_id_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_mobile_id);
 
@@ -1190,9 +1239,9 @@ dissect_bssap_mobile_stn_cls_mrk1(tvbuff_t *tvb, proto_tree *tree, packet_info *
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_mobile_stn_cls_mrk1_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_mobile_stn_cls_mrk1);
 
@@ -1227,9 +1276,9 @@ dissect_bssap_mobile_station_state(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_mobile_station_state_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_mobile_station_state);
 
@@ -1249,9 +1298,9 @@ dissect_bssap_ptmsi(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_ptmsi_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_ptmsi);
 
@@ -1273,9 +1322,9 @@ dissect_bssap_reject_cause(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, 
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_reject_cause_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_reject_cause);
 
@@ -1299,9 +1348,9 @@ dissect_bssap_service_area_id(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_service_area_id_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_service_area_id);
 
@@ -1309,7 +1358,7 @@ dissect_bssap_service_area_id(tvbuff_t *tvb, proto_tree *tree, int offset)
     offset++;
     proto_tree_add_item(ie_tree, hf_bssap_plus_ie_len, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
-    /*  The rest of the information element is coded as the the value part
+    /*  The rest of the information element is coded as the value part
      *  of the SAI IE defined in 3GPP TS 25.413 (not including
      *  3GPP TS 25.413 IEI and 3GPP TS 25.413 length indicator).
      */
@@ -1321,21 +1370,15 @@ dissect_bssap_service_area_id(tvbuff_t *tvb, proto_tree *tree, int offset)
 
 /* 18.4.22 SGSN number */
 
-static const true_false_string bssap_extension_value = {
-  "No Extension",
-  "Extension"
-};
-
 static int
 dissect_bssap_sgsn_number(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
     tvbuff_t   *number_tvb;
-    const char *digit_str;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_sgsn_nr_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_sgsn_nr);
 
@@ -1354,8 +1397,7 @@ dissect_bssap_sgsn_number(tvbuff_t *tvb, proto_tree *tree, int offset)
     proto_tree_add_item(ie_tree, hf_bssap_numbering_plan_id, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
     number_tvb = tvb_new_subset_length(tvb, offset, ie_len-1);
-    digit_str = tvb_bcd_dig_to_wmem_packet_str(number_tvb, 0, -1, NULL, FALSE);
-    proto_tree_add_string(ie_tree, hf_bssap_sgsn_number, number_tvb, 0, -1, digit_str);
+    proto_tree_add_item(ie_tree, hf_bssap_sgsn_number, number_tvb, 0, -1, ENC_BCD_DIGITS_0_9|ENC_LITTLE_ENDIAN);
 
 
     return offset + ie_len-1;
@@ -1367,9 +1409,9 @@ dissect_bssap_tmsi(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_tmsi_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_tmsi);
 
@@ -1397,9 +1439,9 @@ dissect_bssap_tmsi_status(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_tmsi_status_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_tmsi_status);
 
@@ -1433,11 +1475,11 @@ dissect_bssap_ulink_tunnel_payload_control_and_info(tvbuff_t *tvb, packet_info *
     proto_item *item;
     proto_tree *ie_tree;
     tvbuff_t   *next_tvb;
-    guint8      ie_len;
-    guint8      octet;
-    guint8      prot_disc;
+    uint8_t     ie_len;
+    uint8_t     octet;
+    uint8_t     prot_disc;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_ulink_tnl_pld_cntrl_amd_inf_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_ulink_tnl_pld_cntrl_amd_inf);
 
@@ -1451,7 +1493,7 @@ dissect_bssap_ulink_tunnel_payload_control_and_info(tvbuff_t *tvb, packet_info *
      * For coding, see 3GPP TS 44.064.
      */
     proto_tree_add_item(ie_tree, hf_bssap_tom_prot_disc, tvb, offset, 1, ENC_BIG_ENDIAN);
-    octet     = tvb_get_guint8(tvb, offset);
+    octet     = tvb_get_uint8(tvb, offset);
     prot_disc = (octet&0x78)>>3;
 
     /* octet 3 bit 3 E: Cipher Request. When set to 1 indicates that the SGSN received the payload in ciphered form,
@@ -1482,11 +1524,10 @@ dissect_bssap_vlr_number(tvbuff_t *tvb, proto_tree *tree, int offset)
 {
     proto_item *item;
     proto_tree *ie_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
     tvbuff_t   *number_tvb;
-    const char *digit_str;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_vlr_number_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_vlr_number);
 
@@ -1506,8 +1547,7 @@ dissect_bssap_vlr_number(tvbuff_t *tvb, proto_tree *tree, int offset)
     proto_tree_add_item(ie_tree, hf_bssap_numbering_plan_id, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
     number_tvb = tvb_new_subset_length(tvb, offset, ie_len - 1);
-    digit_str = tvb_bcd_dig_to_wmem_packet_str(number_tvb, 0, -1, NULL, FALSE);
-    proto_tree_add_string(ie_tree, hf_bssap_sgsn_number, number_tvb, 0, -1, digit_str);
+    proto_tree_add_item(ie_tree, hf_bssap_vlr_number, number_tvb, 0, -1, ENC_BCD_DIGITS_0_9|ENC_LITTLE_ENDIAN);
 
     return offset + ie_len - 1;
 
@@ -1522,9 +1562,9 @@ dissect_bssap_global_cn_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     proto_tree *plmn_tree;
     proto_item *global_cn_id_item;
     proto_tree *global_cn_id_tree;
-    guint8      ie_len;
+    uint8_t     ie_len;
 
-    ie_len  = tvb_get_guint8(tvb, offset+1);
+    ie_len  = tvb_get_uint8(tvb, offset+1);
     item    = proto_tree_add_item(tree, hf_bssap_global_cn_id_ie, tvb, offset, ie_len+2, ENC_NA);
     ie_tree = proto_item_add_subtree(item, ett_bssap_global_cn);
 
@@ -1546,7 +1586,7 @@ dissect_bssap_global_cn_id(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
      */
     plmn_item = proto_tree_add_item(global_cn_id_tree, hf_bssap_plmn_id, tvb, offset, 3, ENC_NA);
     plmn_tree = proto_item_add_subtree(plmn_item, ett_bssap_plmn);
-    dissect_e212_mcc_mnc(tvb, pinfo, plmn_tree, offset, E212_NONE, TRUE);
+    dissect_e212_mcc_mnc(tvb, pinfo, plmn_tree, offset, E212_NONE, true);
     offset = offset + 3;
 
     /* Octet 6 - 7 CN-Id (INTEGER 0..4095) */
@@ -1561,7 +1601,7 @@ static int dissect_bssap_plus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
 {
     proto_item *bssap_item;
     proto_tree *bssap_tree;
-    guint8      message_type;
+    uint8_t     message_type;
     int         offset = 0;
     struct _sccp_msg_info_t* sccp_info = (struct _sccp_msg_info_t*)data;
 
@@ -1574,14 +1614,14 @@ static int dissect_bssap_plus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
         sccp_info->data.co.assoc->payload = SCCP_PLOAD_BSSAP;
 
     /* create the BSSAP+ protocol tree */
-    bssap_item = proto_tree_add_item(tree, proto_bssap, tvb, 0, -1, ENC_NA);
+    bssap_item = proto_tree_add_item(tree, proto_bssap_plus, tvb, 0, -1, ENC_NA);
     bssap_tree = proto_item_add_subtree(bssap_item, ett_bssap);
 
-    message_type = tvb_get_guint8(tvb, offset);
+    message_type = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(bssap_tree, hf_bssap_plus_message_type, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
-    col_add_str(pinfo->cinfo, COL_INFO, val_to_str_ext(message_type, &bssap_plus_message_type_values_ext, "Unknown %u"));
+    col_add_str(pinfo->cinfo, COL_INFO, val_to_str_ext(pinfo->pool, message_type, &bssap_plus_message_type_values_ext, "Unknown %u"));
 
     switch (message_type) {
     case BSSAP_PAGING_REQUEST:
@@ -1659,6 +1699,10 @@ static int dissect_bssap_plus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
         proto_tree_add_item(tree, hf_bssap_extraneous_data, tvb, offset, -1, ENC_NA);
         break;
     case BSSAP_UPLINK_TUNNEL_REQUEST:           /*  17.1.23 */
+        /* IMSI IMSI 18.4.10 M TLV 6-10 */
+        if (check_ie(tvb, pinfo, tree, &offset, BSSAP_IMSI))
+            offset = dissect_bssap_imsi(tvb, bssap_tree, pinfo, offset);
+
         /* SGSN number 18.4.22 M TLV 5-11 */
         if (check_ie(tvb, pinfo, tree, &offset, BSSAP_SGSN_NUMBER))
             offset = dissect_bssap_sgsn_number(tvb, bssap_tree, offset);
@@ -1714,7 +1758,7 @@ static int dissect_bssap_plus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
 
         /* IMEISV IMEISV 18.4.9 O TLV 10 */
         if (check_optional_ie(tvb, offset, BSSAP_IMEISV))
-            offset = dissect_bssap_imesiv(tvb, bssap_tree, offset);
+            offset = dissect_bssap_imeisv(tvb, bssap_tree, offset);
         if (tvb_reported_length_remaining(tvb, offset) <= 0)
             return tvb_reported_length(tvb);
         proto_tree_add_item(tree, hf_bssap_extraneous_data, tvb, offset, -1, ENC_NA);
@@ -1987,7 +2031,7 @@ static int dissect_bssap_plus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
             return tvb_reported_length(tvb);
         /* IMEISV IMEISV 18.4.9 O TLV 10 BSSAP_IMEISV*/
         if (check_optional_ie(tvb, offset, BSSAP_IMEISV))
-            offset = dissect_bssap_imesiv(tvb, bssap_tree, offset);
+            offset = dissect_bssap_imeisv(tvb, bssap_tree, offset);
         if (tvb_reported_length_remaining(tvb, offset) <= 0)
             return tvb_reported_length(tvb);
 
@@ -2068,7 +2112,7 @@ static int dissect_bssap_plus(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
     return tvb_reported_length(tvb);
 }
 
-static gboolean
+static bool
 dissect_bssap_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     /* Is it a BSSAP/BSAP packet?
@@ -2079,30 +2123,44 @@ dissect_bssap_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *da
      *    to differentiate a BSSMAP BLOCK message from a
      *    RANAP DirectTransfer (under certain conditions)
      */
-    switch (tvb_get_guint8(tvb, 0))
+    switch (tvb_get_uint8(tvb, 0))
     {
     case 0x00:
-        if (tvb_get_guint8(tvb, 1) != (tvb_reported_length(tvb) - 2)) {
-            return(FALSE);
+        if (tvb_get_uint8(tvb, 1) != (tvb_reported_length(tvb) - 2)) {
+            return false;
         }
-        if (tvb_get_guint8(tvb, 2) == 0x40 && tvb_get_guint8(tvb, 3) != 0x01) {
-            return(FALSE);
+        if (tvb_get_uint8(tvb, 2) == 0x40 && tvb_get_uint8(tvb, 3) != 0x01) {
+            return false;
         }
         break;
 
     case 0x01:
-        if (tvb_get_guint8(tvb, 2) != (tvb_reported_length(tvb) - 3)) {
-            return(FALSE);
+        if (tvb_get_uint8(tvb, 2) != (tvb_reported_length(tvb) - 3)) {
+            return false;
         }
         break;
 
     default:
-        return(FALSE);
+        return false;
     }
 
-    dissect_bssap(tvb, pinfo, tree, data);
+    switch (default_protocol_global) {
 
-    return(TRUE);
+    case BSSAP:
+        dissect_bssap(tvb, pinfo, tree, data);
+        break;
+
+    case BSAP:
+        dissect_bsap(tvb, pinfo, tree, data);
+        break;
+
+    case BSSAP_LE:
+        dissect_bssap_le(tvb, pinfo, tree, data);
+        break;
+
+    }
+
+    return true;
 }
 
 /* Register the protocol with Wireshark */
@@ -2110,6 +2168,7 @@ void
 proto_register_bssap(void)
 {
     module_t    *bssap_module;
+    module_t    *bssap_plus_module;
     expert_module_t* expert_bssap;
 
     /* Setup list of header fields */
@@ -2177,7 +2236,7 @@ proto_register_bssap(void)
 
         { &hf_bssap_extension,
           { "Extension", "bssap.extension",
-            FT_BOOLEAN, 8, TFS(&bssap_extension_value), 0x80,
+            FT_BOOLEAN, 8, TFS(&tfs_no_extension_extension), 0x80,
             NULL, HFILL }},
 
         { &hf_bssap_type_of_number,
@@ -2195,12 +2254,10 @@ proto_register_bssap(void)
             FT_STRING, BASE_NONE, NULL, 0,
             NULL, HFILL }},
 
-#if 0
         { &hf_bssap_vlr_number,
           { "VLR number", "bssap.vlr_number",
             FT_STRING, BASE_NONE, NULL, 0,
             NULL, HFILL }},
-#endif
 
         { &hf_bssap_cell_global_id_ie,
           { "Cell global identity IE", "bssap.cell_global_id_ie",
@@ -2247,8 +2304,8 @@ proto_register_bssap(void)
             FT_NONE, BASE_NONE, NULL, 0,
             NULL, HFILL }},
 
-        { &hf_bssap_imesiv_ie,
-          { "IMEISV IE", "bssap.imesiv",
+        { &hf_bssap_imeisv_ie,
+          { "IMEISV IE", "bssap.imeisv_ie",
             FT_NONE, BASE_NONE, NULL, 0,
             NULL, HFILL }},
 
@@ -2454,7 +2511,7 @@ proto_register_bssap(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_bssap,
         &ett_bssap_dlci,
         &ett_bssap_imsi,
@@ -2473,7 +2530,7 @@ proto_register_bssap(void)
         &ett_bssap_gprs_loc_upd,
         &ett_bassp_Gs_cause,
         &ett_bassp_imei,
-        &ett_bassp_imesiv,
+        &ett_bassp_imeisv,
         &ett_bssap_cell_global_id,
         &ett_bssap_cgi,
         &ett_bssap_channel_needed,
@@ -2490,15 +2547,10 @@ proto_register_bssap(void)
         &ett_bssap_plmn,
     };
 
-    static const enum_val_t gsm_or_lb_interface_options[] = {
-        { "gsm a",    "GSM A",    GSM_INTERFACE },
-        { "lb",    "Lb",    LB_INTERFACE  },
-        { NULL,        NULL,        0 }
-    };
-
-    static const enum_val_t bssap_or_bsap_options[] = {
-        { "bssap",  "BSSAP",    BSSAP },
-        { "bsap",   "BSAP",     BSAP  },
+    static const enum_val_t default_protocol_options[] = {
+        { "bssap",    "BSSAP (GSM A-I/F)",    BSSAP },
+        { "bsap",     "BSAP (CDMA2000 A-I/F)",     BSAP  },
+        { "bssap_le", "BSSAP-LE (GSM Lb-I/F)", BSSAP_LE  },
         { NULL,     NULL,       0 }
     };
 
@@ -2509,11 +2561,16 @@ proto_register_bssap(void)
     };
 
     /* Register the protocol name and description */
-    proto_bssap = proto_register_protocol("BSSAP/BSAP", "BSSAP", "bssap");
+    proto_bssap = proto_register_protocol("BSSAP", "BSSAP", "bssap");
     proto_bssap_plus = proto_register_protocol("BSSAP2", "BSSAP2", "bssap_plus");
+    proto_bsap = proto_register_protocol_in_name_only("BSAP", "BSAP", "bsap", proto_bssap, FT_PROTOCOL);
+    proto_bssap_le = proto_register_protocol_in_name_only("BSSAP-LE", "BSSAP-LE", "bssap_le", proto_bssap, FT_PROTOCOL);
 
-    register_dissector("bssap", dissect_bssap, proto_bssap);
-    register_dissector("bssap_plus", dissect_bssap_plus, proto_bssap_plus);
+    bssap_handle = register_dissector("bssap", dissect_bssap, proto_bssap);
+    bsap_handle = register_dissector("bsap", dissect_bsap, proto_bsap);
+    bssap_le_handle = register_dissector("bssap_le", dissect_bssap_le, proto_bssap_le);
+    register_dissector("bssap.imei", dissect_bssap_imei_dissector, proto_bssap);
+    bssap_plus_handle = register_dissector("bssap_plus", dissect_bssap_plus, proto_bssap_plus);
 
     /* Required function calls to register the header fields and subtrees used */
     proto_register_field_array(proto_bssap, hf, array_length(hf));
@@ -2521,62 +2578,53 @@ proto_register_bssap(void)
     expert_bssap = expert_register_protocol(proto_bssap);
     expert_register_field_array(expert_bssap, ei, array_length(ei));
 
-    bssap_module = prefs_register_protocol(proto_bssap, proto_reg_handoff_bssap);
+    bssap_module = prefs_register_protocol(proto_bssap, NULL);
+
+    prefs_register_obsolete_preference(bssap_module, "bsap_or_bssap");
+    prefs_register_obsolete_preference(bssap_module, "gsm_or_lb_interface");
 
     prefs_register_enum_preference(bssap_module,
-                       "bsap_or_bssap",
-                       "Identify to sub-dissector as",
-                       "For the sake of sub-dissectors registering to accept data "
-                       "from the BSSAP/BSAP dissector, this defines whether it is "
-                       "identified as BSSAP or BSAP.",
-                       &bssap_or_bsap_global,
-                       bssap_or_bsap_options,
-                       FALSE);
+                       "default_protocol",
+                       "Default protocol",
+                       "The default protocol assumed by the heuristic dissector,"
+                       "which does not easily distinguish between BSSAP "
+                       "(on the GSM A interface between the BSC and the MSC), "
+                       "BSSAP-LE (on the GSM Lb interface between the BSC and the SMLC), "
+                       "and BSAP (on the CDMA2000 A interface between the BS and MSC).",
+                       &default_protocol_global,
+                       default_protocol_options,
+                       false);
 
-    prefs_register_enum_preference(bssap_module,
-                       "gsm_or_lb_interface",
-                       "Identify the BSSAP interface",
-                       "GSM-A is the interface between the BSC and the MSC. Lb is the interface between the BSC and the SMLC.",
-                       &gsm_or_lb_interface_global,
-                       gsm_or_lb_interface_options,
-                       FALSE);
+    /* No explicit preferences anymore, but it does have an automatic Decode As
+     * preference, so we don't register the module itself obsolete */
+    bssap_plus_module = prefs_register_protocol(proto_bssap_plus, NULL);
+    prefs_register_obsolete_preference(bssap_plus_module, "ssn");
 
-    prefs_register_uint_preference(bssap_module, "ssn",
-                       "Subsystem number used for BSSAP",
-                       "Set Subsystem number used for BSSAP/BSSAP+",
-                       10, &global_bssap_ssn);
     bssap_dissector_table = register_dissector_table("bssap.pdu_type", "BSSAP Message Type", proto_bssap, FT_UINT8, BASE_DEC);
     bsap_dissector_table  = register_dissector_table("bsap.pdu_type", "BSAP Message Type", proto_bssap, FT_UINT8, BASE_DEC);
+    bssap_le_dissector_table = register_dissector_table("bssap_le.pdu_type", "BSSAP Message Type", proto_bssap, FT_UINT8, BASE_DEC);
 }
 
 void
 proto_reg_handoff_bssap(void)
 {
-    static gboolean initialized = FALSE;
-    static dissector_handle_t bssap_plus_handle;
-    static guint old_bssap_ssn;
 
-    if (!initialized) {
-        heur_dissector_add("sccp", dissect_bssap_heur, "BSSAP over SCCP", "bssap_sccp", proto_bssap, HEURISTIC_ENABLE);
-        heur_dissector_add("sua", dissect_bssap_heur, "BSSAP over SUA", "bssap_sua", proto_bssap, HEURISTIC_ENABLE);
-        /* BSSAP+ */
-        bssap_plus_handle = create_dissector_handle(dissect_bssap_plus, proto_bssap);
+    heur_dissector_add("sccp", dissect_bssap_heur, "BSSAP over SCCP", "bssap_sccp", proto_bssap, HEURISTIC_ENABLE);
+    heur_dissector_add("sua", dissect_bssap_heur, "BSSAP over SUA", "bssap_sua", proto_bssap, HEURISTIC_ENABLE);
+    /* BSSAP+ */
 
-        rrlp_handle = find_dissector_add_dependency("rrlp", proto_bssap_plus);
-        gsm_bssmap_le_dissector_handle = find_dissector_add_dependency("gsm_bssmap_le", proto_bssap);
-        gsm_a_bssmap_dissector_handle = find_dissector_add_dependency("gsm_a_bssmap", proto_bssap);
+    rrlp_handle = find_dissector_add_dependency("rrlp", proto_bssap_plus);
+    gsm_bssmap_le_dissector_handle = find_dissector_add_dependency("gsm_bssmap_le", proto_bssap);
+    gsm_a_bssmap_dissector_handle = find_dissector_add_dependency("gsm_a_bssmap", proto_bssap);
 
-        initialized = TRUE;
-    } else {
-        dissector_delete_uint("sccp.ssn", old_bssap_ssn, bssap_plus_handle);
-    }
-
-    dissector_add_uint("sccp.ssn", global_bssap_ssn, bssap_plus_handle);
-    old_bssap_ssn = global_bssap_ssn;
+    dissector_add_for_decode_as("sccp.ssn", bssap_handle);
+    dissector_add_for_decode_as("sccp.ssn", bsap_handle);
+    dissector_add_for_decode_as("sccp.ssn", bssap_le_handle);
+    dissector_add_uint_with_preference("sccp.ssn", BSSAP_PLUS_SSN, bssap_plus_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

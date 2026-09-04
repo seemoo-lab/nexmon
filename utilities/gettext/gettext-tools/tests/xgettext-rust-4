@@ -1,0 +1,35 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Rust support: plurals.
+
+cat <<\EOF > xg-rs-4.rs
+pub trait TestCase {
+  fn main () {
+    ngettext("test 1", "plural test");
+    myngettext(context, "I've 1", "you've lost");
+  }
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location --keyword=myngettext:2,3 \
+  -d xg-rs-4.tmp xg-rs-4.rs || Exit 1
+LC_ALL=C tr -d '\r' < xg-rs-4.tmp.po > xg-rs-4.po || Exit 1
+
+cat <<\EOF > xg-rs-4.ok
+msgid "test 1"
+msgid_plural "plural test"
+msgstr[0] ""
+msgstr[1] ""
+
+msgid "I've 1"
+msgid_plural "you've lost"
+msgstr[0] ""
+msgstr[1] ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-rs-4.ok xg-rs-4.po || Exit 1
+
+exit 0

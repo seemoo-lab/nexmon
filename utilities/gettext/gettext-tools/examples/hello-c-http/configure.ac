@@ -1,0 +1,17 @@
+dnl Example for use of GNU gettext.
+dnl This file is in the public domain.
+dnl
+dnl Configuration file - processed by autoconf.
+
+AC_INIT([hello-c-http], [0])
+AC_CONFIG_SRCDIR([hello-server.c])
+AM_INIT_AUTOMAKE([1.11])
+
+AC_PROG_CC
+AM_GNU_GETTEXT([external])
+AM_GNU_GETTEXT_VERSION([1.0])
+
+AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([m4/Makefile])
+AC_CONFIG_FILES([po/Makefile.in])
+AC_OUTPUT

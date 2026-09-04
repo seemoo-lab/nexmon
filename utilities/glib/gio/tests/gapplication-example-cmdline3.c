@@ -17,7 +17,7 @@ my_cmdline_handler (gpointer data)
     { "arg1", 0, 0, G_OPTION_ARG_INT, &arg1, NULL, NULL },
     { "arg2", 0, 0, G_OPTION_ARG_NONE, &arg2, NULL, NULL },
     { "help", '?', 0, G_OPTION_ARG_NONE, &help, NULL, NULL },
-    { NULL }
+    G_OPTION_ENTRY_NULL
   };
   GError *error;
   gint i;
@@ -96,7 +96,6 @@ main (int argc, char **argv)
   app = g_application_new ("org.gtk.TestApplication",
                            G_APPLICATION_HANDLES_COMMAND_LINE);
   g_signal_connect (app, "command-line", G_CALLBACK (command_line), NULL);
-  g_application_set_inactivity_timeout (app, 10000);
 
   status = g_application_run (app, argc, argv);
 

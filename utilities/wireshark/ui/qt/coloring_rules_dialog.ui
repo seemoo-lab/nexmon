@@ -15,7 +15,13 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QTreeWidget" name="coloringRulesTreeWidget">
+    <widget class="TabnavTreeView" name="coloringRulesTreeView">
+     <property name="dragEnabled">
+      <bool>true</bool>
+     </property>
+     <property name="dragDropMode">
+      <enum>QAbstractItemView::InternalMove</enum>
+     </property>
      <property name="selectionMode">
       <enum>QAbstractItemView::ExtendedSelection</enum>
      </property>
@@ -34,16 +40,9 @@
      <property name="expandsOnDoubleClick">
       <bool>false</bool>
      </property>
-     <column>
-      <property name="text">
-       <string>Name</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Filter</string>
-      </property>
-     </column>
+     <property name="DropIndicatorShown" stdset="0">
+      <bool>true</bool>
+     </property>
     </widget>
    </item>
    <item>
@@ -57,61 +56,55 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0,0,1">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0,0,0,0,0,0,1">
      <item>
-      <widget class="QToolButton" name="newToolButton">
+      <widget class="StockIconToolButton" name="newToolButton">
        <property name="toolTip">
         <string>Add a new coloring rule.</string>
        </property>
        <property name="text">
         <string/>
        </property>
-       <property name="icon">
-        <iconset resource="../../image/toolbar.qrc">
-         <normaloff>:/stock/plus-8.png</normaloff>:/stock/plus-8.png</iconset>
-       </property>
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="deleteToolButton">
+      <widget class="StockIconToolButton" name="deleteToolButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="toolTip">
         <string>Delete this coloring rule.</string>
        </property>
        <property name="text">
         <string/>
        </property>
-       <property name="icon">
-        <iconset resource="../../image/toolbar.qrc">
-         <normaloff>:/stock/minus-8.png</normaloff>:/stock/minus-8.png</iconset>
-       </property>
       </widget>
      </item>
      <item>
-      <widget class="QToolButton" name="copyToolButton">
+      <widget class="StockIconToolButton" name="copyToolButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="toolTip">
         <string>Duplicate this coloring rule.</string>
        </property>
-       <property name="icon">
-        <iconset resource="../../image/toolbar.qrc">
-         <normaloff>:/stock/copy-8.png</normaloff>:/stock/copy-8.png</iconset>
+      </widget>
+     </item>
+     <item>
+      <widget class="StockIconToolButton" name="clearToolButton">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>Clear all coloring rules.</string>
        </property>
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>40</width>
-         <height>20</height>
-        </size>
-       </property>
-      </spacer>
-     </item>
-     <item>
       <widget class="QPushButton" name="fGPushButton">
+       <property name="visible">
+        <bool>false</bool>
+       </property>
        <property name="toolTip">
         <string>Set the foreground color for this rule.</string>
        </property>
@@ -131,6 +124,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="bGPushButton">
+       <property name="visible">
+        <bool>false</bool>
+       </property>
        <property name="toolTip">
         <string>Set the background color for this rule.</string>
        </property>
@@ -149,6 +145,22 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="displayFilterPushButton">
+       <property name="visible">
+        <bool>false</bool>
+       </property>
+       <property name="toolTip">
+        <string>Set the display filter using this rule.</string>
+       </property>
+       <property name="text">
+        <string>Apply as filter</string>
+       </property>
+       <property name="autoDefault">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -160,6 +172,25 @@
         </size>
        </property>
       </spacer>
+     </item>
+     <item>
+      <widget class="ElidedLabel" name="pathLabel">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+         <horstretch>1</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+       <property name="openExternalLinks">
+        <bool>true</bool>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
@@ -175,26 +206,25 @@
    </item>
   </layout>
  </widget>
- <resources>
-  <include location="../../image/toolbar.qrc"/>
- </resources>
+ <customwidgets>
+  <customwidget>
+   <class>ElidedLabel</class>
+   <extends>QLabel</extends>
+   <header>widgets/elided_label.h</header>
+  </customwidget>
+  <customwidget>
+   <class>TabnavTreeView</class>
+   <extends>QTreeView</extends>
+   <header>widgets/tabnav_tree_view.h</header>
+  </customwidget>
+  <customwidget>
+   <class>StockIconToolButton</class>
+   <extends>QToolButton</extends>
+   <header>widgets/stock_icon_tool_button.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
  <connections>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>accepted()</signal>
-   <receiver>ColoringRulesDialog</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>

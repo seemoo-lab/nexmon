@@ -3,7 +3,7 @@
 
 # Test --add-location=file option.
 
-cat <<EOF > mcat-test19.in1
+cat <<\EOF > mcat-test19.in1
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"
@@ -20,7 +20,7 @@ msgid "1"
 msgstr "eins"
 EOF
 
-cat <<EOF > mcat-test19.in2
+cat <<\EOF > mcat-test19.in2
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"

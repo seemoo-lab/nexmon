@@ -9,6 +9,15 @@
  *                 Dave Olsen <dave.olsen@harman.com>
  * Copyright 2013, Andreas Bachmann <bacr@zhaw.ch>, ZHAW/InES
  * Copyright 2016, Uli Heilmeier <uh@heilmeier.eu>
+ * Copyright 2017, Adam Wujek <adam.wujek@cern.ch>
+ * Copyright 2022, Dr. Lars Völker <lars.voelker@technica-engineering.de>
+ * Copyright 2023, Adam Wujek <dev_public@wujek.eu> for CERN
+ * Copyright 2024, Patrik Thunström <patrik.thunstroem@technica-engineering.de>
+ * Copyright 2024, Dr. Lars Völker <lars.voelker@technica-engineering.de>
+ * Copyright 2024, Martin Ostertag <martin.ostertag@zhaw.ch>
+ *                 Aurel Hess <hesu@zhaw.ch>
+ * Copyright 2025, Alex Gebhard <alexander.gebhard@marquette.edu>
+ * Copyright 2025, Prashant Tripathi <prashant.tripathi@selinc.com>
  *
  * Revisions:
  * - Markus Seehofer 09.08.2005 <mseehofe@nt.hirschmann.de>
@@ -23,50 +32,71 @@
  *   - Added support for 802.1AS D7.0
  * - Andreas Bachmann 08.07.2013 <bacr@zhaw.ch>
  *   - allow multiple TLVs
- *   - bugfix in logInterMessagePeriod guint8 -> gint8
+ *   - bugfix in logInterMessagePeriod uint8_t -> int8_t
  * - Uli Heilmeier 21.03.2016 <uh@heilmeier.eu>
  *   - Added support for SMPTE TLV
- *
+ * - Adam Wujek 17.10.2017 <adam.wujek@cern.ch>
+ *   - Added support for White Rabbit TLV
+ * - Prashant Tripathi 19-02-2021 <prashant_tripathi@selinc.com>
+ *   - Added support for C37.238-2017
+ * - Dr. Lars Völker 05-01-2022 <lars.voelker@technica-engineering.de>
+ *   - Added analysis support
+ * - Adam Wujek 28.08.2023 <dev_public@wujek.eu>
+ *   - Added support for L1Sync
+ * - Patrik Thunström 27.01.2024 <patrik.thunstroem@technica-engineering.de>
+ *   - Improvements/corrections for cumulativeScaledRateOffset
+ * - Prashant Tripathi 31-07-2024 <prashant_tripathi@selinc.com>
+ *   - Corrections to timeOfNextJump field in ATOI TLV
+ * - Patrik Thunström 24.09.2024 <patrik.thunstroem@technica-engineering.de>
+ *   - Fix analysis association (Sync to Follow_Up etc.) in case of sequenceId resets
+ * - Dr. Lars Völker 28.11.2024 <lars.voelker@technica-engineering.de>
+ *   - TLV rework
+ * - Martin Ostertag & Aurel Hess 09-12-2024 <martin.ostertag@zhaw.ch> & <hesu@zhaw.ch>
+ *   - Added support for drift_tracking TLV (802.1ASdm)
+ * - Alex Gebhard 04-09-2025 <alexander.gebhard@marquette.edu>
+ *   - Added support for authentication TLV
+ * - Erez Geva 30-04-2025 <ErezGeva2@gmail.com>
+ *   - Fix wrong PTPv2 Management IDs
+ *   - Add missing PTPv2 Management TLVs dissection
+ * - Prashant Tripathi 23-10-2025 <prashant_tripathi@selinc.com>
+ *   - Fix the parsing of organizationSubType field in C37_238 2017 TLV
+
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <math.h>
+#include <locale.h>
 
 #include <epan/packet.h>
+#include <epan/tfs.h>
+#include <epan/unit_strings.h>
 #include <epan/etypes.h>
 #include <epan/expert.h>
-#include <epan/exceptions.h>
+#include <epan/proto_data.h>
+#include <epan/oui.h>
+#include <epan/addr_resolv.h>
 #include "packet-ptp.h"
+
+#define NS_PER_S 1000000000
 
 /**********************************************************/
 /* Port definition's for PTP                              */
 /**********************************************************/
-#define EVENT_PORT_PTP      319
-#define GENERAL_PORT_PTP    320
+#define PTP_PORT_RANGE      "319-320"
 
 /* END Port definition's for PTP */
 void proto_register_ptp(void);
 void proto_reg_handoff_ptp(void);
 
-static int proto_ptp = -1;
+static int proto_ptp;
+/* To keep the decimal point based on locale */
+static char * decimal_point;
 
 /***********************************************************************************/
 /* Definitions and fields for PTPv1 dissection.                                    */
@@ -86,7 +116,7 @@ static int proto_ptp = -1;
 #define PTP_SOURCEUUID_OFFSET                       22
 #define PTP_SOURCEPORTID_OFFSET                     28
 #define PTP_SEQUENCEID_OFFSET                       30
-#define PTP_CONTROL_OFFSET                          32
+#define PTP_CONTROLFIELD_OFFSET                     32
 #define PTP_FLAGS_OFFSET                            34
 #define PTP_FLAGS_LI61_OFFSET                       34
 #define PTP_FLAGS_LI59_OFFSET                       34
@@ -273,13 +303,13 @@ static int proto_ptp = -1;
 /**********************************************************/
 /* flag-field-mask-definitions                            */
 /**********************************************************/
-#define PTP_FLAGS_LI61_BITMASK              0x01
-#define PTP_FLAGS_LI59_BITMASK              0x02
-#define PTP_FLAGS_BOUNDARY_CLOCK_BITMASK    0x04
-#define PTP_FLAGS_ASSIST_BITMASK            0x08
-#define PTP_FLAGS_EXT_SYNC_BITMASK          0x10
-#define PTP_FLAGS_PARENT_STATS_BITMASK      0x20
-#define PTP_FLAGS_SYNC_BURST_BITMASK        0x40
+#define PTP_FLAGS_LI61_BITMASK                  0x0001
+#define PTP_FLAGS_LI59_BITMASK                  0x0002
+#define PTP_FLAGS_BOUNDARY_CLOCK_BITMASK        0x0004
+#define PTP_FLAGS_ASSIST_BITMASK                0x0008
+#define PTP_FLAGS_EXT_SYNC_BITMASK              0x0010
+#define PTP_FLAGS_PARENT_STATS_BITMASK          0x0020
+#define PTP_FLAGS_SYNC_BURST_BITMASK            0x0040
 
 /* END flag-field-mask-definitions */
 
@@ -344,7 +374,7 @@ static const value_string ptp_managementMessageKey_vals[] = {
     {PTP_MM_DISABLE_BURST                     , "PTP_MM_DISABLE_BURST"},
     {PTP_MM_ENABLE_BURST                      , "PTP_MM_ENABLE_BURST"},
     {PTP_MM_SET_TIME                          , "PTP_MM_SET_TIME"},
-    {0,              NULL          }
+    {0                                        , NULL}
 };
 static value_string_ext ptp_managementMessageKey_vals_ext =
     VALUE_STRING_EXT_INIT(ptp_managementMessageKey_vals);
@@ -379,7 +409,7 @@ static const value_string ptp_managementMessageKey_infocolumn_vals[] = {
     {PTP_MM_DISABLE_BURST                     , "Disable Burst"},
     {PTP_MM_ENABLE_BURST                      , "Enable Burst"},
     {PTP_MM_SET_TIME                          , "Set Time"},
-    {0,              NULL          }
+    {0                                        , NULL}
 };
 static value_string_ext ptp_managementMessageKey_infocolumn_vals_ext =
     VALUE_STRING_EXT_INIT(ptp_managementMessageKey_infocolumn_vals);
@@ -435,7 +465,7 @@ static const value_string ptp_communicationid_vals[] = {
     {PTP_PCI           , "PCI bus"},
     {PTP_VXI           , "VXI bus"},
     {PTP_DEFAULT       , "Default value"},
-    {0,              NULL          }
+    {0                 , NULL}
 };
 static value_string_ext ptp_communicationid_vals_ext =
     VALUE_STRING_EXT_INIT(ptp_communicationid_vals);
@@ -452,7 +482,7 @@ static value_string_ext ptp_communicationid_vals_ext =
 #define PTP_MANAGEMENT_MESSAGE  0x04
 #define PTP_OTHER_MESSAGE       0x05
 
-static const value_string ptp_control_vals[] = {
+static const value_string ptp_controlfield_vals[] = {
     {PTP_SYNC_MESSAGE       , "Sync Message"},
     {PTP_DELAY_REQ_MESSAGE  , "Delay_Req Message"},
     {PTP_FOLLOWUP_MESSAGE   , "Follow_Up Message"},
@@ -473,7 +503,7 @@ static const value_string ptp_control_vals[] = {
 static const value_string ptp_messagetype_vals[] = {
     {PTP_MESSAGETYPE_EVENT   , "Event Message"},
     {PTP_MESSAGETYPE_GENERAL , "General Message"},
-    {0,              NULL          }
+    {0                       , NULL}
 };
 
 /* END channel values for the PTP_MESSAGETYPE field */
@@ -482,201 +512,201 @@ static const value_string ptp_messagetype_vals[] = {
 /* Initialize the protocol and registered fields          */
 /**********************************************************/
 
-static int hf_ptp_versionptp = -1;
-static int hf_ptp_versionnetwork = -1;
-static int hf_ptp_subdomain = -1;
-static int hf_ptp_messagetype = -1;
-static int hf_ptp_sourcecommunicationtechnology = -1;
-static int hf_ptp_sourceuuid = -1;
-static int hf_ptp_sourceportid = -1;
-static int hf_ptp_sequenceid = -1;
-static int hf_ptp_control = -1;
-static int hf_ptp_flags = -1;
-static int hf_ptp_flags_li61 = -1;
-static int hf_ptp_flags_li59 = -1;
-static int hf_ptp_flags_boundary_clock = -1;
-static int hf_ptp_flags_assist = -1;
-static int hf_ptp_flags_ext_sync = -1;
-static int hf_ptp_flags_parent = -1;
-static int hf_ptp_flags_sync_burst = -1;
+static int hf_ptp_versionptp;
+static int hf_ptp_versionnetwork;
+static int hf_ptp_subdomain;
+static int hf_ptp_messagetype;
+static int hf_ptp_sourcecommunicationtechnology;
+static int hf_ptp_sourceuuid;
+static int hf_ptp_sourceportid;
+static int hf_ptp_sequenceid;
+static int hf_ptp_controlfield;
+static int hf_ptp_flags;
+static int hf_ptp_flags_li61;
+static int hf_ptp_flags_li59;
+static int hf_ptp_flags_boundary_clock;
+static int hf_ptp_flags_assist;
+static int hf_ptp_flags_ext_sync;
+static int hf_ptp_flags_parent;
+static int hf_ptp_flags_sync_burst;
 
 /* Fields for ptp_sync and delay_req (=sdr) messages */
-static int hf_ptp_sdr_origintimestamp = -1; /* Field for seconds & nanoseconds */
-static int hf_ptp_sdr_origintimestamp_seconds = -1;
-static int hf_ptp_sdr_origintimestamp_nanoseconds = -1;
-static int hf_ptp_sdr_epochnumber = -1;
-static int hf_ptp_sdr_currentutcoffset = -1;
-static int hf_ptp_sdr_grandmastercommunicationtechnology = -1;
-static int hf_ptp_sdr_grandmasterclockuuid = -1;
-static int hf_ptp_sdr_grandmasterportid = -1;
-static int hf_ptp_sdr_grandmastersequenceid = -1;
-static int hf_ptp_sdr_grandmasterclockstratum = -1;
-static int hf_ptp_sdr_grandmasterclockidentifier = -1;
-static int hf_ptp_sdr_grandmasterclockvariance = -1;
-static int hf_ptp_sdr_grandmasterpreferred = -1;
-static int hf_ptp_sdr_grandmasterisboundaryclock = -1;
-static int hf_ptp_sdr_syncinterval = -1;
-static int hf_ptp_sdr_localclockvariance = -1;
-static int hf_ptp_sdr_localstepsremoved = -1;
-static int hf_ptp_sdr_localclockstratum = -1;
-static int hf_ptp_sdr_localclockidentifier = -1;
-static int hf_ptp_sdr_parentcommunicationtechnology = -1;
-static int hf_ptp_sdr_parentuuid = -1;
-static int hf_ptp_sdr_parentportfield = -1;
-static int hf_ptp_sdr_estimatedmastervariance = -1;
-static int hf_ptp_sdr_estimatedmasterdrift = -1;
-static int hf_ptp_sdr_utcreasonable = -1;
+static int hf_ptp_sdr_origintimestamp; /* Field for seconds & nanoseconds */
+static int hf_ptp_sdr_origintimestamp_seconds;
+static int hf_ptp_sdr_origintimestamp_nanoseconds;
+static int hf_ptp_sdr_epochnumber;
+static int hf_ptp_sdr_currentutcoffset;
+static int hf_ptp_sdr_grandmastercommunicationtechnology;
+static int hf_ptp_sdr_grandmasterclockuuid;
+static int hf_ptp_sdr_grandmasterportid;
+static int hf_ptp_sdr_grandmastersequenceid;
+static int hf_ptp_sdr_grandmasterclockstratum;
+static int hf_ptp_sdr_grandmasterclockidentifier;
+static int hf_ptp_sdr_grandmasterclockvariance;
+static int hf_ptp_sdr_grandmasterpreferred;
+static int hf_ptp_sdr_grandmasterisboundaryclock;
+static int hf_ptp_sdr_syncinterval;
+static int hf_ptp_sdr_localclockvariance;
+static int hf_ptp_sdr_localstepsremoved;
+static int hf_ptp_sdr_localclockstratum;
+static int hf_ptp_sdr_localclockidentifier;
+static int hf_ptp_sdr_parentcommunicationtechnology;
+static int hf_ptp_sdr_parentuuid;
+static int hf_ptp_sdr_parentportfield;
+static int hf_ptp_sdr_estimatedmastervariance;
+static int hf_ptp_sdr_estimatedmasterdrift;
+static int hf_ptp_sdr_utcreasonable;
 
 /* Fields for follow_up (=fu) messages */
-static int hf_ptp_fu_associatedsequenceid = -1;
-static int hf_ptp_fu_preciseorigintimestamp = -1;
-static int hf_ptp_fu_preciseorigintimestamp_seconds = -1;
-static int hf_ptp_fu_preciseorigintimestamp_nanoseconds = -1;
+static int hf_ptp_fu_associatedsequenceid;
+static int hf_ptp_fu_preciseorigintimestamp;
+static int hf_ptp_fu_preciseorigintimestamp_seconds;
+static int hf_ptp_fu_preciseorigintimestamp_nanoseconds;
 
 /* Fields for delay_resp (=dr) messages */
-static int hf_ptp_dr_delayreceipttimestamp = -1;
-static int hf_ptp_dr_delayreceipttimestamp_seconds = -1;
-static int hf_ptp_dr_delayreceipttimestamp_nanoseconds = -1;
-static int hf_ptp_dr_requestingsourcecommunicationtechnology = -1;
-static int hf_ptp_dr_requestingsourceuuid = -1;
-static int hf_ptp_dr_requestingsourceportid = -1;
-static int hf_ptp_dr_requestingsourcesequenceid = -1;
+static int hf_ptp_dr_delayreceipttimestamp;
+static int hf_ptp_dr_delayreceipttimestamp_seconds;
+static int hf_ptp_dr_delayreceipttimestamp_nanoseconds;
+static int hf_ptp_dr_requestingsourcecommunicationtechnology;
+static int hf_ptp_dr_requestingsourceuuid;
+static int hf_ptp_dr_requestingsourceportid;
+static int hf_ptp_dr_requestingsourcesequenceid;
 
 /* Fields for management (=mm) messages */
-static int hf_ptp_mm_targetcommunicationtechnology = -1;
-static int hf_ptp_mm_targetuuid = -1;
-static int hf_ptp_mm_targetportid = -1;
-static int hf_ptp_mm_startingboundaryhops = -1;
-static int hf_ptp_mm_boundaryhops = -1;
-static int hf_ptp_mm_managementmessagekey = -1;
-static int hf_ptp_mm_parameterlength = -1;
+static int hf_ptp_mm_targetcommunicationtechnology;
+static int hf_ptp_mm_targetuuid;
+static int hf_ptp_mm_targetportid;
+static int hf_ptp_mm_startingboundaryhops;
+static int hf_ptp_mm_boundaryhops;
+static int hf_ptp_mm_managementmessagekey;
+static int hf_ptp_mm_parameterlength;
     /* parameterlength > 0 */
-/* static int hf_ptp_mm_messageparameters = -1; */
+/* static int hf_ptp_mm_messageparameters; */
     /* ptp_mm_clock_identity (parameterlength = 64) */
-static int hf_ptp_mm_clock_identity_clockcommunicationtechnology = -1;
-static int hf_ptp_mm_clock_identity_clockuuidfield = -1;
-static int hf_ptp_mm_clock_identity_clockportfield = -1;
-static int hf_ptp_mm_clock_identity_manufactureridentity = -1;
+static int hf_ptp_mm_clock_identity_clockcommunicationtechnology;
+static int hf_ptp_mm_clock_identity_clockuuidfield;
+static int hf_ptp_mm_clock_identity_clockportfield;
+static int hf_ptp_mm_clock_identity_manufactureridentity;
 
     /* ptp_mm_initialize_clock (parameterlength = 4) */
-static int hf_ptp_mm_initialize_clock_initialisationkey = -1;
+static int hf_ptp_mm_initialize_clock_initialisationkey;
 
     /* ptp_mm_set_subdomain (parameterlength = 16) */
-static int hf_ptp_mm_set_subdomain_subdomainname = -1;
+static int hf_ptp_mm_set_subdomain_subdomainname;
 
     /* ptp_mm_default_data_set (parameterlength = 76) */
-static int hf_ptp_mm_default_data_set_clockcommunicationtechnology = -1;
-static int hf_ptp_mm_default_data_set_clockuuidfield = -1;
-static int hf_ptp_mm_default_data_set_clockportfield = -1;
-static int hf_ptp_mm_default_data_set_clockstratum = -1;
-static int hf_ptp_mm_default_data_set_clockidentifier = -1;
-static int hf_ptp_mm_default_data_set_clockvariance = -1;
-static int hf_ptp_mm_default_data_set_clockfollowupcapable = -1;
-static int hf_ptp_mm_default_data_set_preferred = -1;
-static int hf_ptp_mm_default_data_set_initializable = -1;
-static int hf_ptp_mm_default_data_set_externaltiming = -1;
-static int hf_ptp_mm_default_data_set_isboundaryclock = -1;
-static int hf_ptp_mm_default_data_set_syncinterval = -1;
-static int hf_ptp_mm_default_data_set_subdomainname = -1;
-static int hf_ptp_mm_default_data_set_numberports = -1;
-static int hf_ptp_mm_default_data_set_numberforeignrecords = -1;
+static int hf_ptp_mm_default_data_set_clockcommunicationtechnology;
+static int hf_ptp_mm_default_data_set_clockuuidfield;
+static int hf_ptp_mm_default_data_set_clockportfield;
+static int hf_ptp_mm_default_data_set_clockstratum;
+static int hf_ptp_mm_default_data_set_clockidentifier;
+static int hf_ptp_mm_default_data_set_clockvariance;
+static int hf_ptp_mm_default_data_set_clockfollowupcapable;
+static int hf_ptp_mm_default_data_set_preferred;
+static int hf_ptp_mm_default_data_set_initializable;
+static int hf_ptp_mm_default_data_set_externaltiming;
+static int hf_ptp_mm_default_data_set_isboundaryclock;
+static int hf_ptp_mm_default_data_set_syncinterval;
+static int hf_ptp_mm_default_data_set_subdomainname;
+static int hf_ptp_mm_default_data_set_numberports;
+static int hf_ptp_mm_default_data_set_numberforeignrecords;
 
     /* ptp_mm_update_default_data_set (parameterlength = 36) */
-static int hf_ptp_mm_update_default_data_set_clockstratum = -1;
-static int hf_ptp_mm_update_default_data_set_clockidentifier = -1;
-static int hf_ptp_mm_update_default_data_set_clockvariance = -1;
-static int hf_ptp_mm_update_default_data_set_preferred = -1;
-static int hf_ptp_mm_update_default_data_set_syncinterval = -1;
-static int hf_ptp_mm_update_default_data_set_subdomainname = -1;
+static int hf_ptp_mm_update_default_data_set_clockstratum;
+static int hf_ptp_mm_update_default_data_set_clockidentifier;
+static int hf_ptp_mm_update_default_data_set_clockvariance;
+static int hf_ptp_mm_update_default_data_set_preferred;
+static int hf_ptp_mm_update_default_data_set_syncinterval;
+static int hf_ptp_mm_update_default_data_set_subdomainname;
 
     /* ptp_mm_current_data_set (parameterlength = 20) */
-static int hf_ptp_mm_current_data_set_stepsremoved = -1;
-static int hf_ptp_mm_current_data_set_offsetfrommaster = -1;
-static int hf_ptp_mm_current_data_set_offsetfrommasterseconds = -1;
-static int hf_ptp_mm_current_data_set_offsetfrommasternanoseconds = -1;
-static int hf_ptp_mm_current_data_set_onewaydelay = -1;
-static int hf_ptp_mm_current_data_set_onewaydelayseconds = -1;
-static int hf_ptp_mm_current_data_set_onewaydelaynanoseconds = -1;
+static int hf_ptp_mm_current_data_set_stepsremoved;
+static int hf_ptp_mm_current_data_set_offsetfrommaster;
+static int hf_ptp_mm_current_data_set_offsetfrommasterseconds;
+static int hf_ptp_mm_current_data_set_offsetfrommasternanoseconds;
+static int hf_ptp_mm_current_data_set_onewaydelay;
+static int hf_ptp_mm_current_data_set_onewaydelayseconds;
+static int hf_ptp_mm_current_data_set_onewaydelaynanoseconds;
 
     /* ptp_mm_parent_data_set (parameterlength = 90) */
-static int hf_ptp_mm_parent_data_set_parentcommunicationtechnology = -1;
-static int hf_ptp_mm_parent_data_set_parentuuid = -1;
-static int hf_ptp_mm_parent_data_set_parentportid = -1;
-static int hf_ptp_mm_parent_data_set_parentlastsyncsequencenumber = -1;
-static int hf_ptp_mm_parent_data_set_parentfollowupcapable = -1;
-static int hf_ptp_mm_parent_data_set_parentexternaltiming = -1;
-static int hf_ptp_mm_parent_data_set_parentvariance = -1;
-static int hf_ptp_mm_parent_data_set_parentstats = -1;
-static int hf_ptp_mm_parent_data_set_observedvariance = -1;
-static int hf_ptp_mm_parent_data_set_observeddrift = -1;
-static int hf_ptp_mm_parent_data_set_utcreasonable = -1;
-static int hf_ptp_mm_parent_data_set_grandmastercommunicationtechnology = -1;
-static int hf_ptp_mm_parent_data_set_grandmasteruuidfield = -1;
-static int hf_ptp_mm_parent_data_set_grandmasterportidfield = -1;
-static int hf_ptp_mm_parent_data_set_grandmasterstratum = -1;
-static int hf_ptp_mm_parent_data_set_grandmasteridentifier = -1;
-static int hf_ptp_mm_parent_data_set_grandmastervariance = -1;
-static int hf_ptp_mm_parent_data_set_grandmasterpreferred = -1;
-static int hf_ptp_mm_parent_data_set_grandmasterisboundaryclock = -1;
-static int hf_ptp_mm_parent_data_set_grandmastersequencenumber = -1;
+static int hf_ptp_mm_parent_data_set_parentcommunicationtechnology;
+static int hf_ptp_mm_parent_data_set_parentuuid;
+static int hf_ptp_mm_parent_data_set_parentportid;
+static int hf_ptp_mm_parent_data_set_parentlastsyncsequencenumber;
+static int hf_ptp_mm_parent_data_set_parentfollowupcapable;
+static int hf_ptp_mm_parent_data_set_parentexternaltiming;
+static int hf_ptp_mm_parent_data_set_parentvariance;
+static int hf_ptp_mm_parent_data_set_parentstats;
+static int hf_ptp_mm_parent_data_set_observedvariance;
+static int hf_ptp_mm_parent_data_set_observeddrift;
+static int hf_ptp_mm_parent_data_set_utcreasonable;
+static int hf_ptp_mm_parent_data_set_grandmastercommunicationtechnology;
+static int hf_ptp_mm_parent_data_set_grandmasteruuidfield;
+static int hf_ptp_mm_parent_data_set_grandmasterportidfield;
+static int hf_ptp_mm_parent_data_set_grandmasterstratum;
+static int hf_ptp_mm_parent_data_set_grandmasteridentifier;
+static int hf_ptp_mm_parent_data_set_grandmastervariance;
+static int hf_ptp_mm_parent_data_set_grandmasterpreferred;
+static int hf_ptp_mm_parent_data_set_grandmasterisboundaryclock;
+static int hf_ptp_mm_parent_data_set_grandmastersequencenumber;
 
     /* ptp_mm_port_data_set (parameterlength = 52) */
-static int hf_ptp_mm_port_data_set_returnedportnumber = -1;
-static int hf_ptp_mm_port_data_set_portstate = -1;
-static int hf_ptp_mm_port_data_set_lastsynceventsequencenumber = -1;
-static int hf_ptp_mm_port_data_set_lastgeneraleventsequencenumber = -1;
-static int hf_ptp_mm_port_data_set_portcommunicationtechnology = -1;
-static int hf_ptp_mm_port_data_set_portuuidfield = -1;
-static int hf_ptp_mm_port_data_set_portidfield = -1;
-static int hf_ptp_mm_port_data_set_burstenabled = -1;
-static int hf_ptp_mm_port_data_set_subdomainaddressoctets = -1;
-static int hf_ptp_mm_port_data_set_eventportaddressoctets = -1;
-static int hf_ptp_mm_port_data_set_generalportaddressoctets = -1;
-static int hf_ptp_mm_port_data_set_subdomainaddress = -1;
-static int hf_ptp_mm_port_data_set_eventportaddress = -1;
-static int hf_ptp_mm_port_data_set_generalportaddress = -1;
+static int hf_ptp_mm_port_data_set_returnedportnumber;
+static int hf_ptp_mm_port_data_set_portstate;
+static int hf_ptp_mm_port_data_set_lastsynceventsequencenumber;
+static int hf_ptp_mm_port_data_set_lastgeneraleventsequencenumber;
+static int hf_ptp_mm_port_data_set_portcommunicationtechnology;
+static int hf_ptp_mm_port_data_set_portuuidfield;
+static int hf_ptp_mm_port_data_set_portidfield;
+static int hf_ptp_mm_port_data_set_burstenabled;
+static int hf_ptp_mm_port_data_set_subdomainaddressoctets;
+static int hf_ptp_mm_port_data_set_eventportaddressoctets;
+static int hf_ptp_mm_port_data_set_generalportaddressoctets;
+static int hf_ptp_mm_port_data_set_subdomainaddress;
+static int hf_ptp_mm_port_data_set_eventportaddress;
+static int hf_ptp_mm_port_data_set_generalportaddress;
 
     /* ptp_mm_global_time_data_set (parameterlength = 24) */
-static int hf_ptp_mm_global_time_data_set_localtime = -1;
-static int hf_ptp_mm_global_time_data_set_localtimeseconds = -1;
-static int hf_ptp_mm_global_time_data_set_localtimenanoseconds = -1;
-static int hf_ptp_mm_global_time_data_set_currentutcoffset = -1;
-static int hf_ptp_mm_global_time_data_set_leap59 = -1;
-static int hf_ptp_mm_global_time_data_set_leap61 = -1;
-static int hf_ptp_mm_global_time_data_set_epochnumber = -1;
+static int hf_ptp_mm_global_time_data_set_localtime;
+static int hf_ptp_mm_global_time_data_set_localtimeseconds;
+static int hf_ptp_mm_global_time_data_set_localtimenanoseconds;
+static int hf_ptp_mm_global_time_data_set_currentutcoffset;
+static int hf_ptp_mm_global_time_data_set_leap59;
+static int hf_ptp_mm_global_time_data_set_leap61;
+static int hf_ptp_mm_global_time_data_set_epochnumber;
 
     /* ptp_mm_update_global_time_properties (parameterlength = 16) */
-static int hf_ptp_mm_update_global_time_properties_currentutcoffset = -1;
-static int hf_ptp_mm_update_global_time_properties_leap59 = -1;
-static int hf_ptp_mm_update_global_time_properties_leap61 = -1;
-/* static int hf_ptp_mm_update_global_time_properties_epochnumber = -1; */
+static int hf_ptp_mm_update_global_time_properties_currentutcoffset;
+static int hf_ptp_mm_update_global_time_properties_leap59;
+static int hf_ptp_mm_update_global_time_properties_leap61;
+/* static int hf_ptp_mm_update_global_time_properties_epochnumber; */
 
     /* ptp_mm_get_foreign_data_set (parameterlength = 4) */
-static int hf_ptp_mm_get_foreign_data_set_recordkey = -1;
+static int hf_ptp_mm_get_foreign_data_set_recordkey;
 
     /* ptp_mm_foreign_data_set (parameterlength = 28) */
-static int hf_ptp_mm_foreign_data_set_returnedportnumber = -1;
-static int hf_ptp_mm_foreign_data_set_returnedrecordnumber = -1;
-static int hf_ptp_mm_foreign_data_set_foreignmastercommunicationtechnology = -1;
-static int hf_ptp_mm_foreign_data_set_foreignmasteruuidfield = -1;
-static int hf_ptp_mm_foreign_data_set_foreignmasterportidfield = -1;
-static int hf_ptp_mm_foreign_data_set_foreignmastersyncs = -1;
+static int hf_ptp_mm_foreign_data_set_returnedportnumber;
+static int hf_ptp_mm_foreign_data_set_returnedrecordnumber;
+static int hf_ptp_mm_foreign_data_set_foreignmastercommunicationtechnology;
+static int hf_ptp_mm_foreign_data_set_foreignmasteruuidfield;
+static int hf_ptp_mm_foreign_data_set_foreignmasterportidfield;
+static int hf_ptp_mm_foreign_data_set_foreignmastersyncs;
 
     /* ptp_mm_set_sync_interval (parameterlength = 4) */
-static int hf_ptp_mm_set_sync_interval_syncinterval = -1;
+static int hf_ptp_mm_set_sync_interval_syncinterval;
 
     /* ptp_mm_set_time (parameterlength = 8) */
-static int hf_ptp_mm_set_time_localtime = -1;
-static int hf_ptp_mm_set_time_localtimeseconds = -1;
-static int hf_ptp_mm_set_time_localtimenanoseconds = -1;
+static int hf_ptp_mm_set_time_localtime;
+static int hf_ptp_mm_set_time_localtimeseconds;
+static int hf_ptp_mm_set_time_localtimenanoseconds;
 
 /* END Initialize the protocol and registered fields */
 
 /* Initialize the subtree pointers */
-static gint ett_ptp = -1;
-static gint ett_ptp_flags = -1;
-static gint ett_ptp_time = -1;
-static gint ett_ptp_time2 = -1;
+static int ett_ptp;
+static int ett_ptp_flags;
+static int ett_ptp_time;
+static int ett_ptp_time2;
 
 /* END Definitions and fields for PTPv1 dissection. */
 
@@ -694,445 +724,412 @@ static gint ett_ptp_time2 = -1;
 /**********************************************************/
 
 /* Common offsets for all Messages (Sync, Delay_Req, Follow_Up, Delay_Resp ....) */
-#define PTP_V2_TRANSPORT_SPECIFIC_MESSAGE_ID_OFFSET                  0
-#define PTP_V2_VERSIONPTP_OFFSET                                     1
-#define PTP_V2_MESSAGE_LENGTH_OFFSET                                 2
-#define PTP_V2_DOMAIN_NUMBER_OFFSET                                  4
-#define PTP_V2_FLAGS_OFFSET                                          6
-#define PTP_V2_CORRECTION_OFFSET                                     8
-#define PTP_V2_CORRECTIONNS_OFFSET                                   8
-#define PTP_V2_CORRECTIONSUBNS_OFFSET                               14
-#define PTP_V2_CLOCKIDENTITY_OFFSET                                 20
-#define PTP_V2_SOURCEPORTID_OFFSET                                  28
-#define PTP_V2_SEQUENCEID_OFFSET                                    30
-#define PTP_V2_CONTROL_OFFSET                                       32
-#define PTP_V2_LOGMESSAGEPERIOD_OFFSET                              33
+#define PTP_V2_MAJORSDOID_MESSAGE_TYPE_OFFSET                               0
+#define PTP_V2_VERSIONPTP_OFFSET                                            1
+#define PTP_V2_MINORVERSIONPTP_OFFSET                PTP_V2_VERSIONPTP_OFFSET
+#define PTP_V2_MESSAGE_LENGTH_OFFSET                                        2
+#define PTP_V2_DOMAIN_NUMBER_OFFSET                                         4
+#define PTP_V2_MINORSDOID_OFFSET                                            5
+#define PTP_V2_FLAGS_OFFSET                                                 6
+#define PTP_V2_CORRECTION_OFFSET                                            8
+#define PTP_V2_CLOCKIDENTITY_OFFSET                                        20
+#define PTP_V2_SOURCEPORTID_OFFSET                                         28
+#define PTP_V2_SEQUENCEID_OFFSET                                           30
 
-
-/* Offsets for PTP_Announce (=AN) messages */
-#define PTP_V2_AN_ORIGINTIMESTAMP_OFFSET                            34
-#define PTP_V2_AN_ORIGINTIMESTAMPSECONDS_OFFSET                     34
-#define PTP_V2_AN_ORIGINTIMESTAMPNANOSECONDS_OFFSET                 40
-#define PTP_V2_AN_ORIGINCURRENTUTCOFFSET_OFFSET                     44
-#define PTP_V2_AN_PRIORITY_1_OFFSET                                 47
-#define PTP_V2_AN_GRANDMASTERCLOCKCLASS_OFFSET                      48
-#define PTP_V2_AN_GRANDMASTERCLOCKACCURACY_OFFSET                   49
-#define PTP_V2_AN_GRANDMASTERCLOCKVARIANCE_OFFSET                   50
-#define PTP_V2_AN_PRIORITY_2_OFFSET                                 52
-#define PTP_V2_AN_GRANDMASTERCLOCKIDENTITY_OFFSET                   53
-#define PTP_V2_AN_LOCALSTEPSREMOVED_OFFSET                          61
-#define PTP_V2_AN_TIMESOURCE_OFFSET                                 63
-#define PTP_V2_AN_TLV_OFFSET                                        64 /* TLV only used if message length is > 64 bytes */
-
-/* Announce TLV field offsets */
-#define PTP_V2_AN_TLV_TYPE_OFFSET                                    0
-#define PTP_V2_AN_TLV_LENGTHFIELD_OFFSET                             2
-
-/* PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION field offsets */
-#define PTP_V2_AN_TLV_OE_ORGANIZATIONID_OFFSET                       4
-#define PTP_V2_AN_TLV_OE_ORGANIZATIONSUBTYPE_OFFSET                  7
-#define PTP_V2_AN_TLV_OE_DATAFIELD_OFFSET                           10
-
-/* PTPv2 IEEE_C37_238 TLV (organization extension subtype) field offsets */
-#define PTP_V2_AN_TLV_OE_IEEEC37238TLV_GMID_OFFSET                  10
-#define PTP_V2_AN_TLV_OE_IEEEC37238TLV_GMINACCURACY_OFFSET          12
-#define PTP_V2_AN_TLV_OE_IEEEC37238TLV_NWINACCURACY_OFFSET          16
-#define PTP_V2_AN_TLV_OE_IEEEC37238TLV_RESERVED_OFFSET              20
-
-/* PTP_V2_TLV_TYPE_ALTERNATE_TIME_OFFSET_INDICATOR field offsets */
-#define PTP_V2_AN_TLV_ATOI_KEYFIELD_OFFSET                           4
-#define PTP_V2_AN_TLV_ATOI_CURRENTOFFSET_OFFSET                      5
-#define PTP_V2_AN_TLV_ATOI_JUMPSECONDS_OFFSET                        9
-#define PTP_V2_AN_TLV_ATOI_TIMEOFNEXTJUMP_OFFSET                    13
-#define PTP_V2_AN_TLV_ATOI_DISPLAYNAME_OFFSET                       19
-
-/* Undissected TLV field offset */
-#define PTP_V2_AN_TLV_DATA_OFFSET                                    4
-
-/* 802.1AS Path Sequence Offset */
-#define PTP_AS_AN_TLV_PATH_TRACE_OFFSET                              4
-
-/* Offsets for PTP_Sync AND PTP_DelayRequest (=SDR) messages */
-#define PTP_V2_SDR_ORIGINTIMESTAMP_OFFSET                           34
-#define PTP_V2_SDR_ORIGINTIMESTAMPSECONDS_OFFSET                    34
-#define PTP_V2_SDR_ORIGINTIMESTAMPNANOSECONDS_OFFSET                40
+/* Common Offset for TLVs (relative from start of TLV) */
+#define PTP_V2_TLV_TYPE_OFFSET                                              0
+#define PTP_V2_TLV_LENGTH_OFFSET                                            2
+#define PTP_V2_TLV_HEADER_LENGTH                                            4
+#define PTP_V2_TLV_ORGANIZATIONSUBTYPE_OFFSET                               7
 
 /* Offsets for PTP_Follow_Up (=FU) messages */
-#define PTP_V2_FU_PRECISEORIGINTIMESTAMP_OFFSET                     34
-#define PTP_V2_FU_PRECISEORIGINTIMESTAMPSECONDS_OFFSET              34
-#define PTP_V2_FU_PRECISEORIGINTIMESTAMPNANOSECONDS_OFFSET          40
-
-/* 802.1AS Follow_Up information TLV */
-#define PTP_AS_FU_TLV_INFORMATION_OFFSET                            44
-
-/* 802.1AS Follow_Up TLV field offsets */
-#define PTP_AS_FU_TLV_TYPE_OFFSET                                    0
-#define PTP_AS_FU_TLV_LENGTHFIELD_OFFSET                             2
-#define PTP_AS_FU_TLV_ORGANIZATIONID_OFFSET                          4
-#define PTP_AS_FU_TLV_ORGANIZATIONSUBTYPE_OFFSET                     7
-#define PTP_AS_FU_TLV_CUMULATIVESCALEDRATEOFFSET_OFFSET             10
-#define PTP_AS_FU_TLV_GMTIMEBASEINDICATOR_OFFSET                    14
-#define PTP_AS_FU_TLV_LASTGMPHASECHANGE_OFFSET                      16
-#define PTP_AS_FU_TLV_SCALEDLASTGMFREQCHANGE_OFFSET                 28
-
-/* Offsets for PTP_DelayResponse (=DR) messages */
-#define PTP_V2_DR_RECEIVETIMESTAMP_OFFSET                           34
-#define PTP_V2_DR_RECEIVETIMESTAMPSECONDS_OFFSET                    34
-#define PTP_V2_DR_RECEIVETIMESTAMPNANOSECONDS_OFFSET                40
-#define PTP_V2_DR_REQUESTINGPORTIDENTITY_OFFSET                     44
-#define PTP_V2_DR_REQUESTINGSOURCEPORTID_OFFSET                     52
-
-/* Offsets for PTP_PDelayRequest (=PDRQ) messages */
-#define PTP_V2_PDRQ_ORIGINTIMESTAMP_OFFSET                          34
-#define PTP_V2_PDRQ_ORIGINTIMESTAMPSECONDS_OFFSET                   34
-#define PTP_V2_PDRQ_ORIGINTIMESTAMPNANOSECONDS_OFFSET               40
-#define PTP_V2_PDRQ_RESERVED_OFFSET                                 44
+#define PTP_V2_FU_PRECISEORIGINTIMESTAMPSECONDS_OFFSET                     34
+#define PTP_V2_FU_PRECISEORIGINTIMESTAMPNANOSECONDS_OFFSET                 40
 
 /* Offsets for PTP_PDelayResponse (=PDRS) messages */
-#define PTP_V2_PDRS_REQUESTRECEIPTTIMESTAMP_OFFSET                  34
-#define PTP_V2_PDRS_REQUESTRECEIPTTIMESTAMPSECONDS_OFFSET           34
-#define PTP_V2_PDRS_REQUESTRECEIPTTIMESTAMPNANOSECONDS_OFFSET       40
-#define PTP_V2_PDRS_REQUESTINGPORTIDENTITY_OFFSET                   44 /* ++ */
-#define PTP_V2_PDRS_REQUESTINGSOURCEPORTID_OFFSET                   52 /* ++ */
-
+#define PTP_V2_PDRS_REQUESTRECEIPTTIMESTAMPSECONDS_OFFSET                  34
+#define PTP_V2_PDRS_REQUESTRECEIPTTIMESTAMPNANOSECONDS_OFFSET              40
+#define PTP_V2_PDRS_REQUESTINGPORTIDENTITY_OFFSET                          44
+#define PTP_V2_PDRS_REQUESTINGSOURCEPORTID_OFFSET                          52
 
 /* Offsets for PTP_PDelayResponseFollowUp (=PDFU) messages */
-#define PTP_V2_PDFU_RESPONSEORIGINTIMESTAMP_OFFSET                  34
-#define PTP_V2_PDFU_RESPONSEORIGINTIMESTAMPSECONDS_OFFSET           34
-#define PTP_V2_PDFU_RESPONSEORIGINTIMESTAMPNANOSECONDS_OFFSET       40
-#define PTP_V2_PDFU_REQUESTINGPORTIDENTITY_OFFSET                   44 /* ++ */
-#define PTP_V2_PDFU_REQUESTINGSOURCEPORTID_OFFSET                   52
+#define PTP_V2_PDFU_RESPONSEORIGINTIMESTAMPSECONDS_OFFSET                  34
+#define PTP_V2_PDFU_RESPONSEORIGINTIMESTAMPNANOSECONDS_OFFSET              40
+#define PTP_V2_PDFU_REQUESTINGPORTIDENTITY_OFFSET                          44
+#define PTP_V2_PDFU_REQUESTINGSOURCEPORTID_OFFSET                          52
 
+/* PTPv2.1 L1 SYNC flags field length */
+#define PTP_V2_SIG_TLV_L1SYNC_FLAGS_BASIC_FORMAT                            2
+#define PTP_V2_SIG_TLV_L1SYNC_FLAGS_EXT_FORMAT                              3
 
-/* Offsets for PTP_Signalling (=SIG) messages */
-#define PTP_V2_SIG_TARGETPORTIDENTITY_OFFSET                        34
-#define PTP_V2_SIG_TARGETPORTID_OFFSET                              42
-#define PTP_V2_SIG_TLV_START                                        44
-
-/* Offset for PTP Signaling messages (relative to tlvOffset!) */
-#define PTP_V2_SIG_TLV_TYPE_OFFSET                                  0
-#define PTP_V2_SIG_TLV_LENGTH_OFFSET                                2
-#define PTP_V2_SIG_TLV_VALUE_OFFSET                                 4
-#define PTP_V2_SIG_TLV_MESSAGE_TYPE_OFFSET                          4
-#define PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_OFFSET              5
-#define PTP_V2_SIG_TLV_DURATION_FIELD_OFFSET                        6
-#define PTP_V2_SIG_TLV_RENEWAL_INVITED_OFFSET                       11
-
-#define PTP_V2_SIG_TLV_TYPE_LEN                                     2
-#define PTP_V2_SIG_TLV_LENGTH_LEN                                   2
-#define PTP_V2_SIG_TLV_MESSAGE_TYPE_LEN                             1
-#define PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_LEN                 1
-#define PTP_V2_SIG_TLV_DURATION_FIELD_LEN                           4
-#define PTP_V2_SIG_TLV_RENEWAL_INVITED_LEN                          1
-
-/* 802.1AS Signalling Message Interval Request TLV */
-#define PTP_AS_SIG_TLV_MESSAGEINTERVALREQUEST_OFFSET                44
-
-/* 802.1AS Signalling TLV field offsets */
-#define PTP_AS_SIG_TLV_TYPE_OFFSET                                   0
-#define PTP_AS_SIG_TLV_LENGTHFIELD_OFFSET                            2
-#define PTP_AS_SIG_TLV_ORGANIZATIONID_OFFSET                         4
-#define PTP_AS_SIG_TLV_ORGANIZATIONSUBTYPE_OFFSET                    7
-#define PTP_AS_SIG_TLV_LINKDELAYINTERVAL_OFFSET                     10
-#define PTP_AS_SIG_TLV_TIMESYNCINTERVAL_OFFSET                      11
-#define PTP_AS_SIG_TLV_ANNOUNCEINTERVAL_OFFSET                      12
-#define PTP_AS_SIG_TLV_FLAGS_OFFSET                                 13
+/* Defined in 10.6.4.4.5 */
+#define PTP_AS_SIG_TLV_TYPE_GPTPCAPABLE_ORG_SUB_TYPE                        4
+/* Defined in 10.6.4.5.5 */
+#define PTP_AS_SIG_TLV_TYPE_GPTPCAPABLE_MESSSAGEINTERVAL_ORG_SUB_TYPE       5
 
 /**********************************************************/
 /* Message Interval Request flag-field-mask-definitions   */
 /**********************************************************/
-#define PTP_AS_FLAGS_COMP_NEIGHBOR_RATE_RATIO_BITMASK           0x0002
-#define PTP_AS_FLAGS_COMP_NEIGHBOR_PROP_DELAY_BITMASK           0x0004
+#define PTP_AS_FLAGS_COMP_NEIGHBOR_RATE_RATIO_BITMASK                    0x02
+#define PTP_AS_FLAGS_COMP_MEAN_LINK_DELAY_BITMASK                        0x04
+#define PTP_AS_FLAGS_ONE_STEP_RECEIVE_CAPABLE                            0x08
 
 /* Offsets for PTP_V2_Management (=MM) messages */
-#define PTP_V2_MM_TARGETPORTIDENTITY_OFFSET             34
-#define PTP_V2_MM_TARGETPORTID_OFFSET                   42
-#define PTP_V2_MM_STARTINGBOUNDARYHOPS_OFFSET           44
-#define PTP_V2_MM_BOUNDARYHOPS_OFFSET                   45
-#define PTP_V2_MM_ACTION_OFFSET                         46
-#define PTP_V2_MM_RESERVED_OFFSET                       47
+#define PTP_V2_MM_ACTION_OFFSET                                            46
+#define PTP_V2_MM_RESERVED_OFFSET                                          47
 
-#define PTP_V2_MM_MANAGEMENTTLV_OFFSET                  48
 /* Management TLV */
-#define PTP_V2_MM_TLV_TYPE_OFFSET                       48
-#define PTP_V2_MM_TLV_LENGTHFIELD_OFFSET                50
-#define PTP_V2_MM_TLV_MANAGEMENTID_OFFSET               52
-#define PTP_V2_MM_TLV_MANAGEMENTERRORID_OFFSET          52
-#define PTP_V2_MM_TLV_DATAFIELD_OFFSET                  54
+#define PTP_V2_MM_TLV_TYPE_OFFSET                                          48
+#define PTP_V2_MM_TLV_MANAGEMENTID_OFFSET                                  52
+#define PTP_V2_MM_TLV_MANAGEMENTERRORID_OFFSET                             52
 
 /* TLV Types */
-#define PTP_V2_TLV_TYPE_RESERVED                                0x0000
-#define PTP_V2_TLV_TYPE_MANAGEMENT                              0x0001
-#define PTP_V2_TLV_TYPE_MANAGEMENT_ERROR_STATUS                 0x0002
-#define PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION                  0x0003
-#define PTP_V2_TLV_TYPE_REQUEST_UNICAST_TRANSMISSION            0x0004
-#define PTP_V2_TLV_TYPE_GRANT_UNICAST_TRANSMISSION              0x0005
-#define PTP_V2_TLV_TYPE_CANCEL_UNICAST_TRANSMISSION             0x0006
-#define PTP_V2_TLV_TYPE_ACKNOWLEDGE_CANCEL_UNICAST_TRANSMISSION 0x0007
-#define PTP_V2_TLV_TYPE_PATH_TRACE                              0x0008
-#define PTP_V2_TLV_TYPE_ALTERNATE_TIME_OFFSET_INDICATOR         0x0009
-#define PTP_V2_TLV_TYPE_AUTHENTICATION                          0x2000
-#define PTP_V2_TLV_TYPE_AUTHENTICATION_CHALLENGE                0x2001
-#define PTP_V2_TLV_TYPE_SECURITY_ASSOCIATION_UPDATE             0x2002
-#define PTP_V2_TLV_TYPE_CUM_FREQ_SCALE_FACTOR_OFFSET            0x2003
+#define PTP_V2_TLV_TYPE_RESERVED                                       0x0000
+#define PTP_V2_TLV_TYPE_MANAGEMENT                                     0x0001
+#define PTP_V2_TLV_TYPE_MANAGEMENT_ERROR_STATUS                        0x0002
+#define PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION                         0x0003
+#define PTP_V2_TLV_TYPE_REQUEST_UNICAST_TRANSMISSION                   0x0004
+#define PTP_V2_TLV_TYPE_GRANT_UNICAST_TRANSMISSION                     0x0005
+#define PTP_V2_TLV_TYPE_CANCEL_UNICAST_TRANSMISSION                    0x0006
+#define PTP_V2_TLV_TYPE_ACKNOWLEDGE_CANCEL_UNICAST_TRANSMISSION        0x0007
+#define PTP_V2_TLV_TYPE_PATH_TRACE                                     0x0008
+#define PTP_V2_TLV_TYPE_ALTERNATE_TIME_OFFSET_INDICATOR                0x0009
+#define PTP_V2_TLV_TYPE_AUTHENTICATION                                 0x2000
+#define PTP_V2_TLV_TYPE_AUTHENTICATION_CHALLENGE                       0x2001
+#define PTP_V2_TLV_TYPE_SECURITY_ASSOCIATION_UPDATE                    0x2002
+#define PTP_V2_TLV_TYPE_CUM_FREQ_SCALE_FACTOR_OFFSET                   0x2003
+#define PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION_PROPAGATE               0x4000
+#define PTP_V2_TLV_TYPE_ENHANCED_ACCURACY_METRICS                      0x4001
+#define PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION_DO_NOT_PROPAGATE        0x8000
+#define PTP_V2_TLV_TYPE_L1_SYNC                                        0x8001
+#define PTP_V2_TLV_TYPE_PORT_COMMUNICATION_AVAILABILITY                0x8002
+#define PTP_V2_TLV_TYPE_PROTOCOL_ADDRESS                               0x8003
+#define PTP_V2_TLV_TYPE_SLAVE_RX_SYNC_TIMING_DATA                      0x8004
+#define PTP_V2_TLV_TYPE_SLAVE_RX_SYNC_COMPUTED_DATA                    0x8005
+#define PTP_V2_TLV_TYPE_SLAVE_TX_EVENT_TIMESTAMPS                      0x8006
+#define PTP_V2_TLV_TYPE_CUMULATIVE_RATE_RATIO                          0x8007
+#define PTP_V2_TLV_TYPE_PAD                                            0x8008
+#define PTP_V2_TLV_TYPE_AUTHENTICATION2                                0x8009
 
-/* Signalling TLV Object IDs */
-#define PTP_AS_TLV_OID_TYPE_802                               0x0080C2
+/* Signaling TLV Object IDs */
+#define PTP_AS_TLV_OID_TYPE_802                                      0x0080C2
 
 /* PTPv2 Management clockType Boolean[16] Bits mask */
-#define CLOCKTYPE_ORDINARY_CLOCK                                0x8000
-#define CLOCKTYPE_BOUNDARY_CLOCK                                0x4000
-#define CLOCKTYPE_P2P_TC                                        0x2000
-#define CLOCKTYPE_E2E_TC                                        0x1000
-#define CLOCKTYPE_MANAGEMENT_NODE                               0x0800
-#define CLOCKTYPE_RESERVED                                      0x07FF
+#define CLOCKTYPE_ORDINARY_CLOCK                                       0x8000
+#define CLOCKTYPE_BOUNDARY_CLOCK                                       0x4000
+#define CLOCKTYPE_P2P_TC                                               0x2000
+#define CLOCKTYPE_E2E_TC                                               0x1000
+#define CLOCKTYPE_MANAGEMENT_NODE                                      0x0800
+#define CLOCKTYPE_RESERVED                                             0x07FF
 
 /* PTPv2 Management IDs */
-#define PTP_V2_MM_ID_NULL_MANAGEMENT                            0x0000
-#define PTP_V2_MM_ID_CLOCK_DESCRIPTION                          0x0001
-#define PTP_V2_MM_ID_USER_DESCRIPTION                           0x0002
-#define PTP_V2_MM_ID_SAVE_IN_NON_VOLATILE_STORAGE               0x0003
-#define PTP_V2_MM_ID_RESET_NON_VOLATILE_STORAGE                 0x0004
-#define PTP_V2_MM_ID_INITIALIZE                                 0x0005
-#define PTP_V2_MM_ID_FAULT_LOG                                  0x0006
-#define PTP_V2_MM_ID_FAULT_LOG_RESET                            0x0007
-#define PTP_V2_MM_ID_DEFAULT_DATA_SET                           0x2000
-#define PTP_V2_MM_ID_CURRENT_DATA_SET                           0x2001
-#define PTP_V2_MM_ID_PARENT_DATA_SET                            0x2002
-#define PTP_V2_MM_ID_TIME_PROPERTIES_DATA_SET                   0x2003
-#define PTP_V2_MM_ID_PORT_DATA_SET                              0x2004
-#define PTP_V2_MM_ID_PRIORITY1                                  0x2005
-#define PTP_V2_MM_ID_PRIORITY2                                  0x2006
-#define PTP_V2_MM_ID_DOMAIN                                     0x2007
-#define PTP_V2_MM_ID_SLAVE_ONLY                                 0x2008
-#define PTP_V2_MM_ID_LOG_ANNOUNCE_INTERVAL                      0x2009
-#define PTP_V2_MM_ID_ANNOUNCE_RECEIPT_TIMEOUT                   0x200A
-#define PTP_V2_MM_ID_LOG_SYNC_INTERVAL                          0x200B
-#define PTP_V2_MM_ID_VERSION_NUMBER                             0x200C
-#define PTP_V2_MM_ID_ENABLE_PORT                                0x200D
-#define PTP_V2_MM_ID_DISABLE_PORT                               0x200E
-#define PTP_V2_MM_ID_TIME                                       0x200F
-#define PTP_V2_MM_ID_CLOCK_ACCURACY                             0x2010
-#define PTP_V2_MM_ID_UTC_PROPERTIES                             0x2011
-#define PTP_V2_MM_ID_TRACEABILITY_PROPERTIES                    0x2012
-#define PTP_V2_MM_ID_TIMESCALE_PROPERTIES                       0x2013
-#define PTP_V2_MM_ID_UNICAST_NEGOTIATION_ENABLE                 0x2014
-#define PTP_V2_MM_ID_PATH_TRACE_LIST                            0x2015
-#define PTP_V2_MM_ID_PATH_TRACE_ENABLE                          0x2016
-#define PTP_V2_MM_ID_GRANDMASTER_CLUSTER_TABLE                  0x2017
-#define PTP_V2_MM_ID_UNICAST_MASTER_TABLE                       0x2018
-#define PTP_V2_MM_ID_UNICAST_MASTER_MAX_TABLE_SIZE              0x2019
-#define PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE                    0x201A
-#define PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE_ENABLED            0x201B
-#define PTP_V2_MM_ID_ACCEPTABLE_MASTER_MAX_TABLE_SIZE           0x201C
-#define PTP_V2_MM_ID_ALTERNATE_MASTER                           0x201D
-#define PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_ENABLE               0x201E
-#define PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_NAME                 0x201F
-#define PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_MAX_KEY              0x2020
-#define PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_PROPERTIES           0x2021
-#define PTP_V2_MM_ID_TC_DEFAULT_DATA_SET                        0x4000
-#define PTP_V2_MM_ID_TC_PORT_DATA_SET                           0x4001
-#define PTP_V2_MM_ID_PRIMARY_DOMAIN                             0x4002
-#define PTP_V2_MM_ID_DELAY_MECHANISM                            0x6000
-#define PTP_V2_MM_ID_LOG_MIN_PDELAY_REQ_INTERVAL                0x6001
+#define PTP_V2_MM_ID_NULL_MANAGEMENT                                   0x0000
+#define PTP_V2_MM_ID_CLOCK_DESCRIPTION                                 0x0001
+#define PTP_V2_MM_ID_USER_DESCRIPTION                                  0x0002
+#define PTP_V2_MM_ID_SAVE_IN_NON_VOLATILE_STORAGE                      0x0003
+#define PTP_V2_MM_ID_RESET_NON_VOLATILE_STORAGE                        0x0004
+#define PTP_V2_MM_ID_INITIALIZE                                        0x0005
+#define PTP_V2_MM_ID_FAULT_LOG                                         0x0006
+#define PTP_V2_MM_ID_FAULT_LOG_RESET                                   0x0007
+#define PTP_V2_MM_ID_DEFAULT_DATA_SET                                  0x2000
+#define PTP_V2_MM_ID_CURRENT_DATA_SET                                  0x2001
+#define PTP_V2_MM_ID_PARENT_DATA_SET                                   0x2002
+#define PTP_V2_MM_ID_TIME_PROPERTIES_DATA_SET                          0x2003
+#define PTP_V2_MM_ID_PORT_DATA_SET                                     0x2004
+#define PTP_V2_MM_ID_PRIORITY1                                         0x2005
+#define PTP_V2_MM_ID_PRIORITY2                                         0x2006
+#define PTP_V2_MM_ID_DOMAIN                                            0x2007
+#define PTP_V2_MM_ID_SLAVE_ONLY                                        0x2008
+#define PTP_V2_MM_ID_LOG_ANNOUNCE_INTERVAL                             0x2009
+#define PTP_V2_MM_ID_ANNOUNCE_RECEIPT_TIMEOUT                          0x200A
+#define PTP_V2_MM_ID_LOG_SYNC_INTERVAL                                 0x200B
+#define PTP_V2_MM_ID_VERSION_NUMBER                                    0x200C
+#define PTP_V2_MM_ID_ENABLE_PORT                                       0x200D
+#define PTP_V2_MM_ID_DISABLE_PORT                                      0x200E
+#define PTP_V2_MM_ID_TIME                                              0x200F
+#define PTP_V2_MM_ID_CLOCK_ACCURACY                                    0x2010
+#define PTP_V2_MM_ID_UTC_PROPERTIES                                    0x2011
+#define PTP_V2_MM_ID_TRACEABILITY_PROPERTIES                           0x2012
+#define PTP_V2_MM_ID_TIMESCALE_PROPERTIES                              0x2013
+#define PTP_V2_MM_ID_UNICAST_NEGOTIATION_ENABLE                        0x2014
+#define PTP_V2_MM_ID_PATH_TRACE_LIST                                   0x2015
+#define PTP_V2_MM_ID_PATH_TRACE_ENABLE                                 0x2016
+#define PTP_V2_MM_ID_GRANDMASTER_CLUSTER_TABLE                         0x2017
+#define PTP_V2_MM_ID_UNICAST_MASTER_TABLE                              0x2018
+#define PTP_V2_MM_ID_UNICAST_MASTER_MAX_TABLE_SIZE                     0x2019
+#define PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE                           0x201A
+#define PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE_ENABLED                   0x201B
+#define PTP_V2_MM_ID_ACCEPTABLE_MASTER_MAX_TABLE_SIZE                  0x201C
+#define PTP_V2_MM_ID_ALTERNATE_MASTER                                  0x201D
+#define PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_ENABLE                      0x201E
+#define PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_NAME                        0x201F
+#define PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_MAX_KEY                     0x2020
+#define PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_PROPERTIES                  0x2021
+#define PTP_V2_MM_ID_EXTERNAL_PORT_CONFIGURATION_ENABLED               0x3000
+#define PTP_V2_MM_ID_MASTER_ONLY                                       0x3001
+#define PTP_V2_MM_ID_HOLDOVER_UPGRADE_ENABLE                           0x3002
+#define PTP_V2_MM_ID_EXT_PORT_CONFIG_PORT_DATA_SET                     0x3003
+#define PTP_V2_MM_ID_TC_DEFAULT_DATA_SET                               0x4000
+#define PTP_V2_MM_ID_TC_PORT_DATA_SET                                  0x4001
+#define PTP_V2_MM_ID_PRIMARY_DOMAIN                                    0x4002
+#define PTP_V2_MM_ID_DELAY_MECHANISM                                   0x6000
+#define PTP_V2_MM_ID_LOG_MIN_PDELAY_REQ_INTERVAL                       0x6001
 
-/* Management DataField for DefaultDS */
-#define PTP_V2_MM_RESERVED1                             PTP_V2_MM_TLV_DATAFIELD_OFFSET + 1
-#define PTP_V2_MM_NUMBERPORTS                           PTP_V2_MM_TLV_DATAFIELD_OFFSET + 2
-#define PTP_V2_MM_PRIORITY1                             PTP_V2_MM_TLV_DATAFIELD_OFFSET + 4
-#define PTP_V2_MM_CLOCKQUALITY                          PTP_V2_MM_TLV_DATAFIELD_OFFSET + 5
-#define PTP_V2_MM_PRIORITY2                             PTP_V2_MM_TLV_DATAFIELD_OFFSET + 9
-#define PTP_V2_MM_CLOCKIDENTITY                         PTP_V2_MM_TLV_DATAFIELD_OFFSET + 10
-#define PTP_V2_MM_DOMAINNUMBER                          PTP_V2_MM_TLV_DATAFIELD_OFFSET + 18
-#define PTP_V2_MM_RESERVED2                             PTP_V2_MM_TLV_DATAFIELD_OFFSET + 19
+/* Bitmasks for PTP_V2_SIG_TLV_L1SYNC_FLAGS1_OFFSET */
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_TCR_BITMASK                 0x1 << 8
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_RCR_BITMASK                 0x2 << 8
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_CR_BITMASK                  0x4 << 8
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_OPE_BITMASK                 0x8 << 8
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_RESERVED_BITMASK           0xF0 << 8
 
-/* Organization IDs for PTPv2 Organization Extension */
-#define PTP_V2_OE_ORG_ID_IEEE_C37_238                   0x1C129D /* Defined in IEEE Std C37.238-2011 */
-#define PTP_v2_OE_ORG_ID_SMPTE                          0x6897E8 /* Society of Motion Picture and Television Engineers */
+/* Bitmasks for PTP_V2_SIG_TLV_L1SYNC_FLAGS2_OFFSET */
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS2_ITC_BITMASK                      0x1
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS2_IRC_BITMASK                      0x2
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS2_IC_BITMASK                       0x4
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS2_RESERVED_BITMASK                0xF8
 
-/* Subtypes for the PTP_V2_OE_ORG_ID_IEEE_C37_238 organization ID */
-#define PTP_V2_OE_ORG_IEEE_C37_238_SUBTYPE_C37238TLV    1        /* Defined in IEEE Std C37.238-2011 */
+/* Bitmasks for PTP_V2_SIG_TLV_L1SYNCEXT_FLAGS3_OFFSET */
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS3_TCT_BITMASK                      0x1
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS3_POV_BITMASK                      0x2
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS3_FOV_BITMASK                      0x4
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS3_RESERVED_BITMASK                0xF8
+
+/* Bitmasks for reserved values for standard and extended versions of L1_SYNC frames */
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS2_RESERVED_ALL_BITMASK \
+        (PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_RESERVED_BITMASK \
+        | PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS2_RESERVED_BITMASK)
+#define PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS3_RESERVED_ALL_BITMASK \
+        (PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS2_RESERVED_ALL_BITMASK << 8 \
+        | PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS3_RESERVED_BITMASK)
+
+/* Subtypes for the OUI_IEEE_802_1 organization ID (802.1AS) */
+#define PTP_V2_OE_ORG_IEEE_802_1_SUBTYPE_FOLLOWUP_INFORMATION_TLV           1
+#define PTP_V2_OE_ORG_IEEE_802_1_SUBTYPE_MSG_INTERVAL_REQ_TLV               2
+#define PTP_V2_OE_ORG_IEEE_802_1_SUBTYPE_CSN_TLV                            3
+#define PTP_V2_OE_ORG_IEEE_802_1_SUBTYPE_FOLLOWUP_DRIFT_TRACKING_TLV        6
+
+/* Subtypes for the OUI_IEEE_C37_238 organization ID */
+#define PTP_V2_OE_ORG_IEEE_C37_238_SUBTYPE_C37238TLV                        1 /* Defined in IEEE Std C37.238-2011 */
+#define PTP_V2_OE_ORG_IEEE_C37_238_SUBTYPE_C372382017TLV                    2 /* Defined in IEEE Std C37.238-2017 */
 
 /* Subtypes for the PTP_V2_OE_ORG_ID_SMPTE organization ID */
-#define PTP_V2_OE_ORG_SMPTE_SUBTYPE_VERSION_TLV         1
+#define PTP_V2_OE_ORG_SMPTE_SUBTYPE_VERSION_TLV                             1
 
-#define PTP_V2_TRANSPORTSPECIFIC_V1COMPATIBILITY_BITMASK              0x10
+/* Subtypes for the OUI_CERN organization ID */
+#define PTP_V2_OE_ORG_CERN_SUBTYPE_WR_TLV                            0xdead01
 
-#define PTP_V2_TRANSPORTSPECIFIC_ASPACKET_BITMASK                     0x10
+/* Subtypes for ITU-T organization ID */
+#define PTP_V2_INTERFACE_RATE_TLV                                    0x000002
+
+/* MESSAGE ID for the PTP_V2_OE_ORG_CERN_SUBTYPE_WR_TLV */
+#define PTP_V2_OE_ORG_CERN_WRMESSAGEID_NULL_WR_TLV                     0x0000
+#define PTP_V2_OE_ORG_CERN_WRMESSAGEID_SLAVE_PRESENT                   0x1000
+#define PTP_V2_OE_ORG_CERN_WRMESSAGEID_LOCK                            0x1001
+#define PTP_V2_OE_ORG_CERN_WRMESSAGEID_LOCKED                          0x1002
+#define PTP_V2_OE_ORG_CERN_WRMESSAGEID_CALIBRATE                       0x1003
+#define PTP_V2_OE_ORG_CERN_WRMESSAGEID_CALIBRATED                      0x1004
+#define PTP_V2_OE_ORG_CERN_WRMESSAGEID_WR_MODE_ON                      0x1005
+#define PTP_V2_OE_ORG_CERN_WRMESSAGEID_ANN_SUFIX                       0x2000
+
+/* Bitmasks for WRTLV_FLAGS */
+#define PTP_V2_TLV_OE_CERN_WRFLAGS_WRCONFIG_BITMASK                       0x3
+#define PTP_V2_TLV_OE_CERN_WRFLAGS_CALIBRATED_BITMASK                     0x4
+#define PTP_V2_TLV_OE_CERN_WRFLAGS_WRMODEON_BITMASK                       0x8
+
+/* Values for PTP_V2_TLV_OE_CERN_WRFLAGS_WRCONFIG_BITMASK */
+#define PTP_V2_TLV_OE_CERN_WRFLAGS_WRCONFIG_NON_WR                          0
+#define PTP_V2_TLV_OE_CERN_WRFLAGS_WRCONFIG_WR_M_ONLY                       1
+#define PTP_V2_TLV_OE_CERN_WRFLAGS_WRCONFIG_WR_S_ONLY                       2
+#define PTP_V2_TLV_OE_CERN_WRFLAGS_WRCONFIG_WR_M_AND_S                      3
+
+#define PTP_V2_MAJORSDOID_ASPACKET_BITMASK                               0x10
 
 
 /**********************************************************/
 /* flag-field-mask-definitions                            */
 /**********************************************************/
-#define PTP_V2_FLAGS_LI61_BITMASK                                   0x0001
-#define PTP_V2_FLAGS_LI59_BITMASK                                   0x0002
-#define PTP_V2_FLAGS_UTC_OFFSET_VALID_BITMASK                       0x0004
-#define PTP_V2_FLAGS_PTP_TIMESCALE_BITMASK                          0x0008
-#define PTP_V2_FLAGS_TIME_TRACEABLE_BITMASK                         0x0010
-#define PTP_V2_FLAGS_FREQUENCY_TRACEABLE_BITMASK                    0x0020
-#define PTP_V2_FLAGS_ALTERNATE_BITMASK                              0x0100
-#define PTP_V2_FLAGS_TWO_STEP_BITMASK                               0x0200
-#define PTP_V2_FLAGS_UNICAST_BITMASK                                0x0400
-#define PTP_V2_FLAGS_SPECIFIC1_BITMASK                              0x2000
-#define PTP_V2_FLAGS_SPECIFIC2_BITMASK                              0x4000
-#define PTP_V2_FLAGS_SECURITY_BITMASK                               0x8000
+#define PTP_V2_FLAGS_LI61_BITMASK                                      0x0001
+#define PTP_V2_FLAGS_LI59_BITMASK                                      0x0002
+#define PTP_V2_FLAGS_UTC_OFFSET_VALID_BITMASK                          0x0004
+#define PTP_V2_FLAGS_PTP_TIMESCALE_BITMASK                             0x0008
+#define PTP_V2_FLAGS_TIME_TRACEABLE_BITMASK                            0x0010
+#define PTP_V2_FLAGS_FREQUENCY_TRACEABLE_BITMASK                       0x0020
+#define PTP_V2_FLAGS_SYNCHRONIZATION_UNCERTAIN_BITMASK                 0x0040
+#define PTP_V2_FLAGS_ALTERNATE_BITMASK                                 0x0100
+#define PTP_V2_FLAGS_TWO_STEP_BITMASK                                  0x0200
+#define PTP_V2_FLAGS_UNICAST_BITMASK                                   0x0400
+#define PTP_V2_FLAGS_SPECIFIC1_BITMASK                                 0x2000
+#define PTP_V2_FLAGS_SPECIFIC2_BITMASK                                 0x4000
+#define PTP_V2_FLAGS_SECURITY_BITMASK                                  0x8000
 
-#define PTP_V2_FLAGS_OE_SMPTE_TIME_ADRESS_FIELD_DROP                0x01
-#define PTP_V2_FLAGS_OE_SMPTE_TIME_ADRESS_FIELD_COLOR               0x02
+#define PTP_V2_FLAGS_OE_SMPTE_TIME_ADDRESS_FIELD_DROP                    0x01
+#define PTP_V2_FLAGS_OE_SMPTE_TIME_ADDRESS_FIELD_COLOR                   0x02
 
-#define PTP_V2_FLAGS_OE_SMPTE_DAYLIGHT_SAVING_CURRENT               0x01
-#define PTP_V2_FLAGS_OE_SMPTE_DAYLIGHT_SAVING_NEXT                  0x02
-#define PTP_V2_FLAGS_OE_SMPTE_DAYLIGHT_SAVING_PREVIOUS              0x04
+#define PTP_V2_FLAGS_OE_SMPTE_DAYLIGHT_SAVING_CURRENT                    0x01
+#define PTP_V2_FLAGS_OE_SMPTE_DAYLIGHT_SAVING_NEXT                       0x02
+#define PTP_V2_FLAGS_OE_SMPTE_DAYLIGHT_SAVING_PREVIOUS                   0x04
 
-#define PTP_V2_FLAGS_OE_SMPTE_LEAP_SECOND_JUMP_CHANGE               0x01
+#define PTP_V2_FLAGS_OE_SMPTE_LEAP_SECOND_JUMP_CHANGE                    0x01
 
 /**********************************************************/
 /* PTP v2 message ids   (ptp messageid field)             */
 /**********************************************************/
-#define PTP_V2_SYNC_MESSAGE                     0x00
-#define PTP_V2_DELAY_REQ_MESSAGE                0x01
-#define PTP_V2_PATH_DELAY_REQ_MESSAGE           0x02
-#define PTP_V2_PATH_DELAY_RESP_MESSAGE          0x03
-#define PTP_V2_FOLLOWUP_MESSAGE                 0x08
-#define PTP_V2_DELAY_RESP_MESSAGE               0x09
-#define PTP_V2_PATH_DELAY_FOLLOWUP_MESSAGE      0x0A
-#define PTP_V2_ANNOUNCE_MESSAGE                 0x0B
-#define PTP_V2_SIGNALLING_MESSAGE               0x0C
-#define PTP_V2_MANAGEMENT_MESSAGE               0x0D
-
+#define PTP_V2_SYNC_MESSAGE                                              0x00
+#define PTP_V2_DELAY_REQ_MESSAGE                                         0x01
+#define PTP_V2_PEER_DELAY_REQ_MESSAGE                                    0x02
+#define PTP_V2_PEER_DELAY_RESP_MESSAGE                                   0x03
+#define PTP_V2_FOLLOWUP_MESSAGE                                          0x08
+#define PTP_V2_DELAY_RESP_MESSAGE                                        0x09
+#define PTP_V2_PEER_DELAY_FOLLOWUP_MESSAGE                               0x0A
+#define PTP_V2_ANNOUNCE_MESSAGE                                          0x0B
+#define PTP_V2_SIGNALING_MESSAGE                                         0x0C
+#define PTP_V2_MANAGEMENT_MESSAGE                                        0x0D
 
 
 static const value_string ptp_v2_managementID_vals[] = {
-    {PTP_V2_MM_ID_NULL_MANAGEMENT                   ,"NULL_MANAGEMENT"},
-    {PTP_V2_MM_ID_CLOCK_DESCRIPTION                 ,"CLOCK_DESCRIPTION"},
-    {PTP_V2_MM_ID_USER_DESCRIPTION                  ,"USER_DESCRIPTION"},
-    {PTP_V2_MM_ID_SAVE_IN_NON_VOLATILE_STORAGE      ,"SAVE_IN_NON_VOLATILE_STORAGE"},
-    {PTP_V2_MM_ID_RESET_NON_VOLATILE_STORAGE        ,"RESET_NON_VOLATILE_STORAGE"},
-    {PTP_V2_MM_ID_INITIALIZE                        ,"INITIALIZE"},
-    {PTP_V2_MM_ID_FAULT_LOG                         ,"FAULT_LOG"},
-    {PTP_V2_MM_ID_FAULT_LOG_RESET                   ,"FAULT_LOG_RESET"},
-    {PTP_V2_MM_ID_DEFAULT_DATA_SET                  ,"DEFAULT_DATA_SET"},
-    {PTP_V2_MM_ID_CURRENT_DATA_SET                  ,"CURRENT_DATA_SET"},
-    {PTP_V2_MM_ID_PARENT_DATA_SET                   ,"PARENT_DATA_SET"},
-    {PTP_V2_MM_ID_TIME_PROPERTIES_DATA_SET          ,"TIME_PROPERTIES_DATA_SET"},
-    {PTP_V2_MM_ID_PORT_DATA_SET                     ,"PORT_DATA_SET"},
-    {PTP_V2_MM_ID_PRIORITY1                         ,"PRIORITY1"},
-    {PTP_V2_MM_ID_PRIORITY2                         ,"PRIORITY2"},
-    {PTP_V2_MM_ID_DOMAIN                            ,"DOMAIN"},
-    {PTP_V2_MM_ID_SLAVE_ONLY                        ,"SLAVE_ONLY"},
-    {PTP_V2_MM_ID_LOG_ANNOUNCE_INTERVAL             ,"LOG_ANNOUNCE_INTERVAL"},
-    {PTP_V2_MM_ID_ANNOUNCE_RECEIPT_TIMEOUT          ,"ANNOUNCE_RECEIPT_TIMEOUT"},
-    {PTP_V2_MM_ID_LOG_SYNC_INTERVAL                 ,"LOG_SYNC_INTERVAL"},
-    {PTP_V2_MM_ID_VERSION_NUMBER                    ,"VERSION_NUMBER"},
-    {PTP_V2_MM_ID_ENABLE_PORT                       ,"ENABLE_PORT"},
-    {PTP_V2_MM_ID_DISABLE_PORT                      ,"DISABLE_PORT"},
-    {PTP_V2_MM_ID_TIME                              ,"TIME"},
-    {PTP_V2_MM_ID_CLOCK_ACCURACY                    ,"CLOCK_ACCURACY"},
-    {PTP_V2_MM_ID_UTC_PROPERTIES                    ,"UTC_PROPERTIES"},
-    {PTP_V2_MM_ID_TRACEABILITY_PROPERTIES           ,"TRACEABILITY_PROPERTIES"},
-    {PTP_V2_MM_ID_TIMESCALE_PROPERTIES              ,"TIMESCALE_PROPERTIES"},
-    {PTP_V2_MM_ID_UNICAST_NEGOTIATION_ENABLE        ,"UNICAST_NEGOTIATION_ENABLE"},
-    {PTP_V2_MM_ID_PATH_TRACE_LIST                   ,"PATH_TRACE_LIST"},
-    {PTP_V2_MM_ID_PATH_TRACE_ENABLE                 ,"PATH_TRACE_ENABLE"},
-    {PTP_V2_MM_ID_GRANDMASTER_CLUSTER_TABLE         ,"GRANDMASTER_CLUSTER_TABLE"},
-    {PTP_V2_MM_ID_UNICAST_MASTER_TABLE              ,"UNICAST_MASTER_TABLE"},
-    {PTP_V2_MM_ID_UNICAST_MASTER_MAX_TABLE_SIZE     ,"UNICAST_MASTER_MAX_TABLE_SIZE"},
-    {PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE           ,"ACCEPTABLE_MASTER_TABLE"},
-    {PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE_ENABLED   ,"ACCEPTABLE_MASTER_TABLE_ENABLED"},
-    {PTP_V2_MM_ID_ACCEPTABLE_MASTER_MAX_TABLE_SIZE  ,"ACCEPTABLE_MASTER_MAX_TABLE_SIZE"},
-    {PTP_V2_MM_ID_ALTERNATE_MASTER                  ,"ALTERNATE_MASTER"},
-    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_ENABLE      ,"ALTERNATE_TIME_OFFSET_ENABLE"},
-    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_NAME        ,"ALTERNATE_TIME_OFFSET_NAME"},
-    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_MAX_KEY     ,"ALTERNATE_TIME_OFFSET_MAX_KEY"},
-    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_PROPERTIES  ,"ALTERNATE_TIME_OFFSET_PROPERTIES"},
-    {PTP_V2_MM_ID_TC_DEFAULT_DATA_SET               ,"TC_DEFAULT_DATA_SET"},
-    {PTP_V2_MM_ID_TC_PORT_DATA_SET                  ,"TC_PORT_DATA_SET"},
-    {PTP_V2_MM_ID_PRIMARY_DOMAIN                    ,"PRIMARY_DOMAIN"},
-    {PTP_V2_MM_ID_DELAY_MECHANISM                   ,"DELAY_MECHANISM"},
-    {PTP_V2_MM_ID_LOG_MIN_PDELAY_REQ_INTERVAL       ,"LOG_MIN_PDELAY_REQ_INTERVAL"},
-    {0                                              ,NULL}
+    {PTP_V2_MM_ID_NULL_MANAGEMENT,                              "NULL_MANAGEMENT"},
+    {PTP_V2_MM_ID_CLOCK_DESCRIPTION,                            "CLOCK_DESCRIPTION"},
+    {PTP_V2_MM_ID_USER_DESCRIPTION,                             "USER_DESCRIPTION"},
+    {PTP_V2_MM_ID_SAVE_IN_NON_VOLATILE_STORAGE,                 "SAVE_IN_NON_VOLATILE_STORAGE"},
+    {PTP_V2_MM_ID_RESET_NON_VOLATILE_STORAGE,                   "RESET_NON_VOLATILE_STORAGE"},
+    {PTP_V2_MM_ID_INITIALIZE,                                   "INITIALIZE"},
+    {PTP_V2_MM_ID_FAULT_LOG,                                    "FAULT_LOG"},
+    {PTP_V2_MM_ID_FAULT_LOG_RESET,                              "FAULT_LOG_RESET"},
+    {PTP_V2_MM_ID_DEFAULT_DATA_SET,                             "DEFAULT_DATA_SET"},
+    {PTP_V2_MM_ID_CURRENT_DATA_SET,                             "CURRENT_DATA_SET"},
+    {PTP_V2_MM_ID_PARENT_DATA_SET,                              "PARENT_DATA_SET"},
+    {PTP_V2_MM_ID_TIME_PROPERTIES_DATA_SET,                     "TIME_PROPERTIES_DATA_SET"},
+    {PTP_V2_MM_ID_PORT_DATA_SET,                                "PORT_DATA_SET"},
+    {PTP_V2_MM_ID_PRIORITY1,                                    "PRIORITY1"},
+    {PTP_V2_MM_ID_PRIORITY2,                                    "PRIORITY2"},
+    {PTP_V2_MM_ID_DOMAIN,                                       "DOMAIN"},
+    {PTP_V2_MM_ID_SLAVE_ONLY,                                   "SLAVE_ONLY"},
+    {PTP_V2_MM_ID_LOG_ANNOUNCE_INTERVAL,                        "LOG_ANNOUNCE_INTERVAL"},
+    {PTP_V2_MM_ID_ANNOUNCE_RECEIPT_TIMEOUT,                     "ANNOUNCE_RECEIPT_TIMEOUT"},
+    {PTP_V2_MM_ID_LOG_SYNC_INTERVAL,                            "LOG_SYNC_INTERVAL"},
+    {PTP_V2_MM_ID_VERSION_NUMBER,                               "VERSION_NUMBER"},
+    {PTP_V2_MM_ID_ENABLE_PORT,                                  "ENABLE_PORT"},
+    {PTP_V2_MM_ID_DISABLE_PORT,                                 "DISABLE_PORT"},
+    {PTP_V2_MM_ID_TIME,                                         "TIME"},
+    {PTP_V2_MM_ID_CLOCK_ACCURACY,                               "CLOCK_ACCURACY"},
+    {PTP_V2_MM_ID_UTC_PROPERTIES,                               "UTC_PROPERTIES"},
+    {PTP_V2_MM_ID_TRACEABILITY_PROPERTIES,                      "TRACEABILITY_PROPERTIES"},
+    {PTP_V2_MM_ID_TIMESCALE_PROPERTIES,                         "TIMESCALE_PROPERTIES"},
+    {PTP_V2_MM_ID_UNICAST_NEGOTIATION_ENABLE,                   "UNICAST_NEGOTIATION_ENABLE"},
+    {PTP_V2_MM_ID_PATH_TRACE_LIST,                              "PATH_TRACE_LIST"},
+    {PTP_V2_MM_ID_PATH_TRACE_ENABLE,                            "PATH_TRACE_ENABLE"},
+    {PTP_V2_MM_ID_GRANDMASTER_CLUSTER_TABLE,                    "GRANDMASTER_CLUSTER_TABLE"},
+    {PTP_V2_MM_ID_UNICAST_MASTER_TABLE,                         "UNICAST_MASTER_TABLE"},
+    {PTP_V2_MM_ID_UNICAST_MASTER_MAX_TABLE_SIZE,                "UNICAST_MASTER_MAX_TABLE_SIZE"},
+    {PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE,                      "ACCEPTABLE_MASTER_TABLE"},
+    {PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE_ENABLED,              "ACCEPTABLE_MASTER_TABLE_ENABLED"},
+    {PTP_V2_MM_ID_ACCEPTABLE_MASTER_MAX_TABLE_SIZE,             "ACCEPTABLE_MASTER_MAX_TABLE_SIZE"},
+    {PTP_V2_MM_ID_ALTERNATE_MASTER,                             "ALTERNATE_MASTER"},
+    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_ENABLE,                 "ALTERNATE_TIME_OFFSET_ENABLE"},
+    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_NAME,                   "ALTERNATE_TIME_OFFSET_NAME"},
+    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_MAX_KEY,                "ALTERNATE_TIME_OFFSET_MAX_KEY"},
+    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_PROPERTIES,             "ALTERNATE_TIME_OFFSET_PROPERTIES"},
+    {PTP_V2_MM_ID_EXTERNAL_PORT_CONFIGURATION_ENABLED,          "EXTERNAL_PORT_CONFIGURATION_ENABLED"},
+    {PTP_V2_MM_ID_MASTER_ONLY,                                  "MASTER_ONLY"},
+    {PTP_V2_MM_ID_HOLDOVER_UPGRADE_ENABLE,                      "HOLDOVER_UPGRADE_ENABLE"},
+    {PTP_V2_MM_ID_EXT_PORT_CONFIG_PORT_DATA_SET,                "EXT_PORT_CONFIG_PORT_DATA_SET"},
+    {PTP_V2_MM_ID_TC_DEFAULT_DATA_SET,                          "TC_DEFAULT_DATA_SET"},
+    {PTP_V2_MM_ID_TC_PORT_DATA_SET,                             "TC_PORT_DATA_SET"},
+    {PTP_V2_MM_ID_PRIMARY_DOMAIN,                               "PRIMARY_DOMAIN"},
+    {PTP_V2_MM_ID_DELAY_MECHANISM,                              "DELAY_MECHANISM"},
+    {PTP_V2_MM_ID_LOG_MIN_PDELAY_REQ_INTERVAL,                  "LOG_MIN_PDELAY_REQ_INTERVAL"},
+    {0,                                                         NULL}
 };
-static value_string_ext ptp_v2_managementID_vals_ext =
-    VALUE_STRING_EXT_INIT(ptp_v2_managementID_vals);
+static value_string_ext ptp_v2_managementID_vals_ext = VALUE_STRING_EXT_INIT(ptp_v2_managementID_vals);
 
 /* same again but better readable text for info column */
 static const value_string ptp_v2_managementID_infocolumn_vals[] = {
-    {PTP_V2_MM_ID_NULL_MANAGEMENT                   ,"Null management"},
-    {PTP_V2_MM_ID_CLOCK_DESCRIPTION                 ,"Clock description"},
-    {PTP_V2_MM_ID_USER_DESCRIPTION                  ,"User description"},
-    {PTP_V2_MM_ID_SAVE_IN_NON_VOLATILE_STORAGE      ,"Save in non volatile storage"},
-    {PTP_V2_MM_ID_RESET_NON_VOLATILE_STORAGE        ,"Reset non volatile storage"},
-    {PTP_V2_MM_ID_INITIALIZE                        ,"Initialize"},
-    {PTP_V2_MM_ID_FAULT_LOG                         ,"Fault log"},
-    {PTP_V2_MM_ID_FAULT_LOG_RESET                   ,"Fault log reset"},
-    {PTP_V2_MM_ID_DEFAULT_DATA_SET                  ,"Default dataset"},
-    {PTP_V2_MM_ID_CURRENT_DATA_SET                  ,"Current dataset"},
-    {PTP_V2_MM_ID_PARENT_DATA_SET                   ,"Parent dataset"},
-    {PTP_V2_MM_ID_TIME_PROPERTIES_DATA_SET          ,"Time properties dataset"},
-    {PTP_V2_MM_ID_PORT_DATA_SET                     ,"Port dataset"},
-    {PTP_V2_MM_ID_PRIORITY1                         ,"Priority 1"},
-    {PTP_V2_MM_ID_PRIORITY2                         ,"Priority 2"},
-    {PTP_V2_MM_ID_DOMAIN                            ,"Domain"},
-    {PTP_V2_MM_ID_SLAVE_ONLY                        ,"Slave only"},
-    {PTP_V2_MM_ID_LOG_ANNOUNCE_INTERVAL             ,"Log announce interval"},
-    {PTP_V2_MM_ID_ANNOUNCE_RECEIPT_TIMEOUT          ,"Announce receipt timeout"},
-    {PTP_V2_MM_ID_LOG_SYNC_INTERVAL                 ,"Log sync interval"},
-    {PTP_V2_MM_ID_VERSION_NUMBER                    ,"Version number"},
-    {PTP_V2_MM_ID_ENABLE_PORT                       ,"Enable port"},
-    {PTP_V2_MM_ID_DISABLE_PORT                      ,"Disable port"},
-    {PTP_V2_MM_ID_TIME                              ,"Time"},
-    {PTP_V2_MM_ID_CLOCK_ACCURACY                    ,"Clock accuracy"},
-    {PTP_V2_MM_ID_UTC_PROPERTIES                    ,"UTC properties"},
-    {PTP_V2_MM_ID_TRACEABILITY_PROPERTIES           ,"Traceability properties"},
-    {PTP_V2_MM_ID_TIMESCALE_PROPERTIES              ,"Timescale properties"},
-    {PTP_V2_MM_ID_UNICAST_NEGOTIATION_ENABLE        ,"Unicast negotiation enable"},
-    {PTP_V2_MM_ID_PATH_TRACE_LIST                   ,"Path trace list"},
-    {PTP_V2_MM_ID_PATH_TRACE_ENABLE                 ,"Path trace enable"},
-    {PTP_V2_MM_ID_GRANDMASTER_CLUSTER_TABLE         ,"Grandmaster cluster table"},
-    {PTP_V2_MM_ID_UNICAST_MASTER_TABLE              ,"Unicast master table"},
-    {PTP_V2_MM_ID_UNICAST_MASTER_MAX_TABLE_SIZE     ,"Unicast master max table size"},
-    {PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE           ,"Acceptable master table"},
-    {PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE_ENABLED   ,"Acceptable master table enabled"},
-    {PTP_V2_MM_ID_ACCEPTABLE_MASTER_MAX_TABLE_SIZE  ,"Acceptable master max table size"},
-    {PTP_V2_MM_ID_ALTERNATE_MASTER                  ,"Alternate master"},
-    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_ENABLE      ,"Alternate time offset enable"},
-    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_NAME        ,"Alternate time offset name"},
-    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_MAX_KEY     ,"Alternate time offset max key"},
-    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_PROPERTIES  ,"Alternate time offset properties"},
-    {PTP_V2_MM_ID_TC_DEFAULT_DATA_SET               ,"Transparent clock default dataset"},
-    {PTP_V2_MM_ID_TC_PORT_DATA_SET                  ,"Transparent clock port dataset"},
-    {PTP_V2_MM_ID_PRIMARY_DOMAIN                    ,"Primary domain"},
-    {PTP_V2_MM_ID_DELAY_MECHANISM                   ,"Delay mechanism"},
-    {PTP_V2_MM_ID_LOG_MIN_PDELAY_REQ_INTERVAL       ,"Log min pdelay req. interval"},
-    {0                                              , NULL}
+    {PTP_V2_MM_ID_NULL_MANAGEMENT,                              "Null management"},
+    {PTP_V2_MM_ID_CLOCK_DESCRIPTION,                            "Clock description"},
+    {PTP_V2_MM_ID_USER_DESCRIPTION,                             "User description"},
+    {PTP_V2_MM_ID_SAVE_IN_NON_VOLATILE_STORAGE,                 "Save in non volatile storage"},
+    {PTP_V2_MM_ID_RESET_NON_VOLATILE_STORAGE,                   "Reset non volatile storage"},
+    {PTP_V2_MM_ID_INITIALIZE,                                   "Initialize"},
+    {PTP_V2_MM_ID_FAULT_LOG,                                    "Fault log"},
+    {PTP_V2_MM_ID_FAULT_LOG_RESET,                              "Fault log reset"},
+    {PTP_V2_MM_ID_DEFAULT_DATA_SET,                             "Default dataset"},
+    {PTP_V2_MM_ID_CURRENT_DATA_SET,                             "Current dataset"},
+    {PTP_V2_MM_ID_PARENT_DATA_SET,                              "Parent dataset"},
+    {PTP_V2_MM_ID_TIME_PROPERTIES_DATA_SET,                     "Time properties dataset"},
+    {PTP_V2_MM_ID_PORT_DATA_SET,                                "Port dataset"},
+    {PTP_V2_MM_ID_PRIORITY1,                                    "Priority 1"},
+    {PTP_V2_MM_ID_PRIORITY2,                                    "Priority 2"},
+    {PTP_V2_MM_ID_DOMAIN,                                       "Domain"},
+    {PTP_V2_MM_ID_SLAVE_ONLY,                                   "Slave only"},
+    {PTP_V2_MM_ID_LOG_ANNOUNCE_INTERVAL,                        "Log announce interval"},
+    {PTP_V2_MM_ID_ANNOUNCE_RECEIPT_TIMEOUT,                     "Announce receipt timeout"},
+    {PTP_V2_MM_ID_LOG_SYNC_INTERVAL,                            "Log sync interval"},
+    {PTP_V2_MM_ID_VERSION_NUMBER,                               "Version number"},
+    {PTP_V2_MM_ID_ENABLE_PORT,                                  "Enable port"},
+    {PTP_V2_MM_ID_DISABLE_PORT,                                 "Disable port"},
+    {PTP_V2_MM_ID_TIME,                                         "Time"},
+    {PTP_V2_MM_ID_CLOCK_ACCURACY,                               "Clock accuracy"},
+    {PTP_V2_MM_ID_UTC_PROPERTIES,                               "UTC properties"},
+    {PTP_V2_MM_ID_TRACEABILITY_PROPERTIES,                      "Traceability properties"},
+    {PTP_V2_MM_ID_TIMESCALE_PROPERTIES,                         "Timescale properties"},
+    {PTP_V2_MM_ID_UNICAST_NEGOTIATION_ENABLE,                   "Unicast negotiation enable"},
+    {PTP_V2_MM_ID_PATH_TRACE_LIST,                              "Path trace list"},
+    {PTP_V2_MM_ID_PATH_TRACE_ENABLE,                            "Path trace enable"},
+    {PTP_V2_MM_ID_GRANDMASTER_CLUSTER_TABLE,                    "Grandmaster cluster table"},
+    {PTP_V2_MM_ID_UNICAST_MASTER_TABLE,                         "Unicast master table"},
+    {PTP_V2_MM_ID_UNICAST_MASTER_MAX_TABLE_SIZE,                "Unicast master max table size"},
+    {PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE,                      "Acceptable master table"},
+    {PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE_ENABLED,              "Acceptable master table enabled"},
+    {PTP_V2_MM_ID_ACCEPTABLE_MASTER_MAX_TABLE_SIZE,             "Acceptable master max table size"},
+    {PTP_V2_MM_ID_ALTERNATE_MASTER,                             "Alternate master"},
+    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_ENABLE,                 "Alternate time offset enable"},
+    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_NAME,                   "Alternate time offset name"},
+    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_MAX_KEY,                "Alternate time offset max key"},
+    {PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_PROPERTIES,             "Alternate time offset properties"},
+    {PTP_V2_MM_ID_EXTERNAL_PORT_CONFIGURATION_ENABLED,          "External port configuration enabled"},
+    {PTP_V2_MM_ID_MASTER_ONLY,                                  "Master only"},
+    {PTP_V2_MM_ID_HOLDOVER_UPGRADE_ENABLE,                      "Holdover upgrade enable"},
+    {PTP_V2_MM_ID_EXT_PORT_CONFIG_PORT_DATA_SET,                "External port config port data set"},
+    {PTP_V2_MM_ID_TC_DEFAULT_DATA_SET,                          "Transparent clock default dataset"},
+    {PTP_V2_MM_ID_TC_PORT_DATA_SET,                             "Transparent clock port dataset"},
+    {PTP_V2_MM_ID_PRIMARY_DOMAIN,                               "Primary domain"},
+    {PTP_V2_MM_ID_DELAY_MECHANISM,                              "Delay mechanism"},
+    {PTP_V2_MM_ID_LOG_MIN_PDELAY_REQ_INTERVAL,                  "Log min pdelay req. interval"},
+    {0,                                                          NULL}
 };
-static value_string_ext ptp_v2_managementID_infocolumn_vals_ext =
-    VALUE_STRING_EXT_INIT(ptp_v2_managementID_infocolumn_vals);
+static value_string_ext ptp_v2_managementID_infocolumn_vals_ext = VALUE_STRING_EXT_INIT(ptp_v2_managementID_infocolumn_vals);
 
 static const value_string ptp_v2_TLV_type_vals[] = {
-    {PTP_V2_TLV_TYPE_RESERVED                       ,"Reserved"},
-    {PTP_V2_TLV_TYPE_MANAGEMENT                     ,"Management"},
-    {PTP_V2_TLV_TYPE_MANAGEMENT_ERROR_STATUS        ,"Management error status"},
-    {PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION         ,"Organization extension"},
-    {PTP_V2_TLV_TYPE_REQUEST_UNICAST_TRANSMISSION   ,"Request unicast transmission"},
-    {PTP_V2_TLV_TYPE_GRANT_UNICAST_TRANSMISSION     ,"Grant unicast transmission"},
-    {PTP_V2_TLV_TYPE_CANCEL_UNICAST_TRANSMISSION    ,"Cancel unicast transmission"},
-    {PTP_V2_TLV_TYPE_ACKNOWLEDGE_CANCEL_UNICAST_TRANSMISSION    ,"Acknowledge cancel unicast transmission"},
-    {PTP_V2_TLV_TYPE_PATH_TRACE                     ,"Path trace"},
-    {PTP_V2_TLV_TYPE_ALTERNATE_TIME_OFFSET_INDICATOR,"Alternate time offset indicator"},
-    {PTP_V2_TLV_TYPE_AUTHENTICATION                 ,"Authentication"},
-    {PTP_V2_TLV_TYPE_AUTHENTICATION_CHALLENGE       ,"Authentication challenge"},
-    {PTP_V2_TLV_TYPE_SECURITY_ASSOCIATION_UPDATE    ,"Security association update"},
-    {PTP_V2_TLV_TYPE_CUM_FREQ_SCALE_FACTOR_OFFSET   ,"Cum. freq. scale factor offset"},
-    {0                                              , NULL}
+    {PTP_V2_TLV_TYPE_RESERVED,                                  "Reserved"},
+    {PTP_V2_TLV_TYPE_MANAGEMENT,                                "Management"},
+    {PTP_V2_TLV_TYPE_MANAGEMENT_ERROR_STATUS,                   "Management error status"},
+    {PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION,                    "Organization extension"},
+    {PTP_V2_TLV_TYPE_REQUEST_UNICAST_TRANSMISSION,              "Request unicast transmission"},
+    {PTP_V2_TLV_TYPE_GRANT_UNICAST_TRANSMISSION,                "Grant unicast transmission"},
+    {PTP_V2_TLV_TYPE_CANCEL_UNICAST_TRANSMISSION,               "Cancel unicast transmission"},
+    {PTP_V2_TLV_TYPE_ACKNOWLEDGE_CANCEL_UNICAST_TRANSMISSION,   "Acknowledge cancel unicast transmission"},
+    {PTP_V2_TLV_TYPE_PATH_TRACE,                                "Path trace"},
+    {PTP_V2_TLV_TYPE_ALTERNATE_TIME_OFFSET_INDICATOR,           "Alternate time offset indicator"},
+    {PTP_V2_TLV_TYPE_AUTHENTICATION,                            "Authentication"},
+    {PTP_V2_TLV_TYPE_AUTHENTICATION_CHALLENGE,                  "Authentication challenge"},
+    {PTP_V2_TLV_TYPE_SECURITY_ASSOCIATION_UPDATE,               "Security association update"},
+    {PTP_V2_TLV_TYPE_CUM_FREQ_SCALE_FACTOR_OFFSET,              "Cum. freq. scale factor offset"},
+    {PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION_PROPAGATE,          "Organization extension propagate"},
+    {PTP_V2_TLV_TYPE_ENHANCED_ACCURACY_METRICS,                 "Enhanced accuracy metrics"},
+    {PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION_DO_NOT_PROPAGATE,   "Organization extension do not propagate"},
+    {PTP_V2_TLV_TYPE_L1_SYNC,                                   "L1 sync"},
+    {PTP_V2_TLV_TYPE_PORT_COMMUNICATION_AVAILABILITY,           "Port communication availability"},
+    {PTP_V2_TLV_TYPE_PROTOCOL_ADDRESS,                          "Protocol address"},
+    {PTP_V2_TLV_TYPE_SLAVE_RX_SYNC_TIMING_DATA,                 "Slave rx sync timing data"},
+    {PTP_V2_TLV_TYPE_SLAVE_RX_SYNC_COMPUTED_DATA,               "Slave rx sync computed data"},
+    {PTP_V2_TLV_TYPE_SLAVE_TX_EVENT_TIMESTAMPS,                 "Slave tx event timestamps"},
+    {PTP_V2_TLV_TYPE_CUMULATIVE_RATE_RATIO,                     "Cumulative rate ratio"},
+    {PTP_V2_TLV_TYPE_PAD,                                       "Pad"},
+    {PTP_V2_TLV_TYPE_AUTHENTICATION2,                           "Authentication"},
+    {0,                                                         NULL}
 };
-static value_string_ext ptp_v2_TLV_type_vals_ext =
-    VALUE_STRING_EXT_INIT(ptp_v2_TLV_type_vals);
+static value_string_ext ptp_v2_TLV_type_vals_ext = VALUE_STRING_EXT_INIT(ptp_v2_TLV_type_vals);
 
-static const value_string ptp_as_TLV_oid_vals[] = {
-    {PTP_AS_TLV_OID_TYPE_802                        ,"IEEE 802"},
-    {0                                              , NULL}
-};
 
 static const value_string ptp_v2_networkProtocol_vals[] = {
     {0x0000,  "Reserved"},
@@ -1145,30 +1142,36 @@ static const value_string ptp_v2_networkProtocol_vals[] = {
     {0x0007,  "Reserved"},
     {0xFFFE,  "Unknown Protocol"},
     {0xFFFF,  "Reserved"},
-    {0,              NULL          }
+    {0,       NULL}
 };
-/* Exposed in packet-ptp.h */
-value_string_ext ptp_v2_networkProtocol_vals_ext =
-    VALUE_STRING_EXT_INIT(ptp_v2_networkProtocol_vals);
+static value_string_ext ptp_v2_networkProtocol_vals_ext = VALUE_STRING_EXT_INIT(ptp_v2_networkProtocol_vals);
 
 
-static const value_string ptp_v2_messageid_vals[] = {
-    {PTP_V2_SYNC_MESSAGE,               "Sync Message"},
-    {PTP_V2_DELAY_REQ_MESSAGE,          "Delay_Req Message"},
-    {PTP_V2_PATH_DELAY_REQ_MESSAGE,     "Path_Delay_Req Message"},
-    {PTP_V2_PATH_DELAY_RESP_MESSAGE,    "Path_Delay_Resp Message"},
-    {PTP_V2_FOLLOWUP_MESSAGE,           "Follow_Up Message"},
-    {PTP_V2_DELAY_RESP_MESSAGE,         "Delay_Resp Message"},
-    {PTP_V2_PATH_DELAY_FOLLOWUP_MESSAGE,"Path_Delay_Resp_Follow_Up Message"},
-    {PTP_V2_ANNOUNCE_MESSAGE,           "Announce Message"},
-    {PTP_V2_SIGNALLING_MESSAGE,         "Signalling Message"},
-    {PTP_V2_MANAGEMENT_MESSAGE,         "Management Message"},
-    {0,                                  NULL }
+static const value_string ptp_v2_messagetype_vals[] = {
+    {PTP_V2_SYNC_MESSAGE,                   "Sync Message"},
+    {PTP_V2_DELAY_REQ_MESSAGE,              "Delay_Req Message"},
+    {PTP_V2_PEER_DELAY_REQ_MESSAGE,         "Peer_Delay_Req Message"},
+    {PTP_V2_PEER_DELAY_RESP_MESSAGE,        "Peer_Delay_Resp Message"},
+    {PTP_V2_FOLLOWUP_MESSAGE,               "Follow_Up Message"},
+    {PTP_V2_DELAY_RESP_MESSAGE,             "Delay_Resp Message"},
+    {PTP_V2_PEER_DELAY_FOLLOWUP_MESSAGE,    "Peer_Delay_Resp_Follow_Up Message"},
+    {PTP_V2_ANNOUNCE_MESSAGE,               "Announce Message"},
+    {PTP_V2_SIGNALING_MESSAGE,              "Signaling Message"},
+    {PTP_V2_MANAGEMENT_MESSAGE,             "Management Message"},
+    {0,                                     NULL }
 };
-static value_string_ext ptp_v2_messageid_vals_ext =
-    VALUE_STRING_EXT_INIT(ptp_v2_messageid_vals);
+static value_string_ext ptp_v2_messagetype_vals_ext = VALUE_STRING_EXT_INIT(ptp_v2_messagetype_vals);
 
 static const value_string ptp_v2_clockAccuracy_vals[] = {
+    {0x17,  "The time is accurate to within 1 ps"},
+    {0x18,  "The time is accurate to within 2,5 ps"},
+    {0x19,  "The time is accurate to within 10 ps"},
+    {0x1A,  "The time is accurate to within 25 ps"},
+    {0x1B,  "The time is accurate to within 100 ps"},
+    {0x1C,  "The time is accurate to within 250 ps"},
+    {0x1D,  "The time is accurate to within 1 ns"},
+    {0x1E,  "The time is accurate to within 2,5 ns"},
+    {0x1F,  "The time is accurate to within 10 ns"},
     {0x20,  "The time is accurate to within 25 ns"},
     {0x21,  "The time is accurate to within 100 ns"},
     {0x22,  "The time is accurate to within 250 ns"},
@@ -1191,7 +1194,7 @@ static const value_string ptp_v2_clockAccuracy_vals[] = {
     {0x80,  "For use by alternate PTP profiles"},
     {0xFE,  "Accuracy Unknown"},
     {0xFF,  "reserved"},
-    {0,              NULL          }
+    {0,     NULL}
 };
 /* Exposed in packet-ptp.h */
 value_string_ext ptp_v2_clockAccuracy_vals_ext =
@@ -1201,13 +1204,14 @@ static const value_string ptp_v2_timeSource_vals[] = {
     {0x10,  "ATOMIC_CLOCK"},
     {0x20,  "GPS"},
     {0x30,  "TERRESTRIAL_RADIO"},
+    {0x39,  "SERIAL_TIME_CODE"},
     {0x40,  "PTP"},
     {0x50,  "NTP"},
     {0x60,  "HAND_SET"},
     {0x90,  "OTHER"},
     {0xA0,  "INTERNAL_OSCILLATOR"},
     {0xFF,  "reserved"},
-    {0,              NULL          }
+    {0,     NULL}
 };
 /* Exposed in packet-ptp.h */
 value_string_ext ptp_v2_timeSource_vals_ext =
@@ -1219,7 +1223,7 @@ static const value_string ptp_v2_mm_action_vals[] = {
     {0x2,  "RESPONSE"},
     {0x3,  "COMMAND"},
     {0x4,  "ACKNOWLEDGE"},
-    {0,              NULL          }
+    {0,    NULL}
 };
 
 static const value_string ptp_v2_severityCode_vals[] = {
@@ -1258,7 +1262,9 @@ value_string_ext ptp_v2_portState_vals_ext =
 const value_string ptp_v2_delayMechanism_vals[] = {
     {0x01,  "E2E"},
     {0x02,  "P2P"},
-    {0xFE,  "DISABLED"},
+    {0x03,  "COMMON_P2P"},
+    {0x04,  "SPECIAL"},
+    {0xFE,  "NO_MECHANISM"},
     {0,     NULL}
 };
 
@@ -1273,25 +1279,63 @@ static const value_string ptp_v2_managementErrorId_vals[] = {
     {0x0007,  "Reserved"},
     {0xFFFE,  "GENERAL_ERROR"},
     {0xFFFF,  "Reserved"},
-    {0,     NULL}
+    {0,       NULL}
 };
 static value_string_ext ptp_v2_managementErrorId_vals_ext =
     VALUE_STRING_EXT_INIT(ptp_v2_managementErrorId_vals);
 
-static const value_string ptp_v2_organizationExtensionOrgId_vals[] = {
-    {PTP_V2_OE_ORG_ID_IEEE_C37_238,  "IEEE C37.238"},
-    {PTP_v2_OE_ORG_ID_SMPTE,         "Society of Motion Picture and Television Engineers"},
-    {0,                              NULL}
+static const value_string ptp_v2_org_802_1_subtype_vals[] = {
+    {PTP_V2_OE_ORG_IEEE_802_1_SUBTYPE_FOLLOWUP_INFORMATION_TLV,     "Follow_Up information TLV"},
+    {PTP_V2_OE_ORG_IEEE_802_1_SUBTYPE_MSG_INTERVAL_REQ_TLV,         "Message interval request TLV"},
+    {PTP_V2_OE_ORG_IEEE_802_1_SUBTYPE_CSN_TLV,                      "CSN TLV"},
+    {PTP_V2_OE_ORG_IEEE_802_1_SUBTYPE_FOLLOWUP_DRIFT_TRACKING_TLV,  "Follow_Up drift tracking TLV"},
+    {0,                                                             NULL}
 };
 
-static const value_string ptp_v2_org_iee_c37_238_subtype_vals[] = {
-    {PTP_V2_OE_ORG_IEEE_C37_238_SUBTYPE_C37238TLV,  "IEEE_C37_238 TLV"},
-    {0,                                             NULL}
+static const value_string ptp_v2_org_802_1_no_propagate_subtype_vals[] = {
+    {PTP_AS_SIG_TLV_TYPE_GPTPCAPABLE_ORG_SUB_TYPE,                  "gPTP-capable TLV"},
+    {PTP_AS_SIG_TLV_TYPE_GPTPCAPABLE_MESSSAGEINTERVAL_ORG_SUB_TYPE, "gPTP-capable message interval request TLV"},
+    {0,                                                             NULL}
+};
+
+static const value_string ptp_v2_org_ieee_c37_238_2017_subtype_vals[] = {
+    {PTP_V2_OE_ORG_IEEE_C37_238_SUBTYPE_C372382017TLV,  "IEEE_C37_238_2017 TLV"},
+    {0,                                                 NULL}
 };
 
 static const value_string ptp_v2_org_smpte_subtype_vals[] = {
     {PTP_V2_OE_ORG_SMPTE_SUBTYPE_VERSION_TLV,  "Version"},
-    {0,                                             NULL}
+    {0,                                        NULL}
+};
+
+static const value_string ptp_v2_org_cern_subtype_vals[] = {
+    {PTP_V2_OE_ORG_CERN_SUBTYPE_WR_TLV,  "White Rabbit"},
+    {0,                                  NULL}
+};
+
+static const value_string ptp_v2_org_itut_subtype_vals[] = {
+    {PTP_V2_INTERFACE_RATE_TLV,  "Interface Rate TLV"},
+    {0,                          NULL}
+};
+
+static const value_string ptp_v2_org_cern_wrMessageID_vals[] = {
+    {PTP_V2_OE_ORG_CERN_WRMESSAGEID_NULL_WR_TLV,  "NULL_WR_TLV"},
+    {PTP_V2_OE_ORG_CERN_WRMESSAGEID_SLAVE_PRESENT,"SLAVE_PRESENT"},
+    {PTP_V2_OE_ORG_CERN_WRMESSAGEID_LOCK,         "LOCK"},
+    {PTP_V2_OE_ORG_CERN_WRMESSAGEID_LOCKED,       "LOCKED"},
+    {PTP_V2_OE_ORG_CERN_WRMESSAGEID_CALIBRATE,    "CALIBRATE"},
+    {PTP_V2_OE_ORG_CERN_WRMESSAGEID_CALIBRATED,   "CALIBRATED"},
+    {PTP_V2_OE_ORG_CERN_WRMESSAGEID_WR_MODE_ON,   "WR_MODE_ON"},
+    {PTP_V2_OE_ORG_CERN_WRMESSAGEID_ANN_SUFIX,    "ANN_SUFIX"},
+    {0,                                           NULL}
+};
+
+static const value_string ptp_v2_tlv_oe_cern_wrFlags_wrConfig_vals[] = {
+    {PTP_V2_TLV_OE_CERN_WRFLAGS_WRCONFIG_NON_WR,     "NON WR"},
+    {PTP_V2_TLV_OE_CERN_WRFLAGS_WRCONFIG_WR_M_ONLY,  "WR_M_ONLY"},
+    {PTP_V2_TLV_OE_CERN_WRFLAGS_WRCONFIG_WR_S_ONLY,  "WR_S_ONLY"},
+    {PTP_V2_TLV_OE_CERN_WRFLAGS_WRCONFIG_WR_M_AND_S, "WR_M_AND_S"},
+    {0,                                              NULL}
 };
 
 static const value_string ptp_v2_org_smpte_subtype_masterlockingstatus_vals[] = {
@@ -1304,342 +1348,693 @@ static const value_string ptp_v2_org_smpte_subtype_masterlockingstatus_vals[] = 
 };
 
 /**********************************************************/
+/* MajorSdoId values for the PTPv2          */
+/**********************************************************/
+// 802.1AS 10.6.2.2.1 majorSdoId
+static const value_string ptpv2_majorsdoid_vals[] = {
+    {0x1, "gPTP Domain"},
+    {0x2, "CMLDS"},
+    {0,   NULL}
+};
+
+/* END PTPv2 MajorSdoId values */
+
+/**********************************************************/
 /* Initialize the protocol and registered fields          */
 /**********************************************************/
 
-static int hf_ptp_v2_transportspecific = -1;
-static int hf_ptp_v2_transportspecific_v1_compatibility = -1; /* over UDP */
-static int hf_ptp_v2_transportspecific_802as_conform = -1; /* over Ethernet */
-static int hf_ptp_v2_messageid = -1;
-static int hf_ptp_v2_versionptp = -1;
-static int hf_ptp_v2_messagelength = -1;
-static int hf_ptp_v2_domainnumber = -1;
-static int hf_ptp_v2_flags = -1;
-static int hf_ptp_v2_flags_alternatemaster = -1;
-static int hf_ptp_v2_flags_twostep = -1;
-static int hf_ptp_v2_flags_unicast = -1;
-static int hf_ptp_v2_flags_specific1 = -1;
-static int hf_ptp_v2_flags_specific2 = -1;
-static int hf_ptp_v2_flags_security = -1;
-static int hf_ptp_v2_flags_li61 = -1;
-static int hf_ptp_v2_flags_li59 = -1;
-static int hf_ptp_v2_flags_utcoffsetvalid = -1;
-static int hf_ptp_v2_flags_ptptimescale = -1;
-static int hf_ptp_v2_flags_timetraceable = -1;
-static int hf_ptp_v2_flags_frequencytraceable = -1;
-static int hf_ptp_v2_correction = -1;
-static int hf_ptp_v2_correctionsubns = -1;
-static int hf_ptp_v2_clockidentity = -1;
-static int hf_ptp_v2_sourceportid = -1;
-static int hf_ptp_v2_sequenceid = -1;
-static int hf_ptp_v2_control = -1;
-static int hf_ptp_v2_logmessageperiod = -1;
+static int hf_ptp_v2_majorsdoid;
+static int hf_ptp_v2_messagetype;
+static int hf_ptp_v2_minorversionptp;
+static int hf_ptp_v2_versionptp;
+static int hf_ptp_v2_messagelength;
+static int hf_ptp_v2_minorsdoid;
+static int hf_ptp_v2_domainnumber;
+static int hf_ptp_v2_flags;
+static int hf_ptp_v2_flags_alternatemaster;
+static int hf_ptp_v2_flags_twostep;
+static int hf_ptp_v2_flags_unicast;
+static int hf_ptp_v2_flags_specific1;
+static int hf_ptp_v2_flags_specific2;
+static int hf_ptp_v2_flags_security;
+static int hf_ptp_v2_flags_li61;
+static int hf_ptp_v2_flags_li59;
+static int hf_ptp_v2_flags_utcoffsetvalid;
+static int hf_ptp_v2_flags_ptptimescale;
+static int hf_ptp_v2_flags_timetraceable;
+static int hf_ptp_v2_flags_frequencytraceable;
+static int hf_ptp_v2_correction;
+static int hf_ptp_v2_correctionsubns;
+static int hf_ptp_v2_messagetypespecific;
+static int hf_ptp_v2_clockidentity;
+static int hf_ptp_v2_clockidentity_manuf;
+static int hf_ptp_v2_sourceportid;
+static int hf_ptp_v2_sequenceid;
+static int hf_ptp_v2_controlfield;
+static int hf_ptp_v2_controlfield_default;
+static int hf_ptp_v2_logmessageinterval;
+static int hf_ptp_v2_logmessageperiod;
+static int hf_ptp_v2_flags_synchronizationUncertain;
 
 
 /* Fields for PTP_Announce (=an) messages */
-/* static int hf_ptp_v2_an_origintimestamp = -1; */   /* Field for seconds & nanoseconds */
-static int hf_ptp_v2_an_origintimestamp_seconds = -1;
-static int hf_ptp_v2_an_origintimestamp_nanoseconds = -1;
-static int hf_ptp_v2_an_origincurrentutcoffset = -1;
-static int hf_ptp_v2_an_timesource = -1;
-static int hf_ptp_v2_an_localstepsremoved = -1;
-static int hf_ptp_v2_an_grandmasterclockidentity = -1;
-static int hf_ptp_v2_an_grandmasterclockclass = -1;
-static int hf_ptp_v2_an_grandmasterclockaccuracy = -1;
-static int hf_ptp_v2_an_grandmasterclockvariance = -1;
-static int hf_ptp_v2_an_priority1 = -1;
-static int hf_ptp_v2_an_priority2 = -1;
+/* static int hf_ptp_v2_an_origintimestamp; */   /* Field for seconds & nanoseconds */
+static int hf_ptp_v2_an_reserved1;
+static int hf_ptp_v2_an_reserved2;
+static int hf_ptp_v2_an_origintimestamp_seconds;
+static int hf_ptp_v2_an_origintimestamp_nanoseconds;
+static int hf_ptp_v2_an_origincurrentutcoffset;
+static int hf_ptp_v2_an_timesource;
+static int hf_ptp_v2_an_localstepsremoved;
+static int hf_ptp_v2_an_grandmasterclockidentity;
+static int hf_ptp_v2_an_grandmasterclockclass;
+static int hf_ptp_v2_an_grandmasterclockaccuracy;
+static int hf_ptp_v2_an_grandmasterclockvariance;
+static int hf_ptp_v2_an_priority1;
+static int hf_ptp_v2_an_priority2;
+
+
+/* Fields for general TLVs handling */
+static int hf_ptp_tlv_tlvtype;
+static int hf_ptp_tlv_lengthfield;
+static int hf_ptp_tlv_unparsed_payload;
+/* Fields for the ORGANIZATION_EXTENSION TLV */
+static int hf_ptp_tlv_oe_organizationid;
+static int hf_ptp_tlv_oe_organizationsubtype;
+static int hf_ptp_tlv_oe_organizationsubtype_802_1;
+static int hf_ptp_tlv_oe_organizationsubtype_802_1_no_propagate;
 
 /* Fields for PTP_Announce TLVs */
-static int hf_ptp_v2_an_tlv_tlvtype = -1;
-static int hf_ptp_v2_an_tlv_lengthfield = -1;
-/* Fields for the ORGANIZATION_EXTENSION TLV */
-static int hf_ptp_v2_oe_tlv_organizationid = -1;
-static int hf_ptp_v2_oe_tlv_organizationsubtype = -1;
-static int hf_ptp_v2_oe_tlv_datafield = -1;
+static int hf_ptp_v2_oe_tlv_ieee_c37_238_2017_organizationsubtype;
+static int hf_ptp_v2_oe_tlv_datafield;
+
+/* Fields for CERN White Rabbit TLV (OE TLV subtype) */
+static int hf_ptp_v2_an_tlv_oe_cern_subtype;
+static int hf_ptp_v2_an_tlv_oe_cern_wrMessageID;
+static int hf_ptp_v2_an_tlv_oe_cern_wrFlags;
+static int hf_ptp_v2_an_tlv_oe_cern_wrFlags_wrConfig;
+static int hf_ptp_v2_an_tlv_oe_cern_wrFlags_calibrated;
+static int hf_ptp_v2_an_tlv_oe_cern_wrFlags_wrModeOn;
+
 /* Fields for IEEE_C37_238 TLV (OE TLV subtype) */
-static int hf_ptp_v2_oe_tlv_subtype_c37238tlv_grandmasterid = -1;
-static int hf_ptp_v2_oe_tlv_subtype_c37238tlv_grandmastertimeinaccuracy = -1;
-static int hf_ptp_v2_oe_tlv_subtype_c37238tlv_networktimeinaccuracy = -1;
-static int hf_ptp_v2_oe_tlv_subtype_c37238tlv_reserved = -1;
+static int hf_ptp_v2_oe_tlv_subtype_c37238tlv_grandmasterid;
+static int hf_ptp_v2_oe_tlv_subtype_c37238tlv_grandmastertimeinaccuracy;
+static int hf_ptp_v2_oe_tlv_subtype_c37238tlv_networktimeinaccuracy;
+static int hf_ptp_v2_oe_tlv_subtype_c37238tlv_reserved;
+
+/* Additional Fields for IEEE_C37_238-2017 TLV (OE TLV subtype) */
+static int hf_ptp_v2_oe_tlv_subtype_c372382017tlv_reserved;
+static int hf_ptp_v2_oe_tlv_subtype_c37238tlv_totaltimeinaccuracy;
+
 /* Fields for SMPTE TLV (OE TLV subtype) */
-static int hf_ptp_v2_oe_tlv_smpte_subtype = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_data = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_defaultsystemframerate = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_defaultsystemframerate_numerator = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_defaultsystemframerate_denominator = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_masterlockingstatus = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags_drop = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags_color = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_currentlocaloffset = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_jumpseconds = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_timeofnextjump = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_timeofnextjam = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_timeofpreviousjam = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_previousjamlocaloffset = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving_current = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving_next = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving_previous = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_leapsecondjump = -1;
-static int hf_ptp_v2_oe_tlv_subtype_smpte_leapsecondjump_change = -1;
+static int hf_ptp_v2_oe_tlv_smpte_subtype;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_data;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_defaultsystemframerate;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_defaultsystemframerate_numerator;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_defaultsystemframerate_denominator;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_masterlockingstatus;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags_drop;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags_color;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_currentlocaloffset;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_jumpseconds;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_timeofnextjump;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_timeofnextjam;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_timeofpreviousjam;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_previousjamlocaloffset;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving_current;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving_next;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving_previous;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_leapsecondjump;
+static int hf_ptp_v2_oe_tlv_subtype_smpte_leapsecondjump_change;
 /* Fields for the ALTERNATE_TIME_OFFSET_INDICATOR TLV */
-static int hf_ptp_v2_atoi_tlv_keyfield = -1;
-static int hf_ptp_v2_atoi_tlv_currentoffset = -1;
-static int hf_ptp_v2_atoi_tlv_jumpseconds = -1;
-static int hf_ptp_v2_atoi_tlv_timeofnextjump = -1;
-static int hf_ptp_v2_atoi_tlv_displayname = -1;
-static int hf_ptp_v2_atoi_tlv_displayname_length = -1;
+static int hf_ptp_v2_atoi_tlv_keyfield;
+static int hf_ptp_v2_atoi_tlv_currentoffset;
+static int hf_ptp_v2_atoi_tlv_jumpseconds;
+static int hf_ptp_v2_atoi_tlv_timeofnextjump;
+static int hf_ptp_v2_atoi_tlv_displayname;
+static int hf_ptp_v2_atoi_tlv_displayname_length;
 /* Field for the PATH TRACE TLV */
-static int hf_ptp_v2_an_tlv_pathsequence = -1;
+static int hf_ptp_v2_an_tlv_pathsequence;
+
+/* Fields for the AUTHENTICATION2_TLV */
+static int hf_ptp_v2_auth_tlv_spp;
+static int hf_ptp_v2_auth_tlv_sec_param_indicator;
+static int hf_ptp_v2_auth_tlv_key_id;
+static int hf_ptp_v2_auth_tlv_icv;
 
 /* Fields for an undissected TLV */
-static int hf_ptp_v2_an_tlv_data = -1;
+static int hf_ptp_v2_an_tlv_data;
 
 /* Fields for PTP_Sync AND PTP_DelayRequest (=sdr) messages */
-/* static int hf_ptp_v2_sdr_origintimestamp = -1; */  /* Field for seconds & nanoseconds */
-static int hf_ptp_v2_sdr_origintimestamp_seconds = -1;
-static int hf_ptp_v2_sdr_origintimestamp_nanoseconds = -1;
+/* static int hf_ptp_v2_sdr_origintimestamp; */  /* Field for seconds & nanoseconds */
+static int hf_ptp_v2_sdr_origintimestamp_seconds;
+static int hf_ptp_v2_sdr_origintimestamp_nanoseconds;
+static int hf_ptp_v2_sync_reserved;
 
 
 /* Fields for PTP_Follow_Up (=fu) messages */
-/* static int hf_ptp_v2_fu_preciseorigintimestamp = -1; */    /* Field for seconds & nanoseconds */
-static int hf_ptp_v2_fu_preciseorigintimestamp_seconds = -1;
-static int hf_ptp_v2_fu_preciseorigintimestamp_nanoseconds = -1;
+/* static int hf_ptp_v2_fu_preciseorigintimestamp; */    /* Field for seconds & nanoseconds */
+static int hf_ptp_v2_fu_preciseorigintimestamp_seconds;
+static int hf_ptp_v2_fu_preciseorigintimestamp_nanoseconds;
+static int hf_ptp_v2_fu_preciseorigintimestamp_32bit;
 /* Fields for the Follow_Up Information TLV */
-static int hf_ptp_as_fu_tlv_tlvtype = -1;
-static int hf_ptp_as_fu_tlv_lengthfield = -1;
-static int hf_ptp_as_fu_tlv_organization_id = -1;
-static int hf_ptp_as_fu_tlv_organization_subtype = -1;
-static int hf_ptp_as_fu_tlv_cumulative_offset = -1;
-static int hf_ptp_as_fu_tlv_gm_base_indicator = -1;
-static int hf_ptp_as_fu_tlv_last_gm_phase_change = -1;
-static int hf_ptp_as_fu_tlv_scaled_last_gm_freq_change = -1;
+static int hf_ptp_as_fu_tlv_cumulative_scaled_rate_offset;
+static int hf_ptp_as_fu_tlv_cumulative_rate_ratio; /* Remove scale and offset from above */
+static int hf_ptp_as_fu_tlv_gm_base_indicator;
+static int hf_ptp_as_fu_tlv_last_gm_phase_change;
+static int hf_ptp_as_fu_tlv_scaled_last_gm_freq_change;
+/* Fields for the Drift_Tracking TLV */
+static int hf_ptp_as_dt_tlv_sync_egress_timestamp_seconds;
+static int hf_ptp_as_dt_tlv_sync_egress_timestamp_fractional_nanoseconds;
+static int hf_ptp_as_dt_tlv_sync_grandmaster_identity;
+static int hf_ptp_as_dt_tlv_sync_steps_removed;
+static int hf_ptp_as_dt_tlv_rate_ratio_drift;
+static int hf_ptp_as_dt_tlv_rate_ratio_drift_ppm;
 
 /* Fields for PTP_DelayResponse (=dr) messages */
-/* static int hf_ptp_v2_dr_receivetimestamp = -1; */ /* Field for seconds & nanoseconds */
-static int hf_ptp_v2_dr_receivetimestamp_seconds = -1;
-static int hf_ptp_v2_dr_receivetimestamp_nanoseconds = -1;
-static int hf_ptp_v2_dr_requestingportidentity = -1;
-static int hf_ptp_v2_dr_requestingsourceportid = -1;
+/* static int hf_ptp_v2_dr_receivetimestamp; */ /* Field for seconds & nanoseconds */
+static int hf_ptp_v2_dr_receivetimestamp_seconds;
+static int hf_ptp_v2_dr_receivetimestamp_nanoseconds;
+static int hf_ptp_v2_dr_requestingportidentity;
+static int hf_ptp_v2_dr_requestingsourceportid;
 
 
 /* Fields for PTP_PDelayRequest (=pdrq) messages */
-/* static int hf_ptp_v2_pdrq_origintimestamp = -1; */ /* Field for seconds & nanoseconds */
-static int hf_ptp_v2_pdrq_origintimestamp_seconds = -1;
-static int hf_ptp_v2_pdrq_origintimestamp_nanoseconds = -1;
+/* static int hf_ptp_v2_pdrq_origintimestamp; */ /* Field for seconds & nanoseconds */
+static int hf_ptp_v2_pdrq_origintimestamp_seconds;
+static int hf_ptp_v2_pdrq_origintimestamp_nanoseconds;
+static int hf_ptp_v2_pdrq_reserved;
 
 
 /* Fields for PTP_PDelayResponse (=pdrs) messages */
-/* static int hf_ptp_v2_pdrs_requestreceipttimestamp = -1; */ /* Field for seconds & nanoseconds */
-static int hf_ptp_v2_pdrs_requestreceipttimestamp_seconds = -1;
-static int hf_ptp_v2_pdrs_requestreceipttimestamp_nanoseconds = -1;
-static int hf_ptp_v2_pdrs_requestingportidentity = -1;
-static int hf_ptp_v2_pdrs_requestingsourceportid = -1;
+/* static int hf_ptp_v2_pdrs_requestreceipttimestamp; */ /* Field for seconds & nanoseconds */
+static int hf_ptp_v2_pdrs_requestreceipttimestamp_seconds;
+static int hf_ptp_v2_pdrs_requestreceipttimestamp_nanoseconds;
+static int hf_ptp_v2_pdrs_requestingportidentity;
+static int hf_ptp_v2_pdrs_requestingsourceportid;
 
 
 /* Fields for PTP_PDelayResponseFollowUp (=pdfu) messages */
-/* static int hf_ptp_v2_pdfu_responseorigintimestamp = -1; */ /* Field for seconds & nanoseconds */
-static int hf_ptp_v2_pdfu_responseorigintimestamp_seconds = -1;
-static int hf_ptp_v2_pdfu_responseorigintimestamp_nanoseconds = -1;
-static int hf_ptp_v2_pdfu_requestingportidentity = -1;
-static int hf_ptp_v2_pdfu_requestingsourceportid = -1;
+/* static int hf_ptp_v2_pdfu_responseorigintimestamp; */ /* Field for seconds & nanoseconds */
+static int hf_ptp_v2_pdfu_responseorigintimestamp_seconds;
+static int hf_ptp_v2_pdfu_responseorigintimestamp_nanoseconds;
+static int hf_ptp_v2_pdfu_requestingportidentity;
+static int hf_ptp_v2_pdfu_requestingsourceportid;
 
 
-/* Fields for PTP_Signalling (=sig) messages */
-static int hf_ptp_v2_sig_targetportidentity         = -1;
-static int hf_ptp_v2_sig_targetportid               = -1;
-static int hf_ptp_v2_sig_tlv_tlvType                = -1;
-static int hf_ptp_v2_sig_tlv_lengthField            = -1;
-static int hf_ptp_v2_sig_tlv_data                   = -1;
-static int hf_ptp_v2_sig_tlv_messageType            = -1;
-static int hf_ptp_v2_sig_tlv_logInterMessagePeriod  = -1;
-static int hf_ptp_v2_sig_tlv_logInterMessagePeriod_period   = -1;
-static int hf_ptp_v2_sig_tlv_logInterMessagePeriod_rate     = -1;
-static int hf_ptp_v2_sig_tlv_durationField          = -1;
-static int hf_ptp_v2_sig_tlv_renewalInvited         = -1;
+/* Fields for PTP_Signaling (=sig) messages */
+static int hf_ptp_v2_sig_targetportidentity;
+static int hf_ptp_v2_sig_targetportid;
+static int hf_ptp_v2_sig_tlv_data;
+static int hf_ptp_v2_sig_tlv_messageType;
+static int hf_ptp_v2_sig_tlv_logInterMessagePeriod;
+static int hf_ptp_v2_sig_tlv_logInterMessagePeriod_period;
+static int hf_ptp_v2_sig_tlv_logInterMessagePeriod_rate;
+static int hf_ptp_v2_sig_tlv_durationField;
+static int hf_ptp_v2_sig_tlv_renewalInvited;
+static int hf_ptp_v2_sig_tlv_maintainRequest;
+static int hf_ptp_v2_sig_tlv_maintainGrant;
+static int hf_ptp_v2_sig_tlv_reserved;
 
 /* Fields for the Message Interval Request TLV */
-static int hf_ptp_as_sig_tlv_tlvtype = -1;
-static int hf_ptp_as_sig_tlv_lengthfield = -1;
-static int hf_ptp_as_sig_tlv_organization_id = -1;
-static int hf_ptp_as_sig_tlv_organization_subtype = -1;
-static int hf_ptp_as_sig_tlv_link_delay_interval = -1;
-static int hf_ptp_as_sig_tlv_time_sync_interval = -1;
-static int hf_ptp_as_sig_tlv_announce_interval = -1;
-static int hf_ptp_as_sig_tlv_flags = -1;
-static int hf_ptp_as_sig_tlv_flags_comp_rate_ratio = -1;
-static int hf_ptp_as_sig_tlv_flags_comp_prop_delay = -1;
+static int hf_ptp_as_sig_tlv_link_delay_interval;
+static int hf_ptp_as_sig_tlv_time_sync_interval;
+static int hf_ptp_as_sig_tlv_announce_interval;
+static int hf_ptp_as_sig_tlv_flags;
+static int hf_ptp_as_sig_tlv_flags_comp_rate_ratio;
+static int hf_ptp_as_sig_tlv_flags_comp_mean_link_delay;
+static int hf_ptp_as_sig_tlv_flags_one_step_receive_capable;
+static int hf_ptp_as_sig_tlv_gptp_capable_message_interval;
+static int hf_ptp_as_sig_tlv_gptp_capable_reserved;
+static int hf_ptp_as_sig_tlv_reserved;
+
+/* Fields for 802.1AS CSN TLV */
+static int hf_ptp_as_csn_upstream_tx_time;
+static int hf_ptp_as_csn_neighbor_rate_ratio;
+static int hf_ptp_as_csn_mean_link_delay;
+static int hf_ptp_as_csn_delay_asymmetry;
+static int hf_ptp_as_csn_domain_number;
+
+/* Fields for L1SYNC TLV */
+static int hf_ptp_v2_sig_tlv_flags2;
+static int hf_ptp_v2_sig_tlv_flags3;
+static int hf_ptp_v2_sig_tlv_l1sync_flags2_reserved;
+static int hf_ptp_v2_sig_tlv_l1sync_flags3_reserved;
+static int hf_ptp_v2_sig_tlv_l1sync_flags2_tcr;
+static int hf_ptp_v2_sig_tlv_l1sync_flags3_tcr;
+static int hf_ptp_v2_sig_tlv_l1sync_flags2_rcr;
+static int hf_ptp_v2_sig_tlv_l1sync_flags3_rcr;
+static int hf_ptp_v2_sig_tlv_l1sync_flags2_cr;
+static int hf_ptp_v2_sig_tlv_l1sync_flags3_cr;
+static int hf_ptp_v2_sig_tlv_l1sync_flags2_ope;
+static int hf_ptp_v2_sig_tlv_l1sync_flags3_ope;
+static int hf_ptp_v2_sig_tlv_l1sync_flags2_itc;
+static int hf_ptp_v2_sig_tlv_l1sync_flags3_itc;
+static int hf_ptp_v2_sig_tlv_l1sync_flags2_irc;
+static int hf_ptp_v2_sig_tlv_l1sync_flags3_irc;
+static int hf_ptp_v2_sig_tlv_l1sync_flags2_ic;
+static int hf_ptp_v2_sig_tlv_l1sync_flags3_ic;
+static int hf_ptp_v2_sig_tlv_l1sync_flags3_tct;
+static int hf_ptp_v2_sig_tlv_l1sync_flags3_pov;
+static int hf_ptp_v2_sig_tlv_l1sync_flags3_fov;
+static int hf_ptp_v2_sig_tlv_l1syncext_phaseOffsetTx_ns;
+static int hf_ptp_v2_sig_tlv_l1syncext_phaseOffsetTx_subns;
+static int hf_ptp_v2_sig_tlv_l1syncext_phaseOffsetTxTimestamp_s;
+static int hf_ptp_v2_sig_tlv_l1syncext_phaseOffsetTxTimestamp_ns;
+static int hf_ptp_v2_sig_tlv_l1syncext_freqOffsetTx_ns;
+static int hf_ptp_v2_sig_tlv_l1syncext_freqOffsetTx_subns;
+static int hf_ptp_v2_sig_tlv_l1syncext_freqOffsetTxTimestamp_s;
+static int hf_ptp_v2_sig_tlv_l1syncext_freqOffsetTxTimestamp_ns;
+
+/* Fields for CERN White Rabbit TLV (OE TLV subtype) */
+static int hf_ptp_v2_sig_oe_tlv_cern_subtype;
+static int hf_ptp_v2_sig_oe_tlv_cern_wrMessageID;
+
+static int hf_ptp_v2_sig_oe_tlv_cern_calSendPattern;
+static int hf_ptp_v2_sig_oe_tlv_cern_calRety;
+static int hf_ptp_v2_sig_oe_tlv_cern_calPeriod;
+static int hf_ptp_v2_sig_oe_tlv_cern_deltaTx;
+static int hf_ptp_v2_sig_oe_tlv_cern_deltaRx;
+
+static int hf_ptp_v2_sig_oe_tlv_itut_subtype;
+static int hf_ptp_v2_sig_tlv_interface_bit_period;
+static int hf_ptp_v2_sig_tlv_numberbits_before_timestamp;
+static int hf_ptp_v2_sig_tlv_numberbits_after_timestamp;
 
 /* Fields for PTP_Management (=mm) messages */
-static int hf_ptp_v2_mm_targetportidentity = -1;
-static int hf_ptp_v2_mm_targetportid = -1;
-static int hf_ptp_v2_mm_startingboundaryhops = -1;
-static int hf_ptp_v2_mm_boundaryhops = -1;
-static int hf_ptp_v2_mm_action = -1;
+static int hf_ptp_v2_mm_targetportidentity;
+static int hf_ptp_v2_mm_targetportid;
+static int hf_ptp_v2_mm_startingboundaryhops;
+static int hf_ptp_v2_mm_boundaryhops;
+static int hf_ptp_v2_mm_action;
+static int hf_ptp_v2_mm_reserved1;
+static int hf_ptp_v2_mm_reserved2;
 
 /* management TLV */
-static int hf_ptp_v2_mm_tlvType = -1;
-static int hf_ptp_v2_mm_lengthField = -1;
-static int hf_ptp_v2_mm_managementId = -1;
-static int hf_ptp_v2_mm_data = -1;
+static int hf_ptp_v2_mm_tlvType;
+static int hf_ptp_v2_mm_lengthField;
+static int hf_ptp_v2_mm_managementId;
+static int hf_ptp_v2_mm_data;
 /* Management dataField  */
 
-static int hf_ptp_v2_mm_clockType = -1;
-static int hf_ptp_v2_mm_clockType_ordinaryClock = -1;
-static int hf_ptp_v2_mm_clockType_boundaryClock = -1;
-static int hf_ptp_v2_mm_clockType_p2p_transparentClock = -1;
-static int hf_ptp_v2_mm_clockType_e2e_transparentClock = -1;
-static int hf_ptp_v2_mm_clockType_managementNode = -1;
-static int hf_ptp_v2_mm_clockType_reserved = -1;
-static int hf_ptp_v2_mm_physicalLayerProtocol = -1;
-static int hf_ptp_v2_mm_physicalLayerProtocol_length = -1;
-static int hf_ptp_v2_mm_physicalAddressLength = -1;
-static int hf_ptp_v2_mm_physicalAddress = -1;
-static int hf_ptp_v2_mm_protocolAddress = -1;
-static int hf_ptp_v2_mm_protocolAddress_networkProtocol = -1;
-static int hf_ptp_v2_mm_protocolAddress_length = -1;
-static int hf_ptp_v2_mm_manufacturerIdentity = -1;
+static int hf_ptp_v2_mm_clockType;
+static int hf_ptp_v2_mm_clockType_ordinaryClock;
+static int hf_ptp_v2_mm_clockType_boundaryClock;
+static int hf_ptp_v2_mm_clockType_p2p_transparentClock;
+static int hf_ptp_v2_mm_clockType_e2e_transparentClock;
+static int hf_ptp_v2_mm_clockType_managementNode;
+static int hf_ptp_v2_mm_clockType_reserved;
+static int hf_ptp_v2_mm_physicalLayerProtocol;
+static int hf_ptp_v2_mm_physicalLayerProtocol_length;
+static int hf_ptp_v2_mm_physicalAddressLength;
+static int hf_ptp_v2_mm_physicalAddress;
+static int hf_ptp_v2_mm_protocolAddressStruct;
+static int hf_ptp_v2_mm_protocolAddress;
+static int hf_ptp_v2_mm_protocolAddress_networkProtocol;
+static int hf_ptp_v2_mm_protocolAddress_length;
+static int hf_ptp_v2_mm_manufacturerIdentity;
 
-static int hf_ptp_v2_mm_reserved = -1;
-static int hf_ptp_v2_mm_productDescription = -1;
-static int hf_ptp_v2_mm_productDescription_length = -1;
-static int hf_ptp_v2_mm_revisionData = -1;
-static int hf_ptp_v2_mm_revisionData_length = -1;
-static int hf_ptp_v2_mm_userDescription = -1;
-static int hf_ptp_v2_mm_userDescription_length = -1;
-static int hf_ptp_v2_mm_profileIdentity = -1;
-static int hf_ptp_v2_mm_pad = -1;
+static int hf_ptp_v2_mm_reserved;
+static int hf_ptp_v2_mm_productDescription;
+static int hf_ptp_v2_mm_productDescription_length;
+static int hf_ptp_v2_mm_revisionData;
+static int hf_ptp_v2_mm_revisionData_length;
+static int hf_ptp_v2_mm_userDescription;
+static int hf_ptp_v2_mm_userDescription_length;
+static int hf_ptp_v2_mm_profileIdentity;
+static int hf_ptp_v2_mm_pad;
 
-static int hf_ptp_v2_mm_numberOfFaultRecords = -1;
-/* static int hf_ptp_v2_mm_faultRecord = -1; */
+static int hf_ptp_v2_mm_numberOfFaultRecords;
+/* static int hf_ptp_v2_mm_faultRecord; */
 
-static int hf_ptp_v2_mm_initializationKey = -1;
-static int hf_ptp_v2_mm_severityCode = -1;
-static int hf_ptp_v2_mm_faultRecordLength = -1;
-/* static int hf_ptp_v2_mm_faultTime = -1; */
-static int hf_ptp_v2_mm_faultTime_s = -1;
-static int hf_ptp_v2_mm_faultTime_ns = -1;
-static int hf_ptp_v2_mm_faultValue = -1;
-static int hf_ptp_v2_mm_faultName = -1;
-static int hf_ptp_v2_mm_faultName_length = -1;
-static int hf_ptp_v2_mm_faultValue_length = -1;
-static int hf_ptp_v2_mm_faultDescription = -1;
-static int hf_ptp_v2_mm_faultDescription_length = -1;
-static int hf_ptp_v2_mm_currentTime_s = -1;
-static int hf_ptp_v2_mm_currentTime_ns = -1;
-static int hf_ptp_v2_mm_clockAccuracy = -1;
-static int hf_ptp_v2_mm_priority1 = -1;
-static int hf_ptp_v2_mm_priority2 = -1;
-static int hf_ptp_v2_mm_dds_SO = -1;
-static int hf_ptp_v2_mm_TSC = -1;
-static int hf_ptp_v2_mm_numberPorts = -1;
-static int hf_ptp_v2_mm_clockclass = -1;
-static int hf_ptp_v2_mm_clockaccuracy = -1;
-static int hf_ptp_v2_mm_clockvariance = -1;
-static int hf_ptp_v2_mm_clockidentity = -1;
-static int hf_ptp_v2_mm_domainNumber = -1;
-static int hf_ptp_v2_mm_SO = -1;
-static int hf_ptp_v2_mm_stepsRemoved = -1;
-static int hf_ptp_v2_mm_parentIdentity = -1;
-static int hf_ptp_v2_mm_parentPort = -1;
-static int hf_ptp_v2_mm_parentStats = -1;
-static int hf_ptp_v2_mm_observedParentOffsetScaledLogVariance = -1;
-static int hf_ptp_v2_mm_observedParentClockPhaseChangeRate = -1;
-static int hf_ptp_v2_mm_grandmasterPriority1 = -1;
-static int hf_ptp_v2_mm_grandmasterPriority2 = -1;
-static int hf_ptp_v2_mm_grandmasterclockclass = -1;
-static int hf_ptp_v2_mm_grandmasterclockaccuracy = -1;
-static int hf_ptp_v2_mm_grandmasterclockvariance = -1;
-static int hf_ptp_v2_mm_grandmasterIdentity = -1;
-static int hf_ptp_v2_mm_currentUtcOffset = -1;
-static int hf_ptp_v2_mm_LI_61 = -1;
-static int hf_ptp_v2_mm_LI_59 = -1;
-static int hf_ptp_v2_mm_UTCV = -1;
-static int hf_ptp_v2_mm_PTP = -1;
-static int hf_ptp_v2_mm_TTRA = -1;
-static int hf_ptp_v2_mm_FTRA = -1;
-static int hf_ptp_v2_mm_timesource = -1;
-static int hf_ptp_v2_mm_offset_ns = -1;
-static int hf_ptp_v2_mm_pathDelay_ns = -1;
-static int hf_ptp_v2_mm_offset_subns = -1;
-static int hf_ptp_v2_mm_pathDelay_subns = -1;
-static int hf_ptp_v2_mm_PortNumber = -1;
-static int hf_ptp_v2_mm_portState = -1;
-static int hf_ptp_v2_mm_logMinDelayReqInterval = -1;
-static int hf_ptp_v2_mm_peerMeanPathDelay_ns = -1;
-static int hf_ptp_v2_mm_peerMeanPathDelay_subns = -1;
-static int hf_ptp_v2_mm_logAnnounceInterval = -1;
-static int hf_ptp_v2_mm_announceReceiptTimeout = -1;
-static int hf_ptp_v2_mm_logSyncInterval = -1;
-static int hf_ptp_v2_mm_delayMechanism = -1;
-static int hf_ptp_v2_mm_logMinPdelayReqInterval = -1;
-static int hf_ptp_v2_mm_versionNumber = -1;
-static int hf_ptp_v2_mm_primaryDomain = -1;
-static int hf_ptp_v2_mm_faultyFlag = -1;
-static int hf_ptp_v2_mm_managementErrorId = -1;
-static int hf_ptp_v2_mm_displayData = -1;
-static int hf_ptp_v2_mm_displayData_length = -1;
-static int hf_ptp_v2_mm_ucEN = -1;
-static int hf_ptp_v2_mm_ptEN = -1;
-static int hf_ptp_v2_mm_atEN = -1;
-static int hf_ptp_v2_mm_keyField = -1;
-static int hf_ptp_v2_mm_displayName = -1;
-static int hf_ptp_v2_mm_displayName_length = -1;
-static int hf_ptp_v2_mm_maxKey = -1;
-static int hf_ptp_v2_mm_currentOffset = -1;
-static int hf_ptp_v2_mm_jumpSeconds = -1;
-static int hf_ptp_v2_mm_nextjumpSeconds = -1;
-static int hf_ptp_v2_mm_logAlternateMulticastSyncInterval = -1;
-static int hf_ptp_v2_mm_numberOfAlternateMasters = -1;
-static int hf_ptp_v2_mm_transmitAlternateMulticastSync = -1;
+static int hf_ptp_v2_mm_initializationKey;
+static int hf_ptp_v2_mm_severityCode;
+static int hf_ptp_v2_mm_faultRecordLength;
+/* static int hf_ptp_v2_mm_faultTime; */
+static int hf_ptp_v2_mm_faultTime_s;
+static int hf_ptp_v2_mm_faultTime_ns;
+static int hf_ptp_v2_mm_faultValue;
+static int hf_ptp_v2_mm_faultName;
+static int hf_ptp_v2_mm_faultName_length;
+static int hf_ptp_v2_mm_faultValue_length;
+static int hf_ptp_v2_mm_faultDescription;
+static int hf_ptp_v2_mm_faultDescription_length;
+static int hf_ptp_v2_mm_currentTime_s;
+static int hf_ptp_v2_mm_currentTime_ns;
+static int hf_ptp_v2_mm_clockAccuracy;
+static int hf_ptp_v2_mm_priority1;
+static int hf_ptp_v2_mm_priority2;
+static int hf_ptp_v2_mm_dds_SO;
+static int hf_ptp_v2_mm_TSC;
+static int hf_ptp_v2_mm_numberPorts;
+static int hf_ptp_v2_mm_clockclass;
+static int hf_ptp_v2_mm_clockaccuracy;
+static int hf_ptp_v2_mm_clockvariance;
+static int hf_ptp_v2_mm_clockidentity;
+static int hf_ptp_v2_mm_domainNumber;
+static int hf_ptp_v2_mm_SO;
+static int hf_ptp_v2_mm_MO;
+static int hf_ptp_v2_mm_stepsRemoved;
+static int hf_ptp_v2_mm_parentIdentity;
+static int hf_ptp_v2_mm_parentPort;
+static int hf_ptp_v2_mm_parentStats;
+static int hf_ptp_v2_mm_observedParentOffsetScaledLogVariance;
+static int hf_ptp_v2_mm_observedParentClockPhaseChangeRate;
+static int hf_ptp_v2_mm_grandmasterPriority1;
+static int hf_ptp_v2_mm_grandmasterPriority2;
+static int hf_ptp_v2_mm_alternatePriority1;
+static int hf_ptp_v2_mm_grandmasterclockclass;
+static int hf_ptp_v2_mm_grandmasterclockaccuracy;
+static int hf_ptp_v2_mm_grandmasterclockvariance;
+static int hf_ptp_v2_mm_grandmasterIdentity;
+static int hf_ptp_v2_mm_currentUtcOffset;
+static int hf_ptp_v2_mm_LI_61;
+static int hf_ptp_v2_mm_LI_59;
+static int hf_ptp_v2_mm_UTCV;
+static int hf_ptp_v2_mm_PTP;
+static int hf_ptp_v2_mm_TTRA;
+static int hf_ptp_v2_mm_FTRA;
+static int hf_ptp_v2_mm_timesource;
+static int hf_ptp_v2_mm_offset_ns;
+static int hf_ptp_v2_mm_pathDelay_ns;
+static int hf_ptp_v2_mm_offset_subns;
+static int hf_ptp_v2_mm_pathDelay_subns;
+static int hf_ptp_v2_mm_PortNumber;
+static int hf_ptp_v2_mm_portState;
+static int hf_ptp_v2_mm_desiredPortState;
+static int hf_ptp_v2_mm_logMinDelayReqInterval;
+static int hf_ptp_v2_mm_peerMeanPathDelay_ns;
+static int hf_ptp_v2_mm_peerMeanPathDelay_subns;
+static int hf_ptp_v2_mm_logAnnounceInterval;
+static int hf_ptp_v2_mm_announceReceiptTimeout;
+static int hf_ptp_v2_mm_logSyncInterval;
+static int hf_ptp_v2_mm_delayMechanism;
+static int hf_ptp_v2_mm_logMinPdelayReqInterval;
+static int hf_ptp_v2_mm_versionNumber;
+static int hf_ptp_v2_mm_primaryDomain;
+static int hf_ptp_v2_mm_faultyFlag;
+static int hf_ptp_v2_mm_managementErrorId;
+static int hf_ptp_v2_mm_displayData;
+static int hf_ptp_v2_mm_displayData_length;
+static int hf_ptp_v2_mm_ucEN;
+static int hf_ptp_v2_mm_ptEN;
+static int hf_ptp_v2_mm_atEN;
+static int hf_ptp_v2_mm_keyField;
+static int hf_ptp_v2_mm_displayName;
+static int hf_ptp_v2_mm_displayName_length;
+static int hf_ptp_v2_mm_maxKey;
+static int hf_ptp_v2_mm_currentOffset;
+static int hf_ptp_v2_mm_jumpSeconds;
+static int hf_ptp_v2_mm_nextjumpSeconds;
+static int hf_ptp_v2_mm_logAlternateMulticastSyncInterval;
+static int hf_ptp_v2_mm_numberOfAlternateMasters;
+static int hf_ptp_v2_mm_transmitAlternateMulticastSync;
+static int hf_ptp_v2_mm_maxTableSize;
+static int hf_ptp_v2_mm_acceptableMasterPortDS;
+static int hf_ptp_v2_mm_externalPortConfigurationEnabled;
+static int hf_ptp_v2_mm_holdoverUpgradeEnable;
+static int hf_ptp_v2_mm_logQueryInterval;
+static int hf_ptp_v2_mm_GrandmasterActualTableSize;
+static int hf_ptp_v2_mm_actualTableSize;
+
+/* Fields for analysis code*/
+static int hf_ptp_v2_analysis_sync_to_followup;
+static int hf_ptp_v2_analysis_followup_to_sync;
+static int hf_ptp_v2_analysis_pdelayreq_to_pdelayres;
+static int hf_ptp_v2_analysis_pdelayres_to_pdelayreq;
+static int hf_ptp_v2_analysis_pdelayres_to_pdelayfup;
+static int hf_ptp_v2_analysis_pdelayfup_to_pdelayres;
+static int hf_ptp_v2_analysis_sync_timestamp;
+static int hf_ptp_v2_analysis_sync_timestamp_seconds;
+static int hf_ptp_v2_analysis_sync_timestamp_nanoseconds;
+static int hf_ptp_v2_analysis_sync_period;
+static int hf_ptp_v2_analysis_sync_rateRatio;
+static int hf_ptp_v2_analysis_sync_rateRatio_ppm;
+static int hf_ptp_v2_analysis_pdelay_mpd_unscaled;
+static int hf_ptp_v2_analysis_pdelay_mpd_unscaled_seconds;
+static int hf_ptp_v2_analysis_pdelay_mpd_unscaled_nanoseconds;
+static int hf_ptp_v2_analysis_pdelay_mpd_scaled;
+static int hf_ptp_v2_analysis_pdelay_period;
+static int hf_ptp_v2_analysis_pdelay_neighRateRatio;
+static int hf_ptp_v2_analysis_pdelay_neighRateRatio_ppm;
 
 /* Initialize the subtree pointers */
-static gint ett_ptp_v2 = -1;
-static gint ett_ptp_v2_flags = -1;
-static gint ett_ptp_v2_correction = -1;
-static gint ett_ptp_v2_time = -1;
-static gint ett_ptp_v2_time2 = -1;
-static gint ett_ptp_v2_managementData = -1;
-static gint ett_ptp_v2_clockType = -1;
-static gint ett_ptp_v2_physicalLayerProtocol = -1;
-static gint ett_ptp_v2_protocolAddress = -1;
-static gint ett_ptp_v2_faultRecord = -1;
-static gint ett_ptp_v2_ptptext = -1;
-static gint ett_ptp_v2_timeInterval = -1;
-static gint ett_ptp_v2_tlv = -1;
-static gint ett_ptp_v2_tlv_log_period = -1;
-static gint ett_ptp_as_sig_tlv_flags = -1;
-static gint ett_ptp_oe_smpte_data = -1;
-static gint ett_ptp_oe_smpte_framerate = -1;
-static gint ett_ptp_oe_smpte_timeaddress = -1;
-static gint ett_ptp_oe_smpte_daylightsaving = -1;
-static gint ett_ptp_oe_smpte_leapsecondjump = -1;
+static int ett_ptp_v2;
+static int ett_ptp_v2_flags;
+static int ett_ptp_v2_clockidentity;
+static int ett_ptp_v2_correction;
+static int ett_ptp_v2_time;
+static int ett_ptp_v2_time2;
+static int ett_ptp_v2_managementData;
+static int ett_ptp_v2_clockType;
+static int ett_ptp_v2_physicalLayerProtocol;
+static int ett_ptp_v2_protocolAddress;
+static int ett_ptp_v2_addressTable;
+static int ett_ptp_v2_acceptableRecord;
+static int ett_ptp_v2_faultRecord;
+static int ett_ptp_v2_ptptext;
+static int ett_ptp_v2_timeInterval;
+static int ett_ptp_v2_tlv;
+static int ett_ptp_v2_tlv_log_period;
+static int ett_ptp_v2_sig_l1sync_flags;
+static int ett_ptp_as_sig_tlv_flags;
+static int ett_ptp_oe_wr_flags;
+static int ett_ptp_oe_smpte_data;
+static int ett_ptp_oe_smpte_framerate;
+static int ett_ptp_oe_smpte_timeaddress;
+static int ett_ptp_oe_smpte_daylightsaving;
+static int ett_ptp_oe_smpte_leapsecondjump;
+static int ett_ptp_analysis_timestamp;
+static int ett_ptp_analysis_mean_propagation_delay;
 
-/* static gint ett_ptp_v2_timesource = -1;
-static gint ett_ptp_v2_priority = -1; */
-static gint ett_ptp_v2_transportspecific = -1;
+/* static int ett_ptp_v2_timesource;
+static int ett_ptp_v2_priority; */
+static int ett_ptp_v2_majorsdoid;
 
-static expert_field ei_ptp_v2_msg_len_too_large = EI_INIT;
-static expert_field ei_ptp_v2_msg_len_too_small = EI_INIT;
+static expert_field ei_ptp_v2_msg_len_too_large;
+static expert_field ei_ptp_v2_msg_len_too_small;
+static expert_field ei_ptp_v2_sync_no_followup;
+static expert_field ei_ptp_v2_sync_no_fup_tlv;
+static expert_field ei_ptp_v2_sync_with_fup_tlv;
+static expert_field ei_ptp_v2_followup_no_sync;
+static expert_field ei_ptp_v2_followup_no_tlv;
+static expert_field ei_ptp_v2_pdreq_no_pdresp;
+static expert_field ei_ptp_v2_pdresp_no_pdreq;
+static expert_field ei_ptp_v2_pdresp_no_pdfup;
+static expert_field ei_ptp_v2_pdresp_twostep;
+static expert_field ei_ptp_v2_pdfup_no_pdresp;
+static expert_field ei_ptp_v2_period_invalid;
+static expert_field ei_ptp_v2_as_tlv_in_non_as;
+static expert_field ei_ptp_v2_mm_protAddrLen;
+static expert_field ei_ptp_v2_mmGrandTblPad;
+static expert_field ei_ptp_v2_mmUnuTblPad;
 
 /* END Definitions and fields for PTPv2 dissection. */
+
+/*
+ * Analysis
+ *
+ * The analysis code cannot access the internal data of the PTP participants and
+ * therefore the values calculated are based on the capture timestamps.
+ *
+ */
+
+/* Config for Analysis features */
+static bool ptp_analyze_messages = true;
+static bool ptp_analyze_messages_with_minor_version = false;
+static unsigned ptp_analysis_max_consecutive_delta = 10;
+
+/* Definitions for Analysis features */
+
+/* 1588 defines related messages (with matching seqIds) should be sent "as soon as possible".
+ * 802.1AS formalizes a requirement of max 10ms for the same in "Annex B - Performance requirements".
+ * A 1 second threshold gives good margin, while not causing analysis issues in case of resets.
+ * In case of rapid sequence number resets <1s apart, incorrect message associations can still happen.
+*/
+#define PTP_ANALYSIS_MAX_ALLOWED_DELTA_SECS 1.0
+
+/* Allow to register TLV subdissectors */
+static dissector_table_t ptpv2_tlv_org_id_subdissector_table;
+
+typedef struct ptp_frame_info_sync {
+    uint32_t sync_frame_num;
+    uint32_t fup_frame_num;
+    bool sync_two_step;
+
+    nstime_t sync_ts;
+
+    uint64_t timestamp_s;
+    uint32_t timestamp_ns;
+    int64_t  correction_ns;
+    uint16_t correction_subns;
+
+    bool calculated_timestamp_valid;
+    nstime_t calculated_timestamp;
+
+    bool syncInterval_valid;
+    double   syncInterval;
+
+    bool syncRateRatio_valid;
+    double   syncRateRatio;
+    double   syncRateRatio_ppm;
+} ptp_frame_info_sync_t;
+
+typedef struct ptp_frame_info_pdelay {
+    uint32_t pdelay_req_frame_num;
+    uint32_t pdelay_res_frame_num;
+    uint32_t pdelay_fup_frame_num;
+    bool pdelay_res_two_step;
+
+    nstime_t pdelay_req_ts;
+
+    uint64_t pdelay_req_recv_ts_s;
+    uint32_t pdelay_req_recv_ts_ns;
+
+    uint64_t pdelay_res_send_ts_s;
+    uint32_t pdelay_res_send_ts_ns;
+
+    nstime_t pdelay_res_ts;
+
+    nstime_t mean_propagation_delay_unscaled;
+    double   mean_propagation_delay_scaled;
+
+    bool pdelayInterval_valid;
+    double   pdelayInterval;
+
+    bool neighborRateRatio_valid;
+    double   neighborRateRatio;
+    int32_t  neighborRateRatio_ppm;
+} ptp_frame_info_pdelay_t;
+
+typedef struct ptp_frame_info {
+    uint8_t messagetype;
+    union {
+        ptp_frame_info_sync_t sync;
+        ptp_frame_info_pdelay_t pdelay;
+    };
+
+    struct ptp_frame_info *prev;
+    nstime_t ref_time;
+} ptp_frame_info_t;
+
+#define PTP_FRAME_INFO_SYNC_SEEN(fi) ((fi) != NULL && (fi)->messagetype == PTP_V2_SYNC_MESSAGE && (fi)->sync.sync_frame_num != 0)
+#define PTP_FRAME_INFO_SYNC_COMPLETE(fi) ((fi) != NULL && (fi)->messagetype == PTP_V2_SYNC_MESSAGE && (fi)->sync.sync_frame_num != 0 && (fi)->sync.fup_frame_num != 0)
+#define PTP_FRAME_INFO_PDELAY_REQ_SEEN(fi) ((fi) != NULL && (fi)->messagetype == PTP_V2_PEER_DELAY_REQ_MESSAGE && (fi)->pdelay.pdelay_req_frame_num != 0)
+#define PTP_FRAME_INFO_PDELAY_COMPLETE(fi) ((fi) != NULL && (fi)->messagetype == PTP_V2_PEER_DELAY_REQ_MESSAGE && (fi)->pdelay.pdelay_req_frame_num != 0 && (fi)->pdelay.pdelay_res_frame_num != 0 && (fi)->pdelay.pdelay_fup_frame_num != 0)
+
+typedef struct ptp_clock_info {
+    wmem_map_t *frames;
+} ptp_clock_info_t;
+
+static wmem_map_t *ptp_clocks;
+
+/*
+ * PTP major ver    4 bit
+ * PTP min ver      4 bit (shift!)
+ * MajorSdoId       4 bit
+ * MessageType      4 bit (shift!)
+ * MinorSdoId       1 Byte
+ * Domain           1 Byte
+ * PortID           2 Byte
+ * SeqID            2 Byte
+ */
+static uint64_t
+calculate_frame_key(uint8_t ptp_major, uint8_t ptp_minor, uint8_t majorsdoid, uint8_t minorsdoid, uint8_t messagetype, uint8_t domain, uint16_t portid, uint16_t seqid) {
+    if (!ptp_analyze_messages_with_minor_version) {
+        ptp_minor = 0;
+    }
+
+    DISSECTOR_ASSERT(ptp_minor % 16 == 0);
+    DISSECTOR_ASSERT(ptp_major <= 15);
+    DISSECTOR_ASSERT(majorsdoid % 16 == 0);
+    DISSECTOR_ASSERT(messagetype <= 15);
+
+    uint64_t ret = (uint64_t)ptp_minor  << 56 | (uint64_t)ptp_major << 56 | (uint64_t)majorsdoid << 48 | (uint64_t)messagetype << 48 | (uint64_t)minorsdoid << 40 | (uint64_t)domain << 32 |
+                  (uint64_t)portid     << 16 | (uint64_t)seqid;
+    return ret;
+}
+
+static ptp_frame_info_t *
+get_frame_info_and_opt_create(packet_info *pinfo, uint8_t ptp_major, uint8_t ptp_minor, uint8_t majorsdoid, uint8_t minorsdoid, uint8_t messagetype, uint8_t domain, uint64_t clockidentity, uint16_t portid, uint16_t seqid, bool create_missing, double delta_cutoff) {
+    DISSECTOR_ASSERT(ptp_clocks != NULL);
+
+    ptp_clock_info_t *clock_info = (ptp_clock_info_t *)wmem_map_lookup(ptp_clocks, &clockidentity);
+
+    if (clock_info == NULL)
+    {
+        uint64_t* new_clockid = wmem_new(wmem_file_scope(), uint64_t);
+        *new_clockid = clockidentity;
+        clock_info = wmem_new0(wmem_file_scope(), ptp_clock_info_t);
+        clock_info->frames = NULL;
+        wmem_map_insert(ptp_clocks, new_clockid, clock_info);
+    }
+
+    if (clock_info->frames == NULL)
+    {
+        clock_info->frames = wmem_map_new(wmem_file_scope(), g_int64_hash, g_int64_equal);
+    }
+
+    uint64_t key2 = calculate_frame_key(ptp_major, ptp_minor, majorsdoid, minorsdoid, messagetype, domain, portid, seqid);
+    ptp_frame_info_t *tmp = (ptp_frame_info_t *)wmem_map_lookup(clock_info->frames, &key2);
+
+    if (tmp != NULL)
+    {
+        /* Is this a real match or did have wrapped the ptp seqid? */
+        /* This check also handles sequenceIds resets due to restarts. */
+        nstime_t delta_time;
+        nstime_delta(&delta_time, &(pinfo->abs_ts), &(tmp->ref_time));
+        double delta_secs = nstime_to_sec(&delta_time);
+
+        if (fabs(delta_secs) > delta_cutoff)
+        {
+            /* Not our match! */
+            tmp = NULL;
+        }
+    }
+
+    if (tmp == NULL && create_missing)
+    {
+        uint64_t* new_key2 = wmem_new(wmem_file_scope(), uint64_t);
+        *new_key2 = key2;
+        tmp = wmem_new0(wmem_file_scope(), ptp_frame_info_t);
+        tmp->prev = NULL;
+        if (messagetype == PTP_V2_PEER_DELAY_REQ_MESSAGE) {
+            tmp->pdelay.neighborRateRatio_valid = false;
+        }
+        wmem_map_insert(clock_info->frames, new_key2, tmp);
+
+        nstime_copy(&(tmp->ref_time), &(pinfo->abs_ts));
+    }
+
+    return tmp;
+}
+
+static ptp_frame_info_t *
+create_frame_info(packet_info *pinfo, uint8_t ptp_major, uint8_t ptp_minor, uint8_t majorsdoid, uint8_t minorsdoid, uint8_t messagetype, uint8_t domain, uint64_t clockidentity, uint16_t portid, uint16_t seqid) {
+    ptp_frame_info_t *ret = get_frame_info_and_opt_create(pinfo, ptp_major, ptp_minor, majorsdoid, minorsdoid, messagetype, domain, clockidentity, portid, seqid, true, PTP_ANALYSIS_MAX_ALLOWED_DELTA_SECS);
+
+    uint16_t seqid_prev = seqid == 0 ? UINT16_MAX : seqid - 1;
+    ret->prev = get_frame_info_and_opt_create(pinfo, ptp_major, ptp_minor, majorsdoid, minorsdoid, messagetype, domain, clockidentity, portid, seqid_prev, false, (double)ptp_analysis_max_consecutive_delta);
+
+    return ret;
+}
 
 
 /* forward declaration of local functions for v1 and v2 */
 
-static int
+static bool
 is_ptp_v1(tvbuff_t *tvb);
 
 static void
 dissect_ptp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
 
-static gboolean
+static bool
 is_ptp_v2(tvbuff_t *tvb);
 
 static void
-dissect_ptp_v2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean ptpv2_oE);
+dissect_ptp_v2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bool ptpv2_oE);
 
 /**********************************************************/
 /* Implementation of the functions                        */
@@ -1649,20 +2044,18 @@ dissect_ptp_v2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean ptp
 /* Code to dissect the packet */
 
 static int
-dissect_ptp_oE(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
-{
+dissect_ptp_oE(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_) {
     /* PTP over Ethernet only available with PTPv2 */
-    dissect_ptp_v2(tvb, pinfo, tree, TRUE);
+    dissect_ptp_v2(tvb, pinfo, tree, true);
     return tvb_captured_length(tvb);
 }
 
 static int
-dissect_ptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
-{
+dissect_ptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_) {
     if(is_ptp_v1(tvb))
         dissect_ptp_v1(tvb, pinfo, tree);
     else if(is_ptp_v2(tvb))
-        dissect_ptp_v2(tvb, pinfo, tree, FALSE);
+        dissect_ptp_v2(tvb, pinfo, tree, false);
 
     return tvb_captured_length(tvb);
 }
@@ -1670,38 +2063,35 @@ dissect_ptp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
 /* Code to check if packet is PTPv1 */
 
-static gboolean
-is_ptp_v1(tvbuff_t *tvb)
-{
-    guint16 version_ptp;
+static bool
+is_ptp_v1(tvbuff_t *tvb) {
+    uint16_t version_ptp;
 
     version_ptp = tvb_get_ntohs(tvb, PTP_VERSIONPTP_OFFSET);
 
-    if( version_ptp == 1) return TRUE;
-    else return FALSE;
+    if( version_ptp == 1) return true;
+    else return false;
 }
 
 
 /* Code to check if packet is PTPv2 */
 
-static gboolean
-is_ptp_v2(tvbuff_t *tvb)
-{
-    guint8 version_ptp;
+static bool
+is_ptp_v2(tvbuff_t *tvb) {
+    uint8_t version_ptp;
 
-    version_ptp = 0x0F & tvb_get_guint8(tvb, PTP_V2_VERSIONPTP_OFFSET);
+    version_ptp = 0x0F & tvb_get_uint8(tvb, PTP_V2_VERSIONPTP_OFFSET);
 
-    if( version_ptp == 2) return TRUE;
-    else return FALSE;
+    if( version_ptp == 2) return true;
+    else return false;
 }
 
 
 /* Code to actually dissect the PTPv1 packets */
 
 static void
-dissect_ptp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
-{
-    guint8   ptp_control, ptp_mm_messagekey = 0;
+dissect_ptp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree) {
+    uint8_t  ptp_control_field, ptp_mm_messagekey = 0;
     nstime_t ts;                /* time structure with seconds and nanoseconds */
 
 /* Set up structures needed to add the protocol subtree and manage it */
@@ -1714,15 +2104,15 @@ dissect_ptp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 
 /* Get control field (what kind of message is this? (Sync, DelayReq, ...) */
 
-    ptp_control = tvb_get_guint8 (tvb, PTP_CONTROL_OFFSET);
+    ptp_control_field = tvb_get_uint8 (tvb, PTP_CONTROLFIELD_OFFSET);
     /* MGMT packet? */
-    if ( ptp_control == PTP_MANAGEMENT_MESSAGE ){
+    if (ptp_control_field == PTP_MANAGEMENT_MESSAGE ){
         /* Get the managementMessageKey */
-        ptp_mm_messagekey = tvb_get_guint8(tvb, PTP_MM_MANAGEMENTMESSAGEKEY_OFFSET);
+        ptp_mm_messagekey = tvb_get_uint8(tvb, PTP_MM_MANAGEMENTMESSAGEKEY_OFFSET);
     }
 
 /* Create and set the string for "Info" column */
-    switch(ptp_control){
+    switch(ptp_control_field){
         case PTP_SYNC_MESSAGE:{
             col_set_str(pinfo->cinfo, COL_INFO, "Sync Message");
             break;
@@ -1741,7 +2131,7 @@ dissect_ptp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
         }
         case PTP_MANAGEMENT_MESSAGE:{
              col_add_fstr(pinfo->cinfo, COL_INFO, "Management Message (%s)",
-                             val_to_str_ext(ptp_mm_messagekey,
+                             val_to_str_ext(pinfo->pool, ptp_mm_messagekey,
                                             &ptp_managementMessageKey_infocolumn_vals_ext,
                                             "Unknown message key %u"));
             break;
@@ -1766,7 +2156,7 @@ dissect_ptp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
             hf_ptp_versionnetwork, tvb, PTP_VERSIONNETWORK_OFFSET, 2, ENC_BIG_ENDIAN);
 
         proto_tree_add_item(ptp_tree,
-            hf_ptp_subdomain, tvb, PTP_SUBDOMAIN_OFFSET, 16, ENC_ASCII|ENC_NA);
+            hf_ptp_subdomain, tvb, PTP_SUBDOMAIN_OFFSET, 16, ENC_ASCII);
 
         proto_tree_add_item(ptp_tree,
             hf_ptp_messagetype, tvb, PTP_MESSAGETYPE_OFFSET, 1, ENC_BIG_ENDIAN);
@@ -1784,40 +2174,39 @@ dissect_ptp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
             hf_ptp_sequenceid, tvb, PTP_SEQUENCEID_OFFSET, 2, ENC_BIG_ENDIAN);
 
         proto_tree_add_item(ptp_tree,
-            hf_ptp_control, tvb, PTP_CONTROL_OFFSET, 1, ENC_BIG_ENDIAN);
+            hf_ptp_controlfield, tvb, PTP_CONTROLFIELD_OFFSET, 1, ENC_BIG_ENDIAN);
 
         /* Subtree for the flag-field */
-        if(tree){
-            flags_ti = proto_tree_add_item(ptp_tree,
-                hf_ptp_flags, tvb, PTP_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
+        /* TODO: use proto_tree_add_bitmask_list() ? */
+        flags_ti = proto_tree_add_item(ptp_tree,
+            hf_ptp_flags, tvb, PTP_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
 
-            ptp_flags_tree = proto_item_add_subtree(flags_ti, ett_ptp_flags);
+        ptp_flags_tree = proto_item_add_subtree(flags_ti, ett_ptp_flags);
 
-            proto_tree_add_item(ptp_flags_tree,
-                hf_ptp_flags_li61, tvb, PTP_FLAGS_LI61_OFFSET, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(ptp_flags_tree,
+            hf_ptp_flags_li61, tvb, PTP_FLAGS_LI61_OFFSET, 2, ENC_BIG_ENDIAN);
 
-            proto_tree_add_item(ptp_flags_tree,
-                hf_ptp_flags_li59, tvb, PTP_FLAGS_LI59_OFFSET, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(ptp_flags_tree,
+            hf_ptp_flags_li59, tvb, PTP_FLAGS_LI59_OFFSET, 2, ENC_BIG_ENDIAN);
 
-            proto_tree_add_item(ptp_flags_tree,
-                hf_ptp_flags_boundary_clock, tvb, PTP_FLAGS_BOUNDARY_CLOCK_OFFSET, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(ptp_flags_tree,
+            hf_ptp_flags_boundary_clock, tvb, PTP_FLAGS_BOUNDARY_CLOCK_OFFSET, 2, ENC_BIG_ENDIAN);
 
-            proto_tree_add_item(ptp_flags_tree,
-                hf_ptp_flags_assist, tvb, PTP_FLAGS_ASSIST_OFFSET, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(ptp_flags_tree,
+            hf_ptp_flags_assist, tvb, PTP_FLAGS_ASSIST_OFFSET, 2, ENC_BIG_ENDIAN);
 
-            proto_tree_add_item(ptp_flags_tree,
-                hf_ptp_flags_ext_sync, tvb, PTP_FLAGS_EXT_SYNC_OFFSET, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(ptp_flags_tree,
+            hf_ptp_flags_ext_sync, tvb, PTP_FLAGS_EXT_SYNC_OFFSET, 2, ENC_BIG_ENDIAN);
 
-            proto_tree_add_item(ptp_flags_tree,
-                hf_ptp_flags_parent, tvb, PTP_FLAGS_PARENT_STATS_OFFSET, 2, ENC_BIG_ENDIAN);
+        proto_tree_add_item(ptp_flags_tree,
+            hf_ptp_flags_parent, tvb, PTP_FLAGS_PARENT_STATS_OFFSET, 2, ENC_BIG_ENDIAN);
 
-            proto_tree_add_item(ptp_flags_tree,
-                hf_ptp_flags_sync_burst, tvb, PTP_FLAGS_SYNC_BURST_OFFSET, 2, ENC_BIG_ENDIAN);
-        }
+        proto_tree_add_item(ptp_flags_tree,
+            hf_ptp_flags_sync_burst, tvb, PTP_FLAGS_SYNC_BURST_OFFSET, 2, ENC_BIG_ENDIAN);
 
         /* The rest of the ptp-dissector depends on the control-field  */
 
-        switch(ptp_control){
+        switch(ptp_control_field){
             case PTP_SYNC_MESSAGE:
             case PTP_DELAY_REQ_MESSAGE:{
 
@@ -1861,7 +2250,7 @@ dissect_ptp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                         PTP_SDR_GRANDMASTERCLOCKSTRATUM_OFFSET, 1, ENC_BIG_ENDIAN);
 
                 proto_tree_add_item(ptp_tree, hf_ptp_sdr_grandmasterclockidentifier, tvb,
-                        PTP_SDR_GRANDMASTERCLOCKIDENTIFIER_OFFSET, 4, ENC_ASCII|ENC_NA);
+                        PTP_SDR_GRANDMASTERCLOCKIDENTIFIER_OFFSET, 4, ENC_ASCII);
 
                 proto_tree_add_item(ptp_tree,
                         hf_ptp_sdr_grandmasterclockvariance, tvb,
@@ -1886,7 +2275,7 @@ dissect_ptp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                         hf_ptp_sdr_localclockstratum, tvb, PTP_SDR_LOCALCLOCKSTRATUM_OFFSET, 1, ENC_BIG_ENDIAN);
 
                 proto_tree_add_item(ptp_tree,
-                        hf_ptp_sdr_localclockidentifier, tvb, PTP_SDR_LOCALCLOCKIDENTIFIER_OFFSET, 4, ENC_ASCII|ENC_NA);
+                        hf_ptp_sdr_localclockidentifier, tvb, PTP_SDR_LOCALCLOCKIDENTIFIER_OFFSET, 4, ENC_ASCII);
 
                 proto_tree_add_item(ptp_tree, hf_ptp_sdr_parentcommunicationtechnology, tvb,
                         PTP_SDR_PARENTCOMMUNICATIONTECHNOLOGY_OFFSET, 1, ENC_BIG_ENDIAN);
@@ -2008,7 +2397,7 @@ dissect_ptp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                     }
                     case PTP_MM_SET_SUBDOMAIN:{
                         proto_tree_add_item(ptp_tree, hf_ptp_mm_set_subdomain_subdomainname, tvb,
-                                PTP_MM_SET_SUBDOMAIN_SUBDOMAINNAME_OFFSET, 16, ENC_ASCII|ENC_NA);
+                                PTP_MM_SET_SUBDOMAIN_SUBDOMAINNAME_OFFSET, 16, ENC_ASCII);
                         break;
                     }
                     case PTP_MM_DEFAULT_DATA_SET:{
@@ -2050,7 +2439,7 @@ dissect_ptp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                                 PTP_MM_DEFAULT_DATA_SET_SYNCINTERVAL_OFFSET, 1, ENC_BIG_ENDIAN);
 
                         proto_tree_add_item(ptp_tree, hf_ptp_mm_default_data_set_subdomainname, tvb,
-                                PTP_MM_DEFAULT_DATA_SET_SUBDOMAINNAME_OFFSET, 16, ENC_ASCII|ENC_NA);
+                                PTP_MM_DEFAULT_DATA_SET_SUBDOMAINNAME_OFFSET, 16, ENC_ASCII);
 
                         proto_tree_add_item(ptp_tree, hf_ptp_mm_default_data_set_numberports, tvb,
                                 PTP_MM_DEFAULT_DATA_SET_NUMBERPORTS_OFFSET, 2, ENC_BIG_ENDIAN);
@@ -2076,7 +2465,7 @@ dissect_ptp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                                 PTP_MM_UPDATE_DEFAULT_DATA_SET_SYNCINTERVAL_OFFSET, 1, ENC_BIG_ENDIAN);
 
                         proto_tree_add_item(ptp_tree, hf_ptp_mm_update_default_data_set_subdomainname, tvb,
-                                PTP_MM_UPDATE_DEFAULT_DATA_SET_SUBDOMAINNAME_OFFSET, 16, ENC_ASCII|ENC_NA);
+                                PTP_MM_UPDATE_DEFAULT_DATA_SET_SUBDOMAINNAME_OFFSET, 16, ENC_ASCII);
                         break;
                     }
                     case PTP_MM_CURRENT_DATA_SET:{
@@ -2360,13 +2749,12 @@ dissect_ptp_v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 
 /* Code to dissect PTPText */
 static void
-dissect_ptp_v2_text(tvbuff_t *tvb, guint16 *cur_offset, proto_tree *tree, int hf_ptp_v2_mm_ptptext, int hf_ptp_v2_mm_ptptext_length)
-{
-    guint8      length = 0;
+dissect_ptp_v2_text(tvbuff_t *tvb, int *cur_offset, proto_tree *tree, int hf_ptp_v2_mm_ptptext, int hf_ptp_v2_mm_ptptext_length) {
+    uint8_t     length = 0;
     proto_item *ptptext_ti;
     proto_tree *ptptext_subtree;
 
-    length = tvb_get_guint8 (tvb, *cur_offset);
+    length = tvb_get_uint8 (tvb, *cur_offset);
 
     if (tree)
     {
@@ -2384,16 +2772,17 @@ dissect_ptp_v2_text(tvbuff_t *tvb, guint16 *cur_offset, proto_tree *tree, int hf
     }
 }
 
-static void
-dissect_ptp_v2_timeInterval(tvbuff_t *tvb, guint16 *cur_offset, proto_tree *tree, const char* name, int hf_ptp_v2_timeInterval_ns, int hf_ptp_v2_timeInterval_subns)
-{
-
+void
+dissect_ptp_v2_timeInterval(tvbuff_t *tvb, int *cur_offset, proto_tree *tree, const char* name, int hf_ptp_v2_timeInterval_ns, int hf_ptp_v2_timeInterval_subns, proto_tree **tree_out, int64_t *ns_out) {
     double      time_double;
-    gint64      time_ns;
-    guint16     time_subns;
+    int64_t     time_ns;
+    uint16_t    time_subns;
     proto_tree *ptptimeInterval_subtree;
 
     time_ns = tvb_get_ntoh64(tvb, *cur_offset);
+    /* TODO: should flag 'too big' if see distinguished value of 0x7FFFFFFFFFFFFFFF?
+     * https://standards.ieee.org/wp-content/uploads/import/documents/interpretations/1588-2008_interp.pdf
+     * notes that this field can cope with about 40 hours.. */
     time_double = (1.0*time_ns) / 65536.0;
     time_ns = time_ns >> 16;
     time_subns = tvb_get_ntohs(tvb, *cur_offset+6);
@@ -2401,48 +2790,1655 @@ dissect_ptp_v2_timeInterval(tvbuff_t *tvb, guint16 *cur_offset, proto_tree *tree
     ptptimeInterval_subtree = proto_tree_add_subtree_format(tree, tvb, *cur_offset, 8,
         ett_ptp_v2_timeInterval, NULL, "%s: %f nanoseconds", name, time_double);
 
-    proto_tree_add_uint64_format_value(ptptimeInterval_subtree,
-        hf_ptp_v2_timeInterval_ns, tvb, *cur_offset, 6, time_ns, "Ns: %" G_GINT64_MODIFIER "d nanoseconds", time_ns);
+    proto_tree_add_int64(ptptimeInterval_subtree,
+        hf_ptp_v2_timeInterval_ns, tvb, *cur_offset, 6, time_ns);
 
-    proto_tree_add_double_format_value(ptptimeInterval_subtree,
-        hf_ptp_v2_timeInterval_subns, tvb, *cur_offset+6, 2, (time_subns/65536.0),
-        "%f nanoseconds", (time_subns/65536.0));
+    proto_tree_add_double(ptptimeInterval_subtree,
+        hf_ptp_v2_timeInterval_subns, tvb, *cur_offset+6, 2, (time_subns/65536.0));
 
+    /* Set output args */
     *cur_offset = *cur_offset + 8;
+    if (tree_out) *tree_out = ptptimeInterval_subtree;
+    if (ns_out) *ns_out = time_ns;
+}
+
+static void
+dissect_ptp_v2_timetstamp(tvbuff_t *tvb, int *cur_offset, proto_tree *tree, const char* name, int hf_ptp_v2_timestamp_s, int hf_ptp_v2_timestamp_ns) {
+    int64_t     time_s;
+    uint32_t    time_ns;
+    proto_tree *ptptimestamp_subtree;
+
+    time_s = tvb_get_ntoh48(tvb, *cur_offset);
+    time_ns = tvb_get_ntohl(tvb, *cur_offset + 6);
+
+    ptptimestamp_subtree = proto_tree_add_subtree_format(tree,
+                                                         tvb,
+                                                         *cur_offset,
+                                                         10,
+                                                         ett_ptp_v2_timeInterval,
+                                                         NULL,
+                                                         "%s: %" PRIu64 "%s%09" PRId32 " nanoseconds",
+                                                         name, time_s, decimal_point, time_ns);
+
+    proto_tree_add_uint64(ptptimestamp_subtree,
+                          hf_ptp_v2_timestamp_s,
+                          tvb,
+                          *cur_offset,
+                          6,
+                          time_s);
+
+    proto_tree_add_int(ptptimestamp_subtree,
+                       hf_ptp_v2_timestamp_ns,
+                       tvb,
+                       *cur_offset + 6,
+                       4,
+                       time_ns);
+
+    *cur_offset = *cur_offset + 10;
 }
 
 /* Code to actually dissect the PTPv2 packets */
 
+static int
+dissect_ptp_v2_tlv_tlvtype_length(tvbuff_t *tvb, int offset_orig, proto_tree *ptp_tlv_tree) {
+    int offset = offset_orig;
+
+    proto_tree_add_item(ptp_tlv_tree, hf_ptp_tlv_tlvtype, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
+
+    proto_tree_add_item(ptp_tlv_tree, hf_ptp_tlv_lengthfield, tvb, offset, 2, ENC_BIG_ENDIAN);
+    offset += 2;
+
+    return offset - offset_orig;
+}
+
+static int
+dissect_ptp_v2_tlv_org_fields(tvbuff_t *tvb, int offset_orig, proto_tree *ptp_tlv_tree, int hf_orgsubtype) {
+    int offset = offset_orig + dissect_ptp_v2_tlv_tlvtype_length(tvb, offset_orig, ptp_tlv_tree);
+
+    proto_tree_add_item(ptp_tlv_tree, hf_ptp_tlv_oe_organizationid, tvb, offset, 3, ENC_BIG_ENDIAN);
+    offset += 3;
+
+    proto_tree_add_item(ptp_tlv_tree, hf_orgsubtype, tvb, offset, 3, ENC_BIG_ENDIAN);
+    offset += 3;
+
+    return offset - offset_orig;
+}
+
+static int
+disect_ptp_v2_tlvs(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_item *ti_root, proto_tree *ptp_tree, uint8_t ptp_v2_messageid, uint16_t ptp_v2_flags, bool is_802_1as) {
+    int offset_orig = offset;
+    proto_item *ti;
+    proto_item *ti_tlv = ti_root;
+
+    bool as_followup_tlv_present = false;
+
+    while (true) {
+        int offset_loopstart = offset;
+
+        if (tvb_reported_length_remaining(tvb, offset) < PTP_V2_TLV_HEADER_LENGTH) {
+            /* broken TLV or maybe just a few bytes at end left */
+            break;
+        }
+
+        uint16_t tlv_type = tvb_get_ntohs(tvb, offset + PTP_V2_TLV_TYPE_OFFSET);
+        uint16_t tlv_length = tvb_get_ntohs(tvb, offset + PTP_V2_TLV_LENGTH_OFFSET);
+
+        switch (tlv_type) {
+        case PTP_V2_TLV_TYPE_MANAGEMENT: {
+            proto_item *managementData_ti, *clockType_ti, *protocolAddress_ti;
+            proto_tree *ptp_managementData_tree, *ptp_clockType_tree, *ptp_protocolAddress_tree;
+
+            proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Management TLV");
+            offset += dissect_ptp_v2_tlv_tlvtype_length(tvb, offset, ptp_tlv_tree);
+
+            uint32_t ptp_v2_managementId;
+            proto_tree_add_item_ret_uint(ptp_tlv_tree, hf_ptp_v2_mm_managementId, tvb, offset, 2, ENC_BIG_ENDIAN, &ptp_v2_managementId);
+            offset += 2;
+
+            if (tlv_length <= 2) {
+                /* no data */
+                break;
+            }
+
+            managementData_ti = proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_mm_data, tvb, offset, tlv_length - 2, ENC_NA);
+            ptp_managementData_tree = proto_item_add_subtree(managementData_ti, ett_ptp_v2_managementData);
+
+            switch (ptp_v2_managementId) {
+            case PTP_V2_MM_ID_NULL_MANAGEMENT: {
+                /* no data in NULL management */
+                break;
+            }
+            case PTP_V2_MM_ID_CLOCK_DESCRIPTION: {
+                uint32_t N = 0, S = 0;
+                clockType_ti = proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockType, tvb, offset, 2, ENC_BIG_ENDIAN);
+
+                ptp_clockType_tree = proto_item_add_subtree(clockType_ti, ett_ptp_v2_clockType);
+                /* ClockType Subtree */
+                proto_tree_add_item(ptp_clockType_tree, hf_ptp_v2_mm_clockType_ordinaryClock, tvb, offset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_clockType_tree, hf_ptp_v2_mm_clockType_boundaryClock, tvb, offset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_clockType_tree, hf_ptp_v2_mm_clockType_p2p_transparentClock, tvb, offset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_clockType_tree, hf_ptp_v2_mm_clockType_e2e_transparentClock, tvb, offset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_clockType_tree, hf_ptp_v2_mm_clockType_managementNode, tvb, offset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_clockType_tree, hf_ptp_v2_mm_clockType_reserved, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                dissect_ptp_v2_text(tvb, &offset, ptp_managementData_tree, hf_ptp_v2_mm_physicalLayerProtocol, hf_ptp_v2_mm_physicalLayerProtocol_length);
+
+                proto_tree_add_item_ret_uint(ptp_managementData_tree, hf_ptp_v2_mm_physicalAddressLength, tvb, offset, 2, ENC_BIG_ENDIAN, &S);
+                offset += 2;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_physicalAddress, tvb, offset, S, ENC_NA);
+                offset += S;
+
+                N = tvb_get_ntohs(tvb, offset + 2);
+                /* protocolAddress_length should be even */
+                if(N % 2)
+                    expert_add_info(pinfo, ptp_managementData_tree, &ei_ptp_v2_mm_protAddrLen);
+
+                protocolAddress_ti = proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_protocolAddressStruct, tvb, offset + 4, N, ENC_NA);
+                ptp_protocolAddress_tree = proto_item_add_subtree(protocolAddress_ti, ett_ptp_v2_protocolAddress);
+                /* physicalLayerProtocol subtree */
+                proto_tree_add_item(ptp_protocolAddress_tree, hf_ptp_v2_mm_protocolAddress_networkProtocol, tvb, offset, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_protocolAddress_tree, hf_ptp_v2_mm_protocolAddress_length, tvb, offset + 2, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_protocolAddress_tree, hf_ptp_v2_mm_protocolAddress, tvb, offset + 4, N, ENC_NA);
+                N += 4;
+                offset += N;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_manufacturerIdentity, tvb, offset, 3, ENC_NA);
+                offset += 3;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                dissect_ptp_v2_text(tvb, &offset, ptp_managementData_tree, hf_ptp_v2_mm_productDescription, hf_ptp_v2_mm_productDescription_length);
+                dissect_ptp_v2_text(tvb, &offset, ptp_managementData_tree, hf_ptp_v2_mm_revisionData, hf_ptp_v2_mm_revisionData_length);
+                dissect_ptp_v2_text(tvb, &offset, ptp_managementData_tree, hf_ptp_v2_mm_userDescription, hf_ptp_v2_mm_userDescription_length);
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_profileIdentity, tvb, offset, 6, ENC_NA);
+                offset += 6;
+
+                /* Pad to even length */
+                if ((offset - offset_loopstart) % 2) {
+                    proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_pad, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+                }
+                break;
+            }
+            case PTP_V2_MM_ID_USER_DESCRIPTION: {
+
+                dissect_ptp_v2_text(tvb, &offset, ptp_managementData_tree, hf_ptp_v2_mm_userDescription, hf_ptp_v2_mm_userDescription_length);
+
+                /* Pad to even length */
+                if ((offset - offset_loopstart) % 2) {
+                    proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_pad, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+                }
+                break;
+            }
+            case PTP_V2_MM_ID_SAVE_IN_NON_VOLATILE_STORAGE: {
+                /* no data */
+                break;
+            }
+            case PTP_V2_MM_ID_RESET_NON_VOLATILE_STORAGE: {
+                /* no data */
+                break;
+            }
+            case PTP_V2_MM_ID_INITIALIZE: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_initializationKey, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+                break;
+            }
+            case PTP_V2_MM_ID_FAULT_LOG: {
+                uint16_t ii, num = 0;
+                proto_tree  *ptpError_subtree;
+
+                num = tvb_get_ntohs(tvb, offset);
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_numberOfFaultRecords, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                for (ii = 0; ii < num; ii++) {
+                    ptpError_subtree = proto_tree_add_subtree(ptp_managementData_tree, tvb, offset, tvb_get_ntohs(tvb, offset),
+                        ett_ptp_v2_faultRecord, NULL, "Fault record");
+
+                    proto_tree_add_item(ptpError_subtree, hf_ptp_v2_mm_faultRecordLength, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    offset += 2;
+
+                    proto_tree_add_item(ptpError_subtree, hf_ptp_v2_mm_faultTime_s, tvb, offset, 6, ENC_BIG_ENDIAN);
+                    offset += 6;
+
+                    proto_tree_add_item(ptpError_subtree, hf_ptp_v2_mm_faultTime_ns, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    offset += 4;
+
+                    proto_tree_add_item(ptpError_subtree, hf_ptp_v2_mm_severityCode, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+
+                    dissect_ptp_v2_text(tvb, &offset, ptpError_subtree, hf_ptp_v2_mm_faultName, hf_ptp_v2_mm_faultName_length);
+
+                    dissect_ptp_v2_text(tvb, &offset, ptpError_subtree, hf_ptp_v2_mm_faultValue, hf_ptp_v2_mm_faultValue_length);
+
+                    dissect_ptp_v2_text(tvb, &offset, ptpError_subtree, hf_ptp_v2_mm_faultDescription, hf_ptp_v2_mm_faultDescription_length);
+                }
+
+                /* Pad to even length */
+                if ((offset - offset_loopstart) % 2) {
+                    proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_pad, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+                }
+                break;
+            }
+            case PTP_V2_MM_ID_FAULT_LOG_RESET: {
+                /* no data */
+                break;
+            }
+            case PTP_V2_MM_ID_DEFAULT_DATA_SET: {
+                // XXX: change to relative offset!
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_TSC, tvb, offset, 1, ENC_NA);
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_dds_SO, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_numberPorts, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_priority1, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockclass, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockaccuracy, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockvariance, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_priority2, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockidentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                offset += 8;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_domainNumber, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_CURRENT_DATA_SET: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_stepsRemoved, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                dissect_ptp_v2_timeInterval(tvb, &offset, ptp_managementData_tree, "Offset from Master",
+                                            hf_ptp_v2_mm_offset_ns, hf_ptp_v2_mm_offset_subns, NULL, NULL);
+                dissect_ptp_v2_timeInterval(tvb, &offset, ptp_managementData_tree, "Mean path delay",
+                                            hf_ptp_v2_mm_pathDelay_ns, hf_ptp_v2_mm_pathDelay_subns, NULL, NULL);
+                break;
+            }
+            case PTP_V2_MM_ID_PARENT_DATA_SET: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_parentIdentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                offset += 8;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_parentPort, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_parentStats, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_observedParentOffsetScaledLogVariance, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_observedParentClockPhaseChangeRate, tvb, offset, 4, ENC_BIG_ENDIAN);
+                offset += 4;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_grandmasterPriority1, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_grandmasterclockclass, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_grandmasterclockaccuracy, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_grandmasterclockvariance, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_grandmasterPriority2, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_grandmasterIdentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                offset += 8;
+
+                break;
+            }
+            case PTP_V2_MM_ID_TIME_PROPERTIES_DATA_SET: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_currentUtcOffset, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_LI_61, tvb, offset, 1, ENC_NA);
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_LI_59, tvb, offset, 1, ENC_NA);
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_UTCV, tvb, offset, 1, ENC_NA);
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_PTP, tvb, offset, 1, ENC_NA);
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_TTRA, tvb, offset, 1, ENC_NA);
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_FTRA, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_timesource, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_PORT_DATA_SET: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockidentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                offset += 8;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_PortNumber, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_portState, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logMinDelayReqInterval, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                dissect_ptp_v2_timeInterval(tvb, &offset, ptp_managementData_tree, "Peer mean path delay",
+                                            hf_ptp_v2_mm_peerMeanPathDelay_ns, hf_ptp_v2_mm_peerMeanPathDelay_subns, NULL, NULL);
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logAnnounceInterval, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_announceReceiptTimeout, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logSyncInterval, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_delayMechanism, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logMinPdelayReqInterval, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_versionNumber, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_PRIORITY1: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_priority1, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_PRIORITY2: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_priority2, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_DOMAIN: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_domainNumber, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_SLAVE_ONLY: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_SO, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_LOG_ANNOUNCE_INTERVAL: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logAnnounceInterval, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_ANNOUNCE_RECEIPT_TIMEOUT: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_announceReceiptTimeout, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_LOG_SYNC_INTERVAL: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logSyncInterval, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_VERSION_NUMBER: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_versionNumber, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_ENABLE_PORT: {
+                /* no data */
+                break;
+            }
+            case PTP_V2_MM_ID_DISABLE_PORT: {
+                /* no data */
+                break;
+            }
+            case PTP_V2_MM_ID_TIME: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_currentTime_s, tvb, offset, 6, ENC_BIG_ENDIAN);
+                offset += 6;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_currentTime_ns, tvb, offset, 4, ENC_BIG_ENDIAN);
+                offset += 4;
+
+                break;
+            }
+            case PTP_V2_MM_ID_CLOCK_ACCURACY: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockAccuracy, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_UTC_PROPERTIES: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_currentUtcOffset, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_LI_61, tvb, offset, 1, ENC_NA);
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_LI_59, tvb, offset, 1, ENC_NA);
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_UTCV, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_TRACEABILITY_PROPERTIES: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_TTRA, tvb, offset, 1, ENC_NA);
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_FTRA, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_TIMESCALE_PROPERTIES: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_PTP, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_timesource, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_UNICAST_NEGOTIATION_ENABLE: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_ucEN, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_PATH_TRACE_LIST: {
+                uint16_t i = 0;
+                /* one or more ClockIdentity */
+                for (i = 0; i < (tlv_length / 8); i++)
+                {
+                    proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockidentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                    offset += 8;
+                }
+
+                break;
+            }
+            case PTP_V2_MM_ID_PATH_TRACE_ENABLE: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_ptEN, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_GRANDMASTER_CLUSTER_TABLE: {
+                uint32_t ii, actualTableSize = 0;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logQueryInterval, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item_ret_uint(ptp_managementData_tree, hf_ptp_v2_mm_GrandmasterActualTableSize, tvb, offset, 1, ENC_NA, &actualTableSize);
+                offset += 1;
+
+                proto_tree *addressTable_subtree = proto_item_add_subtree(ptp_managementData_tree, ett_ptp_v2_addressTable);
+                for (ii = 0; ii < actualTableSize; ii++) {
+                    uint32_t N = tvb_get_ntohs(tvb, offset + 2);
+                    proto_tree  *address_subtree;
+                    /* protocolAddress_length should be even */
+                    if(N % 2)
+                        expert_add_info(pinfo, addressTable_subtree, &ei_ptp_v2_mm_protAddrLen);
+
+                    protocolAddress_ti = proto_tree_add_item(addressTable_subtree, hf_ptp_v2_mm_protocolAddressStruct, tvb, offset + 4, N, ENC_NA);
+                    address_subtree = proto_item_add_subtree(protocolAddress_ti, ett_ptp_v2_protocolAddress);
+                    proto_tree_add_item(address_subtree, hf_ptp_v2_mm_protocolAddress_networkProtocol, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(address_subtree, hf_ptp_v2_mm_protocolAddress_length, tvb, offset + 2, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(address_subtree, hf_ptp_v2_mm_protocolAddress, tvb, offset + 4, N, ENC_NA);
+                    offset += N + 4;
+                }
+
+                /* We never have a pad here as the table is always even */
+                if((offset - offset_loopstart) % 2)
+                    expert_add_info(pinfo, ptp_managementData_tree, &ei_ptp_v2_mmGrandTblPad);
+                break;
+            }
+            case PTP_V2_MM_ID_UNICAST_MASTER_TABLE: {
+                uint32_t ii, actualTableSize = 0;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logQueryInterval, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item_ret_uint(ptp_managementData_tree, hf_ptp_v2_mm_actualTableSize, tvb, offset, 2, ENC_BIG_ENDIAN, &actualTableSize);
+                offset += 2;
+
+                proto_tree *addressTable_subtree = proto_item_add_subtree(ptp_managementData_tree, ett_ptp_v2_addressTable);
+                for (ii = 0; ii < actualTableSize; ii++) {
+                    uint32_t N = tvb_get_ntohs(tvb, offset + 2);
+                    proto_tree  *address_subtree;
+                    /* protocolAddress_length should be even */
+                    if(N % 2)
+                        expert_add_info(pinfo, addressTable_subtree, &ei_ptp_v2_mm_protAddrLen);
+
+                    protocolAddress_ti = proto_tree_add_item(addressTable_subtree, hf_ptp_v2_mm_protocolAddressStruct, tvb, offset + 4, N, ENC_NA);
+                    address_subtree = proto_item_add_subtree(protocolAddress_ti, ett_ptp_v2_protocolAddress);
+                    proto_tree_add_item(address_subtree, hf_ptp_v2_mm_protocolAddress_networkProtocol, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(address_subtree, hf_ptp_v2_mm_protocolAddress_length, tvb, offset + 2, 2, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(address_subtree, hf_ptp_v2_mm_protocolAddress, tvb, offset + 4, N, ENC_NA);
+                    offset += N + 4;
+                }
+
+                /* We always have a pad as the table is always even and the start is odd */
+                if((offset - offset_loopstart) % 2) {
+                    proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_pad, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+                } else
+                    expert_add_info(pinfo, ptp_managementData_tree, &ei_ptp_v2_mmUnuTblPad);
+                break;
+            }
+            case PTP_V2_MM_ID_UNICAST_MASTER_MAX_TABLE_SIZE: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_maxTableSize, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+                break;
+            }
+            case PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE: {
+                uint32_t ii, actualTableSize = 0;
+
+                proto_tree_add_item_ret_uint(ptp_managementData_tree, hf_ptp_v2_mm_actualTableSize, tvb, offset, 2, ENC_BIG_ENDIAN, &actualTableSize);
+                offset += 2;
+
+                proto_tree *acceptableTable_subtree = proto_item_add_subtree(ptp_managementData_tree, ett_ptp_v2_acceptableRecord);
+                for (ii = 0; ii < actualTableSize; ii++) {
+                    proto_tree  *record_subtree;
+                    proto_item *acceptable_ti;
+                    acceptable_ti = proto_tree_add_item(acceptableTable_subtree, hf_ptp_v2_mm_clockidentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                    record_subtree = proto_item_add_subtree(acceptable_ti, ett_ptp_v2_acceptableRecord);
+
+                    proto_tree_add_item(record_subtree, hf_ptp_v2_mm_clockidentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                    offset += 8;
+
+                    proto_tree_add_item(record_subtree, hf_ptp_v2_mm_PortNumber, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    offset += 2;
+
+                    proto_tree_add_item(record_subtree, hf_ptp_v2_mm_alternatePriority1, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+                }
+
+                /* Pad to even length */
+                if ((offset - offset_loopstart) % 2) {
+                    proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_pad, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+                }
+                break;
+            }
+            case PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE_ENABLED: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_acceptableMasterPortDS, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+                break;
+            }
+            case PTP_V2_MM_ID_ACCEPTABLE_MASTER_MAX_TABLE_SIZE: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_maxTableSize, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+                break;
+            }
+            case PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_ENABLE: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_keyField, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_atEN, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_NAME:
+            {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_keyField, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                dissect_ptp_v2_text(tvb, &offset, ptp_managementData_tree, hf_ptp_v2_mm_displayName, hf_ptp_v2_mm_displayName_length);
+
+                /* Pad to even length */
+                if ((offset - offset_loopstart) % 2) {
+                    proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_pad, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+                }
+                break;
+            }
+            case PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_MAX_KEY: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_maxKey, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_ALTERNATE_MASTER: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_transmitAlternateMulticastSync, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_numberOfAlternateMasters, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logAlternateMulticastSyncInterval, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_PROPERTIES: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_keyField, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_currentOffset, tvb, offset, 4, ENC_BIG_ENDIAN);
+                offset += 4;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_jumpSeconds, tvb, offset, 4, ENC_BIG_ENDIAN);
+                offset += 4;
+
+                uint64_t timeStamp = tvb_get_ntohl(tvb, offset);
+                timeStamp = timeStamp << 16;
+                timeStamp = timeStamp | tvb_get_ntohs(tvb, offset + 4);
+
+                proto_tree_add_uint64(ptp_managementData_tree, hf_ptp_v2_mm_nextjumpSeconds, tvb, offset, 6, timeStamp);
+                offset += 6;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_EXTERNAL_PORT_CONFIGURATION_ENABLED: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_externalPortConfigurationEnabled, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+                break;
+            }
+            case PTP_V2_MM_ID_MASTER_ONLY: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_MO, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+                break;
+            }
+            case PTP_V2_MM_ID_HOLDOVER_UPGRADE_ENABLE: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_holdoverUpgradeEnable, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+                break;
+            }
+            case PTP_V2_MM_ID_EXT_PORT_CONFIG_PORT_DATA_SET: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_acceptableMasterPortDS, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_desiredPortState, tvb, offset, 1, ENC_NA);
+                offset += 1;
+                break;
+            }
+            case PTP_V2_MM_ID_TC_DEFAULT_DATA_SET: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockidentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                offset += 8;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_numberPorts, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_delayMechanism, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_primaryDomain, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_TC_PORT_DATA_SET: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockidentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                offset += 8;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_PortNumber, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_faultyFlag, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logMinPdelayReqInterval, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                dissect_ptp_v2_timeInterval(tvb, &offset, ptp_managementData_tree, "Peer mean path delay",
+                                            hf_ptp_v2_mm_peerMeanPathDelay_ns, hf_ptp_v2_mm_peerMeanPathDelay_subns, NULL, NULL);
+                break;
+            }
+            case PTP_V2_MM_ID_PRIMARY_DOMAIN: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_primaryDomain, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_DELAY_MECHANISM: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_delayMechanism, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            case PTP_V2_MM_ID_LOG_MIN_PDELAY_REQ_INTERVAL: {
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logMinPdelayReqInterval, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                break;
+            }
+            default:
+            {
+                /* no data */
+                break;
+            }
+            } /* switch(ptp_v2_managementId) */
+            break;
+        }
+
+        case PTP_V2_TLV_TYPE_MANAGEMENT_ERROR_STATUS: {
+            proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Management Error Status TLV");
+            offset += dissect_ptp_v2_tlv_tlvtype_length(tvb, offset, ptp_tlv_tree);
+
+            int offset_tmp = offset;
+            proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_managementErrorId, tvb, offset, 2, ENC_BIG_ENDIAN);
+            offset += 2;
+
+            proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_managementId, tvb, offset, 2, ENC_BIG_ENDIAN);
+            offset += 2;
+
+            proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_reserved, tvb, offset, 4, ENC_NA);
+            offset += 4;
+
+            /* optional Field! */
+            if (tlv_length - (offset - offset_tmp) > 0) {
+                dissect_ptp_v2_text(tvb, &offset, ptp_tree, hf_ptp_v2_mm_displayData, hf_ptp_v2_mm_displayData_length);
+
+                /* Pad to even length */
+                if ((offset - offset_tmp) % 2) {
+                    proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_pad, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+                }
+            }
+            break;
+        }
+
+        case PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION: {
+            uint32_t org_id = tvb_get_ntoh24(tvb, offset + PTP_V2_TLV_HEADER_LENGTH);
+            uint32_t subtype = tvb_get_ntoh24(tvb, offset + PTP_V2_TLV_ORGANIZATIONSUBTYPE_OFFSET);
+
+            switch (org_id) {
+            case OUI_IEEE_802_1: {
+                switch (subtype) {
+                case PTP_V2_OE_ORG_IEEE_802_1_SUBTYPE_FOLLOWUP_INFORMATION_TLV: {
+                    proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Follow_Up information TLV");
+                    offset += dissect_ptp_v2_tlv_org_fields(tvb, offset, ptp_tlv_tree, hf_ptp_tlv_oe_organizationsubtype_802_1);
+
+                    int32_t scaled_rate;
+                    proto_tree_add_item_ret_int(ptp_tlv_tree, hf_ptp_as_fu_tlv_cumulative_scaled_rate_offset, tvb, offset, 4, ENC_BIG_ENDIAN, &scaled_rate);
+                    /* The cumulative scaled rate offset is(rateRatio - 1.0) * 2 ^ 41 */
+                    ti = proto_tree_add_double(ptp_tlv_tree, hf_ptp_as_fu_tlv_cumulative_rate_ratio, tvb, offset, 4, 1.0 + ((double)scaled_rate / (UINT64_C(1) << 41)));
+                    proto_item_set_generated(ti);
+                    offset += 4;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_fu_tlv_gm_base_indicator, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    offset += 2;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_fu_tlv_last_gm_phase_change, tvb, offset, 12, ENC_NA);
+                    offset += 12;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_fu_tlv_scaled_last_gm_freq_change, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    offset += 4;
+
+                    as_followup_tlv_present = true;
+                    break;
+                }
+
+                case PTP_V2_OE_ORG_IEEE_802_1_SUBTYPE_MSG_INTERVAL_REQ_TLV: {
+                    static int * const msg_interval_req_flags[] = {
+                        &hf_ptp_as_sig_tlv_flags_one_step_receive_capable,
+                        &hf_ptp_as_sig_tlv_flags_comp_mean_link_delay,
+                        &hf_ptp_as_sig_tlv_flags_comp_rate_ratio,
+                        NULL
+                    };
+
+                    proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Message interval request TLV");
+                    offset += dissect_ptp_v2_tlv_org_fields(tvb, offset, ptp_tlv_tree, hf_ptp_tlv_oe_organizationsubtype_802_1);
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_sig_tlv_link_delay_interval, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_sig_tlv_time_sync_interval, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_sig_tlv_announce_interval, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+
+                    proto_tree_add_bitmask(ptp_tlv_tree, tvb, offset, hf_ptp_as_sig_tlv_flags, ett_ptp_as_sig_tlv_flags, msg_interval_req_flags, ENC_BIG_ENDIAN);
+                    offset += 1;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_sig_tlv_reserved, tvb, offset, 2, ENC_NA);
+                    offset += 2;
+
+                    break;
+                }
+
+                case PTP_V2_OE_ORG_IEEE_802_1_SUBTYPE_CSN_TLV: {
+                    proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "CSN TLV");
+                    offset += dissect_ptp_v2_tlv_org_fields(tvb, offset, ptp_tlv_tree, hf_ptp_tlv_oe_organizationsubtype_802_1);
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_csn_upstream_tx_time, tvb, offset, 12, ENC_NA);
+                    offset += 12;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_csn_neighbor_rate_ratio, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    offset += 4;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_csn_mean_link_delay, tvb, offset, 12, ENC_NA);
+                    offset += 12;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_csn_delay_asymmetry, tvb, offset, 12, ENC_NA);
+                    offset += 12;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_csn_domain_number, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+                    break;
+                }
+
+                case PTP_V2_OE_ORG_IEEE_802_1_SUBTYPE_FOLLOWUP_DRIFT_TRACKING_TLV: {
+                    proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Drift Tracking TLV");
+                    offset += dissect_ptp_v2_tlv_org_fields(tvb, offset, ptp_tlv_tree, hf_ptp_tlv_oe_organizationsubtype_802_1);
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_dt_tlv_sync_egress_timestamp_seconds, tvb, offset, 6, ENC_BIG_ENDIAN);
+                    offset += 6;
+
+                    /* Converting the fractionalNanoseconds to a double */
+                    guint32 nanoseconds = tvb_get_ntohl(tvb, offset);
+                    guint16 fractional_nanoseconds = tvb_get_ntohs(tvb, offset + 4);
+                    double combined_timestamp = nanoseconds + (fractional_nanoseconds / (double)(1 << 16));
+                    proto_tree_add_double(ptp_tlv_tree, hf_ptp_as_dt_tlv_sync_egress_timestamp_fractional_nanoseconds, tvb, offset, 6, combined_timestamp);
+                    offset += 6;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_dt_tlv_sync_grandmaster_identity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                    offset += 8;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_dt_tlv_sync_steps_removed, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    offset += 2;
+
+                    int32_t rate_ratio_drift;
+                    proto_tree_add_item_ret_int(ptp_tlv_tree, hf_ptp_as_dt_tlv_rate_ratio_drift, tvb, offset, 4, ENC_BIG_ENDIAN, &rate_ratio_drift);
+                    ti = proto_tree_add_double(ptp_tlv_tree, hf_ptp_as_dt_tlv_rate_ratio_drift_ppm, tvb, offset, 4, ((double)rate_ratio_drift / (UINT64_C(1) << 41)) * 1e6);
+                    proto_item_set_generated(ti);
+                    offset += 4;
+                  break;
+                }
+
+                } /* end of switch (subtype) */
+
+                if (!is_802_1as) {
+                    /* Expert Info ? */
+                    expert_add_info(pinfo, ti_tlv, &ei_ptp_v2_as_tlv_in_non_as);
+                }
+
+                break;
+            }
+
+            case OUI_IEEE_C37_238: {
+                switch (subtype) {
+                case PTP_V2_OE_ORG_IEEE_C37_238_SUBTYPE_C37238TLV: {
+                    proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "IEEE_C37_238 TLV");
+                    offset += dissect_ptp_v2_tlv_org_fields(tvb, offset, ptp_tlv_tree, hf_ptp_tlv_oe_organizationsubtype);
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_oe_tlv_subtype_c37238tlv_grandmasterid, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    offset += 2;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_oe_tlv_subtype_c37238tlv_grandmastertimeinaccuracy, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    offset += 4;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_oe_tlv_subtype_c37238tlv_networktimeinaccuracy, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    offset += 4;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_oe_tlv_subtype_c37238tlv_reserved, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    offset += 2;
+
+                    break;
+                }
+                case PTP_V2_OE_ORG_IEEE_C37_238_SUBTYPE_C372382017TLV: {
+                    proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "IEEE_C37_238 2017 TLV");
+                    offset += dissect_ptp_v2_tlv_org_fields(tvb, offset, ptp_tlv_tree, hf_ptp_tlv_oe_organizationsubtype);
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_oe_tlv_subtype_c37238tlv_grandmasterid, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    offset += 2;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_oe_tlv_subtype_c372382017tlv_reserved, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    offset += 4;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_oe_tlv_subtype_c37238tlv_totaltimeinaccuracy, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    offset += 4;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_oe_tlv_subtype_c37238tlv_reserved, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    offset += 2;
+
+                    break;
+                }
+
+                } /* end of switch (subtype) */
+                break;
+            } /* end of OUI_IEEE_C37_238 */
+
+            case OUI_SMPTE: {
+                switch (subtype) {
+                case PTP_V2_OE_ORG_SMPTE_SUBTYPE_VERSION_TLV: {
+                    proto_item *smptedata_ti, *systemframerate_ti, *timeaddressflags_ti, *daylightsavingflags_ti, *leapsecondjumpflags_ti;
+                    proto_tree *ptp_smptedata_tree, *ptp_framerate_tree, *ptp_timeaddress_tree, *ptp_daylightsaving_tree, *ptp_leapsecondjump_tree;
+
+                    proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Version TLV");
+                    offset += dissect_ptp_v2_tlv_org_fields(tvb, offset, ptp_tlv_tree, hf_ptp_v2_oe_tlv_smpte_subtype);
+
+                    smptedata_ti = proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_oe_tlv_subtype_smpte_data, tvb, offset, 42, ENC_NA);
+                    ptp_smptedata_tree = proto_item_add_subtree(smptedata_ti, ett_ptp_oe_smpte_data);
+                    systemframerate_ti = proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_defaultsystemframerate, tvb, offset, 8, ENC_NA);
+                    ptp_framerate_tree = proto_item_add_subtree(systemframerate_ti, ett_ptp_oe_smpte_framerate);
+                    proto_tree_add_item(ptp_framerate_tree, hf_ptp_v2_oe_tlv_subtype_smpte_defaultsystemframerate_numerator, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(ptp_framerate_tree, hf_ptp_v2_oe_tlv_subtype_smpte_defaultsystemframerate_denominator, tvb, offset + 4, 4, ENC_BIG_ENDIAN);
+                    offset += 8;
+
+                    proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_masterlockingstatus, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+
+                    timeaddressflags_ti = proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags, tvb, offset, 1, ENC_NA);
+                    ptp_timeaddress_tree = proto_item_add_subtree(timeaddressflags_ti, ett_ptp_oe_smpte_timeaddress);
+                    proto_tree_add_item(ptp_timeaddress_tree, hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags_drop, tvb, offset, 1, ENC_NA);
+                    proto_tree_add_item(ptp_timeaddress_tree, hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags_color, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+
+                    proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_currentlocaloffset, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    offset += 4;
+
+                    proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_jumpseconds, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    offset += 4;
+
+                    proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_timeofnextjump, tvb, offset, 6, ENC_BIG_ENDIAN);
+                    offset += 6;
+
+                    proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_timeofnextjam, tvb, offset, 6, ENC_BIG_ENDIAN);
+                    offset += 6;
+
+                    proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_timeofpreviousjam, tvb, offset, 6, ENC_BIG_ENDIAN);
+                    offset += 6;
+
+                    proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_previousjamlocaloffset, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    offset += 4;
+
+                    daylightsavingflags_ti = proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving, tvb, offset, 1, ENC_NA);
+                    ptp_daylightsaving_tree = proto_item_add_subtree(daylightsavingflags_ti, ett_ptp_oe_smpte_daylightsaving);
+                    proto_tree_add_item(ptp_daylightsaving_tree, hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving_current, tvb, offset, 1, ENC_NA);
+                    proto_tree_add_item(ptp_daylightsaving_tree, hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving_next, tvb, offset, 1, ENC_NA);
+                    proto_tree_add_item(ptp_daylightsaving_tree, hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving_previous, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+
+                    leapsecondjumpflags_ti = proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_leapsecondjump, tvb, offset, 1, ENC_NA);
+                    ptp_leapsecondjump_tree = proto_item_add_subtree(leapsecondjumpflags_ti, ett_ptp_oe_smpte_leapsecondjump);
+                    proto_tree_add_item(ptp_leapsecondjump_tree, hf_ptp_v2_oe_tlv_subtype_smpte_leapsecondjump_change, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+                    break;
+                }
+                }
+                break;
+            }
+
+            case OUI_CERN: {
+                switch (subtype) {
+                case PTP_V2_OE_ORG_CERN_SUBTYPE_WR_TLV: {
+                    static int * const wr_flags[] = {
+                        &hf_ptp_v2_an_tlv_oe_cern_wrFlags_wrModeOn,
+                        &hf_ptp_v2_an_tlv_oe_cern_wrFlags_calibrated,
+                        &hf_ptp_v2_an_tlv_oe_cern_wrFlags_wrConfig,
+                        NULL
+                    };
+
+                    proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "CERN White Rabbit TLV");
+                    offset += dissect_ptp_v2_tlv_org_fields(tvb, offset, ptp_tlv_tree, hf_ptp_v2_an_tlv_oe_cern_subtype);
+
+                    uint32_t wr_message_id;
+                    proto_tree_add_item_ret_uint(ptp_tlv_tree, hf_ptp_v2_an_tlv_oe_cern_wrMessageID, tvb, offset, 2, ENC_BIG_ENDIAN, &wr_message_id);
+                    offset += 2;
+
+                    col_append_str(pinfo->cinfo, COL_INFO, " WR ");
+                    col_append_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, wr_message_id, ptp_v2_org_cern_wrMessageID_vals, "Unknown PTP WR Message (%u)"));
+
+                    switch (wr_message_id) {
+                    case PTP_V2_OE_ORG_CERN_WRMESSAGEID_ANN_SUFIX:
+                        /* TODO: This should only happen for Announce messages! */
+                        proto_tree_add_bitmask(ptp_tlv_tree, tvb, offset, hf_ptp_v2_an_tlv_oe_cern_wrFlags, ett_ptp_oe_wr_flags, wr_flags, ENC_BIG_ENDIAN);
+                        offset += 2;
+                        break;
+
+                    case PTP_V2_OE_ORG_CERN_WRMESSAGEID_CALIBRATE:
+                        proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_oe_tlv_cern_calSendPattern, tvb, offset, 1, ENC_NA);
+                        offset += 1;
+
+                        proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_oe_tlv_cern_calRety, tvb, offset, 1, ENC_NA);
+                        offset += 1;
+
+                        proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_oe_tlv_cern_calPeriod, tvb, offset, 4, ENC_BIG_ENDIAN);
+                        offset += 4;
+                        break;
+
+                    case PTP_V2_OE_ORG_CERN_WRMESSAGEID_CALIBRATED:
+                        proto_tree_add_double(ptp_tlv_tree, hf_ptp_v2_sig_oe_tlv_cern_deltaTx, tvb, offset, 8, (double)(tvb_get_ntoh64(tvb, offset)) / (1 << 16));
+                        offset += 8;
+
+                        proto_tree_add_double(ptp_tlv_tree, hf_ptp_v2_sig_oe_tlv_cern_deltaRx, tvb, offset, 8, (double)(tvb_get_ntoh64(tvb, offset)) / (1 << 16));
+                        offset += 8;
+                        break;
+                    }
+
+                    break;
+                }
+
+                } /* end of switch (subtype) */
+                break;
+
+            case OUI_ITU_T: {
+                switch (subtype) {
+                case PTP_V2_INTERFACE_RATE_TLV: {
+                    proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Interface Rate TLV");
+                    offset += dissect_ptp_v2_tlv_org_fields(tvb, offset, ptp_tlv_tree, hf_ptp_v2_sig_oe_tlv_itut_subtype);
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_interface_bit_period, tvb, offset, 8, ENC_BIG_ENDIAN);
+                    offset += 8;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_numberbits_before_timestamp, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    offset += 2;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_numberbits_after_timestamp, tvb, offset, 2, ENC_BIG_ENDIAN);
+                    offset += 2;
+                    break;
+                }
+
+                } /* end of switch (subtype) */
+
+
+                break;
+            }
+            }
+            } /* end of switch (org_id) */
+
+            break;
+        } /* end of case PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION */
+
+        case PTP_V2_TLV_TYPE_REQUEST_UNICAST_TRANSMISSION:
+        /* yes we fall through as the message is basically the same */
+        case PTP_V2_TLV_TYPE_GRANT_UNICAST_TRANSMISSION: {
+            proto_tree *ptp_tlv_tree;
+            if (tlv_type == PTP_V2_TLV_TYPE_REQUEST_UNICAST_TRANSMISSION) {
+                ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Request unicast transmission TLV");
+            } else {
+                ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Grant unicast transmission TLV");
+            }
+            offset += dissect_ptp_v2_tlv_tlvtype_length(tvb, offset, ptp_tlv_tree);
+
+            /* 16.1.4.1.3 messageType / 16.1.4.2.3 messageType*/
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_messageType, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            /* 16.1.4.1.4 logInterMessagePeriod / 16.1.4.2.4 logInterMessagePeriod*/
+            uint8_t log_inter_message_period = tvb_get_uint8(tvb, offset);
+            double period = pow(2, log_inter_message_period);
+
+            proto_item *ptp_tlv_period = proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_logInterMessagePeriod, tvb, offset, 1, ENC_NA);
+            proto_tree *ptp_tlv_period_tree = proto_item_add_subtree(ptp_tlv_period, ett_ptp_v2_tlv_log_period);
+
+            proto_tree_add_int_format_value(ptp_tlv_period_tree, hf_ptp_v2_sig_tlv_logInterMessagePeriod_period, tvb, offset, 1, log_inter_message_period, "every %lg seconds", period);
+
+            if (period > 0) {
+                double rate = 1 / period;
+                proto_tree_add_int_format_value(ptp_tlv_period_tree, hf_ptp_v2_sig_tlv_logInterMessagePeriod_rate, tvb, offset, 1, log_inter_message_period, "%lg packets/sec", rate);
+            } else {
+                proto_tree_add_expert_format(ptp_tlv_period_tree, pinfo, &ei_ptp_v2_period_invalid, tvb, offset, 1, "Invalid InterMessagePeriod: %lg", period);
+            }
+            offset += 1;
+
+            /* 16.1.4.1.5 durationField / 16.1.4.2.5 durationField */
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_durationField, tvb, offset, 4, ENC_BIG_ENDIAN);
+            offset += 4;
+
+            if (tlv_type == PTP_V2_TLV_TYPE_GRANT_UNICAST_TRANSMISSION) {
+                proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_reserved, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                /* 16.1.4.2.6 renewalInvited */
+                proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_renewalInvited, tvb, offset, 1, ENC_NA);
+                offset += 1;
+            }
+
+            break;
+        }
+
+        case PTP_V2_TLV_TYPE_CANCEL_UNICAST_TRANSMISSION:
+        /* yes we fall through as the message is basically the same */
+        case PTP_V2_TLV_TYPE_ACKNOWLEDGE_CANCEL_UNICAST_TRANSMISSION: {
+            proto_tree *ptp_tlv_tree;
+            if (tlv_type == PTP_V2_TLV_TYPE_CANCEL_UNICAST_TRANSMISSION) {
+                ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Cancel unicast transmission TLV");
+            } else {
+                ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Acknowledge cancel unicast transmission TLV");
+            }
+            offset += dissect_ptp_v2_tlv_tlvtype_length(tvb, offset, ptp_tlv_tree);
+
+            /* 16.1.4.3.3 messageType / 16.1.4.4.3 messageType */
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_messageType, tvb, offset, 1, ENC_NA);
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_maintainRequest, tvb, offset, 1, ENC_NA);
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_maintainGrant, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_reserved, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            break;
+        }
+
+        case PTP_V2_TLV_TYPE_PATH_TRACE: {
+            proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Path trace TLV");
+            offset += dissect_ptp_v2_tlv_tlvtype_length(tvb, offset, ptp_tlv_tree);
+
+            int tlv_end = offset + tlv_length + PTP_V2_TLV_HEADER_LENGTH;
+
+            while (offset + 8 <= tlv_end) {
+                proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_an_tlv_pathsequence, tvb, offset, 8, ENC_BIG_ENDIAN);
+                offset += 8;
+            }
+
+            break;
+        }
+
+        case PTP_V2_TLV_TYPE_ALTERNATE_TIME_OFFSET_INDICATOR: {
+            proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Alternate time offset indicator TLV");
+            offset += dissect_ptp_v2_tlv_tlvtype_length(tvb, offset, ptp_tlv_tree);
+
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_atoi_tlv_keyfield, tvb, offset, 1, ENC_NA);
+            offset += 1;
+
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_atoi_tlv_currentoffset, tvb, offset, 4, ENC_BIG_ENDIAN);
+            offset += 4;
+
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_atoi_tlv_jumpseconds, tvb, offset, 4, ENC_BIG_ENDIAN);
+            offset += 4;
+
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_atoi_tlv_timeofnextjump, tvb, offset, 6, ENC_BIG_ENDIAN);
+            offset += 6;
+
+            dissect_ptp_v2_text(tvb, &offset, ptp_tlv_tree, hf_ptp_v2_atoi_tlv_displayname, hf_ptp_v2_atoi_tlv_displayname_length);
+            /* offset was updated */
+            break;
+        }
+
+        case PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION_DO_NOT_PROPAGATE: {
+            uint32_t org_id = tvb_get_ntoh24(tvb, offset + PTP_V2_TLV_HEADER_LENGTH);
+            uint32_t subtype = tvb_get_ntoh24(tvb, offset + PTP_V2_TLV_ORGANIZATIONSUBTYPE_OFFSET);
+
+            switch (org_id) {
+            case OUI_IEEE_802_1:
+                switch (subtype) {
+                case PTP_AS_SIG_TLV_TYPE_GPTPCAPABLE_ORG_SUB_TYPE: {
+                    proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "gPTP-capable TLV");
+                    offset += dissect_ptp_v2_tlv_org_fields(tvb, offset, ptp_tlv_tree, hf_ptp_tlv_oe_organizationsubtype_802_1_no_propagate);
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_sig_tlv_gptp_capable_message_interval, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_sig_tlv_flags, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_sig_tlv_gptp_capable_reserved, tvb, offset, 4, ENC_NA);
+                    offset += 4;
+
+                    break;
+                }
+
+                case PTP_AS_SIG_TLV_TYPE_GPTPCAPABLE_MESSSAGEINTERVAL_ORG_SUB_TYPE: {
+                    proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "gPTP-capable message interval request TLV");
+                    offset += dissect_ptp_v2_tlv_org_fields(tvb, offset, ptp_tlv_tree, hf_ptp_tlv_oe_organizationsubtype_802_1_no_propagate);
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_sig_tlv_gptp_capable_message_interval, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+
+                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_as_sig_tlv_gptp_capable_reserved, tvb, offset, 3, ENC_NA);
+                    offset += 3;
+
+                    break;
+                }
+
+                } /* end of switch (subtype)*/
+                break;
+
+            } /* end of switch (org_id) */
+        }
+        break;
+
+        case PTP_V2_TLV_TYPE_L1_SYNC: {
+            proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "L1 sync TLV");
+            offset += dissect_ptp_v2_tlv_tlvtype_length(tvb, offset, ptp_tlv_tree);
+
+            /* Version with 2 bytes flags field */
+            static int * const data_mode_flags2[] = {
+                &hf_ptp_v2_sig_tlv_l1sync_flags2_ope,
+                &hf_ptp_v2_sig_tlv_l1sync_flags2_cr,
+                &hf_ptp_v2_sig_tlv_l1sync_flags2_rcr,
+                &hf_ptp_v2_sig_tlv_l1sync_flags2_tcr,
+                &hf_ptp_v2_sig_tlv_l1sync_flags2_ic,
+                &hf_ptp_v2_sig_tlv_l1sync_flags2_irc,
+                &hf_ptp_v2_sig_tlv_l1sync_flags2_itc,
+                &hf_ptp_v2_sig_tlv_l1sync_flags2_reserved,
+                NULL
+            };
+
+            /* Version with 3 bytes flags field */
+            static int * const data_mode_flags3[] = {
+                &hf_ptp_v2_sig_tlv_l1sync_flags3_ope,
+                &hf_ptp_v2_sig_tlv_l1sync_flags3_cr,
+                &hf_ptp_v2_sig_tlv_l1sync_flags3_rcr,
+                &hf_ptp_v2_sig_tlv_l1sync_flags3_tcr,
+                &hf_ptp_v2_sig_tlv_l1sync_flags3_ic,
+                &hf_ptp_v2_sig_tlv_l1sync_flags3_irc,
+                &hf_ptp_v2_sig_tlv_l1sync_flags3_itc,
+                &hf_ptp_v2_sig_tlv_l1sync_flags3_fov,
+                &hf_ptp_v2_sig_tlv_l1sync_flags3_pov,
+                &hf_ptp_v2_sig_tlv_l1sync_flags3_tct,
+                &hf_ptp_v2_sig_tlv_l1sync_flags3_reserved,
+                NULL
+            };
+
+            /* Get the value of flags */
+            uint16_t l1sync_flags = tvb_get_ntohs(tvb, offset);
+
+            /* Check if the frame has extended format of L1_SYNC flags field */
+            bool is_ext_format = (l1sync_flags & PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_OPE_BITMASK) == PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_OPE_BITMASK;
+            uint8_t flags_len = is_ext_format ? PTP_V2_SIG_TLV_L1SYNC_FLAGS_EXT_FORMAT : PTP_V2_SIG_TLV_L1SYNC_FLAGS_BASIC_FORMAT;
+
+            if (!is_ext_format) {
+                proto_tree_add_bitmask(ptp_tlv_tree, tvb, offset, hf_ptp_v2_sig_tlv_flags2, ett_ptp_v2_sig_l1sync_flags, data_mode_flags2, ENC_BIG_ENDIAN);
+                offset += flags_len;
+            } else {
+                proto_tree_add_bitmask(ptp_tlv_tree, tvb, offset, hf_ptp_v2_sig_tlv_flags3, ett_ptp_v2_sig_l1sync_flags, data_mode_flags3, ENC_BIG_ENDIAN);
+                offset += flags_len;
+
+                dissect_ptp_v2_timeInterval(tvb, &offset, ptp_tlv_tree, "phaseOffsetTx",
+                                            hf_ptp_v2_sig_tlv_l1syncext_phaseOffsetTx_ns, hf_ptp_v2_sig_tlv_l1syncext_phaseOffsetTx_subns, NULL, NULL);
+                /* offset was updated */
+
+                dissect_ptp_v2_timetstamp(tvb, &offset, ptp_tlv_tree, "phaseOffsetTxTimestamp",
+                                          hf_ptp_v2_sig_tlv_l1syncext_phaseOffsetTxTimestamp_s, hf_ptp_v2_sig_tlv_l1syncext_phaseOffsetTxTimestamp_ns);
+                /* offset was updated */
+
+                dissect_ptp_v2_timeInterval(tvb, &offset, ptp_tlv_tree, "freqOffsetTx",
+                                            hf_ptp_v2_sig_tlv_l1syncext_freqOffsetTx_ns, hf_ptp_v2_sig_tlv_l1syncext_freqOffsetTx_subns, NULL, NULL);
+                /* offset was updated */
+
+                dissect_ptp_v2_timetstamp(tvb, &offset, ptp_tlv_tree, "freqOffsetTxTimestamp",
+                                          hf_ptp_v2_sig_tlv_l1syncext_freqOffsetTxTimestamp_s, hf_ptp_v2_sig_tlv_l1syncext_freqOffsetTxTimestamp_ns);
+                /* offset was updated */
+            }
+
+            break;
+        }
+        case PTP_V2_TLV_TYPE_AUTHENTICATION2: {
+          proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, &ti_tlv, "Authentication TLV");
+          offset += dissect_ptp_v2_tlv_tlvtype_length(tvb, offset, ptp_tlv_tree);
+
+          proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_auth_tlv_spp, tvb, offset, 1, ENC_NA);
+          offset += 1;
+
+          proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_auth_tlv_sec_param_indicator, tvb, offset, 1, ENC_NA);
+          offset += 1;
+
+          proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_auth_tlv_key_id, tvb, offset, 4, ENC_BIG_ENDIAN);
+          offset += 4;
+
+          int auth_tlv_icv_length = tlv_length - 6;
+          proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_auth_tlv_icv, tvb, offset, auth_tlv_icv_length, ENC_NA);
+          offset += auth_tlv_icv_length;
+          break;
+        }
+        } /* end of switch (tlv_type) */
+
+        /* check first we have a registered subdissector for the organizationId */
+        if (offset == offset_loopstart && tlv_type == PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION) {
+            uint32_t org_id = tvb_get_uint24(tvb, offset + PTP_V2_TLV_HEADER_LENGTH, ENC_BIG_ENDIAN);
+            dissector_handle_t handle = dissector_get_uint_handle(ptpv2_tlv_org_id_subdissector_table, org_id);
+            if (handle != NULL) {
+                tvbuff_t *sub_tvb = tvb_new_subset_length(tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH);
+                ptp_v2_tlv_org_ext_info_t ptp_v2_info;
+                ptp_v2_info.is_802_1as = is_802_1as;
+                ptp_v2_info.ptp_v2_flags = ptp_v2_flags;
+                ptp_v2_info.ptp_v2_messageid = ptp_v2_messageid;
+                offset += call_dissector_only(handle, sub_tvb, pinfo, ptp_tree, &ptp_v2_info);
+            }
+        }
+
+        if (offset == offset_loopstart) {
+            /* unknown TLV! */
+            proto_tree *ptp_tlv_tree = proto_tree_add_subtree(ptp_tree, tvb, offset, tlv_length + PTP_V2_TLV_HEADER_LENGTH, ett_ptp_v2_tlv, NULL, "Unknown TLV");
+
+            if (tlv_type == PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION) {
+                offset += dissect_ptp_v2_tlv_org_fields(tvb, offset, ptp_tlv_tree, hf_ptp_tlv_oe_organizationsubtype);
+            } else {
+                offset += dissect_ptp_v2_tlv_tlvtype_length(tvb, offset, ptp_tlv_tree);
+            }
+
+            /* unparsed bytes */
+            proto_tree_add_item(ptp_tlv_tree, hf_ptp_tlv_unparsed_payload, tvb, offset, tlv_length + 4 - (offset - offset_loopstart), ENC_NA);
+            offset += tlv_length + 4 - (offset - offset_loopstart);
+        }
+
+        if (offset < offset_loopstart + PTP_V2_TLV_HEADER_LENGTH + tlv_length) {
+            /* unparsed bytes!*/
+            offset = offset_loopstart + PTP_V2_TLV_HEADER_LENGTH + tlv_length;
+        }
+    }
+
+    /* check if required TLVs are present and forbidden are absent*/
+    if (is_802_1as) {
+        if (ptp_v2_messageid == PTP_V2_SYNC_MESSAGE && ((ptp_v2_flags & PTP_V2_FLAGS_TWO_STEP_BITMASK) != PTP_V2_FLAGS_TWO_STEP_BITMASK) && !as_followup_tlv_present) {
+            expert_add_info(pinfo, ti_tlv, &ei_ptp_v2_sync_no_fup_tlv);
+        }
+        if (ptp_v2_messageid == PTP_V2_SYNC_MESSAGE && ((ptp_v2_flags & PTP_V2_FLAGS_TWO_STEP_BITMASK) == PTP_V2_FLAGS_TWO_STEP_BITMASK) && as_followup_tlv_present) {
+            expert_add_info(pinfo, ti_tlv, &ei_ptp_v2_sync_with_fup_tlv);
+        }
+        if (ptp_v2_messageid == PTP_V2_FOLLOWUP_MESSAGE && !as_followup_tlv_present) {
+            expert_add_info(pinfo, ti_tlv, &ei_ptp_v2_followup_no_tlv);
+        }
+    }
+
+    return offset - offset_orig;
+}
+
 static void
-dissect_ptp_v2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean ptpv2_oE)
-{
-    guint8  ptp_v2_transport_specific;
-    guint8  ptp_v2_messageid;
-    guint64 timeStamp;
-    guint16 msg_len;
-    guint16 temp;
+dissect_ptp_v2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bool ptpv2_oE) {
+    int offset = 0;
+
+    uint8_t ptp_v2_ver = 0;
+    uint8_t ptp_v2_minorver = 0;
+    uint8_t ptp_v2_domain = 0;
+    uint8_t ptp_v2_minorsdoid = 0;
+    uint64_t ptp_v2_correction = 0;
+    uint64_t ptp_v2_clockid = 0;
+    uint16_t ptp_v2_sourceportid = 0;
+    uint16_t ptp_v2_seqid = 0;
+    uint64_t ptp_v2_clockidref = 0;
+    uint16_t ptp_v2_sourceportidref = 0;
 
     /* Set up structures needed to add the protocol subtree and manage it */
-    proto_item  *ti = NULL, *msg_len_item = NULL, *transportspecific_ti, *flags_ti, *managementData_ti, *clockType_ti, *protocolAddress_ti;
-    proto_tree  *ptp_tree = NULL, *ptp_transportspecific_tree, *ptp_flags_tree, *ptp_managementData_tree,
-                *ptp_clockType_tree, *ptp_protocolAddress_tree;
+    proto_item *ti = NULL, *ti1 = NULL, *msg_len_item = NULL, *clockidentity_ti, *ti_root = NULL;
+    proto_tree *ptp_tree = NULL, *ptp_clockidentity_tree;
 
     /* Make entries in Protocol column and Info column on summary display */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "PTPv2");
 
-    /* Get transport specific bit to determine whether this is an AS packet or not */
-    ptp_v2_transport_specific = 0xF0 & tvb_get_guint8 (tvb, PTP_V2_TRANSPORT_SPECIFIC_MESSAGE_ID_OFFSET);
+    /* Get majorSdoId bit to determine whether this is an AS packet or not */
+    uint8_t ptp_v2_majorsdoid = 0xF0 & tvb_get_uint8 (tvb, PTP_V2_MAJORSDOID_MESSAGE_TYPE_OFFSET);
+
+    /* 802.1AS is indicated by majorSdoId = 1 and Ethernet, WIFI, EPON, or CSN transport */
+    bool is_802_1as = (ptp_v2_majorsdoid & PTP_V2_MAJORSDOID_ASPACKET_BITMASK) && (ptpv2_oE == true);
 
     /* Get control field (what kind of message is this? (Sync, DelayReq, ...) */
-    ptp_v2_messageid = 0x0F & tvb_get_guint8 (tvb, PTP_V2_TRANSPORT_SPECIFIC_MESSAGE_ID_OFFSET);
+    uint8_t ptp_v2_messageid = 0x0F & tvb_get_uint8 (tvb, PTP_V2_MAJORSDOID_MESSAGE_TYPE_OFFSET);
 
-    msg_len = tvb_get_ntohs(tvb, PTP_V2_MESSAGE_LENGTH_OFFSET);
+    uint16_t msg_len = tvb_get_ntohs(tvb, PTP_V2_MESSAGE_LENGTH_OFFSET);
+
+    uint16_t ptp_v2_flags = tvb_get_uint16(tvb, PTP_V2_FLAGS_OFFSET, ENC_BIG_ENDIAN);
+
+    if (ptp_analyze_messages)
+    {
+        ptp_v2_ver = 0x0F & tvb_get_uint8(tvb, PTP_V2_VERSIONPTP_OFFSET);
+        ptp_v2_minorver = 0xF0 & tvb_get_uint8(tvb, PTP_V2_MINORVERSIONPTP_OFFSET);
+        ptp_v2_domain = tvb_get_uint8(tvb, PTP_V2_DOMAIN_NUMBER_OFFSET);
+        ptp_v2_minorsdoid = tvb_get_uint8(tvb, PTP_V2_MINORSDOID_OFFSET);
+        ptp_v2_clockid = tvb_get_uint64(tvb, PTP_V2_CLOCKIDENTITY_OFFSET, ENC_BIG_ENDIAN);
+        ptp_v2_sourceportid = tvb_get_uint16(tvb, PTP_V2_SOURCEPORTID_OFFSET, ENC_BIG_ENDIAN);
+        ptp_v2_seqid = tvb_get_uint16(tvb, PTP_V2_SEQUENCEID_OFFSET, ENC_BIG_ENDIAN);
+        ptp_v2_correction = tvb_get_uint64(tvb, PTP_V2_CORRECTION_OFFSET, ENC_BIG_ENDIAN);
+
+        switch (ptp_v2_messageid)
+        {
+        case PTP_V2_PEER_DELAY_RESP_MESSAGE:
+            ptp_v2_clockidref = tvb_get_uint64(tvb, PTP_V2_PDRS_REQUESTINGPORTIDENTITY_OFFSET, ENC_BIG_ENDIAN);
+            ptp_v2_sourceportidref = tvb_get_uint16(tvb, PTP_V2_PDRS_REQUESTINGSOURCEPORTID_OFFSET, ENC_BIG_ENDIAN);
+            break;
+        case PTP_V2_PEER_DELAY_FOLLOWUP_MESSAGE:
+            ptp_v2_clockidref = tvb_get_uint64(tvb, PTP_V2_PDFU_REQUESTINGPORTIDENTITY_OFFSET, ENC_BIG_ENDIAN);
+            ptp_v2_sourceportidref = tvb_get_uint16(tvb, PTP_V2_PDFU_REQUESTINGSOURCEPORTID_OFFSET, ENC_BIG_ENDIAN);
+            break;
+        }
+
+        if (!(pinfo->fd->visited))
+        {
+            ptp_frame_info_t *frame_info = NULL;
+            switch (ptp_v2_messageid)
+            {
+            case PTP_V2_SYNC_MESSAGE:
+                frame_info = create_frame_info(pinfo, ptp_v2_ver, ptp_v2_minorver, ptp_v2_majorsdoid, ptp_v2_minorsdoid, PTP_V2_SYNC_MESSAGE, ptp_v2_domain, ptp_v2_clockid, ptp_v2_sourceportid, ptp_v2_seqid);
+                frame_info->messagetype = PTP_V2_SYNC_MESSAGE;
+                frame_info->sync.sync_two_step = (ptp_v2_flags & PTP_V2_FLAGS_TWO_STEP_BITMASK) == PTP_V2_FLAGS_TWO_STEP_BITMASK;
+                frame_info->sync.sync_ts = pinfo->abs_ts;
+                /* Rapid sequence number resets can be detected here checking for non-zero frame_info->sync.sync_frame_num */
+                frame_info->sync.sync_frame_num = pinfo->num;
+
+                if (!frame_info->sync.sync_two_step) {
+                    /* In 1-step mode, the sync carries the followup information, so we set fup to sync */
+                    frame_info->sync.fup_frame_num = pinfo->num;
+                    frame_info->sync.timestamp_s = tvb_get_uint48(tvb, PTP_V2_FU_PRECISEORIGINTIMESTAMPSECONDS_OFFSET, ENC_BIG_ENDIAN);
+                    frame_info->sync.timestamp_ns = tvb_get_uint32(tvb, PTP_V2_FU_PRECISEORIGINTIMESTAMPNANOSECONDS_OFFSET, ENC_BIG_ENDIAN);
+                    frame_info->sync.correction_ns = ptp_v2_correction >> 16;
+                    frame_info->sync.correction_subns = ptp_v2_correction % 16;
+                }
+                break;
+            case PTP_V2_FOLLOWUP_MESSAGE:
+                frame_info = create_frame_info(pinfo, ptp_v2_ver, ptp_v2_minorver, ptp_v2_majorsdoid, ptp_v2_minorsdoid, PTP_V2_SYNC_MESSAGE, ptp_v2_domain, ptp_v2_clockid, ptp_v2_sourceportid, ptp_v2_seqid);
+                frame_info->messagetype = PTP_V2_SYNC_MESSAGE;
+                frame_info->sync.fup_frame_num = pinfo->num;
+                frame_info->sync.timestamp_s = tvb_get_uint48(tvb, PTP_V2_FU_PRECISEORIGINTIMESTAMPSECONDS_OFFSET, ENC_BIG_ENDIAN);
+                frame_info->sync.timestamp_ns = tvb_get_uint32(tvb, PTP_V2_FU_PRECISEORIGINTIMESTAMPNANOSECONDS_OFFSET, ENC_BIG_ENDIAN);
+                frame_info->sync.correction_ns = ptp_v2_correction >> 16;
+                frame_info->sync.correction_subns = ptp_v2_correction % 16;
+                break;
+            case PTP_V2_PEER_DELAY_REQ_MESSAGE:
+                frame_info = create_frame_info(pinfo, ptp_v2_ver, ptp_v2_minorver, ptp_v2_majorsdoid, ptp_v2_minorsdoid, PTP_V2_PEER_DELAY_REQ_MESSAGE, ptp_v2_domain, ptp_v2_clockid, ptp_v2_sourceportid, ptp_v2_seqid);
+                frame_info->messagetype = PTP_V2_PEER_DELAY_REQ_MESSAGE;
+                frame_info->pdelay.pdelay_req_frame_num = pinfo->num;
+                frame_info->pdelay.pdelay_req_ts = pinfo->abs_ts;
+                break;
+            case PTP_V2_PEER_DELAY_RESP_MESSAGE:
+                frame_info = create_frame_info(pinfo, ptp_v2_ver, ptp_v2_minorver, ptp_v2_majorsdoid, ptp_v2_minorsdoid, PTP_V2_PEER_DELAY_REQ_MESSAGE, ptp_v2_domain, ptp_v2_clockidref, ptp_v2_sourceportidref, ptp_v2_seqid);
+                frame_info->messagetype = PTP_V2_PEER_DELAY_REQ_MESSAGE;
+                frame_info->pdelay.pdelay_res_frame_num = pinfo->num;
+                frame_info->pdelay.pdelay_res_two_step = (ptp_v2_flags & PTP_V2_FLAGS_TWO_STEP_BITMASK) == PTP_V2_FLAGS_TWO_STEP_BITMASK;
+                frame_info->pdelay.pdelay_res_ts = pinfo->abs_ts;
+                frame_info->pdelay.pdelay_req_recv_ts_s = tvb_get_uint48(tvb, PTP_V2_PDRS_REQUESTRECEIPTTIMESTAMPSECONDS_OFFSET, ENC_BIG_ENDIAN);
+                frame_info->pdelay.pdelay_req_recv_ts_ns = tvb_get_uint32(tvb, PTP_V2_PDRS_REQUESTRECEIPTTIMESTAMPNANOSECONDS_OFFSET, ENC_BIG_ENDIAN);
+                break;
+            case PTP_V2_PEER_DELAY_FOLLOWUP_MESSAGE:
+                frame_info = create_frame_info(pinfo, ptp_v2_ver, ptp_v2_minorver, ptp_v2_majorsdoid, ptp_v2_minorsdoid, PTP_V2_PEER_DELAY_REQ_MESSAGE, ptp_v2_domain, ptp_v2_clockidref, ptp_v2_sourceportidref, ptp_v2_seqid);
+                frame_info->messagetype = PTP_V2_PEER_DELAY_REQ_MESSAGE;
+                frame_info->pdelay.pdelay_fup_frame_num = pinfo->num;
+                frame_info->pdelay.pdelay_res_send_ts_s = tvb_get_uint48(tvb, PTP_V2_PDFU_RESPONSEORIGINTIMESTAMPSECONDS_OFFSET, ENC_BIG_ENDIAN);
+                frame_info->pdelay.pdelay_res_send_ts_ns = tvb_get_uint32(tvb, PTP_V2_PDFU_RESPONSEORIGINTIMESTAMPNANOSECONDS_OFFSET, ENC_BIG_ENDIAN);
+                break;
+            }
+
+            if (frame_info != NULL) {
+                p_add_proto_data(wmem_file_scope(), pinfo, proto_ptp, 0, frame_info);
+            }
+
+            if PTP_FRAME_INFO_SYNC_SEEN(frame_info) {
+
+                if (PTP_FRAME_INFO_SYNC_COMPLETE(frame_info) && !frame_info->sync.calculated_timestamp_valid) {
+                    /* calculate two step sync timestamp */
+
+                    nstime_t ts = NSTIME_INIT_SECS_NSECS(frame_info->sync.timestamp_s, frame_info->sync.timestamp_ns);
+
+                    /* we are ignoring subns */
+                    int64_t corr_s  = frame_info->sync.correction_ns / NS_PER_S;
+                    int32_t corr_ns = frame_info->sync.correction_ns % NS_PER_S;
+                    nstime_t corr = NSTIME_INIT_SECS_NSECS(corr_s, corr_ns);
+
+                    nstime_sum(&(frame_info->sync.calculated_timestamp), &(ts), &(corr));
+                    frame_info->sync.calculated_timestamp_valid = true;
+                }
+
+                if PTP_FRAME_INFO_SYNC_SEEN(frame_info->prev) {
+                    nstime_t delta_capture_ts;
+                    nstime_delta(&delta_capture_ts, &(frame_info->sync.sync_ts), &(frame_info->prev->sync.sync_ts));
+
+                    frame_info->sync.syncInterval = nstime_to_sec(&delta_capture_ts);
+                    if (frame_info->sync.syncInterval > 0)
+                        frame_info->sync.syncInterval_valid = true;
+
+                    if (PTP_FRAME_INFO_SYNC_COMPLETE(frame_info->prev) && frame_info->sync.calculated_timestamp_valid && frame_info->prev->sync.calculated_timestamp_valid) {
+                        nstime_t delta_sync_ts;
+                        nstime_delta(&delta_sync_ts, &(frame_info->sync.calculated_timestamp), &(frame_info->prev->sync.calculated_timestamp));
+
+                        if (frame_info->sync.syncInterval_valid) {
+                            frame_info->sync.syncRateRatio = nstime_to_sec(&delta_sync_ts) / nstime_to_sec(&delta_capture_ts);
+                            frame_info->sync.syncRateRatio_valid = true;
+                            frame_info->sync.syncRateRatio_ppm = ((double)1.0 - frame_info->sync.syncRateRatio) * 1000 * 1000;
+                        }
+                    }
+                }
+            }
+
+            if (PTP_FRAME_INFO_PDELAY_REQ_SEEN(frame_info) && PTP_FRAME_INFO_PDELAY_REQ_SEEN(frame_info->prev)) {
+                nstime_t t4_delta;
+                nstime_delta(&t4_delta, &frame_info->pdelay.pdelay_res_ts, &frame_info->prev->pdelay.pdelay_res_ts);
+
+                frame_info->pdelay.pdelayInterval = nstime_to_sec(&t4_delta);
+                if (frame_info->pdelay.pdelayInterval > 0)
+                    frame_info->pdelay.pdelayInterval_valid = true;
+
+                if (PTP_FRAME_INFO_PDELAY_COMPLETE(frame_info) && PTP_FRAME_INFO_PDELAY_COMPLETE(frame_info->prev)) {
+                    /* lets calculate rate t3_delta / t4_delta */
+                    nstime_t t3_delta;
+                    nstime_t t3_curr = NSTIME_INIT_SECS_NSECS(frame_info->pdelay.pdelay_res_send_ts_s, frame_info->pdelay.pdelay_res_send_ts_ns);
+                    nstime_t t3_prev = NSTIME_INIT_SECS_NSECS(frame_info->prev->pdelay.pdelay_res_send_ts_s, frame_info->prev->pdelay.pdelay_res_send_ts_ns);
+                    nstime_delta(&t3_delta, &t3_curr, &t3_prev);
+
+                    if (frame_info->pdelay.pdelayInterval_valid) {
+                        frame_info->pdelay.neighborRateRatio = nstime_to_sec(&t3_delta) / nstime_to_sec(&t4_delta);
+                        frame_info->pdelay.neighborRateRatio_valid = true;
+                        frame_info->pdelay.neighborRateRatio_ppm =
+                            (int32_t)((1.0 - frame_info->pdelay.neighborRateRatio) * 1000 * 1000);
+                    }
+                }
+            }
+
+            if PTP_FRAME_INFO_PDELAY_COMPLETE(frame_info) {
+                /* lets calculate peer delay: T4 - T1 - (t3 - t2) */
+                nstime_t t2 = NSTIME_INIT_SECS_NSECS(frame_info->pdelay.pdelay_req_recv_ts_s, frame_info->pdelay.pdelay_req_recv_ts_ns);
+                nstime_t t3 = NSTIME_INIT_SECS_NSECS(frame_info->pdelay.pdelay_res_send_ts_s, frame_info->pdelay.pdelay_res_send_ts_ns);
+                nstime_t peer_delta_t3_t2;
+                nstime_delta(&peer_delta_t3_t2, &t3, &t2);
+
+                nstime_delta(&frame_info->pdelay.mean_propagation_delay_unscaled, &(frame_info->pdelay.pdelay_res_ts), &(frame_info->pdelay.pdelay_req_ts));
+                double delta_t4_t1 = nstime_to_sec(&(frame_info->pdelay.mean_propagation_delay_unscaled));
+                nstime_subtract(&frame_info->pdelay.mean_propagation_delay_unscaled, &peer_delta_t3_t2);
+
+                /* now take only 1/2 of it */
+                frame_info->pdelay.mean_propagation_delay_unscaled.nsecs /= 2;
+                if ((frame_info->pdelay.mean_propagation_delay_unscaled.secs % 2) == 1) {
+                    frame_info->pdelay.mean_propagation_delay_unscaled.secs -= 1;
+                    frame_info->pdelay.mean_propagation_delay_unscaled.nsecs += NS_PER_S / 2;
+                }
+                frame_info->pdelay.mean_propagation_delay_unscaled.secs /= 2;
+
+                /* lets scale by neighborRateRatio. converted to the capture timestamp timescale. */
+                if (frame_info->pdelay.neighborRateRatio_valid) {
+                    double delta_t3_t2 = nstime_to_sec(&peer_delta_t3_t2);
+                    frame_info->pdelay.mean_propagation_delay_scaled = 0.5 * (delta_t4_t1 - frame_info->pdelay.neighborRateRatio * delta_t3_t2);
+                }
+            }
+        }
+    }
 
     /* Extend  Info column with managementId */
     /* Create and set the string for "Info" column */
-    if ( ptp_v2_messageid == PTP_V2_MANAGEMENT_MESSAGE )
-    {
-        guint16 tlv_type;
+    if ( ptp_v2_messageid == PTP_V2_MANAGEMENT_MESSAGE ) {
+        uint16_t tlv_type;
         /* Get TLV Type */
         tlv_type = tvb_get_ntohs (tvb, PTP_V2_MM_TLV_TYPE_OFFSET);
         /* For management there are PTP_V2_TLV_TYPE_MANAGEMENT and PTP_V2_TLV_TYPE_MANAGEMENT_ERROR_STATUS TLVs */
@@ -2450,67 +4446,49 @@ dissect_ptp_v2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean ptp
         {
             case PTP_V2_TLV_TYPE_MANAGEMENT:
             {
-                guint16 ptp_v2_mm_managementId;
-                guint8  ptp_v2_management_action;
+                uint16_t ptp_v2_mm_managementId;
+                uint8_t ptp_v2_management_action;
                 /* Get the managementId */
                 ptp_v2_mm_managementId = tvb_get_ntohs(tvb, PTP_V2_MM_TLV_MANAGEMENTID_OFFSET);
-                ptp_v2_management_action = 0x0F & tvb_get_guint8(tvb, PTP_V2_MM_ACTION_OFFSET);
+                ptp_v2_management_action = 0x0F & tvb_get_uint8(tvb, PTP_V2_MM_ACTION_OFFSET);
                 col_add_fstr(pinfo->cinfo, COL_INFO, "Management (%s) %s",
-                    val_to_str_ext(ptp_v2_mm_managementId, &ptp_v2_managementID_infocolumn_vals_ext, "Unknown management Id %u"),
-                    val_to_str(ptp_v2_management_action, ptp_v2_mm_action_vals, "Unknown Action %u"));
+                    val_to_str_ext(pinfo->pool, ptp_v2_mm_managementId, &ptp_v2_managementID_infocolumn_vals_ext, "Unknown management Id %u"),
+                    val_to_str(pinfo->pool, ptp_v2_management_action, ptp_v2_mm_action_vals, "Unknown Action %u"));
                 break;
             }
             case PTP_V2_TLV_TYPE_MANAGEMENT_ERROR_STATUS:
             {
-                guint16 ptp_v2_mm_managementId;
+                uint16_t ptp_v2_mm_managementId;
                 /* Get the managementErrorId */
                 ptp_v2_mm_managementId = tvb_get_ntohs(tvb, PTP_V2_MM_TLV_MANAGEMENTERRORID_OFFSET);
                 col_add_fstr(pinfo->cinfo, COL_INFO, "Management Error Message (%s)",
-                    val_to_str_ext(ptp_v2_mm_managementId, &ptp_v2_managementErrorId_vals_ext, "Unknown Error Id %u"));
+                    val_to_str_ext(pinfo->pool, ptp_v2_mm_managementId, &ptp_v2_managementErrorId_vals_ext, "Unknown Error Id %u"));
                 break;
             }
             default:
                 col_add_str(pinfo->cinfo, COL_INFO,
-                    val_to_str_ext(ptp_v2_messageid, &ptp_v2_messageid_vals_ext, "Unknown PTP Message (%u)"));
+                    val_to_str_ext(pinfo->pool, ptp_v2_messageid, &ptp_v2_messagetype_vals_ext, "Unknown PTP Message (%u)"));
                 break;
         }
-    }
-    else
-    {
-        col_add_str(pinfo->cinfo, COL_INFO, val_to_str_ext(ptp_v2_messageid, &ptp_v2_messageid_vals_ext, "Unknown PTP Message (%u)"));
+    } else {
+        col_add_str(pinfo->cinfo, COL_INFO, val_to_str_ext(pinfo->pool, ptp_v2_messageid, &ptp_v2_messagetype_vals_ext, "Unknown PTP Message (%u)"));
     }
 
-   if (tree) {
+    if (tree) {
+        ti_root = proto_tree_add_item(tree, proto_ptp, tvb, offset, -1, ENC_NA);
+        ptp_tree = proto_item_add_subtree(ti_root, ett_ptp_v2);
 
-        ti = proto_tree_add_item(tree, proto_ptp, tvb, 0, -1, ENC_NA);
+        proto_tree_add_item(ptp_tree, hf_ptp_v2_majorsdoid, tvb, offset, 1, ENC_NA);
+        proto_tree_add_item(ptp_tree, hf_ptp_v2_messagetype, tvb, offset, 1, ENC_NA);
+        offset += 1;
 
-        ptp_tree = proto_item_add_subtree(ti, ett_ptp_v2);
+        proto_tree_add_item(ptp_tree, hf_ptp_v2_minorversionptp, tvb, offset, 1, ENC_NA);
+        proto_tree_add_item(ptp_tree, hf_ptp_v2_versionptp, tvb, offset, 1, ENC_NA);
+        offset += 1;
 
-        transportspecific_ti = proto_tree_add_item(ptp_tree,
-            hf_ptp_v2_transportspecific, tvb, PTP_V2_TRANSPORT_SPECIFIC_MESSAGE_ID_OFFSET, 1, ENC_BIG_ENDIAN);
-
-        ptp_transportspecific_tree = proto_item_add_subtree(transportspecific_ti, ett_ptp_v2_transportspecific);
-
-        if (ptpv2_oE == TRUE)
-        {
-            proto_tree_add_item(ptp_transportspecific_tree,
-                hf_ptp_v2_transportspecific_802as_conform, tvb, PTP_V2_TRANSPORT_SPECIFIC_MESSAGE_ID_OFFSET, 1, ENC_BIG_ENDIAN);
-        }
-        else
-        {
-            proto_tree_add_item(ptp_transportspecific_tree,
-                hf_ptp_v2_transportspecific_v1_compatibility, tvb, PTP_V2_TRANSPORT_SPECIFIC_MESSAGE_ID_OFFSET, 1, ENC_BIG_ENDIAN);
-        }
-
-        proto_tree_add_item(ptp_tree,
-            hf_ptp_v2_messageid, tvb, PTP_V2_TRANSPORT_SPECIFIC_MESSAGE_ID_OFFSET, 1, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_tree,
-            hf_ptp_v2_versionptp, tvb, PTP_V2_VERSIONPTP_OFFSET, 1, ENC_BIG_ENDIAN);
-
-        msg_len_item = proto_tree_add_item(ptp_tree,
-            hf_ptp_v2_messagelength, tvb, PTP_V2_MESSAGE_LENGTH_OFFSET, 2, ENC_BIG_ENDIAN);
-   }
+        msg_len_item = proto_tree_add_item(ptp_tree, hf_ptp_v2_messagelength, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 2;
+    }
 
    /*
     * Sanity-check the message length.
@@ -2518,7 +4496,6 @@ dissect_ptp_v2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean ptp
    if (msg_len > tvb_reported_length(tvb)) {
        /* Bogus message length - runs past the end of the packet */
        expert_add_info(pinfo, msg_len_item, &ei_ptp_v2_msg_len_too_large);
-       msg_len = tvb_reported_length(tvb);
    } else if (msg_len < PTP_V2_MESSAGE_LENGTH_OFFSET + 2) {
        /* Bogus message length - not long enough to include the message length field */
        expert_add_info(pinfo, msg_len_item, &ei_ptp_v2_msg_len_too_small);
@@ -2529,1600 +4506,426 @@ dissect_ptp_v2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean ptp
         * off extra data.
         */
        set_actual_length(tvb, msg_len);
-       proto_item_set_len(ti, msg_len);
+       proto_item_set_len(ti_root, msg_len);
    }
 
    if (tree) {
+        static int * const ptp_flags[] = {
+            &hf_ptp_v2_flags_security,
+            &hf_ptp_v2_flags_specific2,
+            &hf_ptp_v2_flags_specific1,
+            &hf_ptp_v2_flags_unicast,
+            &hf_ptp_v2_flags_twostep,
+            &hf_ptp_v2_flags_alternatemaster,
+            &hf_ptp_v2_flags_synchronizationUncertain,
+            &hf_ptp_v2_flags_frequencytraceable,
+            &hf_ptp_v2_flags_timetraceable,
+            &hf_ptp_v2_flags_ptptimescale,
+            &hf_ptp_v2_flags_utcoffsetvalid,
+            &hf_ptp_v2_flags_li59,
+            &hf_ptp_v2_flags_li61,
+            NULL
+        };
 
-        proto_tree_add_item(ptp_tree,
-            hf_ptp_v2_domainnumber, tvb, PTP_V2_DOMAIN_NUMBER_OFFSET, 1, ENC_BIG_ENDIAN);
+        ptp_frame_info_t *frame_info = (ptp_frame_info_t *)p_get_proto_data(wmem_file_scope(), pinfo, proto_ptp, 0);
+
+        proto_tree_add_item(ptp_tree, hf_ptp_v2_domainnumber, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_item(ptp_tree, hf_ptp_v2_minorsdoid, tvb, offset, 1, ENC_NA);
+        offset += 1;
+
+        proto_tree_add_bitmask(ptp_tree, tvb, offset, hf_ptp_v2_flags, ett_ptp_v2_flags, ptp_flags, ENC_BIG_ENDIAN);
+        offset += 2;
+
+        dissect_ptp_v2_timeInterval(tvb, &offset, ptp_tree, "correctionField", hf_ptp_v2_correction, hf_ptp_v2_correctionsubns, NULL, NULL);
+        /* offset was updated */
+
+        proto_tree_add_item(ptp_tree, hf_ptp_v2_messagetypespecific, tvb, offset, 4, ENC_BIG_ENDIAN);
+        offset += 4;
+
+        clockidentity_ti = proto_tree_add_item(ptp_tree, hf_ptp_v2_clockidentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+
+        /* EUI-64: vendor ID | 0xFF - 0xFE | card ID */
+        if (tvb_get_ntohs(tvb, offset + 3) == 0xFFFE) {
+            ptp_clockidentity_tree = proto_item_add_subtree(clockidentity_ti, ett_ptp_v2_clockidentity);
+
+            const char *manuf_name = tvb_get_manuf_name(tvb, offset);
+            proto_tree_add_bytes_format_value(ptp_clockidentity_tree, hf_ptp_v2_clockidentity_manuf, tvb, offset, 3, NULL, "%s", manuf_name);
+        }
+        offset += 8;
+
+        proto_tree_add_item(ptp_tree, hf_ptp_v2_sourceportid, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 2;
+
+        proto_tree_add_item(ptp_tree, hf_ptp_v2_sequenceid, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 2;
+
+        /* IEEE 802.1AS defines the control field to be 0x00, so we turn off resolution */
+        if (is_802_1as) {
+            proto_tree_add_item(ptp_tree, hf_ptp_v2_controlfield_default, tvb, offset, 1, ENC_NA);
+        } else {
+            proto_tree_add_item(ptp_tree, hf_ptp_v2_controlfield, tvb, offset, 1, ENC_NA);
+        }
+        offset += 1;
 
 
-        flags_ti = proto_tree_add_item(ptp_tree,
-            hf_ptp_v2_flags, tvb, PTP_V2_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
+        int logmsginterval;
+        ti = proto_tree_add_item_ret_int(ptp_tree, hf_ptp_v2_logmessageinterval, tvb, offset, 1, ENC_NA, &logmsginterval);
+        /* Retain this item as hidden item for backward compatibility. */
+        ti1 = proto_tree_add_item(ptp_tree, hf_ptp_v2_logmessageperiod, tvb, offset, 1, ENC_NA);
 
-        ptp_flags_tree = proto_item_add_subtree(flags_ti, ett_ptp_v2_flags);
+        /* 127 is special */
+        if (ptp_analyze_messages && logmsginterval != 127) {
+            proto_item_append_text(ti, " (%.6f s)", pow(2.0, (double)logmsginterval));
+            proto_item_append_text(ti1, " (%.6f s)", pow(2.0, (double)logmsginterval));
+        }
+        proto_item_set_hidden(ti1);
 
-        proto_tree_add_item(ptp_flags_tree,
-            hf_ptp_v2_flags_security, tvb, PTP_V2_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
+        offset += 1;
 
-        proto_tree_add_item(ptp_flags_tree,
-            hf_ptp_v2_flags_specific2, tvb, PTP_V2_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_flags_tree,
-            hf_ptp_v2_flags_specific1, tvb, PTP_V2_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_flags_tree,
-            hf_ptp_v2_flags_unicast, tvb, PTP_V2_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_flags_tree,
-            hf_ptp_v2_flags_twostep, tvb, PTP_V2_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_flags_tree,
-            hf_ptp_v2_flags_alternatemaster, tvb, PTP_V2_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_flags_tree,
-            hf_ptp_v2_flags_frequencytraceable, tvb, PTP_V2_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_flags_tree,
-            hf_ptp_v2_flags_timetraceable, tvb, PTP_V2_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_flags_tree,
-            hf_ptp_v2_flags_ptptimescale, tvb, PTP_V2_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_flags_tree,
-            hf_ptp_v2_flags_utcoffsetvalid, tvb, PTP_V2_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_flags_tree,
-            hf_ptp_v2_flags_li59, tvb, PTP_V2_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_flags_tree,
-            hf_ptp_v2_flags_li61, tvb, PTP_V2_FLAGS_OFFSET, 2, ENC_BIG_ENDIAN);
-
-        temp = PTP_V2_CORRECTIONNS_OFFSET;
-
-        dissect_ptp_v2_timeInterval(tvb, &temp, ptp_tree, "correction", hf_ptp_v2_correction, hf_ptp_v2_correctionsubns);
-
-        proto_tree_add_item(ptp_tree,
-            hf_ptp_v2_clockidentity, tvb, PTP_V2_CLOCKIDENTITY_OFFSET, 8, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_tree,
-            hf_ptp_v2_sourceportid, tvb, PTP_V2_SOURCEPORTID_OFFSET, 2, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_tree,
-            hf_ptp_v2_sequenceid, tvb, PTP_V2_SEQUENCEID_OFFSET, 2, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_tree,
-            hf_ptp_v2_control, tvb, PTP_V2_CONTROL_OFFSET, 1, ENC_BIG_ENDIAN);
-
-        proto_tree_add_item(ptp_tree,
-            hf_ptp_v2_logmessageperiod, tvb, PTP_V2_LOGMESSAGEPERIOD_OFFSET, 1, ENC_BIG_ENDIAN);
-
-        switch(ptp_v2_messageid){
+        switch(ptp_v2_messageid) {
             case PTP_V2_ANNOUNCE_MESSAGE:{
-                guint16     Offset;
-                guint16     tlv_type;
-                guint16     tlv_length;
-                guint16     tlv_total_length;
-                proto_tree *ptp_tlv_tree;
 
                 /* In 802.1AS there is no origin timestamp in an Announce Message */
-                if(!(ptp_v2_transport_specific & PTP_V2_TRANSPORTSPECIFIC_ASPACKET_BITMASK)){
+                if(!is_802_1as){
+                    proto_tree_add_item(ptp_tree, hf_ptp_v2_an_origintimestamp_seconds, tvb, offset, 6, ENC_BIG_ENDIAN);
+                    offset += 6;
 
-                    proto_tree_add_item(ptp_tree, hf_ptp_v2_an_origintimestamp_seconds, tvb,
-                        PTP_V2_AN_ORIGINTIMESTAMPSECONDS_OFFSET, 6, ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(ptp_tree, hf_ptp_v2_an_origintimestamp_nanoseconds, tvb,
-                        PTP_V2_AN_ORIGINTIMESTAMPNANOSECONDS_OFFSET, 4, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(ptp_tree, hf_ptp_v2_an_origintimestamp_nanoseconds, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    offset += 4;
+                } else {
+                    proto_tree_add_item(ptp_tree, hf_ptp_v2_an_reserved1, tvb, offset, 10, ENC_NA);
+                    offset += 10;
                 }
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_origincurrentutcoffset, tvb,
-                    PTP_V2_AN_ORIGINCURRENTUTCOFFSET_OFFSET, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_origincurrentutcoffset, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_priority1, tvb,
-                    PTP_V2_AN_PRIORITY_1_OFFSET, 1, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_reserved2, tvb, offset, 1, ENC_NA);
+                offset += 1;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_grandmasterclockclass, tvb,
-                    PTP_V2_AN_GRANDMASTERCLOCKCLASS_OFFSET, 1, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_priority1, tvb, offset, 1, ENC_NA);
+                offset += 1;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_grandmasterclockaccuracy, tvb,
-                    PTP_V2_AN_GRANDMASTERCLOCKACCURACY_OFFSET, 1, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_grandmasterclockclass, tvb, offset, 1, ENC_NA);
+                offset += 1;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_grandmasterclockvariance, tvb,
-                    PTP_V2_AN_GRANDMASTERCLOCKVARIANCE_OFFSET, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_grandmasterclockaccuracy, tvb, offset, 1, ENC_NA);
+                offset += 1;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_priority2, tvb,
-                    PTP_V2_AN_PRIORITY_2_OFFSET, 1, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_grandmasterclockvariance, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_grandmasterclockidentity, tvb,
-                    PTP_V2_AN_GRANDMASTERCLOCKIDENTITY_OFFSET, 8, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_priority2, tvb, offset, 1, ENC_NA);
+                offset += 1;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_localstepsremoved, tvb,
-                        PTP_V2_AN_LOCALSTEPSREMOVED_OFFSET, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_grandmasterclockidentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                offset += 8;
 
-                proto_tree_add_item(ptp_tree,
-                    hf_ptp_v2_an_timesource, tvb, PTP_V2_AN_TIMESOURCE_OFFSET, 1, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_localstepsremoved, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
 
-                if (msg_len > 64)
-                {
-                    tlv_total_length = 0;
-                    /* XXX It seems like at least 4 bytes must reamain to have a tlv_type and tlv_length */
-                    while (tvb_reported_length_remaining(tvb, PTP_V2_AN_TLV_OFFSET + tlv_total_length) >= 4)
-                    {
-                        /* There are TLV's to be processed */
-                        tlv_type = tvb_get_ntohs (tvb, PTP_V2_AN_TLV_OFFSET+tlv_total_length+PTP_V2_AN_TLV_TYPE_OFFSET);
-                        tlv_length = tvb_get_ntohs (tvb, PTP_V2_AN_TLV_OFFSET+tlv_total_length+PTP_V2_AN_TLV_LENGTHFIELD_OFFSET);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_an_timesource, tvb, offset, 1, ENC_NA);
+                offset += 1;
 
-                        ptp_tlv_tree = proto_tree_add_subtree_format(
-                            ptp_tree,
-                            tvb,
-                            PTP_V2_AN_TLV_OFFSET + tlv_total_length,
-                            tlv_length + PTP_V2_AN_TLV_DATA_OFFSET,
-                            ett_ptp_v2_tlv, NULL, "%s TLV",
-                            val_to_str_ext(tlv_type,
-                                           &ptp_v2_TLV_type_vals_ext,
-                                           "Unknown (%u)"));
-
-                        proto_tree_add_item(ptp_tlv_tree,
-                                            hf_ptp_v2_an_tlv_tlvtype,
-                                            tvb,
-                                            PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_TYPE_OFFSET,
-                                            2,
-                                            ENC_BIG_ENDIAN);
-
-                        proto_tree_add_item(ptp_tlv_tree,
-                                            hf_ptp_v2_an_tlv_lengthfield,
-                                            tvb,
-                                            PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_LENGTHFIELD_OFFSET,
-                                            2,
-                                            ENC_BIG_ENDIAN);
-
-                        switch (tlv_type)
-                        {
-                            case PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION:
-                            {
-                                guint32 org_id;
-                                guint32 subtype;
-
-                                proto_tree_add_item(ptp_tlv_tree,
-                                                    hf_ptp_v2_oe_tlv_organizationid,
-                                                    tvb,
-                                                    PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_OE_ORGANIZATIONID_OFFSET,
-                                                    3,
-                                                    ENC_BIG_ENDIAN);
-
-                                org_id = tvb_get_ntoh24(tvb, PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_OE_ORGANIZATIONID_OFFSET);
-                                subtype = tvb_get_ntoh24(tvb, PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_OE_ORGANIZATIONSUBTYPE_OFFSET);
-
-                                switch (org_id)
-                                {
-                                    case PTP_V2_OE_ORG_ID_IEEE_C37_238:
-                                    {
-                                        proto_tree_add_item(ptp_tlv_tree,
-                                                            hf_ptp_v2_oe_tlv_organizationsubtype,
-                                                            tvb,
-                                                            PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_OE_ORGANIZATIONSUBTYPE_OFFSET,
-                                                            3,
-                                                            ENC_BIG_ENDIAN);
-
-                                        switch (subtype)
-                                        {
-                                            case PTP_V2_OE_ORG_IEEE_C37_238_SUBTYPE_C37238TLV:
-                                            {
-                                                proto_tree_add_item(ptp_tlv_tree,
-                                                                    hf_ptp_v2_oe_tlv_subtype_c37238tlv_grandmasterid,
-                                                                    tvb,
-                                                                    PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_OE_IEEEC37238TLV_GMID_OFFSET,
-                                                                    2,
-                                                                    ENC_BIG_ENDIAN);
-                                                proto_tree_add_item(ptp_tlv_tree,
-                                                                    hf_ptp_v2_oe_tlv_subtype_c37238tlv_grandmastertimeinaccuracy,
-                                                                    tvb,
-                                                                    PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_OE_IEEEC37238TLV_GMINACCURACY_OFFSET,
-                                                                    4,
-                                                                    ENC_BIG_ENDIAN);
-                                                proto_tree_add_item(ptp_tlv_tree,
-                                                                    hf_ptp_v2_oe_tlv_subtype_c37238tlv_networktimeinaccuracy,
-                                                                    tvb,
-                                                                    PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_OE_IEEEC37238TLV_NWINACCURACY_OFFSET,
-                                                                    4,
-                                                                    ENC_BIG_ENDIAN);
-                                                proto_tree_add_item(ptp_tlv_tree,
-                                                                    hf_ptp_v2_oe_tlv_subtype_c37238tlv_reserved,
-                                                                    tvb,
-                                                                    PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_OE_IEEEC37238TLV_RESERVED_OFFSET,
-                                                                    2,
-                                                                    ENC_BIG_ENDIAN);
-                                                break;
-                                            }
-                                            default:
-                                            {
-                                                proto_tree_add_item(ptp_tlv_tree,
-                                                                    hf_ptp_v2_oe_tlv_datafield,
-                                                                    tvb,
-                                                                    PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_OE_DATAFIELD_OFFSET,
-                                                                    tlv_length - 6,
-                                                                    ENC_NA);
-                                                break;
-                                            }
-                                        }
-                                        break;
-                                    }
-                                    default:
-                                    {
-                                        proto_tree_add_item(ptp_tlv_tree,
-                                                            hf_ptp_v2_oe_tlv_organizationsubtype,
-                                                            tvb,
-                                                            PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_OE_ORGANIZATIONSUBTYPE_OFFSET,
-                                                            3,
-                                                            ENC_BIG_ENDIAN);
-
-                                        proto_tree_add_item(ptp_tlv_tree,
-                                                            hf_ptp_v2_oe_tlv_datafield,
-                                                            tvb,
-                                                            PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_OE_DATAFIELD_OFFSET,
-                                                            tlv_length - 6,
-                                                            ENC_NA);
-                                        break;
-                                    }
-                                }
-                                break;
-                            }
-                            case PTP_V2_TLV_TYPE_ALTERNATE_TIME_OFFSET_INDICATOR:
-                            {
-                                proto_tree_add_item(ptp_tlv_tree,
-                                                    hf_ptp_v2_atoi_tlv_keyfield,
-                                                    tvb,
-                                                    PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_ATOI_KEYFIELD_OFFSET,
-                                                    1,
-                                                    ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_tlv_tree,
-                                                    hf_ptp_v2_atoi_tlv_currentoffset,
-                                                    tvb,
-                                                    PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_ATOI_CURRENTOFFSET_OFFSET,
-                                                    4,
-                                                    ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_tlv_tree,
-                                                    hf_ptp_v2_atoi_tlv_jumpseconds,
-                                                    tvb,
-                                                    PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_ATOI_JUMPSECONDS_OFFSET,
-                                                    4,
-                                                    ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_tlv_tree,
-                                                    hf_ptp_v2_atoi_tlv_timeofnextjump,
-                                                    tvb,
-                                                    PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_ATOI_TIMEOFNEXTJUMP_OFFSET,
-                                                    6,
-                                                    ENC_NA);
-
-                                Offset = PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_ATOI_DISPLAYNAME_OFFSET;
-                                dissect_ptp_v2_text(tvb,
-                                                    &Offset,
-                                                    ptp_tlv_tree,
-                                                    hf_ptp_v2_atoi_tlv_displayname,
-                                                    hf_ptp_v2_atoi_tlv_displayname_length);
-
-                                break;
-                            }
-                            case PTP_V2_TLV_TYPE_PATH_TRACE:
-                            {
-                                guint16 path_seq_total_length;
-
-                                for(path_seq_total_length = 0; path_seq_total_length < tlv_length; path_seq_total_length+=8)
-                                {
-                                    proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_an_tlv_pathsequence, tvb,
-                                                        PTP_V2_AN_TLV_OFFSET + PTP_AS_AN_TLV_PATH_TRACE_OFFSET + path_seq_total_length,
-                                                        8, ENC_BIG_ENDIAN);
-                                }
-
-                                break;
-                            }
-                            default:
-                            {
-                                proto_tree_add_item(ptp_tlv_tree,
-                                                    hf_ptp_v2_an_tlv_data,
-                                                    tvb,
-                                                    PTP_V2_AN_TLV_OFFSET + tlv_total_length + PTP_V2_AN_TLV_DATA_OFFSET,
-                                                    tlv_length,
-                                                    ENC_NA);
-                                break;
-                            }
-                        }
-
-                        tlv_total_length += (tlv_length + PTP_V2_AN_TLV_DATA_OFFSET);
-                    }
-                }
-
+                disect_ptp_v2_tlvs(tvb, offset, pinfo, ti_root, ptp_tree, ptp_v2_messageid, ptp_v2_flags, is_802_1as);
                 break;
             }
 
             case PTP_V2_SYNC_MESSAGE:
+                if (is_802_1as && ((ptp_v2_flags & PTP_V2_FLAGS_TWO_STEP_BITMASK) == PTP_V2_FLAGS_TWO_STEP_BITMASK)) {
+                    /* IEEE 802.1AS 2-step does not have Origin Timestamp in Sync! See 11.4.3 */
+                    proto_tree_add_item(ptp_tree, hf_ptp_v2_sync_reserved, tvb, offset, 10, ENC_NA);
+                    offset += 10;
+                } else {
+                    /* regular PTP or 802.1AS 1-step */
+                    proto_tree_add_item(ptp_tree, hf_ptp_v2_sdr_origintimestamp_seconds, tvb, offset, 6, ENC_BIG_ENDIAN);
+                    offset += 6;
+
+                    proto_tree_add_item(ptp_tree, hf_ptp_v2_sdr_origintimestamp_nanoseconds, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    offset += 4;
+                }
+
+                disect_ptp_v2_tlvs(tvb, offset, pinfo, ti_root, ptp_tree, ptp_v2_messageid, ptp_v2_flags, is_802_1as);
+
+                if (ptp_analyze_messages) {
+                    if (PTP_FRAME_INFO_SYNC_COMPLETE(frame_info)) {
+                        if (frame_info->sync.syncInterval_valid) {
+                            ti = proto_tree_add_double(ptp_tree, hf_ptp_v2_analysis_sync_period, tvb, 0, 0, frame_info->sync.syncInterval);
+                            proto_item_append_text(ti, " %s", "s");
+                            proto_item_set_generated(ti);
+                        }
+
+                        if ((ptp_v2_flags & PTP_V2_FLAGS_TWO_STEP_BITMASK) == PTP_V2_FLAGS_TWO_STEP_BITMASK) {
+                            ti = proto_tree_add_uint(ptp_tree, hf_ptp_v2_analysis_sync_to_followup, tvb, 0, 0, frame_info->sync.fup_frame_num);
+                            proto_item_set_generated(ti);
+                        } else {
+                            if (frame_info->sync.calculated_timestamp_valid) {
+                                ti = proto_tree_add_double(ptp_tree, hf_ptp_v2_analysis_sync_timestamp, tvb, 0, 0, nstime_to_sec(&(frame_info->sync.calculated_timestamp)));
+                                proto_item_set_generated(ti);
+                                proto_tree *ts_tree = proto_item_add_subtree(ti, ett_ptp_analysis_timestamp);
+                                ti = proto_tree_add_uint64(ts_tree, hf_ptp_v2_analysis_sync_timestamp_seconds, tvb, 0, 0, frame_info->sync.calculated_timestamp.secs);
+                                proto_item_set_generated(ti);
+                                ti = proto_tree_add_uint(ts_tree, hf_ptp_v2_analysis_sync_timestamp_nanoseconds, tvb, 0, 0, frame_info->sync.calculated_timestamp.nsecs);
+                                proto_item_set_generated(ti);
+                            }
+
+                            if (frame_info->sync.syncRateRatio_valid) {
+                                ti = proto_tree_add_double(ptp_tree, hf_ptp_v2_analysis_sync_rateRatio, tvb, 0, 0, frame_info->sync.syncRateRatio);
+                                proto_item_set_generated(ti);
+                                ti = proto_tree_add_double(ptp_tree, hf_ptp_v2_analysis_sync_rateRatio_ppm, tvb, 0, 0, frame_info->sync.syncRateRatio_ppm);
+                                proto_item_set_generated(ti);
+                            }
+                        }
+                    } else if ((ptp_v2_flags & PTP_V2_FLAGS_TWO_STEP_BITMASK) == PTP_V2_FLAGS_TWO_STEP_BITMASK) {
+                        /* No FollowUp found! */
+                        expert_add_info(pinfo, ti_root, &ei_ptp_v2_sync_no_followup);
+                    }
+                }
+
+                break;
+
             case PTP_V2_DELAY_REQ_MESSAGE:{
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_sdr_origintimestamp_seconds, tvb, offset, 6, ENC_BIG_ENDIAN);
+                offset += 6;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_sdr_origintimestamp_seconds, tvb,
-                    PTP_V2_SDR_ORIGINTIMESTAMPSECONDS_OFFSET, 6, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_sdr_origintimestamp_nanoseconds, tvb, offset, 4, ENC_BIG_ENDIAN);
+                offset += 4;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_sdr_origintimestamp_nanoseconds, tvb,
-                    PTP_V2_SDR_ORIGINTIMESTAMPNANOSECONDS_OFFSET, 4, ENC_BIG_ENDIAN);
+                disect_ptp_v2_tlvs(tvb, offset, pinfo, ti_root, ptp_tree, ptp_v2_messageid, ptp_v2_flags, is_802_1as);
 
                 break;
             }
 
             case PTP_V2_FOLLOWUP_MESSAGE:{
-                guint16     tlv_length;
-                proto_tree *ptp_tlv_tree;
+                proto_item *ti_tstamp;
+                uint64_t    ts_sec;
+                uint32_t    ts_ns;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_fu_preciseorigintimestamp_seconds, tvb,
-                    PTP_V2_FU_PRECISEORIGINTIMESTAMPSECONDS_OFFSET, 6, ENC_BIG_ENDIAN);
+                proto_tree_add_item_ret_uint64(ptp_tree, hf_ptp_v2_fu_preciseorigintimestamp_seconds, tvb, offset, 6, ENC_BIG_ENDIAN, &ts_sec);
+                proto_tree_add_item_ret_uint(ptp_tree, hf_ptp_v2_fu_preciseorigintimestamp_nanoseconds, tvb, offset + 6, 4, ENC_BIG_ENDIAN, &ts_ns);
+                ti_tstamp = proto_tree_add_bytes_format_value(ptp_tree, hf_ptp_v2_fu_preciseorigintimestamp_32bit, tvb, offset, 10,
+                                                              NULL, "%"PRIu64, (ts_sec * NS_PER_S + ts_ns) % UINT64_C(0x100000000));
+                proto_item_set_hidden(ti_tstamp);
+                proto_item_set_generated(ti_tstamp);
+                offset += 10;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_fu_preciseorigintimestamp_nanoseconds, tvb,
-                    PTP_V2_FU_PRECISEORIGINTIMESTAMPNANOSECONDS_OFFSET, 4, ENC_BIG_ENDIAN);
+                disect_ptp_v2_tlvs(tvb, offset, pinfo, ptp_tree, ti_root, ptp_v2_messageid, ptp_v2_flags, is_802_1as);
 
-                /* In 802.1AS there is a Follow_UP information TLV in the Follow Up Message */
-                if(ptp_v2_transport_specific & PTP_V2_TRANSPORTSPECIFIC_ASPACKET_BITMASK){
+                if (ptp_analyze_messages) {
+                    if (frame_info != NULL) {
+                        if (PTP_FRAME_INFO_SYNC_COMPLETE(frame_info) && frame_info->sync.sync_two_step) {
+                            if (frame_info->sync.calculated_timestamp_valid) {
+                                ti = proto_tree_add_double(ptp_tree, hf_ptp_v2_analysis_sync_timestamp, tvb, 0, 0, nstime_to_sec(&(frame_info->sync.calculated_timestamp)));
+                                proto_item_set_generated(ti);
+                                proto_tree *ts_tree = proto_item_add_subtree(ti, ett_ptp_analysis_timestamp);
+                                ti = proto_tree_add_uint64(ts_tree, hf_ptp_v2_analysis_sync_timestamp_seconds, tvb, 0, 0, frame_info->sync.calculated_timestamp.secs);
+                                proto_item_set_generated(ti);
+                                ti = proto_tree_add_uint(ts_tree, hf_ptp_v2_analysis_sync_timestamp_nanoseconds, tvb, 0, 0, frame_info->sync.calculated_timestamp.nsecs);
+                                proto_item_set_generated(ti);
+                            }
 
-                    /* There are TLV's to be processed */
-                    tlv_length = tvb_get_ntohs (tvb, PTP_AS_FU_TLV_INFORMATION_OFFSET + PTP_AS_FU_TLV_LENGTHFIELD_OFFSET);
+                            if (frame_info->sync.syncRateRatio_valid) {
+                                ti = proto_tree_add_double(ptp_tree, hf_ptp_v2_analysis_sync_rateRatio, tvb, 0, 0, frame_info->sync.syncRateRatio);
+                                proto_item_set_generated(ti);
+                                ti = proto_tree_add_double(ptp_tree, hf_ptp_v2_analysis_sync_rateRatio_ppm, tvb, 0, 0, frame_info->sync.syncRateRatio_ppm);
+                                proto_item_set_generated(ti);
+                            }
 
-                    ptp_tlv_tree = proto_tree_add_subtree(
-                        ptp_tree,
-                        tvb,
-                        PTP_AS_FU_TLV_INFORMATION_OFFSET,
-                        tlv_length + PTP_AS_FU_TLV_ORGANIZATIONID_OFFSET,
-                        ett_ptp_v2_tlv, NULL, "Follow Up information TLV");
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_fu_tlv_tlvtype,
-                                        tvb,
-                                        PTP_AS_FU_TLV_INFORMATION_OFFSET + PTP_AS_FU_TLV_TYPE_OFFSET,
-                                        2,
-                                        ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_fu_tlv_lengthfield,
-                                        tvb,
-                                        PTP_AS_FU_TLV_INFORMATION_OFFSET + PTP_AS_FU_TLV_LENGTHFIELD_OFFSET,
-                                        2,
-                                        ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_fu_tlv_organization_id,
-                                        tvb,
-                                        PTP_AS_FU_TLV_INFORMATION_OFFSET + PTP_AS_FU_TLV_ORGANIZATIONID_OFFSET,
-                                        3,
-                                        ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_fu_tlv_organization_subtype,
-                                        tvb,
-                                        PTP_AS_FU_TLV_INFORMATION_OFFSET + PTP_AS_FU_TLV_ORGANIZATIONSUBTYPE_OFFSET,
-                                        3,
-                                        ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_fu_tlv_cumulative_offset,
-                                        tvb,
-                                        PTP_AS_FU_TLV_INFORMATION_OFFSET + PTP_AS_FU_TLV_CUMULATIVESCALEDRATEOFFSET_OFFSET,
-                                        4,
-                                        ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_fu_tlv_gm_base_indicator,
-                                        tvb,
-                                        PTP_AS_FU_TLV_INFORMATION_OFFSET + PTP_AS_FU_TLV_GMTIMEBASEINDICATOR_OFFSET,
-                                        2,
-                                        ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_fu_tlv_last_gm_phase_change,
-                                        tvb,
-                                        PTP_AS_FU_TLV_INFORMATION_OFFSET + PTP_AS_FU_TLV_LASTGMPHASECHANGE_OFFSET,
-                                        12,
-                                        ENC_NA);
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_fu_tlv_scaled_last_gm_freq_change,
-                                        tvb,
-                                        PTP_AS_FU_TLV_INFORMATION_OFFSET + PTP_AS_FU_TLV_SCALEDLASTGMFREQCHANGE_OFFSET,
-                                        4,
-                                        ENC_BIG_ENDIAN);
-
+                            ti = proto_tree_add_uint(ptp_tree, hf_ptp_v2_analysis_followup_to_sync, tvb, 0, 0, frame_info->sync.sync_frame_num);
+                            proto_item_set_generated(ti);
+                        } else {
+                            /* No 2-step Sync found! */
+                            expert_add_info(pinfo, ti_root, &ei_ptp_v2_followup_no_sync);
+                        }
+                    }
                 }
 
                 break;
             }
 
             case PTP_V2_DELAY_RESP_MESSAGE:{
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_dr_receivetimestamp_seconds, tvb, offset, 6, ENC_BIG_ENDIAN);
+                offset += 6;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_dr_receivetimestamp_seconds, tvb,
-                    PTP_V2_DR_RECEIVETIMESTAMPSECONDS_OFFSET, 6, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_dr_receivetimestamp_nanoseconds, tvb, offset, 4, ENC_BIG_ENDIAN);
+                offset += 4;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_dr_receivetimestamp_nanoseconds, tvb,
-                    PTP_V2_DR_RECEIVETIMESTAMPNANOSECONDS_OFFSET, 4, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_dr_requestingportidentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                offset += 8;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_dr_requestingportidentity, tvb,
-                    PTP_V2_DR_REQUESTINGPORTIDENTITY_OFFSET, 8, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_dr_requestingsourceportid, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_dr_requestingsourceportid, tvb,
-                    PTP_V2_DR_REQUESTINGSOURCEPORTID_OFFSET, 2, ENC_BIG_ENDIAN);
+                disect_ptp_v2_tlvs(tvb, offset, pinfo, ptp_tree, ti_root, ptp_v2_messageid, ptp_v2_flags, is_802_1as);
 
                 break;
             }
 
-            case PTP_V2_PATH_DELAY_REQ_MESSAGE:{
+            case PTP_V2_PEER_DELAY_REQ_MESSAGE:{
                 /* In 802.1AS there is no origin timestamp in a Pdelay_Req Message */
-                if(!(ptp_v2_transport_specific & PTP_V2_TRANSPORTSPECIFIC_ASPACKET_BITMASK)){
+                if(!is_802_1as){
+                    proto_tree_add_item(ptp_tree, hf_ptp_v2_pdrq_origintimestamp_seconds, tvb, offset, 6, ENC_BIG_ENDIAN);
+                    offset += 6;
 
-                    proto_tree_add_item(ptp_tree, hf_ptp_v2_pdrq_origintimestamp_seconds, tvb,
-                        PTP_V2_PDRQ_ORIGINTIMESTAMPSECONDS_OFFSET, 6, ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(ptp_tree, hf_ptp_v2_pdrq_origintimestamp_nanoseconds, tvb,
-                        PTP_V2_PDRQ_ORIGINTIMESTAMPNANOSECONDS_OFFSET, 4, ENC_BIG_ENDIAN);
-                }
-
-                break;
-            }
-
-            case PTP_V2_PATH_DELAY_RESP_MESSAGE:{
-
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdrs_requestreceipttimestamp_seconds, tvb,
-                    PTP_V2_PDRS_REQUESTRECEIPTTIMESTAMPSECONDS_OFFSET, 6, ENC_BIG_ENDIAN);
-
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdrs_requestreceipttimestamp_nanoseconds, tvb,
-                    PTP_V2_PDRS_REQUESTRECEIPTTIMESTAMPNANOSECONDS_OFFSET, 4, ENC_BIG_ENDIAN);
-
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdrs_requestingportidentity, tvb,
-                    PTP_V2_PDRS_REQUESTINGPORTIDENTITY_OFFSET, 8, ENC_BIG_ENDIAN);
-
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdrs_requestingsourceportid, tvb,
-                    PTP_V2_PDRS_REQUESTINGSOURCEPORTID_OFFSET, 2, ENC_BIG_ENDIAN);
-
-                break;
-            }
-
-            case PTP_V2_PATH_DELAY_FOLLOWUP_MESSAGE:{
-
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdfu_responseorigintimestamp_seconds, tvb,
-                    PTP_V2_PDFU_RESPONSEORIGINTIMESTAMPSECONDS_OFFSET, 6, ENC_BIG_ENDIAN);
-
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdfu_responseorigintimestamp_nanoseconds, tvb,
-                    PTP_V2_PDFU_RESPONSEORIGINTIMESTAMPNANOSECONDS_OFFSET, 4, ENC_BIG_ENDIAN);
-
-
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdfu_requestingportidentity, tvb,
-                    PTP_V2_PDFU_REQUESTINGPORTIDENTITY_OFFSET, 8, ENC_BIG_ENDIAN);
-
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdfu_requestingsourceportid, tvb,
-                    PTP_V2_PDFU_REQUESTINGSOURCEPORTID_OFFSET, 2, ENC_BIG_ENDIAN);
-
-                break;
-            }
-
-            case PTP_V2_SIGNALLING_MESSAGE:{
-                guint16 tlv_length;
-                proto_item *tlv_ti, *sig_tlv_flags_ti;
-                proto_tree *ptp_tlv_tree, *sig_tlv_flags_tree;
-
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_sig_targetportidentity, tvb,
-                    PTP_V2_SIG_TARGETPORTIDENTITY_OFFSET, 8, ENC_BIG_ENDIAN);
-
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_sig_targetportid, tvb,
-                    PTP_V2_SIG_TARGETPORTID_OFFSET, 2, ENC_BIG_ENDIAN);
-
-                /* In 802.1AS there is a Message Interval Request TLV in the Signalling Message */
-                if(ptp_v2_transport_specific & PTP_V2_TRANSPORTSPECIFIC_ASPACKET_BITMASK){
-
-                    /* There are TLV's to be processed */
-                    tlv_length = tvb_get_ntohs (tvb, PTP_AS_SIG_TLV_MESSAGEINTERVALREQUEST_OFFSET + PTP_AS_SIG_TLV_LENGTHFIELD_OFFSET);
-
-                    ptp_tlv_tree = proto_tree_add_subtree(
-                        ptp_tree,
-                        tvb,
-                        PTP_AS_SIG_TLV_MESSAGEINTERVALREQUEST_OFFSET,
-                        tlv_length + PTP_AS_SIG_TLV_ORGANIZATIONID_OFFSET,
-                        ett_ptp_v2_tlv, NULL, "Message Interval Request TLV");
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_sig_tlv_tlvtype,
-                                        tvb,
-                                        PTP_AS_SIG_TLV_MESSAGEINTERVALREQUEST_OFFSET + PTP_AS_SIG_TLV_TYPE_OFFSET,
-                                        2,
-                                        ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_sig_tlv_lengthfield,
-                                        tvb,
-                                        PTP_AS_SIG_TLV_MESSAGEINTERVALREQUEST_OFFSET + PTP_AS_SIG_TLV_LENGTHFIELD_OFFSET,
-                                        2,
-                                        ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_sig_tlv_organization_id,
-                                        tvb,
-                                        PTP_AS_SIG_TLV_MESSAGEINTERVALREQUEST_OFFSET + PTP_AS_SIG_TLV_ORGANIZATIONID_OFFSET,
-                                        3,
-                                        ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_sig_tlv_organization_subtype,
-                                        tvb,
-                                        PTP_AS_SIG_TLV_MESSAGEINTERVALREQUEST_OFFSET + PTP_AS_SIG_TLV_ORGANIZATIONSUBTYPE_OFFSET,
-                                        3,
-                                        ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_sig_tlv_link_delay_interval,
-                                        tvb,
-                                        PTP_AS_SIG_TLV_MESSAGEINTERVALREQUEST_OFFSET + PTP_AS_SIG_TLV_LINKDELAYINTERVAL_OFFSET,
-                                        1,
-                                        ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_sig_tlv_time_sync_interval,
-                                        tvb,
-                                        PTP_AS_SIG_TLV_MESSAGEINTERVALREQUEST_OFFSET + PTP_AS_SIG_TLV_TIMESYNCINTERVAL_OFFSET,
-                                        1,
-                                        ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(ptp_tlv_tree,
-                                        hf_ptp_as_sig_tlv_announce_interval,
-                                        tvb,
-                                        PTP_AS_SIG_TLV_MESSAGEINTERVALREQUEST_OFFSET + PTP_AS_SIG_TLV_ANNOUNCEINTERVAL_OFFSET,
-                                        1,
-                                        ENC_BIG_ENDIAN);
-
-                    sig_tlv_flags_ti = proto_tree_add_item(ptp_tlv_tree,
-                                                           hf_ptp_as_sig_tlv_flags,
-                                                          tvb,
-                                                          PTP_AS_SIG_TLV_MESSAGEINTERVALREQUEST_OFFSET + PTP_AS_SIG_TLV_FLAGS_OFFSET,
-                                                          1,
-                                                          ENC_BIG_ENDIAN);
-
-                    sig_tlv_flags_tree = proto_item_add_subtree(sig_tlv_flags_ti, ett_ptp_as_sig_tlv_flags);
-
-                    proto_tree_add_item(sig_tlv_flags_tree,
-                                        hf_ptp_as_sig_tlv_flags_comp_rate_ratio,
-                                        tvb,
-                                        PTP_AS_SIG_TLV_MESSAGEINTERVALREQUEST_OFFSET + PTP_AS_SIG_TLV_FLAGS_OFFSET,
-                                        1,
-                                        ENC_BIG_ENDIAN);
-
-                    proto_tree_add_item(sig_tlv_flags_tree,
-                                        hf_ptp_as_sig_tlv_flags_comp_prop_delay,
-                                        tvb,
-                                        PTP_AS_SIG_TLV_MESSAGEINTERVALREQUEST_OFFSET + PTP_AS_SIG_TLV_FLAGS_OFFSET,
-                                        1,
-                                        ENC_BIG_ENDIAN);
-
+                    proto_tree_add_item(ptp_tree, hf_ptp_v2_pdrq_origintimestamp_nanoseconds, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    offset += 4;
                 } else {
-                    guint   proto_len;
-                    guint32 tlv_offset;
-                    guint16 tlv_type;
-                    gint8   log_inter_message_period;
-                    gdouble period = 0.0f;
-                    gdouble rate   = 0.0f;
-                    guint32 duration_field;
+                    proto_tree_add_item(ptp_tree, hf_ptp_v2_pdrq_reserved, tvb, offset, 10, ENC_NA);
+                    offset += 10;
+                }
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdrq_reserved, tvb, offset, 10, ENC_NA);
+                offset += 10;
 
-                    proto_item *ptp_tlv_period;
-                    proto_tree *ptp_tlv_period_tree;
+                disect_ptp_v2_tlvs(tvb, offset, pinfo, ptp_tree, ti_root, ptp_v2_messageid, ptp_v2_flags, is_802_1as);
 
-                    proto_len  = tvb_reported_length(tvb);
-                    tlv_offset = PTP_V2_SIG_TLV_START;
-
-                    while (tlv_offset < proto_len) {
-
-                        /* 14.1.1 tlvType */
-                        tlv_type     = tvb_get_ntohs(tvb, tlv_offset + PTP_V2_SIG_TLV_TYPE_OFFSET);
-                        tlv_ti       = proto_tree_add_item(ptp_tree, hf_ptp_v2_sig_tlv_tlvType, tvb,
-                                                           tlv_offset + PTP_V2_SIG_TLV_TYPE_OFFSET, PTP_V2_SIG_TLV_TYPE_LEN, ENC_BIG_ENDIAN);
-
-                        ptp_tlv_tree = proto_item_add_subtree(tlv_ti, ett_ptp_v2_tlv);
-
-                        /* 14.1.2 lengthField */
-                        tlv_length   = tvb_get_ntohs(tvb, tlv_offset + PTP_V2_SIG_TLV_LENGTH_OFFSET);
-                        proto_tree_add_uint(ptp_tlv_tree, hf_ptp_v2_sig_tlv_lengthField, tvb,
-                                            tlv_offset + PTP_V2_SIG_TLV_LENGTH_OFFSET, PTP_V2_SIG_TLV_LENGTH_LEN, tlv_length);
-
-                        switch (tlv_type) {
-
-                            /* Request Unicast Transmission */
-                            case PTP_V2_TLV_TYPE_REQUEST_UNICAST_TRANSMISSION:
-
-                                /* 16.1.4.1.3 messageType */
-                                proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_messageType, tvb,
-                                                    tlv_offset + PTP_V2_SIG_TLV_MESSAGE_TYPE_OFFSET, PTP_V2_SIG_TLV_MESSAGE_TYPE_LEN, ENC_BIG_ENDIAN);
-
-                                /* 16.1.4.1.4 logInterMessagePeriod */
-                                log_inter_message_period = tvb_get_guint8(tvb, tlv_offset + PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_OFFSET);
-                                period = pow(2, log_inter_message_period);
-                                rate   = 1/period;
-
-                                ptp_tlv_period = proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_logInterMessagePeriod, tvb,
-                                                                     tlv_offset + PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_OFFSET, PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_LEN, ENC_BIG_ENDIAN);
-
-                                ptp_tlv_period_tree = proto_item_add_subtree(ptp_tlv_period, ett_ptp_v2_tlv_log_period);
-
-                                proto_tree_add_int_format_value(ptp_tlv_period_tree, hf_ptp_v2_sig_tlv_logInterMessagePeriod_period, tvb,
-                                                                tlv_offset + PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_OFFSET, PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_LEN, log_inter_message_period, "every %lg seconds", period);
-
-                                proto_tree_add_int_format_value(ptp_tlv_period_tree, hf_ptp_v2_sig_tlv_logInterMessagePeriod_rate, tvb,
-                                                                tlv_offset + PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_OFFSET, PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_LEN, log_inter_message_period, "%lg packets/sec", rate);
-
-                                /* 16.1.4.1.5 durationField */
-                                duration_field = tvb_get_ntohl(tvb, tlv_offset + PTP_V2_SIG_TLV_DURATION_FIELD_OFFSET);
-
-                                proto_tree_add_uint_format_value(ptp_tlv_tree, hf_ptp_v2_sig_tlv_durationField, tvb,
-                                                                 tlv_offset + PTP_V2_SIG_TLV_DURATION_FIELD_OFFSET, PTP_V2_SIG_TLV_DURATION_FIELD_LEN, duration_field, "%u seconds", duration_field);
-
-                                break;
-
-                            /* Grant Unicast Transmission */
-                            case PTP_V2_TLV_TYPE_GRANT_UNICAST_TRANSMISSION:
-
-                                /* 16.1.4.2.3 messageType */
-                                proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_messageType, tvb,
-                                                    tlv_offset + PTP_V2_SIG_TLV_MESSAGE_TYPE_OFFSET, PTP_V2_SIG_TLV_MESSAGE_TYPE_LEN, ENC_BIG_ENDIAN);
-
-                                /* 16.1.4.2.4 logInterMessagePeriod */
-                                log_inter_message_period = tvb_get_guint8(tvb, tlv_offset + PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_OFFSET);
-                                period = pow(2, log_inter_message_period);
-                                rate   = 1/period;
-
-                                ptp_tlv_period = proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_logInterMessagePeriod, tvb,
-                                                                     tlv_offset + PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_OFFSET, PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_LEN, ENC_BIG_ENDIAN);
-
-                                ptp_tlv_period_tree = proto_item_add_subtree(ptp_tlv_period, ett_ptp_v2_tlv_log_period);
-
-                                proto_tree_add_int_format_value(ptp_tlv_period_tree, hf_ptp_v2_sig_tlv_logInterMessagePeriod_period, tvb,
-                                                                tlv_offset + PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_OFFSET, PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_LEN, log_inter_message_period, "every %lg seconds", period);
-
-                                proto_tree_add_int_format_value(ptp_tlv_period_tree, hf_ptp_v2_sig_tlv_logInterMessagePeriod_rate, tvb,
-                                                                tlv_offset + PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_OFFSET, PTP_V2_SIG_TLV_LOG_INTER_MESSAGE_PERIOD_LEN, log_inter_message_period, "%lg packets/sec", rate);
-
-                                /* 16.1.4.2.5 durationField */
-                                duration_field = tvb_get_ntohl(tvb, tlv_offset + PTP_V2_SIG_TLV_DURATION_FIELD_OFFSET);
-
-                                proto_tree_add_uint_format_value(ptp_tlv_tree, hf_ptp_v2_sig_tlv_durationField, tvb,
-                                                                 tlv_offset + PTP_V2_SIG_TLV_DURATION_FIELD_OFFSET, PTP_V2_SIG_TLV_DURATION_FIELD_LEN, duration_field, "%u seconds", duration_field);
-
-                                /* 16.1.4.2.6 renewalInvited */
-                                proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_renewalInvited, tvb,
-                                                    tlv_offset + PTP_V2_SIG_TLV_RENEWAL_INVITED_OFFSET, PTP_V2_SIG_TLV_RENEWAL_INVITED_LEN, ENC_BIG_ENDIAN);
-
-                                break;
-
-                            /* Cancel Unicast Transmission */
-                            case PTP_V2_TLV_TYPE_CANCEL_UNICAST_TRANSMISSION:
-
-                                /* 16.1.4.3.3 messageType */
-                                proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_messageType, tvb,
-                                                    tlv_offset + PTP_V2_SIG_TLV_MESSAGE_TYPE_OFFSET, PTP_V2_SIG_TLV_MESSAGE_TYPE_LEN, ENC_BIG_ENDIAN);
-
-                                break;
-
-                            /* Acknowledge Cancel Unicast Transmission */
-                            case PTP_V2_TLV_TYPE_ACKNOWLEDGE_CANCEL_UNICAST_TRANSMISSION:
-
-                                /* 16.1.4.4.3 messageType */
-                                proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_messageType, tvb,
-                                                    tlv_offset + PTP_V2_SIG_TLV_MESSAGE_TYPE_OFFSET, PTP_V2_SIG_TLV_MESSAGE_TYPE_LEN, ENC_BIG_ENDIAN);
-
-                                break;
-
-                            default:
-                                /* TODO: Add dissector for other TLVs */
-                                proto_tree_add_item(ptp_tlv_tree, hf_ptp_v2_sig_tlv_data, tvb,
-                                                    tlv_offset + PTP_V2_SIG_TLV_VALUE_OFFSET, tlv_length, ENC_NA);
+                if (ptp_analyze_messages) {
+                    if (frame_info != NULL) {
+                        if PTP_FRAME_INFO_PDELAY_REQ_SEEN(frame_info) {
+                            if (frame_info->pdelay.pdelayInterval_valid) {
+                                ti = proto_tree_add_double(ptp_tree, hf_ptp_v2_analysis_pdelay_period, tvb, 0, 0, frame_info->pdelay.pdelayInterval);
+                                proto_item_append_text(ti, " %s", "s");
+                                proto_item_set_generated(ti);
+                            }
                         }
 
-                        tlv_offset += PTP_V2_SIG_TLV_TYPE_LEN +
-                                      PTP_V2_SIG_TLV_LENGTH_LEN +
-                                      tlv_length;
+                        if (frame_info->pdelay.pdelay_res_frame_num != 0) {
+                            ti = proto_tree_add_uint(ptp_tree, hf_ptp_v2_analysis_pdelayreq_to_pdelayres, tvb, 0, 0, frame_info->pdelay.pdelay_res_frame_num);
+                            proto_item_set_generated(ti);
+                        } else {
+                            /* No Response found! */
+                            expert_add_info(pinfo, ti_root, &ei_ptp_v2_pdreq_no_pdresp);
+                        }
                     }
                 }
                 break;
             }
 
-            case PTP_V2_MANAGEMENT_MESSAGE:
-            {
-                guint16 tlv_type, tlv_length;
+            case PTP_V2_PEER_DELAY_RESP_MESSAGE:{
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdrs_requestreceipttimestamp_seconds, tvb, offset, 6, ENC_BIG_ENDIAN);
+                offset += 6;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_targetportidentity, tvb,
-                    PTP_V2_MM_TARGETPORTIDENTITY_OFFSET, 8, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdrs_requestreceipttimestamp_nanoseconds, tvb, offset, 4, ENC_BIG_ENDIAN);
+                offset += 4;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_targetportid, tvb,
-                    PTP_V2_MM_TARGETPORTID_OFFSET, 2, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdrs_requestingportidentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                offset += 8;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_startingboundaryhops, tvb,
-                    PTP_V2_MM_STARTINGBOUNDARYHOPS_OFFSET, 1, ENC_BIG_ENDIAN);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdrs_requestingsourceportid, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_boundaryhops, tvb,
-                    PTP_V2_MM_BOUNDARYHOPS_OFFSET, 1, ENC_BIG_ENDIAN);
+                disect_ptp_v2_tlvs(tvb, offset, pinfo, ptp_tree, ti_root, ptp_v2_messageid, ptp_v2_flags, is_802_1as);
 
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_action, tvb,
-                    PTP_V2_MM_ACTION_OFFSET, 1, ENC_BIG_ENDIAN);
-
-                /* management TLV */
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_tlvType, tvb,
-                    PTP_V2_MM_TLV_TYPE_OFFSET, 2, ENC_BIG_ENDIAN);
-
-                proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_lengthField, tvb,
-                    PTP_V2_MM_TLV_LENGTHFIELD_OFFSET, 2, ENC_BIG_ENDIAN);
-
-                tlv_type = tvb_get_ntohs (tvb, PTP_V2_MM_TLV_TYPE_OFFSET);
-                tlv_length = tvb_get_ntohs (tvb, PTP_V2_MM_TLV_LENGTHFIELD_OFFSET);
-
-                /* For management there are PTP_V2_TLV_TYPE_MANAGEMENT and PTP_V2_TLV_TYPE_MANAGEMENT_ERROR_STATUS TLVs */
-                switch(tlv_type) {
-                    case PTP_V2_TLV_TYPE_MANAGEMENT:
-                    {
-                        guint16 ptp_v2_managementId;
-                        guint16 Offset = PTP_V2_MM_TLV_DATAFIELD_OFFSET;
-
-                        proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_managementId, tvb,
-                            PTP_V2_MM_TLV_MANAGEMENTID_OFFSET, 2, ENC_BIG_ENDIAN);
-
-                        ptp_v2_managementId = tvb_get_ntohs (tvb, PTP_V2_MM_TLV_MANAGEMENTID_OFFSET);
-
-                        if (tlv_length <= 2)
-                        {
-                            /* no data */
-                            break;
+                if (ptp_analyze_messages) {
+                    if (frame_info != NULL) {
+                        if (frame_info->pdelay.pdelay_req_frame_num != 0) {
+                            ti = proto_tree_add_uint(ptp_tree, hf_ptp_v2_analysis_pdelayres_to_pdelayreq, tvb, 0, 0, frame_info->pdelay.pdelay_req_frame_num);
+                            proto_item_set_generated(ti);
+                        } else {
+                            /* No Request found! */
+                            expert_add_info(pinfo, ti_root, &ei_ptp_v2_pdresp_no_pdreq);
                         }
-
-                        managementData_ti = proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_data, tvb, Offset, tlv_length - 2, ENC_NA);
-
-                        /* data field of the management message (subtree) */
-                        ptp_managementData_tree = proto_item_add_subtree(managementData_ti, ett_ptp_v2_managementData);
-
-                        switch(ptp_v2_managementId) {
-                            case PTP_V2_MM_ID_NULL_MANAGEMENT:
-                            {
-                                /* no data in NULL management */
-                                break;
-                            }
-                            case PTP_V2_MM_ID_CLOCK_DESCRIPTION:
-                            {
-                                guint16 N = 0, S = 0;
-                                clockType_ti = proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockType, tvb,
-                                    Offset, 2, ENC_BIG_ENDIAN);
-
-                                ptp_clockType_tree = proto_item_add_subtree(clockType_ti, ett_ptp_v2_clockType);
-                                    /* ClockType Subtree */
-                                    proto_tree_add_item(ptp_clockType_tree, hf_ptp_v2_mm_clockType_ordinaryClock, tvb,
-                                        Offset, 2, ENC_BIG_ENDIAN);
-
-                                    proto_tree_add_item(ptp_clockType_tree, hf_ptp_v2_mm_clockType_boundaryClock, tvb,
-                                        Offset, 2, ENC_BIG_ENDIAN);
-
-                                    proto_tree_add_item(ptp_clockType_tree, hf_ptp_v2_mm_clockType_p2p_transparentClock, tvb,
-                                        Offset, 2, ENC_BIG_ENDIAN);
-
-                                    proto_tree_add_item(ptp_clockType_tree, hf_ptp_v2_mm_clockType_e2e_transparentClock, tvb,
-                                        Offset, 2, ENC_BIG_ENDIAN);
-
-                                    proto_tree_add_item(ptp_clockType_tree, hf_ptp_v2_mm_clockType_managementNode, tvb,
-                                        Offset, 2, ENC_BIG_ENDIAN);
-
-                                    proto_tree_add_item(ptp_clockType_tree, hf_ptp_v2_mm_clockType_reserved, tvb,
-                                        Offset, 2, ENC_BIG_ENDIAN);
-                                Offset +=2;
-
-                                dissect_ptp_v2_text (tvb, &Offset, ptp_managementData_tree,
-                                                     hf_ptp_v2_mm_physicalLayerProtocol, hf_ptp_v2_mm_physicalLayerProtocol_length);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_physicalAddressLength, tvb,
-                                    Offset, 2, ENC_BIG_ENDIAN);
-
-                                S = tvb_get_ntohs (tvb, Offset);
-                                Offset +=2;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_physicalAddress, tvb,
-                                    Offset, S, ENC_NA);
-                                Offset += S;
-
-                                N = tvb_get_ntohs (tvb, Offset+2);
-
-                                protocolAddress_ti = proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_protocolAddress, tvb,
-                                    Offset+4, N, ENC_NA);
-
-                                ptp_protocolAddress_tree = proto_item_add_subtree(protocolAddress_ti, ett_ptp_v2_protocolAddress);
-                                    /* physicalLayerProtocol subtree */
-                                    proto_tree_add_item(ptp_protocolAddress_tree, hf_ptp_v2_mm_protocolAddress_networkProtocol, tvb,
-                                        Offset, 2, ENC_BIG_ENDIAN);
-
-                                    proto_tree_add_item(ptp_protocolAddress_tree, hf_ptp_v2_mm_protocolAddress_length, tvb,
-                                        Offset+2, 2, ENC_BIG_ENDIAN);
-
-                                    proto_tree_add_item(ptp_protocolAddress_tree, hf_ptp_v2_mm_protocolAddress, tvb,
-                                        Offset+4, N, ENC_NA);
-                                N = N + 4;
-                                Offset += N;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_manufacturerIdentity, tvb,
-                                    Offset, 3, ENC_NA);
-
-                                Offset += 3;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset, 1, ENC_NA);
-                                Offset += 1;
-
-                                dissect_ptp_v2_text (tvb, &Offset, ptp_managementData_tree,
-                                                     hf_ptp_v2_mm_productDescription, hf_ptp_v2_mm_productDescription_length);
-                                dissect_ptp_v2_text (tvb, &Offset, ptp_managementData_tree,
-                                                     hf_ptp_v2_mm_revisionData, hf_ptp_v2_mm_revisionData_length);
-                                dissect_ptp_v2_text (tvb, &Offset, ptp_managementData_tree,
-                                                     hf_ptp_v2_mm_userDescription, hf_ptp_v2_mm_userDescription_length);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_profileIdentity, tvb,
-                                    Offset, 6, ENC_NA);
-                                Offset += 6;
-
-                                /* Wenn Offset nicht gerade folgt noch ein pad Bit */
-                                if ( (Offset - PTP_V2_MM_TLV_DATAFIELD_OFFSET) % 2 )
-                                {
-                                    proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_pad, tvb,
-                                    Offset, 1, ENC_NA);
-                                }
-                                break;
-                            }
-                            case PTP_V2_MM_ID_USER_DESCRIPTION:
-                            {
-
-                                dissect_ptp_v2_text (tvb, &Offset, ptp_managementData_tree,
-                                                     hf_ptp_v2_mm_userDescription, hf_ptp_v2_mm_userDescription_length);
-
-                                /* Wenn Offset nicht gerade folgt noch ein pad Bit */
-                                if ( (Offset - PTP_V2_MM_TLV_DATAFIELD_OFFSET) % 2 )
-                                {
-                                    proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_pad, tvb,
-                                    Offset, 1, ENC_NA);
-                                }
-                                break;
-                            }
-                            case PTP_V2_MM_ID_SAVE_IN_NON_VOLATILE_STORAGE:
-                            {
-                                /* no data */
-                                break;
-                            }
-                            case PTP_V2_MM_ID_RESET_NON_VOLATILE_STORAGE:
-                            {
-                                /* no data */
-                                break;
-                            }
-                            case PTP_V2_MM_ID_INITIALIZE:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_initializationKey, tvb,
-                                    Offset, 2, ENC_BIG_ENDIAN);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_FAULT_LOG:
-                            {
-                                guint16 ii, num = 0;
-                                proto_tree  *ptpError_subtree;
-
-                                num = tvb_get_ntohs (tvb, Offset);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_numberOfFaultRecords, tvb,
-                                    Offset, 2, ENC_BIG_ENDIAN);
-                                Offset +=2;
-
-                                for (ii = 0; ii < num; ii++)
-                                {
-                                    ptpError_subtree = proto_tree_add_subtree(ptp_managementData_tree, tvb, Offset, tvb_get_ntohs (tvb, Offset),
-                                            ett_ptp_v2_faultRecord, NULL, "Fault record");
-
-                                    proto_tree_add_item(ptpError_subtree, hf_ptp_v2_mm_faultRecordLength, tvb,
-                                        Offset, 2, ENC_BIG_ENDIAN);
-                                    Offset +=2;
-
-                                    proto_tree_add_item(ptpError_subtree, hf_ptp_v2_mm_faultTime_s, tvb,
-                                                Offset, 6, ENC_BIG_ENDIAN);
-
-                                    Offset +=6;
-                                    proto_tree_add_item(ptpError_subtree, hf_ptp_v2_mm_faultTime_ns, tvb,
-                                                Offset, 4, ENC_BIG_ENDIAN);
-                                    Offset +=4;
-                                    proto_tree_add_item(ptpError_subtree, hf_ptp_v2_mm_severityCode, tvb,
-                                                Offset, 1, ENC_BIG_ENDIAN);
-                                    Offset +=1;
-
-                                    dissect_ptp_v2_text (tvb, &Offset, ptpError_subtree,
-                                                         hf_ptp_v2_mm_faultName, hf_ptp_v2_mm_faultName_length);
-
-                                    dissect_ptp_v2_text (tvb, &Offset, ptpError_subtree,
-                                                         hf_ptp_v2_mm_faultValue, hf_ptp_v2_mm_faultValue_length);
-
-                                    dissect_ptp_v2_text (tvb, &Offset, ptpError_subtree,
-                                                         hf_ptp_v2_mm_faultDescription, hf_ptp_v2_mm_faultDescription_length);
-                                }
-
-                                /* Wenn Offset nicht gerade folgt noch ein pad Bit */
-                                if ( (Offset - PTP_V2_MM_TLV_DATAFIELD_OFFSET) % 2 )
-                                {
-                                    proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_pad, tvb,
-                                        Offset, 1, ENC_NA);
-                                }
-                                break;
-                            }
-                            case PTP_V2_MM_ID_FAULT_LOG_RESET:
-                            {
-                                /* no data */
-                                break;
-                            }
-                            case PTP_V2_MM_ID_DEFAULT_DATA_SET:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_TSC, tvb,
-                                    PTP_V2_MM_TLV_DATAFIELD_OFFSET, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_dds_SO, tvb,
-                                    PTP_V2_MM_TLV_DATAFIELD_OFFSET, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    PTP_V2_MM_RESERVED1, 1, ENC_NA);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_numberPorts, tvb,
-                                    PTP_V2_MM_NUMBERPORTS, 2, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_priority1, tvb,
-                                    PTP_V2_MM_PRIORITY1, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockclass, tvb,
-                                    PTP_V2_MM_CLOCKQUALITY, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockaccuracy, tvb,
-                                    PTP_V2_MM_CLOCKQUALITY+1, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockvariance, tvb,
-                                    PTP_V2_MM_CLOCKQUALITY+2, 2, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_priority2, tvb,
-                                    PTP_V2_MM_PRIORITY2, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockidentity, tvb,
-                                    PTP_V2_MM_CLOCKIDENTITY, 8, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_domainNumber, tvb,
-                                    PTP_V2_MM_DOMAINNUMBER, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    PTP_V2_MM_RESERVED2, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_CURRENT_DATA_SET:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_stepsRemoved, tvb,
-                                    Offset, 2, ENC_BIG_ENDIAN);
-                                Offset +=2;
-
-                                dissect_ptp_v2_timeInterval(tvb, &Offset, ptp_managementData_tree,
-                                    "Offset from Master", hf_ptp_v2_mm_offset_ns, hf_ptp_v2_mm_offset_subns);
-                                dissect_ptp_v2_timeInterval(tvb, &Offset, ptp_managementData_tree,
-                                    "Mean path delay", hf_ptp_v2_mm_pathDelay_ns, hf_ptp_v2_mm_pathDelay_subns);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_PARENT_DATA_SET:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_parentIdentity, tvb,
-                                    Offset, 8, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_parentPort, tvb,
-                                    Offset+8, 2, ENC_BIG_ENDIAN);
-                                Offset +=10;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_parentStats, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset, 1, ENC_NA);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_observedParentOffsetScaledLogVariance, tvb,
-                                    Offset, 2, ENC_BIG_ENDIAN);
-                                Offset +=2;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_observedParentClockPhaseChangeRate, tvb,
-                                    Offset, 4, ENC_BIG_ENDIAN);
-                                Offset +=4;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_grandmasterPriority1, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_grandmasterclockclass, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_grandmasterclockaccuracy, tvb,
-                                    Offset+1, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_grandmasterclockvariance, tvb,
-                                    Offset+2, 2, ENC_BIG_ENDIAN);
-                                Offset += 4;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_grandmasterPriority2, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_grandmasterIdentity, tvb,
-                                    Offset, 8, ENC_BIG_ENDIAN);
-
-                                break;
-                            }
-                            case PTP_V2_MM_ID_TIME_PROPERTIES_DATA_SET:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_currentUtcOffset, tvb,
-                                    Offset, 2, ENC_BIG_ENDIAN);
-                                Offset +=2;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_LI_61, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_LI_59, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_UTCV, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_PTP, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_TTRA, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_FTRA, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_timesource, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-
-                                break;
-                            }
-                            case PTP_V2_MM_ID_PORT_DATA_SET:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockidentity, tvb,
-                                    Offset, 8, ENC_BIG_ENDIAN);
-                                Offset +=8;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_PortNumber, tvb,
-                                    Offset, 2, ENC_BIG_ENDIAN);
-                                Offset +=2;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_portState, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logMinDelayReqInterval, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                dissect_ptp_v2_timeInterval(tvb, &Offset, ptp_managementData_tree,
-                                    "Peer mean path delay", hf_ptp_v2_mm_peerMeanPathDelay_ns, hf_ptp_v2_mm_peerMeanPathDelay_subns);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logAnnounceInterval, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_announceReceiptTimeout, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logSyncInterval, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_delayMechanism, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logMinPdelayReqInterval, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_versionNumber, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                break;
-                            }
-                            case PTP_V2_MM_ID_PRIORITY1:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_priority1, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset+1, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_PRIORITY2:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_priority2, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset+1, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_DOMAIN:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_domainNumber, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset+1, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_SLAVE_ONLY:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_SO, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset+1, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_LOG_ANNOUNCE_INTERVAL:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logAnnounceInterval, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset+1, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_ANNOUNCE_RECEIPT_TIMEOUT:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_announceReceiptTimeout, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset+1, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_LOG_SYNC_INTERVAL:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logSyncInterval, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset+1, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_VERSION_NUMBER:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_versionNumber, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset+1, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_ENABLE_PORT:
-                            {
-                                /* no data */
-                                break;
-                            }
-                            case PTP_V2_MM_ID_DISABLE_PORT:
-                            {
-                                /* no data */
-                                break;
-                            }
-                            case PTP_V2_MM_ID_TIME:
-                            {
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_currentTime_s, tvb,
-                                            Offset, 6, ENC_BIG_ENDIAN);
-
-                                Offset +=6;
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_currentTime_ns, tvb,
-                                            Offset, 4, ENC_BIG_ENDIAN);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_CLOCK_ACCURACY:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockAccuracy, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset+1, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_UTC_PROPERTIES:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_currentUtcOffset, tvb,
-                                    Offset, 2, ENC_BIG_ENDIAN);
-                                Offset +=2;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_LI_61, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_LI_59, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_UTCV, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_TRACEABILITY_PROPERTIES:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_TTRA, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_FTRA, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset, 1, ENC_NA);
-
-                                break;
-                            }
-                            case PTP_V2_MM_ID_TIMESCALE_PROPERTIES:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_PTP, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_timesource, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-
-                                break;
-                            }
-                            case PTP_V2_MM_ID_UNICAST_NEGOTIATION_ENABLE:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_ucEN, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_PATH_TRACE_LIST:
-                            {
-                                guint16 i = 0;
-                                /* one or more ClockIdentity */
-                                for (i = 0; i < (tlv_length / 8); i++)
-                                {
-                                    proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockidentity, tvb,
-                                        Offset, 8, ENC_BIG_ENDIAN);
-                                }
-
-                                break;
-                            }
-                            case PTP_V2_MM_ID_PATH_TRACE_ENABLE:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_ptEN, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset, 1, ENC_NA);
-
-                                break;
-                            }
-                            case PTP_V2_MM_ID_GRANDMASTER_CLUSTER_TABLE:
-                                {
-                                /* ToDo */
-                                break;
-                                }
-                            case PTP_V2_MM_ID_UNICAST_MASTER_TABLE:
-                                {
-                                /* ToDo */
-                                break;
-                                }
-                            case PTP_V2_MM_ID_UNICAST_MASTER_MAX_TABLE_SIZE:
-                                {
-                                /* ToDo */
-                                break;
-                                }
-                            case PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE:
-                                {
-                                /* ToDo */
-                                break;
-                                }
-                            case PTP_V2_MM_ID_ACCEPTABLE_MASTER_TABLE_ENABLED:
-                                {
-                                /* ToDo */
-                                break;
-                                }
-                            case PTP_V2_MM_ID_ACCEPTABLE_MASTER_MAX_TABLE_SIZE:
-                                {
-                                /* ToDo */
-                                break;
-                                }
-                            case PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_ENABLE:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_keyField, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_atEN, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                break;
-                            }
-                            case PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_NAME:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_keyField, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                dissect_ptp_v2_text (tvb, &Offset, ptp_managementData_tree,
-                                    hf_ptp_v2_mm_displayName, hf_ptp_v2_mm_displayName_length);
-
-                                /* Wenn Offset nicht gerade folgt noch ein pad Bit */
-                                if ( (Offset - PTP_V2_MM_TLV_DATAFIELD_OFFSET) % 2 )
-                                {
-                                    proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_pad, tvb,
-                                        Offset, 1, ENC_NA);
-                                }
-                                break;
-                            }
-                            case PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_MAX_KEY:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_maxKey, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset, 1, ENC_NA);
-
-                                break;
-                            }
-                            case PTP_V2_MM_ID_ALTERNATE_MASTER:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_transmitAlternateMulticastSync, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_numberOfAlternateMasters, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logAlternateMulticastSyncInterval, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_ALTERNATE_TIME_OFFSET_PROPERTIES:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_keyField, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_currentOffset, tvb,
-                                    Offset, 4, ENC_BIG_ENDIAN);
-                                Offset +=4;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_jumpSeconds, tvb,
-                                    Offset, 4, ENC_BIG_ENDIAN);
-                                Offset +=4;
-
-                                timeStamp = tvb_get_ntohl(tvb, Offset);
-                                timeStamp = timeStamp << 16;
-                                timeStamp = timeStamp | tvb_get_ntohs(tvb, Offset+4);
-
-                                proto_tree_add_uint64(ptp_managementData_tree, hf_ptp_v2_mm_nextjumpSeconds, tvb,
-                                    Offset, 6, timeStamp);
-                                Offset +=6;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_TC_DEFAULT_DATA_SET:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockidentity, tvb,
-                                    Offset, 8, ENC_BIG_ENDIAN);
-                                Offset +=8;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_numberPorts, tvb,
-                                    Offset, 2, ENC_BIG_ENDIAN);
-                                Offset +=2;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_delayMechanism, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_primaryDomain, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-
-                                break;
-                            }
-                            case PTP_V2_MM_ID_TC_PORT_DATA_SET:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_clockidentity, tvb,
-                                    Offset, 8, ENC_BIG_ENDIAN);
-                                Offset +=8;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_PortNumber, tvb,
-                                    Offset, 2, ENC_BIG_ENDIAN);
-                                Offset +=2;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_faultyFlag, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logMinPdelayReqInterval, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-                                Offset +=1;
-
-                                dissect_ptp_v2_timeInterval(tvb, &Offset, ptp_managementData_tree,
-                                    "Peer mean path delay", hf_ptp_v2_mm_peerMeanPathDelay_ns, hf_ptp_v2_mm_peerMeanPathDelay_subns);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_PRIMARY_DOMAIN:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_primaryDomain, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset+1, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_DELAY_MECHANISM:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_delayMechanism, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset+1, 1, ENC_NA);
-                                break;
-                            }
-                            case PTP_V2_MM_ID_LOG_MIN_PDELAY_REQ_INTERVAL:
-                            {
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_logMinPdelayReqInterval, tvb,
-                                    Offset, 1, ENC_BIG_ENDIAN);
-
-                                proto_tree_add_item(ptp_managementData_tree, hf_ptp_v2_mm_reserved, tvb,
-                                    Offset+1, 1, ENC_NA);
-                                break;
-                            }
-                            default:
-                            {
-                                /* no data */
-                                break;
-                            }
-                        } /* switch(ptp_v2_managementId) */
-                        break;
-                    }
-                    case PTP_V2_TLV_TYPE_MANAGEMENT_ERROR_STATUS:
-                    {
-                        /* there is only one error TLV */
-                        guint16 Offset = PTP_V2_MM_TLV_MANAGEMENTERRORID_OFFSET;
-
-                        proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_managementErrorId, tvb,
-                            Offset, 2, ENC_BIG_ENDIAN);
-                        Offset +=2;
-
-                        proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_managementId, tvb,
-                            Offset, 2, ENC_BIG_ENDIAN);
-                        Offset +=2;
-
-                        proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_reserved, tvb,
-                            Offset, 4, ENC_NA);
-                        Offset +=4;
-
-                        /* optional Field! */
-                        if (Offset - PTP_V2_MM_TLV_MANAGEMENTERRORID_OFFSET + 2 < tlv_length)
-                        {
-                            dissect_ptp_v2_text (tvb, &Offset, ptp_tree,
-                                hf_ptp_v2_mm_displayData, hf_ptp_v2_mm_displayData_length);
+                        if (frame_info->pdelay.pdelay_fup_frame_num != 0) {
+                            ti = proto_tree_add_uint(ptp_tree, hf_ptp_v2_analysis_pdelayres_to_pdelayfup, tvb, 0, 0, frame_info->pdelay.pdelay_fup_frame_num);
+                            proto_item_set_generated(ti);
+                        } else {
+                            /* No Follow Up found! */
+                            expert_add_info(pinfo, ti_root, &ei_ptp_v2_pdresp_no_pdfup);
                         }
-
-                        /* Wenn Offset nicht gerade folgt noch ein pad Bit */
-                        if ( (Offset - PTP_V2_MM_TLV_MANAGEMENTERRORID_OFFSET) % 2 )
-                        {
-                            proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_pad, tvb,
-                                Offset, 1, ENC_NA);
-                        }
-                        break;
-                    }
-                    case PTP_V2_TLV_TYPE_ORGANIZATION_EXTENSION:
-                    {
-                        guint32 org_id;
-                        guint32 subtype;
-                        proto_item *smptedata_ti, *systemframerate_ti, *timeaddressflags_ti, *daylightsavingflags_ti, *leapsecondjumpflags_ti;
-                        proto_tree *ptp_smptedata_tree, *ptp_framerate_tree, *ptp_timeaddress_tree, *ptp_daylightsaving_tree, *ptp_leapsecondjump_tree;
-                        guint16 Offset = PTP_V2_MM_TLV_LENGTHFIELD_OFFSET + 2;
-
-                        proto_tree_add_item(ptp_tree, hf_ptp_v2_oe_tlv_organizationid,
-                                            tvb, Offset, 3, ENC_BIG_ENDIAN);
-
-                        org_id = tvb_get_ntoh24(tvb, Offset);
-                        Offset += 3;
-
-                        switch (org_id)
-                        {
-                            case PTP_v2_OE_ORG_ID_SMPTE:
-                            {
-                            proto_tree_add_item(ptp_tree, hf_ptp_v2_oe_tlv_smpte_subtype,
-                                                tvb, Offset, 3, ENC_BIG_ENDIAN);
-                            subtype = tvb_get_ntoh24(tvb, Offset);
-                            Offset += 3;
-
-                                switch (subtype)
-                                {
-                                        case PTP_V2_OE_ORG_SMPTE_SUBTYPE_VERSION_TLV:
-                                        {
-                                            smptedata_ti = proto_tree_add_item(ptp_tree,
-                                                    hf_ptp_v2_oe_tlv_subtype_smpte_data, tvb, Offset, 42, ENC_NA);
-                                            ptp_smptedata_tree = proto_item_add_subtree(smptedata_ti, ett_ptp_oe_smpte_data);
-                                            systemframerate_ti = proto_tree_add_item(ptp_smptedata_tree,
-                                                    hf_ptp_v2_oe_tlv_subtype_smpte_defaultsystemframerate, tvb, Offset, 8, ENC_NA);
-                                            ptp_framerate_tree = proto_item_add_subtree(systemframerate_ti, ett_ptp_oe_smpte_framerate);
-                                            proto_tree_add_item(ptp_framerate_tree,
-                                                    hf_ptp_v2_oe_tlv_subtype_smpte_defaultsystemframerate_numerator, tvb, Offset, 4, ENC_BIG_ENDIAN);
-                                            proto_tree_add_item(ptp_framerate_tree,
-                                                    hf_ptp_v2_oe_tlv_subtype_smpte_defaultsystemframerate_denominator, tvb, Offset+4, 4, ENC_BIG_ENDIAN);
-                                            Offset += 8;
-
-                                            proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_masterlockingstatus,
-                                                    tvb, Offset, 1, ENC_BIG_ENDIAN);
-                                            Offset += 1;
-
-                                            timeaddressflags_ti = proto_tree_add_item(ptp_smptedata_tree,
-                                                    hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags, tvb, Offset, 1, ENC_NA);
-                                            ptp_timeaddress_tree = proto_item_add_subtree(timeaddressflags_ti, ett_ptp_oe_smpte_timeaddress);
-                                            proto_tree_add_item(ptp_timeaddress_tree,
-                                                    hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags_drop, tvb, Offset, 1, ENC_BIG_ENDIAN);
-                                            proto_tree_add_item(ptp_timeaddress_tree,
-                                                    hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags_color, tvb, Offset, 1, ENC_BIG_ENDIAN);
-                                            Offset += 1;
-
-                                            proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_currentlocaloffset,
-                                                    tvb, Offset, 4, ENC_BIG_ENDIAN);
-                                            Offset += 4;
-
-                                            proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_jumpseconds,
-                                                    tvb, Offset, 4, ENC_BIG_ENDIAN);
-                                            Offset += 4;
-
-                                            proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_timeofnextjump,
-                                                    tvb, Offset, 6, ENC_BIG_ENDIAN);
-                                            Offset += 6;
-
-                                            proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_timeofnextjam,
-                                                    tvb, Offset, 6, ENC_BIG_ENDIAN);
-                                            Offset += 6;
-
-                                            proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_timeofpreviousjam,
-                                                    tvb, Offset, 6, ENC_BIG_ENDIAN);
-                                            Offset += 6;
-
-                                            proto_tree_add_item(ptp_smptedata_tree, hf_ptp_v2_oe_tlv_subtype_smpte_previousjamlocaloffset,
-                                                    tvb, Offset, 4, ENC_BIG_ENDIAN);
-                                            Offset += 4;
-
-                                            daylightsavingflags_ti = proto_tree_add_item(ptp_smptedata_tree,
-                                                    hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving, tvb, Offset, 1, ENC_NA);
-                                            ptp_daylightsaving_tree = proto_item_add_subtree(daylightsavingflags_ti, ett_ptp_oe_smpte_daylightsaving);
-                                            proto_tree_add_item(ptp_daylightsaving_tree,
-                                                    hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving_current, tvb, Offset, 1, ENC_BIG_ENDIAN);
-                                            proto_tree_add_item(ptp_daylightsaving_tree,
-                                                    hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving_next, tvb, Offset, 1, ENC_BIG_ENDIAN);
-                                            proto_tree_add_item(ptp_daylightsaving_tree,
-                                                    hf_ptp_v2_oe_tlv_subtype_smpte_daylightsaving_previous, tvb, Offset, 1, ENC_BIG_ENDIAN);
-                                            Offset += 1;
-
-                                            leapsecondjumpflags_ti = proto_tree_add_item(ptp_smptedata_tree,
-                                                    hf_ptp_v2_oe_tlv_subtype_smpte_leapsecondjump, tvb, Offset, 1, ENC_NA);
-                                            ptp_leapsecondjump_tree = proto_item_add_subtree(leapsecondjumpflags_ti, ett_ptp_oe_smpte_leapsecondjump);
-                                            proto_tree_add_item(ptp_leapsecondjump_tree,
-                                                    hf_ptp_v2_oe_tlv_subtype_smpte_leapsecondjump_change, tvb, Offset, 1, ENC_BIG_ENDIAN);
-                                            break;
-                                        }
-                                }
-                            break;
-                            }
+                        if (PTP_FRAME_INFO_PDELAY_COMPLETE(frame_info) && frame_info->pdelay.pdelay_res_two_step == false) {
+                            /* Two step false but follow up received! */
+                            /* According to 802.1AS-2011/2022 2-step must be true on pDelay Req */
+                            expert_add_info(pinfo, ti_root, &ei_ptp_v2_pdresp_twostep);
                         }
                     }
-                    default:
-                    {
-                        break;
+                }
+                break;
+            }
+
+            case PTP_V2_PEER_DELAY_FOLLOWUP_MESSAGE:{
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdfu_responseorigintimestamp_seconds, tvb, offset, 6, ENC_BIG_ENDIAN);
+                offset += 6;
+
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdfu_responseorigintimestamp_nanoseconds, tvb, offset, 4, ENC_BIG_ENDIAN);
+                offset += 4;
+
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdfu_requestingportidentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                offset += 8;
+
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_pdfu_requestingsourceportid, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                disect_ptp_v2_tlvs(tvb, offset, pinfo, ptp_tree, ti_root, ptp_v2_messageid, ptp_v2_flags, is_802_1as);
+
+                if (ptp_analyze_messages) {
+                    if (frame_info != NULL) {
+                        if PTP_FRAME_INFO_PDELAY_COMPLETE(frame_info) {
+                            ti = proto_tree_add_double(ptp_tree, hf_ptp_v2_analysis_pdelay_mpd_unscaled, tvb, 0, 0, nstime_to_sec(&frame_info->pdelay.mean_propagation_delay_unscaled));
+                            proto_item_set_generated(ti);
+                            proto_tree *ts_tree = proto_item_add_subtree(ti, ett_ptp_analysis_mean_propagation_delay);
+                            ti = proto_tree_add_int64(ts_tree, hf_ptp_v2_analysis_pdelay_mpd_unscaled_seconds, tvb, 0, 0, frame_info->pdelay.mean_propagation_delay_unscaled.secs);
+                            proto_item_set_generated(ti);
+                            ti = proto_tree_add_int(ts_tree, hf_ptp_v2_analysis_pdelay_mpd_unscaled_nanoseconds, tvb, 0, 0, frame_info->pdelay.mean_propagation_delay_unscaled.nsecs);
+                            proto_item_set_generated(ti);
+
+                            if (frame_info->pdelay.neighborRateRatio_valid) {
+                                ti = proto_tree_add_double(ptp_tree, hf_ptp_v2_analysis_pdelay_mpd_scaled, tvb, 0, 0, frame_info->pdelay.mean_propagation_delay_scaled);
+                                proto_item_set_generated(ti);
+                                ti = proto_tree_add_double(ptp_tree, hf_ptp_v2_analysis_pdelay_neighRateRatio, tvb, 0, 0, frame_info->pdelay.neighborRateRatio);
+                                proto_item_set_generated(ti);
+                                ti = proto_tree_add_int(ptp_tree, hf_ptp_v2_analysis_pdelay_neighRateRatio_ppm, tvb, 0, 0, frame_info->pdelay.neighborRateRatio_ppm);
+                                proto_item_set_generated(ti);
+                            }
+                        }
+
+                        if (frame_info->pdelay.pdelay_res_frame_num != 0) {
+                            ti = proto_tree_add_uint(ptp_tree, hf_ptp_v2_analysis_pdelayfup_to_pdelayres, tvb, 0, 0, frame_info->pdelay.pdelay_res_frame_num);
+                            proto_item_set_generated(ti);
+                        } else {
+                            /* No Response found! */
+                            expert_add_info(pinfo, ti_root, &ei_ptp_v2_pdfup_no_pdresp);
+                        }
                     }
-                } /* switch TLV Type */
+                }
+                break;
+            }
+
+            case PTP_V2_SIGNALING_MESSAGE:{
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_sig_targetportidentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                offset += 8;
+
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_sig_targetportid, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                disect_ptp_v2_tlvs(tvb, offset, pinfo, ptp_tree, ti_root, ptp_v2_messageid, ptp_v2_flags, is_802_1as);
+
+                break;
+            }
+
+            case PTP_V2_MANAGEMENT_MESSAGE: {
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_targetportidentity, tvb, offset, 8, ENC_BIG_ENDIAN);
+                offset += 8;
+
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_targetportid, tvb, offset, 2, ENC_BIG_ENDIAN);
+                offset += 2;
+
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_startingboundaryhops, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_boundaryhops, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_reserved1, tvb, offset, 1, ENC_NA);
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_action, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                proto_tree_add_item(ptp_tree, hf_ptp_v2_mm_reserved2, tvb, offset, 1, ENC_NA);
+                offset += 1;
+
+                disect_ptp_v2_tlvs(tvb, offset, pinfo, ptp_tree, ti_root, ptp_v2_messageid, ptp_v2_flags, is_802_1as);
+
+                break;
             } /* case Management Message */
         } /* switch message ID */
     } /* tree */
@@ -4132,8 +4935,7 @@ dissect_ptp_v2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean ptp
 /* Register the protocol with Wireshark */
 
 void
-proto_register_ptp(void)
-{
+proto_register_ptp(void) {
     static hf_register_info hf[] = {
         /* PTPv1 fields **********************************************************/
         /* Common fields for all frames */
@@ -4177,9 +4979,9 @@ proto_register_ptp(void)
             FT_UINT16, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
-        { &hf_ptp_control,
-          { "control",           "ptp.control",
-            FT_UINT8, BASE_DEC, VALS(ptp_control_vals), 0x00,
+        { &hf_ptp_controlfield,
+          { "controlField",           "ptp.controlfield",
+            FT_UINT8, BASE_DEC, VALS(ptp_controlfield_vals), 0x00,
             NULL, HFILL }
         },
         /* THE FLAGS-FIELD */
@@ -4926,24 +5728,19 @@ proto_register_ptp(void)
 
         /* PTPv2 fields **********************************************************/
         /* Common fields for all frames */
-        { &hf_ptp_v2_transportspecific,
-          { "transportSpecific",           "ptp.v2.transportspecific",
-            FT_UINT8, BASE_HEX, NULL, 0xF0,
+        { &hf_ptp_v2_majorsdoid,
+          { "majorSdoId",           "ptp.v2.majorsdoid",
+            FT_UINT8, BASE_HEX, VALS(ptpv2_majorsdoid_vals), 0xF0,
             NULL, HFILL }
         },
-        { &hf_ptp_v2_transportspecific_v1_compatibility,
-          { "V1 Compatibility",           "ptp.v2.transportspecific.v1compatibility",
-            FT_BOOLEAN, 8, NULL, PTP_V2_TRANSPORTSPECIFIC_V1COMPATIBILITY_BITMASK,
+        { &hf_ptp_v2_messagetype,
+          { "messageType",           "ptp.v2.messagetype",
+            FT_UINT8, BASE_HEX | BASE_EXT_STRING, & ptp_v2_messagetype_vals_ext, 0x0F,
             NULL, HFILL }
         },
-        { &hf_ptp_v2_transportspecific_802as_conform,
-          { "802.1as conform",           "ptp.v2.transportspecific.802.1asconform",
-            FT_BOOLEAN, 8, NULL, PTP_V2_TRANSPORTSPECIFIC_V1COMPATIBILITY_BITMASK,
-            NULL, HFILL }
-        },
-        { &hf_ptp_v2_messageid,
-          { "messageId",           "ptp.v2.messageid",
-            FT_UINT8, BASE_HEX | BASE_EXT_STRING, &ptp_v2_messageid_vals_ext, 0x0F,
+        { &hf_ptp_v2_minorversionptp,
+          { "minorVersionPTP",             "ptp.v2.minorversionptp",
+            FT_UINT8, BASE_DEC, NULL, 0xF0,
             NULL, HFILL }
         },
         { &hf_ptp_v2_versionptp,
@@ -4956,8 +5753,13 @@ proto_register_ptp(void)
             FT_UINT16, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
+        { &hf_ptp_v2_minorsdoid,
+          { "minorSdoId",               "ptp.v2.minorsdoid",
+            FT_UINT8, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
         { &hf_ptp_v2_domainnumber,
-          { "subdomainNumber",           "ptp.v2.subdomainnumber",
+          { "domainNumber",           "ptp.v2.domainnumber",
             FT_UINT8, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
@@ -5026,19 +5828,34 @@ proto_register_ptp(void)
             FT_BOOLEAN, 16, NULL, PTP_V2_FLAGS_FREQUENCY_TRACEABLE_BITMASK,
             NULL, HFILL }
         },
+        { &hf_ptp_v2_flags_synchronizationUncertain,
+          { "SYNCHRONIZATION_UNCERTAIN",           "ptp.v2.flags.synchronizationUncertain",
+            FT_BOOLEAN, 16, NULL, PTP_V2_FLAGS_SYNCHRONIZATION_UNCERTAIN_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_messagetypespecific,
+          { "messageTypeSpecific",           "ptp.v2.messagetypespecific",
+            FT_UINT32, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
         { &hf_ptp_v2_correction,
-          { "correction",           "ptp.v2.correction.ns",
-            FT_UINT64, BASE_DEC, NULL, 0x00,
+          { "correctionNs",              "ptp.v2.correction.ns",
+            FT_INT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_nanosecond_nanoseconds), 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_correctionsubns,
           { "correctionSubNs",           "ptp.v2.correction.subns",
-            FT_DOUBLE, BASE_NONE, NULL, 0x00,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_nanosecond_nanoseconds), 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_clockidentity,
           { "ClockIdentity",           "ptp.v2.clockidentity",
             FT_UINT64, BASE_HEX, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_clockidentity_manuf,
+          { "MAC Vendor",       "ptp.v2.clockidentity_manuf",
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_sourceportid,
@@ -5051,9 +5868,19 @@ proto_register_ptp(void)
             FT_UINT16, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
-        { &hf_ptp_v2_control,
-          { "control",           "ptp.v2.control",
-            FT_UINT8, BASE_DEC, VALS(ptp_control_vals), 0x00,
+        { &hf_ptp_v2_controlfield_default,
+          { "controlField",           "ptp.v2.controlfield",
+            FT_UINT8, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_controlfield,
+          { "controlField",           "ptp.v2.controlfield",
+            FT_UINT8, BASE_DEC, VALS(ptp_controlfield_vals), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_logmessageinterval,
+          { "logMessageInterval",           "ptp.v2.logmessageinterval",
+            FT_INT8, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_logmessageperiod,
@@ -5063,6 +5890,16 @@ proto_register_ptp(void)
         },
 
         /* Fields for PTP_Announce (=an) messages */
+        { &hf_ptp_v2_an_reserved1,
+          { "reserved",           "ptp.v2.an.reserved1",
+            FT_BYTES, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_an_reserved2,
+          { "reserved",           "ptp.v2.an.reserved2",
+            FT_BYTES, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
 #if 0
         { &hf_ptp_v2_an_origintimestamp,
           { "originTimestamp",           "ptp.v2.an.origintimestamp",
@@ -5126,31 +5963,84 @@ proto_register_ptp(void)
             NULL, HFILL }
         },
 
-        /* Fields for PTP_Announce TLVs */
-        { &hf_ptp_v2_an_tlv_tlvtype,
-          { "tlvType", "ptp.v2.an.tlvType",
-            FT_UINT16, BASE_DEC | BASE_EXT_STRING, &ptp_v2_TLV_type_vals_ext, 0x00,
+        /* Fields for TLVs */
+        { &hf_ptp_tlv_tlvtype,
+          { "tlvType", "ptp.v2.tlv.tlvType",
+            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &ptp_v2_TLV_type_vals_ext, 0x00,
             NULL, HFILL }
         },
-        { &hf_ptp_v2_an_tlv_lengthfield,
-          { "lengthField", "ptp.v2.an.lengthField",
+        { &hf_ptp_tlv_lengthfield,
+          { "lengthField", "ptp.v2.tlv.lengthField",
             FT_UINT16, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
-        /* Fields for ORGANIZATION_EXTENSION TLV */
-        { &hf_ptp_v2_oe_tlv_organizationid,
-          { "organizationId", "ptp.v2.an.oe.organizationId",
-            FT_UINT24, BASE_HEX, VALS(ptp_v2_organizationExtensionOrgId_vals), 0x00,
+        { &hf_ptp_tlv_unparsed_payload,
+          { "Unparsed Payload", "ptp.v2.tlv.unparsed_payload",
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
-        { &hf_ptp_v2_oe_tlv_organizationsubtype,
-          { "organizationSubType", "ptp.v2.an.oe.organizationSubType",
-            FT_UINT24, BASE_HEX, VALS(ptp_v2_org_iee_c37_238_subtype_vals), 0x00,
+            /* Fields for ORGANIZATION_EXTENSION TLV */
+        { &hf_ptp_tlv_oe_organizationid,
+          { "organizationId", "ptp.v2.tlv.oe.organizationId",
+            FT_UINT24, BASE_OUI, NULL, 0x00,
             NULL, HFILL }
         },
+        { &hf_ptp_tlv_oe_organizationsubtype,
+          { "organizationSubType", "ptp.v2.tlv.oe.organizationSubType",
+            FT_UINT24, BASE_HEX, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_tlv_oe_organizationsubtype_802_1,
+          { "organizationSubType", "ptp.v2.tlv.oe.organizationSubType",
+            FT_UINT24, BASE_HEX, VALS(ptp_v2_org_802_1_subtype_vals), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_tlv_oe_organizationsubtype_802_1_no_propagate,
+          { "organizationSubType", "ptp.v2.tlv.oe.organizationSubType",
+            FT_UINT24, BASE_HEX, VALS(ptp_v2_org_802_1_no_propagate_subtype_vals), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_oe_tlv_ieee_c37_238_2017_organizationsubtype,
+          { "organizationSubType", "ptp.v2.tlv.oe.organizationSubType",
+            FT_UINT24, BASE_HEX, VALS(ptp_v2_org_ieee_c37_238_2017_subtype_vals), 0x00,
+            NULL, HFILL }
+        },
+
         { &hf_ptp_v2_oe_tlv_datafield,
           { "dataField", "ptp.v2.an.oe.dataField",
             FT_BYTES, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+
+        /* Fields for CERN White Rabbit TLV (OE TLV subtype) */
+        { &hf_ptp_v2_an_tlv_oe_cern_subtype,
+          { "organizationSubType", "ptp.v2.tlv.oe.organizationSubType",
+            FT_UINT24, BASE_HEX, VALS(ptp_v2_org_cern_subtype_vals), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_an_tlv_oe_cern_wrMessageID,
+          { "wrMessageID", "ptp.v2.an.oe.cern.wr.wrMessageID",
+            FT_UINT16, BASE_HEX, VALS(ptp_v2_org_cern_wrMessageID_vals), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_an_tlv_oe_cern_wrFlags,
+          { "wrFlags", "ptp.v2.an.oe.cern.wr.wrFlags",
+            FT_UINT16, BASE_HEX, NULL, 0x00,
+            NULL, HFILL }
+        },
+         { &hf_ptp_v2_an_tlv_oe_cern_wrFlags_wrConfig,
+           { "wrConfig",           "ptp.v2.an.oe.cern.wr.wrFlags.wrConfig",
+             FT_UINT16, BASE_HEX, VALS(ptp_v2_tlv_oe_cern_wrFlags_wrConfig_vals), PTP_V2_TLV_OE_CERN_WRFLAGS_WRCONFIG_BITMASK,
+             NULL, HFILL }
+         },
+        { &hf_ptp_v2_an_tlv_oe_cern_wrFlags_calibrated,
+          { "calibrated",           "ptp.v2.an.oe.cern.wr.wrFlags.calibrated",
+            FT_BOOLEAN, 16, NULL, PTP_V2_TLV_OE_CERN_WRFLAGS_CALIBRATED_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_an_tlv_oe_cern_wrFlags_wrModeOn,
+          { "wrModeOn",           "ptp.v2.an.oe.cern.wr.wrFlags.wrModeOn",
+            FT_BOOLEAN, 16, NULL, PTP_V2_TLV_OE_CERN_WRFLAGS_WRMODEON_BITMASK,
             NULL, HFILL }
         },
         /* Fields for IEEE_C37_238 TLV (OE TLV subtype) */
@@ -5174,6 +6064,17 @@ proto_register_ptp(void)
             FT_UINT16, BASE_HEX, NULL, 0x00,
             NULL, HFILL }
         },
+        /* Additional fields in C37.238-2017 compared to C37.238-2011 */
+        { &hf_ptp_v2_oe_tlv_subtype_c372382017tlv_reserved,
+          { "reserved", "ptp.v2.an.oe.reserved",
+            FT_UINT32, BASE_HEX, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_oe_tlv_subtype_c37238tlv_totaltimeinaccuracy,
+            { "totalTimeInaccuracy (nanoseconds)", "ptp.v2.an.oe.totalTimeInaccuracy",
+                FT_UINT32, BASE_DEC, NULL, 0x00,
+                NULL, HFILL }
+        },
         /* Fields for ALTERNATE_TIME_OFFSET_INDICATOR TLV */
         { &hf_ptp_v2_atoi_tlv_keyfield,
           { "keyField", "ptp.v2.an.atoi.keyField",
@@ -5192,16 +6093,16 @@ proto_register_ptp(void)
         },
         { &hf_ptp_v2_atoi_tlv_timeofnextjump,
           { "timeOfNextJump", "ptp.v2.an.atoi.timeOfNextJump",
-            FT_BYTES, BASE_NONE, NULL, 0x00,
+            FT_INT48, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_atoi_tlv_displayname,
-          { "displayName", "ptp.v2.an.atoi.dislpayName",
+          { "displayName", "ptp.v2.an.atoi.displayName",
             FT_STRING, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_atoi_tlv_displayname_length,
-          { "length",           "ptp.v2.an.atoi.dislpayName.length",
+          { "length",           "ptp.v2.an.atoi.displayName.length",
             FT_UINT8, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
@@ -5238,6 +6139,12 @@ proto_register_ptp(void)
             NULL, HFILL }
         },
 
+        { &hf_ptp_v2_sync_reserved,
+          { "reserved",           "ptp.v2.sync.reserved",
+            FT_BYTES, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+
         /* Fields for PTP_Follow_Up (=fu) messages */
 #if 0
         { &hf_ptp_v2_fu_preciseorigintimestamp,
@@ -5253,33 +6160,23 @@ proto_register_ptp(void)
         },
         { &hf_ptp_v2_fu_preciseorigintimestamp_nanoseconds,
           { "preciseOriginTimestamp (nanoseconds)",           "ptp.v2.fu.preciseorigintimestamp.nanoseconds",
-            FT_INT32, BASE_DEC, NULL, 0x00,
+            FT_UINT32, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_fu_preciseorigintimestamp_32bit,
+          { "preciseOriginTimestamp (32bit)",           "ptp.v2.fu.preciseorigintimestamp.32bit",
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
         /* Fields for PTP_Follow_up TLVs */
-        { &hf_ptp_as_fu_tlv_tlvtype,
-          { "tlvType", "ptp.as.fu.tlvType",
-            FT_UINT16, BASE_DEC | BASE_EXT_STRING, &ptp_v2_TLV_type_vals_ext, 0x00,
-            NULL, HFILL }
-        },
-        { &hf_ptp_as_fu_tlv_lengthfield,
-          { "lengthField", "ptp.as.fu.lengthField",
-            FT_UINT16, BASE_DEC, NULL, 0x00,
-            NULL, HFILL }
-        },
-        { &hf_ptp_as_fu_tlv_organization_id,
-          { "organizationId", "ptp.as.fu.organizationId",
-            FT_UINT24, BASE_DEC, NULL, 0x00,
-            NULL, HFILL }
-        },
-        { &hf_ptp_as_fu_tlv_organization_subtype,
-          { "OrganizationSubType", "ptp.as.fu.organizationSubType",
-            FT_INT24, BASE_DEC, NULL, 0x00,
-            NULL, HFILL }
-        },
-        { &hf_ptp_as_fu_tlv_cumulative_offset,
+        { &hf_ptp_as_fu_tlv_cumulative_scaled_rate_offset,
           { "cumulativeScaledRateOffset", "ptp.as.fu.cumulativeScaledRateOffset",
-            FT_UINT32, BASE_DEC, NULL, 0x00,
+            FT_INT32, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_as_fu_tlv_cumulative_rate_ratio,
+          { "cumulativeRateRatio", "ptp.as.fu.cumulativeRateRatio",
+            FT_DOUBLE, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_as_fu_tlv_gm_base_indicator,
@@ -5295,6 +6192,37 @@ proto_register_ptp(void)
         { &hf_ptp_as_fu_tlv_scaled_last_gm_freq_change,
           { "scaledLastGmFreqChange", "ptp.as.fu.scaledLastGmFreqChange",
             FT_INT32, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        /* Fields for Drift_Tracking TLVs (802.1ASdm) */
+        { &hf_ptp_as_dt_tlv_sync_egress_timestamp_seconds,
+          { "syncEgressTimestamp (seconds)", "ptp.as.dt.syncEgressTimestamp.seconds",
+            FT_UINT48, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_as_dt_tlv_sync_egress_timestamp_fractional_nanoseconds,
+          { "syncEgressTimestamp (nanoseconds)", "ptp.as.dt.syncEgressTimestamp.scaledNanoseconds",
+            FT_DOUBLE, BASE_NONE, NULL, 0x00,
+            "fractionalNanoseconds converted into nanoseconds (double)", HFILL }
+        },
+        { &hf_ptp_as_dt_tlv_sync_grandmaster_identity,
+          { "syncGrandmasterIdentity", "ptp.as.dt.syncGrandmasterIdentity",
+            FT_EUI64, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_as_dt_tlv_sync_steps_removed,
+          { "syncStepsRemoved", "ptp.as.dt.syncStepsRemoved",
+            FT_UINT16, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_as_dt_tlv_rate_ratio_drift,
+          { "rateRatioDrift", "ptp.as.dt.rateRatioDrift",
+            FT_INT32, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_as_dt_tlv_rate_ratio_drift_ppm,
+          { "rateRatioDrift (ppm/s)", "ptp.as.fu.rateRatioDrift.ppm",
+            FT_DOUBLE, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
 
@@ -5343,6 +6271,11 @@ proto_register_ptp(void)
         { &hf_ptp_v2_pdrq_origintimestamp_nanoseconds,
           { "originTimestamp (nanoseconds)",           "ptp.v2.pdrq.origintimestamp.nanoseconds",
             FT_INT32, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_pdrq_reserved,
+          { "reserved",           "ptp.v2.pdrq.reserved",
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
 
@@ -5404,7 +6337,7 @@ proto_register_ptp(void)
             NULL, HFILL }
         },
 
-        /* Fields for PTP_Signalling (=sig) messages */
+        /* Fields for PTP_Signaling (=sig) messages */
         { &hf_ptp_v2_sig_targetportidentity,
           { "targetPortIdentity",           "ptp.v2.sig.targetportidentity",
             FT_UINT64, BASE_HEX, NULL, 0x00,
@@ -5415,16 +6348,6 @@ proto_register_ptp(void)
             FT_UINT16, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
-        { &hf_ptp_v2_sig_tlv_tlvType,
-          { "tlvType",                      "ptp.v2.sig.tlv.tlvType",
-            FT_UINT16, BASE_DEC | BASE_EXT_STRING, &ptp_v2_TLV_type_vals_ext, 0x00,
-            NULL, HFILL }
-        },
-        { &hf_ptp_v2_sig_tlv_lengthField,
-          { "lengthField",                  "ptp.v2.sig.tlv.lengthField",
-            FT_UINT16, BASE_DEC, NULL, 0x00,
-            NULL, HFILL }
-        },
         { &hf_ptp_v2_sig_tlv_data,
           { "data",                         "ptp.v2.sig.tlv.data",
             FT_BYTES, BASE_NONE, NULL, 0x00,
@@ -5432,7 +6355,7 @@ proto_register_ptp(void)
         },
         { &hf_ptp_v2_sig_tlv_messageType,
           { "messageType",                  "ptp.v2.sig.tlv.messageType",
-            FT_UINT8, BASE_HEX | BASE_EXT_STRING, &ptp_v2_messageid_vals_ext, 0xF0,
+            FT_UINT8, BASE_HEX | BASE_EXT_STRING, & ptp_v2_messagetype_vals_ext, 0xF0,
             NULL, HFILL }
         },
         { &hf_ptp_v2_sig_tlv_logInterMessagePeriod,
@@ -5452,7 +6375,7 @@ proto_register_ptp(void)
         },
         { &hf_ptp_v2_sig_tlv_durationField,
           { "durationField",                "ptp.v2.sig.tlv.durationField",
-            FT_UINT32, BASE_DEC, NULL, 0x00,
+            FT_UINT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_second_seconds), 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_sig_tlv_renewalInvited,
@@ -5460,28 +6383,207 @@ proto_register_ptp(void)
             FT_BOOLEAN, 8, NULL, 0x01,
             NULL, HFILL }
         },
-
-        /* Fields for PTP_Signalling (=sig) TLVs */
-        { &hf_ptp_as_sig_tlv_tlvtype,
-          { "tlvType", "ptp.as.sig.tlvType",
-            FT_UINT16, BASE_DEC | BASE_EXT_STRING, &ptp_v2_TLV_type_vals_ext, 0x00,
+        { &hf_ptp_v2_sig_tlv_maintainRequest,
+          { "maintainRequest",              "ptp.v2.sig.tlv.maintainRequest",
+            FT_BOOLEAN, 8, NULL, 0x01,
             NULL, HFILL }
         },
-        { &hf_ptp_as_sig_tlv_lengthfield,
-          { "lengthField", "ptp.as.sig.lengthField",
-            FT_UINT16, BASE_DEC, NULL, 0x00,
+        { &hf_ptp_v2_sig_tlv_maintainGrant,
+          { "maintainGrant",                "ptp.v2.sig.tlv.maintainGrant",
+            FT_BOOLEAN, 8, NULL, 0x02,
             NULL, HFILL }
         },
-        { &hf_ptp_as_sig_tlv_organization_id,
-          { "organizationId", "ptp.as.sig.tlv.organizationId",
-            FT_UINT24, BASE_HEX, VALS(ptp_as_TLV_oid_vals), 0x00,
+        { &hf_ptp_v2_sig_tlv_reserved,
+          { "reserved",                     "ptp.v2.sig.tlv.reserved",
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
-        { &hf_ptp_as_sig_tlv_organization_subtype,
-          { "OrganizationSubType", "ptp.as.sig.tlv.organizationSubType",
-            FT_INT24, BASE_DEC, NULL, 0x00,
+        { &hf_ptp_v2_sig_tlv_flags2,
+          { "flags",           "ptp.v2.sig.tlv.l1sync.flags",
+            FT_UINT16, BASE_HEX, NULL, 0x00,
             NULL, HFILL }
         },
+        { &hf_ptp_v2_sig_tlv_flags3,
+          { "flags",           "ptp.v2.sig.tlv.l1sync.flags",
+            FT_UINT24, BASE_HEX, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags2_tcr, /* Version with 2 bytes flags field */
+          { "txCoherentIsRequired",           "ptp.v2.sig.tlv.l1sync.flags.tcr",
+            FT_BOOLEAN, 16, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_TCR_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags3_tcr, /* Version with 3 bytes flags field */
+          { "txCoherentIsRequired",           "ptp.v2.sig.tlv.l1sync.flags.tcr",
+            FT_BOOLEAN, 24, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_TCR_BITMASK << 8,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags2_rcr, /* Version with 2 bytes flags field */
+          { "rxCoherentIsRequired",           "ptp.v2.sig.tlv.l1sync.flags.rcr",
+            FT_BOOLEAN, 16, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_RCR_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags3_rcr, /* Version with 3 bytes flags field */
+          { "rxCoherentIsRequired",           "ptp.v2.sig.tlv.l1sync.flags.rcr",
+            FT_BOOLEAN, 24, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_RCR_BITMASK << 8,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags2_cr, /* Version with 2 bytes flags field */
+          { "congruentIsRequired",           "ptp.v2.sig.tlv.l1sync.flags.cr",
+            FT_BOOLEAN, 16, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_CR_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags3_cr, /* Version with 3 bytes flags field */
+          { "congruentIsRequired",           "ptp.v2.sig.tlv.l1sync.flags.cr",
+            FT_BOOLEAN, 24, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_CR_BITMASK << 8,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags2_ope, /* Version with 2 bytes flags field */
+          { "optParamsEnabled",           "ptp.v2.sig.tlv.l1sync.flags.ope",
+            FT_BOOLEAN, 16, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_OPE_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags3_ope, /* Version with 3 bytes flags field */
+          { "optParamsEnabled",           "ptp.v2.sig.tlv.l1sync.flags.ope",
+            FT_BOOLEAN, 24, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS1_OPE_BITMASK << 8,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags2_itc, /* Version with 2 bytes flags field */
+          { "isTxCoherent",           "ptp.v2.sig.tlv.l1sync.flags.itc",
+            FT_BOOLEAN, 16, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS2_ITC_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags3_itc, /* Version with 3 bytes flags field */
+          { "isTxCoherent",           "ptp.v2.sig.tlv.l1sync.flags.itc",
+            FT_BOOLEAN, 24, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS2_ITC_BITMASK << 8,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags2_irc, /* Version with 2 bytes flags field */
+          { "isRxCoherent",           "ptp.v2.sig.tlv.l1sync.flags.irc",
+            FT_BOOLEAN, 16, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS2_IRC_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags3_irc, /* Version with 3 bytes flags field */
+          { "isRxCoherent",           "ptp.v2.sig.tlv.l1sync.flags.irc",
+            FT_BOOLEAN, 24, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS2_IRC_BITMASK << 8,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags2_ic, /* Version with 2 bytes flags field */
+          { "isCongruent",           "ptp.v2.sig.tlv.l1sync.flags.ic",
+            FT_BOOLEAN, 16, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS2_IC_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags3_ic, /* Version with 3 bytes flags field */
+          { "isCongruent",           "ptp.v2.sig.tlv.l1sync.flags.ic",
+            FT_BOOLEAN, 24, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS2_IC_BITMASK << 8,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags3_fov,
+          { "frequencyOffsetTxValid", "ptp.v2.sig.tlv.l1sync.flags.fov",
+            FT_BOOLEAN, 24, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS3_FOV_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags3_pov,
+          { "phaseOffsetTxValid",    "ptp.v2.sig.tlv.l1sync.flags.pov",
+            FT_BOOLEAN, 24, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS3_POV_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags3_tct,
+          { "timestampsCorrectedTx", "ptp.v2.sig.tlv.l1sync.flags.tct",
+            FT_BOOLEAN, 24, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS3_TCT_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags2_reserved,
+          { "reserved", "ptp.v2.sig.tlv.l1sync.flags.reserved",
+            FT_UINT16, BASE_HEX, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS2_RESERVED_ALL_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1sync_flags3_reserved,
+          { "reserved", "ptp.v2.sig.tlv.l1sync.flags.reserved",
+            FT_UINT24, BASE_HEX, NULL, PTP_V2_TLV_SIG_TLV_L1SYNC_FLAGS3_RESERVED_ALL_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1syncext_phaseOffsetTx_ns,
+          { "Ns",           "ptp.v2.sig.tlv.l1sync.phaseOffsetTx.ns",
+            FT_INT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_nanosecond_nanoseconds), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1syncext_phaseOffsetTx_subns,
+          { "SubNs",           "ptp.v2.sig.tlv.l1sync.phaseOffsetTx.subns",
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_nanosecond_nanoseconds), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1syncext_phaseOffsetTxTimestamp_s,
+          { "S",           "ptp.v2.sig.tlv.l1sync.phaseOffsetTxTimestamp.s",
+            FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_second_seconds), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1syncext_phaseOffsetTxTimestamp_ns,
+          { "Ns",           "ptp.v2.sig.tlv.l1sync.phaseOffsetTxTimestamp.ns",
+            FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_nanosecond_nanoseconds), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1syncext_freqOffsetTx_ns,
+          { "Ns",           "ptp.v2.sig.tlv.l1sync.freqOffsetTx.ns",
+            FT_INT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_nanosecond_nanoseconds), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1syncext_freqOffsetTx_subns,
+          { "SubNs",           "ptp.v2.sig.tlv.l1sync.freqOffsetTx.subns",
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_nanosecond_nanoseconds), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1syncext_freqOffsetTxTimestamp_s,
+          { "S",           "ptp.v2.sig.tlv.l1sync.freqOffsetTxTimestamp.s",
+            FT_UINT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_second_seconds), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_l1syncext_freqOffsetTxTimestamp_ns,
+          { "Ns",           "ptp.v2.sig.tlv.l1sync.freqOffsetTxTimestamp.ns",
+            FT_INT32, BASE_DEC|BASE_UNIT_STRING, UNS(&units_nanosecond_nanoseconds), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_oe_tlv_cern_subtype,
+          { "organizationSubType", "ptp.v2.tlv.oe.organizationSubType",
+            FT_UINT24, BASE_HEX, VALS(ptp_v2_org_cern_subtype_vals), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_oe_tlv_itut_subtype,
+          { "organizationSubType", "ptp.v2.tlv.oe.organizationSubType",
+            FT_UINT24, BASE_HEX, VALS(ptp_v2_org_itut_subtype_vals), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_oe_tlv_cern_wrMessageID,
+          { "wrMessageID", "ptp.v2.sig.oe.cern.wr.wrMessageID",
+            FT_UINT16, BASE_HEX, VALS(ptp_v2_org_cern_wrMessageID_vals), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_oe_tlv_cern_calSendPattern,
+          { "calSendPattern", "ptp.v2.sig.oe.cern.wr.calSendPattern",
+            FT_BOOLEAN, 8, NULL, 0x01,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_oe_tlv_cern_calRety,
+          { "calRety", "ptp.v2.sig.oe.cern.wr.calRety",
+            FT_UINT8, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_oe_tlv_cern_calPeriod,
+          { "calPeriod", "ptp.v2.sig.oe.cern.wr.calPeriod",
+            FT_UINT32, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_oe_tlv_cern_deltaTx,
+          { "deltaTx", "ptp.v2.sig.oe.cern.wr.deltaTx",
+            FT_DOUBLE, BASE_NONE | BASE_UNIT_STRING, UNS(&units_picoseconds), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_oe_tlv_cern_deltaRx,
+          { "deltaRx", "ptp.v2.sig.oe.cern.wr.deltaRx",
+            FT_DOUBLE, BASE_NONE | BASE_UNIT_STRING, UNS(&units_picoseconds), 0x00,
+            NULL, HFILL }
+        },
+        /* Fields for PTP_Signaling (=sig) TLVs */
         { &hf_ptp_as_sig_tlv_link_delay_interval,
           { "linkDelayInterval", "ptp.as.sig.tlv.linkdelayinterval",
             FT_INT8, BASE_DEC, NULL, 0x00,
@@ -5498,7 +6600,7 @@ proto_register_ptp(void)
             NULL, HFILL }
         },
         { &hf_ptp_as_sig_tlv_flags,
-          { "flags",           "ptp.as.sig.tvl.flags",
+          { "flags",           "ptp.as.sig.tlv.flags",
             FT_UINT8, BASE_HEX, NULL, 0x00,
             NULL, HFILL }
         },
@@ -5507,12 +6609,73 @@ proto_register_ptp(void)
             FT_BOOLEAN, 8, NULL, PTP_AS_FLAGS_COMP_NEIGHBOR_RATE_RATIO_BITMASK,
             NULL, HFILL }
         },
-        { &hf_ptp_as_sig_tlv_flags_comp_prop_delay,
-          { "computeNeighborPropDelay", "ptp.as.sig.tlv.flags.propdelay",
-            FT_BOOLEAN, 8, NULL, PTP_AS_FLAGS_COMP_NEIGHBOR_PROP_DELAY_BITMASK,
+        { &hf_ptp_as_sig_tlv_flags_comp_mean_link_delay,
+          { "computeMeanLinkDelay", "ptp.as.sig.tlv.flags.meanlinkdelay",
+            FT_BOOLEAN, 8, NULL, PTP_AS_FLAGS_COMP_MEAN_LINK_DELAY_BITMASK,
+            NULL, HFILL }
+        },
+        { &hf_ptp_as_sig_tlv_flags_one_step_receive_capable,
+          { "oneStepReceiveCapable", "ptp.as.sig.tlv.flags.stepreceivecapable",
+             FT_BOOLEAN, 8, NULL, PTP_AS_FLAGS_ONE_STEP_RECEIVE_CAPABLE,
+             NULL, HFILL }
+        },
+        { &hf_ptp_as_sig_tlv_gptp_capable_message_interval,
+          { "gptpCapableMessageInterval", "ptp.as.sig.tlv.gptpcapablemessageinterval",
+            FT_INT8, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_as_sig_tlv_gptp_capable_reserved,
+          { "reserved", "ptp.as.sig.tlv.reserved",
+            FT_BYTES, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_as_sig_tlv_reserved,
+          { "reserved", "ptp.as.sig.tlv.reserved",
+            FT_BYTES, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
 
+        { &hf_ptp_as_csn_upstream_tx_time,
+            { "upstreamTxTime", "ptp.as.tlv.csn.upstream_tx_time",
+              FT_BYTES, BASE_NONE, NULL, 0x00,
+              NULL, HFILL }
+        },
+        { &hf_ptp_as_csn_neighbor_rate_ratio,
+            { "neighborRateRatio", "ptp.as.tlv.csn.neighbor_rate_ratio",
+              FT_INT32, BASE_DEC, NULL, 0x00,
+              NULL, HFILL }
+        },
+        { &hf_ptp_as_csn_mean_link_delay,
+            { "meanLinkDelay", "ptp.as.tlv.csn.mean_link_delay",
+              FT_BYTES, BASE_NONE, NULL, 0x00,
+              NULL, HFILL }
+        },
+        { &hf_ptp_as_csn_delay_asymmetry,
+            { "delayAsymmetry", "ptp.as.tlv.csn.delay_asymmetry",
+              FT_BYTES, BASE_NONE, NULL, 0x00,
+              NULL, HFILL }
+        },
+        { &hf_ptp_as_csn_domain_number,
+            { "domainNumber", "ptp.as.tlv.csn.domain_number",
+              FT_UINT8, BASE_DEC, NULL, 0x00,
+              NULL, HFILL }
+        },
+
+        { &hf_ptp_v2_sig_tlv_interface_bit_period,
+          { "interfaceBitPeriod", "ptp.as.sig.tlv.interfaceBitPeriod",
+            FT_UINT64, BASE_DEC | BASE_UNIT_STRING, UNS(&units_attoseconds), 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_numberbits_before_timestamp,
+          { "numberBitsBeforeTimestamp", "ptp.as.sig.tlv.numberBitsBeforeTimestamp",
+            FT_UINT16, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_sig_tlv_numberbits_after_timestamp,
+          { "numberBitsAfterTimestamp", "ptp.as.sig.tlv.numberBitsAfterTimestamp",
+            FT_UINT16, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
         /* Fields for PTP_Management (=mm) messages */
         { &hf_ptp_v2_mm_targetportidentity,
           { "targetPortIdentity",           "ptp.v2.mm.targetportidentity",
@@ -5539,10 +6702,20 @@ proto_register_ptp(void)
             FT_UINT8, BASE_DEC, VALS(ptp_v2_mm_action_vals), 0x0F,
             NULL, HFILL }
         },
+        { &hf_ptp_v2_mm_reserved1,
+          { "reserved",         "ptp.v2.mm.reserved1",
+            FT_UINT8, BASE_DEC, NULL, 0xF0,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_mm_reserved2,
+          { "reserved",         "ptp.v2.mm.reserved2",
+            FT_BYTES, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
         /* Management TLV */
         { &hf_ptp_v2_mm_tlvType,
           { "tlvType",           "ptp.v2.mm.tlvType",
-            FT_UINT16, BASE_DEC | BASE_EXT_STRING, &ptp_v2_TLV_type_vals_ext, 0x00,
+            FT_UINT16, BASE_HEX | BASE_EXT_STRING, &ptp_v2_TLV_type_vals_ext, 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_mm_lengthField,
@@ -5593,7 +6766,7 @@ proto_register_ptp(void)
             NULL, HFILL }
         },
         { &hf_ptp_v2_mm_clockType_reserved,
-          { "Reserved", "ptp.v2.mm.clockType.reserved",
+          { "reserved", "ptp.v2.mm.clockType.reserved",
             FT_BOOLEAN, 16, NULL, CLOCKTYPE_RESERVED,
             NULL, HFILL }
         },
@@ -5614,6 +6787,11 @@ proto_register_ptp(void)
         },
         { &hf_ptp_v2_mm_physicalAddress,
           { "physical address",  "ptp.v2.mm.physicalAddress",
+            FT_BYTES, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_mm_protocolAddressStruct,
+          { "protocol address structure",  "ptp.v2.mm.protocolAddressStruct",
             FT_BYTES, BASE_NONE, NULL, 0x00,
             NULL, HFILL }
         },
@@ -5783,7 +6961,7 @@ proto_register_ptp(void)
             NULL, HFILL }
         },
         { &hf_ptp_v2_mm_dds_SO,
-          { "Slave only",           "ptp.v2.mm.SlavOnly",
+          { "Slave only",           "ptp.v2.mm.SlaveOnly",
             FT_BOOLEAN, 8, NULL, 0x02,
             NULL, HFILL }
         },
@@ -5827,6 +7005,11 @@ proto_register_ptp(void)
             FT_BOOLEAN, 8, NULL, 0x01,
             NULL, HFILL }
         },
+        { &hf_ptp_v2_mm_MO,
+          { "Master only",           "ptp.v2.mm.MasterOnly",
+            FT_BOOLEAN, 8, NULL, 0x01,
+            NULL, HFILL }
+        },
         { &hf_ptp_v2_mm_stepsRemoved,
           { "steps removed",           "ptp.v2.mm.stepsRemoved",
             FT_INT16, BASE_DEC, NULL, 0x00,
@@ -5864,6 +7047,11 @@ proto_register_ptp(void)
         },
         { &hf_ptp_v2_mm_grandmasterPriority2,
           { "Grandmaster priority2", "ptp.v2.mm.grandmasterPriority2",
+            FT_UINT8, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_mm_alternatePriority1,
+          { "Alternate priority1", "ptp.v2.mm.alternatePriority1",
             FT_UINT8, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
@@ -5928,23 +7116,23 @@ proto_register_ptp(void)
             NULL, HFILL }
         },
         { &hf_ptp_v2_mm_offset_ns,
-          { "correction",           "ptp.v2.mm.offset.ns",
-            FT_UINT64, BASE_DEC, NULL, 0x00,
+          { "Ns",              "ptp.v2.mm.offset.ns",
+            FT_INT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_nanosecond_nanoseconds), 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_mm_offset_subns,
           { "SubNs",           "ptp.v2.mm.offset.subns",
-            FT_DOUBLE, BASE_NONE, NULL, 0x00,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_nanosecond_nanoseconds), 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_mm_pathDelay_ns,
-          { "ns",           "ptp.v2.mm.pathDelay.ns",
-            FT_UINT64, BASE_DEC, NULL, 0x00,
+          { "Ns",           "ptp.v2.mm.pathDelay.ns",
+            FT_INT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_nanosecond_nanoseconds), 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_mm_pathDelay_subns,
           { "SubNs",           "ptp.v2.mm.pathDelay.subns",
-            FT_DOUBLE, BASE_NONE, NULL, 0x00,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_nanosecond_nanoseconds), 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_mm_PortNumber,
@@ -5957,19 +7145,24 @@ proto_register_ptp(void)
             FT_UINT8, BASE_DEC | BASE_EXT_STRING, &ptp_v2_portState_vals_ext, 0x00,
             NULL, HFILL }
         },
+        { &hf_ptp_v2_mm_desiredPortState,
+          { "Desired port state",   "ptp.v2.mm.desiredPortState",
+            FT_UINT8, BASE_DEC | BASE_EXT_STRING, &ptp_v2_portState_vals_ext, 0x00,
+            NULL, HFILL }
+        },
         { &hf_ptp_v2_mm_logMinDelayReqInterval,
           { "logMinDelayReqInterval",           "ptp.v2.mm.logMinDelayReqInterval",
             FT_INT8, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_mm_peerMeanPathDelay_ns,
-          { "ns",           "ptp.v2.mm.peerMeanPathDelay.ns",
-            FT_UINT64, BASE_DEC, NULL, 0x00,
+          { "Ns",           "ptp.v2.mm.peerMeanPathDelay.ns",
+            FT_INT64, BASE_DEC|BASE_UNIT_STRING, UNS(&units_nanosecond_nanoseconds), 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_mm_peerMeanPathDelay_subns,
           { "SubNs",           "ptp.v2.mm.peerMeanPathDelay.subns",
-            FT_DOUBLE, BASE_NONE, NULL, 0x00,
+            FT_DOUBLE, BASE_NONE|BASE_UNIT_STRING, UNS(&units_nanosecond_nanoseconds), 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_mm_logAnnounceInterval,
@@ -6093,6 +7286,46 @@ proto_register_ptp(void)
             FT_BOOLEAN, 8, NULL, 0x01,
             NULL, HFILL }
         },
+        { &hf_ptp_v2_mm_maxTableSize,
+          { "Maximum number of addresses in a time transmitters table",
+            "ptp.v2.mm.maxTableSize",
+            FT_UINT16, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_mm_acceptableMasterPortDS,
+          { "Acceptable time transmitter table enabled",
+            "ptp.v2.mm.acceptableMasterPortDS",
+            FT_BOOLEAN, 8, NULL, 0x01,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_mm_externalPortConfigurationEnabled,
+          { "External port configuration enabled",
+            "ptp.v2.mm.externalPortConfigurationEnabled",
+            FT_BOOLEAN, 8, NULL, 0x01,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_mm_holdoverUpgradeEnable,
+          { "Holdover-upgrade enable", "ptp.v2.mm.holdoverUpgradeEnable",
+            FT_BOOLEAN, 8, NULL, 0x01,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_mm_logQueryInterval,
+          { "logarithm to the base 2 of the mean interval in seconds",
+            "ptp.v2.mm.logQueryInterval",
+            FT_INT8, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_mm_GrandmasterActualTableSize,
+          { "number of records in Grandmaster table",
+            "ptp.v2.mm.GrandmasterActualTableSize",
+            FT_UINT8, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_mm_actualTableSize,
+          { "number of records",  "ptp.v2.mm.actualTableSize",
+            FT_UINT16, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
         { &hf_ptp_v2_oe_tlv_smpte_subtype,
           { "SMPTE SubType", "ptp.v2.oe.smpte.SubType",
             FT_UINT24, BASE_HEX, VALS(ptp_v2_org_smpte_subtype_vals), 0x00,
@@ -6124,18 +7357,18 @@ proto_register_ptp(void)
             NULL, HFILL }
         },
         { &hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags,
-          { "timeAdressFlags", "ptp.v2.oe.smpte.timeadressflags",
+          { "timeAddressFlags", "ptp.v2.oe.smpte.timeaddressflags",
             FT_UINT8, BASE_HEX, NULL, 0x00,
             NULL, HFILL }
         },
         { &hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags_drop,
-          { "Drop frame", "ptp.v2.oe.smpte.timeadressflags.drop",
-            FT_BOOLEAN, 8, TFS(&tfs_inuse_not_inuse), PTP_V2_FLAGS_OE_SMPTE_TIME_ADRESS_FIELD_DROP,
+          { "Drop frame", "ptp.v2.oe.smpte.timeaddressflags.drop",
+            FT_BOOLEAN, 8, TFS(&tfs_inuse_not_inuse), PTP_V2_FLAGS_OE_SMPTE_TIME_ADDRESS_FIELD_DROP,
             NULL, HFILL }
         },
         { &hf_ptp_v2_oe_tlv_subtype_smpte_timeaddressflags_color,
-          { "Color frame identification", "ptp.v2.oe.smpte.timeadressflags.color",
-            FT_BOOLEAN, 8, TFS(&tfs_inuse_not_inuse), PTP_V2_FLAGS_OE_SMPTE_TIME_ADRESS_FIELD_COLOR,
+          { "Color frame identification", "ptp.v2.oe.smpte.timeaddressflags.color",
+            FT_BOOLEAN, 8, TFS(&tfs_inuse_not_inuse), PTP_V2_FLAGS_OE_SMPTE_TIME_ADDRESS_FIELD_COLOR,
             NULL, HFILL }
         },
         { &hf_ptp_v2_oe_tlv_subtype_smpte_currentlocaloffset,
@@ -6194,22 +7427,134 @@ proto_register_ptp(void)
             NULL, HFILL }
         },
         { &hf_ptp_v2_oe_tlv_subtype_smpte_leapsecondjump_change,
-          { "Change in number", "ptp.v2.oe.smpte.leaspsecondjump",
+          { "Change in number", "ptp.v2.oe.smpte.leapsecondjump.change",
             FT_BOOLEAN, 8, TFS(&tfs_set_notset), PTP_V2_FLAGS_OE_SMPTE_LEAP_SECOND_JUMP_CHANGE,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_auth_tlv_spp,
+          { "spp", "ptp.v2.auth.spp",
+            FT_UINT8, BASE_DEC, NULL, 0x00, "Which security association was used", HFILL }
+        },
+        { &hf_ptp_v2_auth_tlv_sec_param_indicator,
+          { "secParamIndicator", "ptp.v2.auth.secParamIndicator",
+            FT_UINT8, BASE_HEX, NULL, 0x00, "Indicates the existence of optional fields in the TLV", HFILL }
+        },
+        { &hf_ptp_v2_auth_tlv_key_id,
+          { "keyId", "ptp.v2.auth.keyId",
+            FT_UINT32, BASE_DEC, NULL, 0x00, "Which key was used to calculate the integrity check value (ICV)", HFILL }
+        },
+        { &hf_ptp_v2_auth_tlv_icv,
+          { "icv", "ptp.v2.auth.icv",
+            FT_BYTES, SEP_SPACE, NULL, 0x00, "Integrity check value", HFILL }
+        },
+        { &hf_ptp_v2_analysis_followup_to_sync,
+          { "This is a Follow Up to Sync in Frame", "ptp.v2.analysis.followuptosync",
+            FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+            "Which message is this a Follow Up for", HFILL }
+        },
+        { &hf_ptp_v2_analysis_sync_to_followup,
+          { "This is a Sync to Follow Up in Frame", "ptp.v2.analysis.synctofollowup",
+            FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+            "Which message is this a Sync for", HFILL }
+        },
+        { &hf_ptp_v2_analysis_pdelayreq_to_pdelayres,
+          { "This is a Peer Delay Request to Response in Frame", "ptp.v2.analysis.pdelayreqtores",
+            FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+            "Which Peer Delay Response is this a Peer Delay Request for", HFILL }
+        },
+        { &hf_ptp_v2_analysis_pdelayres_to_pdelayreq,
+          { "This is a Peer Delay Response to Request in Frame", "ptp.v2.analysis.pdelayrestoreq",
+            FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+            "Which Peer Delay Request is this a Peer Delay Response for", HFILL }
+        },
+        { &hf_ptp_v2_analysis_pdelayres_to_pdelayfup,
+          { "This is a Peer Delay Response to Follow Up in Frame", "ptp.v2.analysis.pdelayfuptores",
+            FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+            "Which Peer Delay FollowUp is this a Peer Delay Response for", HFILL }
+        },
+        { &hf_ptp_v2_analysis_pdelayfup_to_pdelayres,
+          { "This is a Peer Delay Follow Up to Response in Frame", "ptp.v2.analysis.pdelayrestofup",
+            FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+            "Which Peer Delay Response is this a Peer Delay FollowUp for", HFILL }
+        },
+        { &hf_ptp_v2_analysis_sync_timestamp,
+          { "calculatedSyncTimestamp", "ptp.v2.analysis.sync.timestamp",
+            FT_DOUBLE, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_analysis_sync_timestamp_seconds,
+          { "calculatedSyncTimestamp (s)", "ptp.v2.analysis.sync.timestamp_seconds",
+            FT_UINT64, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_analysis_sync_timestamp_nanoseconds,
+          { "calculatedSyncTimestamp (ns)", "ptp.v2.analysis.sync.timestamp_nanoseconds",
+            FT_UINT32, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_analysis_sync_period,
+          { "measuredMessagePeriod", "ptp.v2.analysis.sync.measuredMessagePeriod",
+            FT_DOUBLE, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_analysis_sync_rateRatio,
+          { "calculatedSyncRateRatio", "ptp.v2.analysis.sync.calculatedRateRatio",
+            FT_DOUBLE, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_analysis_sync_rateRatio_ppm,
+          { "calculatedSyncRateRatio PPM", "ptp.v2.analysis.sync.calculatedRateRatio_ppm",
+            FT_DOUBLE, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_analysis_pdelay_mpd_unscaled,
+          { "calculatedUnscaledMeanPropagationDelay", "ptp.v2.analysis.pdelay.meanpropdelay_unscaled",
+            FT_DOUBLE, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_analysis_pdelay_mpd_unscaled_seconds,
+          { "calculatedUnscaledMeanPropagationDelay (s)", "ptp.v2.analysis.pdelay.meanpropdelay_unscaled_seconds",
+            FT_INT64, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_analysis_pdelay_mpd_unscaled_nanoseconds,
+          { "calculatedUnscaledMeanPropagationDelay (ns)", "ptp.v2.analysis.pdelay.meanpropdelay_unscaled_nanoseconds",
+            FT_INT32, BASE_DEC, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_analysis_pdelay_mpd_scaled,
+          { "calculatedScaledMeanPropagationDelay", "ptp.v2.analysis.pdelay.meanpropdelay_scaled",
+            FT_DOUBLE, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_analysis_pdelay_period,
+          { "measuredMessagePeriod", "ptp.v2.analysis.pdelay.measuredMessagePeriod",
+            FT_DOUBLE, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_analysis_pdelay_neighRateRatio,
+          { "calculatedNeighborRateRatio", "ptp.v2.analysis.pdelay.calculatedNeighborRateRatio",
+            FT_DOUBLE, BASE_NONE, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_ptp_v2_analysis_pdelay_neighRateRatio_ppm,
+          { "calculatedNeighborRateRatio PPM", "ptp.v2.analysis.pdelay.calculatedNeighborRateRatio_ppm",
+            FT_INT32, BASE_DEC, NULL, 0x00,
             NULL, HFILL }
         },
     };
 
 
-/* Setup protocol subtree array */
-    static gint *ett[] = {
+    /* Setup protocol subtree array */
+    static int *ett[] = {
         &ett_ptp,
         &ett_ptp_flags,
         &ett_ptp_time,
         &ett_ptp_time2,
         &ett_ptp_v2,
-        &ett_ptp_v2_transportspecific,
+        &ett_ptp_v2_majorsdoid,
         &ett_ptp_v2_flags,
+        &ett_ptp_v2_clockidentity,
         &ett_ptp_v2_correction,
         &ett_ptp_v2_time,
         &ett_ptp_v2_time2,
@@ -6217,54 +7562,96 @@ proto_register_ptp(void)
         &ett_ptp_v2_clockType,
         &ett_ptp_v2_physicalLayerProtocol,
         &ett_ptp_v2_protocolAddress,
+        &ett_ptp_v2_addressTable,
+        &ett_ptp_v2_acceptableRecord,
         &ett_ptp_v2_ptptext,
         &ett_ptp_v2_faultRecord,
         &ett_ptp_v2_timeInterval,
         &ett_ptp_v2_tlv,
         &ett_ptp_v2_tlv_log_period,
+        &ett_ptp_v2_sig_l1sync_flags,
         &ett_ptp_as_sig_tlv_flags,
+        &ett_ptp_oe_wr_flags,
         &ett_ptp_oe_smpte_data,
         &ett_ptp_oe_smpte_framerate,
         &ett_ptp_oe_smpte_timeaddress,
         &ett_ptp_oe_smpte_daylightsaving,
         &ett_ptp_oe_smpte_leapsecondjump,
+        &ett_ptp_analysis_timestamp,
+        &ett_ptp_analysis_mean_propagation_delay,
     };
 
     static ei_register_info ei[] = {
         { &ei_ptp_v2_msg_len_too_large, { "ptp.v2.msg_len_too_large", PI_MALFORMED, PI_ERROR, "Message length goes past the end of the packet", EXPFILL }},
         { &ei_ptp_v2_msg_len_too_small, { "ptp.v2.msg_len_too_small", PI_MALFORMED, PI_ERROR, "Message length too short to include the message length field", EXPFILL }},
+        { &ei_ptp_v2_sync_no_followup,  { "ptp.v2.sync_no_fup", PI_PROTOCOL, PI_WARN, "No Follow Up for this Two Step Sync", EXPFILL }},
+        { &ei_ptp_v2_sync_no_fup_tlv,   { "ptp.v2.sync_no_fup_tlv", PI_PROTOCOL, PI_WARN, "No Follow Up Information TLV for this gPTP One Step Sync", EXPFILL }},
+        { &ei_ptp_v2_sync_with_fup_tlv, { "ptp.v2.sync_with_fup_tlv", PI_PROTOCOL, PI_WARN, "Two Step Sync should not have Follow Up Information TLV", EXPFILL }},
+        { &ei_ptp_v2_followup_no_sync,  { "ptp.v2.fup_without_sync", PI_PROTOCOL, PI_WARN, "No Sync for this Follow Up", EXPFILL }},
+        { &ei_ptp_v2_followup_no_tlv,   { "ptp.v2.fup_without_fup_tlv", PI_PROTOCOL, PI_WARN, "Follow Up without Follow Up TLV", EXPFILL }},
+        { &ei_ptp_v2_pdreq_no_pdresp,   { "ptp.v2.pdelay_req_without_resp", PI_PROTOCOL, PI_WARN, "No Response for this Peer Delay Request", EXPFILL }},
+        { &ei_ptp_v2_pdresp_no_pdreq,   { "ptp.v2.pdelay_resp_without_req", PI_PROTOCOL, PI_WARN, "No Request for this Peer Delay Response", EXPFILL }},
+        { &ei_ptp_v2_pdresp_no_pdfup,   { "ptp.v2.pdelay_resp_without_fup", PI_PROTOCOL, PI_WARN, "No Follow Up for this Peer Delay Response", EXPFILL }},
+        { &ei_ptp_v2_pdresp_twostep,    { "ptp.v2.pdelay_resp_two_step_false", PI_PROTOCOL, PI_WARN, "Peer Delay Response with Two Step Flag set to false but Follow Up received", EXPFILL }},
+        { &ei_ptp_v2_pdfup_no_pdresp,   { "ptp.v2.pdelay_fup_without_resp", PI_PROTOCOL, PI_WARN, "No Response for this Peer Delay Follow Up", EXPFILL }},
+        { &ei_ptp_v2_period_invalid,    { "ptp.v2.period.invalid", PI_PROTOCOL, PI_WARN, "Period invalid", EXPFILL }},
+        { &ei_ptp_v2_as_tlv_in_non_as,  { "ptp.v2.as_tlv_in_non_as", PI_PROTOCOL, PI_WARN, "TLV defined for 802.1AS but this is PTPv2", EXPFILL }},
+        { &ei_ptp_v2_mm_protAddrLen,    { "ptp.v2.mm.even.address.leng", PI_PROTOCOL, PI_WARN, "Protocol Address length is odd", EXPFILL }},
+        { &ei_ptp_v2_mmGrandTblPad,     { "ptp.v2.mm.tlv.grand_wrong.len", PI_PROTOCOL, PI_WARN, "Grandmaster cluster table should not have a pad", EXPFILL }},
+        { &ei_ptp_v2_mmUnuTblPad,       { "ptp.v2.mm.tlv.wrong.len", PI_PROTOCOL, PI_WARN, "Unicast master table lacks pad", EXPFILL }},
     };
 
     expert_module_t* expert_ptp;
 
-/* Register the protocol name and description */
-    proto_ptp = proto_register_protocol("Precision Time Protocol (IEEE1588)",
-                                        "PTP", "ptp");
+    /* Register the protocol name and description */
+    proto_ptp = proto_register_protocol("Precision Time Protocol (IEEE1588)", "PTP", "ptp");
 
-/* Required function calls to register the header fields and subtrees used */
+    /* Required function calls to register the header fields and subtrees used */
     proto_register_field_array(proto_ptp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
     expert_ptp = expert_register_protocol(proto_ptp);
     expert_register_field_array(expert_ptp, ei, array_length(ei));
+
+    /* Get the decimal point based on locale */
+    decimal_point = localeconv()->decimal_point;
+
+    /* Configuration */
+    module_t *ptp_module = prefs_register_protocol(proto_ptp, NULL);
+    prefs_register_bool_preference(ptp_module, "analyze_ptp_messages", "Analyze PTP messages",
+                                   "Make the PTP dissector analyze PTP messages. Accurate Capture Timestamps required!",
+                                   &ptp_analyze_messages);
+
+    prefs_register_bool_preference(ptp_module, "analyze_ptp_strict_minor_version_matching", "Analysis: Only match messages, if minor version matches",
+                                   "Take minor version for matching of messages into account!",
+                                   &ptp_analyze_messages_with_minor_version);
+
+    prefs_register_uint_preference(ptp_module, "analyze_ptp_delta", "Analysis: Max message delta",
+                                   "Maximum allowed time between messages of same type when finding "
+                                   "consecutive messages for analysis calculations.",
+                                   10, &ptp_analysis_max_consecutive_delta);
+
+    /* Setup analysis data structures */
+    ptp_clocks = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_int64_hash, g_int64_equal);
+
+    ptpv2_tlv_org_id_subdissector_table = register_dissector_table("ptp.v2.tlv.oe.organizationId", "PTPv2 TLV Organization ID", proto_ptp, FT_UINT24, BASE_HEX);
+
 }
 
 void
-proto_reg_handoff_ptp(void)
-{
+proto_reg_handoff_ptp(void) {
     dissector_handle_t ptp_handle;
     dissector_handle_t ethertype_ptp_handle;
 
-    ptp_handle   = create_dissector_handle(dissect_ptp, proto_ptp);
-    ethertype_ptp_handle    = create_dissector_handle(dissect_ptp_oE, proto_ptp);
+    ptp_handle = register_dissector("ptp", dissect_ptp, proto_ptp);
+    ethertype_ptp_handle = register_dissector("ptp_over_ethernet", dissect_ptp_oE, proto_ptp);
 
-    dissector_add_uint("udp.port",  EVENT_PORT_PTP, ptp_handle);
-    dissector_add_uint("udp.port",  GENERAL_PORT_PTP, ptp_handle);
+    dissector_add_uint_range_with_preference("udp.port",  PTP_PORT_RANGE, ptp_handle);
     dissector_add_uint("ethertype", ETHERTYPE_PTP, ethertype_ptp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -1,7 +1,5 @@
 /* gettext - retrieve text string from message catalog and print it.
-   Copyright (C) 1995-1997, 2000-2007, 2012, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>, May 1995.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,85 +12,87 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Ulrich Drepper and Bruno Haible.  */
 
-#include <getopt.h>
+#include <config.h>
+
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <locale.h>
 
+#include <error.h>
+#include "options.h"
+#include "attribute.h"
+#include "noreturn.h"
 #include "closeout.h"
-#include "error.h"
 #include "progname.h"
 #include "relocatable.h"
-#include "basename.h"
+#include "basename-lgpl.h"
 #include "xalloc.h"
 #include "propername.h"
 #include "xsetenv.h"
+#include "glthread/thread.h"
+#include "../../gettext-runtime/src/escapes.h"
 
-#define HAVE_SETLOCALE 1
 /* Make sure we use the included libintl, not the system's one. */
 #undef _LIBINTL_H
 #include "libgnuintl.h"
 
+#if defined _WIN32 && !defined __CYGWIN__
+# undef setlocale
+# define setlocale fake_setlocale
+extern char *setlocale (int category, const char *locale);
+#endif
+
 #define _(str) gettext (str)
 
-/* If true, add newline after last string.  This makes only sense in
-   the 'echo' emulation mode.  */
-static bool add_newline;
-
-/* If true, expand escape sequences in strings before looking in the
-   message catalog.  */
-static bool do_expand;
-
-/* Long options.  */
-static const struct option long_options[] =
-{
-  { "domain", required_argument, NULL, 'd' },
-  { "env", required_argument, NULL, '=' },
-  { "help", no_argument, NULL, 'h' },
-  { "shell-script", no_argument, NULL, 's' },
-  { "version", no_argument, NULL, 'V' },
-  { NULL, 0, NULL, 0 }
-};
-
 /* Forward declaration of local functions.  */
-static void usage (int status)
-#if defined __GNUC__ && ((__GNUC__ == 2 && __GNUC_MINOR__ >= 5) || __GNUC__ > 2)
-     __attribute__ ((noreturn))
-#endif
-;
-static const char *expand_escape (const char *str);
+_GL_NORETURN_FUNC static void *worker_thread (void *arg);
+_GL_NORETURN_FUNC static void usage (int status);
+
+/* Argument passed to the worker_thread.  */
+struct worker_context
+{
+  int argc;
+  char **argv;
+  bool do_shell;
+  const char *domain;
+  const char *domaindir;
+  /* If false, add newline after last string.  This makes only sense in
+     the 'echo' emulation mode.  */
+  bool inhibit_added_newline;
+  /* If true, expand escape sequences in strings before looking in the
+     message catalog.  */
+  bool do_expand;
+};
 
 int
 main (int argc, char *argv[])
 {
-  int optchar;
-  const char *msgid;
-
   /* Default values for command line options.  */
   bool do_help = false;
-  bool do_shell = false;
+  bool do_thread = false;
   bool do_version = false;
   bool environ_changed = false;
-  const char *domain = getenv ("TEXTDOMAIN");
-  const char *domaindir = getenv ("TEXTDOMAINDIR");
-  add_newline = true;
-  do_expand = false;
+  struct worker_context context;
+  context.argc = argc;
+  context.argv = argv;
+  context.do_shell = false;
+  context.domain = getenv ("TEXTDOMAIN");
+  context.domaindir = getenv ("TEXTDOMAINDIR");
+  context.inhibit_added_newline = false;
+  context.do_expand = false;
 
   /* Set program name for message texts.  */
   set_program_name (argv[0]);
 
-#ifdef HAVE_SETLOCALE
   /* Set locale via LC_ALL.  */
   setlocale (LC_ALL, "");
-#endif
 
   /* Set the text message domain.  */
   bindtextdomain (PACKAGE, relocate (LOCALEDIR));
@@ -102,67 +102,84 @@ main (int argc, char *argv[])
   atexit (close_stdout);
 
   /* Parse command line options.  */
-  while ((optchar = getopt_long (argc, argv, "+d:eEhnsV", long_options, NULL))
-         != EOF)
+  BEGIN_ALLOW_OMITTING_FIELD_INITIALIZERS
+  static const struct program_option options[] =
+  {
+    { "domain",       'd',          required_argument },
+    { "env",          CHAR_MAX + 1, required_argument },
+    { "help",         'h',          no_argument       },
+    { "shell-script", 's',          no_argument       },
+    { "thread",       't',          no_argument       },
+    { "version",      'V',          no_argument       },
+    { NULL,           'e',          no_argument       },
+    { NULL,           'E',          no_argument       },
+    { NULL,           'n',          no_argument       },
+  };
+  END_ALLOW_OMITTING_FIELD_INITIALIZERS
+  start_options (argc, argv, options, NON_OPTION_TERMINATES_OPTIONS, 0);
+  int optchar;
+  while ((optchar = get_next_option ()) != -1)
     switch (optchar)
-    {
-    case '\0':          /* Long option.  */
-      break;
-    case 'd':
-      domain = optarg;
-      break;
-    case 'e':
-      do_expand = true;
-      break;
-    case 'E':
-      /* Ignore.  Just for compatibility.  */
-      break;
-    case 'h':
-      do_help = true;
-      break;
-    case 'n':
-      add_newline = false;
-      break;
-    case 's':
-      do_shell = true;
-      break;
-    case 'V':
-      do_version = true;
-      break;
-    case '=':
       {
-        /* Undocumented option --env sets an environment variable.  */
-        char *separator = strchr (optarg, '=');
-        if (separator != NULL)
-          {
-            *separator = '\0';
-            xsetenv (optarg, separator + 1, 1);
-            environ_changed = true;
-            break;
-          }
+      case '\0':          /* Long option with key == 0.  */
+        break;
+      case 'd':
+        context.domain = optarg;
+        break;
+      case 'e':
+        context.do_expand = true;
+        break;
+      case 'E':
+        /* Ignore.  Just for compatibility.  */
+        break;
+      case 'h':
+        do_help = true;
+        break;
+      case 'n':
+        context.inhibit_added_newline = true;
+        break;
+      case 's':
+        context.do_shell = true;
+        break;
+      case 't':
+        do_thread = true;
+        break;
+      case 'V':
+        do_version = true;
+        break;
+      case CHAR_MAX + 1: /* --env */
+        {
+          /* Undocumented option --env sets an environment variable.  */
+          char *separator = strchr (optarg, '=');
+          if (separator != NULL)
+            {
+              *separator = '\0';
+              xsetenv (optarg, separator + 1, 1);
+              environ_changed = true;
+              break;
+            }
+        }
+        FALLTHROUGH;
+      default:
+        usage (EXIT_FAILURE);
       }
-      /*FALLTHROUGH*/
-    default:
-      usage (EXIT_FAILURE);
-    }
 
-#ifdef HAVE_SETLOCALE
   if (environ_changed)
     /* Set locale again via LC_ALL.  */
     setlocale (LC_ALL, "");
-#endif
 
   /* Version information is requested.  */
   if (do_version)
     {
-      printf ("%s (GNU %s) %s\n", basename (program_name), PACKAGE, VERSION);
+      printf ("%s (GNU %s) %s\n", last_component (program_name),
+              PACKAGE, VERSION);
       /* xgettext: no-wrap */
       printf (_("Copyright (C) %s Free Software Foundation, Inc.\n\
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\
+License GPLv3+: GNU GPL version 3 or later <%s>\n\
 This is free software: you are free to change and redistribute it.\n\
 There is NO WARRANTY, to the extent permitted by law.\n\
 "),
-              "1995-1997, 2000-2006");
+              "1995-2023", "https://gnu.org/licenses/gpl.html");
       printf (_("Written by %s.\n"), proper_name ("Ulrich Drepper"));
       exit (EXIT_SUCCESS);
     }
@@ -171,9 +188,28 @@ There is NO WARRANTY, to the extent permitted by law.\n\
   if (do_help)
     usage (EXIT_SUCCESS);
 
+  if (do_thread)
+    {
+      gl_thread_t thread = gl_thread_create (worker_thread, &context);
+      void *retval;
+      gl_thread_join (thread, &retval);
+    }
+  else
+    worker_thread (&context);
+}
+
+static void *
+worker_thread (void *arg)
+{
+  struct worker_context *context = arg;
+  int argc = context->argc;
+  char **argv = context->argv;
+
+  const char *msgid;
+
   /* We have two major modes: use following Uniforum spec and as
      internationalized 'echo' program.  */
-  if (!do_shell)
+  if (!context->do_shell)
     {
       /* We have to write a single strings translation to stdout.  */
 
@@ -184,8 +220,8 @@ There is NO WARRANTY, to the extent permitted by law.\n\
             error (EXIT_FAILURE, 0, _("too many arguments"));
 
           case 2:
-            domain = argv[optind++];
-            /* FALLTHROUGH */
+            context->domain = argv[optind++];
+            FALLTHROUGH;
 
           case 1:
             break;
@@ -197,22 +233,22 @@ There is NO WARRANTY, to the extent permitted by law.\n\
       msgid = argv[optind++];
 
       /* Expand escape sequences if enabled.  */
-      if (do_expand)
-        msgid = expand_escape (msgid);
+      if (context->do_expand)
+        msgid = expand_escapes (msgid, &context->inhibit_added_newline);
 
       /* If no domain name is given we don't translate.  */
-      if (domain == NULL || domain[0] == '\0')
+      if (context->domain == NULL || context->domain[0] == '\0')
         {
           fputs (msgid, stdout);
         }
       else
         {
           /* Bind domain to appropriate directory.  */
-          if (domaindir != NULL && domaindir[0] != '\0')
-            bindtextdomain (domain, domaindir);
+          if (context->domaindir != NULL && context->domaindir[0] != '\0')
+            bindtextdomain (context->domain, context->domaindir);
 
           /* Write out the result.  */
-          fputs (dgettext (domain, msgid), stdout);
+          fputs (dgettext (context->domain, msgid), stdout);
         }
     }
   else
@@ -221,12 +257,12 @@ There is NO WARRANTY, to the extent permitted by law.\n\
         {
           /* If no domain name is given we print the original string.
              We mark this assigning NULL to domain.  */
-          if (domain == NULL || domain[0] == '\0')
-            domain = NULL;
+          if (context->domain == NULL || context->domain[0] == '\0')
+            context->domain = NULL;
           else
             /* Bind domain to appropriate directory.  */
-            if (domaindir != NULL && domaindir[0] != '\0')
-              bindtextdomain (domain, domaindir);
+            if (context->domaindir != NULL && context->domaindir[0] != '\0')
+              bindtextdomain (context->domain, context->domaindir);
 
           /* We have to simulate 'echo'.  All arguments are strings.  */
           do
@@ -234,11 +270,13 @@ There is NO WARRANTY, to the extent permitted by law.\n\
               msgid = argv[optind++];
 
               /* Expand escape sequences if enabled.  */
-              if (do_expand)
-                msgid = expand_escape (msgid);
+              if (context->do_expand)
+                msgid = expand_escapes (msgid, &context->inhibit_added_newline);
 
               /* Write out the result.  */
-              fputs (domain == NULL ? msgid : dgettext (domain, msgid),
+              fputs (context->domain == NULL
+                     ? msgid
+                     : dgettext (context->domain, msgid),
                      stdout);
 
               /* We separate the arguments by a single ' '.  */
@@ -249,7 +287,7 @@ There is NO WARRANTY, to the extent permitted by law.\n\
         }
 
       /* If not otherwise told: add trailing newline.  */
-      if (add_newline)
+      if (!context->inhibit_added_newline)
         fputc ('\n', stdout);
     }
 
@@ -299,115 +337,17 @@ found in the selected catalog are translated.\n\
 Standard search directory: %s\n"),
               getenv ("IN_HELP2MAN") == NULL ? LOCALEDIR : "@localedir@");
       printf ("\n");
-      /* TRANSLATORS: The placeholder indicates the bug-reporting address
-         for this package.  Please add _another line_ saying
+      /* TRANSLATORS: The first placeholder is the web address of the Savannah
+         project of this package.  The second placeholder is the bug-reporting
+         email address for this package.  Please add _another line_ saying
          "Report translation bugs to <...>\n" with the address for translation
          bugs (typically your translation team's web or email address).  */
-      fputs (_("Report bugs to <bug-gnu-gettext@gnu.org>.\n"), stdout);
+      printf (_("\
+Report bugs in the bug tracker at <%s>\n\
+or by email to <%s>.\n"),
+             "https://savannah.gnu.org/projects/gettext",
+             "bug-gettext@gnu.org");
     }
 
   exit (status);
-}
-
-
-/* Expand some escape sequences found in the argument string.  */
-static const char *
-expand_escape (const char *str)
-{
-  char *retval, *rp;
-  const char *cp = str;
-
-  for (;;)
-    {
-      while (cp[0] != '\0' && cp[0] != '\\')
-        ++cp;
-      if (cp[0] == '\0')
-        return str;
-      /* Found a backslash.  */
-      if (cp[1] == '\0')
-        return str;
-      if (strchr ("abcfnrtv\\01234567", cp[1]) != NULL)
-        break;
-      ++cp;
-    }
-
-  retval = XNMALLOC (strlen (str), char);
-
-  rp = retval + (cp - str);
-  memcpy (retval, str, cp - str);
-
-  do
-    {
-      /* Here cp[0] == '\\'.  */
-      switch (*++cp)
-        {
-        case 'a':               /* alert */
-          *rp++ = '\a';
-          ++cp;
-          break;
-        case 'b':               /* backspace */
-          *rp++ = '\b';
-          ++cp;
-          break;
-        case 'c':               /* suppress trailing newline */
-          add_newline = false;
-          ++cp;
-          break;
-        case 'f':               /* form feed */
-          *rp++ = '\f';
-          ++cp;
-          break;
-        case 'n':               /* new line */
-          *rp++ = '\n';
-          ++cp;
-          break;
-        case 'r':               /* carriage return */
-          *rp++ = '\r';
-          ++cp;
-          break;
-        case 't':               /* horizontal tab */
-          *rp++ = '\t';
-          ++cp;
-          break;
-        case 'v':               /* vertical tab */
-          *rp++ = '\v';
-          ++cp;
-          break;
-        case '\\':
-          *rp = '\\';
-          ++cp;
-          break;
-        case '0': case '1': case '2': case '3':
-        case '4': case '5': case '6': case '7':
-          {
-            int ch = *cp++ - '0';
-
-            if (*cp >= '0' && *cp <= '7')
-              {
-                ch *= 8;
-                ch += *cp++ - '0';
-
-                if (*cp >= '0' && *cp <= '7')
-                  {
-                    ch *= 8;
-                    ch += *cp++ - '0';
-                  }
-              }
-            *rp = ch;
-          }
-          break;
-        default:
-          *rp = '\\';
-          break;
-        }
-
-      while (cp[0] != '\0' && cp[0] != '\\')
-        *rp++ = *cp++;
-    }
-  while (cp[0] != '\0');
-
-  /* Terminate string.  */
-  *rp = '\0';
-
-  return (const char *) retval;
 }

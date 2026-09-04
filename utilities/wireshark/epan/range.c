@@ -8,23 +8,12 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -34,19 +23,20 @@
 #include <epan/frame_data.h>
 
 #include <epan/range.h>
-#include <stdio.h>
+
+#include <wsutil/strtoi.h>
 
 /*
  * Size of the header of a range_t.
  */
-#define RANGE_HDR_SIZE (sizeof (range_t) - sizeof (range_admin_t))
+#define RANGE_HDR_SIZE (sizeof (range_t))
 
 /* Allocate an empty range. */
-range_t *range_empty(void)
+range_t *range_empty(wmem_allocator_t *scope)
 {
    range_t *range;
 
-   range = (range_t *)g_malloc(RANGE_HDR_SIZE);
+   range = (range_t *)wmem_alloc(scope, RANGE_HDR_SIZE);
    range->nranges = 0;
    return range;
 }
@@ -78,9 +68,9 @@ range_t *range_empty(void)
  */
 
 convert_ret_t
-range_convert_str(range_t **rangep, const gchar *es, guint32 max_value)
+range_convert_str(wmem_allocator_t *scope, range_t **rangep, const char *es, uint32_t max_value)
 {
-   return range_convert_str_work(rangep, es, max_value, TRUE);
+   return range_convert_str_work(scope, rangep, es, max_value, true);
 }
 
 /*  This version of range_convert_str() allows the caller to specify whether
@@ -89,24 +79,24 @@ range_convert_str(range_t **rangep, const gchar *es, guint32 max_value)
  *  XXX - both the function and the variable could probably use better names.
  */
 convert_ret_t
-range_convert_str_work(range_t **rangep, const gchar *es, guint32 max_value,
-                       gboolean err_on_max)
+range_convert_str_work(wmem_allocator_t *scope, range_t **rangep, const char *es, uint32_t max_value,
+                       bool err_on_max)
 {
 
    range_t       *range;
-   guint         nranges;
-   const gchar   *p;
-   char          *endp;
-   gchar         c;
-   guint         i;
-   guint32       tmp;
-   unsigned long val;
+   unsigned      nranges;
+   const char    *p;
+   const char    *endp;
+   char          c;
+   unsigned      i;
+   uint32_t      tmp;
+   uint32_t      val;
 
-   if ( (rangep == NULL) || (es == NULL) )
+   if (rangep == NULL)
       return CVT_SYNTAX_ERROR;
 
    /* Allocate a range; this has room for one subrange. */
-   range = (range_t *)g_malloc(RANGE_HDR_SIZE + sizeof (range_admin_t));
+   range = (range_t *)wmem_alloc(scope, RANGE_HDR_SIZE + sizeof (range_admin_t));
    range->nranges = 0;
    nranges = 1;
 
@@ -117,8 +107,7 @@ range_convert_str_work(range_t **rangep, const gchar *es, guint32 max_value,
     * were found. The number of individual ranges is limited to 'MaxRanges'
     */
 
-   p = es;
-   for (;;) {
+   for (p = es; p; range->nranges++) {
       /* Skip white space. */
       while ((c = *p) == ' ' || c == '\t')
          p++;
@@ -137,7 +126,7 @@ range_convert_str_work(range_t **rangep, const gchar *es, guint32 max_value,
             nranges = 4;
          else
             nranges += 4;
-         range = (range_t *)g_realloc(range, RANGE_HDR_SIZE +
+         range = (range_t *)wmem_realloc(scope, range, RANGE_HDR_SIZE +
                                       nranges*sizeof (range_admin_t));
       }
 
@@ -147,10 +136,10 @@ range_convert_str_work(range_t **rangep, const gchar *es, guint32 max_value,
       } else if (g_ascii_isdigit(c)) {
          /* Subrange starts with the specified number */
          errno = 0;
-         val = strtoul(p, &endp, 0);
-         if (p == endp) {
+         ws_basestrtou32(p, &endp, &val, 0);
+         if (errno == EINVAL) {
             /* That wasn't a valid number. */
-            g_free(range);
+            wmem_free(scope, range);
             return CVT_SYNTAX_ERROR;
          }
          if (errno == ERANGE || val > max_value) {
@@ -158,7 +147,7 @@ range_convert_str_work(range_t **rangep, const gchar *es, guint32 max_value,
              * (e.g., except when reading from the preferences file).
              */
             if (err_on_max) {
-               g_free(range);
+               wmem_free(scope, range);
                return CVT_NUMBER_TOO_BIG;
             } else {
                /* Silently use the range's maximum value */
@@ -166,14 +155,14 @@ range_convert_str_work(range_t **rangep, const gchar *es, guint32 max_value,
             }
          }
          p = endp;
-         range->ranges[range->nranges].low = (guint32)val;
+         range->ranges[range->nranges].low = val;
 
          /* Skip white space. */
          while ((c = *p) == ' ' || c == '\t')
             p++;
       } else {
          /* Neither empty nor a number. */
-         g_free(range);
+         wmem_free(scope, range);
          return CVT_SYNTAX_ERROR;
       }
 
@@ -193,10 +182,10 @@ range_convert_str_work(range_t **rangep, const gchar *es, guint32 max_value,
          } else if (g_ascii_isdigit(c)) {
             /* Subrange ends with the specified number. */
             errno = 0;
-            val = strtoul(p, &endp, 0);
-            if (p == endp) {
+            ws_basestrtou32(p, &endp, &val, 0);
+            if (errno == EINVAL) {
                /* That wasn't a valid number. */
-               g_free(range);
+               wmem_free(scope, range);
                return CVT_SYNTAX_ERROR;
             }
             if (errno == ERANGE || val > max_value) {
@@ -204,7 +193,7 @@ range_convert_str_work(range_t **rangep, const gchar *es, guint32 max_value,
                 * (e.g., except when reading from the preferences file).
                 */
                if (err_on_max) {
-                  g_free(range);
+                  wmem_free(scope, range);
                   return CVT_NUMBER_TOO_BIG;
                } else {
                   /* Silently use the range's maximum value */
@@ -212,14 +201,14 @@ range_convert_str_work(range_t **rangep, const gchar *es, guint32 max_value,
                }
             }
             p = endp;
-            range->ranges[range->nranges].high = (guint32)val;
+            range->ranges[range->nranges].high = val;
 
             /* Skip white space. */
             while ((c = *p) == ' ' || c == '\t')
                p++;
          } else {
             /* Neither empty nor a number. */
-            g_free(range);
+            wmem_free(scope, range);
             return CVT_SYNTAX_ERROR;
          }
       } else if (c == ',' || c == '\0') {
@@ -229,10 +218,9 @@ range_convert_str_work(range_t **rangep, const gchar *es, guint32 max_value,
          range->ranges[range->nranges].high = range->ranges[range->nranges].low;
       } else {
          /* Invalid character. */
-         g_free(range);
+         wmem_free(scope, range);
          return CVT_SYNTAX_ERROR;
       }
-      range->nranges++;
 
       if (c == ',') {
          /* Subrange is followed by a comma; skip it. */
@@ -263,45 +251,138 @@ range_convert_str_work(range_t **rangep, const gchar *es, guint32 max_value,
    return CVT_NO_ERROR;
 } /* range_convert_str */
 
-/* This function returns TRUE if a given value is within one of the ranges
+/* This function returns true if a given value is within one of the ranges
  * stored in the ranges array.
  */
-gboolean
-value_is_in_range(range_t *range, guint32 val)
+bool
+value_is_in_range(const range_t *range, uint32_t val)
 {
-   guint i;
+   unsigned i;
 
    if (range) {
       for (i=0; i < range->nranges; i++) {
          if (val >= range->ranges[i].low && val <= range->ranges[i].high)
-            return TRUE;
+            return true;
       }
    }
-   return(FALSE);
+   return false;
 }
 
-/* This function returns TRUE if the two given range_t's are equal.
+/* This function returns true if val has successfully been added to
+ * a range.  This may extend an existing range or create a new one
  */
-gboolean
-ranges_are_equal(range_t *a, range_t *b)
+bool
+range_add_value(wmem_allocator_t *scope, range_t **range, uint32_t val)
 {
-   guint i;
+   unsigned i;
+
+   if ((range) && (*range)) {
+      for (i=0; i < (*range)->nranges; i++) {
+         if (val >= (*range)->ranges[i].low && val <= (*range)->ranges[i].high)
+            return true;
+
+         if (val == (*range)->ranges[i].low-1)
+         {
+             /* Sink to a new low */
+             (*range)->ranges[i].low = val;
+             return true;
+         }
+
+         if (val == (*range)->ranges[i].high+1)
+         {
+             /* Reach a new high */
+             (*range)->ranges[i].high = val;
+             return true;
+         }
+      }
+
+      (*range) = (range_t *)wmem_realloc(scope, (*range), RANGE_HDR_SIZE +
+                                ((*range)->nranges+1)*sizeof (range_admin_t));
+      (*range)->nranges++;
+      (*range)->ranges[i].low = (*range)->ranges[i].high = val;
+      return true;
+   }
+   return false;
+}
+
+/* This function returns true if val has successfully been removed from
+ * a range.  This may delete an existing range
+ */
+bool
+range_remove_value(wmem_allocator_t *scope, range_t **range, uint32_t val)
+{
+   unsigned i, j, new_j;
+   range_t *new_range;
+
+   if ((range) && (*range)) {
+      for (i=0; i < (*range)->nranges; i++) {
+
+          /* value is in the middle of the range, so it can't really be removed */
+         if (val > (*range)->ranges[i].low && val < (*range)->ranges[i].high)
+            return true;
+
+         if ((val ==  (*range)->ranges[i].low) && (val == (*range)->ranges[i].high))
+         {
+             /* Remove the range item entirely */
+             new_range = (range_t*)wmem_alloc(scope, RANGE_HDR_SIZE + ((*range)->nranges-1)*sizeof (range_admin_t));
+             new_range->nranges = (*range)->nranges-1;
+             for (j=0, new_j = 0; j < (*range)->nranges; j++) {
+
+                 /* Skip the current range */
+                 if (j == i)
+                     continue;
+
+                 new_range->ranges[new_j].low = (*range)->ranges[j].low;
+                 new_range->ranges[new_j].high = (*range)->ranges[j].high;
+                 new_j++;
+             }
+
+             wmem_free(scope, *range);
+             *range = new_range;
+             return true;
+         }
+
+         if (val == (*range)->ranges[i].low)
+         {
+             /* Raise low */
+             (*range)->ranges[i].low++;
+             return true;
+         }
+
+         if (val == (*range)->ranges[i].high)
+         {
+             /* Reach a new high */
+             (*range)->ranges[i].high--;
+             return true;
+         }
+      }
+      return true;
+   }
+   return false;
+}
+
+/* This function returns true if the two given range_t's are equal.
+ */
+bool
+ranges_are_equal(const range_t *a, const range_t *b)
+{
+   unsigned i;
 
    if ( (a == NULL) || (b == NULL) )
-       return FALSE;
+       return false;
 
    if (a->nranges != b->nranges)
-      return FALSE;
+      return false;
 
    for (i=0; i < a->nranges; i++) {
       if (a->ranges[i].low != b->ranges[i].low)
-         return FALSE;
+         return false;
 
       if (a->ranges[i].high != b->ranges[i].high)
-         return FALSE;
+         return false;
    }
 
-   return TRUE;
+   return true;
 
 }
 
@@ -309,14 +390,14 @@ ranges_are_equal(range_t *a, range_t *b)
  * in the range.
  */
 void
-range_foreach(range_t *range, void (*callback)(guint32 val))
+range_foreach(range_t *range, void (*callback)(uint32_t val, void *ptr), void *ptr)
 {
-   guint32 i, j;
+   uint32_t i, j;
 
    if (range && callback) {
       for (i=0; i < range->nranges; i++) {
          for (j = range->ranges[i].low; j <= range->ranges[i].high; j++)
-            callback(j);
+            callback(j, ptr);
       }
    }
 }
@@ -325,11 +406,11 @@ range_foreach(range_t *range, void (*callback)(guint32 val))
 char *
 range_convert_range(wmem_allocator_t *scope, const range_t *range)
 {
-   guint32 i;
-   gboolean prepend_comma = FALSE;
+   uint32_t i;
+   bool prepend_comma = false;
    wmem_strbuf_t *strbuf;
 
-   strbuf=wmem_strbuf_new(scope, "");
+   strbuf=wmem_strbuf_new(scope, NULL);
 
    if (range) {
       for (i=0; i < range->nranges; i++) {
@@ -338,7 +419,7 @@ range_convert_range(wmem_allocator_t *scope, const range_t *range)
          } else {
             wmem_strbuf_append_printf(strbuf, "%s%u-%u", prepend_comma?",":"", range->ranges[i].low, range->ranges[i].high);
          }
-         prepend_comma = TRUE;
+         prepend_comma = true;
       }
    }
    return wmem_strbuf_finalize(strbuf);
@@ -346,7 +427,7 @@ range_convert_range(wmem_allocator_t *scope, const range_t *range)
 
 /* Create a copy of a range. */
 range_t *
-range_copy(range_t *src)
+range_copy(wmem_allocator_t *scope, const range_t *src)
 {
    range_t *dst;
    size_t range_size;
@@ -355,15 +436,14 @@ range_copy(range_t *src)
        return NULL;
 
    range_size = RANGE_HDR_SIZE + src->nranges*sizeof (range_admin_t);
-   dst = (range_t *)g_malloc(range_size);
-   memcpy(dst, src, range_size);
+   dst = (range_t *)wmem_memdup(scope, src, range_size);
    return dst;
 }
 
 #if 0
 /* This is a debug function to check the range functionality */
 static void
-value_is_in_range_check(range_t *range, guint32 val)
+value_is_in_range_check(range_t *range, uint32_t val)
 {
    /* Print the result for a given value */
    printf("Function : value_is_in_range_check Number %u\t",val);
@@ -377,7 +457,7 @@ value_is_in_range_check(range_t *range, guint32 val)
 #endif
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 3

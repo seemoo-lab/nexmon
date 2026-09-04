@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1999 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,14 +20,49 @@
 #include <epan/prefs.h>
 #include <epan/ptvcursor.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
+/*
+ * RFC 3208
+ *
+ * Plus https://dl.acm.org/doi/pdf/10.1145/347057.347390 for PGMCC,
+ * whence the ACK packet type comes; there are some I-Ds for PGMCC,
+ * draft-ietf-rmt-bb-pgmcc-00 through draft-ietf-rmt-bb-pgmcc-03,
+ * but none of them give any description of the packet-level
+ * changes to PGM, unlike the paper in question, which merely gives
+ * an *insufficient* description of said changes.  In particular,
+ * it doesn't indicate what the packet type code for ACK is.
+ *
+ * Luigi Rizzo's PGMCC code for FreeBSD, at
+ *
+ *     https://web.archive.org/web/20020302084503/http://info.iet.unipi.it/~luigi/pgm-code/
+ *
+ * uses 0x0b (11) for ACK, as does tcpdump's dissector.
+ *
+ * A capture file attached to
+ *
+ *     https://gitlab.com/wireshark/wireshark/-/issues/4798
+ *
+ * has packets that use 0x0d for ACK, as did this dissector, and
+ * as does OpenPGM at https://github.com/steve-o/openpgm.  It may
+ * be that some proprietary PGMCC implementations, such as SmartPGM,
+ * do so as well.
+ *
+ * We use *both*, treating *either one* as a PGMCC ACK, pending
+ * more information, such as an answer to
+ *
+ *    https://github.com/steve-o/openpgm/issues/75.
+ */
 
 void proto_register_pgm(void);
 void proto_reg_handoff_pgm(void);
 
+static dissector_handle_t pgm_handle;
+
 /*
  * Flag to control whether to check the PGM checksum.
  */
-static gboolean pgm_check_checksum = TRUE;
+static bool pgm_check_checksum = true;
 
 /* constants for hdr types */
 #define PGM_SPM_PCKT  0x00
@@ -50,7 +73,13 @@ static gboolean pgm_check_checksum = TRUE;
 #define PGM_NCF_PCKT 0x0A
 #define PGM_POLL_PCKT 0x01
 #define PGM_POLR_PCKT 0x02
-#define PGM_ACK_PCKT 0x0D
+
+/*
+ * See above comment for why there are two values for the PGMCC
+ * ACK packet's packet type.
+ */
+#define PGM_ACK_PCKT 0x0B
+#define PGM_ACK2_PCKT 0x0D
 
 /* option flags (main PGM header) */
 #define PGM_OPT 0x01
@@ -109,200 +138,192 @@ static gboolean pgm_check_checksum = TRUE;
 #define PGM_OPT_REDIRECT_SIZE 12
 #define PGM_OPT_FRAGMENT_SIZE 16
 
-/*
- * Udp port for UDP encapsulation
- */
-#define DEFAULT_UDP_ENCAP_UCAST_PORT 3055
-#define DEFAULT_UDP_ENCAP_MCAST_PORT 3056
+static int proto_pgm;
+static int ett_pgm;
+static int ett_pgm_optbits;
+static int ett_pgm_opts;
+static int ett_pgm_spm;
+static int ett_pgm_data;
+static int ett_pgm_nak;
+static int ett_pgm_poll;
+static int ett_pgm_polr;
+static int ett_pgm_ack;
+static int ett_pgm_opts_join;
+static int ett_pgm_opts_parityprm;
+static int ett_pgm_opts_paritygrp;
+static int ett_pgm_opts_naklist;
+static int ett_pgm_opts_ccdata;
+static int ett_pgm_opts_nak_bo_ivl;
+static int ett_pgm_opts_nak_bo_rng;
+static int ett_pgm_opts_redirect;
+static int ett_pgm_opts_fragment;
 
-static guint udp_encap_ucast_port = 0;
-static guint udp_encap_mcast_port = 0;
+static int hf_pgm_main_sport;
+static int hf_pgm_main_dport;
+static int hf_pgm_port;
+static int hf_pgm_main_type;
+static int hf_pgm_main_opts;
+static int hf_pgm_main_opts_opt;
+static int hf_pgm_main_opts_netsig;
+static int hf_pgm_main_opts_varlen;
+static int hf_pgm_main_opts_parity;
+static int hf_pgm_main_cksum;
+static int hf_pgm_main_cksum_status;
+static int hf_pgm_main_gsi;
+static int hf_pgm_main_tsdulen;
+static int hf_pgm_spm_sqn;
+static int hf_pgm_spm_lead;
+static int hf_pgm_spm_trail;
+static int hf_pgm_spm_pathafi;
+static int hf_pgm_spm_res;
+static int hf_pgm_spm_path;
+static int hf_pgm_spm_path6;
+/* static int hf_pgm_data_sqn; */
+/* static int hf_pgm_data_trail; */
+static int hf_pgm_nak_sqn;
+static int hf_pgm_nak_srcafi;
+static int hf_pgm_nak_srcres;
+static int hf_pgm_nak_src;
+static int hf_pgm_nak_src6;
+static int hf_pgm_nak_grpafi;
+static int hf_pgm_nak_grpres;
+static int hf_pgm_nak_grp;
+static int hf_pgm_nak_grp6;
+static int hf_pgm_poll_sqn;
+static int hf_pgm_poll_round;
+static int hf_pgm_poll_subtype;
+static int hf_pgm_poll_pathafi;
+static int hf_pgm_poll_res;
+static int hf_pgm_poll_path;
+static int hf_pgm_poll_path6;
+static int hf_pgm_poll_backoff_ivl;
+static int hf_pgm_poll_rand_str;
+static int hf_pgm_poll_matching_bmask;
+static int hf_pgm_polr_sqn;
+static int hf_pgm_polr_round;
+static int hf_pgm_polr_res;
+static int hf_pgm_ack_sqn;
+static int hf_pgm_ack_bitmap;
 
-static int proto_pgm = -1;
-static int ett_pgm = -1;
-static int ett_pgm_optbits = -1;
-static int ett_pgm_opts = -1;
-static int ett_pgm_spm = -1;
-static int ett_pgm_data = -1;
-static int ett_pgm_nak = -1;
-static int ett_pgm_poll = -1;
-static int ett_pgm_polr = -1;
-static int ett_pgm_ack = -1;
-static int ett_pgm_opts_join = -1;
-static int ett_pgm_opts_parityprm = -1;
-static int ett_pgm_opts_paritygrp = -1;
-static int ett_pgm_opts_naklist = -1;
-static int ett_pgm_opts_ccdata = -1;
-static int ett_pgm_opts_nak_bo_ivl = -1;
-static int ett_pgm_opts_nak_bo_rng = -1;
-static int ett_pgm_opts_redirect = -1;
-static int ett_pgm_opts_fragment = -1;
+static int hf_pgm_opt_type;
+static int hf_pgm_opt_len;
+static int hf_pgm_opt_tlen;
 
-static int hf_pgm_main_sport = -1;
-static int hf_pgm_main_dport = -1;
-static int hf_pgm_port = -1;
-static int hf_pgm_main_type = -1;
-static int hf_pgm_main_opts = -1;
-static int hf_pgm_main_opts_opt = -1;
-static int hf_pgm_main_opts_netsig = -1;
-static int hf_pgm_main_opts_varlen = -1;
-static int hf_pgm_main_opts_parity = -1;
-static int hf_pgm_main_cksum = -1;
-static int hf_pgm_main_cksum_status = -1;
-static int hf_pgm_main_gsi = -1;
-static int hf_pgm_main_tsdulen = -1;
-static int hf_pgm_spm_sqn = -1;
-static int hf_pgm_spm_lead = -1;
-static int hf_pgm_spm_trail = -1;
-static int hf_pgm_spm_pathafi = -1;
-static int hf_pgm_spm_res = -1;
-static int hf_pgm_spm_path = -1;
-static int hf_pgm_spm_path6 = -1;
-/* static int hf_pgm_data_sqn = -1; */
-/* static int hf_pgm_data_trail = -1; */
-static int hf_pgm_nak_sqn = -1;
-static int hf_pgm_nak_srcafi = -1;
-static int hf_pgm_nak_srcres = -1;
-static int hf_pgm_nak_src = -1;
-static int hf_pgm_nak_src6 = -1;
-static int hf_pgm_nak_grpafi = -1;
-static int hf_pgm_nak_grpres = -1;
-static int hf_pgm_nak_grp = -1;
-static int hf_pgm_nak_grp6 = -1;
-static int hf_pgm_poll_sqn = -1;
-static int hf_pgm_poll_round = -1;
-static int hf_pgm_poll_subtype = -1;
-static int hf_pgm_poll_pathafi = -1;
-static int hf_pgm_poll_res = -1;
-static int hf_pgm_poll_path = -1;
-static int hf_pgm_poll_path6 = -1;
-static int hf_pgm_poll_backoff_ivl = -1;
-static int hf_pgm_poll_rand_str = -1;
-static int hf_pgm_poll_matching_bmask = -1;
-static int hf_pgm_polr_sqn = -1;
-static int hf_pgm_polr_round = -1;
-static int hf_pgm_polr_res = -1;
-static int hf_pgm_ack_sqn = -1;
-static int hf_pgm_ack_bitmap = -1;
+static int hf_pgm_genopt_end;
+static int hf_pgm_genopt_type;
+static int hf_pgm_genopt_len;
+static int hf_pgm_genopt_opx;
 
-static int hf_pgm_opt_type = -1;
-static int hf_pgm_opt_len = -1;
-static int hf_pgm_opt_tlen = -1;
+static int hf_pgm_opt_join_res;
+static int hf_pgm_opt_join_minjoin;
 
-static int hf_pgm_genopt_end = -1;
-static int hf_pgm_genopt_type = -1;
-static int hf_pgm_genopt_len = -1;
-static int hf_pgm_genopt_opx = -1;
+static int hf_pgm_opt_parity_prm_po;
+static int hf_pgm_opt_parity_prm_prmtgsz;
 
-static int hf_pgm_opt_join_res = -1;
-static int hf_pgm_opt_join_minjoin = -1;
+static int hf_pgm_opt_parity_grp_res;
+static int hf_pgm_opt_parity_grp_prmgrp;
 
-static int hf_pgm_opt_parity_prm_po = -1;
-static int hf_pgm_opt_parity_prm_prmtgsz = -1;
+static int hf_pgm_opt_nak_res;
+static int hf_pgm_opt_nak_list;
 
-static int hf_pgm_opt_parity_grp_res = -1;
-static int hf_pgm_opt_parity_grp_prmgrp = -1;
+static int hf_pgm_opt_ccdata_res;
+static int hf_pgm_opt_ccdata_tsp;
+static int hf_pgm_opt_ccdata_afi;
+static int hf_pgm_opt_ccdata_res2;
+static int hf_pgm_opt_ccdata_acker;
+static int hf_pgm_opt_ccdata_acker6;
 
-static int hf_pgm_opt_nak_res = -1;
-static int hf_pgm_opt_nak_list = -1;
+static int hf_pgm_opt_ccfeedbk_res;
+static int hf_pgm_opt_ccfeedbk_tsp;
+static int hf_pgm_opt_ccfeedbk_afi;
+static int hf_pgm_opt_ccfeedbk_lossrate;
+static int hf_pgm_opt_ccfeedbk_acker;
+static int hf_pgm_opt_ccfeedbk_acker6;
 
-static int hf_pgm_opt_ccdata_res = -1;
-static int hf_pgm_opt_ccdata_tsp = -1;
-static int hf_pgm_opt_ccdata_afi = -1;
-static int hf_pgm_opt_ccdata_res2 = -1;
-static int hf_pgm_opt_ccdata_acker = -1;
-static int hf_pgm_opt_ccdata_acker6 = -1;
+static int hf_pgm_opt_nak_bo_ivl_res;
+static int hf_pgm_opt_nak_bo_ivl_bo_ivl;
+static int hf_pgm_opt_nak_bo_ivl_bo_ivl_sqn;
 
-static int hf_pgm_opt_ccfeedbk_res = -1;
-static int hf_pgm_opt_ccfeedbk_tsp = -1;
-static int hf_pgm_opt_ccfeedbk_afi = -1;
-static int hf_pgm_opt_ccfeedbk_lossrate = -1;
-static int hf_pgm_opt_ccfeedbk_acker = -1;
-static int hf_pgm_opt_ccfeedbk_acker6 = -1;
+static int hf_pgm_opt_nak_bo_rng_res;
+static int hf_pgm_opt_nak_bo_rng_min_bo_ivl;
+static int hf_pgm_opt_nak_bo_rng_max_bo_ivl;
 
-static int hf_pgm_opt_nak_bo_ivl_res = -1;
-static int hf_pgm_opt_nak_bo_ivl_bo_ivl = -1;
-static int hf_pgm_opt_nak_bo_ivl_bo_ivl_sqn = -1;
+static int hf_pgm_opt_redirect_res;
+static int hf_pgm_opt_redirect_afi;
+static int hf_pgm_opt_redirect_res2;
+static int hf_pgm_opt_redirect_dlr;
+static int hf_pgm_opt_redirect_dlr6;
 
-static int hf_pgm_opt_nak_bo_rng_res = -1;
-static int hf_pgm_opt_nak_bo_rng_min_bo_ivl = -1;
-static int hf_pgm_opt_nak_bo_rng_max_bo_ivl = -1;
+static int hf_pgm_opt_fragment_res;
+static int hf_pgm_opt_fragment_first_sqn;
+static int hf_pgm_opt_fragment_offset;
+static int hf_pgm_opt_fragment_total_length;
 
-static int hf_pgm_opt_redirect_res = -1;
-static int hf_pgm_opt_redirect_afi = -1;
-static int hf_pgm_opt_redirect_res2 = -1;
-static int hf_pgm_opt_redirect_dlr = -1;
-static int hf_pgm_opt_redirect_dlr6 = -1;
-
-static int hf_pgm_opt_fragment_res = -1;
-static int hf_pgm_opt_fragment_first_sqn = -1;
-static int hf_pgm_opt_fragment_offset = -1;
-static int hf_pgm_opt_fragment_total_length = -1;
-
-static expert_field ei_pgm_genopt_len = EI_INIT;
-static expert_field ei_pgm_opt_tlen = EI_INIT;
-static expert_field ei_pgm_opt_type = EI_INIT;
-static expert_field ei_address_format_invalid = EI_INIT;
+static expert_field ei_pgm_genopt_len;
+static expert_field ei_pgm_opt_tlen;
+static expert_field ei_pgm_opt_type;
+static expert_field ei_address_format_invalid;
+static expert_field ei_pgm_main_cksum;
 
 static dissector_table_t subdissector_table;
 static heur_dissector_list_t heur_subdissector_list;
 
 
 static const char *
-optsstr(guint8 opts)
+optsstr(wmem_allocator_t *pool, uint8_t opts)
 {
 	char *msg;
-	gint  returned_length, idx = 0;
+	int   returned_length, idx = 0;
 	const int MAX_STR_LEN = 256;
 
 	if (opts == 0)
-		return("");
+		return "";
 
-	msg=(char *)wmem_alloc(wmem_packet_scope(), MAX_STR_LEN);
+	msg=(char *)wmem_alloc(pool, MAX_STR_LEN);
 	if (opts & PGM_OPT){
-		returned_length = g_snprintf(&msg[idx], MAX_STR_LEN-idx, "Present");
+		returned_length = snprintf(&msg[idx], MAX_STR_LEN-idx, "Present");
 		idx += MIN(returned_length, MAX_STR_LEN-idx);
 	}
 	if (opts & PGM_OPT_NETSIG){
-		returned_length = g_snprintf(&msg[idx], MAX_STR_LEN-idx, "%sNetSig", (!idx)?"":",");
+		returned_length = snprintf(&msg[idx], MAX_STR_LEN-idx, "%sNetSig", (!idx)?"":",");
 		idx += MIN(returned_length, MAX_STR_LEN-idx);
 	}
 	if (opts & PGM_OPT_VAR_PKTLEN){
-		returned_length = g_snprintf(&msg[idx], MAX_STR_LEN-idx, "%sVarLen", (!idx)?"":",");
+		returned_length = snprintf(&msg[idx], MAX_STR_LEN-idx, "%sVarLen", (!idx)?"":",");
 		idx += MIN(returned_length, MAX_STR_LEN-idx);
 	}
 	if (opts & PGM_OPT_PARITY){
-		returned_length = g_snprintf(&msg[idx], MAX_STR_LEN-idx, "%sParity", (!idx)?"":",");
+		returned_length = snprintf(&msg[idx], MAX_STR_LEN-idx, "%sParity", (!idx)?"":",");
 		idx += MIN(returned_length, MAX_STR_LEN-idx);
 	}
 	if (!idx) {
-		g_snprintf(&msg[idx], MAX_STR_LEN-idx, "0x%x", opts);
+		snprintf(&msg[idx], MAX_STR_LEN-idx, "0x%x", opts);
 	}
-	return(msg);
+	return msg;
 }
 static const char *
-paritystr(guint8 parity)
+paritystr(wmem_allocator_t *pool, uint8_t parity)
 {
 	char *msg;
-	gint returned_length, idx = 0;
+	int returned_length, idx = 0;
 	const int MAX_STR_LEN = 256;
 
 	if (parity == 0)
-		return("");
+		return "";
 
-	msg=(char *)wmem_alloc(wmem_packet_scope(), MAX_STR_LEN);
+	msg=(char *)wmem_alloc(pool, MAX_STR_LEN);
 	if (parity & PGM_OPT_PARITY_PRM_PRO){
-		returned_length = g_snprintf(&msg[idx], MAX_STR_LEN-idx, "Pro-active");
+		returned_length = snprintf(&msg[idx], MAX_STR_LEN-idx, "Pro-active");
 		idx += MIN(returned_length, MAX_STR_LEN-idx);
 	}
 	if (parity & PGM_OPT_PARITY_PRM_OND){
-		returned_length = g_snprintf(&msg[idx], MAX_STR_LEN-idx, "%sOn-demand", (!idx)?"":",");
+		returned_length = snprintf(&msg[idx], MAX_STR_LEN-idx, "%sOn-demand", (!idx)?"":",");
 		idx += MIN(returned_length, MAX_STR_LEN-idx);
 	}
 	if (!idx) {
-		g_snprintf(&msg[idx], MAX_STR_LEN-idx, "0x%x", parity);
+		snprintf(&msg[idx], MAX_STR_LEN-idx, "0x%x", parity);
 	}
-	return(msg);
+	return msg;
 }
 
 static const value_string opt_vals[] = {
@@ -322,7 +343,6 @@ static const value_string opt_vals[] = {
 	{ PGM_OPT_PGMCC_FEEDBACK, "CcFeedBack" },
 	{ PGM_OPT_NAK_BO_IVL,	  "NakBackOffIvl" },
 	{ PGM_OPT_NAK_BO_RNG,	  "NakBackOffRng" },
-	{ PGM_OPT_FRAGMENT,	  "Fragment" },
 	{ 0,                   NULL }
 };
 
@@ -333,15 +353,10 @@ static const value_string opx_vals[] = {
 	{ 0,               NULL }
 };
 
-static const true_false_string opts_present = {
-	"Present",
-	"Not Present"
-};
-
 #define TLV_CHECK(ett) \
 	opt_tree = proto_tree_add_subtree_format(opts_tree, tvb, ptvcursor_current_offset(cursor), genopts_len, \
 						ett, &tf, "Option: %s, Length: %u", \
-						val_to_str(genopts_type, opt_vals, "Unknown (0x%02x)"), genopts_len); \
+						val_to_str(pinfo->pool, genopts_type, opt_vals, "Unknown (0x%02x)"), genopts_len); \
 	if (genopts_len < 4) { \
 		expert_add_info_format(pinfo, tf, &ei_pgm_genopt_len, \
 					"Length %u invalid, must be >= 4", genopts_len); \
@@ -362,24 +377,24 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 	proto_tree *opt_tree  = NULL;
 	tvbuff_t   *tvb       = ptvcursor_tvbuff(cursor);
 
-	gboolean theend = FALSE;
+	bool theend = false;
 
-	guint16 opts_total_len;
-	guint8  genopts_type;
-	guint8  genopts_len;
-	guint8  opts_type;
+	uint16_t opts_total_len;
+	uint8_t genopts_type;
+	uint8_t genopts_len;
+	uint8_t opts_type;
 
 	opts_tree = proto_tree_add_subtree_format(ptvcursor_tree(cursor), tvb, ptvcursor_current_offset(cursor), -1,
 		ett_pgm_opts, &tf, "%s Options", pktname);
 	ptvcursor_set_tree(cursor, opts_tree);
-	opts_type = tvb_get_guint8(tvb, ptvcursor_current_offset(cursor));
+	opts_type = tvb_get_uint8(tvb, ptvcursor_current_offset(cursor));
 	ti = ptvcursor_add(cursor, hf_pgm_opt_type, 1, ENC_BIG_ENDIAN);
 	if (opts_type != PGM_OPT_LENGTH) {
 		expert_add_info_format(pinfo, ti, &ei_pgm_opt_type,
 		    "%s Options - initial option is %s, should be %s",
 		    pktname,
-		    val_to_str(opts_type, opt_vals, "Unknown (0x%02x)"),
-		    val_to_str(PGM_OPT_LENGTH, opt_vals, "Unknown (0x%02x)"));
+		    val_to_str(pinfo->pool, opts_type, opt_vals, "Unknown (0x%02x)"),
+		    val_to_str(pinfo->pool, PGM_OPT_LENGTH, opt_vals, "Unknown (0x%02x)"));
 		return;
 	}
 	ptvcursor_add(cursor, hf_pgm_opt_len, 1, ENC_BIG_ENDIAN);
@@ -401,12 +416,12 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 			break;
 		}
 
-		genopts_type = tvb_get_guint8(tvb, ptvcursor_current_offset(cursor));
-		genopts_len = tvb_get_guint8(tvb, ptvcursor_current_offset(cursor)+1);
+		genopts_type = tvb_get_uint8(tvb, ptvcursor_current_offset(cursor));
+		genopts_len = tvb_get_uint8(tvb, ptvcursor_current_offset(cursor)+1);
 
 		if (genopts_type & PGM_OPT_END)  {
 			genopts_type &= ~PGM_OPT_END;
-			theend = TRUE;
+			theend = true;
 		}
 
 		switch(genopts_type) {
@@ -432,7 +447,7 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 			break;
 		}
 		case PGM_OPT_PARITY_PRM:{
-			guint8 optdata_po;
+			uint8_t optdata_po;
 
 			TLV_CHECK(ett_pgm_opts_parityprm);
 			ptvcursor_set_tree(cursor, opt_tree);
@@ -450,10 +465,10 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 			}
 			ptvcursor_add(cursor, hf_pgm_genopt_len, 1, ENC_BIG_ENDIAN);
 			ptvcursor_add(cursor, hf_pgm_genopt_opx, 1, ENC_BIG_ENDIAN);
-			optdata_po = tvb_get_guint8(tvb, ptvcursor_current_offset(cursor));
+			optdata_po = tvb_get_uint8(tvb, ptvcursor_current_offset(cursor));
 			proto_tree_add_uint_format_value(opt_tree, hf_pgm_opt_parity_prm_po, tvb,
 				ptvcursor_current_offset(cursor), 1, optdata_po, "%s (0x%x)",
-				paritystr(optdata_po), optdata_po);
+				paritystr(pinfo->pool, optdata_po), optdata_po);
 			ptvcursor_advance(cursor, 1);
 
 			ptvcursor_add(cursor, hf_pgm_opt_parity_prm_prmtgsz, 4, ENC_BIG_ENDIAN);
@@ -482,10 +497,10 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 			break;
 		}
 		case PGM_OPT_NAK_LIST:{
-			guint8 optdata_len;
-			guint32 naklist[PGM_MAX_NAK_LIST_SZ+1];
+			uint8_t optdata_len;
+			uint32_t naklist[PGM_MAX_NAK_LIST_SZ+1];
 			unsigned char *nakbuf;
-			gboolean firsttime;
+			bool firsttime;
 			int i, j, naks, soffset;
 
 			TLV_CHECK(ett_pgm_opts_naklist);
@@ -494,24 +509,24 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 			ptvcursor_add_no_advance(cursor, hf_pgm_genopt_end, 1, ENC_BIG_ENDIAN);
 			ptvcursor_add(cursor, hf_pgm_genopt_type, 1, ENC_BIG_ENDIAN);
 
-			optdata_len = tvb_get_guint8(tvb, ptvcursor_current_offset(cursor));
+			optdata_len = tvb_get_uint8(tvb, ptvcursor_current_offset(cursor));
 			ptvcursor_add(cursor, hf_pgm_genopt_len, 1, ENC_BIG_ENDIAN);
 			ptvcursor_add(cursor, hf_pgm_genopt_opx, 1, ENC_BIG_ENDIAN);
 			ptvcursor_add(cursor, hf_pgm_opt_nak_res, 1, ENC_BIG_ENDIAN);
 
 			optdata_len -= PGM_OPT_NAK_LIST_SIZE;
-			tvb_memcpy(tvb, (guint8 *)naklist, ptvcursor_current_offset(cursor), optdata_len);
-			firsttime = TRUE;
+			tvb_memcpy(tvb, (uint8_t *)naklist, ptvcursor_current_offset(cursor), optdata_len);
+			firsttime = true;
 			soffset = 0;
-			naks = (int)(optdata_len/sizeof(guint32));
-			nakbuf = (unsigned char *)wmem_alloc(wmem_packet_scope(), 8192);
+			naks = (int)(optdata_len/sizeof(uint32_t));
+			nakbuf = (unsigned char *)wmem_alloc(pinfo->pool, 8192);
 			j = 0;
 			/*
 			 * Print out 8 per line
 			 */
 			for (i=0; i < naks; i++) {
 				soffset += MIN(8192-soffset,
-					g_snprintf(nakbuf+soffset, 8192-soffset, "0x%lx ",
+					snprintf(nakbuf+soffset, 8192-soffset, "0x%lx ",
 						(unsigned long)g_ntohl(naklist[i])));
 				if ((++j % 8) == 0) {
 					if (firsttime) {
@@ -519,7 +534,7 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 							hf_pgm_opt_nak_list, tvb, ptvcursor_current_offset(cursor), j*4,
 							nakbuf, "List(%d): %s", naks, nakbuf);
 						soffset = 0;
-						firsttime = FALSE;
+						firsttime = false;
 					} else {
 						proto_tree_add_bytes_format_value(opt_tree,
 							hf_pgm_opt_nak_list, tvb, ptvcursor_current_offset(cursor), j*4,
@@ -545,7 +560,7 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 			break;
 		}
 		case PGM_OPT_PGMCC_DATA:{
-			guint16 optdata_afi;
+			uint16_t optdata_afi;
 
 			TLV_CHECK(ett_pgm_opts_ccdata);
 			ptvcursor_set_tree(cursor, opt_tree);
@@ -586,7 +601,7 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 			break;
 		}
 		case PGM_OPT_PGMCC_FEEDBACK:{
-			guint16 optdata_afi;
+			uint16_t optdata_afi;
 
 			TLV_CHECK(ett_pgm_opts_ccdata);
 			ptvcursor_set_tree(cursor, opt_tree);
@@ -671,7 +686,7 @@ dissect_pgmopts(ptvcursor_t* cursor, packet_info *pinfo, const char *pktname)
 			break;
 		}
 		case PGM_OPT_REDIRECT:{
-			guint16 optdata_afi;
+			uint16_t optdata_afi;
 
 			TLV_CHECK(ett_pgm_opts_redirect);
 			ptvcursor_set_tree(cursor, opt_tree);
@@ -755,6 +770,7 @@ static const value_string type_vals[] = {
 	{ PGM_POLL_PCKT,  "POLL" },
 	{ PGM_POLR_PCKT,  "POLR" },
 	{ PGM_ACK_PCKT,   "ACK" },
+	{ PGM_ACK2_PCKT,  "ACK" },
 	{ 0,              NULL }
 };
 
@@ -770,7 +786,7 @@ static const value_string poll_subtype_vals[] = {
 
 static void
 decode_pgm_ports(tvbuff_t *tvb, int offset, packet_info *pinfo,
-		 proto_tree *tree, guint16 pgmhdr_sport, guint16 pgmhdr_dport)
+		 proto_tree *tree, uint16_t pgmhdr_sport, uint16_t pgmhdr_dport)
 {
 	tvbuff_t *next_tvb;
 	int       found = 0;
@@ -803,22 +819,27 @@ decode_pgm_ports(tvbuff_t *tvb, int offset, packet_info *pinfo,
 static int
 dissect_pgm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	guint16 pgmhdr_sport;
-	guint16 pgmhdr_dport;
-	guint8  pgmhdr_type;
-	guint8  pgmhdr_opts;
-	guint16 pgmhdr_cksum;
-	guint16 pgmhdr_tsdulen;
-	guint32 sqn;
-	guint16 afi;
+	uint32_t pgmhdr_sport;
+	uint32_t pgmhdr_dport;
+	uint32_t pgmhdr_type;
+	uint8_t pgmhdr_opts;
+	uint16_t pgmhdr_cksum;
+	uint32_t pgmhdr_tsdulen;
+	uint32_t sqn;
+	uint16_t afi;
 
-	guint       plen   = 0;
+	proto_tree *pgm_tree = NULL;
+	proto_tree *opt_tree = NULL;
+	proto_tree *type_tree = NULL;
+	proto_item *tf, *hidden_item;
+	ptvcursor_t* cursor;
+
+	unsigned    plen   = 0;
 	proto_item *ti;
 	const char *pktname;
-	const char *pollstname;
 	char       *gsi;
-	gboolean    isdata = FALSE;
-	guint       pgmlen, reportedlen;
+	bool        isdata = false;
+	unsigned    pgmlen, reportedlen;
 
 	if (tvb_reported_length_remaining(tvb, 0) < 18)
 		return 0;
@@ -826,248 +847,218 @@ dissect_pgm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "PGM");
 	col_clear(pinfo->cinfo, COL_INFO);
 
-	pinfo->srcport = pgmhdr_sport = tvb_get_ntohs(tvb, 0);
-	pinfo->destport = pgmhdr_dport = tvb_get_ntohs(tvb, 2);
+	ti = proto_tree_add_protocol_format(tree, proto_pgm, tvb, 0, -1,
+		"Pragmatic General Multicast");
+	pgm_tree = proto_item_add_subtree(ti, ett_pgm);
 
-	pgmhdr_type = tvb_get_guint8(tvb, 4);
-	pktname = val_to_str(pgmhdr_type, type_vals, "Unknown (0x%02x)");
+	cursor = ptvcursor_new(pinfo->pool, pgm_tree, tvb, 0);
 
-	pgmhdr_opts = tvb_get_guint8(tvb, 5);
+	hidden_item = proto_tree_add_item(pgm_tree, hf_pgm_port, tvb, 0, 2, ENC_BIG_ENDIAN);
+	proto_item_set_hidden(hidden_item);
+	hidden_item = proto_tree_add_item(pgm_tree, hf_pgm_port, tvb, 2, 2, ENC_BIG_ENDIAN);
+	proto_item_set_hidden(hidden_item);
+	ptvcursor_add_ret_uint(cursor, hf_pgm_main_sport, 2, ENC_BIG_ENDIAN, &pgmhdr_sport);
+	pinfo->srcport = pgmhdr_sport;
+	ptvcursor_add_ret_uint(cursor, hf_pgm_main_dport, 2, ENC_BIG_ENDIAN, &pgmhdr_dport);
+	pinfo->destport = pgmhdr_dport;
+	ptvcursor_add_ret_uint(cursor, hf_pgm_main_type, 1, ENC_BIG_ENDIAN, &pgmhdr_type);
+	pktname = val_to_str(pinfo->pool, pgmhdr_type, type_vals, "Unknown (0x%02x)");
+	proto_item_append_text(ti, ": Type %s Src Port %u, Dst Port %u",
+	                       pktname, pgmhdr_sport, pgmhdr_dport);
+	col_append_fstr(pinfo->cinfo, COL_INFO, "%-5s", pktname);
+
+	pgmhdr_opts = tvb_get_uint8(tvb, 5);
+	tf = proto_tree_add_uint_format_value(pgm_tree, hf_pgm_main_opts, tvb,
+		ptvcursor_current_offset(cursor), 1, pgmhdr_opts, "%s (0x%x)",
+		optsstr(pinfo->pool, pgmhdr_opts), pgmhdr_opts);
+	opt_tree = proto_item_add_subtree(tf, ett_pgm_optbits);
+	ptvcursor_set_tree(cursor, opt_tree);
+
+	ptvcursor_add_no_advance(cursor, hf_pgm_main_opts_opt, 1, ENC_BIG_ENDIAN);
+	ptvcursor_add_no_advance(cursor, hf_pgm_main_opts_netsig, 1, ENC_BIG_ENDIAN);
+	ptvcursor_add_no_advance(cursor, hf_pgm_main_opts_varlen, 1, ENC_BIG_ENDIAN);
+	ptvcursor_add(cursor, hf_pgm_main_opts_parity, 1, ENC_BIG_ENDIAN);
+	ptvcursor_set_tree(cursor, pgm_tree);
+
+	/* Checksum may be 0 (not available), but not for DATA packets */
 	pgmhdr_cksum = tvb_get_ntohs(tvb, 6);
-	gsi = tvb_bytes_to_str(wmem_packet_scope(), tvb, 8, 6);
-	pgmhdr_tsdulen = tvb_get_ntohs(tvb, 14);
+	if ((pgmhdr_type != PGM_RDATA_PCKT) && (pgmhdr_type != PGM_ODATA_PCKT) &&
+	    (pgmhdr_cksum == 0))
+	{
+		proto_tree_add_checksum(pgm_tree, tvb, ptvcursor_current_offset(cursor), hf_pgm_main_cksum, hf_pgm_main_cksum_status, &ei_pgm_main_cksum,
+								pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NOT_PRESENT);
+	} else {
+		reportedlen = tvb_reported_length(tvb);
+		pgmlen = tvb_captured_length(tvb);
+		if (pgm_check_checksum && pgmlen >= reportedlen) {
+			vec_t cksum_vec[1];
+
+			SET_CKSUM_VEC_TVB(cksum_vec[0], tvb, 0, pgmlen);
+			proto_tree_add_checksum(pgm_tree, tvb, ptvcursor_current_offset(cursor), hf_pgm_main_cksum_status, hf_pgm_main_cksum_status, &ei_pgm_main_cksum,
+									pinfo, in_cksum(&cksum_vec[0], 1), ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY|PROTO_CHECKSUM_IN_CKSUM);
+		} else {
+			proto_tree_add_checksum(pgm_tree, tvb, ptvcursor_current_offset(cursor), hf_pgm_main_cksum, hf_pgm_main_cksum_status, &ei_pgm_main_cksum,
+									pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
+		}
+	}
+	ptvcursor_advance(cursor, 2);
+
+	gsi = tvb_bytes_to_str(pinfo->pool, tvb, 8, 6);
+	ptvcursor_add(cursor, hf_pgm_main_gsi, 6, ENC_NA);
+	proto_item_append_text(ti, ", GSI %s", gsi);
+	ptvcursor_add_ret_uint(cursor, hf_pgm_main_tsdulen, 2, ENC_BIG_ENDIAN, &pgmhdr_tsdulen);
 	sqn = tvb_get_ntohl(tvb, 16);
+	col_append_fstr(pinfo->cinfo, COL_INFO,
+		     " sqn 0x%x gsi %s", sqn, gsi);
 
 	switch(pgmhdr_type) {
 	case PGM_SPM_PCKT:
-	case PGM_NAK_PCKT:
-	case PGM_NNAK_PCKT:
-	case PGM_NCF_PCKT:
-	case PGM_POLR_PCKT:
-	case PGM_ACK_PCKT:
-		col_add_fstr(pinfo->cinfo, COL_INFO,
-				"%-5s sqn 0x%x gsi %s", pktname, sqn, gsi);
+		type_tree = proto_tree_add_subtree_format(pgm_tree, tvb, ptvcursor_current_offset(cursor), plen,
+											ett_pgm_spm, NULL, "%s Packet", pktname);
+		ptvcursor_set_tree(cursor, type_tree);
+
+		ptvcursor_add(cursor, hf_pgm_spm_sqn, 4, ENC_BIG_ENDIAN);
+		ptvcursor_add(cursor, hf_pgm_spm_trail, 4, ENC_BIG_ENDIAN);
+		ptvcursor_add(cursor, hf_pgm_spm_lead, 4, ENC_BIG_ENDIAN);
+		afi = tvb_get_ntohs(tvb, ptvcursor_current_offset(cursor));
+		ti = ptvcursor_add(cursor, hf_pgm_spm_pathafi, 2, ENC_BIG_ENDIAN);
+		ptvcursor_add(cursor, hf_pgm_spm_res, 2, ENC_BIG_ENDIAN);
+
+		switch (afi) {
+		case AFNUM_INET:
+			ptvcursor_add(cursor, hf_pgm_spm_path, 4, ENC_BIG_ENDIAN);
+			break;
+
+		case AFNUM_INET6:
+			ptvcursor_add(cursor, hf_pgm_spm_path6, 16, ENC_NA);
+			break;
+
+		default:
+			expert_add_info(pinfo, ti, &ei_address_format_invalid);
+			ptvcursor_free(cursor);
+			return tvb_captured_length(tvb);
+		}
 		break;
 	case PGM_RDATA_PCKT:
 	case PGM_ODATA_PCKT:
-		col_add_fstr(pinfo->cinfo, COL_INFO,
-			    "%-5s sqn 0x%x gsi %s tsdulen %d", pktname, sqn, gsi,
-			    pgmhdr_tsdulen);
+		isdata = true;
+		type_tree = proto_tree_add_subtree_format(pgm_tree, tvb, ptvcursor_current_offset(cursor), plen,
+											ett_pgm_data, NULL, "%s Packet", pktname);
+		ptvcursor_set_tree(cursor, type_tree);
+		col_append_fstr(pinfo->cinfo, COL_INFO,
+			    " tsdulen %d", pgmhdr_tsdulen);
 
-		isdata = TRUE;
+		ptvcursor_add(cursor, hf_pgm_spm_sqn, 4, ENC_BIG_ENDIAN);
+		ptvcursor_add(cursor, hf_pgm_spm_trail, 4, ENC_BIG_ENDIAN);
+		break;
+	case PGM_NAK_PCKT:
+	case PGM_NNAK_PCKT:
+	case PGM_NCF_PCKT:
+		type_tree = proto_tree_add_subtree_format(pgm_tree, tvb, ptvcursor_current_offset(cursor), plen,
+											ett_pgm_nak, NULL, "%s Packet", pktname);
+		ptvcursor_set_tree(cursor, type_tree);
+
+		ptvcursor_add(cursor, hf_pgm_nak_sqn, 4, ENC_BIG_ENDIAN);
+		afi = tvb_get_ntohs(tvb, ptvcursor_current_offset(cursor));
+		ti = ptvcursor_add(cursor, hf_pgm_nak_srcafi, 2, ENC_BIG_ENDIAN);
+		ptvcursor_add(cursor, hf_pgm_nak_srcres, 2, ENC_BIG_ENDIAN);
+
+		switch (afi) {
+		case AFNUM_INET:
+			ptvcursor_add(cursor, hf_pgm_nak_src, 4, ENC_BIG_ENDIAN);
+			break;
+
+		case AFNUM_INET6:
+			ptvcursor_add(cursor, hf_pgm_nak_src6, 16, ENC_NA);
+			break;
+
+		default:
+			expert_add_info(pinfo, ti, &ei_address_format_invalid);
+			break;
+		}
+
+		afi = tvb_get_ntohs(tvb, ptvcursor_current_offset(cursor));
+		ti = ptvcursor_add(cursor, hf_pgm_nak_grpafi, 2, ENC_BIG_ENDIAN);
+		ptvcursor_add(cursor, hf_pgm_nak_grpres, 2, ENC_BIG_ENDIAN);
+
+		switch (afi) {
+		case AFNUM_INET:
+			ptvcursor_add(cursor, hf_pgm_nak_grp, 4, ENC_BIG_ENDIAN);
+			break;
+
+		case AFNUM_INET6:
+			ptvcursor_add(cursor, hf_pgm_nak_grp6, 16, ENC_NA);
+			break;
+
+		default:
+			expert_add_info(pinfo, ti, &ei_address_format_invalid);
+			ptvcursor_free(cursor);
+			return tvb_captured_length(tvb);
+		}
 		break;
 	case PGM_POLL_PCKT: {
-		guint16 poll_stype = tvb_get_ntohs(tvb, 22);
-		pollstname = val_to_str(poll_stype, poll_subtype_vals, "Unknown (0x%02x)");
+		uint32_t poll_stype;
 
-		col_add_fstr(pinfo->cinfo, COL_INFO,
-				"%-5s sqn 0x%x gsi %s subtype %s",
-					pktname, sqn, gsi, pollstname);
+		type_tree = proto_tree_add_subtree_format(pgm_tree, tvb, ptvcursor_current_offset(cursor), plen,
+											ett_pgm_poll, NULL, "%s Packet", pktname);
+		ptvcursor_set_tree(cursor, type_tree);
+
+		ptvcursor_add(cursor, hf_pgm_poll_sqn, 4, ENC_BIG_ENDIAN);
+		ptvcursor_add(cursor, hf_pgm_poll_round, 2, ENC_BIG_ENDIAN);
+		ptvcursor_add_ret_uint(cursor, hf_pgm_poll_subtype, 2, ENC_BIG_ENDIAN, &poll_stype);
+		col_append_fstr(pinfo->cinfo, COL_INFO,
+				" subtype %s",
+				val_to_str(pinfo->pool, poll_stype, poll_subtype_vals, "Unknown (0x%02x)"));
+		afi = tvb_get_ntohs(tvb, ptvcursor_current_offset(cursor));
+		ti = ptvcursor_add(cursor, hf_pgm_poll_pathafi, 2, ENC_BIG_ENDIAN);
+		ptvcursor_add(cursor, hf_pgm_poll_res, 2, ENC_BIG_ENDIAN);
+
+		switch (afi) {
+		case AFNUM_INET:
+			ptvcursor_add(cursor, hf_pgm_poll_path, 4, ENC_BIG_ENDIAN);
+			break;
+
+		case AFNUM_INET6:
+			ptvcursor_add(cursor, hf_pgm_poll_path6, 16, ENC_NA);
+			break;
+
+		default:
+			expert_add_info(pinfo, ti, &ei_address_format_invalid);
+			break;
 		}
+
+		ptvcursor_add(cursor, hf_pgm_poll_backoff_ivl, 4, ENC_BIG_ENDIAN);
+		ptvcursor_add(cursor, hf_pgm_poll_rand_str, 4, ENC_BIG_ENDIAN);
+		ptvcursor_add(cursor, hf_pgm_poll_matching_bmask, 4, ENC_BIG_ENDIAN);
 		break;
-	default:
-		return 20;
+	}
+	case PGM_POLR_PCKT:
+		type_tree = proto_tree_add_subtree_format(pgm_tree, tvb, ptvcursor_current_offset(cursor), plen,
+											ett_pgm_polr, NULL, "%s Packet", pktname);
+		ptvcursor_set_tree(cursor, type_tree);
+
+		ptvcursor_add(cursor, hf_pgm_polr_sqn, 4, ENC_BIG_ENDIAN);
+		ptvcursor_add(cursor, hf_pgm_polr_round, 2, ENC_BIG_ENDIAN);
+		ptvcursor_add(cursor, hf_pgm_polr_res, 2, ENC_BIG_ENDIAN);
+		break;
+	case PGM_ACK_PCKT:
+	case PGM_ACK2_PCKT:
+		type_tree = proto_tree_add_subtree_format(pgm_tree, tvb, ptvcursor_current_offset(cursor), plen,
+											ett_pgm_ack, NULL, "%s Packet", pktname);
+		ptvcursor_set_tree(cursor, type_tree);
+
+		ptvcursor_add(cursor, hf_pgm_ack_sqn, 4, ENC_BIG_ENDIAN);
+		ptvcursor_add(cursor, hf_pgm_ack_bitmap, 4, ENC_BIG_ENDIAN);
+		break;
 	}
 
-	{
-		proto_tree *pgm_tree = NULL;
-		proto_tree *opt_tree = NULL;
-		proto_tree *type_tree = NULL;
-		proto_item *tf, *hidden_item;
-		ptvcursor_t* cursor;
+	if (pgmhdr_opts & PGM_OPT)
+		dissect_pgmopts(cursor, pinfo, pktname);
 
-		ti = proto_tree_add_protocol_format(tree, proto_pgm,
-			tvb, 0, -1,
-			"Pragmatic General Multicast: Type %s"
-			    " Src Port %u, Dst Port %u, GSI %s", pktname,
-			pgmhdr_sport, pgmhdr_dport, gsi);
+	if (isdata)
+		decode_pgm_ports(tvb, ptvcursor_current_offset(cursor), pinfo, tree, pgmhdr_sport, pgmhdr_dport);
 
-		pgm_tree = proto_item_add_subtree(ti, ett_pgm);
-
-		cursor = ptvcursor_new(pgm_tree, tvb, 0);
-
-		hidden_item = proto_tree_add_item(pgm_tree, hf_pgm_port, tvb, 0, 2, ENC_BIG_ENDIAN);
-		PROTO_ITEM_SET_HIDDEN(hidden_item);
-		hidden_item = proto_tree_add_item(pgm_tree, hf_pgm_port, tvb, 2, 2, ENC_BIG_ENDIAN);
-		PROTO_ITEM_SET_HIDDEN(hidden_item);
-		ptvcursor_add(cursor, hf_pgm_main_sport, 2, ENC_BIG_ENDIAN);
-		ptvcursor_add(cursor, hf_pgm_main_dport, 2, ENC_BIG_ENDIAN);
-		ptvcursor_add(cursor, hf_pgm_main_type, 1, ENC_BIG_ENDIAN);
-
-		tf = proto_tree_add_uint_format_value(pgm_tree, hf_pgm_main_opts, tvb,
-			ptvcursor_current_offset(cursor), 1, pgmhdr_opts, "%s (0x%x)",
-			optsstr(pgmhdr_opts), pgmhdr_opts);
-		opt_tree = proto_item_add_subtree(tf, ett_pgm_optbits);
-		ptvcursor_set_tree(cursor, opt_tree);
-
-		ptvcursor_add_no_advance(cursor, hf_pgm_main_opts_opt, 1, ENC_BIG_ENDIAN);
-		ptvcursor_add_no_advance(cursor, hf_pgm_main_opts_netsig, 1, ENC_BIG_ENDIAN);
-		ptvcursor_add_no_advance(cursor, hf_pgm_main_opts_varlen, 1, ENC_BIG_ENDIAN);
-		ptvcursor_add(cursor, hf_pgm_main_opts_parity, 1, ENC_BIG_ENDIAN);
-		ptvcursor_set_tree(cursor, pgm_tree);
-
-		/* Checksum may be 0 (not available), but not for DATA packets */
-		if ((pgmhdr_type != PGM_RDATA_PCKT) && (pgmhdr_type != PGM_ODATA_PCKT) &&
-		    (pgmhdr_cksum == 0))
-		{
-			proto_tree_add_checksum(pgm_tree, tvb, ptvcursor_current_offset(cursor), hf_pgm_main_cksum, hf_pgm_main_cksum_status, NULL, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NOT_PRESENT);
-		} else {
-			reportedlen = tvb_reported_length(tvb);
-			pgmlen = tvb_captured_length(tvb);
-			if (pgm_check_checksum && pgmlen >= reportedlen) {
-				vec_t cksum_vec[1];
-
-				SET_CKSUM_VEC_TVB(cksum_vec[0], tvb, 0, pgmlen);
-				proto_tree_add_checksum(pgm_tree, tvb, ptvcursor_current_offset(cursor), hf_pgm_main_cksum_status, -1, NULL, pinfo,
-										in_cksum(&cksum_vec[0], 1), ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY|PROTO_CHECKSUM_IN_CKSUM);
-			} else {
-				proto_tree_add_checksum(pgm_tree, tvb, ptvcursor_current_offset(cursor), hf_pgm_main_cksum, hf_pgm_main_cksum_status, NULL, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
-			}
-		}
-		ptvcursor_advance(cursor, 2);
-
-		ptvcursor_add(cursor, hf_pgm_main_gsi, 6, ENC_NA);
-		ptvcursor_add(cursor, hf_pgm_main_tsdulen, 2, ENC_BIG_ENDIAN);
-
-		switch(pgmhdr_type) {
-		case PGM_SPM_PCKT:
-			type_tree = proto_tree_add_subtree_format(pgm_tree, tvb, ptvcursor_current_offset(cursor), plen,
-												ett_pgm_spm, NULL, "%s Packet", pktname);
-			ptvcursor_set_tree(cursor, type_tree);
-
-			ptvcursor_add(cursor, hf_pgm_spm_sqn, 4, ENC_BIG_ENDIAN);
-			ptvcursor_add(cursor, hf_pgm_spm_trail, 4, ENC_BIG_ENDIAN);
-			ptvcursor_add(cursor, hf_pgm_spm_lead, 4, ENC_BIG_ENDIAN);
-			afi = tvb_get_ntohs(tvb, ptvcursor_current_offset(cursor));
-			ti = ptvcursor_add(cursor, hf_pgm_spm_pathafi, 2, ENC_BIG_ENDIAN);
-			ptvcursor_add(cursor, hf_pgm_spm_res, 2, ENC_BIG_ENDIAN);
-
-			switch (afi) {
-			case AFNUM_INET:
-				ptvcursor_add(cursor, hf_pgm_spm_path, 4, ENC_BIG_ENDIAN);
-				break;
-
-			case AFNUM_INET6:
-				ptvcursor_add(cursor, hf_pgm_spm_path6, 16, ENC_NA);
-				break;
-
-			default:
-				expert_add_info(pinfo, ti, &ei_address_format_invalid);
-				ptvcursor_free(cursor);
-				return tvb_captured_length(tvb);
-			}
-			break;
-		case PGM_RDATA_PCKT:
-		case PGM_ODATA_PCKT:
-			type_tree = proto_tree_add_subtree_format(pgm_tree, tvb, ptvcursor_current_offset(cursor), plen,
-												ett_pgm_data, NULL, "%s Packet", pktname);
-			ptvcursor_set_tree(cursor, type_tree);
-
-			ptvcursor_add(cursor, hf_pgm_spm_sqn, 4, ENC_BIG_ENDIAN);
-			ptvcursor_add(cursor, hf_pgm_spm_trail, 4, ENC_BIG_ENDIAN);
-			break;
-		case PGM_NAK_PCKT:
-		case PGM_NNAK_PCKT:
-		case PGM_NCF_PCKT:
-			type_tree = proto_tree_add_subtree_format(pgm_tree, tvb, ptvcursor_current_offset(cursor), plen,
-												ett_pgm_nak, NULL, "%s Packet", pktname);
-			ptvcursor_set_tree(cursor, type_tree);
-
-			ptvcursor_add(cursor, hf_pgm_nak_sqn, 4, ENC_BIG_ENDIAN);
-			afi = tvb_get_ntohs(tvb, ptvcursor_current_offset(cursor));
-			ti = ptvcursor_add(cursor, hf_pgm_nak_srcafi, 2, ENC_BIG_ENDIAN);
-			ptvcursor_add(cursor, hf_pgm_nak_srcres, 2, ENC_BIG_ENDIAN);
-
-			switch (afi) {
-			case AFNUM_INET:
-				ptvcursor_add(cursor, hf_pgm_nak_src, 4, ENC_BIG_ENDIAN);
-				break;
-
-			case AFNUM_INET6:
-				ptvcursor_add(cursor, hf_pgm_nak_src6, 16, ENC_NA);
-				break;
-
-			default:
-				expert_add_info(pinfo, ti, &ei_address_format_invalid);
-				break;
-			}
-
-			afi = tvb_get_ntohs(tvb, ptvcursor_current_offset(cursor));
-			ti = ptvcursor_add(cursor, hf_pgm_nak_grpafi, 2, ENC_BIG_ENDIAN);
-			ptvcursor_add(cursor, hf_pgm_nak_grpres, 2, ENC_BIG_ENDIAN);
-
-			switch (afi) {
-			case AFNUM_INET:
-				ptvcursor_add(cursor, hf_pgm_nak_grp, 4, ENC_BIG_ENDIAN);
-				break;
-
-			case AFNUM_INET6:
-				ptvcursor_add(cursor, hf_pgm_nak_grp6, 16, ENC_NA);
-				break;
-
-			default:
-				expert_add_info(pinfo, ti, &ei_address_format_invalid);
-				ptvcursor_free(cursor);
-				return tvb_captured_length(tvb);
-			}
-			break;
-		case PGM_POLL_PCKT:
-			type_tree = proto_tree_add_subtree_format(pgm_tree, tvb, ptvcursor_current_offset(cursor), plen,
-												ett_pgm_poll, NULL, "%s Packet", pktname);
-			ptvcursor_set_tree(cursor, type_tree);
-
-			ptvcursor_add(cursor, hf_pgm_poll_sqn, 4, ENC_BIG_ENDIAN);
-			ptvcursor_add(cursor, hf_pgm_poll_round, 2, ENC_BIG_ENDIAN);
-			ptvcursor_add(cursor, hf_pgm_poll_subtype, 2, ENC_BIG_ENDIAN);
-			afi = tvb_get_ntohs(tvb, ptvcursor_current_offset(cursor));
-			ti = ptvcursor_add(cursor, hf_pgm_poll_pathafi, 2, ENC_BIG_ENDIAN);
-			ptvcursor_add(cursor, hf_pgm_poll_res, 2, ENC_BIG_ENDIAN);
-
-			switch (afi) {
-			case AFNUM_INET:
-				ptvcursor_add(cursor, hf_pgm_poll_path, 4, ENC_BIG_ENDIAN);
-				break;
-
-			case AFNUM_INET6:
-				ptvcursor_add(cursor, hf_pgm_poll_path6, 16, ENC_NA);
-				break;
-
-			default:
-				expert_add_info(pinfo, ti, &ei_address_format_invalid);
-				break;
-			}
-
-			ptvcursor_add(cursor, hf_pgm_poll_backoff_ivl, 4, ENC_BIG_ENDIAN);
-			ptvcursor_add(cursor, hf_pgm_poll_rand_str, 4, ENC_BIG_ENDIAN);
-			ptvcursor_add(cursor, hf_pgm_poll_matching_bmask, 4, ENC_BIG_ENDIAN);
-			break;
-		case PGM_POLR_PCKT:
-			type_tree = proto_tree_add_subtree_format(pgm_tree, tvb, ptvcursor_current_offset(cursor), plen,
-												ett_pgm_polr, NULL, "%s Packet", pktname);
-			ptvcursor_set_tree(cursor, type_tree);
-
-			ptvcursor_add(cursor, hf_pgm_polr_sqn, 4, ENC_BIG_ENDIAN);
-			ptvcursor_add(cursor, hf_pgm_polr_round, 2, ENC_BIG_ENDIAN);
-			ptvcursor_add(cursor, hf_pgm_polr_res, 2, ENC_BIG_ENDIAN);
-			break;
-		case PGM_ACK_PCKT:
-			type_tree = proto_tree_add_subtree_format(pgm_tree, tvb, ptvcursor_current_offset(cursor), plen,
-												ett_pgm_ack, NULL, "%s Packet", pktname);
-			ptvcursor_set_tree(cursor, type_tree);
-
-			ptvcursor_add(cursor, hf_pgm_ack_sqn, 4, ENC_BIG_ENDIAN);
-			ptvcursor_add(cursor, hf_pgm_ack_bitmap, 4, ENC_BIG_ENDIAN);
-			break;
-		}
-
-		if (pgmhdr_opts & PGM_OPT)
-			dissect_pgmopts(cursor, pinfo, pktname);
-
-		if (isdata)
-			decode_pgm_ports(tvb, ptvcursor_current_offset(cursor), pinfo, tree, pgmhdr_sport, pgmhdr_dport);
-
-		ptvcursor_free(cursor);
-	}
+	ptvcursor_free(cursor);
 	return tvb_captured_length(tvb);
 }
 
@@ -1093,18 +1084,18 @@ proto_register_pgm(void)
 		    NULL, 0x0, NULL, HFILL }},
 		{ &hf_pgm_main_opts_opt,
 		  { "Options", "pgm.hdr.opts.opt", FT_BOOLEAN, 8,
-		    TFS(&opts_present), PGM_OPT, NULL, HFILL }},
+		    TFS(&tfs_present_not_present), PGM_OPT, NULL, HFILL }},
 		{ &hf_pgm_main_opts_netsig,
 		  { "Network Significant Options", "pgm.hdr.opts.netsig",
 		    FT_BOOLEAN, 8,
-		    TFS(&opts_present), PGM_OPT_NETSIG, NULL, HFILL }},
+		    TFS(&tfs_present_not_present), PGM_OPT_NETSIG, NULL, HFILL }},
 		{ &hf_pgm_main_opts_varlen,
 		  { "Variable length Parity Packet Option", "pgm.hdr.opts.varlen",
 		    FT_BOOLEAN, 8,
-		    TFS(&opts_present), PGM_OPT_VAR_PKTLEN, NULL, HFILL }},
+		    TFS(&tfs_present_not_present), PGM_OPT_VAR_PKTLEN, NULL, HFILL }},
 		{ &hf_pgm_main_opts_parity,
 		  { "Parity", "pgm.hdr.opts.parity", FT_BOOLEAN, 8,
-		    TFS(&opts_present), PGM_OPT_PARITY, NULL, HFILL }},
+		    TFS(&tfs_present_not_present), PGM_OPT_PARITY, NULL, HFILL }},
 		{ &hf_pgm_main_cksum,
 		  { "Checksum", "pgm.hdr.cksum", FT_UINT16, BASE_HEX,
 		    NULL, 0x0, NULL, HFILL }},
@@ -1255,7 +1246,7 @@ proto_register_pgm(void)
 		  { "Minimum Sequence Number", "pgm.opts.join.min_join",
 		    FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }},
 		{ &hf_pgm_opt_parity_grp_res,
-		  { "Reserved", "pgm.opts.parity_prm.op", FT_UINT8, BASE_HEX,
+		  { "Reserved", "pgm.opts.parity_prm.reserved", FT_UINT8, BASE_HEX,
 		    NULL, 0x0, NULL, HFILL }},
 		{ &hf_pgm_opt_parity_grp_prmgrp,
 		  { "Transmission Group Size", "pgm.opts.parity_prm.prm_grp",
@@ -1349,7 +1340,7 @@ proto_register_pgm(void)
 		  { "Total Length", "pgm.opts.fragment.total_length", FT_UINT32, BASE_DEC,
 		    NULL, 0x0, NULL, HFILL }}
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_pgm,
 		&ett_pgm_optbits,
 		&ett_pgm_spm,
@@ -1374,13 +1365,13 @@ proto_register_pgm(void)
 		{ &ei_pgm_opt_tlen, { "pgm.opts.tlen.invalid", PI_PROTOCOL, PI_WARN, "Total Length invalid", EXPFILL }},
 		{ &ei_pgm_genopt_len, { "pgm.genopts.len.invalid", PI_PROTOCOL, PI_WARN, "Option length invalid", EXPFILL }},
 		{ &ei_address_format_invalid, { "pgm.address_format_invalid", PI_PROTOCOL, PI_WARN, "Can't handle this address format", EXPFILL }},
+		{ &ei_pgm_main_cksum, { "pgm.bad_checksum", PI_CHECKSUM, PI_ERROR, "Bad checksum", EXPFILL }},
 	};
 
 	module_t *pgm_module;
 	expert_module_t* expert_pgm;
 
-	proto_pgm = proto_register_protocol("Pragmatic General Multicast",
-					    "PGM", "pgm");
+	proto_pgm = proto_register_protocol("Pragmatic General Multicast", "PGM", "pgm");
 
 	proto_register_field_array(proto_pgm, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
@@ -1388,9 +1379,10 @@ proto_register_pgm(void)
 	expert_register_field_array(expert_pgm, ei, array_length(ei));
 
 	/* subdissector code */
+	pgm_handle = register_dissector("pgm", dissect_pgm, proto_pgm);
 	subdissector_table = register_dissector_table("pgm.port",
 						      "PGM port", proto_pgm, FT_UINT16, BASE_DEC);
-	heur_subdissector_list = register_heur_dissector_list("pgm", proto_pgm);
+	heur_subdissector_list = register_heur_dissector_list_with_description("pgm", "PGM data fallback", proto_pgm);
 
 	/*
 	 * Register configuration preferences for UDP encapsulation
@@ -1400,25 +1392,12 @@ proto_register_pgm(void)
 	 *        dissector_add_for_decode_as is called so that pgm
 	 *        is available for 'decode-as'
 	 */
-	pgm_module = prefs_register_protocol(proto_pgm, proto_reg_handoff_pgm);
+	pgm_module = prefs_register_protocol(proto_pgm, NULL);
 
 	prefs_register_bool_preference(pgm_module, "check_checksum",
 				       "Check the validity of the PGM checksum when possible",
 				       "Whether to check the validity of the PGM checksum",
 				       &pgm_check_checksum);
-
-	prefs_register_uint_preference(pgm_module, "udp.encap_ucast_port",
-				       "PGM Encap Unicast Port (standard is 3055)",
-				       "PGM Encap is PGM packets encapsulated in UDP packets"
-				       " (Note: This option is off, i.e. port is 0, by default)",
-				       10, &udp_encap_ucast_port);
-
-	prefs_register_uint_preference(pgm_module, "udp.encap_mcast_port",
-				       "PGM Encap Multicast Port (standard is 3056)",
-				       "PGM Encap is PGM packets encapsulated in UDP packets"
-				       " (Note: This option is off, i.e. port is 0, by default)",
-				       10, &udp_encap_mcast_port);
-
 }
 
 /* The registration hand-off routine */
@@ -1429,37 +1408,12 @@ proto_register_pgm(void)
 void
 proto_reg_handoff_pgm(void)
 {
-	static gboolean initialized = FALSE;
-	static dissector_handle_t pgm_handle;
-	static guint old_udp_encap_ucast_port;
-	static guint old_udp_encap_mcast_port;
-
-	if (! initialized) {
-		pgm_handle = create_dissector_handle(dissect_pgm, proto_pgm);
-		dissector_add_for_decode_as("udp.port", pgm_handle);
-		dissector_add_uint("ip.proto", IP_PROTO_PGM, pgm_handle);
-		initialized = TRUE;
-	} else {
-		if (old_udp_encap_ucast_port != 0) {
-			dissector_delete_uint("udp.port", old_udp_encap_ucast_port, pgm_handle);
-		}
-		if (old_udp_encap_mcast_port != 0) {
-			dissector_delete_uint("udp.port", old_udp_encap_mcast_port, pgm_handle);
-		}
-	}
-
-	if (udp_encap_ucast_port != 0) {
-		dissector_add_uint("udp.port", udp_encap_ucast_port, pgm_handle);
-	}
-	if (udp_encap_mcast_port != 0) {
-		dissector_add_uint("udp.port", udp_encap_mcast_port, pgm_handle);
-	}
-	old_udp_encap_ucast_port = udp_encap_ucast_port;
-	old_udp_encap_mcast_port = udp_encap_mcast_port;
+	dissector_add_uint_range_with_preference("udp.port", "", pgm_handle);
+	dissector_add_uint("ip.proto", IP_PROTO_PGM, pgm_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

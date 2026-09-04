@@ -5,19 +5,7 @@
  * Copyright 1998 Gerald Combs
  *
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_DTLS_H__
@@ -26,7 +14,17 @@
 #include "ws_symbol_export.h"
 #include <epan/packet.h>
 
-WS_DLL_PUBLIC void dtls_dissector_add(guint port, dissector_handle_t handle);
-WS_DLL_PUBLIC void dtls_dissector_delete(guint port, dissector_handle_t handle);
+WS_DLL_PUBLIC void dtls_dissector_add(unsigned port, dissector_handle_t handle);
+WS_DLL_PUBLIC void dtls_dissector_delete(unsigned port, dissector_handle_t handle);
+
+extern uint32_t
+dtls_increment_stream_count(void);
+
+/* Shared with packet-tls-utils.c */
+
+int
+dtls_dissect_hnd_hello_ext_use_srtp(packet_info *pinfo, tvbuff_t *tvb,
+                                    proto_tree *tree, uint32_t offset,
+                                    uint32_t ext_len, bool is_server);
 
 #endif  /* __PACKET_DTLS_H__ */

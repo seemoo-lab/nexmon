@@ -2,10 +2,12 @@
  *
  * Copyright © 2010 Collabora Ltd.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,28 +21,17 @@
  */
 
 /**
- * SECTION:gtcpwrapperconnection
- * @title: GTcpWrapperConnection
- * @short_description: Wrapper for non-GSocketConnection-based,
- *     GSocket-based GIOStreams
- * @include: gio/gio.h
- * @see_also: #GSocketConnection.
+ * GTcpWrapperConnection:
  *
- * A #GTcpWrapperConnection can be used to wrap a #GIOStream that is
- * based on a #GSocket, but which is not actually a
- * #GSocketConnection. This is used by #GSocketClient so that it can
- * always return a #GSocketConnection, even when the connection it has
- * actually created is not directly a #GSocketConnection.
+ * A `GTcpWrapperConnection` can be used to wrap a [class@Gio.IOStream] that is
+ * based on a [class@Gio.Socket], but which is not actually a
+ * [class@Gio.SocketConnection]. This is used by [class@Gio.SocketClient] so
+ * that it can always return a [class@Gio.SocketConnection], even when the
+ * connection it has actually created is not directly a
+ * [class@Gio.SocketConnection].
  *
  * Since: 2.28
  */
-
-/**
- * GTcpWrapperConnection:
- *
- * #GTcpWrapperConnection is an opaque data structure and can only be accessed
- * using the following functions.
- **/
 
 #include "config.h"
 
@@ -140,11 +131,16 @@ g_tcp_wrapper_connection_class_init (GTcpWrapperConnectionClass *klass)
   stream_class->get_input_stream = g_tcp_wrapper_connection_get_input_stream;
   stream_class->get_output_stream = g_tcp_wrapper_connection_get_output_stream;
 
+  /**
+   * GTcpWrapperConnection:base-io-stream:
+   *
+   * The wrapped [class@Gio.IOStream].
+   *
+   * Since: 2.28
+   */
   g_object_class_install_property (gobject_class,
                                    PROP_BASE_IO_STREAM,
-                                   g_param_spec_object ("base-io-stream",
-			                                P_("Base IO Stream"),
-			                                P_("The wrapped GIOStream"),
+                                   g_param_spec_object ("base-io-stream", NULL, NULL,
                                                         G_TYPE_IO_STREAM,
                                                         G_PARAM_CONSTRUCT_ONLY |
                                                         G_PARAM_READWRITE |
@@ -188,7 +184,7 @@ g_tcp_wrapper_connection_new (GIOStream *base_io_stream,
  * g_tcp_wrapper_connection_get_base_io_stream:
  * @conn: a #GTcpWrapperConnection
  *
- * Get's @conn's base #GIOStream
+ * Gets @conn's base #GIOStream
  *
  * Returns: (transfer none): @conn's base #GIOStream
  */

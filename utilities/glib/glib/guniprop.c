@@ -3,10 +3,12 @@
  * Copyright (C) 1999 Tom Tromey
  * Copyright (C) 2000 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -36,6 +38,13 @@
 #ifdef G_OS_WIN32
 #include "gwin32.h"
 #endif
+
+#define G_UNICHAR_FULLWIDTH_A 0xff21
+#define G_UNICHAR_FULLWIDTH_I 0xff29
+#define G_UNICHAR_FULLWIDTH_J 0xff2a
+#define G_UNICHAR_FULLWIDTH_F 0xff26
+#define G_UNICHAR_FULLWIDTH_a 0xff41
+#define G_UNICHAR_FULLWIDTH_f 0xff46
 
 #define ATTR_TABLE(Page) (((Page) <= G_UNICODE_LAST_PAGE_PART1) \
                           ? attr_table_part1[Page] \
@@ -355,16 +364,18 @@ g_unichar_istitle (gunichar c)
  * g_unichar_isxdigit:
  * @c: a Unicode character.
  * 
- * Determines if a character is a hexidecimal digit.
+ * Determines if a character is a hexadecimal digit.
  * 
  * Returns: %TRUE if the character is a hexadecimal digit
  **/
 gboolean
 g_unichar_isxdigit (gunichar c)
 {
-  return ((c >= 'a' && c <= 'f')
-	  || (c >= 'A' && c <= 'F')
-	  || (TYPE (c) == G_UNICODE_DECIMAL_NUMBER));
+  return ((c >= 'a' && c <= 'f') ||
+          (c >= 'A' && c <= 'F') ||
+          (c >= G_UNICHAR_FULLWIDTH_a && c <= G_UNICHAR_FULLWIDTH_f) ||
+          (c >= G_UNICHAR_FULLWIDTH_A && c <= G_UNICHAR_FULLWIDTH_F) ||
+          (TYPE (c) == G_UNICODE_DECIMAL_NUMBER));
 }
 
 /**
@@ -412,8 +423,15 @@ g_unichar_iszerowidth (gunichar c)
   if (G_UNLIKELY (ISZEROWIDTHTYPE (TYPE (c))))
     return TRUE;
 
+  /* A few additional codepoints are zero-width:
+   *  - Part of the Hangul Jamo block covering medial/vowels/jungseong and
+   *    final/trailing_consonants/jongseong Jamo
+   *  - Jungseong and jongseong for Old Korean
+   *  - Zero-width space (U+200B)
+   */
   if (G_UNLIKELY ((c >= 0x1160 && c < 0x1200) ||
-		  c == 0x200B))
+                  (c >= 0xD7B0 && c < 0xD800) ||
+                  c == 0x200B))
     return TRUE;
 
   return FALSE;
@@ -439,7 +457,7 @@ static inline gboolean
 g_unichar_iswide_bsearch (gunichar ch)
 {
   int lower = 0;
-  int upper = G_N_ELEMENTS (g_unicode_width_table_wide) + 1;
+  int upper = G_N_ELEMENTS (g_unicode_width_table_wide) - 1;
   static int saved_mid = G_WIDTH_TABLE_MIDPOINT;
   int mid = saved_mid;
 
@@ -459,6 +477,14 @@ g_unichar_iswide_bsearch (gunichar ch)
   return FALSE;
 }
 
+static const struct Interval default_wide_blocks[] = {
+  { 0x3400, 0x4dbf },
+  { 0x4e00, 0x9fff },
+  { 0xf900, 0xfaff },
+  { 0x20000, 0x2fffd },
+  { 0x30000, 0x3fffd }
+};
+
 /**
  * g_unichar_iswide:
  * @c: a Unicode character
@@ -473,8 +499,17 @@ g_unichar_iswide (gunichar c)
 {
   if (c < g_unicode_width_table_wide[0].start)
     return FALSE;
-  else
-    return g_unichar_iswide_bsearch (c);
+  else if (g_unichar_iswide_bsearch (c))
+    return TRUE;
+  else if (g_unichar_type (c) == G_UNICODE_UNASSIGNED &&
+           bsearch (GUINT_TO_POINTER (c),
+                    default_wide_blocks,
+                    G_N_ELEMENTS (default_wide_blocks),
+                    sizeof default_wide_blocks[0],
+                    interval_compare))
+    return TRUE;
+
+  return FALSE;
 }
 
 
@@ -503,6 +538,11 @@ g_unichar_iswide_cjk (gunichar c)
   if (g_unichar_iswide (c))
     return TRUE;
 
+  /* bsearch() is declared attribute(nonnull(1)) so we can't validly search
+   * for a NULL key */
+  if (c == 0)
+    return FALSE;
+
   if (bsearch (GUINT_TO_POINTER (c), 
                g_unicode_width_table_ambiguous,
                G_N_ELEMENTS (g_unicode_width_table_ambiguous),
@@ -521,7 +561,7 @@ g_unichar_iswide_cjk (gunichar c)
  * Converts a character to uppercase.
  * 
  * Returns: the result of converting @c to uppercase.
- *               If @c is not an lowercase or titlecase character,
+ *               If @c is not a lowercase or titlecase character,
  *               or has no upper case equivalent @c is returned unchanged.
  **/
 gunichar
@@ -533,7 +573,7 @@ g_unichar_toupper (gunichar c)
       gunichar val = ATTTABLE (c >> 8, c & 0xff);
       if (val >= 0x1000000)
 	{
-	  const gchar *p = special_case_table + val - 0x1000000;
+          const gchar *p = special_case_table + (val - 0x1000000);
           val = g_utf8_get_char (p);
 	}
       /* Some lowercase letters, e.g., U+000AA, FEMININE ORDINAL INDICATOR,
@@ -573,8 +613,8 @@ g_unichar_tolower (gunichar c)
       gunichar val = ATTTABLE (c >> 8, c & 0xff);
       if (val >= 0x1000000)
 	{
-	  const gchar *p = special_case_table + val - 0x1000000;
-	  return g_utf8_get_char (p);
+          const gchar *p = special_case_table + (val - 0x1000000);
+          return g_utf8_get_char (p);
 	}
       else
 	{
@@ -609,13 +649,19 @@ gunichar
 g_unichar_totitle (gunichar c)
 {
   unsigned int i;
+
+  /* We handle U+0000 explicitly because some elements in
+   * title_table[i][1] may be null. */
+  if (c == 0)
+    return c;
+
   for (i = 0; i < G_N_ELEMENTS (title_table); ++i)
     {
       if (title_table[i][0] == c || title_table[i][1] == c
 	  || title_table[i][2] == c)
 	return title_table[i][0];
     }
-    
+
   if (TYPE (c) == G_UNICODE_LOWERCASE_LETTER)
     return g_unichar_toupper (c);
 
@@ -644,7 +690,7 @@ g_unichar_digit_value (gunichar c)
  * g_unichar_xdigit_value:
  * @c: a Unicode character
  *
- * Determines the numeric value of a character as a hexidecimal
+ * Determines the numeric value of a character as a hexadecimal
  * digit.
  *
  * Returns: If @c is a hex digit (according to
@@ -657,6 +703,10 @@ g_unichar_xdigit_value (gunichar c)
     return c - 'A' + 10;
   if (c >= 'a' && c <= 'f')
     return c - 'a' + 10;
+  if (c >= G_UNICHAR_FULLWIDTH_A && c <= G_UNICHAR_FULLWIDTH_F)
+    return c - G_UNICHAR_FULLWIDTH_A + 10;
+  if (c >= G_UNICHAR_FULLWIDTH_a && c <= G_UNICHAR_FULLWIDTH_f)
+    return c - G_UNICHAR_FULLWIDTH_a + 10;
   if (TYPE (c) == G_UNICODE_DECIMAL_NUMBER)
     return ATTTABLE (c >> 8, c & 0xff);
   return -1;
@@ -722,14 +772,36 @@ get_locale_type (void)
   return LOCALE_NORMAL;
 }
 
-static gint
-output_marks (const char **p_inout,
-	      char        *out_buffer,
-	      gboolean     remove_dot)
+G_ALWAYS_INLINE static inline void
+increase_size (size_t *sizeptr, size_t add)
+{
+  g_assert (G_MAXSIZE - *(sizeptr) >= add);
+  *(sizeptr) += add;
+}
+
+G_ALWAYS_INLINE static inline void
+append_utf8_char_to_buffer (gunichar  c,
+                            char     *out_buffer,
+                            size_t   *in_out_len)
+{
+  gint utf8_len;
+  char *buffer;
+
+  buffer = out_buffer ? out_buffer + *(in_out_len) : NULL;
+  utf8_len = g_unichar_to_utf8 (c, buffer);
+
+  g_assert (utf8_len >= 0);
+  increase_size (in_out_len, utf8_len);
+}
+
+static void
+append_mark (const char **p_inout,
+             char        *out_buffer,
+             size_t      *in_out_len,
+             gboolean     remove_dot)
 {
   const char *p = *p_inout;
-  gint len = 0;
-  
+
   while (*p)
     {
       gunichar c = g_utf8_get_char (p);
@@ -737,7 +809,7 @@ output_marks (const char **p_inout,
       if (ISMARK (TYPE (c)))
 	{
 	  if (!remove_dot || c != 0x307 /* COMBINING DOT ABOVE */)
-	    len += g_unichar_to_utf8 (c, out_buffer ? out_buffer + len : NULL);
+            append_utf8_char_to_buffer (c, out_buffer, in_out_len);
 	  p = g_utf8_next_char (p);
 	}
       else
@@ -745,17 +817,17 @@ output_marks (const char **p_inout,
     }
 
   *p_inout = p;
-  return len;
 }
 
-static gint
-output_special_case (gchar *out_buffer,
-		     int    offset,
-		     int    type,
-		     int    which)
+static void
+append_special_case (char   *out_buffer,
+                     size_t *in_out_len,
+                     int     offset,
+                     int     type,
+                     int     which)
 {
   const gchar *p = special_case_table + offset;
-  gint len;
+  size_t len;
 
   if (type != G_UNICODE_TITLECASE_LETTER)
     p = g_utf8_next_char (p);
@@ -764,10 +836,12 @@ output_special_case (gchar *out_buffer,
     p += strlen (p) + 1;
 
   len = strlen (p);
-  if (out_buffer)
-    memcpy (out_buffer, p, len);
+  g_assert (len < G_MAXSIZE - *in_out_len);
 
-  return len;
+  if (out_buffer)
+    memcpy (out_buffer + *in_out_len, p, len);
+
+  increase_size (in_out_len, len);
 }
 
 static gsize
@@ -808,11 +882,13 @@ real_toupper (const gchar *str,
 		  decomp_len = g_unichar_fully_decompose (c, FALSE, decomp, G_N_ELEMENTS (decomp));
 		  for (i=0; i < decomp_len; i++)
 		    {
+
 		      if (decomp[i] != 0x307 /* COMBINING DOT ABOVE */)
-			len += g_unichar_to_utf8 (g_unichar_toupper (decomp[i]), out_buffer ? out_buffer + len : NULL);
+                        append_utf8_char_to_buffer (g_unichar_toupper (decomp[i]),
+                                                    out_buffer, &len);
 		    }
-		  
-		  len += output_marks (&p, out_buffer ? out_buffer + len : NULL, TRUE);
+
+                  append_mark (&p, out_buffer, &len, TRUE);
 
 		  continue;
 		}
@@ -825,17 +901,17 @@ real_toupper (const gchar *str,
       if (locale_type == LOCALE_TURKIC && c == 'i')
 	{
 	  /* i => LATIN CAPITAL LETTER I WITH DOT ABOVE */
-	  len += g_unichar_to_utf8 (0x130, out_buffer ? out_buffer + len : NULL); 
+          append_utf8_char_to_buffer (0x130, out_buffer, &len);
 	}
       else if (c == 0x0345)	/* COMBINING GREEK YPOGEGRAMMENI */
 	{
 	  /* Nasty, need to move it after other combining marks .. this would go away if
 	   * we normalized first.
 	   */
-	  len += output_marks (&p, out_buffer ? out_buffer + len : NULL, FALSE);
+          append_mark (&p, out_buffer, &len, TRUE);
 
 	  /* And output as GREEK CAPITAL LETTER IOTA */
-	  len += g_unichar_to_utf8 (0x399, out_buffer ? out_buffer + len : NULL); 	  
+          append_utf8_char_to_buffer (0x399, out_buffer, &len);
 	}
       else if (IS (t,
 		   OR (G_UNICODE_LOWERCASE_LETTER,
@@ -846,8 +922,8 @@ real_toupper (const gchar *str,
 
 	  if (val >= 0x1000000)
 	    {
-	      len += output_special_case (out_buffer ? out_buffer + len : NULL, val - 0x1000000, t,
-					  t == G_UNICODE_LOWERCASE_LETTER ? 0 : 1);
+              append_special_case (out_buffer, &len, val - 0x1000000, t,
+                                   t == G_UNICODE_LOWERCASE_LETTER ? 0 : 1);
 	    }
 	  else
 	    {
@@ -867,7 +943,7 @@ real_toupper (const gchar *str,
 	      /* Some lowercase letters, e.g., U+000AA, FEMININE ORDINAL INDICATOR,
 	       * do not have an uppercase equivalent, in which case val will be
 	       * zero. */
-	      len += g_unichar_to_utf8 (val ? val : c, out_buffer ? out_buffer + len : NULL);
+              append_utf8_char_to_buffer (val ? val : c, out_buffer, &len);
 	    }
 	}
       else
@@ -877,7 +953,7 @@ real_toupper (const gchar *str,
 	  if (out_buffer)
 	    memcpy (out_buffer + len, last, char_len);
 
-	  len += char_len;
+          increase_size (&len, char_len);
 	}
 
     }
@@ -915,6 +991,8 @@ g_utf8_strup (const gchar *str,
    * We use a two pass approach to keep memory management simple
    */
   result_len = real_toupper (str, len, NULL, locale_type);
+  g_assert (result_len < G_MAXSIZE);
+
   result = g_malloc (result_len + 1);
   real_toupper (str, len, result, locale_type);
   result[result_len] = '\0';
@@ -963,18 +1041,24 @@ real_tolower (const gchar *str,
       last = p;
       p = g_utf8_next_char (p);
 
-      if (locale_type == LOCALE_TURKIC && c == 'I')
-	{
-          if (g_utf8_get_char (p) == 0x0307)
+      if (locale_type == LOCALE_TURKIC && (c == 'I' || c == 0x130 ||
+                                           c == G_UNICHAR_FULLWIDTH_I))
+        {
+          gboolean combining_dot = (c == 'I' || c == G_UNICHAR_FULLWIDTH_I) &&
+                                   g_utf8_get_char (p) == 0x0307;
+          if (combining_dot || c == 0x130)
             {
-              /* I + COMBINING DOT ABOVE => i (U+0069) */
-              len += g_unichar_to_utf8 (0x0069, out_buffer ? out_buffer + len : NULL); 
-              p = g_utf8_next_char (p);
+              /* I + COMBINING DOT ABOVE => i (U+0069)
+               * LATIN CAPITAL LETTER I WITH DOT ABOVE => i (U+0069) */
+              append_utf8_char_to_buffer (0x0069, out_buffer, &len);
+
+              if (combining_dot)
+                p = g_utf8_next_char (p);
             }
           else
             {
               /* I => LATIN SMALL LETTER DOTLESS I */
-              len += g_unichar_to_utf8 (0x131, out_buffer ? out_buffer + len : NULL); 
+              append_utf8_char_to_buffer (0x131, out_buffer, &len);
             }
         }
       /* Introduce an explicit dot above when lowercasing capital I's and J's
@@ -982,28 +1066,29 @@ real_tolower (const gchar *str,
       else if (locale_type == LOCALE_LITHUANIAN && 
                (c == 0x00cc || c == 0x00cd || c == 0x0128))
         {
-          len += g_unichar_to_utf8 (0x0069, out_buffer ? out_buffer + len : NULL); 
-          len += g_unichar_to_utf8 (0x0307, out_buffer ? out_buffer + len : NULL); 
+          append_utf8_char_to_buffer (0x0069, out_buffer, &len);
+          append_utf8_char_to_buffer (0x0307, out_buffer, &len);
 
           switch (c)
             {
             case 0x00cc: 
-              len += g_unichar_to_utf8 (0x0300, out_buffer ? out_buffer + len : NULL); 
+              append_utf8_char_to_buffer (0x0300, out_buffer, &len);
               break;
             case 0x00cd: 
-              len += g_unichar_to_utf8 (0x0301, out_buffer ? out_buffer + len : NULL); 
+              append_utf8_char_to_buffer (0x0301, out_buffer, &len);
               break;
             case 0x0128: 
-              len += g_unichar_to_utf8 (0x0303, out_buffer ? out_buffer + len : NULL); 
+              append_utf8_char_to_buffer (0x0303, out_buffer, &len);
               break;
             }
         }
       else if (locale_type == LOCALE_LITHUANIAN && 
-               (c == 'I' || c == 'J' || c == 0x012e) && 
+               (c == 'I' || c == G_UNICHAR_FULLWIDTH_I ||
+                c == 'J' || c == G_UNICHAR_FULLWIDTH_J || c == 0x012e) &&
                has_more_above (p))
         {
-          len += g_unichar_to_utf8 (g_unichar_tolower (c), out_buffer ? out_buffer + len : NULL); 
-          len += g_unichar_to_utf8 (0x0307, out_buffer ? out_buffer + len : NULL); 
+          append_utf8_char_to_buffer (g_unichar_tolower (c), out_buffer, &len);
+          append_utf8_char_to_buffer (0x0307, out_buffer, &len);
         }
       else if (c == 0x03A3)	/* GREEK CAPITAL LETTER SIGMA */
 	{
@@ -1026,7 +1111,7 @@ real_tolower (const gchar *str,
 	  else
 	    val = 0x3c2;	/* GREEK SMALL FINAL SIGMA */
 
-	  len += g_unichar_to_utf8 (val, out_buffer ? out_buffer + len : NULL);
+          append_utf8_char_to_buffer (val, out_buffer, &len);
 	}
       else if (IS (t,
 		   OR (G_UNICODE_UPPERCASE_LETTER,
@@ -1037,7 +1122,7 @@ real_tolower (const gchar *str,
 
 	  if (val >= 0x1000000)
 	    {
-	      len += output_special_case (out_buffer ? out_buffer + len : NULL, val - 0x1000000, t, 0);
+              append_special_case (out_buffer, &len, val - 0x1000000, t, 0);
 	    }
 	  else
 	    {
@@ -1056,7 +1141,7 @@ real_tolower (const gchar *str,
 
 	      /* Not all uppercase letters are guaranteed to have a lowercase
 	       * equivalent.  If this is the case, val will be zero. */
-	      len += g_unichar_to_utf8 (val ? val : c, out_buffer ? out_buffer + len : NULL);
+              append_utf8_char_to_buffer (val ? val : c, out_buffer, &len);
 	    }
 	}
       else
@@ -1066,7 +1151,7 @@ real_tolower (const gchar *str,
 	  if (out_buffer)
 	    memcpy (out_buffer + len, last, char_len);
 
-	  len += char_len;
+          increase_size (&len, char_len);
 	}
 
     }
@@ -1103,6 +1188,8 @@ g_utf8_strdown (const gchar *str,
    * We use a two pass approach to keep memory management simple
    */
   result_len = real_tolower (str, len, NULL, locale_type);
+  g_assert (result_len < G_MAXSIZE);
+
   result = g_malloc (result_len + 1);
   real_tolower (str, len, result, locale_type);
   result[result_len] = '\0';
@@ -1180,7 +1267,7 @@ g_utf8_casefold (const gchar *str,
 /**
  * g_unichar_get_mirror_char:
  * @ch: a Unicode character
- * @mirrored_ch: location to store the mirrored character
+ * @mirrored_ch: (out): location to store the mirrored character
  * 
  * In Unicode, some characters are "mirrored". This means that their
  * images are mirrored horizontally in text that is laid out from right
@@ -1399,7 +1486,7 @@ static const guint32 iso15924_tags[] =
     PACK ('S','i','n','d'), /* G_UNICODE_SCRIPT_KHUDAWADI */
     PACK ('L','i','n','a'), /* G_UNICODE_SCRIPT_LINEAR_A */
     PACK ('M','a','h','j'), /* G_UNICODE_SCRIPT_MAHAJANI */
-    PACK ('M','a','n','u'), /* G_UNICODE_SCRIPT_MANICHAEAN */
+    PACK ('M','a','n','i'), /* G_UNICODE_SCRIPT_MANICHAEAN */
     PACK ('M','e','n','d'), /* G_UNICODE_SCRIPT_MENDE_KIKAKUI */
     PACK ('M','o','d','i'), /* G_UNICODE_SCRIPT_MODI */
     PACK ('M','r','o','o'), /* G_UNICODE_SCRIPT_MRO */
@@ -1421,6 +1508,70 @@ static const guint32 iso15924_tags[] =
     PACK ('M','u','l','t'), /* G_UNICODE_SCRIPT_MULTANI */
     PACK ('H','u','n','g'), /* G_UNICODE_SCRIPT_OLD_HUNGARIAN */
     PACK ('S','g','n','w'), /* G_UNICODE_SCRIPT_SIGNWRITING */
+
+  /* Unicode 9.0 additions */
+    PACK ('A','d','l','m'), /* G_UNICODE_SCRIPT_ADLAM */
+    PACK ('B','h','k','s'), /* G_UNICODE_SCRIPT_BHAIKSUKI */
+    PACK ('M','a','r','c'), /* G_UNICODE_SCRIPT_MARCHEN */
+    PACK ('N','e','w','a'), /* G_UNICODE_SCRIPT_NEWA */
+    PACK ('O','s','g','e'), /* G_UNICODE_SCRIPT_OSAGE */
+    PACK ('T','a','n','g'), /* G_UNICODE_SCRIPT_TANGUT */
+
+  /* Unicode 10.0 additions */
+    PACK ('G','o','n','m'), /* G_UNICODE_SCRIPT_MASARAM_GONDI */
+    PACK ('N','s','h','u'), /* G_UNICODE_SCRIPT_NUSHU */
+    PACK ('S','o','y','o'), /* G_UNICODE_SCRIPT_SOYOMBO */
+    PACK ('Z','a','n','b'), /* G_UNICODE_SCRIPT_ZANABAZAR_SQUARE */
+
+  /* Unicode 11.0 additions */
+    PACK ('D','o','g','r'), /* G_UNICODE_SCRIPT_DOGRA */
+    PACK ('G','o','n','g'), /* G_UNICODE_SCRIPT_GUNJALA_GONDI */
+    PACK ('R','o','h','g'), /* G_UNICODE_SCRIPT_HANIFI_ROHINGYA */
+    PACK ('M','a','k','a'), /* G_UNICODE_SCRIPT_MAKASAR */
+    PACK ('M','e','d','f'), /* G_UNICODE_SCRIPT_MEDEFAIDRIN */
+    PACK ('S','o','g','o'), /* G_UNICODE_SCRIPT_OLD_SOGDIAN */
+    PACK ('S','o','g','d'), /* G_UNICODE_SCRIPT_SOGDIAN */
+
+  /* Unicode 12.0 additions */
+    PACK ('E','l','y','m'), /* G_UNICODE_SCRIPT_ELYMAIC */
+    PACK ('N','a','n','d'), /* G_UNICODE_SCRIPT_NANDINAGARI */
+    PACK ('H','m','n','p'), /* G_UNICODE_SCRIPT_NYIAKENG_PUACHUE_HMONG */
+    PACK ('W','c','h','o'), /* G_UNICODE_SCRIPT_WANCHO */
+
+  /* Unicode 13.0 additions */
+    PACK ('C', 'h', 'r', 's'), /* G_UNICODE_SCRIPT_CHORASMIAN */
+    PACK ('D', 'i', 'a', 'k'), /* G_UNICODE_SCRIPT_DIVES_AKURU */
+    PACK ('K', 'i', 't', 's'), /* G_UNICODE_SCRIPT_KHITAN_SMALL_SCRIPT */
+    PACK ('Y', 'e', 'z', 'i'), /* G_UNICODE_SCRIPT_YEZIDI */
+
+  /* Unicode 14.0 additions */
+    PACK ('C', 'p', 'm', 'n'), /* G_UNICODE_SCRIPT_CYPRO_MINOAN */
+    PACK ('O', 'u', 'g', 'r'), /* G_UNICODE_SCRIPT_OLD_UYHUR */
+    PACK ('T', 'n', 's', 'a'), /* G_UNICODE_SCRIPT_TANGSA */
+    PACK ('T', 'o', 't', 'o'), /* G_UNICODE_SCRIPT_TOTO */
+    PACK ('V', 'i', 't', 'h'), /* G_UNICODE_SCRIPT_VITHKUQI */
+
+  /* not really a Unicode script, but part of ISO 15924 */
+    PACK ('Z', 'm', 't', 'h'), /* G_UNICODE_SCRIPT_MATH */
+
+    /* Unicode 15.0 additions */
+    PACK ('K', 'a', 'w', 'i'), /* G_UNICODE_SCRIPT_KAWI */
+    PACK ('N', 'a', 'g', 'm'), /* G_UNICODE_SCRIPT_NAG_MUNDARI */
+
+    /* Unicode 16.0 additions */
+    PACK ('T', 'o', 'd', 'r'), /* G_UNICODE_SCRIPT_TODHRI */
+    PACK ('G', 'a', 'r', 'a'), /* G_UNICODE_SCRIPT_GARAY */
+    PACK ('T', 'u', 't', 'g'), /* G_UNICODE_SCRIPT_TULU_TIGALARI */
+    PACK ('S', 'u', 'n', 'u'), /* G_UNICODE_SCRIPT_SUNUWAR */
+    PACK ('G', 'u', 'k', 'h'), /* G_UNICODE_SCRIPT_GURUNG_KHEMA */
+    PACK ('K', 'r', 'a', 'i'), /* G_UNICODE_SCRIPT_KIRAT_RAI */
+    PACK ('O', 'n', 'a', 'o'), /* G_UNICODE_SCRIPT_OL_ONAL */
+
+    PACK ('S', 'i', 'd', 't'), /* G_UNICODE_SCRIPT_SIDETIC */
+    PACK ('T', 'o', 'l', 's'), /* G_UNICODE_SCRIPT_TOLONG_SIKI */
+    PACK ('T', 'a', 'y', 'o'), /* G_UNICODE_SCRIPT_TAI_YO */
+    PACK ('B', 'e', 'r', 'f'), /* G_UNICODE_SCRIPT_BERIA_ERFE */
+
 #undef PACK
 };
 

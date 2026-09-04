@@ -1,7 +1,7 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test of Shell support: bash $(...) syntax.
+# Test of Shell support: POSIX $(...) syntax.
 
 cat <<\EOF > xg-sh-5.sh
 echo $(gettext 'Simple string')

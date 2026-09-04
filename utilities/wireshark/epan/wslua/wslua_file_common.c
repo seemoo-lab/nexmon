@@ -10,19 +10,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /************
@@ -36,15 +24,17 @@
  * two files opened at the same time for the same Lua script (due to reload
  * and other such events), the script can't just have one file state.
  */
+#include "config.h"
 
 #include "wslua_file_common.h"
 
 
 /* create and set the wtap->priv private data for the file instance */
 void create_wth_priv(lua_State* L, wtap *wth) {
-    file_priv_t *priv = (file_priv_t*)g_malloc(sizeof(file_priv_t));
+    file_priv_t *priv = g_new(file_priv_t, 1);
 
     if (wth->priv != NULL) {
+        g_free(priv);
         luaL_error(L, "Cannot create wtap private data because there already is private data");
         return;
     }
@@ -118,9 +108,10 @@ void remove_wth_priv(lua_State* L, wtap *wth) {
 
 /* create and set the wtap_dumper->priv private data for the file instance */
 void create_wdh_priv(lua_State* L, wtap_dumper *wdh) {
-    file_priv_t *priv = (file_priv_t*)g_malloc(sizeof(file_priv_t));
+    file_priv_t *priv = g_new(file_priv_t, 1);
 
     if (wdh->priv != NULL) {
+        g_free(priv);
         luaL_error(L, "Cannot create wtap_dumper private data because there already is private data");
         return;
     }
@@ -192,7 +183,7 @@ void remove_wdh_priv(lua_State* L, wtap_dumper *wdh) {
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

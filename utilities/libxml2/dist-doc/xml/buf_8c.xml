@@ -1,0 +1,1966 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="buf_8c" kind="file" language="C++">
+    <compoundname>buf.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">string.h</includes>
+    <includes local="no">limits.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includes local="yes">private/buf.h</includes>
+    <incdepgraph>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/buf.c</label>
+        <link refid="buf_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="7">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="4">
+        <label>limits.h</label>
+      </node>
+      <node id="26">
+        <label>private/buf.h</label>
+      </node>
+      <node id="11">
+        <label>stdarg.h</label>
+      </node>
+      <node id="15">
+        <label>stddef.h</label>
+      </node>
+      <node id="9">
+        <label>stdio.h</label>
+      </node>
+      <node id="3">
+        <label>string.h</label>
+      </node>
+    </incdepgraph>
+    <innerclass refid="struct__xmlBuf" prot="public">_xmlBuf</innerclass>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="buf_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="15" column="9" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="15" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="buf_8c_1a3c75bb398badb69c7577b21486f9963f" prot="public" static="no">
+        <name>SIZE_MAX</name>
+        <initializer>((size_t) -1)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="27" column="9" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="27" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="buf_8c_1ad2a9cf705e7130bf03e6b9ea7d46e3b4" prot="public" static="no">
+        <name>BUF_FLAG_OOM</name>
+        <initializer>(1u &lt;&lt; 0)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="30" column="9" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="30" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="buf_8c_1a609a6e3f144626f87f128cacb6a61800" prot="public" static="no">
+        <name>BUF_FLAG_OVERFLOW</name>
+        <initializer>(1u &lt;&lt; 1)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="31" column="9" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="31" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="buf_8c_1a1ac35c4f0bd4a457a22b50cb1c76ed4e" prot="public" static="no">
+        <name>BUF_FLAG_STATIC</name>
+        <initializer>(1u &lt;&lt; 2)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="32" column="9" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="32" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="buf_8c_1abc9af502808dcc79c54d2a9fb99ed8f9" prot="public" static="no">
+        <name>BUF_ERROR</name>
+        <param><defname>buf</defname></param>
+        <initializer>((buf)-&gt;flags &amp; (BUF_FLAG_OOM | BUF_FLAG_OVERFLOW))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="34" column="9" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="34" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="buf_8c_1abf8a010140a41aec8dc567786ea63a7c" prot="public" static="no">
+        <name>BUF_STATIC</name>
+        <param><defname>buf</defname></param>
+        <initializer>((buf)-&gt;flags &amp; BUF_FLAG_STATIC)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="35" column="9" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="35" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="buf_8c_1a930663dabc8729b4dcb2ae18288526ac" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlBufMemoryError</definition>
+        <argsstring>(xmlBufPtr buf)</argsstring>
+        <name>xmlBufMemoryError</name>
+        <param>
+          <type>xmlBufPtr</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Handle an out of memory condition To be improved... </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="59" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="59" bodyend="63"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a9e5c0fe2ead8ab144621c5bccfef968a" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlBufOverflowError</definition>
+        <argsstring>(xmlBufPtr buf)</argsstring>
+        <name>xmlBufOverflowError</name>
+        <param>
+          <type>xmlBufPtr</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Handle a buffer overflow error To be improved... </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="72" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="72" bodyend="76"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1ad29b4d30755a651a7843691d1dbefb1d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+        <definition>xmlBuf * xmlBufCreate</definition>
+        <argsstring>(size_t size)</argsstring>
+        <name>xmlBufCreate</name>
+        <param>
+          <type>size_t</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>Create a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>initial buffer size </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new structure </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="85" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="85" bodyend="109"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1ab158ac2622e35a26ab6f779ac985b799" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+        <definition>xmlBuf * xmlBufCreateMem</definition>
+        <argsstring>(const xmlChar *mem, size_t size, int isStatic)</argsstring>
+        <name>xmlBufCreateMem</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>mem</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>size</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>isStatic</declname>
+        </param>
+        <briefdescription>
+<para>Create a buffer initialized with memory. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If <computeroutput>isStatic</computeroutput> is set, uses the memory area directly as backing store. The memory must be zero-terminated and not be modified for the lifetime of the buffer. A static buffer can&apos;t be grown, modified or detached, but it can be shrunk.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>mem</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a memory area </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>size of the buffer excluding terminator </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>isStatic</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>whether the memory area is static </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new buffer. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="125" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="125" bodyend="163"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a7ce4319bbe671f0bc761b598dc100665" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlBufDetach</definition>
+        <argsstring>(xmlBuf *buf)</argsstring>
+        <name>xmlBufDetach</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Extract buffer content. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Return the content of the buffer as an <computeroutput><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref></computeroutput> string, clearing the buffer.</para>
+<para>This doesn&apos;t work with static buffers as they can&apos;t be reset.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the buffer content </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="177" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="177" bodyend="196"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1aba094780555b857579e79999f1749884" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlBufFree</definition>
+        <argsstring>(xmlBuf *buf)</argsstring>
+        <name>xmlBufFree</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Free a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer to free </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="204" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="204" bodyend="211"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1ab8fdc7b546b1b66198276fc9248db1f8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlBufEmpty</definition>
+        <argsstring>(xmlBuf *buf)</argsstring>
+        <name>xmlBufEmpty</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Empty a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="219" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="219" bodyend="229"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a6ee0e2287610933479e8027c6ab77a7f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t xmlBufShrink</definition>
+        <argsstring>(xmlBuf *buf, size_t len)</argsstring>
+        <name>xmlBufShrink</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Discard bytes at the start of a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>NOTE that the return value differs from <ref refid="tree_8h_1a3eb65e1a38df1d53b75383efcaa415d2" kindref="member">xmlBufferShrink</ref> as it will return 0 on error instead of -1 due to size_t being used as the return type.</para>
+<para><xrefsect id="deprecated_1_deprecated000078"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of bytes to remove </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes removed or 0 in case of failure </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="245" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="245" bodyend="259"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a02bb9209fd3438b4591a907751ffe0d0" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlBufGrowInternal</definition>
+        <argsstring>(xmlBufPtr buf, size_t len)</argsstring>
+        <name>xmlBufGrowInternal</name>
+        <param>
+          <type>xmlBufPtr</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Grow a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Increase the capacity of a buffer. <computeroutput>len</computeroutput> is the amount of free space required after the current end of the buffer.</para>
+<para>Assumes <computeroutput>len &gt; buf-&gt;size - buf-&gt;use</computeroutput>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>number of extra bytes to allocate </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success, -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="274" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="274" bodyend="329"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1aa080b9970ce9efdbd6f9cacad1ac5113" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufGrow</definition>
+        <argsstring>(xmlBuf *buf, size_t len)</argsstring>
+        <name>xmlBufGrow</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Grow a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Increase the capacity of a buffer. <computeroutput>len</computeroutput> is the amount of free space required after the current end of the buffer.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>number of extra bytes to allocate </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success, -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="342" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="342" bodyend="353"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a9043390cfac5851a0ad2d1f702ee61b7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlBufContent</definition>
+        <argsstring>(const xmlBuf *buf)</argsstring>
+        <name>xmlBufContent</name>
+        <param>
+          <type>const <ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Get pointer into buffer content. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the internal content or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="362" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="362" bodyend="368"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a83418a1fd702bf4d4ccec6890b14a923" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlBufEnd</definition>
+        <argsstring>(xmlBuf *buf)</argsstring>
+        <name>xmlBufEnd</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Return a pointer to the end of the buffer content. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the end of the internal content or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="377" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="377" bodyend="383"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a948c1ad324541dbe427c68c56c262b05" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufAddLen</definition>
+        <argsstring>(xmlBuf *buf, size_t len)</argsstring>
+        <name>xmlBufAddLen</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Increase the size of the buffer content. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If data was appended by writing directly into the content array, this function increases the buffer size.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>number of bytes to add </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success, -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="396" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="396" bodyend="404"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1ae0a3d8632d864126eff9f8d288a8d168" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t xmlBufUse</definition>
+        <argsstring>(xmlBuf *buf)</argsstring>
+        <name>xmlBufUse</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Return the size of the buffer content. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>size of buffer content in bytes </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="413" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="413" bodyend="419"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1ab0dc4ed09719102e4b1de80f95c14e69" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t xmlBufAvail</definition>
+        <argsstring>(xmlBuf *buf)</argsstring>
+        <name>xmlBufAvail</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Return the size of available space at the end of a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>available space in bytes </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="428" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="428" bodyend="434"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1ab24c30c6ac77fa869d4e4cbda93fb2da" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufIsEmpty</definition>
+        <argsstring>(xmlBuf *buf)</argsstring>
+        <name>xmlBufIsEmpty</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Tell if a buffer is empty. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if no, 1 if yes and -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="443" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="443" bodyend="449"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a2617cbd20d7546cc926fc5ec49945a3f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufAdd</definition>
+        <argsstring>(xmlBuf *buf, const xmlChar *str, size_t len)</argsstring>
+        <name>xmlBufAdd</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Append data to a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If <computeroutput>len</computeroutput> is -1, <computeroutput>str</computeroutput> is expected to be zero-terminated.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>bytes to add </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>number of bytes </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if successful, -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="462" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="462" bodyend="480"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1afebd647e6a1ed3a0815f004fa9b395c2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufCat</definition>
+        <argsstring>(xmlBuf *buf, const xmlChar *str)</argsstring>
+        <name>xmlBufCat</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Append a zero-terminated string to a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string (optional) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if successful, -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="490" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="490" bodyend="494"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a14a09e4839e28d5c371dea9b375681a2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+        <definition>xmlBuf * xmlBufFromBuffer</definition>
+        <argsstring>(xmlBuffer *buffer)</argsstring>
+        <name>xmlBufFromBuffer</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buffer</declname>
+        </param>
+        <briefdescription>
+<para>Helper routine to switch from the old buffer structures in use in various APIs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>It creates a wrapper <ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> which will be used for internal processing until xmlBufBackToBuffer is issued.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buffer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>incoming old buffer to convert to a new one </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new <ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> unless the call failed and NULL is returned </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="506" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="506" bodyend="538"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a37658fe9fa4c3289103e1b7f448c1c7a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufBackToBuffer</definition>
+        <argsstring>(xmlBuf *buf, xmlBuffer *ret)</argsstring>
+        <name>xmlBufBackToBuffer</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>ret</declname>
+        </param>
+        <briefdescription>
+<para>Function to be called once internal processing had been done to update back the buffer provided by the user. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This can lead to a failure in case the size accumulated in the <ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> is larger than what an <ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> can support on 64 bits (INT_MAX) The <ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> <computeroutput>buf</computeroutput> wrapper is deallocated by this call in any case.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new buffer wrapping the old one </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ret</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>old buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success, -1 on error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="552" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="552" bodyend="578"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a9de7a2bd470e4ae7c8fe490f5aa3b2a9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufResetInput</definition>
+        <argsstring>(xmlBuf *buf, xmlParserInput *input)</argsstring>
+        <name>xmlBufResetInput</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> *</type>
+          <declname>input</declname>
+        </param>
+        <briefdescription>
+<para>Update pointers in the parser input struct. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Update <computeroutput>base</computeroutput>, <computeroutput>cur</computeroutput> and <computeroutput>end</computeroutput> to point into the buffer. This is required after the content array was reallocated.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>input</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a parser input </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success, -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="591" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="591" bodyend="593"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a08dc4a9483f985592296b3664afd157c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufUpdateInput</definition>
+        <argsstring>(xmlBuf *buf, xmlParserInput *input, size_t pos)</argsstring>
+        <name>xmlBufUpdateInput</name>
+        <param>
+          <type><ref refid="tree_8h_1a8a549ab0cfa53cd9e4c47eeb7ceb7094" kindref="member">xmlBuf</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> *</type>
+          <declname>input</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>pos</declname>
+        </param>
+        <briefdescription>
+<para>Update pointers in the parser input struct. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Update <computeroutput>base</computeroutput>, <computeroutput>cur</computeroutput> and <computeroutput>end</computeroutput> to point into the buffer. This is required after the content array was reallocated.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>input</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a parser input </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>pos</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the <computeroutput>cur</computeroutput> position relative to the start of the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success, -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="608" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="608" bodyend="615"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a0fc2fca0daacef8ca684cf1e81185ab8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSetBufferAllocationScheme</definition>
+        <argsstring>(xmlBufferAllocationScheme scheme)</argsstring>
+        <name>xmlSetBufferAllocationScheme</name>
+        <param>
+          <type><ref refid="tree_8h_1a97b35ae4cd8dc514398f48f6785ec760" kindref="member">xmlBufferAllocationScheme</ref></type>
+          <declname>scheme</declname>
+        </param>
+        <briefdescription>
+<para>Set the buffer allocation scheme. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000079"><xreftitle>Deprecated</xreftitle><xrefdescription><para>No-op, allocation schemes were removed.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>scheme</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>allocation method to use </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="631" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="631" bodyend="632"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a16f6a54279156a98888e6f0ddc332971" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a97b35ae4cd8dc514398f48f6785ec760" kindref="member">xmlBufferAllocationScheme</ref></type>
+        <definition>xmlBufferAllocationScheme xmlGetBufferAllocationScheme</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlGetBufferAllocationScheme</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Get the buffer allocation scheme. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000080"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Allocation schemes were removed.</para>
+</xrefdescription></xrefsect></para>
+<para><simplesect kind="return"><para>the current allocation scheme </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="642" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="642" bodyend="644"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a357077c4616a7b791e5e2d6fc6d47781" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+        <definition>xmlBuffer * xmlBufferCreate</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlBufferCreate</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Create a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The default initial size is 256.</para>
+<para><simplesect kind="return"><para>the new structure. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="654" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="654" bodyend="673"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a3e43731f833511c06ebc167144993ca1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+        <definition>xmlBuffer * xmlBufferCreateSize</definition>
+        <argsstring>(size_t size)</argsstring>
+        <name>xmlBufferCreateSize</name>
+        <param>
+          <type>size_t</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>Create a buffer with an initial size. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>initial size of buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new structure. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="682" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="682" bodyend="710"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1aa912f824aed6a1ac0017f360e6a6a748" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar * xmlBufferDetach</definition>
+        <argsstring>(xmlBuffer *buf)</argsstring>
+        <name>xmlBufferDetach</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Extract buffer content. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Return the contents of the buffer as an <computeroutput><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref></computeroutput> string, clearing the buffer.</para>
+<para>This doesn&apos;t work with static buffers as they can&apos;t be reset.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the buffer content </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="724" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="724" bodyend="744"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a50934926155faab965760d3f9261a45a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+        <definition>xmlBuffer * xmlBufferCreateStatic</definition>
+        <argsstring>(void *mem, size_t size)</argsstring>
+        <name>xmlBufferCreateStatic</name>
+        <param>
+          <type>void *</type>
+          <declname>mem</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>Create a static buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The memory must be zero-terminated and not be modified for the lifetime of the buffer. A static buffer can&apos;t be grown, modified or detached, but it can be shrunk.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>mem</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the memory area </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the size in bytes </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new buffer </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="758" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="758" bodyend="768"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a851a463854ee62c7c03e301625504faa" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlBufferSetAllocationScheme</definition>
+        <argsstring>(xmlBuffer *buf, xmlBufferAllocationScheme scheme)</argsstring>
+        <name>xmlBufferSetAllocationScheme</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a97b35ae4cd8dc514398f48f6785ec760" kindref="member">xmlBufferAllocationScheme</ref></type>
+          <declname>scheme</declname>
+        </param>
+        <briefdescription>
+<para>Set the allocation scheme of a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>For libxml2 before 2.14, it is recommended to set this to XML_BUFFER_ALLOC_DOUBLE_IT. Has no effect on 2.14 or later.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer to tune </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>scheme</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>allocation scheme to use </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="780" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="780" bodyend="782"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1ad47816217b8233b5f51c0728b5f82875" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlBufferFree</definition>
+        <argsstring>(xmlBuffer *buf)</argsstring>
+        <name>xmlBufferFree</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Free a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer to free </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="790" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="790" bodyend="800"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a963f4e1ed94d4741408b2024ed7b0fe1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlBufferEmpty</definition>
+        <argsstring>(xmlBuffer *buf)</argsstring>
+        <name>xmlBufferEmpty</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Empty a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="808" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="808" bodyend="823"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a3eb65e1a38df1d53b75383efcaa415d2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufferShrink</definition>
+        <argsstring>(xmlBuffer *buf, unsigned int len)</argsstring>
+        <name>xmlBufferShrink</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>unsigned int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Discard bytes at the start of a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000081"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the number of bytes to remove </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes removed, or -1 in case of failure. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="835" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="835" bodyend="853"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a964be2938a2472b2fa24b97a016a5daf" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufferGrow</definition>
+        <argsstring>(xmlBuffer *buf, unsigned int len)</argsstring>
+        <name>xmlBufferGrow</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>unsigned int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Grow a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000082"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>number of extra bytes to allocate </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new available space or -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="865" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="865" bodyend="908"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1ae87d6f9be80675043e19724c50df48da" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufferDump</definition>
+        <argsstring>(FILE *file, xmlBuffer *buf)</argsstring>
+        <name>xmlBufferDump</name>
+        <param>
+          <type>FILE *</type>
+          <declname>file</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Dump a buffer to a <computeroutput>FILE</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>file</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the output file </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="918" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="918" bodyend="929"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a0f19f56a45ed97079b579cdf1171abca" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar * xmlBufferContent</definition>
+        <argsstring>(const xmlBuffer *buf)</argsstring>
+        <name>xmlBufferContent</name>
+        <param>
+          <type>const <ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Get pointer into buffer content. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the internal content </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="938" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="938" bodyend="944"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1afdaf9cd81ba6bbfd4ff47370e5d71817" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufferLength</definition>
+        <argsstring>(const xmlBuffer *buf)</argsstring>
+        <name>xmlBufferLength</name>
+        <param>
+          <type>const <ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <briefdescription>
+<para>Get the size of the buffer content. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the size of the buffer content in bytes </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="953" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="953" bodyend="959"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a13383ad97a45f4f635f9ffd43817746a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufferResize</definition>
+        <argsstring>(xmlBuffer *buf, unsigned int size)</argsstring>
+        <name>xmlBufferResize</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>unsigned int</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>Resize a buffer to a minimum size. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000083"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer to resize </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the desired size </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 on succes, 0 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="971" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="971" bodyend="982"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a1162938ba52d92b95fccdc0846b7214b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufferAdd</definition>
+        <argsstring>(xmlBuffer *buf, const xmlChar *str, int len)</argsstring>
+        <name>xmlBufferAdd</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Append bytes to a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If <computeroutput>len</computeroutput> is -1, <computeroutput>str</computeroutput> is assumed to be zero-terminated.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>bytes to add </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>number of bytes </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="995" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="995" bodyend="1013"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a17f00f3a7fcd1e6db699ed7b982789eb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufferAddHead</definition>
+        <argsstring>(xmlBuffer *buf, const xmlChar *str, int len)</argsstring>
+        <name>xmlBufferAddHead</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>len</declname>
+        </param>
+        <briefdescription>
+<para>Prepend bytes to a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If <computeroutput>len</computeroutput> is -1, <computeroutput>str</computeroutput> is assumed to be zero-terminated.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>bytes to prepend </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>len</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>number of bytes </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="1026" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="1026" bodyend="1068"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1afde70bec94ba76d16135cb6282878c7c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufferCat</definition>
+        <argsstring>(xmlBuffer *buf, const xmlChar *str)</argsstring>
+        <name>xmlBufferCat</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Append a zero-terminated string to a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string to add </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="1078" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="1078" bodyend="1080"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a53f7a4cc289a81088f4b06c7561b8114" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlBufferCCat</definition>
+        <argsstring>(xmlBuffer *buf, const char *str)</argsstring>
+        <name>xmlBufferCCat</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>Append a zero-terminated C string to a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>string to add </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="1090" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="1090" bodyend="1092"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a8327a40751c88fd8867ddd6bcbc62b67" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlBufferWriteCHAR</definition>
+        <argsstring>(xmlBuffer *buf, const xmlChar *string)</argsstring>
+        <name>xmlBufferWriteCHAR</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>string</declname>
+        </param>
+        <briefdescription>
+<para>Append a zero-terminated <computeroutput><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref></computeroutput> string to a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XML buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>string</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to add </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="1101" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="1101" bodyend="1103"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1a8ebd3aaee61b4f0904de35a9b1cf01e8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlBufferWriteChar</definition>
+        <argsstring>(xmlBuffer *buf, const char *string)</argsstring>
+        <name>xmlBufferWriteChar</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>string</declname>
+        </param>
+        <briefdescription>
+<para>Append a zero-terminated C string to a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Same as <ref refid="tree_8h_1a53f7a4cc289a81088f4b06c7561b8114" kindref="member">xmlBufferCCat</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>string</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to add </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="1114" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="1114" bodyend="1116"/>
+      </memberdef>
+      <memberdef kind="function" id="buf_8c_1acada98328fa7db6b043142bcb9d2de24" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlBufferWriteQuotedString</definition>
+        <argsstring>(xmlBuffer *buf, const xmlChar *string)</argsstring>
+        <name>xmlBufferWriteQuotedString</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buf</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>string</declname>
+        </param>
+        <briefdescription>
+<para>Append a quoted string to a buffer. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Append a string quoted with single or double quotes. If the string contains both single and double quotes, double quotes are escaped with <computeroutput>&amp;quot;</computeroutput>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buf</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>string</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the string to add </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/buf.c" line="1129" column="1" bodyfile="/builds/GNOME/libxml2/buf.c" bodystart="1129" bodyend="1163"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/buf.c"/>
+  </compounddef>
+</doxygen>

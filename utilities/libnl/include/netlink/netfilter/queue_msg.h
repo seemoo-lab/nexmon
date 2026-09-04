@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/netfilter/queue_msg.h	Netfilter Queue Messages
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2007, 2008 Patrick McHardy <kaber@trash.net>
  */
 
@@ -92,6 +86,10 @@ extern unsigned int		nfnl_queue_msg_get_verdict(const struct nfnl_queue_msg *);
 
 extern struct nl_msg *		nfnl_queue_msg_build_verdict(const struct nfnl_queue_msg *);
 extern int			nfnl_queue_msg_send_verdict(struct nl_sock *,
+							    const struct nfnl_queue_msg *);
+
+extern struct nl_msg *		nfnl_queue_msg_build_verdict_batch(const struct nfnl_queue_msg *msg);
+extern int			nfnl_queue_msg_send_verdict_batch(struct nl_sock *,
 							    const struct nfnl_queue_msg *);
 extern int			nfnl_queue_msg_send_verdict_payload(struct nl_sock *,
 						const struct nfnl_queue_msg *,

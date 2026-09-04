@@ -16,75 +16,64 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/reassemble.h>
+#include <epan/conversation.h>
 
 void proto_register_lapsat(void);
 
-static int proto_lapsat = -1;
+static int proto_lapsat;
 
 static reassembly_table lapsat_reassembly_table;
 
 static dissector_table_t lapsat_sapi_dissector_table;
 
-static gint ett_lapsat = -1;
-static gint ett_lapsat_address = -1;
-static gint ett_lapsat_control = -1;
-static gint ett_lapsat_fragment = -1;
-static gint ett_lapsat_fragments = -1;
+static int ett_lapsat;
+static int ett_lapsat_address;
+static int ett_lapsat_control;
+static int ett_lapsat_fragment;
+static int ett_lapsat_fragments;
 
-static int hf_lapsat_addr = -1;
-static int hf_lapsat_addr_sst = -1;
-static int hf_lapsat_addr_cr = -1;
-static int hf_lapsat_addr_sapi = -1;
-static int hf_lapsat_addr_si = -1;
-static int hf_lapsat_addr_lpd = -1;
-static int hf_lapsat_addr_lfi = -1;
+static int hf_lapsat_addr;
+static int hf_lapsat_addr_sst;
+static int hf_lapsat_addr_cr;
+static int hf_lapsat_addr_sapi;
+static int hf_lapsat_addr_si;
+static int hf_lapsat_addr_lpd;
+static int hf_lapsat_addr_lfi;
 
-static int hf_lapsat_ctl = -1;
-static int hf_lapsat_ctl_ftype_i = -1;
-static int hf_lapsat_ctl_ftype_s_u = -1;
-static int hf_lapsat_ctl_s_ftype = -1;
-static int hf_lapsat_ctl_u_modifier_cmd = -1;
-static int hf_lapsat_ctl_u_modifier_resp = -1;
-static int hf_lapsat_ctl_n_r = -1;
-static int hf_lapsat_ctl_n_s = -1;
-static int hf_lapsat_ctl_p = -1;
-static int hf_lapsat_ctl_f = -1;
-static int hf_lapsat_ctl_mii = -1;
+static int hf_lapsat_ctl;
+static int hf_lapsat_ctl_ftype_i;
+static int hf_lapsat_ctl_ftype_s_u;
+static int hf_lapsat_ctl_s_ftype;
+static int hf_lapsat_ctl_u_modifier_cmd;
+static int hf_lapsat_ctl_u_modifier_resp;
+static int hf_lapsat_ctl_n_r;
+static int hf_lapsat_ctl_n_s;
+static int hf_lapsat_ctl_p;
+static int hf_lapsat_ctl_f;
+static int hf_lapsat_ctl_mii;
 
-static int hf_lapsat_payload_last_nibble = -1;
+static int hf_lapsat_payload_last_nibble;
 
-static int hf_lapsat_len = -1;
+static int hf_lapsat_len;
 
-static int hf_lapsat_fragment_data = -1;
-static int hf_lapsat_fragments = -1;
-static int hf_lapsat_fragment = -1;
-static int hf_lapsat_fragment_overlap = -1;
-static int hf_lapsat_fragment_overlap_conflicts = -1;
-static int hf_lapsat_fragment_multiple_tails = -1;
-static int hf_lapsat_fragment_too_long_fragment = -1;
-static int hf_lapsat_fragment_error = -1;
-static int hf_lapsat_fragment_count = -1;
-static int hf_lapsat_reassembled_in = -1;
-static int hf_lapsat_reassembled_length = -1;
+static int hf_lapsat_fragment_data;
+static int hf_lapsat_fragments;
+static int hf_lapsat_fragment;
+static int hf_lapsat_fragment_overlap;
+static int hf_lapsat_fragment_overlap_conflicts;
+static int hf_lapsat_fragment_multiple_tails;
+static int hf_lapsat_fragment_too_long_fragment;
+static int hf_lapsat_fragment_error;
+static int hf_lapsat_fragment_count;
+static int hf_lapsat_reassembled_in;
+static int hf_lapsat_reassembled_length;
 
 
 #define LAPSAT_HEADER_LEN		3
@@ -214,12 +203,6 @@ static const value_string lapsat_ctl_u_modifier_vals_resp[] = {
  * Fragment stuff
  */
 
-static const value_string true_false_vals[] = {
-	{ 0, "False" },
-	{ 1, "True" },
-	{ 0, NULL },
-};
-
 
 static const fragment_items lapsat_frag_items = {
 	/* Fragment subtrees */
@@ -244,34 +227,21 @@ static const fragment_items lapsat_frag_items = {
 	"fragments"
 };
 
-static void
-lapsat_defragment_init(void)
-{
-	reassembly_table_init(&lapsat_reassembly_table,
-	    &addresses_reassembly_table_functions);
-}
-
-static void
-lapsat_defragment_cleanup(void)
-{
-	reassembly_table_destroy(&lapsat_reassembly_table);
-}
-
 
 /*
  * Main dissection functions
  */
 
-static guint16
+static uint16_t
 dissect_control(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int is_response)
 {
 	proto_tree *ctl_tree;
 	proto_item *ctl_ti;
-	guint16 ctl, poll_final;
+	uint16_t ctl, poll_final;
 	const char *frame_type;
 	char *info;
 
-	info = (char *)wmem_alloc(wmem_packet_scope(), 80);
+	info = (char *)wmem_alloc(pinfo->pool, 80);
 
 	/* Grab complete control field */
 	ctl = tvb_get_ntohs(tvb, 1) >> 4;
@@ -296,7 +266,7 @@ dissect_control(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int is_
 			break;
 		}
 
-		g_snprintf(info, 80, "S%s, func=%s, N(R)=%u",
+		snprintf(info, 80, "S%s, func=%s, N(R)=%u",
 			poll_final ? (is_response ? " F" : " P") : "",
 			frame_type,
 			(ctl & LAPSAT_CTL_N_R_MSK) >> LAPSAT_CTL_N_R_SHIFT);
@@ -329,7 +299,7 @@ dissect_control(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int is_
 			break;
 		}
 
-		g_snprintf(info, 80, "U%s, func=%s",
+		snprintf(info, 80, "U%s, func=%s",
 			poll_final ? (is_response ? " F" : " P") : "",
 			frame_type);
 
@@ -339,7 +309,7 @@ dissect_control(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int is_
 		/*
 		 * Information frame
 		 */
-		g_snprintf(info, 80, "I%s, N(R)=%u, N(S)=%u",
+		snprintf(info, 80, "I%s, N(R)=%u, N(S)=%u",
 			poll_final ? " P" : "",
 			(ctl & LAPSAT_CTL_N_R_MSK) >> LAPSAT_CTL_N_R_SHIFT,
 			(ctl & LAPSAT_CTL_N_S_MSK) >> LAPSAT_CTL_N_S_SHIFT);
@@ -353,7 +323,7 @@ dissect_control(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int is_
 	/* Create item & subtree */
 	ctl_ti = proto_tree_add_uint_format_value(
 			tree, hf_lapsat_ctl,
-			tvb, 1, 2, (guint32)ctl,
+			tvb, 1, 2, (uint32_t)ctl,
 			"%s (0x%03x)", info, ctl
 	);
 
@@ -437,8 +407,8 @@ dissect_lapsat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dissec
 	proto_tree *lapsat_tree, *addr_tree;
 	proto_item *lapsat_ti, *addr_ti;
 	tvbuff_t *payload;
-	guint8 addr, sapi, cr;
-	guint16 control;
+	uint8_t addr, sapi, cr;
+	uint16_t control;
 	unsigned int hlen, is_response = 0, plen;
 
 	/* Check that there's enough data */
@@ -449,16 +419,16 @@ dissect_lapsat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dissec
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "LAPSat");
 
 	/* Grab a couple of fields */
-	addr = tvb_get_guint8(tvb, 0);
+	addr = tvb_get_uint8(tvb, 0);
 
 	sapi = (addr & LAPSAT_SAPI_MSK) >> LAPSAT_SAPI_SHIFT;
 
 	cr = addr & LAPSAT_CR;
 	if (pinfo->p2p_dir == P2P_DIR_RECV) {
-		is_response = cr ? FALSE : TRUE;
+		is_response = cr ? false : true;
 	}
 	else if (pinfo->p2p_dir == P2P_DIR_SENT) {
-		is_response = cr ? TRUE : FALSE;
+		is_response = cr ? true : false;
 	}
 
 	hlen = LAPSAT_HEADER_LEN;
@@ -498,21 +468,19 @@ dissect_lapsat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dissec
 
 	/* Get the payload */
 	plen = (addr & LAPSAT_LFI) ?
-		tvb_get_guint8(tvb, 3) : tvb_captured_length(tvb) - hlen;
+		tvb_get_uint8(tvb, 3) : tvb_captured_length(tvb) - hlen;
 
 	if (!plen)
 		return 3;	/* No point in doing more if there is no payload */
 
-	DISSECTOR_ASSERT((plen + hlen) <= tvb_captured_length(tvb));
-
 	if ((plen + hlen) == tvb_captured_length(tvb)) {
 		/* Need to integrate the last nibble */
-		guint8 *data = (guint8 *)tvb_memdup(pinfo->pool, tvb, hlen, plen);
-		data[plen-1] |= tvb_get_guint8(tvb, 2) << 4;
+		uint8_t *data = (uint8_t *)tvb_memdup(pinfo->pool, tvb, hlen, plen);
+		data[plen-1] |= tvb_get_uint8(tvb, 2) << 4;
 		payload = tvb_new_child_real_data(tvb, data, plen, plen);
 	} else {
 		/* Last nibble doesn't need merging */
-		payload = tvb_new_subset(tvb, hlen, plen, plen);
+		payload = tvb_new_subset_length(tvb, hlen, plen);
 	}
 
 	add_new_data_source(pinfo, payload, "LAPSat Payload");
@@ -524,14 +492,14 @@ dissect_lapsat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dissec
 		 */
 		fragment_head *fd_m = NULL;
 		tvbuff_t *reassembled = NULL;
-		guint32 fragment_id;
-		gboolean save_fragmented = pinfo->fragmented;
+		uint32_t fragment_id;
+		bool save_fragmented = pinfo->fragmented;
 
 		/* Is this a fragment ? */
 		pinfo->fragmented = !!(addr & LAPSAT_SI);
 
 		/* Rely on caller to provide a way to group fragments */
-		fragment_id = (pinfo->circuit_id << 3) | (sapi << 1) | pinfo->p2p_dir;
+		fragment_id = (conversation_get_id_from_elements(pinfo, CONVERSATION_GSMTAP, USE_LAST_ENDPOINT) << 3) | (sapi << 1) | pinfo->p2p_dir;
 
 		/* Fragment reconstruction helpers */
 		fd_m = fragment_add_seq_next(
@@ -660,17 +628,17 @@ proto_register_lapsat(void)
 		},
 		{ &hf_lapsat_ctl_p,
 		  { "Poll", "lapsat.control.p",
-		    FT_UINT16, BASE_DEC, VALS(true_false_vals), LAPSAT_CTL_P_F << 4,
+		    FT_BOOLEAN, 16, NULL, LAPSAT_CTL_P_F << 4,
 		    NULL, HFILL }
 		},
 		{ &hf_lapsat_ctl_f,
 		  { "Final", "lapsat.control.f",
-		    FT_UINT16, BASE_DEC, VALS(true_false_vals), LAPSAT_CTL_P_F << 4,
+		    FT_BOOLEAN, 16, NULL, LAPSAT_CTL_P_F << 4,
 		    NULL, HFILL }
 		},
 		{ &hf_lapsat_ctl_mii,
 		  { "MII", "lapsat.control.mii",
-		    FT_UINT16, BASE_DEC, VALS(true_false_vals), LAPSAT_CTL_MII << 4,
+		    FT_BOOLEAN, 16, NULL, LAPSAT_CTL_MII << 4,
 		    "Mobile Identity Indicator", HFILL }
 		},
 
@@ -747,7 +715,7 @@ proto_register_lapsat(void)
 		},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_lapsat,
 		&ett_lapsat_address,
 		&ett_lapsat_control,
@@ -764,13 +732,13 @@ proto_register_lapsat(void)
 
 	lapsat_sapi_dissector_table = register_dissector_table("lapsat.sapi", "LAPSat SAPI", proto_lapsat, FT_UINT8, BASE_DEC);
 
-	register_init_routine (lapsat_defragment_init);
-	register_cleanup_routine (lapsat_defragment_cleanup);
+	reassembly_table_register(&lapsat_reassembly_table,
+	    &addresses_reassembly_table_functions);
 }
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

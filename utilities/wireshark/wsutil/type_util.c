@@ -5,27 +5,17 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
+#include <glib.h>
+
 #include "type_util.h"
 
 /*
- * guint64 to gdouble conversions taken from gstutils.c of GStreamer project
+ * uint64_t to double conversions taken from gstutils.c of GStreamer project
  *
  * GStreamer
  * Copyright (C) 1999,2000 Erik Walthinsen <omega@cse.ogi.edu>
@@ -45,27 +35,27 @@
  * double conversion is not defined/implemented.
  */
 
-gdouble
-type_util_guint64_to_gdouble(guint64 value)
+double
+type_util_uint64_to_double(uint64_t value)
 {
-  if (value & G_GUINT64_CONSTANT (0x8000000000000000))
-    return (gdouble) ((gint64) value) + (gdouble) 18446744073709551616.;
+  if (value & UINT64_C (0x8000000000000000))
+    return (double) ((int64_t) value) + (double) 18446744073709551616.;
   else
-    return (gdouble) ((gint64) value);
+    return (double) ((int64_t) value);
 }
 
-guint64
-type_util_gdouble_to_guint64(gdouble value)
+uint64_t
+type_util_double_to_uint64(double value)
 {
-  if (value < (gdouble) 9223372036854775808.)   /* 1 << 63 */
-    return ((guint64) ((gint64) value));
+  if (value < (double) 9223372036854775808.)   /* 1 << 63 */
+    return ((uint64_t) ((int64_t) value));
 
-  value -= (gdouble) 18446744073709551616.;
-  return ((guint64) ((gint64) value));
+  value -= (double) 18446744073709551616.;
+  return ((uint64_t) ((int64_t) value));
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

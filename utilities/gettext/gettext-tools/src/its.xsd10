@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="http://www.w3.org/2005/11/its" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:its="http://www.w3.org/2005/11/its" xmlns:gt="https://www.gnu.org/s/gettext/ns/its/extensions/1.0" elementFormDefault="qualified">
+
+  <annotation>
+    <documentation>XML schema 1.0 of *.its files, as understood by GNU gettext.
+
+Copyright (C) 2015-2026 Free Software Foundation, Inc.
+
+This file is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published
+by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version.
+
+This file is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;https://www.gnu.org/licenses/&gt;.
+
+Written by Bruno Haible.
+</documentation>
+  </annotation>
+
+  <!-- Define elements and types in the gt namespace.  -->
+  <import namespace="https://www.gnu.org/s/gettext/ns/its/extensions/1.0" schemaLocation="its-extensions.xsd"/>
+
+  <element name="rules" type="its:RulesType"></element>
+
+  <complexType name="RulesType">
+    <sequence minOccurs="0" maxOccurs="unbounded">
+      <choice>
+        <element name="translateRule" type="its:TranslateRuleType">
+        </element>
+        <element name="locNoteRule" type="its:LocNoteRuleType">
+        </element>
+        <element name="withinTextRule" type="its:WithinTextRuleType">
+        </element>
+        <element name="preserveSpaceRule" type="its:PreserveSpaceRuleType">
+        </element>
+        <element ref="gt:preserveSpaceRule">
+        </element>
+        <element ref="gt:contextRule">
+        </element>
+        <element ref="gt:escapeRule">
+        </element>
+        <!-- Allow other rules from the ITS namespace (not implemented
+             by GNU gettext).  -->
+        <element name="termRule" type="its:OtherRuleType"/>
+        <element name="dirRule" type="its:OtherRuleType"/>
+        <element name="langRule" type="its:OtherRuleType"/>
+        <element name="domainRule" type="its:OtherRuleType"/>
+        <element name="textAnalysisRule" type="its:OtherRuleType"/>
+        <element name="localeFilterRule" type="its:OtherRuleType"/>
+        <element name="provRule" type="its:OtherRuleType"/>
+        <element name="externalResourceRefRule" type="its:OtherRuleType"/>
+        <element name="targetPointerRule" type="its:OtherRuleType"/>
+        <element name="idValueRule" type="its:OtherRuleType"/>
+        <element name="locQualityIssueRule" type="its:OtherRuleType"/>
+        <element name="mtConfidenceRule" type="its:OtherRuleType"/>
+        <element name="allowedCharactersRule" type="its:OtherRuleType"/>
+        <element name="storageSizeRule" type="its:OtherRuleType"/>
+        <!-- Allow itstool extensions (not implemented by GNU gettext).  -->
+        <any namespace="http://itstool.org/extensions/" processContents="skip"/>
+      </choice>
+    </sequence>
+    <attribute name="version" type="string" use="required" fixed="2.0"></attribute>
+  </complexType>
+
+  <complexType name="TranslateRuleType">
+    <attribute name="selector" type="string" use="required"></attribute>
+    <attribute name="translate" use="required">
+      <simpleType>
+        <restriction base="string">
+          <enumeration value="yes"></enumeration>
+          <enumeration value="no"></enumeration>
+        </restriction>
+      </simpleType>
+    </attribute>
+  </complexType>
+
+  <complexType name="LocNoteRuleType">
+    <annotation>
+      <documentation>Note: An instance should not have both the 'locNotePointer' attribute and a 'locNote' child at the same time.
+</documentation></annotation>
+    <sequence minOccurs="0" maxOccurs="1">
+      <element name="locNote" type="string"></element>
+    </sequence>
+    <attribute name="selector" type="string" use="required"></attribute>
+    <attribute name="locNoteType" use="required">
+      <simpleType>
+        <restriction base="string">
+          <enumeration value="description"></enumeration>
+          <enumeration value="alert"></enumeration>
+        </restriction>
+      </simpleType>
+    </attribute>
+    <attribute name="locNotePointer" type="string" use="optional"></attribute>
+    <!-- Valid in XML Schema 1.1 only:
+    <assert test="not(@locNotePointer and locNote)"/>
+    -->
+  </complexType>
+
+  <complexType name="WithinTextRuleType">
+    <attribute name="selector" type="string" use="required"></attribute>
+    <attribute name="withinText" use="required">
+      <simpleType>
+        <restriction base="string">
+          <enumeration value="yes"></enumeration>
+          <enumeration value="nested"></enumeration>
+          <enumeration value="no"></enumeration>
+        </restriction>
+      </simpleType>
+    </attribute>
+  </complexType>
+
+  <!-- If no <its:preserveSpaceRule> nor <gt:preserveSpaceRule> is present,
+       the default 'space' property is "default".  -->
+  <complexType name="PreserveSpaceRuleType">
+    <attribute name="selector" type="string" use="required"></attribute>
+    <attribute name="space" use="required">
+      <simpleType>
+        <restriction base="string">
+          <enumeration value="preserve"></enumeration>
+          <enumeration value="default"></enumeration>
+        </restriction>
+      </simpleType>
+    </attribute>
+  </complexType>
+
+  <complexType name="OtherRuleType" mixed="true">
+    <sequence>
+      <any processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+    </sequence>
+    <anyAttribute processContents="skip"/>
+  </complexType>
+
+</schema>

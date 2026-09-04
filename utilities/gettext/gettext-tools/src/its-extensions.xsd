@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema targetNamespace="https://www.gnu.org/s/gettext/ns/its/extensions/1.0" xmlns="http://www.w3.org/2001/XMLSchema" xmlns:gt="https://www.gnu.org/s/gettext/ns/its/extensions/1.0" elementFormDefault="qualified">
+
+  <annotation>
+    <documentation>XML schema extensions for *.its files, as understood by GNU gettext.
+
+Copyright (C) 2015-2026 Free Software Foundation, Inc.
+
+This file is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published
+by the Free Software Foundation, either version 3 of the License,
+or (at your option) any later version.
+
+This file is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see &lt;https://www.gnu.org/licenses/&gt;.
+
+Written by Bruno Haible.
+</documentation>
+  </annotation>
+
+  <element name="preserveSpaceRule" type="gt:ExtendedPreserveSpaceRuleType"></element>
+  <element name="contextRule" type="gt:ContextRuleType"></element>
+  <element name="escapeRule" type="gt:EscapeRuleType"></element>
+
+  <!-- If no <its:preserveSpaceRule> nor <gt:preserveSpaceRule> is present,
+       the default 'space' property is "default".  -->
+  <complexType name="ExtendedPreserveSpaceRuleType">
+    <attribute name="selector" type="string" use="required"></attribute>
+    <attribute name="space" use="required">
+      <simpleType>
+        <restriction base="string">
+          <enumeration value="preserve"></enumeration>
+          <enumeration value="default"></enumeration>
+          <enumeration value="trim"></enumeration>
+          <enumeration value="paragraph"></enumeration>
+        </restriction>
+      </simpleType>
+    </attribute>
+  </complexType>
+
+  <complexType name="ContextRuleType">
+    <attribute name="selector" type="string" use="required"></attribute>
+    <attribute name="contextPointer" type="string" use="required"></attribute>
+    <attribute name="textPointer" type="string" use="optional"></attribute>
+  </complexType>
+
+  <!-- If no <gt:escapeRule> is present, the default 'escape' and 'unescape-if'
+       properties are "no".  -->
+  <complexType name="EscapeRuleType">
+    <attribute name="selector" type="string" use="required"></attribute>
+    <attribute name="escape" use="required">
+      <simpleType>
+        <restriction base="string">
+          <enumeration value="yes"></enumeration>
+          <enumeration value="no"></enumeration>
+        </restriction>
+      </simpleType>
+    </attribute>
+    <attribute name="unescape-if" use="optional" default="no">
+      <simpleType>
+        <restriction base="string">
+          <enumeration value="xml"></enumeration>
+          <enumeration value="xhtml"></enumeration>
+          <enumeration value="html"></enumeration>
+          <enumeration value="no"></enumeration>
+        </restriction>
+      </simpleType>
+    </attribute>
+  </complexType>
+</schema>

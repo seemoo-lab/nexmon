@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See thehf_class
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,22 +19,24 @@
 #include <epan/expert.h>
 #include "packet-usb.h"
 
-static int proto_pn532_hci                                                 = -1;
-static int hf_preamble                                                     = -1;
-static int hf_start_code                                                   = -1;
-static int hf_length                                                       = -1;
-static int hf_length_checksum                                              = -1;
-static int hf_extended_length                                              = -1;
-static int hf_packet_code                                                  = -1;
-static int hf_postable                                                     = -1;
-static int hf_specific_application_level_error_code                        = -1;
-static int hf_data_checksum                                                = -1;
-static int hf_ignored                                                      = -1;
+static int proto_pn532_hci;
+static int hf_preamble;
+static int hf_start_code;
+static int hf_length;
+static int hf_length_checksum;
+static int hf_length_checksum_status;
+static int hf_extended_length;
+static int hf_packet_code;
+static int hf_postable;
+static int hf_specific_application_level_error_code;
+static int hf_data_checksum;
+static int hf_data_checksum_status;
+static int hf_ignored;
 
-static gint ett_pn532_hci                                                  = -1;
+static int ett_pn532_hci;
 
-static expert_field ei_invalid_length_checksum                        = EI_INIT;
-static expert_field ei_invalid_data_checksum                          = EI_INIT;
+static expert_field ei_invalid_length_checksum;
+static expert_field ei_invalid_data_checksum;
 
 static dissector_handle_t  pn532_handle;
 static dissector_handle_t  pn532_hci_handle;
@@ -62,22 +52,22 @@ static const value_string packet_code_vals[] = {
 void proto_register_pn532_hci(void);
 void proto_reg_handoff_pn532_hci(void);
 
-static gint
+static int
 dissect_pn532_hci(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     proto_item      *main_item;
     proto_tree      *main_tree;
-    gint             offset = 0;
+    int              offset = 0;
     tvbuff_t        *next_tvb;
-    guint16          packet_code;
-    guint16          length;
-    guint8           checksum;
-    usb_conv_info_t *usb_conv_info;
+    uint16_t         packet_code;
+    uint16_t         length;
+    uint8_t          checksum;
+    urb_info_t      *urb;
 
     /* Reject the packet if data is NULL */
     if (data == NULL)
         return 0;
-    usb_conv_info = (usb_conv_info_t *)data;
+    urb = (urb_info_t *)data;
 
     length = tvb_captured_length_remaining(tvb, offset);
     if (length < 6) return offset;
@@ -126,46 +116,43 @@ dissect_pn532_hci(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         length = tvb_get_ntohs(tvb, offset);
         offset += 2;
 
-        proto_tree_add_item(main_tree, hf_length_checksum, tvb, offset, 1, ENC_BIG_ENDIAN);
-        checksum = (length >> 8) + (length & 0xFF) + tvb_get_guint8(tvb, offset);
-        if (checksum != 0) {
-            proto_tree_add_expert(main_tree, pinfo, &ei_invalid_length_checksum, tvb, offset, 1);
-        }
+        checksum = (length >> 8) + (length & 0xFF) + tvb_get_uint8(tvb, offset);
+        proto_tree_add_checksum(main_tree, tvb, offset, hf_length_checksum, hf_length_checksum_status, &ei_invalid_length_checksum,
+                            pinfo, checksum, ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY|PROTO_CHECKSUM_ZERO);
         offset += 1;
 
         next_tvb = tvb_new_subset_length(tvb, offset, length);
-        call_dissector_with_data(pn532_handle, next_tvb, pinfo, tree, usb_conv_info);
+        call_dissector_with_data(pn532_handle, next_tvb, pinfo, tree, urb);
         offset += length;
 
-        checksum = tvb_get_guint8(tvb, offset);
+        checksum = tvb_get_uint8(tvb, offset);
         while (length) {
-            checksum += tvb_get_guint8(tvb, offset - length);
+            checksum += tvb_get_uint8(tvb, offset - length);
             length -= 1;
         }
-        proto_tree_add_checksum(main_tree, tvb, offset, hf_data_checksum, -1, &ei_invalid_data_checksum, pinfo, 0,
+        proto_tree_add_checksum(main_tree, tvb, offset, hf_data_checksum, hf_data_checksum_status, &ei_invalid_data_checksum, pinfo, 0,
                             ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY|PROTO_CHECKSUM_ZERO);
         offset += 1;
     } else { /* Normal Information Frame */
         col_set_str(pinfo->cinfo, COL_INFO, "Normal Information Frame");
 
         proto_tree_add_item(main_tree, hf_length, tvb, offset, 1, ENC_BIG_ENDIAN);
-        length = tvb_get_guint8(tvb, offset);
+        length = tvb_get_uint8(tvb, offset);
         offset += 1;
 
-        proto_tree_add_item(main_tree, hf_length_checksum, tvb, offset, 1, ENC_BIG_ENDIAN);
-        checksum = length + tvb_get_guint8(tvb, offset);
-        if (checksum != 0)
-            proto_tree_add_expert(main_tree, pinfo, &ei_invalid_length_checksum, tvb, offset, 1);
+        checksum = length + tvb_get_uint8(tvb, offset);
+        proto_tree_add_checksum(main_tree, tvb, offset, hf_length_checksum, hf_length_checksum_status, &ei_invalid_length_checksum,
+                            pinfo, checksum, ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY|PROTO_CHECKSUM_ZERO);
         offset += 1;
 
         next_tvb = tvb_new_subset_length(tvb, offset, length);
-        call_dissector_with_data(pn532_handle, next_tvb, pinfo, tree, usb_conv_info);
+        call_dissector_with_data(pn532_handle, next_tvb, pinfo, tree, urb);
         offset += length;
 
         proto_tree_add_item(main_tree, hf_data_checksum, tvb, offset, 1, ENC_BIG_ENDIAN);
-        checksum = tvb_get_guint8(tvb, offset);
+        checksum = tvb_get_uint8(tvb, offset);
         while (length) {
-            checksum += tvb_get_guint8(tvb, offset - length);
+            checksum += tvb_get_uint8(tvb, offset - length);
             length -= 1;
         }
         if (checksum != 0) {
@@ -230,9 +217,19 @@ proto_register_pn532_hci(void)
             FT_UINT8, BASE_HEX, NULL, 0x00,
             NULL, HFILL }
         },
+        { &hf_length_checksum_status,
+            { "Length Checksum Status",            "pn532_hci.length_checksum.status",
+            FT_UINT8, BASE_NONE, VALS(proto_checksum_vals), 0x00,
+            NULL, HFILL }
+        },
         { &hf_data_checksum,
             { "Data Checksum",                   "pn532_hci.data_checksum",
             FT_UINT8, BASE_HEX, NULL, 0x00,
+            NULL, HFILL }
+        },
+        { &hf_data_checksum_status,
+            { "Data Checksum Status",            "pn532_hci.data_checksum.status",
+            FT_UINT8, BASE_NONE, VALS(proto_checksum_vals), 0x00,
             NULL, HFILL }
         },
         { &hf_specific_application_level_error_code,
@@ -252,7 +249,7 @@ proto_register_pn532_hci(void)
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_pn532_hci
     };
 
@@ -287,7 +284,7 @@ proto_reg_handoff_pn532_hci(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

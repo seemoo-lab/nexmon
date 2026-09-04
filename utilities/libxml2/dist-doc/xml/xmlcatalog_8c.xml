@@ -1,0 +1,534 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="xmlcatalog_8c" kind="file" language="C++">
+    <compoundname>xmlcatalog.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">string.h</includes>
+    <includes local="no">stdio.h</includes>
+    <includes local="no">stdarg.h</includes>
+    <includes local="no">stdlib.h</includes>
+    <includes local="no">unistd.h</includes>
+    <includes refid="xmlmemory_8h" local="no">libxml/xmlmemory.h</includes>
+    <includes refid="uri_8h" local="no">libxml/uri.h</includes>
+    <includes refid="catalog_8h" local="no">libxml/catalog.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <incdepgraph>
+      <node id="28">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/catalog.h</label>
+        <link refid="catalog_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="26">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+      </node>
+      <node id="29">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>libxml/uri.h</label>
+        <link refid="uri_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="27">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/xmlcatalog.c</label>
+        <link refid="xmlcatalog_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="10">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="15">
+        <label>limits.h</label>
+      </node>
+      <node id="5">
+        <label>stdarg.h</label>
+      </node>
+      <node id="19">
+        <label>stddef.h</label>
+      </node>
+      <node id="4">
+        <label>stdio.h</label>
+      </node>
+      <node id="6">
+        <label>stdlib.h</label>
+      </node>
+      <node id="3">
+        <label>string.h</label>
+      </node>
+      <node id="7">
+        <label>unistd.h</label>
+      </node>
+    </incdepgraph>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="xmlcatalog_8c_1a60d2d7f2bb8f028815ac45dfd648c66c" prot="public" static="no">
+        <name>XML_DEPRECATED</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="9" column="9" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="9" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlcatalog_8c_1afcf80a6d91178952d107ad00b165752b" prot="public" static="no">
+        <name>STDIN_FILENO</name>
+        <initializer>0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="38" column="11" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="38" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlcatalog_8c_1a5d9742537c38d1c8e5cecff6128a9037" prot="public" static="no">
+        <name>XML_SGML_DEFAULT_CATALOG</name>
+        <initializer>XML_SYSCONFDIR &quot;/sgml/catalog&quot;</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="60" column="9" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="60" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="var">
+      <memberdef kind="variable" id="xmlcatalog_8c_1ae7c2b21c4ff2a85e344606e0079333f8" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int shell</definition>
+        <argsstring></argsstring>
+        <name>shell</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="42" column="12" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="42" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="xmlcatalog_8c_1a54f86be4de8d63876000ba13613eb194" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int sgml</definition>
+        <argsstring></argsstring>
+        <name>sgml</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="44" column="12" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="44" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="xmlcatalog_8c_1a2808aedae2023336fcf1cc23cf32a756" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int noout</definition>
+        <argsstring></argsstring>
+        <name>noout</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="46" column="12" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="46" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="xmlcatalog_8c_1aa1f4cfeee2842f40a2b8dfd94331479f" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int create</definition>
+        <argsstring></argsstring>
+        <name>create</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="47" column="12" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="47" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="xmlcatalog_8c_1aeb84694c28fdf361868a5234d9d74db7" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int add</definition>
+        <argsstring></argsstring>
+        <name>add</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="48" column="12" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="48" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="xmlcatalog_8c_1aa867b70c32b29e3757f619124617fe8d" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int del</definition>
+        <argsstring></argsstring>
+        <name>del</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="49" column="12" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="49" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="xmlcatalog_8c_1a86b62e26592963beccfe23b7fc27c6cf" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int convert</definition>
+        <argsstring></argsstring>
+        <name>convert</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="51" column="12" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="51" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="xmlcatalog_8c_1abef3fcd543fada7cf73c5c9fb3537323" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int no_super_update</definition>
+        <argsstring></argsstring>
+        <name>no_super_update</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="52" column="12" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="52" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="xmlcatalog_8c_1a0b2caeb4b6f130be43e5a2f0267dd453" prot="public" static="yes" mutable="no">
+        <type>int</type>
+        <definition>int verbose</definition>
+        <argsstring></argsstring>
+        <name>verbose</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="54" column="12" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="54" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="xmlcatalog_8c_1aeac90097f29f7529968697163cea5c18" prot="public" static="yes" mutable="no">
+        <type>char *</type>
+        <definition>char* filename</definition>
+        <argsstring></argsstring>
+        <name>filename</name>
+        <initializer>= NULL</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="55" column="13" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="55" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="xmlcatalog_8c_1ade6d906e3ba8a238c12451aa31a2e0a3" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>char *</type>
+        <definition>static char * xmlShellReadline</definition>
+        <argsstring>(const char *prompt)</argsstring>
+        <name>xmlShellReadline</name>
+        <param>
+          <type>const char *</type>
+          <declname>prompt</declname>
+        </param>
+        <briefdescription>
+<para>Read a string. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>prompt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the prompt value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to it or NULL on EOF the caller is expected to free the returned string. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="77" column="1" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="77" bodyend="111"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlcatalog_8c_1a6e6d3d9db657478676c3221abe6b5182" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void usershell</definition>
+        <argsstring>(void)</argsstring>
+        <name>usershell</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="113" column="13" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="113" bodyend="322"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlcatalog_8c_1ab24984492570c9e0e802e45300d2eb82" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void usage</definition>
+        <argsstring>(const char *name)</argsstring>
+        <name>usage</name>
+        <param>
+          <type>const char *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="329" column="13" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="329" bodyend="351"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlcatalog_8c_1a3c04138a5bfe5d72780bb7e82a18e627" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int main</definition>
+        <argsstring>(int argc, char **argv)</argsstring>
+        <name>main</name>
+        <param>
+          <type>int</type>
+          <declname>argc</declname>
+        </param>
+        <param>
+          <type>char **</type>
+          <declname>argv</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlcatalog.c" line="352" column="5" bodyfile="/builds/GNOME/libxml2/xmlcatalog.c" bodystart="352" bodyend="684"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlcatalog.c"/>
+  </compounddef>
+</doxygen>

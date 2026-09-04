@@ -10,19 +10,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  */
 
@@ -33,9 +21,12 @@
 #include "config.h"
 
 #include <epan/packet.h>
+#include <wsutil/array.h>
 
 void proto_register_17221(void);
 void proto_reg_handoff_17221(void);
+
+static dissector_handle_t avb17221_handle;
 
 /* 17221 Offsets */
 #define P1722_HEADER_OFFSET                 12
@@ -44,7 +35,7 @@ void proto_reg_handoff_17221(void);
 #define ADP_CD_OFFSET                       0
 #define ADP_VERSION_OFFSET                  1
 #define ADP_VALID_TIME_OFFSET               2
-#define ADP_CD_LENGTH_OFFSET                3
+#define ADP_CD_LENGTH_OFFSET                2
 #define ADP_ENTITY_ID_OFFSET                4
 #define ADP_ENTITY_MODEL_ID_OFFSET          P1722_HEADER_OFFSET+0
 #define ADP_ENTITY_CAP_OFFSET               P1722_HEADER_OFFSET+8
@@ -73,17 +64,17 @@ void proto_reg_handoff_17221(void);
 #define ADP_ENTITY_DISCOVER_MESSAGE         0x02
 
 /* entity_capabilities_flags                            */
-#define ADP_EFU_MODE_BITMASK                 0x01
-#define ADP_ADDRESS_ACCESS_BITMASK           0x02
-#define ADP_GATEWAY_ENTITY_BITMASK           0x04
-#define ADP_AEM_SUPPORTED_BITMASK            0x08
-#define ADP_LEGACY_AVC_BITMASK               0x10
-#define ADP_ASSOC_ID_SUPPORT_BITMASK         0x20
-#define ADP_ASSOC_ID_VALID_BITMASK           0x40
-#define ADP_VENDOR_UNIQUE_BITMASK            0x80
-#define ADP_CLASS_A_SUPPORTED_BITMASK        0x100
-#define ADP_CLASS_B_SUPPORTED_BITMASK        0x200
-#define ADP_AS_SUPPORTED_BITMASK             0x400
+#define ADP_EFU_MODE_BITMASK                 0x00000001
+#define ADP_ADDRESS_ACCESS_BITMASK           0x00000002
+#define ADP_GATEWAY_ENTITY_BITMASK           0x00000004
+#define ADP_AEM_SUPPORTED_BITMASK            0x00000008
+#define ADP_LEGACY_AVC_BITMASK               0x00000010
+#define ADP_ASSOC_ID_SUPPORT_BITMASK         0x00000020
+#define ADP_ASSOC_ID_VALID_BITMASK           0x00000040
+#define ADP_VENDOR_UNIQUE_BITMASK            0x00000080
+#define ADP_CLASS_A_SUPPORTED_BITMASK        0x00000100
+#define ADP_CLASS_B_SUPPORTED_BITMASK        0x00000200
+#define ADP_AS_SUPPORTED_BITMASK             0x00000400
 
 /* talker capabilities flags                            */
 #define ADP_TALK_IMPLEMENTED_BITMASK         0x0001
@@ -107,8 +98,8 @@ void proto_reg_handoff_17221(void);
 #define ADP_LIST_VIDEO_SINK_BITMASK          0x8000
 
 /* Controller capabilities flags                        */
-#define ADP_CONT_IMPLEMENTED_BITMASK         0x00000001
-#define ADP_CONT_LAYER3_PROXY_BITMASK        0x00000002
+#define ADP_CONT_IMPLEMENTED_BITMASK         0x0001
+#define ADP_CONT_LAYER3_PROXY_BITMASK        0x0002
 
 /* Default audio formats fields */
 #define ADP_DEF_AUDIO_SAMPLE_RATES_MASK      0xFC
@@ -379,8 +370,7 @@ void proto_reg_handoff_17221(void);
 #define AECP_OFFSET_COUNTERS_STREAM_INPUT_UNSUPPORTED_FORMAT   64
 #define AECP_OFFSET_COUNTERS_STREAM_INPUT_LATE_TIMESTAMP       68
 #define AECP_OFFSET_COUNTERS_STREAM_INPUT_EARLY_TIMESTAMP      72
-#define AECP_OFFSET_COUNTERS_STREAM_INPUT_PACKETS_TX           76
-#define AECP_OFFSET_COUNTERS_STREAM_INPUT_PACKETS_RX           80
+#define AECP_OFFSET_COUNTERS_STREAM_INPUT_PACKETS_RX           76
 #define AECP_OFFSET_COUNTERS_ENTITY_SPECIFIC_8                 128
 #define AECP_OFFSET_COUNTERS_ENTITY_SPECIFIC_7                 132
 #define AECP_OFFSET_COUNTERS_ENTITY_SPECIFIC_6                 136
@@ -1261,6 +1251,8 @@ void proto_reg_handoff_17221(void);
 #define AEM_OFFSET_COMPRESS_MODE                   6
 #define AEM_OFFSET_COLOR_SPACE                     7
 
+/* AECP Vendor Unique Command Specific Offsets */
+#define AECP_VUC_OFFSET_PROTOCOL_ID                22
 
 /* AECP Video Cluster Format Offsets */
 /* IEEE 1722.1 draft D21 section 7.3.7 */
@@ -1298,14 +1290,14 @@ void proto_reg_handoff_17221(void);
 #define AECP_KEY_NUMBER_MASK                    0x04ff
 #define AECP_MATRIX_DIRECTION_MASK              0x70
 #define AECP_MATRIX_REP_MASK                    0x80
-#define AECP_MATRIX_VALUE_COUNT_MASK            0xfff
+#define AECP_MATRIX_VALUE_COUNT_MASK            0x0fff
 #define AECP_MSG_TYPE_MASK                      0x0f
 #define AECP_PERSISTENT_FLAG_MASK               0x00000001
 #define AECP_RELEASE_FLAG_MASK                  0x80000000
 #define AECP_SIGNATURE_ID_MASK                  0x0fff
 #define AECP_SIGNATURE_INFO_MASK                0x00f0
 #define AECP_SIGNATURE_LENGTH_MASK              0x3ff
-#define AECP_UNLOCK_FLAG_MASK                   0x00000001
+#define AECP_UNLOCK_FLAG_MASK                   0x01
 #define AECP_U_FLAG_MASK                        0x80
 #define AECP_MSRP_MAPPINGS_COUNT_MASK           0x00
 #define AECP_AS_CAPABLE_FLAG_MASK               0x01
@@ -1373,14 +1365,14 @@ void proto_reg_handoff_17221(void);
 #define AECP_COUNTERS_VALID_ENTITY_SPECIFIC_2      0x40000000
 #define AECP_COUNTERS_VALID_ENTITY_SPECIFIC_1      0x80000000
 
-#define AEM_CLOCK_SYNC_SOURCE_FLAG_MASK         0x00000001
-#define AEM_ASYNC_SAMPLE_RATE_CONV_FLAG_MASK    0x00000002
-#define AEM_SYNC_SAMPLE_RATE_CONV_FLAG_MASK     0x00000004
+#define AEM_CLOCK_SYNC_SOURCE_FLAG_MASK         0x0001
+#define AEM_ASYNC_SAMPLE_RATE_CONV_FLAG_MASK    0x0002
+#define AEM_SYNC_SAMPLE_RATE_CONV_FLAG_MASK     0x0004
 
 #define AEM_BASE_FREQUENCY_MASK                 0x1fffffff
-#define AEM_CAPTIVE_FLAG_MASK                   0x00000002
-#define AEM_CLASS_A_FLAG_MASK                   0x00000002
-#define AEM_CLASS_B_FLAG_MASK                   0x00000004
+#define AEM_CAPTIVE_FLAG_MASK                   0x0002
+#define AEM_CLASS_A_FLAG_MASK                   0x0002
+#define AEM_CLASS_B_FLAG_MASK                   0x0004
 
 #define AEM_MASK_B                              0x80
 #define AEM_MASK_BPP                            0x3F
@@ -1734,14 +1726,14 @@ static const value_string aecp_message_type_vals[] = {
    {AECP_AVC_COMMAND_MESSAGE,             "AVC_COMMAND"},
    {AECP_AVC_RESPONSE_MESSAGE,            "AVC_RESPONSE"},
    {AECP_VENDOR_UNIQUE_COMMAND_MESSAGE,   "VENDOR_UNIQUE_COMMAND"},
-   {AECP_VENDOR_UNIQUE_RESPONSE_MESSAGE,  "VENDOR_UNIQUEU_RESPONSE"},
+   {AECP_VENDOR_UNIQUE_RESPONSE_MESSAGE,  "VENDOR_UNIQUE_RESPONSE"},
    {AECP_EXTENDED_COMMAND_MESSAGE,        "EXTENDED_COMMAND"},
    {AECP_EXTENDED_RESPONSE_MESSAGE,       "EXTENDED_RESPONSE"},
    {0,                                    NULL }
 };
 
 static const value_string aecp_command_type_vals[] = {
-   {AECP_COMMAND_ACQUIRE_ENTITY                , "ACQUIRE_ENTIY"},
+   {AECP_COMMAND_ACQUIRE_ENTITY                , "ACQUIRE_ENTITY"},
    {AECP_COMMAND_LOCK_ENTITY                   , "LOCK_ENTITY"},
    {AECP_COMMAND_ENTITY_AVAILABLE              , "ENTITY_AVAILABLE"},
    {AECP_COMMAND_CONTROLLER_AVAILABLE          , "CONTROLLER_AVAILABLE"},
@@ -1875,577 +1867,578 @@ static const value_string aecp_sampling_rate_pull_field_vals[] = {
 /**********************************************************/
 /* Initialize the protocol and registered fields          */
 /**********************************************************/
-static int proto_17221 = -1;
+static int proto_17221;
 
 /* AVDECC Discovery Protocol Data Unit (ADPDU) */
-static int hf_adp_message_type = -1;
-static int hf_adp_valid_time = -1;
-static int hf_adp_cd_length = -1;
-static int hf_adp_entity_id = -1;
-static int hf_adp_entity_model_id = -1;
-static int hf_adp_entity_cap = -1;
-static int hf_adp_talker_stream_srcs = -1;
-static int hf_adp_talker_cap = -1;
-static int hf_adp_listener_stream_sinks = -1;
-static int hf_adp_listener_cap = -1;
-static int hf_adp_controller_cap = -1;
-static int hf_adp_avail_index = -1;
-static int hf_adp_gptp_gm_id = -1;
-/* static int hf_adp_def_aud_format = -1; */
-/* static int hf_adp_def_vid_format = -1; */
-static int hf_adp_assoc_id = -1;
-/* static int hf_adp_entity_type = -1; */
+static int hf_adp_message_type;
+static int hf_adp_valid_time;
+static int hf_adp_cd_length;
+static int hf_adp_entity_id;
+static int hf_adp_entity_model_id;
+static int hf_adp_entity_cap;
+static int hf_adp_talker_stream_srcs;
+static int hf_adp_talker_cap;
+static int hf_adp_listener_stream_sinks;
+static int hf_adp_listener_cap;
+static int hf_adp_controller_cap;
+static int hf_adp_avail_index;
+static int hf_adp_gptp_gm_id;
+/* static int hf_adp_def_aud_format; */
+/* static int hf_adp_def_vid_format; */
+static int hf_adp_assoc_id;
+/* static int hf_adp_entity_type; */
 
-/* Entity Capabilties Flags */
-static int hf_adp_entity_cap_efu_mode = -1;
-static int hf_adp_entity_cap_address_access_supported = -1;
-static int hf_adp_entity_cap_gateway_entity = -1;
-static int hf_adp_entity_cap_aem_supported = -1;
-static int hf_adp_entity_cap_legacy_avc = -1;
-static int hf_adp_entity_cap_assoc_id_support = -1;
-static int hf_adp_entity_cap_assoc_id_valid = -1;
-static int hf_adp_entity_cap_vendor_unique = -1;
-static int hf_adp_entity_cap_class_a_supported = -1;
-static int hf_adp_entity_cap_class_b_supported = -1;
-static int hf_adp_entity_cap_gptp_supported = -1;
+/* Entity Capabilities Flags */
+static int hf_adp_entity_cap_efu_mode;
+static int hf_adp_entity_cap_address_access_supported;
+static int hf_adp_entity_cap_gateway_entity;
+static int hf_adp_entity_cap_aem_supported;
+static int hf_adp_entity_cap_legacy_avc;
+static int hf_adp_entity_cap_assoc_id_support;
+static int hf_adp_entity_cap_assoc_id_valid;
+static int hf_adp_entity_cap_vendor_unique;
+static int hf_adp_entity_cap_class_a_supported;
+static int hf_adp_entity_cap_class_b_supported;
+static int hf_adp_entity_cap_gptp_supported;
 
 /* Talker Capabilities Flags */
-static int hf_adp_talk_cap_implement = -1;
-static int hf_adp_talk_cap_other_src = -1;
-static int hf_adp_talk_cap_control_src = -1;
-static int hf_adp_talk_cap_media_clk_src = -1;
-static int hf_adp_talk_cap_smpte_src = -1;
-static int hf_adp_talk_cap_midi_src = -1;
-static int hf_adp_talk_cap_audio_src = -1;
-static int hf_adp_talk_cap_video_src = -1;
+static int hf_adp_talk_cap_implement;
+static int hf_adp_talk_cap_other_src;
+static int hf_adp_talk_cap_control_src;
+static int hf_adp_talk_cap_media_clk_src;
+static int hf_adp_talk_cap_smpte_src;
+static int hf_adp_talk_cap_midi_src;
+static int hf_adp_talk_cap_audio_src;
+static int hf_adp_talk_cap_video_src;
 
 /* Listener Capabilities Flags */
-static int hf_adp_list_cap_implement = -1;
-static int hf_adp_list_cap_other_sink = -1;
-static int hf_adp_list_cap_control_sink = -1;
-static int hf_adp_list_cap_media_clk_sink = -1;
-static int hf_adp_list_cap_smpte_sink = -1;
-static int hf_adp_list_cap_midi_sink = -1;
-static int hf_adp_list_cap_audio_sink = -1;
-static int hf_adp_list_cap_video_sink = -1;
+static int hf_adp_list_cap_implement;
+static int hf_adp_list_cap_other_sink;
+static int hf_adp_list_cap_control_sink;
+static int hf_adp_list_cap_media_clk_sink;
+static int hf_adp_list_cap_smpte_sink;
+static int hf_adp_list_cap_midi_sink;
+static int hf_adp_list_cap_audio_sink;
+static int hf_adp_list_cap_video_sink;
 
 /* Controller Capabilities Flags */
-static int hf_adp_cont_cap_implement = -1;
-static int hf_adp_cont_cap_layer3_proxy = -1;
+static int hf_adp_cont_cap_implement;
+static int hf_adp_cont_cap_layer3_proxy;
 
 #if 0
 /* Default Audio Format */
-static int hf_adp_def_aud_sample_rates = -1;
-static int hf_adp_def_aud_max_chan = -1;
-static int hf_adp_def_aud_saf_flag = -1;
-static int hf_adp_def_aud_float_flag = -1;
-static int hf_adp_def_aud_chan_formats = -1;
+static int hf_adp_def_aud_sample_rates;
+static int hf_adp_def_aud_max_chan;
+static int hf_adp_def_aud_saf_flag;
+static int hf_adp_def_aud_float_flag;
+static int hf_adp_def_aud_chan_formats;
 
 /* Default Audio Sample Rates */
-static int hf_adp_samp_rate_44k1 = -1;
-static int hf_adp_samp_rate_48k = -1;
-static int hf_adp_samp_rate_88k2 = -1;
-static int hf_adp_samp_rate_96k = -1;
-static int hf_adp_samp_rate_176k4 = -1;
-static int hf_adp_samp_rate_192k = -1;
+static int hf_adp_samp_rate_44k1;
+static int hf_adp_samp_rate_48k;
+static int hf_adp_samp_rate_88k2;
+static int hf_adp_samp_rate_96k;
+static int hf_adp_samp_rate_176k4;
+static int hf_adp_samp_rate_192k;
 
 /* Audio Channel Formats */
-static int hf_adp_chan_format_mono = -1;
-static int hf_adp_chan_format_2ch = -1;
-static int hf_adp_chan_format_3ch = -1;
-static int hf_adp_chan_format_4ch = -1;
-static int hf_adp_chan_format_5ch = -1;
-static int hf_adp_chan_format_6ch = -1;
-static int hf_adp_chan_format_7ch = -1;
-static int hf_adp_chan_format_8ch = -1;
-static int hf_adp_chan_format_10ch = -1;
-static int hf_adp_chan_format_12ch = -1;
-static int hf_adp_chan_format_14ch = -1;
-static int hf_adp_chan_format_16ch = -1;
-static int hf_adp_chan_format_18ch = -1;
-static int hf_adp_chan_format_20ch = -1;
-static int hf_adp_chan_format_22ch = -1;
-static int hf_adp_chan_format_24ch = -1;
+static int hf_adp_chan_format_mono;
+static int hf_adp_chan_format_2ch;
+static int hf_adp_chan_format_3ch;
+static int hf_adp_chan_format_4ch;
+static int hf_adp_chan_format_5ch;
+static int hf_adp_chan_format_6ch;
+static int hf_adp_chan_format_7ch;
+static int hf_adp_chan_format_8ch;
+static int hf_adp_chan_format_10ch;
+static int hf_adp_chan_format_12ch;
+static int hf_adp_chan_format_14ch;
+static int hf_adp_chan_format_16ch;
+static int hf_adp_chan_format_18ch;
+static int hf_adp_chan_format_20ch;
+static int hf_adp_chan_format_22ch;
+static int hf_adp_chan_format_24ch;
 #endif
 
+/* AECP Vendor Unique Protocol Dissector table */
+static dissector_table_t vendor_unique_protocol_dissector_table;
 
 /* ***************************************************************** */
 /*     AVDECC Enumeration and Control Protocol Data Unit (AECPDU)    */
 /* ***************************************************************** */
 
-static int hf_aecp_aa_count = -1;
-static int hf_aecp_aa_tlv_mode = -1;
-static int hf_aecp_aa_tlv_length = -1;
-static int hf_aecp_aa_tlv_address = -1;
+static int hf_aecp_aa_count;
+static int hf_aecp_aa_tlv_mode;
+static int hf_aecp_aa_tlv_length;
+static int hf_aecp_aa_tlv_address;
 
-/* static int hf_aecp_address_type = -1; */
-static int hf_aecp_association_id = -1;
-static int hf_aecp_as_path_count = -1;
-static int hf_aecp_as_path_sequences = -1;
-static int ett_aecp_get_as_path_sequences = -1;
-static int hf_aecp_get_as_info_clock_id = -1;
-static int hf_aecp_auth_token = -1;
-static int hf_aecp_avb_interface_gptp_gm_changed_valid = -1;
-static int hf_aecp_avb_interface_gptp_gm_changed = -1;
-static int hf_aecp_avb_interface_link_up_valid = -1;
-static int hf_aecp_avb_interface_link_up = -1;
-static int hf_aecp_avb_interface_link_down_valid = -1;
-static int hf_aecp_avb_interface_link_down = -1;
-static int hf_aecp_avb_interface_packets_tx_valid = -1;
-static int hf_aecp_avb_interface_packets_tx = -1;
-static int hf_aecp_avb_interface_packets_rx_valid = -1;
-static int hf_aecp_avb_interface_packets_rx = -1;
-static int hf_aecp_avb_interface_rx_crc_error_valid = -1;
-static int hf_aecp_avb_interface_rx_crc_error = -1;
-static int hf_aecp_cd_length = -1;
-static int hf_aecp_clock_domain_locked_valid = -1;
-static int hf_aecp_clock_domain_locked = -1;
-static int hf_aecp_clock_domain_unlocked_valid = -1;
-static int hf_aecp_clock_domain_unlocked = -1;
-static int hf_aecp_clock_source_id = -1;
-static int hf_aecp_command_type = -1;
-static int hf_aecp_configuration = -1;
-static int hf_aecp_configuration_index = -1;
-static int hf_aecp_connected_flag = -1;
-/* static int hf_aecp_continued_flag = -1; */
-/* static int hf_aecp_control_admin_flag = -1; */
-/* static int hf_aecp_control_user_l1 = -1; */
-/* static int hf_aecp_control_user_l2 = -1; */
-/* static int hf_aecp_control_user_l3 = -1; */
-/* static int hf_aecp_control_user_l4 = -1; */
-static int hf_aecp_controller_guid = -1;
-/* static int hf_aecp_count = -1; */
-static int hf_aecp_descriptor_index = -1;
-static int hf_aecp_descriptor_type = -1;
-/* static int hf_aecp_descriptors = -1; */
-static int hf_aecp_dest_mac_valid_flag = -1;
-static int hf_aecp_entity_specific1 = -1;
-static int hf_aecp_entity_specific1_valid = -1;
-static int hf_aecp_entity_specific2 = -1;
-static int hf_aecp_entity_specific2_valid = -1;
-static int hf_aecp_entity_specific3 = -1;
-static int hf_aecp_entity_specific3_valid = -1;
-static int hf_aecp_entity_specific4 = -1;
-static int hf_aecp_entity_specific4_valid = -1;
-static int hf_aecp_entity_specific5 = -1;
-static int hf_aecp_entity_specific5_valid = -1;
-static int hf_aecp_entity_specific6 = -1;
-static int hf_aecp_entity_specific6_valid = -1;
-static int hf_aecp_entity_specific7 = -1;
-static int hf_aecp_entity_specific7_valid = -1;
-static int hf_aecp_entity_specific8 = -1;
-static int hf_aecp_entity_specific8_valid = -1;
-static int hf_aecp_flags_32 = -1;
-/* static int hf_aecp_ipv4_address = -1; */
-/* static int hf_aecp_ipv6_address = -1; */
-static int hf_aecp_key = -1;
-static int hf_aecp_key_eui = -1;
-static int hf_aecp_key_length = -1;
-/* static int hf_aecp_key_number = -1; */
-/* static int hf_aecp_key_part = -1; */
-static int hf_aecp_keychain_id = -1;
-static int hf_aecp_keychain_id_small = -1;
-static int hf_aecp_keychain_list_index = -1;
-static int hf_aecp_keychain_number_of_keys = -1;
-static int hf_aecp_keychain_number_of_lists = -1;
-static int hf_aecp_key_signature = -1;
-static int hf_aecp_key_type = -1;
-static int hf_aecp_locked_guid = -1;
-static int hf_aecp_mac_address = -1;
-static int hf_aecp_map_index = -1;
-/* static int hf_aecp_matrix_affected_item_count = -1; */
-static int hf_aecp_matrix_column = -1;
-static int hf_aecp_matrix_direction = -1;
-static int hf_aecp_matrix_item_offset = -1;
-static int hf_aecp_matrix_region_height = -1;
-static int hf_aecp_matrix_region_width = -1;
-static int hf_aecp_matrix_rep = -1;
-static int hf_aecp_matrix_row = -1;
-static int hf_aecp_matrix_value_count = -1;
-/* static int hf_aecp_media_format = -1; */
-/* static int hf_aecp_mem_obj_admin_flag = -1; */
-/* static int hf_aecp_mem_obj_settings_flag = -1; */
-static int hf_aecp_message_type = -1;
-static int hf_aecp_msrp_acc_lat_valid_flag = -1;
-static int hf_aecp_msrp_accumulated_latency = -1;
-static int hf_aecp_msrp_failure_bridge_id = -1;
-static int hf_aecp_msrp_failure_code = -1;
-static int hf_aecp_msrp_failure_valid_flag = -1;
-/* static int hf_aecp_stream_vlan_id = -1; */
-static int hf_aecp_name = -1;
-static int hf_aecp_name_index = -1;
-static int hf_aecp_number_of_maps = -1;
-static int hf_aecp_operation_id = -1;
-static int hf_aecp_operation_type = -1;
-static int hf_aecp_owner_guid = -1;
-static int hf_aecp_percent_complete = -1;
-static int hf_aecp_persistent_flag = -1;
-/* static int hf_aecp_private_key_read_flag = -1; */
-/* static int hf_aecp_private_key_write_flag = -1; */
-/* static int hf_aecp_public_key_write_flag = -1; */
-/* static int hf_aecp_query_id = -1; */
-/* static int hf_aecp_query_limit = -1; */
-/* static int hf_aecp_query_period = -1; */
-/* static int hf_aecp_query_type = -1; */
-static int hf_aecp_release_flag = -1;
-static int hf_aecp_sampling_rate_base_frequency = -1;
-static int hf_aecp_sampling_rate_pull = -1;
-static int hf_aecp_sequence_id = -1;
-static int hf_aecp_signal_index = -1;
-static int hf_aecp_signal_type = -1;
-static int hf_aecp_signal_output = -1;
-static int hf_aecp_stream_format = -1;
-static int hf_aecp_stream_format_valid_flag = -1;
-static int hf_aecp_stream_id_valid_flag = -1;
-static int hf_aecp_stream_input_early_timestamp_valid = -1;
-static int hf_aecp_stream_input_early_timestamp = -1;
-static int hf_aecp_stream_input_late_timestamp_valid = -1;
-static int hf_aecp_stream_input_late_timestamp = -1;
-static int hf_aecp_stream_input_media_locked_valid = -1;
-static int hf_aecp_stream_input_media_locked = -1;
-static int hf_aecp_stream_input_media_unlocked_valid = -1;
-static int hf_aecp_stream_input_media_unlocked = -1;
-static int hf_aecp_stream_input_media_reset_valid = -1;
-static int hf_aecp_stream_input_media_reset = -1;
-static int hf_aecp_stream_input_packets_rx_valid = -1;
-static int hf_aecp_stream_input_packets_rx = -1;
-static int hf_aecp_stream_input_packets_tx_valid = -1;
-static int hf_aecp_stream_input_packets_tx = -1;
-static int hf_aecp_stream_input_seq_num_mismatch_valid = -1;
-static int hf_aecp_stream_input_seq_num_mismatch = -1;
-static int hf_aecp_stream_input_stream_reset_valid = -1;
-static int hf_aecp_stream_input_stream_reset = -1;
-static int hf_aecp_stream_input_timestamp_uncertain_valid = -1;
-static int hf_aecp_stream_input_timestamp_uncertain = -1;
-static int hf_aecp_stream_input_timestamp_valid_valid = -1;
-static int hf_aecp_stream_input_timestamp_valid = -1;
-static int hf_aecp_stream_input_timestamp_not_valid_valid = -1;
-static int hf_aecp_stream_input_timestamp_not_valid = -1;
-static int hf_aecp_stream_input_unsupported_format_valid = -1;
-static int hf_aecp_stream_input_unsupported_format = -1;
-static int hf_aecp_stream_vlan_id_valid_flag = -1;
-static int hf_aecp_target_guid  = -1;
-static int hf_aecp_token_length = -1;
-static int hf_aecp_u_flag = -1;
-static int hf_aecp_unlock_flag = -1;
-/* static int hf_aecp_values = -1; */
-/* static int hf_aecp_values_count = -1; */
-static int hf_aecp_video_format = -1;
-static int hf_aecp_status_code = -1;
-static int hf_aecp_backup_talker_entity_id_0 = -1;
-static int hf_aecp_backup_talker_entity_id_1 = -1;
-static int hf_aecp_backup_talker_entity_id_2 = -1;
-static int hf_aecp_backup_talker_unique_id_0 = -1;
-static int hf_aecp_backup_talker_unique_id_1 = -1;
-static int hf_aecp_backup_talker_unique_id_2 = -1;
-static int hf_aecp_backedup_talker_entity_id = -1;
-static int hf_aecp_backedup_talker_unique_id = -1;
-static int hf_aecp_avb_info_ptp_grandmaster_id = -1;
-static int hf_aecp_avb_info_propegation_delay = -1;
-static int hf_aecp_avb_info_gptp_domain_number = -1;
-/* static int hf_aecp_avb_info_flags = -1; */
-static int hf_aecp_as_capable_flag = -1;
-static int hf_aecp_gptp_enabled_flag = -1;
-static int hf_aecp_srp_enabled_flag = -1;
-static int hf_aecp_avb_info_msrp_mappings_count = -1;
-static int hf_aecp_avb_info_msrp_mappings = -1;
-static int hf_aecp_avb_info_msrp_mapping_traffic_class = -1;
-static int hf_aecp_avb_info_msrp_mapping_priority = -1;
+/* static int hf_aecp_address_type; */
+static int hf_aecp_association_id;
+static int hf_aecp_as_path_count;
+static int hf_aecp_as_path_sequences;
+static int ett_aecp_get_as_path_sequences;
+static int hf_aecp_get_as_info_clock_id;
+static int hf_aecp_auth_token;
+static int hf_aecp_avb_interface_gptp_gm_changed_valid;
+static int hf_aecp_avb_interface_gptp_gm_changed;
+static int hf_aecp_avb_interface_link_up_valid;
+static int hf_aecp_avb_interface_link_up;
+static int hf_aecp_avb_interface_link_down_valid;
+static int hf_aecp_avb_interface_link_down;
+static int hf_aecp_avb_interface_packets_tx_valid;
+static int hf_aecp_avb_interface_packets_tx;
+static int hf_aecp_avb_interface_packets_rx_valid;
+static int hf_aecp_avb_interface_packets_rx;
+static int hf_aecp_avb_interface_rx_crc_error_valid;
+static int hf_aecp_avb_interface_rx_crc_error;
+static int hf_aecp_cd_length;
+static int hf_aecp_clock_domain_locked_valid;
+static int hf_aecp_clock_domain_locked;
+static int hf_aecp_clock_domain_unlocked_valid;
+static int hf_aecp_clock_domain_unlocked;
+static int hf_aecp_clock_source_id;
+static int hf_aecp_command_type;
+static int hf_aecp_configuration;
+static int hf_aecp_configuration_index;
+static int hf_aecp_connected_flag;
+/* static int hf_aecp_continued_flag; */
+/* static int hf_aecp_control_admin_flag; */
+/* static int hf_aecp_control_user_l1; */
+/* static int hf_aecp_control_user_l2; */
+/* static int hf_aecp_control_user_l3; */
+/* static int hf_aecp_control_user_l4; */
+static int hf_aecp_controller_guid;
+/* static int hf_aecp_count; */
+static int hf_aecp_descriptor_index;
+static int hf_aecp_descriptor_type;
+/* static int hf_aecp_descriptors; */
+static int hf_aecp_dest_mac_valid_flag;
+static int hf_aecp_entity_specific1;
+static int hf_aecp_entity_specific1_valid;
+static int hf_aecp_entity_specific2;
+static int hf_aecp_entity_specific2_valid;
+static int hf_aecp_entity_specific3;
+static int hf_aecp_entity_specific3_valid;
+static int hf_aecp_entity_specific4;
+static int hf_aecp_entity_specific4_valid;
+static int hf_aecp_entity_specific5;
+static int hf_aecp_entity_specific5_valid;
+static int hf_aecp_entity_specific6;
+static int hf_aecp_entity_specific6_valid;
+static int hf_aecp_entity_specific7;
+static int hf_aecp_entity_specific7_valid;
+static int hf_aecp_entity_specific8;
+static int hf_aecp_entity_specific8_valid;
+static int hf_aecp_flags_32;
+/* static int hf_aecp_ipv4_address; */
+/* static int hf_aecp_ipv6_address; */
+static int hf_aecp_key;
+static int hf_aecp_key_eui;
+static int hf_aecp_key_length;
+/* static int hf_aecp_key_number; */
+/* static int hf_aecp_key_part; */
+static int hf_aecp_keychain_id;
+static int hf_aecp_keychain_id_small;
+static int hf_aecp_keychain_list_index;
+static int hf_aecp_keychain_number_of_keys;
+static int hf_aecp_keychain_number_of_lists;
+static int hf_aecp_key_signature;
+static int hf_aecp_key_type;
+static int hf_aecp_locked_guid;
+static int hf_aecp_mac_address;
+static int hf_aecp_map_index;
+/* static int hf_aecp_matrix_affected_item_count; */
+static int hf_aecp_matrix_column;
+static int hf_aecp_matrix_direction;
+static int hf_aecp_matrix_item_offset;
+static int hf_aecp_matrix_region_height;
+static int hf_aecp_matrix_region_width;
+static int hf_aecp_matrix_rep;
+static int hf_aecp_matrix_row;
+static int hf_aecp_matrix_value_count;
+/* static int hf_aecp_media_format; */
+/* static int hf_aecp_mem_obj_admin_flag; */
+/* static int hf_aecp_mem_obj_settings_flag; */
+static int hf_aecp_message_type;
+static int hf_aecp_msrp_acc_lat_valid_flag;
+static int hf_aecp_msrp_accumulated_latency;
+static int hf_aecp_msrp_failure_bridge_id;
+static int hf_aecp_msrp_failure_code;
+static int hf_aecp_msrp_failure_valid_flag;
+/* static int hf_aecp_stream_vlan_id; */
+static int hf_aecp_name;
+static int hf_aecp_name_index;
+static int hf_aecp_number_of_maps;
+static int hf_aecp_operation_id;
+static int hf_aecp_operation_type;
+static int hf_aecp_owner_guid;
+static int hf_aecp_percent_complete;
+static int hf_aecp_persistent_flag;
+/* static int hf_aecp_private_key_read_flag; */
+/* static int hf_aecp_private_key_write_flag; */
+/* static int hf_aecp_public_key_write_flag; */
+/* static int hf_aecp_query_id; */
+/* static int hf_aecp_query_limit; */
+/* static int hf_aecp_query_period; */
+/* static int hf_aecp_query_type; */
+static int hf_aecp_release_flag;
+static int hf_aecp_sampling_rate_base_frequency;
+static int hf_aecp_sampling_rate_pull;
+static int hf_aecp_sequence_id;
+static int hf_aecp_signal_index;
+static int hf_aecp_signal_type;
+static int hf_aecp_signal_output;
+static int hf_aecp_stream_format;
+static int hf_aecp_stream_format_valid_flag;
+static int hf_aecp_stream_id_valid_flag;
+static int hf_aecp_stream_input_early_timestamp_valid;
+static int hf_aecp_stream_input_early_timestamp;
+static int hf_aecp_stream_input_late_timestamp_valid;
+static int hf_aecp_stream_input_late_timestamp;
+static int hf_aecp_stream_input_media_locked_valid;
+static int hf_aecp_stream_input_media_locked;
+static int hf_aecp_stream_input_media_unlocked_valid;
+static int hf_aecp_stream_input_media_unlocked;
+static int hf_aecp_stream_input_media_reset_valid;
+static int hf_aecp_stream_input_media_reset;
+static int hf_aecp_stream_input_packets_rx_valid;
+static int hf_aecp_stream_input_packets_rx;
+static int hf_aecp_stream_input_seq_num_mismatch_valid;
+static int hf_aecp_stream_input_seq_num_mismatch;
+static int hf_aecp_stream_input_stream_reset_valid;
+static int hf_aecp_stream_input_stream_reset;
+static int hf_aecp_stream_input_timestamp_uncertain_valid;
+static int hf_aecp_stream_input_timestamp_uncertain;
+static int hf_aecp_stream_input_timestamp_valid_valid;
+static int hf_aecp_stream_input_timestamp_valid;
+static int hf_aecp_stream_input_timestamp_not_valid_valid;
+static int hf_aecp_stream_input_timestamp_not_valid;
+static int hf_aecp_stream_input_unsupported_format_valid;
+static int hf_aecp_stream_input_unsupported_format;
+static int hf_aecp_stream_vlan_id_valid_flag;
+static int hf_aecp_target_guid;
+static int hf_aecp_token_length;
+static int hf_aecp_u_flag;
+static int hf_aecp_unlock_flag;
+/* static int hf_aecp_values; */
+/* static int hf_aecp_values_count; */
+static int hf_aecp_vendor_unique_protocol_id;
+static int hf_aecp_video_format;
+static int hf_aecp_status_code;
+static int hf_aecp_backup_talker_entity_id_0;
+static int hf_aecp_backup_talker_entity_id_1;
+static int hf_aecp_backup_talker_entity_id_2;
+static int hf_aecp_backup_talker_unique_id_0;
+static int hf_aecp_backup_talker_unique_id_1;
+static int hf_aecp_backup_talker_unique_id_2;
+static int hf_aecp_backedup_talker_entity_id;
+static int hf_aecp_backedup_talker_unique_id;
+static int hf_aecp_avb_info_ptp_grandmaster_id;
+static int hf_aecp_avb_info_propegation_delay;
+static int hf_aecp_avb_info_gptp_domain_number;
+/* static int hf_aecp_avb_info_flags; */
+static int hf_aecp_as_capable_flag;
+static int hf_aecp_gptp_enabled_flag;
+static int hf_aecp_srp_enabled_flag;
+static int hf_aecp_avb_info_msrp_mappings_count;
+static int hf_aecp_avb_info_msrp_mappings;
+static int hf_aecp_avb_info_msrp_mapping_traffic_class;
+static int hf_aecp_avb_info_msrp_mapping_priority;
 
-static int hf_aecp_get_avb_info_msrp_vlan_id = -1;
+static int hf_aecp_get_avb_info_msrp_vlan_id;
 
 /* ***************************************************************** */
 /*                   AVDECC Entity Model (AEM)                       */
 /* ***************************************************************** */
-static int hf_aem_am824_label = -1;
-/* static int hf_aem_aspect_x = -1; */
-/* static int hf_aem_aspect_y = -1; */
-/* static int hf_aem_audio_channels = -1; */
-static int hf_aem_avb_interface_id = -1;
-static int hf_aem_buffer_length = -1;
-static int hf_aem_b_flag = -1;
-static int hf_aem_backedup_talker_guid = -1;
-static int hf_aem_backedup_talker_unique = -1;
-static int hf_aem_backup_talker_guid_0 = -1;
-static int hf_aem_backup_talker_guid_1 = -1;
-static int hf_aem_backup_talker_guid_2 = -1;
-static int hf_aem_backup_talker_unique_0 = -1;
-static int hf_aem_backup_talker_unique_1 = -1;
-static int hf_aem_backup_talker_unique_2 = -1;
-static int hf_aem_base_audio_map = -1;
-static int hf_aem_base_cluster = -1;
-static int hf_aem_base_control = -1;
-static int hf_aem_base_control_block = -1;
-/* static int hf_aem_base_destination = -1; */
-static int hf_aem_base_external_input_port = -1;
-static int hf_aem_base_external_output_port = -1;
-static int hf_aem_base_frequency = -1;
-static int hf_aem_base_internal_input_port = -1;
-static int hf_aem_base_internal_output_port = -1;
-static int hf_aem_base_matrix = -1;
-static int hf_aem_base_mixer = -1;
-static int hf_aem_base_signal_selector = -1;
-/* static int hf_aem_base_source = -1; */
-static int hf_aem_number_splitters = -1;
-static int hf_aem_base_splitter = -1;
-static int hf_aem_number_combiners = -1;
-static int hf_aem_base_combiner = -1;
-static int hf_aem_number_demultiplexers = -1;
-static int hf_aem_base_demultiplexer = -1;
-static int hf_aem_number_multiplexers = -1;
-static int hf_aem_base_multiplexer = -1;
-static int hf_aem_number_transcoders = -1;
-static int hf_aem_base_transcoder = -1;
-static int hf_aem_base_stream_input_port = -1;
-static int hf_aem_base_stream_output_port = -1;
-static int hf_aem_base_strings = -1;
-static int hf_aem_binary_blob = -1;
-static int hf_aem_blob_size = -1;
-static int hf_aem_block_latency = -1;
-static int hf_aem_reset_time = -1;
-/* static int hf_aem_bpp = -1; */
-static int hf_aem_channel_count = -1;
-/* static int hf_aem_channels = -1; */
-static int hf_aem_clock_source_flags = -1;
-static int hf_aem_clock_source_id = -1;
-static int hf_aem_clock_domain_id = -1;
-static int hf_aem_clock_sources_offset = -1;
-static int hf_aem_clock_source_index = -1;
-static int hf_aem_clock_sources_count = -1;
-static int hf_aem_clock_sources = -1;
-static int hf_aem_clock_sources_array = -1;
-static int hf_aem_clock_source_location_id = -1;
-static int hf_aem_clock_source_location_type = -1;
-static int hf_aem_clock_source_name = -1;
-static int hf_aem_clock_source_name_string = -1;
-static int hf_aem_clock_source_type = -1;
-/* static int hf_aem_cluster_name = -1; */
-/* static int hf_aem_cluster_name_string = -1; */
-/* static int hf_aem_color_format = -1; */
-static int hf_aem_color_space = -1;
-/* static int hf_aem_comp1 = -1; */
-/* static int hf_aem_comp2 = -1; */
-/* static int hf_aem_comp3 = -1; */
-/* static int hf_aem_comp4 = -1; */
-static int hf_aem_compress_mode = -1;
-static int hf_aem_configuration_name = -1;
-static int hf_aem_configuration_name_string = -1;
-static int hf_aem_configurations_count = -1;
-static int hf_aem_control_domain = -1;
-static int hf_aem_control_latency = -1;
-/* static int hf_aem_control_location_id = -1; */
-/* static int hf_aem_control_location_type = -1; */
-static int hf_aem_control_type = -1;
-static int hf_aem_control_value_type = -1;
-static int hf_aem_count = -1;
-/* static int hf_aem_cs_eui64 = -1; */
-static int hf_aem_ctrl_double = -1;
-static int hf_aem_ctrl_float = -1;
-static int hf_aem_ctrl_int16 = -1;
-static int hf_aem_ctrl_int32 = -1;
-static int hf_aem_ctrl_int64 = -1;
-static int hf_aem_ctrl_int8 = -1;
-static int hf_aem_ctrl_uint16 = -1;
-static int hf_aem_ctrl_uint32 = -1;
-static int hf_aem_ctrl_uint64 = -1;
-static int hf_aem_ctrl_uint8 = -1;
-static int hf_aem_ctrl_vals = -1;
-static int hf_aem_current_configuration = -1;
-static int hf_aem_current_sample_rate = -1;
-/* static int hf_aem_current_signal_id = -1; */
-/* static int hf_aem_current_signal_type = -1; */
-static int hf_aem_dbs = -1;
-/* static int hf_aem_default_signal_id = -1; */
-/* static int hf_aem_default_signal_type = -1; */
-static int hf_aem_descriptor_counts_count = -1;
-static int hf_aem_descriptor_counts_offset = -1;
-/* static int hf_aem_div = -1; */
-static int hf_aem_entity_id = -1;
-static int hf_aem_entity_model_id = -1;
-static int hf_aem_entity_name = -1;
-static int hf_aem_fdf_evt = -1;
-static int hf_aem_fdf_sfc = -1;
-static int hf_aem_firmware_version = -1;
-static int hf_aem_flags_async_sample_rate_conv = -1;
-static int hf_aem_flags_captive = -1;
-static int hf_aem_flags_class_a = -1;
-static int hf_aem_flags_class_b = -1;
-static int hf_aem_flags_clock_sync_source = -1;
-static int hf_aem_flags_sync_sample_rate_conv = -1;
-static int hf_aem_fmt = -1;
-/* static int hf_aem_formats_count = -1; */
-static int hf_aem_formats_offset = -1;
-/* static int hf_aem_frame_rate = -1; */
-static int hf_aem_frequency = -1;
-static int hf_aem_group_name = -1;
-static int hf_aem_guid = -1;
-/* static int hf_aem_height = -1; */
-static int hf_aem_iidc_format = -1;
-static int hf_aem_iidc_mode = -1;
-static int hf_aem_iidc_rate = -1;
-static int hf_aem_interface_name = -1;
-static int hf_aem_interface_name_string = -1;
-/* static int hf_aem_interlace = -1; */
-/* static int hf_aem_internal_id = -1; */
-static int hf_aem_jack_flags = -1;
-static int hf_aem_jack_id = -1;
-static int hf_aem_jack_name = -1;
-static int hf_aem_jack_name_string = -1;
-static int hf_aem_jack_type = -1;
-static int hf_aem_label_iec_60958_cnt = -1;
-static int hf_aem_label_mbla_cnt = -1;
-static int hf_aem_label_midi_cnt = -1;
-static int hf_aem_label_smpte_cnt = -1;
-static int hf_aem_length = -1;
-static int hf_aem_locale_identifier = -1;
-static int hf_aem_mapping_cluster_offset = -1;
-static int hf_aem_mapping_cluster_channel = -1;
-static int hf_aem_mapping_stream_channel = -1;
-static int hf_aem_mapping_stream_index = -1;
-static int hf_aem_mappings = -1;
-static int hf_aem_mappings_offset = -1;
-static int hf_aem_memory_object_type = -1;
-/* static int hf_aem_mf_height = -1; */
-/* static int hf_aem_mf_width = -1; */
-/* static int hf_aem_mfd_type = -1; */
-static int hf_aem_model_name_string = -1;
-static int hf_aem_avb_interface_flags = -1;
-static int hf_aem_avb_clock_identity = -1;
-static int hf_aem_avb_priority1 = -1;
-static int hf_aem_avb_clock_class = -1;
-static int hf_aem_avb_offset_scaled_log_variance = -1;
-static int hf_aem_avb_clock_accuracy = -1;
-static int hf_aem_avb_priority2 = -1;
-static int hf_aem_avb_domain_number = -1;
-static int hf_aem_avb_log_sync_interval = -1;
-/* static int hf_aem_avb_propagation_delay = -1; */
-static int hf_aem_nb_flag = -1;
-static int hf_aem_number_audio_maps = -1;
-/* static int hf_aem_number_destinations = -1; */
-static int hf_aem_number_matrices = -1;
-static int hf_aem_number_mixers = -1;
-static int hf_aem_number_of_clusters = -1;
-static int hf_aem_number_of_controls = -1;
-static int hf_aem_number_control_blocks = -1;
-static int hf_aem_number_of_external_input_ports = -1;
-static int hf_aem_number_of_external_output_ports = -1;
-static int hf_aem_number_of_formats = -1;
-static int hf_aem_number_of_internal_input_ports = -1;
-static int hf_aem_number_of_internal_output_ports = -1;
-static int hf_aem_number_of_mappings = -1;
-/* static int hf_aem_number_of_sources = -1; */
-static int hf_aem_number_of_stream_input_ports = -1;
-static int hf_aem_number_of_stream_output_ports = -1;
-static int hf_aem_number_of_strings = -1;
-static int hf_aem_number_of_values = -1;
-static int hf_aem_number_signal_selectors = -1;
-static int hf_aem_object_name = -1;
-static int hf_aem_localized_description = -1;
-/* static int hf_aem_oui24 = -1; */
-static int hf_aem_path_latency = -1;
-static int hf_aem_port_flags = -1;
-static int hf_aem_pull_field = -1;
-static int hf_aem_sample_rates = -1;
-static int hf_aem_sample_rates_count = -1;
-static int hf_aem_sample_rates_offset = -1;
-static int hf_aem_serial_number = -1;
-static int hf_aem_sf = -1;
-static int hf_aem_sf_version = -1;
-static int hf_aem_sf_subtype = -1;
-static int hf_aem_signal_index = -1;
-static int hf_aem_signal_output = -1;
-static int hf_aem_signal_type = -1;
-static int hf_aem_signals_count = -1;
-static int hf_aem_signals_offset = -1;
-static int hf_aem_sources = -1;
-/* static int hf_aem_sources_offset = -1; */
-static int hf_aem_start_address = -1;
-/* static int hf_aem_stream_channels = -1; */
-static int hf_aem_stream_flags = -1;
-static int hf_aem_stream_format = -1;
-static int hf_aem_stream_formats = -1;
-/* static int hf_aem_stream_id = -1; */
-static int hf_aem_stream_name = -1;
-static int hf_aem_stream_name_string = -1;
-static int hf_aem_string = -1;
-static int hf_aem_string_ref = -1;
-static int hf_aem_target_descriptor_id = -1;
-static int hf_aem_target_descriptor_type = -1;
-static int hf_aem_unit = -1;
-static int hf_aem_unknown_descriptor = -1;
-/* static int hf_aem_value_offset = -1; */
-static int hf_aem_values_offset = -1;
-static int hf_aem_vendor_name_string = -1;
-static int hf_aem_video_mode = -1;
-/* static int hf_aem_width = -1; */
+static int hf_aem_am824_label;
+/* static int hf_aem_aspect_x; */
+/* static int hf_aem_aspect_y; */
+/* static int hf_aem_audio_channels; */
+static int hf_aem_avb_interface_id;
+static int hf_aem_buffer_length;
+static int hf_aem_b_flag;
+static int hf_aem_backedup_talker_guid;
+static int hf_aem_backedup_talker_unique;
+static int hf_aem_backup_talker_guid_0;
+static int hf_aem_backup_talker_guid_1;
+static int hf_aem_backup_talker_guid_2;
+static int hf_aem_backup_talker_unique_0;
+static int hf_aem_backup_talker_unique_1;
+static int hf_aem_backup_talker_unique_2;
+static int hf_aem_base_audio_map;
+static int hf_aem_base_cluster;
+static int hf_aem_base_control;
+static int hf_aem_base_control_block;
+/* static int hf_aem_base_destination; */
+static int hf_aem_base_external_input_port;
+static int hf_aem_base_external_output_port;
+static int hf_aem_base_frequency;
+static int hf_aem_base_internal_input_port;
+static int hf_aem_base_internal_output_port;
+static int hf_aem_base_matrix;
+static int hf_aem_base_mixer;
+static int hf_aem_base_signal_selector;
+/* static int hf_aem_base_source; */
+static int hf_aem_number_splitters;
+static int hf_aem_base_splitter;
+static int hf_aem_number_combiners;
+static int hf_aem_base_combiner;
+static int hf_aem_number_demultiplexers;
+static int hf_aem_base_demultiplexer;
+static int hf_aem_number_multiplexers;
+static int hf_aem_base_multiplexer;
+static int hf_aem_number_transcoders;
+static int hf_aem_base_transcoder;
+static int hf_aem_base_stream_input_port;
+static int hf_aem_base_stream_output_port;
+static int hf_aem_base_strings;
+static int hf_aem_binary_blob;
+static int hf_aem_blob_size;
+static int hf_aem_block_latency;
+static int hf_aem_reset_time;
+/* static int hf_aem_bpp; */
+static int hf_aem_channel_count;
+/* static int hf_aem_channels; */
+static int hf_aem_clock_source_flags;
+static int hf_aem_clock_source_id;
+static int hf_aem_clock_domain_id;
+static int hf_aem_clock_sources_offset;
+static int hf_aem_clock_source_index;
+static int hf_aem_clock_sources_count;
+static int hf_aem_clock_sources;
+static int hf_aem_clock_sources_array;
+static int hf_aem_clock_source_location_id;
+static int hf_aem_clock_source_location_type;
+static int hf_aem_clock_source_name;
+static int hf_aem_clock_source_name_string;
+static int hf_aem_clock_source_type;
+/* static int hf_aem_cluster_name; */
+/* static int hf_aem_cluster_name_string; */
+/* static int hf_aem_color_format; */
+static int hf_aem_color_space;
+/* static int hf_aem_comp1; */
+/* static int hf_aem_comp2; */
+/* static int hf_aem_comp3; */
+/* static int hf_aem_comp4; */
+static int hf_aem_compress_mode;
+static int hf_aem_configuration_name;
+static int hf_aem_configuration_name_string;
+static int hf_aem_configurations_count;
+static int hf_aem_control_domain;
+static int hf_aem_control_latency;
+/* static int hf_aem_control_location_id; */
+/* static int hf_aem_control_location_type; */
+static int hf_aem_control_type;
+static int hf_aem_control_value_type;
+static int hf_aem_count;
+/* static int hf_aem_cs_eui64; */
+static int hf_aem_ctrl_double;
+static int hf_aem_ctrl_float;
+static int hf_aem_ctrl_int16;
+static int hf_aem_ctrl_int32;
+static int hf_aem_ctrl_int64;
+static int hf_aem_ctrl_int8;
+static int hf_aem_ctrl_uint16;
+static int hf_aem_ctrl_uint32;
+static int hf_aem_ctrl_uint64;
+static int hf_aem_ctrl_uint8;
+static int hf_aem_ctrl_vals;
+static int hf_aem_current_configuration;
+static int hf_aem_current_sample_rate;
+/* static int hf_aem_current_signal_id; */
+/* static int hf_aem_current_signal_type; */
+static int hf_aem_dbs;
+/* static int hf_aem_default_signal_id; */
+/* static int hf_aem_default_signal_type; */
+static int hf_aem_descriptor_counts_count;
+static int hf_aem_descriptor_counts_offset;
+/* static int hf_aem_div; */
+static int hf_aem_entity_id;
+static int hf_aem_entity_model_id;
+static int hf_aem_entity_name;
+static int hf_aem_fdf_evt;
+static int hf_aem_fdf_sfc;
+static int hf_aem_firmware_version;
+static int hf_aem_flags_async_sample_rate_conv;
+static int hf_aem_flags_captive;
+static int hf_aem_flags_class_a;
+static int hf_aem_flags_class_b;
+static int hf_aem_flags_clock_sync_source;
+static int hf_aem_flags_sync_sample_rate_conv;
+static int hf_aem_fmt;
+/* static int hf_aem_formats_count; */
+static int hf_aem_formats_offset;
+/* static int hf_aem_frame_rate; */
+static int hf_aem_frequency;
+static int hf_aem_group_name;
+static int hf_aem_guid;
+/* static int hf_aem_height; */
+static int hf_aem_iidc_format;
+static int hf_aem_iidc_mode;
+static int hf_aem_iidc_rate;
+static int hf_aem_interface_name;
+static int hf_aem_interface_name_string;
+/* static int hf_aem_interlace; */
+/* static int hf_aem_internal_id; */
+static int hf_aem_jack_flags;
+static int hf_aem_jack_id;
+static int hf_aem_jack_name;
+static int hf_aem_jack_name_string;
+static int hf_aem_jack_type;
+static int hf_aem_label_iec_60958_cnt;
+static int hf_aem_label_mbla_cnt;
+static int hf_aem_label_midi_cnt;
+static int hf_aem_label_smpte_cnt;
+static int hf_aem_length;
+static int hf_aem_locale_identifier;
+static int hf_aem_mapping_cluster_offset;
+static int hf_aem_mapping_cluster_channel;
+static int hf_aem_mapping_stream_channel;
+static int hf_aem_mapping_stream_index;
+static int hf_aem_mappings;
+static int hf_aem_mappings_offset;
+static int hf_aem_memory_object_type;
+/* static int hf_aem_mf_height; */
+/* static int hf_aem_mf_width; */
+/* static int hf_aem_mfd_type; */
+static int hf_aem_model_name_string;
+static int hf_aem_avb_interface_flags;
+static int hf_aem_avb_clock_identity;
+static int hf_aem_avb_priority1;
+static int hf_aem_avb_clock_class;
+static int hf_aem_avb_offset_scaled_log_variance;
+static int hf_aem_avb_clock_accuracy;
+static int hf_aem_avb_priority2;
+static int hf_aem_avb_domain_number;
+static int hf_aem_avb_log_sync_interval;
+/* static int hf_aem_avb_propagation_delay; */
+static int hf_aem_nb_flag;
+static int hf_aem_number_audio_maps;
+/* static int hf_aem_number_destinations; */
+static int hf_aem_number_matrices;
+static int hf_aem_number_mixers;
+static int hf_aem_number_of_clusters;
+static int hf_aem_number_of_controls;
+static int hf_aem_number_control_blocks;
+static int hf_aem_number_of_external_input_ports;
+static int hf_aem_number_of_external_output_ports;
+static int hf_aem_number_of_formats;
+static int hf_aem_number_of_internal_input_ports;
+static int hf_aem_number_of_internal_output_ports;
+static int hf_aem_number_of_mappings;
+/* static int hf_aem_number_of_sources; */
+static int hf_aem_number_of_stream_input_ports;
+static int hf_aem_number_of_stream_output_ports;
+static int hf_aem_number_of_strings;
+static int hf_aem_number_of_values;
+static int hf_aem_number_signal_selectors;
+static int hf_aem_object_name;
+static int hf_aem_localized_description;
+/* static int hf_aem_oui24; */
+static int hf_aem_path_latency;
+static int hf_aem_port_flags;
+static int hf_aem_pull_field;
+static int hf_aem_sample_rates;
+static int hf_aem_sample_rates_count;
+static int hf_aem_sample_rates_offset;
+static int hf_aem_serial_number;
+static int hf_aem_sf;
+static int hf_aem_sf_version;
+static int hf_aem_sf_subtype;
+static int hf_aem_signal_index;
+static int hf_aem_signal_output;
+static int hf_aem_signal_type;
+static int hf_aem_signals_count;
+static int hf_aem_signals_offset;
+static int hf_aem_sources;
+/* static int hf_aem_sources_offset; */
+static int hf_aem_start_address;
+/* static int hf_aem_stream_channels; */
+static int hf_aem_stream_flags;
+static int hf_aem_stream_format;
+static int hf_aem_stream_formats;
+/* static int hf_aem_stream_id; */
+static int hf_aem_stream_name;
+static int hf_aem_stream_name_string;
+static int hf_aem_string;
+static int hf_aem_string_ref;
+static int hf_aem_target_descriptor_id;
+static int hf_aem_target_descriptor_type;
+static int hf_aem_unit;
+static int hf_aem_unknown_descriptor;
+/* static int hf_aem_value_offset; */
+static int hf_aem_values_offset;
+static int hf_aem_vendor_name_string;
+static int hf_aem_video_mode;
+/* static int hf_aem_width; */
 
 /****************************************************************** */
 /*     AVDECC Connection Management Protocol Data Unit (ACMPDU)     */
 /* **************************************************************** */
-static int hf_acmp_message_type = -1;
-static int hf_acmp_status_field = -1;
-static int hf_acmp_cd_length = -1;
-static int hf_acmp_stream_id = -1;
-static int hf_acmp_controller_guid = -1;
-static int hf_acmp_talker_guid = -1;
-static int hf_acmp_listener_guid = -1;
-static int hf_acmp_talker_unique_id = -1;
-static int hf_acmp_listener_unique_id = -1;
-static int hf_acmp_stream_dest_mac = -1;
-static int hf_acmp_connection_count = -1;
-static int hf_acmp_sequence_id = -1;
-static int hf_acmp_flags = -1;
-static int hf_acmp_vlan_id = -1;
+static int hf_acmp_message_type;
+static int hf_acmp_status_field;
+static int hf_acmp_cd_length;
+static int hf_acmp_stream_id;
+static int hf_acmp_controller_guid;
+static int hf_acmp_talker_guid;
+static int hf_acmp_listener_guid;
+static int hf_acmp_talker_unique_id;
+static int hf_acmp_listener_unique_id;
+static int hf_acmp_stream_dest_mac;
+static int hf_acmp_connection_count;
+static int hf_acmp_sequence_id;
+static int hf_acmp_flags;
+static int hf_acmp_vlan_id;
 
 /* ACMP Flags (8.2.1.17) */
-static int hf_acmp_flags_class_b = -1;
-static int hf_acmp_flags_fast_connect = -1;
-static int hf_acmp_flags_saved_state = -1;
-static int hf_acmp_flags_streaming_wait = -1;
-static int hf_acmp_flags_supports_encrypted = -1;
-static int hf_acmp_flags_encrypted_pdu = -1;
-static int hf_acmp_flags_talker_failed = -1;
+static int hf_acmp_flags_class_b;
+static int hf_acmp_flags_fast_connect;
+static int hf_acmp_flags_saved_state;
+static int hf_acmp_flags_streaming_wait;
+static int hf_acmp_flags_supports_encrypted;
+static int hf_acmp_flags_encrypted_pdu;
+static int hf_acmp_flags_talker_failed;
 
 /* Initialize the subtree pointers */
-static int ett_17221 = -1;
+static int ett_17221;
 /* ADP */
-static int ett_adp_ent_cap = -1;
-static int ett_adp_talk_cap = -1;
-static int ett_adp_list_cap = -1;
-static int ett_adp_cont_cap = -1;
-/* static int ett_adp_aud_format = -1; */
-static int ett_adp_samp_rates = -1;
-static int ett_adp_chan_format = -1;
+static int ett_adp_ent_cap;
+static int ett_adp_talk_cap;
+static int ett_adp_list_cap;
+static int ett_adp_cont_cap;
+/* static int ett_adp_aud_format; */
+static int ett_adp_samp_rates;
+static int ett_adp_chan_format;
 /* ACMP */
-static int ett_acmp_flags = -1;
+static int ett_acmp_flags;
 /* AEM */
-static int ett_aem_descriptor = -1;
-static int ett_aem_desc_counts = -1;
-static int ett_aem_sample_rates = -1;
-static int ett_aem_stream_flags = -1;
-static int ett_aem_clock_sources = -1;
-static int ett_aem_stream_formats = -1;
-static int ett_aem_jack_flags = -1;
-static int ett_aem_port_flags = -1;
-static int ett_aecp_get_avb_info_msrp_mappings = -1;
-static int ett_aem_clock_source_flags = -1;
-static int ett_aem_mappings = -1;
-static int ett_aem_ctrl_vals = -1;
-static int ett_aem_sources = -1;
-/* static int ett_aem_media_format = -1; */
-static int ett_aem_stream_format = -1;
+static int ett_aem_descriptor;
+static int ett_aem_desc_counts;
+static int ett_aem_sample_rates;
+static int ett_aem_stream_flags;
+static int ett_aem_clock_sources;
+static int ett_aem_stream_formats;
+static int ett_aem_jack_flags;
+static int ett_aem_port_flags;
+static int ett_aecp_get_avb_info_msrp_mappings;
+static int ett_aem_clock_source_flags;
+static int ett_aem_mappings;
+static int ett_aem_ctrl_vals;
+static int ett_aem_sources;
+/* static int ett_aem_media_format; */
+static int ett_aem_stream_format;
 
-static int ett_aecp_descriptors = -1;
-static int ett_aecp_flags_32 = -1;
+static int ett_aecp_descriptors;
+static int ett_aecp_flags_32;
 
 typedef struct {
    int hf;
-   guint16 size;
+   uint16_t size;
 } ctrl_ref_vals;
 
 /* convenience function */
 static inline ctrl_ref_vals
-get_ctrl_ref_vals(guint16 ctrl_val_type)
+get_ctrl_ref_vals(uint16_t ctrl_val_type)
 {
    ctrl_ref_vals ret;
 
@@ -2527,11 +2520,11 @@ dissect_17221_stream_format(tvbuff_t *tvb, proto_tree *tree)
 {
    proto_item *stream_tree;
    proto_item *stream_ti;
-   guint8 version;
-   guint8 subtype;
-   guint8 sf;
-   guint8 fmt;
-   guint8 fdf_evt;
+   uint8_t version;
+   uint8_t subtype;
+   uint8_t sf;
+   uint8_t fmt;
+   uint8_t fdf_evt;
 
    /* subtree */
    stream_ti = proto_tree_add_item(tree, hf_aem_stream_format, tvb,
@@ -2539,7 +2532,7 @@ dissect_17221_stream_format(tvbuff_t *tvb, proto_tree *tree)
    stream_tree = proto_item_add_subtree(stream_ti, ett_aem_stream_format);
 
    /* get version */
-   version = tvb_get_guint8(tvb, 0) & AEM_MASK_SF_VERSION;
+   version = tvb_get_uint8(tvb, 0) & AEM_MASK_SF_VERSION;
 
    /* add the version to the tree */
    proto_tree_add_item(stream_tree, hf_aem_sf_version, tvb,
@@ -2547,7 +2540,7 @@ dissect_17221_stream_format(tvbuff_t *tvb, proto_tree *tree)
 
    if (version == 0) {       /* stream format version 0 */
 
-      subtype = tvb_get_guint8(tvb, AEM_OFFSET_SF_SUBTYPE) & AEM_MASK_SF_SUBTYPE;
+      subtype = tvb_get_uint8(tvb, AEM_OFFSET_SF_SUBTYPE) & AEM_MASK_SF_SUBTYPE;
 
       proto_tree_add_item(stream_tree, hf_aem_sf_subtype, tvb,
             AEM_OFFSET_SF_SUBTYPE, 1, ENC_BIG_ENDIAN);
@@ -2555,7 +2548,7 @@ dissect_17221_stream_format(tvbuff_t *tvb, proto_tree *tree)
       switch(subtype) {
          case IEC_61883_IIDC_SUBTYPE:
             /* get sf */
-            sf = tvb_get_guint8(tvb, 1) & AEM_MASK_SF;
+            sf = tvb_get_uint8(tvb, 1) & AEM_MASK_SF;
             proto_tree_add_item(stream_tree, hf_aem_sf, tvb,
                   AEM_OFFSET_SF, 1, ENC_BIG_ENDIAN);
 
@@ -2570,7 +2563,7 @@ dissect_17221_stream_format(tvbuff_t *tvb, proto_tree *tree)
             } else { /* 61883 Stream Format */
                proto_tree_add_item(stream_tree, hf_aem_fmt, tvb,
                      AEM_OFFSET_FMT, 1, ENC_BIG_ENDIAN);
-               fmt = tvb_get_guint8(tvb, AEM_OFFSET_FMT) & 0x7F;
+               fmt = tvb_get_uint8(tvb, AEM_OFFSET_FMT) & 0x7F;
                if (fmt == 0x20) {       /* 61883-6 Stream Format */
                   proto_tree_add_item(stream_tree, hf_aem_fdf_evt, tvb,
                         AEM_OFFSET_FDF_EVT, 1, ENC_BIG_ENDIAN);
@@ -2579,7 +2572,7 @@ dissect_17221_stream_format(tvbuff_t *tvb, proto_tree *tree)
                   proto_tree_add_item(stream_tree, hf_aem_dbs, tvb,
                         AEM_OFFSET_DBS, 1, ENC_BIG_ENDIAN);
 
-                  fdf_evt = tvb_get_guint8(tvb, AEM_OFFSET_FDF_EVT) & AEM_MASK_FDF_EVT;
+                  fdf_evt = tvb_get_uint8(tvb, AEM_OFFSET_FDF_EVT) & AEM_MASK_FDF_EVT;
 
                   proto_tree_add_item(stream_tree, hf_aem_b_flag, tvb,
                         AEM_OFFSET_B, 1, ENC_BIG_ENDIAN);
@@ -2664,12 +2657,12 @@ dissect_17221_media_format(tvbuff_t *tvb, proto_tree *tree)
 {
    proto_item *media_tree;
    proto_item *media_ti;
-   guint32 oui24;
-   guint8  mfd_type;
+   uint32_t oui24;
+   uint8_t mfd_type;
 
    /* grab the oui24 and mfd_type */
    oui24 = tvb_get_ntoh24(tvb, 0);
-   mfd_type = tvb_get_guint8(tvb, 3);
+   mfd_type = tvb_get_uint8(tvb, 3);
 
    /* subtree */
    media_ti = proto_tree_add_item(tree, hf_aecp_media_format, tvb,
@@ -2740,14 +2733,13 @@ dissect_17221_media_format(tvbuff_t *tvb, proto_tree *tree)
 
 /* TODO following updates in Draft 18 and the pending Draft 19 this section will require major overhaul */
 static void
-dissect_17221_ctrl_val(tvbuff_t *tvb, proto_tree *tree, guint16 num_ctrl_vals, guint16 ctrl_val_type,
-                       guint16 ctrl_offset)
+dissect_17221_ctrl_val(tvbuff_t *tvb, proto_tree *tree, uint16_t num_ctrl_vals, uint16_t ctrl_val_type,
+                       uint16_t ctrl_offset)
 {
    proto_item *ctrl_item;
    proto_item *ctrl_subtree;
    int i;
-   guint32 bin_blob_size;
-   gint string_length;
+   uint32_t bin_blob_size;
    ctrl_ref_vals ref;
 
    /* set up control values tree */
@@ -2809,9 +2801,8 @@ dissect_17221_ctrl_val(tvbuff_t *tvb, proto_tree *tree, guint16 num_ctrl_vals, g
 
       /* UTF8 STRING TYPE */
    } else if (ctrl_val_type == 0x14) {
-      tvb_get_const_stringz(tvb, ctrl_offset, &string_length);
       proto_tree_add_item(ctrl_subtree, hf_aem_string, tvb,
-            ctrl_offset, string_length, ENC_ASCII|ENC_NA);
+            ctrl_offset, -1, ENC_ASCII);
 
       /* BODE_PLOT TYPE */
    } else if (ctrl_val_type == 0x15) {
@@ -2842,9 +2833,9 @@ dissect_17221_ctrl_val(tvbuff_t *tvb, proto_tree *tree, guint16 num_ctrl_vals, g
 static void
 dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-   guint16 desc_type;
-   guint16 ctrl_val_type;
-   guint16 num_ctrl_vals;
+   uint16_t desc_type;
+   uint16_t ctrl_val_type;
+   uint16_t num_ctrl_vals;
    tvbuff_t *next_tvb;
    int i;
 
@@ -2855,12 +2846,12 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
     */
    proto_item *mr_subtree;
    proto_item *mr_item;
-   guint32 mr_offset;
-   guint16 mr_counter;
+   uint32_t mr_offset;
+   uint16_t mr_counter;
 
-   gfloat frequency;
-   gint freq_mult;
-   gint base_freq;
+   float frequency;
+   int freq_mult;
+   int base_freq;
 
    proto_item *aem_tree;
    /* used in creation of descriptor subtree */
@@ -2968,17 +2959,17 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          proto_tree_add_item(aem_tree, hf_aecp_association_id, tvb,
                ENTITY_OFFSET_ASSOCIATION_ID, 8, ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_entity_name, tvb,
-               ENTITY_OFFSET_ENTITY_NAME, 64, ENC_ASCII|ENC_NA);
+               ENTITY_OFFSET_ENTITY_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_vendor_name_string, tvb,
                ENTITY_OFFSET_VENDOR_NAME_STRING, 2, ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_model_name_string, tvb,
                ENTITY_OFFSET_MODEL_NAME_STRING, 2, ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_firmware_version, tvb,
-               ENTITY_OFFSET_FIRMWARE_VERSION, 64, ENC_ASCII|ENC_NA);
+               ENTITY_OFFSET_FIRMWARE_VERSION, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_group_name, tvb,
-               ENTITY_OFFSET_GROUP_NAME, 64, ENC_ASCII|ENC_NA);
+               ENTITY_OFFSET_GROUP_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_serial_number, tvb,
-               ENTITY_OFFSET_SERIAL_NUMBER, 64, ENC_ASCII|ENC_NA);
+               ENTITY_OFFSET_SERIAL_NUMBER, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_configurations_count, tvb,
                ENTITY_OFFSET_CONFIGURATIONS_COUNT, 2, ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_current_configuration, tvb,
@@ -2986,7 +2977,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          break;
       case AEM_DESCRIPTOR_CONFIGURATION:
          proto_tree_add_item(aem_tree, hf_aem_configuration_name, tvb,
-               CONFIGURATION_OFFSET_OBJECT_NAME, 64, ENC_ASCII|ENC_NA);
+               CONFIGURATION_OFFSET_OBJECT_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_configuration_name_string, tvb,
                CONFIGURATION_OFFSET_LOCALIZED_DESCRIPTION, 2, ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_descriptor_counts_count, tvb,
@@ -3009,7 +3000,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          break;
       case AEM_DESCRIPTOR_AUDIO_UNIT:
          proto_tree_add_item(aem_tree, hf_aem_object_name, tvb,
-               AUDIO_UNIT_OFFSET_OBJECT_NAME, 64, ENC_ASCII|ENC_NA);
+               AUDIO_UNIT_OFFSET_OBJECT_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_localized_description, tvb,
                AUDIO_UNIT_OFFSET_LOCALIZED_DESCRIPTION, 2, ENC_BIG_ENDIAN);
 
@@ -3114,8 +3105,8 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
             base_freq &= 0x1fffffff;
             /* replace this with something not horrible */
             frequency = freq_mult == 0 ? 1 :
-               freq_mult == 1 ? 1 / (gfloat)1.001 :
-               freq_mult == 2 ? (gfloat)1.001 :
+               freq_mult == 1 ? 1 / (float)1.001 :
+               freq_mult == 2 ? (float)1.001 :
                freq_mult == 3 ? 24 / 25 :
                freq_mult == 4 ? 54 / 24 : 0;
 
@@ -3128,7 +3119,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
       case AEM_DESCRIPTOR_VIDEO_UNIT:
       case AEM_DESCRIPTOR_SENSOR_UNIT:
          proto_tree_add_item(aem_tree, hf_aem_object_name, tvb,
-               VIDEO_UNIT_OFFSET_OBJECT_NAME, 64, ENC_ASCII|ENC_NA);
+               VIDEO_UNIT_OFFSET_OBJECT_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_localized_description, tvb,
                VIDEO_UNIT_OFFSET_LOCALIZED_DESCRIPTION, 2, ENC_BIG_ENDIAN);
 
@@ -3206,7 +3197,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
       case AEM_DESCRIPTOR_STREAM_INPUT:
       case AEM_DESCRIPTOR_STREAM_OUTPUT:
          proto_tree_add_item(aem_tree, hf_aem_stream_name, tvb,
-               STREAM_OFFSET_OBJECT_NAME, 64, ENC_ASCII|ENC_NA);
+               STREAM_OFFSET_OBJECT_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_stream_name_string, tvb,
                STREAM_OFFSET_LOCALIZED_DESCRIPTION, 2, ENC_BIG_ENDIAN);
 
@@ -3273,7 +3264,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
       case AEM_DESCRIPTOR_JACK_INPUT:
       case AEM_DESCRIPTOR_JACK_OUTPUT:
          proto_tree_add_item(aem_tree, hf_aem_jack_name, tvb,
-               JACK_OFFSET_OBJECT_NAME, 64, ENC_ASCII|ENC_NA);
+               JACK_OFFSET_OBJECT_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_jack_name_string, tvb,
                JACK_OFFSET_LOCALIZED_DESCRIPTION, 2, ENC_BIG_ENDIAN);
 
@@ -3392,7 +3383,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          break;
       case AEM_DESCRIPTOR_AVB_INTERFACE:
          proto_tree_add_item(aem_tree, hf_aem_interface_name, tvb,
-               AVB_INTERFACE_OFFSET_OBJECT_NAME, 64, ENC_ASCII|ENC_NA);
+               AVB_INTERFACE_OFFSET_OBJECT_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_interface_name_string, tvb,
                AVB_INTERFACE_OFFSET_LOCALIZED_DESCRIPTION, 2, ENC_BIG_ENDIAN);
 
@@ -3420,7 +3411,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          break;
       case AEM_DESCRIPTOR_CLOCK_SOURCE:
          proto_tree_add_item(aem_tree, hf_aem_clock_source_name, tvb,
-               CLOCK_SOURCE_OFFSET_OBJECT_NAME, 64, ENC_ASCII|ENC_NA);
+               CLOCK_SOURCE_OFFSET_OBJECT_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_clock_source_name_string, tvb,
                CLOCK_SOURCE_OFFSET_LOCALIZED_DESCRIPTION, 2, ENC_BIG_ENDIAN);
          /* set up clock_source_flags subtree */
@@ -3469,7 +3460,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          break;
       case AEM_DESCRIPTOR_AUDIO_CLUSTER:
          proto_tree_add_item(aem_tree, hf_aem_configuration_name, tvb,
-               AUDIO_CLUSTER_OFFSET_OBJECT_NAME, 64, ENC_ASCII|ENC_NA);
+               AUDIO_CLUSTER_OFFSET_OBJECT_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_configuration_name_string, tvb,
                AUDIO_CLUSTER_OFFSET_LOCALIZED_DESCRIPTION, 2, ENC_BIG_ENDIAN);
 
@@ -3494,7 +3485,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          break;
       case AEM_DESCRIPTOR_CONTROL:
          proto_tree_add_item(aem_tree, hf_aem_object_name, tvb,
-               CONTROL_OFFSET_OBJECT_NAME, 64, ENC_ASCII|ENC_NA);
+               CONTROL_OFFSET_OBJECT_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_localized_description, tvb,
                CONTROL_OFFSET_LOCALIZED_DESCRIPTION, 2, ENC_BIG_ENDIAN);
 
@@ -3532,7 +3523,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          break;
       case AEM_DESCRIPTOR_SIGNAL_SELECTOR:
          proto_tree_add_item(aem_tree, hf_aem_object_name, tvb,
-               SIGNAL_SELECTOR_OFFSET_OBJECT_NAME, 64, ENC_ASCII|ENC_NA);
+               SIGNAL_SELECTOR_OFFSET_OBJECT_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_localized_description, tvb,
                SIGNAL_SELECTOR_OFFSET_LOCALIZED_DESCRIPTION, 2, ENC_BIG_ENDIAN);
 
@@ -3551,7 +3542,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          proto_tree_add_item(aem_tree, hf_aem_control_domain, tvb,
                AEM_OFFSET_CONTROL_DOMAIN_SIGS, 2, ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_object_name, tvb,
-               AEM_OFFSET_CONTROL_NAME_SIGS, 64, ENC_ASCII|ENC_NA);
+               AEM_OFFSET_CONTROL_NAME_SIGS, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_localized_description, tvb,
                AEM_OFFSET_CONTROL_NAME_STRING_SIGS, 2, ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_sources_offset, tvb,
@@ -3591,7 +3582,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          break;
       case AEM_DESCRIPTOR_MIXER:
          proto_tree_add_item(aem_tree, hf_aem_object_name, tvb,
-               MIXER_OFFSET_OBJECT_NAME, 64, ENC_ASCII|ENC_NA);
+               MIXER_OFFSET_OBJECT_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_localized_description, tvb,
                MIXER_OFFSET_LOCALIZED_DESCRIPTION, 2, ENC_BIG_ENDIAN);
 
@@ -3612,7 +3603,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          proto_tree_add_item(aem_tree, hf_aem_control_domain, tvb,
                AEM_OFFSET_CONTROL_DOMAIN_MXR, 2 ,ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_object_name, tvb,
-               AEM_OFFSET_CONTROL_NAME_MXR, 64, ENC_ASCII|ENC_NA);
+               AEM_OFFSET_CONTROL_NAME_MXR, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_localized_description, tvb,
                AEM_OFFSET_CONTROL_NAME_STRING_MXR, 2, ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_sources_offset, tvb,
@@ -3653,7 +3644,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          break;
       case AEM_DESCRIPTOR_MATRIX:
          proto_tree_add_item(aem_tree, hf_aem_object_name, tvb,
-               MATRIX_OFFSET_OBJECT_NAME, 64, ENC_ASCII|ENC_NA);
+               MATRIX_OFFSET_OBJECT_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_localized_description, tvb,
                MATRIX_OFFSET_LOCALIZED_DESCRIPTION, 2, ENC_BIG_ENDIAN);
 
@@ -3676,7 +3667,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          proto_tree_add_item(aem_tree, hf_aem_control_domain, tvb,
                AEM_OFFSET_CONTROL_DOMAIN_MTRX, 2 ,ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_object_name, tvb,
-               AEM_OFFSET_CONTROL_NAME_MTRX, 64, ENC_ASCII|ENC_NA);
+               AEM_OFFSET_CONTROL_NAME_MTRX, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_localized_description, tvb,
                AEM_OFFSET_CONTROL_NAME_STRING_MTRX, 2, ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_width, tvb,
@@ -3709,7 +3700,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          break;
       case AEM_DESCRIPTOR_LOCALE:
          proto_tree_add_item(aem_tree, hf_aem_locale_identifier, tvb,
-               LOCALE_OFFSET_LOCALE_IDENTIFIER, 64, ENC_ASCII|ENC_NA);
+               LOCALE_OFFSET_LOCALE_IDENTIFIER, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_number_of_strings, tvb,
                LOCALE_OFFSET_NUMBER_OF_STRINGS, 2, ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_base_strings, tvb,
@@ -3719,7 +3710,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          mr_offset = STRINGS_OFFSET_STRING0;
          for(i = 0; i < 7; ++i) {
             proto_tree_add_item(aem_tree, hf_aem_string, tvb,
-                  mr_offset, 64, ENC_ASCII|ENC_NA);
+                  mr_offset, 64, ENC_ASCII);
             mr_offset += 64;
          }
          break;
@@ -3754,7 +3745,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          proto_tree_add_item(aem_tree, hf_aem_target_descriptor_id, tvb,
                MEMORY_OBJECT_OFFSET_TARGET_DESCRIPTOR_INDEX, 2, ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_object_name, tvb,
-               MEMORY_OBJECT_OFFSET_OBJECT_NAME, 64, ENC_ASCII|ENC_NA);
+               MEMORY_OBJECT_OFFSET_OBJECT_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_localized_description, tvb,
                MEMORY_OBJECT_OFFSET_LOCALIZED_DESCRIPTION, 2, ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_start_address, tvb,
@@ -3764,7 +3755,7 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
          break;
       case AEM_DESCRIPTOR_CLOCK_DOMAIN:
          proto_tree_add_item(aem_tree, hf_aem_object_name, tvb,
-               CLOCK_DOMAIN_OFFSET_OBJECT_NAME, 64, ENC_ASCII|ENC_NA);
+               CLOCK_DOMAIN_OFFSET_OBJECT_NAME, 64, ENC_ASCII);
          proto_tree_add_item(aem_tree, hf_aem_localized_description, tvb,
                CLOCK_DOMAIN_OFFSET_LOCALIZED_DESCRIPTION, 2, ENC_BIG_ENDIAN);
          proto_tree_add_item(aem_tree, hf_aem_clock_source_index, tvb,
@@ -3800,16 +3791,18 @@ dissect_17221_aem(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 dissect_17221_aecp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aecp_tree)
 {
-   guint16 c_type;
-   /*guint16 addr_type;*/
-   /*guint16 ctrl_data_len;*/
-   guint16 mess_status;
-   guint16 mess_type;
-   guint16 mr_counter;
-   guint32 mr_offset;
+   uint16_t c_type;
+   /*uint16_t addr_type;*/
+   /*uint16_t ctrl_data_len;*/
+   uint16_t mess_status;
+   uint16_t mess_type;
+   uint16_t mr_counter;
+   uint32_t mr_offset;
    proto_item *mr_subtree;
    proto_item *mr_item;
    int i;
+   uint64_t vendor_unique_protocol_id;
+   char *vendor_unique_protocol_id_string;
    /* next tvb for use in subdissection */
    tvbuff_t *next_tvb;
    proto_tree *flags_tree;
@@ -4022,7 +4015,7 @@ dissect_17221_aecp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aecp_tree)
 
             if ((mess_type == AECP_AEM_RESPONSE_MESSAGE) || (c_type == AECP_COMMAND_SET_NAME)) {
                proto_tree_add_item(aecp_tree, hf_aecp_name, tvb,
-                     AECP_OFFSET_NAME_NAME, 64, ENC_ASCII|ENC_NA);
+                     AECP_OFFSET_NAME_NAME, 64, ENC_ASCII);
             }
             break;
           case AECP_COMMAND_SET_ASSOCIATION_ID:
@@ -4247,8 +4240,6 @@ dissect_17221_aecp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aecp_tree)
                         AECP_OFFSET_COUNTERS_VALID, 4, ENC_BIG_ENDIAN);
                   proto_tree_add_item(aecp_tree, hf_aecp_stream_input_early_timestamp_valid, tvb,
                         AECP_OFFSET_COUNTERS_VALID, 4, ENC_BIG_ENDIAN);
-                  proto_tree_add_item(aecp_tree, hf_aecp_stream_input_packets_tx_valid, tvb,
-                        AECP_OFFSET_COUNTERS_VALID, 4, ENC_BIG_ENDIAN);
                   proto_tree_add_item(aecp_tree, hf_aecp_stream_input_packets_rx_valid, tvb,
                         AECP_OFFSET_COUNTERS_VALID, 4, ENC_BIG_ENDIAN);
                   break;
@@ -4323,8 +4314,6 @@ dissect_17221_aecp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aecp_tree)
                         AECP_OFFSET_COUNTERS_STREAM_INPUT_LATE_TIMESTAMP, 4, ENC_BIG_ENDIAN);
                   proto_tree_add_item(aecp_tree, hf_aecp_stream_input_early_timestamp, tvb,
                         AECP_OFFSET_COUNTERS_STREAM_INPUT_EARLY_TIMESTAMP, 4, ENC_BIG_ENDIAN);
-                  proto_tree_add_item(aecp_tree, hf_aecp_stream_input_packets_tx, tvb,
-                        AECP_OFFSET_COUNTERS_STREAM_INPUT_PACKETS_TX, 4, ENC_BIG_ENDIAN);
                   proto_tree_add_item(aecp_tree, hf_aecp_stream_input_packets_rx, tvb,
                         AECP_OFFSET_COUNTERS_STREAM_INPUT_PACKETS_RX, 4, ENC_BIG_ENDIAN);
                   break;
@@ -4465,7 +4454,7 @@ dissect_17221_aecp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aecp_tree)
             break;
          case AECP_COMMAND_AUTH_ADD_TOKEN:
             if (mess_type == AECP_AEM_COMMAND_MESSAGE) {
-               guint32 token_length = tvb_get_ntohl(tvb, AECP_OFFSET_AUTH_TOKEN_TOKEN_LENGTH);
+               uint32_t token_length = tvb_get_ntohl(tvb, AECP_OFFSET_AUTH_TOKEN_TOKEN_LENGTH);
                proto_tree_add_item(aecp_tree, hf_aecp_key_length, tvb,
                      AECP_OFFSET_AUTH_TOKEN_TOKEN_LENGTH, 2, ENC_BIG_ENDIAN);
                proto_tree_add_item(aecp_tree, hf_aecp_key_signature, tvb,
@@ -4549,8 +4538,18 @@ dissect_17221_aecp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *aecp_tree)
          AECP_AA_OFFSET_TLVS_START, 2, ENC_BIG_ENDIAN);
       proto_tree_add_item(aecp_tree, hf_aecp_aa_tlv_address, tvb,
          AECP_AA_OFFSET_TLVS_START+2, 8, ENC_BIG_ENDIAN);
-   }
+   } /* AECP Vendor Unique Command/Response */
+   else if ((mess_type == AECP_VENDOR_UNIQUE_COMMAND_MESSAGE) || (mess_type == AECP_VENDOR_UNIQUE_RESPONSE_MESSAGE))
+   {
+      proto_tree_add_item(aecp_tree, hf_aecp_vendor_unique_protocol_id, tvb,
+         AECP_VUC_OFFSET_PROTOCOL_ID, 6, ENC_BIG_ENDIAN);
 
+      /* attempt to dissect the payload specific data */
+      next_tvb = tvb_new_subset_remaining(tvb, AECP_VUC_OFFSET_PROTOCOL_ID);
+      vendor_unique_protocol_id = tvb_get_uint48(tvb, AECP_VUC_OFFSET_PROTOCOL_ID, ENC_BIG_ENDIAN);
+      vendor_unique_protocol_id_string = wmem_strdup_printf(pinfo->pool, "%012" PRIx64, vendor_unique_protocol_id);
+      dissector_try_string_with_data(vendor_unique_protocol_dissector_table, vendor_unique_protocol_id_string, next_tvb, pinfo, aecp_tree, true, NULL);
+    }
 }
 
 static void
@@ -4569,7 +4568,7 @@ dissect_17221_adp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *adp_tree)
 
    proto_tree_add_item(adp_tree, hf_adp_message_type, tvb, ADP_VERSION_OFFSET, 1, ENC_BIG_ENDIAN);
    proto_tree_add_item(adp_tree, hf_adp_valid_time, tvb, ADP_VALID_TIME_OFFSET, 1, ENC_BIG_ENDIAN);
-   proto_tree_add_item(adp_tree, hf_adp_cd_length, tvb, ADP_CD_LENGTH_OFFSET, 1, ENC_BIG_ENDIAN);
+   proto_tree_add_item(adp_tree, hf_adp_cd_length, tvb, ADP_CD_LENGTH_OFFSET, 2, ENC_BIG_ENDIAN);
    proto_tree_add_item(adp_tree, hf_adp_entity_id, tvb, ADP_ENTITY_ID_OFFSET, 8, ENC_BIG_ENDIAN);
    proto_tree_add_item(adp_tree, hf_adp_entity_model_id, tvb, ADP_ENTITY_MODEL_ID_OFFSET, 8, ENC_BIG_ENDIAN);
 
@@ -4695,10 +4694,10 @@ dissect_17221_acmp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *acmp_tree)
 static int
 dissect_17221(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-   guint8 subtype = 0;
+   uint8_t subtype = 0;
    proto_item *ieee17221_item;
    proto_tree *ieee17221_tree;
-   subtype = tvb_get_guint8(tvb, 0);
+   subtype = tvb_get_uint8(tvb, 0);
    subtype &= 0x7F;
 
    /* Make entries in Protocol column and Info column on summary display */
@@ -4760,15 +4759,15 @@ proto_register_17221(void)
       },
       { &hf_adp_entity_id,
          { "Entity ID", "ieee17221.entity_id",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_adp_entity_model_id,
          { "Entity Model ID", "ieee17221.entity_model_id",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_adp_entity_cap,
          { "Entity Capabilities", "ieee17221.entity_capabilities",
-            FT_UINT32, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       /* Entity Capability Flags Begin */
       { &hf_adp_entity_cap_efu_mode,
@@ -4818,11 +4817,11 @@ proto_register_17221(void)
       /* Entity Capability Flags End */
       { &hf_adp_talker_stream_srcs,
          { "Talker Stream Sources", "ieee17221.talker_stream_sources",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_adp_talker_cap,
          { "Talker Capabilities", "ieee17221.talker_capabilities",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       /* Talker Capability Flags Begin */
       { &hf_adp_talk_cap_implement,
@@ -4860,11 +4859,11 @@ proto_register_17221(void)
       /* Talker Capability Flags End */
       { &hf_adp_listener_stream_sinks,
          { "Listener Stream Sinks", "ieee17221.listener_stream_sinks",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_adp_listener_cap,
          { "Listener Capabilities", "ieee17221.listener_capabilities",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       /* Listener Capability Flags Begin */
       { &hf_adp_list_cap_implement,
@@ -4902,7 +4901,7 @@ proto_register_17221(void)
       /* Listener Capability Flags End */
       { &hf_adp_controller_cap,
          { "Controller Capabilities", "ieee17221.controller_capabilities",
-            FT_UINT32, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       /* Controller Capability Flags Begin */
       { &hf_adp_cont_cap_implement,
@@ -4916,16 +4915,16 @@ proto_register_17221(void)
       /* Controller Capability Flags End */
       { &hf_adp_avail_index,
          { "Available Index", "ieee17221.available_index",
-            FT_UINT32, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_adp_gptp_gm_id,
          { "gPTP Grandmaster ID", "ieee17221.gptp_grandmaster_id",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 #if 0
       { &hf_adp_def_aud_format,
          { "Default Audio Format", "ieee17221.default_audio_format",
-            FT_UINT32, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 #endif
 #if 0
@@ -4974,7 +4973,7 @@ proto_register_17221(void)
       },
       { &hf_adp_def_aud_chan_formats,
          { "Channel Formats", "ieee17221.default_audio_format.channel_formats",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       /* Channel Formats Fields Start */
       { &hf_adp_chan_format_mono,
@@ -5047,17 +5046,17 @@ proto_register_17221(void)
 #if 0
       { &hf_adp_def_vid_format,
          { "Default Video Format", "ieee17221.default_video_format",
-            FT_UINT32, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 #endif
       { &hf_adp_assoc_id,
          { "Association ID", "ieee17221.association_id",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 #if 0
       { &hf_adp_entity_type,
          { "Entity Type", "ieee17221.entity_type",
-            FT_UINT32, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 #endif
       /*******************************************************************/
@@ -5075,43 +5074,43 @@ proto_register_17221(void)
       },
       { &hf_acmp_stream_id,
          { "Stream ID", "ieee17221.stream_id",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_acmp_controller_guid,
          { "Controller GUID", "ieee17221.controller_guid",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_acmp_talker_guid,
          { "Talker GUID", "ieee17221.talker_guid",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_acmp_listener_guid,
          { "Listener GUID", "ieee17221.listener_guid",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_acmp_talker_unique_id,
          { "Talker Unique ID", "ieee17221.talker_unique_id",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_acmp_listener_unique_id,
          { "Listener Unique ID", "ieee17221.listener_unique_id",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_acmp_stream_dest_mac,
          { "Destination MAC address", "ieee17221.dest_mac",
-            FT_ETHER, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_ETHER, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_acmp_connection_count,
          { "Connection Count", "ieee17221.connection_count",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_acmp_sequence_id,
          { "Sequence ID", "ieee17221.sequence_id",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_acmp_flags,
          { "Flags", "ieee17221.flags",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       /* ACMP Flags Begin */
       { &hf_acmp_flags_class_b,
@@ -5145,7 +5144,7 @@ proto_register_17221(void)
       /* ACMP Flags End */
       { &hf_acmp_vlan_id,
          { "Stream VLAN Id", "ieee17221.vlan_id",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       /******* AECP ******/
       /* COMMON FIELDS */
@@ -5159,15 +5158,15 @@ proto_register_17221(void)
       },
       { &hf_aecp_target_guid,
          { "Target GUID", "ieee17221.target_guid",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_controller_guid,
          { "Controller GUID", "ieee17221.controller_guid",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_sequence_id,
          { "Sequence ID", "ieee17221.sequence_id",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_u_flag,
          { "U Flag", "ieee17221.u_flag",
@@ -5180,7 +5179,7 @@ proto_register_17221(void)
       /* Address Access Fields */
       { &hf_aecp_aa_count,
          { "Count", "ieee17221.count",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_aa_tlv_mode,
          { "Tlv Mode", "ieee17221.tlv_mode",
@@ -5202,7 +5201,7 @@ proto_register_17221(void)
       },
       { &hf_aecp_descriptor_index,
          {"Descriptor Index", "ieee17221.descriptor_index",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 
       /* AECP Commands and Responses 1722.1 Sec 7.4 */
@@ -5213,13 +5212,13 @@ proto_register_17221(void)
       },
       { &hf_aecp_locked_guid,
          { "Locked GUID", "ieee17221.locked_guid",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL}
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL}
       },
 
       /* READ_DESCRIPTOR */
       { &hf_aecp_configuration,
          { "Configuration", "ieee17221.configuration",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       /* WRITE_DESCRIPTOR */
@@ -5235,7 +5234,7 @@ proto_register_17221(void)
       },
       { &hf_aecp_owner_guid,
          { "Owner GUID", "ieee17221.owner_guid",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 
       /* CONTROLLER_AVAILABLE */
@@ -5243,13 +5242,13 @@ proto_register_17221(void)
       /* SET_CLOCK_SOURCE / GET_CLOCK_SOURCE */
       { &hf_aecp_clock_source_id,
          { "Clock Source ID", "ieee17221.clock_source_id64",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 
       /* SET_STREAM_FORMAT */
       { &hf_aecp_stream_format,
          {"Stream Format", "ieee17221.stream_format64",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       /* GET_STREAM_FORMAT */
 
@@ -5260,15 +5259,15 @@ proto_register_17221(void)
       /* SET_SIGNAL_SELECTOR / GET_SIGNAL_SELECTOR */
       { &hf_aecp_signal_type,
          {"Signal Type", "ieee17221.signal_type",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_signal_index,
          {"Signal Index", "ieee17221.signal_index",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_signal_output,
          {"Signal Output", "ieee17221.signal_output",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 
       /* SET_MIXER / GET_MIXER */
@@ -5276,19 +5275,19 @@ proto_register_17221(void)
       /* SET_MATRIX / GET_MATRIX */
       { &hf_aecp_matrix_column,
          {"Matrix Column", "ieee17221.matrix_column",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_matrix_row,
          {"Matrix Row", "ieee17221.matrix_row",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_matrix_region_width,
          {"Region Width", "ieee17221.matrix_region_width",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_matrix_region_height,
          {"Region Height", "ieee17221.matrix_region_height",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_matrix_rep,
          {"Rep", "ieee17221.matrix_rep",
@@ -5304,12 +5303,12 @@ proto_register_17221(void)
       },
       { &hf_aecp_matrix_item_offset,
          {"Item Offset", "ieee17221.matrix_item_offset",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #if 0
       { &hf_aecp_matrix_affected_item_count,
          {"Affected Item Count", "ieee17221.matrix_affected_item_count",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #endif
 
@@ -5320,20 +5319,20 @@ proto_register_17221(void)
       /* GET_AVB_INFO */
       { &hf_aecp_avb_info_ptp_grandmaster_id,
          {"gPTP Grandmaster ID", "ieee17221.avb_info_gptp_grandmaster_id",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_avb_info_propegation_delay,
          {"Propagation Delay", "ieee17221.avb_info_propagation_delay",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_avb_info_gptp_domain_number,
          {"gPTP Domain Number", "ieee17221.avb_info_gptp_domain_number",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #if 0
       { &hf_aecp_avb_info_flags,
          {"Flags", "ieee17221.avbinfo_flags",
-            FT_UINT8, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 #endif
 
@@ -5354,53 +5353,53 @@ proto_register_17221(void)
 
       { &hf_aecp_avb_info_msrp_mappings_count,
          {"MSRP Mappings Count", "ieee17221.msrp_mappings_count",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       { &hf_aecp_avb_info_msrp_mappings,
          {"MSRP Mappings", "ieee17221.msrp_mappings",
-            FT_NONE, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 
       { &hf_aecp_avb_info_msrp_mapping_traffic_class,
          {"MSRP Mapping Traffic Class", "ieee17221.msrp_mapping_traffic_class",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_avb_info_msrp_mapping_priority,
          {"MSRP Mapping Priority", "ieee17221.msrp_mapping_priority",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_get_avb_info_msrp_vlan_id,
          {"MSRP VLAN ID", "ieee17221.msrp_vlan_id",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       { &hf_aecp_map_index,
          {"Map Index", "ieee17221.map_index",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_number_of_maps,
          {"Number of Maps", "ieee17221.number_of_maps",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       /* GET_STREAM_INFO */
       { &hf_aecp_msrp_accumulated_latency,
          {"MSRP Accumulated Latency", "ieee17221.msrp_accumulated_latency",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_msrp_failure_code,
          {"MSRP Failure Code", "ieee17221.msrp_failure_code",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_msrp_failure_bridge_id,
          {"MSRP Failure Bridge ID", "ieee17221.msrp_failure_bridge_id",
-            FT_BYTES, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 #if 0
       { &hf_aecp_stream_vlan_id,
          {"Stream VLAN ID", "ieee17221.stream_vlan_id",
-             FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+             FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #endif
       { &hf_aecp_stream_vlan_id_valid_flag,
@@ -5435,44 +5434,44 @@ proto_register_17221(void)
       /* SET_NAME / GET_NAME */
       { &hf_aecp_name_index,
          {"Name Index", "ieee17221.name_index",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_configuration_index,
          {"Configuration Index", "ieee17221.configuration_index",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       { &hf_aecp_name,
          {"Name", "ieee17221.name",
-            FT_STRING, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 
       /* SET_ASSOCIATION_ID / GET_ASSOCIATION_ID */
       { &hf_aecp_association_id,
          {"Association ID", "ieee17221.association_id",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 
       /* GET_AS_PATH */
       { &hf_aecp_as_path_count,
          {"Count", "ieee17221.as_path_count",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       { &hf_aecp_as_path_sequences,
          {"Path Sequence", "ieee17221.as_path_sequences",
-            FT_NONE, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 
       { &hf_aecp_get_as_info_clock_id,
          { "ClockId", "ieee17221.get_as_info_clock_id",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 
       /* AUTH_ADD_KEY */
       { &hf_aecp_keychain_id,
          {"Keychain ID", "ieee17221.keychain_id",
-            FT_UINT8, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_keychain_id_small,
          {"Keychain ID", "ieee17221.keychain_id_small",
@@ -5484,7 +5483,7 @@ proto_register_17221(void)
       },
       { &hf_aecp_key_signature,
          {"Key Signature", "ieee17221.key_signature",
-            FT_BYTES, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 #if 0
       { &hf_aecp_key_number,
@@ -5550,20 +5549,20 @@ proto_register_17221(void)
 
       { &hf_aecp_keychain_list_index,
          {"Keychain List Index", "ieee17221.keychain_list_index",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_keychain_number_of_keys,
          {"Keychain Number of Keys", "ieee17221.keychain_number_of_keys",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_keychain_number_of_lists,
          {"Keychain Number of Lists", "ieee17221.keychain_number_of_lists",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       { &hf_aecp_key_eui,
          {"Key EUI", "ieee17221.key_eui",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_token_length,
          {"Token Length", "ieee17221.token_length",
@@ -5571,15 +5570,15 @@ proto_register_17221(void)
       },
       { &hf_aecp_key,
          {"Key", "ieee17221.key",
-            FT_BYTES, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_auth_token,
          {"Auth Token", "ieee17221.auth_token",
-            FT_BYTES, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_flags_32,
          {"Flags", "ieee17221.flags",
-            FT_UINT32, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 
       /* AUTH_GET_KEY */
@@ -5592,7 +5591,7 @@ proto_register_17221(void)
             FT_BOOLEAN, 32, NULL, AECP_COUNTERS_VALID_LINK_UP, NULL, HFILL }
       },
       { &hf_aecp_avb_interface_link_down_valid,
-         {"Link Down Valid", "ieee17221.flags.link_up_valid",
+         {"Link Down Valid", "ieee17221.flags.link_down_valid",
             FT_BOOLEAN, 32, NULL, AECP_COUNTERS_VALID_LINK_DOWN, NULL, HFILL }
       },
       { &hf_aecp_avb_interface_packets_tx_valid,
@@ -5665,10 +5664,6 @@ proto_register_17221(void)
          {"Early Timestamp Valid", "ieee17221.flags.early_timestamp_valid",
             FT_BOOLEAN, 32, NULL, AECP_COUNTERS_VALID_EARLY_TIMESTAMP, NULL, HFILL }
       },
-      { &hf_aecp_stream_input_packets_tx_valid,
-         {"Stream Packets TX Valid", "ieee17221.flags.stream_packets_tx_valid",
-            FT_BOOLEAN, 32, NULL, AECP_COUNTERS_VALID_STREAM_PACKETS_TX, NULL, HFILL }
-      },
       { &hf_aecp_stream_input_packets_rx_valid,
          {"Stream Packets RX Valid", "ieee17221.flags.stream_packets_rx_valid",
             FT_BOOLEAN, 32, NULL, AECP_COUNTERS_VALID_STREAM_PACKETS_RX, NULL, HFILL }
@@ -5710,122 +5705,118 @@ proto_register_17221(void)
       /* Counters */
       { &hf_aecp_avb_interface_link_up,
          {"Link Up", "ieee17221.link_up",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_avb_interface_link_down,
          {"Link Down", "ieee17221.link_down",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_avb_interface_packets_tx,
          {"Frames TX", "ieee17221.frames_tx",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_avb_interface_packets_rx,
          {"Frames RX", "ieee17221.frames_rx",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_avb_interface_rx_crc_error,
          {"RX CRC Error", "ieee17221.rx_crc_error",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_avb_interface_gptp_gm_changed,
          {"GPTP GM Changed", "ieee17221.gptp_gm_changed",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       { &hf_aecp_clock_domain_unlocked,
          {"Clock Domain Unlocked", "ieee17221.clock_domain_unlocked",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_clock_domain_locked,
          {"Clock_Domain Locked", "ieee17221.clock_domain_locked",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       { &hf_aecp_stream_input_media_unlocked,
          {"Media Unlocked", "ieee17221.media_unlocked",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_stream_input_media_locked,
          {"Media Locked", "ieee17221.media_locked",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_stream_input_stream_reset,
          {"Stream Reset", "ieee17221.stream_reset",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_stream_input_seq_num_mismatch,
          {"Seq Num Mismatch", "ieee17221.seq_num_mismatch",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_stream_input_media_reset,
          {"Media Reset", "ieee17221.media_reset",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_stream_input_timestamp_uncertain,
          {"Timestamp Uncertain", "ieee17221.timestamp_uncertain",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_stream_input_timestamp_valid,
          {"Timestamp Valid", "ieee17221.timestamp",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_stream_input_timestamp_not_valid,
          {"Timestamp Not Valid", "ieee17221.timestamp_not",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_stream_input_unsupported_format,
          {"Unsupported Format", "ieee17221.unsupported_format",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_stream_input_late_timestamp,
          {"Late Timestamp", "ieee17221.late_timestamp",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_stream_input_early_timestamp,
          {"Early Timestamp", "ieee17221.early_timestamp",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
-      },
-      { &hf_aecp_stream_input_packets_tx,
-         {"Stream Packets TX", "ieee17221.stream_packets_tx",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_stream_input_packets_rx,
          {"Stream Packets RX", "ieee17221.stream_packets_rx",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       { &hf_aecp_entity_specific1,
          {"Entity Specific 1", "ieee17221.entity_specific1",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_entity_specific2,
          {"Entity Specific 2", "ieee17221.entity_specific2",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_entity_specific3,
          {"Entity Specific 3", "ieee17221.entity_specific3",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_entity_specific4,
          {"Entity Specific 4", "ieee17221.entity_specific4",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_entity_specific5,
          {"Entity Specific 5", "ieee17221.entity_specific5",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_entity_specific6,
          {"Entity Specific 6", "ieee17221.entity_specific6",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_entity_specific7,
          {"Entity Specific 7", "ieee17221.entity_specific7",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_entity_specific8,
          {"Entity Specific 8", "ieee17221.entity_specific8",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       /* REBOOT */
@@ -5834,13 +5825,13 @@ proto_register_17221(void)
 #if 0
       { &hf_aecp_media_format,
          {"Media Format", "ieee17221.media_format",
-            FT_BYTES, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 #endif
 
       { &hf_aecp_video_format,
          {"Video Format", "ieee17221.video_format",
-            FT_BYTES, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 
       { &hf_aecp_sampling_rate_pull,
@@ -5862,16 +5853,16 @@ proto_register_17221(void)
 #endif
       { &hf_aecp_mac_address,
          { "MAC address", "ieee17221.mac_address",
-            FT_ETHER, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_ETHER, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 #if 0
       { &hf_aecp_ipv4_address,
          {"IPV4 Address", "ieee17221.ipv4_address",
-            FT_IPv4, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_IPv4, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_ipv6_address,
          {"IPv6 Address", "ieee17221.ipv6_address",
-            FT_IPv6, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_IPv6, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 #endif
 
@@ -5881,11 +5872,11 @@ proto_register_17221(void)
 #if 0
       { &hf_aecp_query_period,
          {"Query Period (ms)", "ieee17221.query_period",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_query_limit,
          {"Query Limit", "ieee17221.query_limit",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_query_type,
          {"Query Type", "ieee17221.query_type",
@@ -5893,7 +5884,7 @@ proto_register_17221(void)
       },
       { &hf_aecp_query_id,
          {"Query ID", "ieee17221.query_id",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #endif
 
@@ -5903,28 +5894,28 @@ proto_register_17221(void)
 #if 0
       { &hf_aecp_count,
          {"Count", "ieee17221.count",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_descriptors,
          {"Descriptors Array", "ieee17221.descriptors",
-            FT_BYTES, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 
       /* INCREMENT_CONTROL_VALUE / DECREMENT_CONTROL_VALUE */
       { &hf_aecp_values_count,
          {"Values Count", "ieee17221.values_count",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #endif
 
       /* START_OPERATION */
       { &hf_aecp_operation_id,
          {"Operation ID", "ieee17221.operation_id",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_operation_type,
          {"Operation Type", "ieee17221.operation_type",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },/* draft spec says this is defined by control_type field *
          * start_operation does not include a control type field *
          * There is an operation type table 7.83 that has not    *
@@ -5936,7 +5927,7 @@ proto_register_17221(void)
       /* OPERATION_STATUS */
       { &hf_aecp_percent_complete,
          {"Percent Complete", "ieee17221.percent_complete",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       /* AUTH_GET_KEY_COUNT */
@@ -5948,11 +5939,11 @@ proto_register_17221(void)
       /* hf_aecp_descriptor_index */
       { &hf_aem_entity_id,
          {"Entity ID", "ieee17221.entity_id",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_entity_model_id,
          {"Entity Model ID", "ieee17221.entity_model_id",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       /* hf_adp_entity_cap
        * hf_adp_entity_cap_avdecc_ip
@@ -5972,240 +5963,240 @@ proto_register_17221(void)
       /* where appropriate use adp values */
       { &hf_aem_entity_name,
          {"Entity Name", "ieee17221.entity_name",
-            FT_STRING, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_vendor_name_string,
          {"Vendor Name String (ptr)", "ieee17221.vendor_name_string",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_model_name_string,
          {"Model Name String (ptr)", "ieee17221.model_name_string",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_firmware_version,
          {"Firmware Version", "ieee17221.firmware_version",
-            FT_STRING, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_group_name,
          {"Group Name", "ieee17221.group_name",
-            FT_STRING, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_serial_number,
          {"Serial Number", "ieee17221.serial_number",
-            FT_STRING, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_configurations_count,
          {"Configurations Count", "ieee17221.configurations_count",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_current_configuration,
          {"Current Configuration", "ieee17221.current_configuration",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       /* CONFIGURATION */
       { &hf_aem_configuration_name,
          {"Object Name", "ieee17221.configuration_name",
-            FT_STRING, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_configuration_name_string,
          {"Localized Description", "ieee17221.configuration_name_string",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_descriptor_counts_count,
          {"Descriptor Counts Count", "ieee17221.descriptor_counts_count",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_descriptor_counts_offset,
          {"Descriptor Counts Offset", "ieee17221.descriptor_counts_offset",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_count,
          {"Count", "ieee17221.count",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       /* AUDIO */
       { &hf_aem_number_of_stream_input_ports,
          {"Number Of Stream Input Ports", "ieee17221.number_of_stream_input_ports",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_stream_input_port,
          {"Base Stream Input Port", "ieee17221.base_stream_input_port",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_of_stream_output_ports,
          {"Number Of Stream Output Ports", "ieee17221.number_of_stream_output_ports",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_stream_output_port,
          {"Base Stream Output Port", "ieee17221.base_stream_output_port",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_of_external_input_ports,
          {"Number Of External Input Ports", "ieee17221.number_of_external_input_ports",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_external_input_port,
          {"Base External Input Port", "ieee17221.base_external_input_port",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_of_external_output_ports,
          {"Number Of External Output Ports", "ieee17221.number_of_external_output_ports",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_external_output_port,
          {"Base External Output Port", "ieee17221.base_external_output_port",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_of_internal_input_ports,
          {"Number Of Internal Input Ports", "ieee17221.number_of_internal_input_ports",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_internal_input_port,
          {"Base Internal Input Port", "ieee17221.base_internal_input_port",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_of_internal_output_ports,
          {"Number Of Internal Output Ports", "ieee17221.number_of_internal_output_ports",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_internal_output_port,
          {"Base Internal Output Port", "ieee17221.base_internal_output_port",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_clock_source_id,
          {"Clock Source ID", "ieee17221.clock_source_id",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_clock_domain_id,
          {"Clock Domain ID", "ieee17221.clock_domain_id",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_clock_sources_offset,
          {"Clock Sources Offset", "ieee17221.clock_sources_offset",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_clock_source_index,
          {"Clock Source Index", "ieee17221.clock_source_index",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_clock_sources_count,
          {"Clock Sources Count", "ieee17221.clock_sources_count",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_clock_sources,
          {"Clock Sources", "ieee17221.clock_sources",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_clock_sources_array,
          {"Clock Sources Array", "ieee17221.clock_sources_array",
-            FT_NONE, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_of_controls,
          {"Number Of Controls", "ieee17221.number_of_controls",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_control,
          {"Base Control", "ieee17221.base_control",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_control_blocks,
          {"Number Of Control Blocks", "ieee17221.number_of_control_blocks",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_control_block,
          {"Base Control Block", "ieee17221.base_control_block",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_object_name,
          {"Object Name", "ieee17221.object_name",
-            FT_STRING, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_localized_description,
          {"Localized Description", "ieee17221.localized_description",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_current_sample_rate,
          {"Current Sample Rate", "ieee17221.current_sample_rate",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_signal_selectors,
          {"Number of Signal Selectors", "ieee17221.num_signal_selectors",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_signal_selector,
          {"Base Signal Selector", "ieee17221.base_signal_selector",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_mixers,
          {"Number of Mixers", "ieee17221.num_mixers",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_mixer,
          {"Base Mixer", "ieee17221.base_mixer",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_matrices,
          {"Number of Matrices", "ieee17221.num_matrices",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_matrix,
          {"Base Matrix", "ieee17221.base_matrix",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_splitters,
          {"Number of Splitters", "ieee17221.num_splitters",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_splitter,
          {"Base Splitter", "ieee17221.base_splitter",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_combiners,
          {"Number of Combiners", "ieee17221.num_combiners",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_combiner,
          {"Base Combiner", "ieee17221.base_combiner",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_demultiplexers,
          {"Number of Demultiplexers", "ieee17221.num_demultiplexer",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_demultiplexer,
          {"Base Demultiplexer", "ieee17221.base_demultiplexer",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_multiplexers,
          {"Number of Multiplexers", "ieee17221.num_multiplexers",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_multiplexer,
          {"Base Multiplexer", "ieee17221.base_multiplexer",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_transcoders,
          {"Number of Transcoders", "ieee17221.num_transcoders",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_transcoder,
          {"Base Transcoder", "ieee17221.base_transcoder",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       /* sample rate is 3 bit pull field multiplier and 29 bit base freq in Hz */
       { &hf_aem_sample_rates_offset,
          {"Sample Rates Offset", "ieee17221.sample_rates_offset",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_sample_rates_count,
          {"Sample Rates Count", "ieee17221.sample_rates_count",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_sample_rates,
          {"Sample Rates", "ieee17221.sample_rates",
-            FT_NONE, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 
       { &hf_aem_base_frequency,
@@ -6225,15 +6216,15 @@ proto_register_17221(void)
       /* STREAM_OUTPUT */
       { &hf_aem_stream_name,
          {"Object Name", "ieee17221.stream_name",
-            FT_STRING, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_stream_name_string,
          {"Localized Description", "ieee17221.stream_name_string",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_stream_flags,
          {"Stream Flags", "ieee17221.stream_flags",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_flags_clock_sync_source,
          {"Clock Sync Source Flag", "ieee17221.flags.clock_sync_source",
@@ -6250,85 +6241,85 @@ proto_register_17221(void)
 #if 0
       { &hf_aem_stream_channels,
          {"Stream Channels", "ieee17221.stream_channels",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #endif
       { &hf_aem_formats_offset,
          {"Formats Offset", "ieee17221.formats_offset",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_of_formats,
          {"Number Of Formats", "ieee17221.number_of_formats",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_backup_talker_guid_0,
          {"Primary Backup Talker GUID", "ieee17221.backup_talker_guid_0",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_backup_talker_unique_0,
          {"Primary Backup Talker Unique ID", "ieee17221.backup_talker_unique_0",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_backup_talker_guid_1,
          {"Secondary Backup Talker GUID", "ieee17221.backup_talker_guid_1",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_backup_talker_unique_1,
          {"Secondary Backup Talker Unique ID", "ieee17221.backup_talker_unique_1",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_backup_talker_guid_2,
          {"Tertiary Backup Talker GUID", "ieee17221.backup_talker_guid_2",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_backup_talker_unique_2,
          {"Tertiary Backup Talker Unique ID", "ieee17221.backup_talker_unique_2",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_backedup_talker_guid,
          {"Backedup Talker GUID", "ieee17221.backedup_talker_guid",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_backedup_talker_unique,
          {"Backedup Talker Unique ID", "ieee17221.backedup_talker_unique",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_avb_interface_id,
          {"AVB Interface ID", "ieee17221.avb_interface_id",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_buffer_length,
          {"Buffer Length", "ieee17221.buffer_length",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       /* array head. uses ett_aem_stream_formats */
       { &hf_aem_stream_formats,
          {"Stream Formats Array", "ieee17221.stream_formats",
-            FT_NONE, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 
       /* EXTERNAL_JACK_INPUT */
       /* EXTERNAL_JACK_OUTPUT*/
       { &hf_aem_jack_name,
          {"Object Name", "ieee17221.jack_name",
-            FT_STRING, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_jack_name_string,
          {"Localized Description", "ieee17221.jack_name_string",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_interface_name,
          {"Interface Name", "ieee17221.interface_name",
-            FT_STRING, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_interface_name_string,
          {"Interface Name String", "ieee17221.interface_name_string",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_jack_flags,
          {"Jack Flags", "ieee17221.jack_flags",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_flags_captive,
          {"Captive Flag", "ieee17221.flags.captive",
@@ -6342,7 +6333,7 @@ proto_register_17221(void)
       /* AUDIO_PORT_OUTPUT */
       { &hf_aem_port_flags,
          {"Port Flags", "ieee17221.port_flags",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_flags_async_sample_rate_conv,
          {"Asynchronous Sample Rate Converter Flag", "ieee17221.flags.async_sample_rate_conv",
@@ -6355,35 +6346,35 @@ proto_register_17221(void)
 #if 0
       { &hf_aem_audio_channels,
          {"Audio Channels", "ieee17221.audio_channels",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #endif
       { &hf_aem_number_of_clusters,
          {"Number of Clusters", "ieee17221.number_of_clusters",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_cluster,
          {"Base Cluster", "ieee17221.base_cluster",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_audio_map,
          {"Base Audio Map", "ieee17221.base_audio_map",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_audio_maps,
          {"Number of Audio Maps", "ieee17221.num_audio_maps",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       /* VIDEO_PORT_INPUT */
       /* VIDEO_PORT_OUTPUT */
 #if 0
       { &hf_aem_stream_id,
          {"Stream Descriptor ID", "ieee17221.stream_descriptor_id",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_formats_count,
          {"Formats Count", "ieee17221.formats_count",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #endif
 
@@ -6391,7 +6382,7 @@ proto_register_17221(void)
       /* EXTERNAL_PORT_OUTPUT */
       { &hf_aem_jack_id,
          {"Jack ID", "ieee17221.jack_id",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       /* SENSOR_PORT_INPUT */
       /* SENSOR_PORT_OUTPUT */
@@ -6400,65 +6391,65 @@ proto_register_17221(void)
 #if 0
       { &hf_aem_internal_id,
          {"Internal ID", "ieee17221.internal_id",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #endif
       /* AVB_INTERFACE */
      { &hf_aem_avb_interface_flags,
          {"Interface Flags", "ieee17221.interface_flags",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_avb_clock_identity,
          {"Clock Identity", "ieee17221.clock_identity",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_avb_priority1,
          {"Priority1", "ieee17221.priority1",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_avb_clock_class,
          {"Clock Class", "ieee17221.clock_class",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_avb_offset_scaled_log_variance,
          {"Scaled Log Variance", "ieee17221.offset_scaled_log_variance",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_avb_clock_accuracy,
          {"Clock Accuracy", "ieee17221.clock_accuracy",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_avb_priority2,
          {"Priority2", "ieee17221.priority2",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_avb_domain_number,
          {"Domain Number", "ieee17221.domain_number",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_avb_log_sync_interval,
          {"Log sync Interval", "ieee17221.log_sync_interval",
-            FT_INT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_INT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #if 0
       { &hf_aem_avb_propagation_delay,
          {"Propagation Delay", "ieee17221.propagation_delay",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #endif
 
       /* CLOCK_SOURCE */
       { &hf_aem_clock_source_name,
          {"Object Name", "ieee17221.clock_source_name",
-            FT_STRING, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_clock_source_name_string,
          {"Localized Description", "ieee17221.clock_source_name_string",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_clock_source_flags,
          {"Clock Source Flags", "ieee17221.clock_source_flags",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       }, /* no flags currently defined */
       { &hf_aem_clock_source_type,
          {"Clock Source Type", "ieee17221.clock_source_type",
@@ -6470,65 +6461,65 @@ proto_register_17221(void)
       },
       { &hf_aem_clock_source_location_id,
          {"Clock Source Location ID", "ieee17221.clock_source_location_id",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       /* AUDIO_MAP */
       { &hf_aem_mappings_offset,
          {"Mappings Offset", "ieee17221.mappings_offset",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_of_mappings,
          {"Number of Mappings", "ieee17221.number_of_mappings",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_mappings,
          {"Mappings", "ieee17221.mappings",
-            FT_NONE, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_mapping_stream_index,
          {"Mapping Stream Index", "ieee17221.mapping_stream_index",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_mapping_stream_channel,
          {"Mapping Stream Channel", "ieee17221.mapping_stream_channel",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_mapping_cluster_offset,
          {"Mapping Cluster Offset", "ieee17221.mapping_cluster_offset",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_mapping_cluster_channel,
          {"Mapping Cluster Channel", "ieee17221.mapping_cluster_channel",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       /* AUDIO_CLUSTER */
       { &hf_aem_channel_count,
          {"Channel Count", "ieee17221.channel_count",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_path_latency,
          {"Path Latency", "ieee17221.path_latency",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_am824_label,
          {"AM824 Label", "ieee17221.am824_label",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #if 0
       { &hf_aem_cluster_name,
          {"Cluster Name", "ieee17221.cluster_name",
-            FT_STRING, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_cluster_name_string,
          {"Cluster Name String", "ieee17221.cluster_name_string",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #endif
 
       /* CONTROL */
       { &hf_aem_control_type,
          {"Control Type", "ieee17221.control_type",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 #if 0
       { &hf_aem_control_location_type,
@@ -6537,7 +6528,7 @@ proto_register_17221(void)
       },
       { &hf_aem_control_location_id,
          {"Control Location ID", "ieee17221.control_location_id",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #endif
       { &hf_aem_control_value_type,
@@ -6546,26 +6537,26 @@ proto_register_17221(void)
       },
       { &hf_aem_control_domain,
          {"Control Domain", "ieee17221.control_domain",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_values_offset,
          {"Values Offset", "ieee17221.values_offset",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_of_values,
          {"Number Of Values", "ieee17221.number_of_values",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_control_latency,
          {"Control Latency", "ieee17221.control_latency",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       /* SIGNAL_SELECTOR */
 #if 0
       { &hf_aem_sources_offset,
          {"Sources Offset", "ieee17221.sources_offset",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_current_signal_type,
          {"Current Signal Type", "ieee17221.current_signal_type",
@@ -6573,7 +6564,7 @@ proto_register_17221(void)
       },
       { &hf_aem_current_signal_id,
          {"Current Signal ID", "ieee17221.current_signal_id",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_default_signal_type,
          {"Default Signal Type", "ieee17221.default_signal_type",
@@ -6581,16 +6572,16 @@ proto_register_17221(void)
       },
       { &hf_aem_default_signal_id,
          {"Default Signal ID", "ieee17221.default_signal_id",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 #endif
       { &hf_aem_block_latency,
          {"Block Latency", "ieee17221.block_latency",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_reset_time,
          {"Reset Time", "ieee17221.reset_time",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_signal_type,
          {"Signal Type", "ieee17221.signal_type",
@@ -6598,75 +6589,75 @@ proto_register_17221(void)
       },
       { &hf_aem_signal_index,
          {"Signal Index", "ieee17221.signal_index",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_signal_output,
          {"Signal Output", "ieee17221.signal_output",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       /* MIXER */
 #if 0
       { &hf_aem_number_of_sources,
          {"Number of Sources", "ieee17221.number_of_sources",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_value_offset,
          {"Value Offset", "ieee17221.value_offset",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       /* MATRIX */
       { &hf_aem_width,
          {"Width", "ieee17221.width",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_height,
          {"Height", "ieee17221.height",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_source,
          {"Base Source", "ieee17221.base_source",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_destinations,
          {"Number of Destinations", "ieee17221.num_destinations",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_destination,
          {"Base Destination", "ieee17221.base_destination",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 #endif
 
       /* LOCALE */
       { &hf_aem_locale_identifier,
          {"Locale Identifier", "ieee17221.locale_identifier",
-            FT_STRING, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_number_of_strings,
          {"Number of Strings", "ieee17221.number_of_strings",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_base_strings,
          {"Base Strings", "ieee17221.base_strings",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
       /* STRINGS */
       { &hf_aem_string,
          {"String", "ieee17221.string",
-            FT_STRING, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_STRINGZ, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 
       /* MATRIX SIGNAL */
       { &hf_aem_signals_count,
          {"Signals Count", "ieee17221.signals_count",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_signals_offset,
          {"Signals Offset", "ieee17221.signals_offset",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 
       /* MEMORY OBJECT */
@@ -6680,94 +6671,94 @@ proto_register_17221(void)
       },
       { &hf_aem_target_descriptor_id,
          {"Target Descriptor ID", "ieee17221.target_descriptor_id",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_start_address,
          {"Start Address", "ieee17221.start_address",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_length,
          {"Length", "ieee17221.length",
-            FT_UINT64, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
 
 
       /* CONTROL VALUE TYPES */
       { &hf_aem_ctrl_int8,
          {"Control INT8", "ieee17221.ctrl_int8",
-            FT_INT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_INT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_ctrl_uint8,
          {"Control UINT8", "ieee17221.ctrl_uint8",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_ctrl_int16,
          {"Control INT16", "ieee17221.ctrl_int16",
-            FT_INT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_INT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_ctrl_uint16,
          {"Control UINT16", "ieee17221.ctrl_uint16",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_ctrl_int32,
          {"Control INT32", "ieee17221.ctrl_int32",
-            FT_INT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_INT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_ctrl_uint32,
          {"Control UINT32", "ieee17221.ctrl_uint32",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_ctrl_int64,
          {"Control INT64", "ieee17221.ctrl_int64",
-            FT_INT64, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_INT64, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_ctrl_uint64,
          {"Control UINT64", "ieee17221.ctrl_uint64",
-            FT_UINT64, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_ctrl_float,
          {"Control FLOAT", "ieee17221.ctrl_float",
-            FT_FLOAT, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_ctrl_double,
          {"Control DOUBLE", "ieee17221.ctrl_double",
-            FT_DOUBLE, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_DOUBLE, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_ctrl_vals,
          {"Control Values", "ieee17221.ctrl_vals",
-            FT_NONE, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_unit,
          {"Control Value Units", "ieee17221.units",
-            FT_UINT16, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_string_ref,
          {"String Reference", "ieee17221.string_ref",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_guid,
          {"GUID", "ieee17221.guid",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_blob_size,
          {"Blob Size", "ieee17221.blob_size",
-            FT_UINT32, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_binary_blob,
          {"Binary Blob", "ieee17221.binary_blob",
-            FT_BYTES, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_sources,
          {"Sources", "ieee17221.sources",
-            FT_NONE, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_unknown_descriptor,
          {"Unknown or Malformed Descriptor", "ieee17221.unknown_descriptor",
-            FT_BYTES, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_frequency,
          {"Frequency", "ieee17221.frequency",
-            FT_FLOAT, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_FLOAT, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 
       /* AEM MEDIA FORMAT FIELDS */
@@ -6777,7 +6768,7 @@ proto_register_17221(void)
 #if 0
       { &hf_aem_oui24,
          {"OUI-24", "ieee17221.oui24",
-            FT_UINT24, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT24, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_mfd_type,
          {"MFD Type", "ieee17221.mfd_type",
@@ -6785,11 +6776,11 @@ proto_register_17221(void)
       },
       { &hf_aem_div,
          {"Div Flag", "ieee17221.div",
-            FT_BOOLEAN, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_BOOLEAN, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_interlace,
          {"Interlace Flag", "ieee17221.interlace",
-            FT_BOOLEAN, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_BOOLEAN, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_channels,
          {"Video Channel Count", "ieee17221.channels",
@@ -6805,15 +6796,15 @@ proto_register_17221(void)
       },
       { &hf_aem_aspect_x,
          {"Aspect X", "ieee17221.aspect_x",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_aspect_y,
          {"Aspect Y", "ieee17221.aspect_y",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_frame_rate,
          {"Frame Rate", "ieee17221.frame_rate",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_comp1,
          {"Comp 1", "ieee17221.comp1",
@@ -6833,21 +6824,21 @@ proto_register_17221(void)
       },
       { &hf_aem_mf_width,
          {"Width", "ieee17221.width",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_mf_height,
          {"Height", "ieee17221.height",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_cs_eui64,
          {"CS EUI64", "ieee17221.cs_eui64",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 #endif
       /* BEGIN STREAM FORMAT (SF) FIELDS */
       { &hf_aem_stream_format,
          {"Stream Format", "ieee17221.stream_format",
-            FT_NONE, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_sf_version,
          {"Version", "ieee17221.sf_version",
@@ -6864,15 +6855,15 @@ proto_register_17221(void)
       },
       { &hf_aem_iidc_format,
          {"IIDC Format", "ieee17221.iidc_format",
-            FT_UINT8, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_iidc_mode,
          {"IIDC Mode", "ieee17221.iidc_mode",
-            FT_UINT8, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_iidc_rate,
          {"IIDC Rate", "ieee17221.iidc_rate",
-            FT_UINT8, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_fmt,
          {"FMT", "ieee17221.fmt",
@@ -6888,7 +6879,7 @@ proto_register_17221(void)
       },
       { &hf_aem_dbs,
          {"DBS", "ieee17221.dbs",
-            FT_UINT8, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_b_flag,
          {"Blocking Flag", "ieee17221.flags.b",
@@ -6900,11 +6891,11 @@ proto_register_17221(void)
       },
       { &hf_aem_label_iec_60958_cnt,
          {"Label IEC 60958 Count", "ieee17221.label_iec_60958_cnt",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_label_mbla_cnt,
          {"Label Multi-Bit Linear Audio Count", "ieee17221.label_mbla_cnt",
-            FT_UINT8, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_label_midi_cnt,
          {"Label Midi Slot Count", "ieee17221.label_midi_cnt",
@@ -6916,20 +6907,20 @@ proto_register_17221(void)
       },
       { &hf_aem_video_mode,
          {"Video Mode", "ieee17221.video_mode",
-            FT_UINT8, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_compress_mode,
          {"Compress Mode", "ieee17221.compress_mode",
-            FT_UINT8, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT8, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aem_color_space,
          {"Color Space", "ieee17221.color_space",
-            FT_UINT8, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
 #if 0
       { &hf_aecp_values,
          {"Values", "ieee17221.values",
-            FT_BYTES, BASE_NONE, NULL, 0x00, NULL, HFILL }
+            FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
       },
 #endif
       { &hf_aecp_status_code,
@@ -6941,40 +6932,44 @@ proto_register_17221(void)
       /* SET/GET_STREAM_BACKUP */
       { &hf_aecp_backup_talker_entity_id_0,
          {"Backup Talker Entity ID 0", "ieee17221.backup_talker_entity_id_0",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_backup_talker_unique_id_0,
          {"Backup Talker Unique ID 0", "ieee17221.backup_talker_unique_id_0",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_backup_talker_entity_id_1,
          {"Backup Talker Entity ID 1", "ieee17221.backup_talker_entity_id_1",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_backup_talker_unique_id_1,
          {"Backup Talker Unique ID 1", "ieee17221.backup_talker_unique_id_1",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_backup_talker_entity_id_2,
          {"Backup Talker Entity ID 2", "ieee17221.backup_talker_entity_id_2",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_backup_talker_unique_id_2,
          {"Backup Talker Unique ID 2", "ieee17221.backup_talker_unique_id_2",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_backedup_talker_entity_id,
          {"Backed up Talker Entity ID", "ieee17221.backedup_talker_entity_id",
-            FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL }
+            FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL }
       },
       { &hf_aecp_backedup_talker_unique_id,
          {"Backedup Talker Unique ID", "ieee17221.backedup_talker_unique_id",
-            FT_UINT16, BASE_DEC, NULL, 0x00, NULL, HFILL }
+            FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
+      },
+      { &hf_aecp_vendor_unique_protocol_id,
+         {"Vendor Unique Protocol ID", "ieee17221.protocol_id",
+            FT_UINT48, BASE_HEX, NULL, 0x0, NULL, HFILL }
       }
    };
 
    /* Setup protocol subtree array */
-   static gint *ett[] = {
+   static int *ett[] = {
       &ett_17221,
       &ett_adp_ent_cap,
       &ett_adp_talk_cap,
@@ -7006,28 +7001,26 @@ proto_register_17221(void)
 
    /* Register the protocol name and description */
    proto_17221 = proto_register_protocol("IEEE 1722.1 Protocol", "IEEE1722.1", "ieee17221");
+   avb17221_handle = register_dissector("ieee17221", dissect_17221, proto_17221);
 
    /* Required function calls to register the header fields and subtrees used */
    proto_register_field_array(proto_17221, hf, array_length(hf));
    proto_register_subtree_array(ett, array_length(ett));
+
+   /* Register the custom handler for vendor specific messages */
+   vendor_unique_protocol_dissector_table = register_dissector_table("ieee17221.protocol_id", "Vendor Unique Protocol ID", proto_17221, FT_STRING, STRING_CASE_SENSITIVE);
 }
 
 void
 proto_reg_handoff_17221(void)
 {
-
-   dissector_handle_t avb17221_handle;
-
-   /* avb17221_handle = find_dissector("ieee1722"); */
-
-   avb17221_handle = create_dissector_handle(dissect_17221, proto_17221);
-   dissector_add_uint("ieee1722.subtype", 0x7A, avb17221_handle);
-   dissector_add_uint("ieee1722.subtype", 0x7B, avb17221_handle);
-   dissector_add_uint("ieee1722.subtype", 0x7C, avb17221_handle);
+   dissector_add_uint("ieee1722.subtype", 0xFA, avb17221_handle);
+   dissector_add_uint("ieee1722.subtype", 0xFB, avb17221_handle);
+   dissector_add_uint("ieee1722.subtype", 0xFC, avb17221_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 3

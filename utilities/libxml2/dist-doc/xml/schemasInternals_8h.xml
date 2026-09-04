@@ -1,0 +1,2310 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="schemasInternals_8h" kind="file" language="C++">
+    <compoundname>schemasInternals.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes refid="xmlregexp_8h" local="no">libxml/xmlregexp.h</includes>
+    <includes refid="hash_8h" local="no">libxml/hash.h</includes>
+    <includes refid="dict_8h" local="no">libxml/dict.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includedby refid="xmlschemas_8c" local="no">/builds/GNOME/libxml2/xmlschemas.c</includedby>
+    <includedby refid="xmlschemastypes_8c" local="no">/builds/GNOME/libxml2/xmlschemastypes.c</includedby>
+    <includedby refid="xmlschemastypes_8h" local="no">xmlschemastypes.h</includedby>
+    <incdepgraph>
+      <node id="9">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>schemasInternals.h</label>
+        <link refid="schemasInternals_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="12">
+        <label>limits.h</label>
+      </node>
+      <node id="7">
+        <label>stdarg.h</label>
+      </node>
+      <node id="10">
+        <label>stddef.h</label>
+      </node>
+      <node id="5">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="1">
+        <label>schemasInternals.h</label>
+        <link refid="schemasInternals_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>xmlschemastypes.h</label>
+        <link refid="xmlschemastypes_8h"/>
+      </node>
+    </invincdepgraph>
+    <innerclass refid="struct__xmlSchemaAnnot" prot="public">_xmlSchemaAnnot</innerclass>
+    <innerclass refid="struct__xmlSchemaAttribute" prot="public">_xmlSchemaAttribute</innerclass>
+    <innerclass refid="struct__xmlSchemaAttributeLink" prot="public">_xmlSchemaAttributeLink</innerclass>
+    <innerclass refid="struct__xmlSchemaWildcardNs" prot="public">_xmlSchemaWildcardNs</innerclass>
+    <innerclass refid="struct__xmlSchemaWildcard" prot="public">_xmlSchemaWildcard</innerclass>
+    <innerclass refid="struct__xmlSchemaAttributeGroup" prot="public">_xmlSchemaAttributeGroup</innerclass>
+    <innerclass refid="struct__xmlSchemaTypeLink" prot="public">_xmlSchemaTypeLink</innerclass>
+    <innerclass refid="struct__xmlSchemaFacetLink" prot="public">_xmlSchemaFacetLink</innerclass>
+    <innerclass refid="struct__xmlSchemaType" prot="public">_xmlSchemaType</innerclass>
+    <innerclass refid="struct__xmlSchemaElement" prot="public">_xmlSchemaElement</innerclass>
+    <innerclass refid="struct__xmlSchemaFacet" prot="public">_xmlSchemaFacet</innerclass>
+    <innerclass refid="struct__xmlSchemaNotation" prot="public">_xmlSchemaNotation</innerclass>
+    <innerclass refid="struct__xmlSchema" prot="public">_xmlSchema</innerclass>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="schemasInternals_8h_1aac14e61519f8df91e7ca189406acf4e2" prot="public" static="no">
+        <name>XML_SCHEMAS_ANYATTR_SKIP</name>
+        <initializer>1</initializer>
+        <briefdescription>
+<para>Skip unknown attribute from validation Obsolete, not used anymore. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="173" column="9" bodyfile="schemasInternals.h" bodystart="173" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1aeaedb93bc5a4c258682ab37d87259f50" prot="public" static="no">
+        <name>XML_SCHEMAS_ANYATTR_LAX</name>
+        <initializer>2</initializer>
+        <briefdescription>
+<para>Ignore validation non definition on attributes Obsolete, not used anymore. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="178" column="9" bodyfile="schemasInternals.h" bodystart="178" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1ab925143287ad4b81ab062c87c1bb9182" prot="public" static="no">
+        <name>XML_SCHEMAS_ANYATTR_STRICT</name>
+        <initializer>3</initializer>
+        <briefdescription>
+<para>Apply strict validation rules on attributes Obsolete, not used anymore. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="183" column="9" bodyfile="schemasInternals.h" bodystart="183" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a0c1d47e1c2468b84824a45612c12be07" prot="public" static="no">
+        <name>XML_SCHEMAS_ANY_SKIP</name>
+        <initializer>1</initializer>
+        <briefdescription>
+<para>Skip unknown attribute from validation. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="187" column="9" bodyfile="schemasInternals.h" bodystart="187" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a70de52c01941463993806c911bd7247f" prot="public" static="no">
+        <name>XML_SCHEMAS_ANY_LAX</name>
+        <initializer>2</initializer>
+        <briefdescription>
+<para>Used by wildcards. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Validate if type found, don&apos;t worry if not found </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="192" column="9" bodyfile="schemasInternals.h" bodystart="192" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a0cb6ea779bdd42fdc15339ac1ee21466" prot="public" static="no">
+        <name>XML_SCHEMAS_ANY_STRICT</name>
+        <initializer>3</initializer>
+        <briefdescription>
+<para>Used by wildcards. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Apply strict validation rules </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="197" column="9" bodyfile="schemasInternals.h" bodystart="197" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1ad352e0c39c496ede1b28f192ba0c3c48" prot="public" static="no">
+        <name>XML_SCHEMAS_ATTR_USE_PROHIBITED</name>
+        <initializer>0</initializer>
+        <briefdescription>
+<para>Used by wildcards. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The attribute is prohibited. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="202" column="9" bodyfile="schemasInternals.h" bodystart="202" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1afa14d673d4c2c9eec2b182a072edcb0b" prot="public" static="no">
+        <name>XML_SCHEMAS_ATTR_USE_REQUIRED</name>
+        <initializer>1</initializer>
+        <briefdescription>
+<para>The attribute is required. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="206" column="9" bodyfile="schemasInternals.h" bodystart="206" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a2d7d20dfcebd9d4f68cc5cbd41ac04e9" prot="public" static="no">
+        <name>XML_SCHEMAS_ATTR_USE_OPTIONAL</name>
+        <initializer>2</initializer>
+        <briefdescription>
+<para>The attribute is optional. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="210" column="9" bodyfile="schemasInternals.h" bodystart="210" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1aec8f685ae2d9274a998985d323ac8ac7" prot="public" static="no">
+        <name>XML_SCHEMAS_ATTR_GLOBAL</name>
+        <initializer>1 &lt;&lt; 0</initializer>
+        <briefdescription>
+<para>allow elements in no namespace </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="214" column="9" bodyfile="schemasInternals.h" bodystart="214" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a24b545c5a9a5d37472f7d7fe5378bb5d" prot="public" static="no">
+        <name>XML_SCHEMAS_ATTR_NSDEFAULT</name>
+        <initializer>1 &lt;&lt; 7</initializer>
+        <briefdescription>
+<para>allow elements in no namespace </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="218" column="9" bodyfile="schemasInternals.h" bodystart="218" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1af932253d312a33f5eb06bf7ffae5c55c" prot="public" static="no">
+        <name>XML_SCHEMAS_ATTR_INTERNAL_RESOLVED</name>
+        <initializer>1 &lt;&lt; 8</initializer>
+        <briefdescription>
+<para>this is set when the &quot;type&quot; and &quot;ref&quot; references have been resolved. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="223" column="9" bodyfile="schemasInternals.h" bodystart="223" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a6b9fa96d891396b8141b82da78257e2a" prot="public" static="no">
+        <name>XML_SCHEMAS_ATTR_FIXED</name>
+        <initializer>1 &lt;&lt; 9</initializer>
+        <briefdescription>
+<para>the attribute has a fixed value </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="227" column="9" bodyfile="schemasInternals.h" bodystart="227" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1ad5af0eddc985795aeea104220d35f505" prot="public" static="no">
+        <name>XML_SCHEMAS_WILDCARD_COMPLETE</name>
+        <initializer>1 &lt;&lt; 0</initializer>
+        <briefdescription>
+<para>If the wildcard is complete. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="273" column="9" bodyfile="schemasInternals.h" bodystart="273" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a075e950e4c5b940cf29018e3165d7c07" prot="public" static="no">
+        <name>XML_SCHEMAS_ATTRGROUP_WILDCARD_BUILDED</name>
+        <initializer>1 &lt;&lt; 0</initializer>
+        <briefdescription>
+<para>The attribute wildcard has been built. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="309" column="9" bodyfile="schemasInternals.h" bodystart="309" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a8d370041a6ee850cb5b553f1f11af9dc" prot="public" static="no">
+        <name>XML_SCHEMAS_ATTRGROUP_GLOBAL</name>
+        <initializer>1 &lt;&lt; 1</initializer>
+        <briefdescription>
+<para>The attribute group has been defined. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="313" column="9" bodyfile="schemasInternals.h" bodystart="313" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a830e690ae733af2cc380c1a11b16a9b7" prot="public" static="no">
+        <name>XML_SCHEMAS_ATTRGROUP_MARKED</name>
+        <initializer>1 &lt;&lt; 2</initializer>
+        <briefdescription>
+<para>Marks the attr group as marked; used for circular checks. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="317" column="9" bodyfile="schemasInternals.h" bodystart="317" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1afd953a2afd9acad3b2e38c4bf88ccd91" prot="public" static="no">
+        <name>XML_SCHEMAS_ATTRGROUP_REDEFINED</name>
+        <initializer>1 &lt;&lt; 3</initializer>
+        <briefdescription>
+<para>The attr group was redefined. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="322" column="9" bodyfile="schemasInternals.h" bodystart="322" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a83f5005a071a961abdecdf9bf97a41d5" prot="public" static="no">
+        <name>XML_SCHEMAS_ATTRGROUP_HAS_REFS</name>
+        <initializer>1 &lt;&lt; 4</initializer>
+        <briefdescription>
+<para>Whether this attr. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>group contains attr. group references. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="326" column="9" bodyfile="schemasInternals.h" bodystart="326" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a6913ed7b5a3ef1a0d52fdb4d6b0aacc0" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_MIXED</name>
+        <initializer>1 &lt;&lt; 0</initializer>
+        <briefdescription>
+<para>the element content type is mixed </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="382" column="9" bodyfile="schemasInternals.h" bodystart="382" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1ae66698f0eed84068904cfc4ef14ec939" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_DERIVATION_METHOD_EXTENSION</name>
+        <initializer>1 &lt;&lt; 1</initializer>
+        <briefdescription>
+<para>the simple or complex type has a derivation method of &quot;extension&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="386" column="9" bodyfile="schemasInternals.h" bodystart="386" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1aec288977f7b4830c558fda3b8eeb3325" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_DERIVATION_METHOD_RESTRICTION</name>
+        <initializer>1 &lt;&lt; 2</initializer>
+        <briefdescription>
+<para>the simple or complex type has a derivation method of &quot;restriction&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="390" column="9" bodyfile="schemasInternals.h" bodystart="390" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a263ce5b6f1132f72532dfe21b291d558" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_GLOBAL</name>
+        <initializer>1 &lt;&lt; 3</initializer>
+        <briefdescription>
+<para>the type is global </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="394" column="9" bodyfile="schemasInternals.h" bodystart="394" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a2f23baf0be8c7ba8fd87b0f7d56ddf2b" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_OWNED_ATTR_WILDCARD</name>
+        <initializer>1 &lt;&lt; 4 /* Obsolete. */</initializer>
+        <briefdescription>
+<para>the complexType owns an attribute wildcard, i.e. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>it can be freed by the complexType </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="399" column="9" bodyfile="schemasInternals.h" bodystart="399" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1ade6d66ca3d3952c2cf1c77884d178f1f" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_VARIETY_ABSENT</name>
+        <initializer>1 &lt;&lt; 5</initializer>
+        <briefdescription>
+<para>the simpleType has a variety of &quot;absent&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>TODO: Actually not necessary :-/, since if none of the variety flags occur then it&apos;s automatically absent. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="406" column="9" bodyfile="schemasInternals.h" bodystart="406" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a4f12ddee903b932a2db6b79625150a2d" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_VARIETY_LIST</name>
+        <initializer>1 &lt;&lt; 6</initializer>
+        <briefdescription>
+<para>the simpleType has a variety of &quot;list&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="410" column="9" bodyfile="schemasInternals.h" bodystart="410" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1adc42b405ff7bb7ef569863f7fd2ab7e3" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_VARIETY_UNION</name>
+        <initializer>1 &lt;&lt; 7</initializer>
+        <briefdescription>
+<para>the simpleType has a variety of &quot;union&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="414" column="9" bodyfile="schemasInternals.h" bodystart="414" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a7f17b7add2134db56861215a1893388f" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_VARIETY_ATOMIC</name>
+        <initializer>1 &lt;&lt; 8</initializer>
+        <briefdescription>
+<para>the simpleType has a variety of &quot;union&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="418" column="9" bodyfile="schemasInternals.h" bodystart="418" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1af233ec617169abc3f6f18ad75cbeaf0c" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_FINAL_EXTENSION</name>
+        <initializer>1 &lt;&lt; 9</initializer>
+        <briefdescription>
+<para>the complexType has a final of &quot;extension&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="422" column="9" bodyfile="schemasInternals.h" bodystart="422" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a3265f7a98892a62f4244049b622f0530" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_FINAL_RESTRICTION</name>
+        <initializer>1 &lt;&lt; 10</initializer>
+        <briefdescription>
+<para>the simpleType/complexType has a final of &quot;restriction&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="426" column="9" bodyfile="schemasInternals.h" bodystart="426" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a4b4bc4c618159fa69dd5d5e959282966" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_FINAL_LIST</name>
+        <initializer>1 &lt;&lt; 11</initializer>
+        <briefdescription>
+<para>the simpleType has a final of &quot;list&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="430" column="9" bodyfile="schemasInternals.h" bodystart="430" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a2d605c7eac2d4c266d60ad0a183338cb" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_FINAL_UNION</name>
+        <initializer>1 &lt;&lt; 12</initializer>
+        <briefdescription>
+<para>the simpleType has a final of &quot;union&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="434" column="9" bodyfile="schemasInternals.h" bodystart="434" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a9a3b96afc720d850d8a13fc33c927012" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_FINAL_DEFAULT</name>
+        <initializer>1 &lt;&lt; 13</initializer>
+        <briefdescription>
+<para>the simpleType has a final of &quot;default&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="438" column="9" bodyfile="schemasInternals.h" bodystart="438" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a54e8bbe731466ee46ab15b98ee554c41" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_BUILTIN_PRIMITIVE</name>
+        <initializer>1 &lt;&lt; 14</initializer>
+        <briefdescription>
+<para>Marks the item as a builtin primitive. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="442" column="9" bodyfile="schemasInternals.h" bodystart="442" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1ab2daf9eced804feeabb2143b17b999e5" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_MARKED</name>
+        <initializer>1 &lt;&lt; 16</initializer>
+        <briefdescription>
+<para>Marks the item as marked; used for circular checks. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="446" column="9" bodyfile="schemasInternals.h" bodystart="446" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1ab3ce87057d084ea15d135e12dd70f98f" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_BLOCK_DEFAULT</name>
+        <initializer>1 &lt;&lt; 17</initializer>
+        <briefdescription>
+<para>the complexType did not specify &apos;block&apos; so use the default of the <computeroutput>&lt;schema&gt;</computeroutput> item. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="451" column="9" bodyfile="schemasInternals.h" bodystart="451" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a8dd0cc965f5d232975eddaf6a26fc23a" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_BLOCK_EXTENSION</name>
+        <initializer>1 &lt;&lt; 18</initializer>
+        <briefdescription>
+<para>the complexType has a &apos;block&apos; of &quot;extension&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="455" column="9" bodyfile="schemasInternals.h" bodystart="455" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1afdb8d6ed8117f86bce6964aa4ed44d5c" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_BLOCK_RESTRICTION</name>
+        <initializer>1 &lt;&lt; 19</initializer>
+        <briefdescription>
+<para>the complexType has a &apos;block&apos; of &quot;restriction&quot;. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="459" column="9" bodyfile="schemasInternals.h" bodystart="459" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1af9a535cc6a668bc87e70d913fb72e036" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_ABSTRACT</name>
+        <initializer>1 &lt;&lt; 20</initializer>
+        <briefdescription>
+<para>the simple/complexType is abstract. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="463" column="9" bodyfile="schemasInternals.h" bodystart="463" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a09dadac72d73e1170544f9e2614ddf7c" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_FACETSNEEDVALUE</name>
+        <initializer>1 &lt;&lt; 21</initializer>
+        <briefdescription>
+<para>indicates if the facets need a computed value </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="467" column="9" bodyfile="schemasInternals.h" bodystart="467" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a7a9aec7f2f5021d139793df52f068eb1" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_INTERNAL_RESOLVED</name>
+        <initializer>1 &lt;&lt; 22</initializer>
+        <briefdescription>
+<para>indicates that the type was typefixed </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="471" column="9" bodyfile="schemasInternals.h" bodystart="471" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a6e1f5118dde3bb67b8708682ef458b48" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_INTERNAL_INVALID</name>
+        <initializer>1 &lt;&lt; 23</initializer>
+        <briefdescription>
+<para>indicates that the type is invalid </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="475" column="9" bodyfile="schemasInternals.h" bodystart="475" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a0a0abd6c538e34a4fd0b3ce959452e75" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_WHITESPACE_PRESERVE</name>
+        <initializer>1 &lt;&lt; 24</initializer>
+        <briefdescription>
+<para>a whitespace-facet value of &quot;preserve&quot; </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="479" column="9" bodyfile="schemasInternals.h" bodystart="479" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a0129e5c8c547f416c5bf9c1888ecf202" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_WHITESPACE_REPLACE</name>
+        <initializer>1 &lt;&lt; 25</initializer>
+        <briefdescription>
+<para>a whitespace-facet value of &quot;replace&quot; </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="483" column="9" bodyfile="schemasInternals.h" bodystart="483" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a949e0eb37323b1f38d16f8da8095b444" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_WHITESPACE_COLLAPSE</name>
+        <initializer>1 &lt;&lt; 26</initializer>
+        <briefdescription>
+<para>a whitespace-facet value of &quot;collapse&quot; </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="487" column="9" bodyfile="schemasInternals.h" bodystart="487" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1ae8be59d745845500e91c272a58aa5a3f" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_HAS_FACETS</name>
+        <initializer>1 &lt;&lt; 27</initializer>
+        <briefdescription>
+<para>has facets </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="491" column="9" bodyfile="schemasInternals.h" bodystart="491" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1aeca59891f2a584997dafed85717f4a77" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_NORMVALUENEEDED</name>
+        <initializer>1 &lt;&lt; 28</initializer>
+        <briefdescription>
+<para>indicates if the facets (pattern) need a normalized value </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="495" column="9" bodyfile="schemasInternals.h" bodystart="495" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a4ea3e231d95d88997eb05f78e94d69b8" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_FIXUP_1</name>
+        <initializer>1 &lt;&lt; 29</initializer>
+        <briefdescription>
+<para>First stage of fixup was done. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="500" column="9" bodyfile="schemasInternals.h" bodystart="500" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a93c9551723f8546980e7358524cb4efb" prot="public" static="no">
+        <name>XML_SCHEMAS_TYPE_REDEFINED</name>
+        <initializer>1 &lt;&lt; 30</initializer>
+        <briefdescription>
+<para>The type was redefined. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="505" column="9" bodyfile="schemasInternals.h" bodystart="505" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a233bdc42e4cbc833ef92fbd52b9f8db6" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_NILLABLE</name>
+        <initializer>1 &lt;&lt; 0</initializer>
+        <briefdescription>
+<para>the element is nillable </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="554" column="9" bodyfile="schemasInternals.h" bodystart="554" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a192876d1f2eccd8a2ce65198d74bdc75" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_GLOBAL</name>
+        <initializer>1 &lt;&lt; 1</initializer>
+        <briefdescription>
+<para>the element is global </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="558" column="9" bodyfile="schemasInternals.h" bodystart="558" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a8d531a7d96fb3ec5bf89f78c1b9fee93" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_DEFAULT</name>
+        <initializer>1 &lt;&lt; 2</initializer>
+        <briefdescription>
+<para>the element has a default value </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="562" column="9" bodyfile="schemasInternals.h" bodystart="562" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1ac5fd8a279fa21400a10aa5b316505f17" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_FIXED</name>
+        <initializer>1 &lt;&lt; 3</initializer>
+        <briefdescription>
+<para>the element has a fixed value </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="566" column="9" bodyfile="schemasInternals.h" bodystart="566" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a9de439476e6d1ffda07636d42a099278" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_ABSTRACT</name>
+        <initializer>1 &lt;&lt; 4</initializer>
+        <briefdescription>
+<para>the element is abstract </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="570" column="9" bodyfile="schemasInternals.h" bodystart="570" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a445e5c930dd56d45e5cad671c0ff5369" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_TOPLEVEL</name>
+        <initializer>1 &lt;&lt; 5</initializer>
+        <briefdescription>
+<para>the element is top level obsolete: use XML_SCHEMAS_ELEM_GLOBAL instead </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="575" column="9" bodyfile="schemasInternals.h" bodystart="575" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a1fb1a1fc9a92171d7f1b9bb601b1f81e" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_REF</name>
+        <initializer>1 &lt;&lt; 6</initializer>
+        <briefdescription>
+<para>the element is a reference to a type </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="579" column="9" bodyfile="schemasInternals.h" bodystart="579" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1aec21f73de4ac6d1ccb9efa365758d170" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_NSDEFAULT</name>
+        <initializer>1 &lt;&lt; 7</initializer>
+        <briefdescription>
+<para>allow elements in no namespace Obsolete, not used anymore. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="584" column="9" bodyfile="schemasInternals.h" bodystart="584" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a6d761ff04136c350012422bd5f2e9b55" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_INTERNAL_RESOLVED</name>
+        <initializer>1 &lt;&lt; 8</initializer>
+        <briefdescription>
+<para>this is set when &quot;type&quot;, &quot;ref&quot;, &quot;substitutionGroup&quot; references have been resolved. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="589" column="9" bodyfile="schemasInternals.h" bodystart="589" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a6328fd28b8e328ed417ba93b4f1f99ed" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_CIRCULAR</name>
+        <initializer>1 &lt;&lt; 9</initializer>
+        <briefdescription>
+<para>a helper flag for the search of circular references. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="593" column="9" bodyfile="schemasInternals.h" bodystart="593" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1aae3be147a88764f71c4435e92c9bc4ee" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_BLOCK_ABSENT</name>
+        <initializer>1 &lt;&lt; 10</initializer>
+        <briefdescription>
+<para>the &quot;block&quot; attribute is absent </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="597" column="9" bodyfile="schemasInternals.h" bodystart="597" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a539888c8b292a3e3b4ec20fcc32c5e65" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_BLOCK_EXTENSION</name>
+        <initializer>1 &lt;&lt; 11</initializer>
+        <briefdescription>
+<para>disallowed substitutions are absent </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="601" column="9" bodyfile="schemasInternals.h" bodystart="601" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a9995117514db6e16facb0de497427ffe" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_BLOCK_RESTRICTION</name>
+        <initializer>1 &lt;&lt; 12</initializer>
+        <briefdescription>
+<para>disallowed substitutions: &quot;restriction&quot; </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="605" column="9" bodyfile="schemasInternals.h" bodystart="605" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a8ce8ab6fca8ceb962388cec234abc55f" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_BLOCK_SUBSTITUTION</name>
+        <initializer>1 &lt;&lt; 13</initializer>
+        <briefdescription>
+<para>disallowed substitutions: &quot;substitution&quot; </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="609" column="9" bodyfile="schemasInternals.h" bodystart="609" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1aed4cc72cf10a73ef2e3ca17ea9289a83" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_FINAL_ABSENT</name>
+        <initializer>1 &lt;&lt; 14</initializer>
+        <briefdescription>
+<para>substitution group exclusions are absent </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="613" column="9" bodyfile="schemasInternals.h" bodystart="613" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1aba446d65ca3ccf22a9788cf70b00a4d3" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_FINAL_EXTENSION</name>
+        <initializer>1 &lt;&lt; 15</initializer>
+        <briefdescription>
+<para>substitution group exclusions: &quot;extension&quot; </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="617" column="9" bodyfile="schemasInternals.h" bodystart="617" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a27c9bf805ed66c9da3c5c9dbd126a593" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_FINAL_RESTRICTION</name>
+        <initializer>1 &lt;&lt; 16</initializer>
+        <briefdescription>
+<para>substitution group exclusions: &quot;restriction&quot; </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="621" column="9" bodyfile="schemasInternals.h" bodystart="621" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a38191a14d1bdd67e0e588eb796f25eeb" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_SUBST_GROUP_HEAD</name>
+        <initializer>1 &lt;&lt; 17</initializer>
+        <briefdescription>
+<para>the declaration is a substitution group head </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="625" column="9" bodyfile="schemasInternals.h" bodystart="625" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1afeed3db7931a222b52e0b27360c0389c" prot="public" static="no">
+        <name>XML_SCHEMAS_ELEM_INTERNAL_CHECKED</name>
+        <initializer>1 &lt;&lt; 18</initializer>
+        <briefdescription>
+<para>this is set when the elem decl has been checked against all constraints </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="630" column="9" bodyfile="schemasInternals.h" bodystart="630" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a70732671acdf69eb1e72d264e9c6480f" prot="public" static="no">
+        <name>XML_SCHEMAS_FACET_UNKNOWN</name>
+        <initializer>0</initializer>
+        <briefdescription>
+<para>unknown facet handling </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="675" column="9" bodyfile="schemasInternals.h" bodystart="675" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1ad1ac4df628f603a7778d7d76b0ef1df0" prot="public" static="no">
+        <name>XML_SCHEMAS_FACET_PRESERVE</name>
+        <initializer>1</initializer>
+        <briefdescription>
+<para>preserve the type of the facet </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="679" column="9" bodyfile="schemasInternals.h" bodystart="679" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1ae230bda81e6aa2299d306454c41d406b" prot="public" static="no">
+        <name>XML_SCHEMAS_FACET_REPLACE</name>
+        <initializer>2</initializer>
+        <briefdescription>
+<para>replace the type of the facet </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="683" column="9" bodyfile="schemasInternals.h" bodystart="683" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a86d6d9dcff5787bc2cca948806fe1060" prot="public" static="no">
+        <name>XML_SCHEMAS_FACET_COLLAPSE</name>
+        <initializer>3</initializer>
+        <briefdescription>
+<para>collapse the types of the facet </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="687" column="9" bodyfile="schemasInternals.h" bodystart="687" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1afbf34193d90ae40fb3545564e59980f6" prot="public" static="no">
+        <name>XML_SCHEMAS_QUALIF_ELEM</name>
+        <initializer>1 &lt;&lt; 0</initializer>
+        <briefdescription>
+<para>Reflects elementFormDefault == qualified in an XML schema document. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="728" column="9" bodyfile="schemasInternals.h" bodystart="728" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a30ce8b119cbd8c721abdb096b8fe36f2" prot="public" static="no">
+        <name>XML_SCHEMAS_QUALIF_ATTR</name>
+        <initializer>1 &lt;&lt; 1</initializer>
+        <briefdescription>
+<para>Reflects attributeFormDefault == qualified in an XML schema document. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="733" column="9" bodyfile="schemasInternals.h" bodystart="733" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a130256a7f1c56677947763122f1ed918" prot="public" static="no">
+        <name>XML_SCHEMAS_FINAL_DEFAULT_EXTENSION</name>
+        <initializer>1 &lt;&lt; 2</initializer>
+        <briefdescription>
+<para>the schema has &quot;extension&quot; in the set of finalDefault. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="737" column="9" bodyfile="schemasInternals.h" bodystart="737" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a679ae0c4403f9057680bb52e3548e32c" prot="public" static="no">
+        <name>XML_SCHEMAS_FINAL_DEFAULT_RESTRICTION</name>
+        <initializer>1 &lt;&lt; 3</initializer>
+        <briefdescription>
+<para>the schema has &quot;restriction&quot; in the set of finalDefault. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="741" column="9" bodyfile="schemasInternals.h" bodystart="741" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a73a0de707f3773504c12645be75c14c8" prot="public" static="no">
+        <name>XML_SCHEMAS_FINAL_DEFAULT_LIST</name>
+        <initializer>1 &lt;&lt; 4</initializer>
+        <briefdescription>
+<para>the schema has &quot;list&quot; in the set of finalDefault. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="745" column="9" bodyfile="schemasInternals.h" bodystart="745" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a8d82187aec2cedc4ac1fe76683a513e4" prot="public" static="no">
+        <name>XML_SCHEMAS_FINAL_DEFAULT_UNION</name>
+        <initializer>1 &lt;&lt; 5</initializer>
+        <briefdescription>
+<para>the schema has &quot;union&quot; in the set of finalDefault. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="749" column="9" bodyfile="schemasInternals.h" bodystart="749" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a648503f7a2019248c0d3dfb0963f5e9b" prot="public" static="no">
+        <name>XML_SCHEMAS_BLOCK_DEFAULT_EXTENSION</name>
+        <initializer>1 &lt;&lt; 6</initializer>
+        <briefdescription>
+<para>the schema has &quot;extension&quot; in the set of blockDefault. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="753" column="9" bodyfile="schemasInternals.h" bodystart="753" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1adaa9775dbfea17c110230a58f336b2a2" prot="public" static="no">
+        <name>XML_SCHEMAS_BLOCK_DEFAULT_RESTRICTION</name>
+        <initializer>1 &lt;&lt; 7</initializer>
+        <briefdescription>
+<para>the schema has &quot;restriction&quot; in the set of blockDefault. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="757" column="9" bodyfile="schemasInternals.h" bodystart="757" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a9cbd85f9c6306455c667a1d67dd6553b" prot="public" static="no">
+        <name>XML_SCHEMAS_BLOCK_DEFAULT_SUBSTITUTION</name>
+        <initializer>1 &lt;&lt; 8</initializer>
+        <briefdescription>
+<para>the schema has &quot;substitution&quot; in the set of blockDefault. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="761" column="9" bodyfile="schemasInternals.h" bodystart="761" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="schemasInternals_8h_1a94c76b34aefed1ebaed8d537218c2a43" prot="public" static="no">
+        <name>XML_SCHEMAS_INCLUDING_CONVERT_NS</name>
+        <initializer>1 &lt;&lt; 9</initializer>
+        <briefdescription>
+<para>the schema is currently including an other schema with no target namespace. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="766" column="9" bodyfile="schemasInternals.h" bodystart="766" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcd" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlSchemaValType</name>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda97051ae9e77d41ea6bbfdbb3685d1e1e" prot="public">
+          <name>XML_SCHEMAS_UNKNOWN</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda6f73e8909d3f3851c1a8a67c6fbe5ea8" prot="public">
+          <name>XML_SCHEMAS_STRING</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda46403fe25b1c57b633be393f5eb77f3a" prot="public">
+          <name>XML_SCHEMAS_NORMSTRING</name>
+          <initializer>= 2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdaa4fc4fc79964a0a4943f847b79c10f8e" prot="public">
+          <name>XML_SCHEMAS_DECIMAL</name>
+          <initializer>= 3</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdafcd5ffc744552e1ce59aa466d52364f3" prot="public">
+          <name>XML_SCHEMAS_TIME</name>
+          <initializer>= 4</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda543850af132e9ecefa2f0f3305bc3a0b" prot="public">
+          <name>XML_SCHEMAS_GDAY</name>
+          <initializer>= 5</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda33c7648785abeabfd5cd9d43ffdea972" prot="public">
+          <name>XML_SCHEMAS_GMONTH</name>
+          <initializer>= 6</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda3ff81536c2379bcc13427e90e5fd4b3d" prot="public">
+          <name>XML_SCHEMAS_GMONTHDAY</name>
+          <initializer>= 7</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdaf78430ef9c976784e5cc817a42aee20c" prot="public">
+          <name>XML_SCHEMAS_GYEAR</name>
+          <initializer>= 8</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdaa7e034f78ac97fc02041fc37412eec80" prot="public">
+          <name>XML_SCHEMAS_GYEARMONTH</name>
+          <initializer>= 9</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda9f72bd17a91535f986455918348e4504" prot="public">
+          <name>XML_SCHEMAS_DATE</name>
+          <initializer>= 10</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda4b7fc69732a69a5e3ae4a1a96b0e7190" prot="public">
+          <name>XML_SCHEMAS_DATETIME</name>
+          <initializer>= 11</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda8042b13ec4285f064612ad720ed2ec76" prot="public">
+          <name>XML_SCHEMAS_DURATION</name>
+          <initializer>= 12</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdabad933cb2a7dc0743b9913eb869a176a" prot="public">
+          <name>XML_SCHEMAS_FLOAT</name>
+          <initializer>= 13</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdaa560a292fa05927c4be9e1ca1148e3cb" prot="public">
+          <name>XML_SCHEMAS_DOUBLE</name>
+          <initializer>= 14</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda01bebdc7a0f60281b25bbce45ee421ac" prot="public">
+          <name>XML_SCHEMAS_BOOLEAN</name>
+          <initializer>= 15</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda125bf55e1780982ed7a52fa7ec9c3ed0" prot="public">
+          <name>XML_SCHEMAS_TOKEN</name>
+          <initializer>= 16</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdaeb7abffdcd89848f0f2f0c10bc1b06ab" prot="public">
+          <name>XML_SCHEMAS_LANGUAGE</name>
+          <initializer>= 17</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda7c7632edb818ec29fec0e5156d1dae6e" prot="public">
+          <name>XML_SCHEMAS_NMTOKEN</name>
+          <initializer>= 18</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdaa6dc5dc70a3ea909c52ace058e940dbe" prot="public">
+          <name>XML_SCHEMAS_NMTOKENS</name>
+          <initializer>= 19</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda8b9cd3736e6d1bcf9e1acfd6ccb86c0d" prot="public">
+          <name>XML_SCHEMAS_NAME</name>
+          <initializer>= 20</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda27cfa3004c2bebc92b66f012b085eaf4" prot="public">
+          <name>XML_SCHEMAS_QNAME</name>
+          <initializer>= 21</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdace1565548351cb717da96644d10782e2" prot="public">
+          <name>XML_SCHEMAS_NCNAME</name>
+          <initializer>= 22</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdaf67da5d797c9efd1eef6f45c1a1d3e2e" prot="public">
+          <name>XML_SCHEMAS_ID</name>
+          <initializer>= 23</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdaa44e115a020f456280c46b668ef2aff1" prot="public">
+          <name>XML_SCHEMAS_IDREF</name>
+          <initializer>= 24</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda11e9d0136d5403e2937aabfa4bc646d8" prot="public">
+          <name>XML_SCHEMAS_IDREFS</name>
+          <initializer>= 25</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda0d2e30f0253e5a5a192ebfacd9afed85" prot="public">
+          <name>XML_SCHEMAS_ENTITY</name>
+          <initializer>= 26</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdace5f92f25796be07dab8f3f7623da76a" prot="public">
+          <name>XML_SCHEMAS_ENTITIES</name>
+          <initializer>= 27</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdaa06cf2a96845a6729aef2f2a9d50b93d" prot="public">
+          <name>XML_SCHEMAS_NOTATION</name>
+          <initializer>= 28</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda6a81a02253fdb63898090657ea7ef546" prot="public">
+          <name>XML_SCHEMAS_ANYURI</name>
+          <initializer>= 29</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda6fbdc01ff86024ced8e60b00cb53d010" prot="public">
+          <name>XML_SCHEMAS_INTEGER</name>
+          <initializer>= 30</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda6f4949404cd67842886cb7f762122e17" prot="public">
+          <name>XML_SCHEMAS_NPINTEGER</name>
+          <initializer>= 31</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda413708cb183c43a9d901e87d4390905f" prot="public">
+          <name>XML_SCHEMAS_NINTEGER</name>
+          <initializer>= 32</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda51fca596c1f58198b50eceeaf6c880a6" prot="public">
+          <name>XML_SCHEMAS_NNINTEGER</name>
+          <initializer>= 33</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdab9b2decc308b98fc471b5d9d929b704d" prot="public">
+          <name>XML_SCHEMAS_PINTEGER</name>
+          <initializer>= 34</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda057142cc222de2a06e91c8d0bb97e189" prot="public">
+          <name>XML_SCHEMAS_INT</name>
+          <initializer>= 35</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda56ddc01c99633bb695edbf73f90b0be6" prot="public">
+          <name>XML_SCHEMAS_UINT</name>
+          <initializer>= 36</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdaec1471e97848458fe11f1fa48a2f2848" prot="public">
+          <name>XML_SCHEMAS_LONG</name>
+          <initializer>= 37</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda0a0fbfce2e68c1ec90ec3855ed9cb7d6" prot="public">
+          <name>XML_SCHEMAS_ULONG</name>
+          <initializer>= 38</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda782d3acdcf225c1b9b4c886cb50826fc" prot="public">
+          <name>XML_SCHEMAS_SHORT</name>
+          <initializer>= 39</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda4959c39a740add7c105db7281e2e5ba4" prot="public">
+          <name>XML_SCHEMAS_USHORT</name>
+          <initializer>= 40</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcda8a22de551704680695459ea626c3a024" prot="public">
+          <name>XML_SCHEMAS_BYTE</name>
+          <initializer>= 41</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdad61c152ab29bda3e2972f01648e56ee7" prot="public">
+          <name>XML_SCHEMAS_UBYTE</name>
+          <initializer>= 42</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdadb157c83636abf62408fcc359ee97c88" prot="public">
+          <name>XML_SCHEMAS_HEXBINARY</name>
+          <initializer>= 43</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdaf9af7b335d80369d04245c92feff887a" prot="public">
+          <name>XML_SCHEMAS_BASE64BINARY</name>
+          <initializer>= 44</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdaca3307b4300bc0ed03c2afc8a6c45c8c" prot="public">
+          <name>XML_SCHEMAS_ANYTYPE</name>
+          <initializer>= 45</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a8d804852736ab90dc07a88a45acfffcdaa1e4dc49aa47645f05d118bb626f24d3" prot="public">
+          <name>XML_SCHEMAS_ANYSIMPLETYPE</name>
+          <initializer>= 46</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Schema value type. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="36" column="1" bodyfile="schemasInternals.h" bodystart="36" bodyend="84"/>
+      </memberdef>
+      <memberdef kind="enum" id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035b" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlSchemaTypeType</name>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035baf2251139321be393a7fb5f92318f2024" prot="public">
+          <name>XML_SCHEMA_TYPE_BASIC</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba174300a9cdbd5e596757bc733f1d5eb5" prot="public">
+          <name>XML_SCHEMA_TYPE_ANY</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba451736e39889c9a113f41c701acd0deb" prot="public">
+          <name>XML_SCHEMA_TYPE_FACET</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035baaf70e69f52ab11a37c686bad0631c977" prot="public">
+          <name>XML_SCHEMA_TYPE_SIMPLE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035baa65bf835af657526d7fd0373d8891f94" prot="public">
+          <name>XML_SCHEMA_TYPE_COMPLEX</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba6b98258db2a653dc877a7ced3cabc2f2" prot="public">
+          <name>XML_SCHEMA_TYPE_SEQUENCE</name>
+          <initializer>= 6</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035bab2e0edcfdffc7495ce6d4ee4d2028a73" prot="public">
+          <name>XML_SCHEMA_TYPE_CHOICE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035baeb36517f326ca6a508825b5d1722d426" prot="public">
+          <name>XML_SCHEMA_TYPE_ALL</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035baa74688106f7c6e0dfcae1ca768b175e4" prot="public">
+          <name>XML_SCHEMA_TYPE_SIMPLE_CONTENT</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba099485e8113d5ac7036736de788e4153" prot="public">
+          <name>XML_SCHEMA_TYPE_COMPLEX_CONTENT</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035babdfc326e3de52fc0d3119ddee4ad54f7" prot="public">
+          <name>XML_SCHEMA_TYPE_UR</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba3e585e1fcae7ca2b1ec4b3965f74ed5b" prot="public">
+          <name>XML_SCHEMA_TYPE_RESTRICTION</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba687f307be13d3b0dfad95f2b90f8d2b6" prot="public">
+          <name>XML_SCHEMA_TYPE_EXTENSION</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba2380f5ccee3a0f3e777053445a20d320" prot="public">
+          <name>XML_SCHEMA_TYPE_ELEMENT</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035bafcfe0f01ec8ff966addb68b329984288" prot="public">
+          <name>XML_SCHEMA_TYPE_ATTRIBUTE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba06471510988ffd0758187ad782e6aa96" prot="public">
+          <name>XML_SCHEMA_TYPE_ATTRIBUTEGROUP</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba320c27a2521a46ac15b5bad31173ac8b" prot="public">
+          <name>XML_SCHEMA_TYPE_GROUP</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba690b00bb7155b885f9ea576d1cd7c98a" prot="public">
+          <name>XML_SCHEMA_TYPE_NOTATION</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035babd744bbcfb703cd14c0ac95284782284" prot="public">
+          <name>XML_SCHEMA_TYPE_LIST</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba0442afcc7527ebd54b93e4e916bb2c49" prot="public">
+          <name>XML_SCHEMA_TYPE_UNION</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035baff477c11e0ca639ed3ff15107984232f" prot="public">
+          <name>XML_SCHEMA_TYPE_ANY_ATTRIBUTE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba99bcd114504169bbaa48afa53e809513" prot="public">
+          <name>XML_SCHEMA_TYPE_IDC_UNIQUE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035babe4aea9af1d3b8e857bbf9dbec76d16e" prot="public">
+          <name>XML_SCHEMA_TYPE_IDC_KEY</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035bad7ab0781edd20d1d6df21c82443e46ec" prot="public">
+          <name>XML_SCHEMA_TYPE_IDC_KEYREF</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035bacef23b44610c0a24136dec8d4a74e143" prot="public">
+          <name>XML_SCHEMA_TYPE_PARTICLE</name>
+          <initializer>= 25</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035bace4525ec9a71c476e82292cee40c0725" prot="public">
+          <name>XML_SCHEMA_TYPE_ATTRIBUTE_USE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba6bc696d46c164ea742d53ba606404b9b" prot="public">
+          <name>XML_SCHEMA_FACET_MININCLUSIVE</name>
+          <initializer>= 1000</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035bacc64b4c59089a8941947d842cecc3226" prot="public">
+          <name>XML_SCHEMA_FACET_MINEXCLUSIVE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba2b4746b7ae51d5e27cf389c52ed58b6c" prot="public">
+          <name>XML_SCHEMA_FACET_MAXINCLUSIVE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035baa5c8468ae05f5cade4feb4bf527ffca5" prot="public">
+          <name>XML_SCHEMA_FACET_MAXEXCLUSIVE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035baabe07ecf61a2b0f25d75ce8d8ebe5d59" prot="public">
+          <name>XML_SCHEMA_FACET_TOTALDIGITS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035babb79f86ec3557458d926dd8f5d2bc801" prot="public">
+          <name>XML_SCHEMA_FACET_FRACTIONDIGITS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba46f8166faa64c689367d7c60c2539551" prot="public">
+          <name>XML_SCHEMA_FACET_PATTERN</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba9a3f118c99ece16db7e0bb1d9533c591" prot="public">
+          <name>XML_SCHEMA_FACET_ENUMERATION</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035bad6a3e8be66a2c876fff754f77c813b32" prot="public">
+          <name>XML_SCHEMA_FACET_WHITESPACE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba1a7dc006244cee6089c21507c18c49e4" prot="public">
+          <name>XML_SCHEMA_FACET_LENGTH</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba9e97c82a8775008d6b84dec1f7359db2" prot="public">
+          <name>XML_SCHEMA_FACET_MAXLENGTH</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035baadc274f123061f0d32ea72b17a59936e" prot="public">
+          <name>XML_SCHEMA_FACET_MINLENGTH</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035bab7707aff6fd49b27fcfc68f418f02bd5" prot="public">
+          <name>XML_SCHEMA_EXTRA_QNAMEREF</name>
+          <initializer>= 2000</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035ba93c84219386397281e0a495b55e2749c" prot="public">
+          <name>XML_SCHEMA_EXTRA_ATTR_USE_PROHIB</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>XML Schemas defines multiple type of types. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="89" column="1" bodyfile="schemasInternals.h" bodystart="89" bodyend="130"/>
+      </memberdef>
+      <memberdef kind="enum" id="schemasInternals_8h_1a82d21a67961e1cc78884a5aa8d5f7fe4" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlSchemaContentType</name>
+        <enumvalue id="schemasInternals_8h_1a82d21a67961e1cc78884a5aa8d5f7fe4a9fa1fb1f766af90829b15ceeec2f946b" prot="public">
+          <name>XML_SCHEMA_CONTENT_UNKNOWN</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a82d21a67961e1cc78884a5aa8d5f7fe4adb8f7d8c3c3aff880f2ca181f88218bc" prot="public">
+          <name>XML_SCHEMA_CONTENT_EMPTY</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a82d21a67961e1cc78884a5aa8d5f7fe4a14a0e7ace6e198748c01949158fa0974" prot="public">
+          <name>XML_SCHEMA_CONTENT_ELEMENTS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a82d21a67961e1cc78884a5aa8d5f7fe4a274f2af206008a0ccae25426d76464ef" prot="public">
+          <name>XML_SCHEMA_CONTENT_MIXED</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a82d21a67961e1cc78884a5aa8d5f7fe4a08046c5a35a545557145bab642de152a" prot="public">
+          <name>XML_SCHEMA_CONTENT_SIMPLE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a82d21a67961e1cc78884a5aa8d5f7fe4a9d4c9aff85769eef482649346f562360" prot="public">
+          <name>XML_SCHEMA_CONTENT_MIXED_OR_ELEMENTS</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a82d21a67961e1cc78884a5aa8d5f7fe4a982cfc9748df40a1d15218c81d1b69c0" prot="public">
+          <name>XML_SCHEMA_CONTENT_BASIC</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="schemasInternals_8h_1a82d21a67961e1cc78884a5aa8d5f7fe4abc853422f3dfcb2710579b0aff7b1151" prot="public">
+          <name>XML_SCHEMA_CONTENT_ANY</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>Schema content type. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="135" column="1" bodyfile="schemasInternals.h" bodystart="135" bodyend="144"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" prot="public" static="no">
+        <type>struct _xmlSchemaVal</type>
+        <definition>typedef struct _xmlSchemaVal xmlSchemaVal</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaVal</name>
+        <briefdescription>
+<para>Schema value. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="147" column="28" bodyfile="schemasInternals.h" bodystart="147" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1ac129218d7bd51aed7db72f790176c3c2" prot="public" static="no">
+        <type><ref refid="schemasInternals_8h_1a4450e4734a3cbfa4c985ee3d695e1d6e" kindref="member">xmlSchemaVal</ref> *</type>
+        <definition>typedef xmlSchemaVal* xmlSchemaValPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaValPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="148" column="22" bodyfile="schemasInternals.h" bodystart="148" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" prot="public" static="no">
+        <type>struct <ref refid="struct__xmlSchemaType" kindref="compound">_xmlSchemaType</ref></type>
+        <definition>typedef struct _xmlSchemaType xmlSchemaType</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaType</name>
+        <briefdescription>
+<para>Schema type. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="151" column="29" bodyfile="schemasInternals.h" bodystart="151" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1a5562b369a6bd261f2305b6e3bfe07d92" prot="public" static="no">
+        <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+        <definition>typedef xmlSchemaType* xmlSchemaTypePtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaTypePtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="152" column="23" bodyfile="schemasInternals.h" bodystart="152" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1a537bdafcb533f6f1641260d0123102f2" prot="public" static="no">
+        <type>struct <ref refid="struct__xmlSchemaFacet" kindref="compound">_xmlSchemaFacet</ref></type>
+        <definition>typedef struct _xmlSchemaFacet xmlSchemaFacet</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaFacet</name>
+        <briefdescription>
+<para>Schema facet. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="155" column="30" bodyfile="schemasInternals.h" bodystart="155" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1a2d07ea1816ee9773b7dd7bd713f76438" prot="public" static="no">
+        <type><ref refid="schemasInternals_8h_1a537bdafcb533f6f1641260d0123102f2" kindref="member">xmlSchemaFacet</ref> *</type>
+        <definition>typedef xmlSchemaFacet* xmlSchemaFacetPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaFacetPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="156" column="24" bodyfile="schemasInternals.h" bodystart="156" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1afb7787502db52ed53c5449fda627a467" prot="public" static="no">
+        <type>struct <ref refid="struct__xmlSchemaAnnot" kindref="compound">_xmlSchemaAnnot</ref></type>
+        <definition>typedef struct _xmlSchemaAnnot xmlSchemaAnnot</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaAnnot</name>
+        <briefdescription>
+<para>Schema annotation. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="159" column="30" bodyfile="schemasInternals.h" bodystart="159" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1a03864b53fba81e1d2edc87bdf566399e" prot="public" static="no">
+        <type><ref refid="schemasInternals_8h_1afb7787502db52ed53c5449fda627a467" kindref="member">xmlSchemaAnnot</ref> *</type>
+        <definition>typedef xmlSchemaAnnot* xmlSchemaAnnotPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaAnnotPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="160" column="24" bodyfile="schemasInternals.h" bodystart="160" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1a7880be4c4333fc23cfa93e2c212b87a5" prot="public" static="no">
+        <type>struct <ref refid="struct__xmlSchemaAttribute" kindref="compound">_xmlSchemaAttribute</ref></type>
+        <definition>typedef struct _xmlSchemaAttribute xmlSchemaAttribute</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaAttribute</name>
+        <briefdescription>
+<para>Schema attribute definition. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="230" column="34" bodyfile="schemasInternals.h" bodystart="230" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1a136ef5601c15ed4705de30876d719770" prot="public" static="no">
+        <type><ref refid="schemasInternals_8h_1a7880be4c4333fc23cfa93e2c212b87a5" kindref="member">xmlSchemaAttribute</ref> *</type>
+        <definition>typedef xmlSchemaAttribute* xmlSchemaAttributePtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaAttributePtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="231" column="28" bodyfile="schemasInternals.h" bodystart="231" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1ae6bb599d431788990cebca660f5b20cb" prot="public" static="no">
+        <type>struct <ref refid="struct__xmlSchemaAttributeLink" kindref="compound">_xmlSchemaAttributeLink</ref></type>
+        <definition>typedef struct _xmlSchemaAttributeLink xmlSchemaAttributeLink</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaAttributeLink</name>
+        <briefdescription>
+<para>Linked list of schema attributes. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="259" column="38" bodyfile="schemasInternals.h" bodystart="259" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1afc0306bf6921691a682b2f481378c2f4" prot="public" static="no">
+        <type><ref refid="schemasInternals_8h_1ae6bb599d431788990cebca660f5b20cb" kindref="member">xmlSchemaAttributeLink</ref> *</type>
+        <definition>typedef xmlSchemaAttributeLink* xmlSchemaAttributeLinkPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaAttributeLinkPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="260" column="32" bodyfile="schemasInternals.h" bodystart="260" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1aa0570b4557dd045b0e55aa8978173f22" prot="public" static="no">
+        <type>struct <ref refid="struct__xmlSchemaWildcardNs" kindref="compound">_xmlSchemaWildcardNs</ref></type>
+        <definition>typedef struct _xmlSchemaWildcardNs xmlSchemaWildcardNs</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaWildcardNs</name>
+        <briefdescription>
+<para>Namespace wildcard. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="276" column="35" bodyfile="schemasInternals.h" bodystart="276" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1a2c52426255ed360324774b5c8c1337eb" prot="public" static="no">
+        <type><ref refid="schemasInternals_8h_1aa0570b4557dd045b0e55aa8978173f22" kindref="member">xmlSchemaWildcardNs</ref> *</type>
+        <definition>typedef xmlSchemaWildcardNs* xmlSchemaWildcardNsPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaWildcardNsPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="277" column="29" bodyfile="schemasInternals.h" bodystart="277" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1addef0f64c47c44a22ea2aa71147f847f" prot="public" static="no">
+        <type>struct <ref refid="struct__xmlSchemaWildcard" kindref="compound">_xmlSchemaWildcard</ref></type>
+        <definition>typedef struct _xmlSchemaWildcard xmlSchemaWildcard</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaWildcard</name>
+        <briefdescription>
+<para>Name wildcard. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="287" column="33" bodyfile="schemasInternals.h" bodystart="287" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1a1e6cbf22816785fc176e2b39090a8bb6" prot="public" static="no">
+        <type><ref refid="schemasInternals_8h_1addef0f64c47c44a22ea2aa71147f847f" kindref="member">xmlSchemaWildcard</ref> *</type>
+        <definition>typedef xmlSchemaWildcard* xmlSchemaWildcardPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaWildcardPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="288" column="27" bodyfile="schemasInternals.h" bodystart="288" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1a0a4256ef4875b3ad61002a07e26cc443" prot="public" static="no">
+        <type>struct <ref refid="struct__xmlSchemaAttributeGroup" kindref="compound">_xmlSchemaAttributeGroup</ref></type>
+        <definition>typedef struct _xmlSchemaAttributeGroup xmlSchemaAttributeGroup</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaAttributeGroup</name>
+        <briefdescription>
+<para>Attribute group. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="329" column="39" bodyfile="schemasInternals.h" bodystart="329" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1acba3a7347896e9a1bc97aa2618b7f1f9" prot="public" static="no">
+        <type><ref refid="schemasInternals_8h_1a0a4256ef4875b3ad61002a07e26cc443" kindref="member">xmlSchemaAttributeGroup</ref> *</type>
+        <definition>typedef xmlSchemaAttributeGroup* xmlSchemaAttributeGroupPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaAttributeGroupPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="330" column="33" bodyfile="schemasInternals.h" bodystart="330" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1adb7444499a1d799cc6fed1005cf34af6" prot="public" static="no">
+        <type>struct <ref refid="struct__xmlSchemaTypeLink" kindref="compound">_xmlSchemaTypeLink</ref></type>
+        <definition>typedef struct _xmlSchemaTypeLink xmlSchemaTypeLink</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaTypeLink</name>
+        <briefdescription>
+<para>Linked list of schema types. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="357" column="33" bodyfile="schemasInternals.h" bodystart="357" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1a28cead7d76ff06ffab6a96f18aef732d" prot="public" static="no">
+        <type><ref refid="schemasInternals_8h_1adb7444499a1d799cc6fed1005cf34af6" kindref="member">xmlSchemaTypeLink</ref> *</type>
+        <definition>typedef xmlSchemaTypeLink* xmlSchemaTypeLinkPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaTypeLinkPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="358" column="27" bodyfile="schemasInternals.h" bodystart="358" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1afa6332eac11eec26f9feaac76ed076c8" prot="public" static="no">
+        <type>struct <ref refid="struct__xmlSchemaFacetLink" kindref="compound">_xmlSchemaFacetLink</ref></type>
+        <definition>typedef struct _xmlSchemaFacetLink xmlSchemaFacetLink</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaFacetLink</name>
+        <briefdescription>
+<para>Linked list of schema facets. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="369" column="34" bodyfile="schemasInternals.h" bodystart="369" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1ab2d71f25cb0d01cbb186afdbfaa6cfce" prot="public" static="no">
+        <type><ref refid="schemasInternals_8h_1afa6332eac11eec26f9feaac76ed076c8" kindref="member">xmlSchemaFacetLink</ref> *</type>
+        <definition>typedef xmlSchemaFacetLink* xmlSchemaFacetLinkPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaFacetLinkPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="370" column="28" bodyfile="schemasInternals.h" bodystart="370" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1ae2cb6e61d404349e6c185676b6015d97" prot="public" static="no">
+        <type>struct <ref refid="struct__xmlSchemaElement" kindref="compound">_xmlSchemaElement</ref></type>
+        <definition>typedef struct _xmlSchemaElement xmlSchemaElement</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaElement</name>
+        <briefdescription>
+<para>Schema element definition. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="633" column="32" bodyfile="schemasInternals.h" bodystart="633" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1a0a13d945c582108de0fe6f6d6734553e" prot="public" static="no">
+        <type><ref refid="schemasInternals_8h_1ae2cb6e61d404349e6c185676b6015d97" kindref="member">xmlSchemaElement</ref> *</type>
+        <definition>typedef xmlSchemaElement* xmlSchemaElementPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaElementPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="634" column="26" bodyfile="schemasInternals.h" bodystart="634" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1afd8511de9ffd064cc70f1aa128715617" prot="public" static="no">
+        <type>struct <ref refid="struct__xmlSchemaNotation" kindref="compound">_xmlSchemaNotation</ref></type>
+        <definition>typedef struct _xmlSchemaNotation xmlSchemaNotation</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaNotation</name>
+        <briefdescription>
+<para>Schema notation. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="705" column="33" bodyfile="schemasInternals.h" bodystart="705" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="schemasInternals_8h_1a092b90778b39956124b61c472052366e" prot="public" static="no">
+        <type><ref refid="schemasInternals_8h_1afd8511de9ffd064cc70f1aa128715617" kindref="member">xmlSchemaNotation</ref> *</type>
+        <definition>typedef xmlSchemaNotation* xmlSchemaNotationPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaNotationPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="706" column="27" bodyfile="schemasInternals.h" bodystart="706" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="schemasInternals_8h_1abba4b89db8cbc48dfd1b7fd1fa20f268" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaFreeType</definition>
+        <argsstring>(xmlSchemaType *type)</argsstring>
+        <name>xmlSchemaFreeType</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1a91d281210143bd7e73a3556fe96bb576" kindref="member">xmlSchemaType</ref> *</type>
+          <declname>type</declname>
+        </param>
+        <briefdescription>
+<para>Deallocate a Schema Type structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>type</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema type structure </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="797" column="16" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="3902" bodyend="3935" declfile="schemasInternals.h" declline="797" declcolumn="16"/>
+      </memberdef>
+      <memberdef kind="function" id="schemasInternals_8h_1a4549908811d25e4c5e7a9be2f85cfd3f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaFreeWildcard</definition>
+        <argsstring>(xmlSchemaWildcard *wildcard)</argsstring>
+        <name>xmlSchemaFreeWildcard</name>
+        <param>
+          <type><ref refid="schemasInternals_8h_1addef0f64c47c44a22ea2aa71147f847f" kindref="member">xmlSchemaWildcard</ref> *</type>
+          <declname>wildcard</declname>
+        </param>
+        <briefdescription>
+<para>Deallocates a wildcard structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>wildcard</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a wildcard structure </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="schemasInternals.h" line="798" column="16" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="3751" bodyend="3762" declfile="schemasInternals.h" declline="798" declcolumn="16"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>internal interfaces for XML Schemas </para>
+    </briefdescription>
+    <detaileddescription>
+<para>internal interfaces for the XML Schemas handling and schema validity checking The Schemas development is a Work In Progress. Some of those interfaces are not guaranteed to be API or ABI stable !</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="schemasInternals.h"/>
+  </compounddef>
+</doxygen>

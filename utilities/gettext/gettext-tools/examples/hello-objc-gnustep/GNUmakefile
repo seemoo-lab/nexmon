@@ -34,3 +34,6 @@ Hello_C_FILES =
 include $(GNUSTEP_MAKEFILES)/aggregate.make
 include $(GNUSTEP_MAKEFILES)/application.make
 -include GNUmakefile.postamble
+
+internal-distclean::
+	rm -rf *.lproj

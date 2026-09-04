@@ -1,29 +1,49 @@
-/* Copyright (C) 1991-1993, 1996-1999, 2001-2003, 2005, 2007, 2009-2016 Free
+/* Substitute for and wrapper around <fnmatch.h>.
+   Copyright (C) 1991-1993, 1996-1999, 2001-2003, 2005, 2007, 2009-2026 Free
    Software Foundation, Inc.
 
    This file is part of the GNU C Library.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifndef _FNMATCH_H
-#define _FNMATCH_H      1
+#ifndef _@GUARD_PREFIX@_FNMATCH_H
+
+#if __GNUC__ >= 3
+@PRAGMA_SYSTEM_HEADER@
+#endif
+@PRAGMA_COLUMNS@
+
+/* The include_next requires a split double-inclusion guard.  */
+#if @HAVE_FNMATCH_H@ && !@REPLACE_FNMATCH@
+# @INCLUDE_NEXT@ @NEXT_FNMATCH_H@
+#endif
+
+#ifndef _@GUARD_PREFIX@_FNMATCH_H
+#define _@GUARD_PREFIX@_FNMATCH_H
+
+/* This file uses GNULIB_POSIXCHECK, HAVE_RAW_DECL_*.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
+
+/* The definitions of _GL_FUNCDECL_RPL etc. are copied here.  */
 
 /* The definition of _GL_ARG_NONNULL is copied here.  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* The definition of _GL_WARN_ON_USE is copied here.  */
+
+#if !@HAVE_FNMATCH_H@ || @REPLACE_FNMATCH@
 
 /* We #undef these before defining them because some losing systems
    (HP-UX A.08.07 for example) define these in <unistd.h>.  */
@@ -54,14 +74,43 @@ extern "C" {
 # define FNM_NOSYS      (-1)
 #endif
 
-/* Match NAME against the file name pattern PATTERN,
-   returning zero if it matches, FNM_NOMATCH if not.  */
-extern int fnmatch (const char *__pattern, const char *__name,
-                    int __flags)
-     _GL_ARG_NONNULL ((1, 2));
-
-#ifdef __cplusplus
-}
 #endif
 
-#endif /* fnmatch.h */
+
+#if @GNULIB_FNMATCH@
+/* Match NAME against the file name pattern PATTERN,
+   returning zero if it matches, FNM_NOMATCH if not.  */
+# if @REPLACE_FNMATCH@
+#  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
+#   define fnmatch rpl_fnmatch
+#  endif
+#  define GNULIB_defined_fnmatch_function 1
+_GL_FUNCDECL_RPL (fnmatch, int,
+                  (const char *pattern, const char *name, int flags),
+                  _GL_ARG_NONNULL ((1, 2)));
+_GL_CXXALIAS_RPL (fnmatch, int,
+                  (const char *pattern, const char *name, int flags));
+# else
+#  if !@HAVE_FNMATCH@
+#   define GNULIB_defined_fnmatch_function 1
+_GL_FUNCDECL_SYS (fnmatch, int,
+                  (const char *pattern, const char *name, int flags),
+                  _GL_ARG_NONNULL ((1, 2)));
+#  endif
+_GL_CXXALIAS_SYS (fnmatch, int,
+                  (const char *pattern, const char *name, int flags));
+# endif
+# if !GNULIB_FNMATCH_GNU && __GLIBC__ >= 2
+_GL_CXXALIASWARN (fnmatch);
+# endif
+#elif defined GNULIB_POSIXCHECK
+# if HAVE_RAW_DECL_FNMATCH
+_GL_WARN_ON_USE (fnmatch,
+                 "fnmatch does not portably work - "
+                 "use gnulib module fnmatch for portability or gnulib module fnmatch-gnu for a glibc compatible implementation");
+# endif
+#endif
+
+
+#endif /* _@GUARD_PREFIX@_FNMATCH_H */
+#endif /* _@GUARD_PREFIX@_FNMATCH_H */

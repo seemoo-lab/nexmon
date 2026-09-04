@@ -1,7 +1,5 @@
 /* xgettext AppData file backend.
-   Copyright (C) 2002-2003, 2006, 2013, 2015-2016 Free Software Foundation,
-   Inc.
-   Written by Philip Withnall <philip.withnall@collabora.co.uk>, 2015.
+   Copyright (C) 2002-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,7 +12,9 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Daiki Ueno.  */
 
 
 #include <stdio.h>
@@ -28,13 +28,12 @@ extern "C" {
 #endif
 
 
-/* The scanner is implemented as ITS rules, in its/appdata.its.  */
+/* The scanner is implemented as ITS rules, in its/metainfo.its.  */
 
-#define EXTENSIONS_APPDATA \
-  { "appdata.xml", NULL }, \
+#define EXTENSIONS_APPDATA
 
 #define SCANNERS_APPDATA \
-  { "appdata", NULL, NULL, NULL, NULL, NULL }, \
+  { "appdata", NULL, NULL, NULL, NULL, NULL },
 
 
 #ifdef __cplusplus

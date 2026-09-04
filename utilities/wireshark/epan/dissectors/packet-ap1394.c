@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,28 +20,31 @@
 void proto_register_ap1394(void);
 void proto_reg_handoff_ap1394(void);
 
-static int proto_ap1394 = -1;
-static int hf_ap1394_dst = -1;
-static int hf_ap1394_src = -1;
-static int hf_ap1394_type = -1;
+static dissector_handle_t ap1394_handle;
+static capture_dissector_handle_t ap1394_cap_handle;
 
-static gint ett_ap1394 = -1;
+static int proto_ap1394;
+static int hf_ap1394_dst;
+static int hf_ap1394_src;
+static int hf_ap1394_type;
+
+static int ett_ap1394;
 
 static dissector_table_t ethertype_subdissector_table;
 
-static gboolean
-capture_ap1394(const guchar *pd, int offset, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header)
+static bool
+capture_ap1394(const unsigned char *pd, int offset, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header)
 {
-  guint16    etype;
+  uint16_t   etype;
 
   if (!BYTES_ARE_IN_FRAME(offset, len, 18)) {
-    return FALSE;
+    return false;
   }
 
   /* Skip destination and source addresses */
   offset += 16;
 
-  etype = pntoh16(&pd[offset]);
+  etype = pntohu16(&pd[offset]);
   offset += 2;
   return try_capture_dissector("ethertype", etype, pd, offset, len, cpinfo, pseudo_header);
 }
@@ -63,7 +54,7 @@ dissect_ap1394(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 {
   proto_item *ti;
   proto_tree *fh_tree = NULL;
-  guint16    etype;
+  uint16_t   etype;
   tvbuff_t *next_tvb;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "IP/IEEE1394");
@@ -77,7 +68,7 @@ dissect_ap1394(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
   if (tree) {
     ti = proto_tree_add_protocol_format(tree, proto_ap1394, tvb, 0, 18,
                 "Apple IP-over-IEEE 1394, Src: %s, Dst: %s",
-                address_to_str(wmem_packet_scope(), &pinfo->src), address_to_str(wmem_packet_scope(), &pinfo->dst));
+                address_to_str(pinfo->pool, &pinfo->src), address_to_str(pinfo->pool, &pinfo->dst));
     fh_tree = proto_item_add_subtree(ti, ett_ap1394);
     proto_tree_add_item(fh_tree, hf_ap1394_dst, tvb, 0, 8, ENC_NA);
     proto_tree_add_item(fh_tree, hf_ap1394_src, tvb, 8, 8, ENC_NA);
@@ -108,29 +99,30 @@ proto_register_ap1394(void)
       { "Type", "ap1394.type", FT_UINT16, BASE_HEX,
         VALS(etype_vals), 0x0, NULL, HFILL }},
   };
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_ap1394,
   };
 
   proto_ap1394 = proto_register_protocol("Apple IP-over-IEEE 1394", "IP/IEEE1394", "ap1394");
   proto_register_field_array(proto_ap1394, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+
+  ap1394_handle = register_dissector("ap1394", dissect_ap1394, proto_ap1394);
+  ap1394_cap_handle = register_capture_dissector("ap1394", capture_ap1394, proto_ap1394);
 }
 
 void
 proto_reg_handoff_ap1394(void)
 {
-  dissector_handle_t ap1394_handle;
-
   ethertype_subdissector_table = find_dissector_table("ethertype");
 
-  ap1394_handle = create_dissector_handle(dissect_ap1394, proto_ap1394);
   dissector_add_uint("wtap_encap", WTAP_ENCAP_APPLE_IP_OVER_IEEE1394, ap1394_handle);
-  register_capture_dissector("wtap_encap", WTAP_ENCAP_APPLE_IP_OVER_IEEE1394, capture_ap1394, proto_ap1394);
+
+  capture_dissector_add_uint("wtap_encap", WTAP_ENCAP_APPLE_IP_OVER_IEEE1394, ap1394_cap_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

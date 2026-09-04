@@ -1,0 +1,3 @@
+<catalog xmlns="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+    <delegateURI uriStartString="/foo" catalog="catalog-recursive.xml"/>
+</catalog>

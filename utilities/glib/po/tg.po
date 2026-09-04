@@ -4160,3 +4160,99 @@ msgstr[1] ""
 #, c-format
 msgid "%.1f KB"
 msgstr "%.1f КБ"
+
+msgctxt "full month name with day"
+msgid "January"
+msgstr "Январ"
+
+msgctxt "full month name with day"
+msgid "February"
+msgstr "Феврал"
+
+msgctxt "full month name with day"
+msgid "March"
+msgstr "Март"
+
+msgctxt "full month name with day"
+msgid "April"
+msgstr "Апрел"
+
+msgctxt "full month name with day"
+msgid "May"
+msgstr "Май"
+
+msgctxt "full month name with day"
+msgid "June"
+msgstr "Июн"
+
+msgctxt "full month name with day"
+msgid "July"
+msgstr "Июл"
+
+msgctxt "full month name with day"
+msgid "August"
+msgstr "Август"
+
+msgctxt "full month name with day"
+msgid "September"
+msgstr "Сентябр"
+
+msgctxt "full month name with day"
+msgid "October"
+msgstr "Октябр"
+
+msgctxt "full month name with day"
+msgid "November"
+msgstr "Ноябр"
+
+msgctxt "full month name with day"
+msgid "December"
+msgstr "Декабр"
+
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "Янв"
+
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "Фев"
+
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "Мар"
+
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "Апр"
+
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "Май"
+
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "Июн"
+
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "Июл"
+
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "Авг"
+
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "Сен"
+
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "Окт"
+
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "Ноя"
+
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "Дек"

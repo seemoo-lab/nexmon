@@ -1,37 +1,36 @@
-/* time_util.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __TIME_UTIL_H__
 #define __TIME_UTIL_H__
 
-#include "ws_symbol_export.h"
+#include <wireshark.h>
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-#include <time.h>
-
+/** Converts a broken down date representation, relative to UTC,
+ * to a timestamp
+ */
 WS_DLL_PUBLIC
 time_t mktime_utc(struct tm *tm);
+
+/** Validate the values in a time_t.
+ * Currently checks tm_year, tm_mon, tm_mday, tm_hour, tm_min, and tm_sec;
+ * disregards tm_wday, tm_yday, and tm_isdst.
+ *
+ * @param tm The struct tm to validate.
+ */
+WS_DLL_PUBLIC
+bool tm_is_valid(struct tm *tm);
 
 /** Fetch the process CPU time.
  *
@@ -49,13 +48,31 @@ void get_resource_usage(double *user_time, double *sys_time);
  * Print the current process user and system CPU times along with the times
  * elapsed since the times were last reset.
  *
- * @param reset_delta Reset the delta times. This will typically be TRUE when
- * logging the first measurement and FALSE thereafter.
+ * @param reset_delta Reset the delta times. This will typically be true when
+ * logging the first measurement and false thereafter.
  * @param format Printf-style format string. Passed to g_string_vprintf.
  * @param ... Parameters for the format string.
  */
 WS_DLL_PUBLIC
-void log_resource_usage(gboolean reset_delta, const char *format, ...);
+void log_resource_usage(bool reset_delta, const char *format, ...);
+
+/**
+ * Fetch the number of microseconds since midnight (0 hour), January 1, 1970.
+ */
+WS_DLL_PUBLIC
+uint64_t create_timestamp(void);
+
+WS_DLL_PUBLIC
+void ws_tzset(void);
+
+WS_DLL_PUBLIC
+struct timespec *ws_clock_get_realtime(struct timespec *ts);
+
+WS_DLL_PUBLIC
+struct tm *ws_localtime_r(const time_t *timep, struct tm *result);
+
+WS_DLL_PUBLIC
+struct tm *ws_gmtime_r(const time_t *timep, struct tm *result);
 
 #ifdef __cplusplus
 }

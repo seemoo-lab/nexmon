@@ -1,0 +1,5 @@
+./test/relaxng/broken-xml.rng:2: parser error : Couldn't find end of Start Tag foo line 1
+
+^
+Relax-NG parser error : xmlRelaxNGParse: could not load ./test/relaxng/broken-xml.rng
+Relax-NG schema ./test/relaxng/broken-xml.rng failed to compile

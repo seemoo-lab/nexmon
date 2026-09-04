@@ -70,7 +70,7 @@ test -d fr || mkdir fr
 test -d fr/LC_MESSAGES || mkdir fr/LC_MESSAGES
 
 : ${MSGFMT=msgfmt}
-${MSGFMT} -o fr/LC_MESSAGES/prog.mo fr.po
+${MSGFMT} -c -o fr/LC_MESSAGES/prog.mo fr.po
 
 # Test for presence of lua version 5.0 or newer with gettext support.
 (lua -v) >/dev/null 2>/dev/null
@@ -128,12 +128,10 @@ EOF
 : ${LOCALE_FR=fr_FR}
 : ${LOCALE_FR_UTF8=fr_FR.UTF-8}
 if test $LOCALE_FR != none; then
-  prepare_locale_ fr $LOCALE_FR
   LANGUAGE= LC_ALL=$LOCALE_FR lua -l gettext prog.lua > prog.out || Exit 1
   ${DIFF} prog.ok prog.out || Exit 1
 fi
 if test $LOCALE_FR_UTF8 != none; then
-  prepare_locale_ fr $LOCALE_FR_UTF8
   LANGUAGE= LC_ALL=$LOCALE_FR_UTF8 lua -l gettext prog.lua > prog.out || Exit 1
   ${DIFF} prog.oku prog.out || Exit 1
 fi

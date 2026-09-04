@@ -1,173 +1,44 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/msg.c		Netlink Messages Interface
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
- * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
+ * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
 /**
  * @ingroup core
- * @defgroup msg Messages
+ * @defgroup msg Message Construction & Parsing
  * Netlink Message Construction/Parsing Interface
  * 
- * The following information is partly extracted from RFC3549
- * (ftp://ftp.rfc-editor.org/in-notes/rfc3549.txt)
+ * Related sections in the development guide:
+ * - @core_doc{_message_parsing_amp_construction,Message Parsing & Construction}
  *
- * @par Message Format
- * Netlink messages consist of a byte stream with one or multiple
- * Netlink headers and an associated payload.  If the payload is too big
- * to fit into a single message it, can be split over multiple Netlink
- * messages, collectively called a multipart message.  For multipart
- * messages, the first and all following headers have the \c NLM_F_MULTI
- * Netlink header flag set, except for the last header which has the
- * Netlink header type \c NLMSG_DONE.
- *
- * @par
- * The Netlink message header (\link nlmsghdr struct nlmsghdr\endlink) is shown below.
- * @code   
- * 0                   1                   2                   3
- * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |                          Length                             |
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |            Type              |           Flags              |
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |                      Sequence Number                        |
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |                      Process ID (PID)                       |
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * @endcode
- *
- * @par
- * The netlink message header and payload must be aligned properly:
- * @code
- *  <------- NLMSG_ALIGN(hlen) ------> <---- NLMSG_ALIGN(len) --->
- * +----------------------------+- - -+- - - - - - - - - - -+- - -+
- * |           Header           | Pad |       Payload       | Pad |
- * |      struct nlmsghdr       |     |                     |     |
- * +----------------------------+- - -+- - - - - - - - - - -+- - -+
- * @endcode
- * @par
- * Message Format:
- * @code
- *    <--- nlmsg_total_size(payload)  --->
- *    <-- nlmsg_msg_size(payload) ->
- *   +----------+- - -+-------------+- - -+-------- - -
- *   | nlmsghdr | Pad |   Payload   | Pad | nlmsghdr
- *   +----------+- - -+-------------+- - -+-------- - -
- *   nlmsg_data(nlh)---^                   ^
- *   nlmsg_next(nlh)-----------------------+
- * @endcode
- * @par
- * The payload may consist of arbitary data but may have strict
- * alignment and formatting rules depening on the specific netlink
- * families.
- * @par
- * @code
- *    <---------------------- nlmsg_len(nlh) --------------------->
- *    <------ hdrlen ------>       <- nlmsg_attrlen(nlh, hdrlen) ->
- *   +----------------------+- - -+--------------------------------+
- *   |     Family Header    | Pad |           Attributes           |
- *   +----------------------+- - -+--------------------------------+
- *   nlmsg_attrdata(nlh, hdrlen)---^
- * @endcode
- * @par The ACK Netlink Message
- * This message is actually used to denote both an ACK and a NACK.
- * Typically, the direction is from FEC to CPC (in response to an ACK
- * request message).  However, the CPC should be able to send ACKs back
- * to FEC when requested.
- * @code
- *  0                   1                   2                   3
- *  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |                       Netlink message header                  |
- * |                       type = NLMSG_ERROR                      |
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |                          Error code                           |
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * |                       OLD Netlink message header              |
- * +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- * @endcode
- *
- * @par Example
- * @code
- * // Various methods exist to create/allocate a new netlink
- * // message. 
- * //
- * // nlmsg_alloc() will allocate an empty netlink message with
- * // a maximum payload size which defaults to the page size of
- * // the system. This default size can be modified using the
- * // function nlmsg_set_default_size().
- * struct nl_msg *msg = nlmsg_alloc();
- *
- * // Very often, the message type and message flags are known
- * // at allocation time while the other fields are auto generated:
- * struct nl_msg *msg = nlmsg_alloc_simple(MY_TYPE, MY_FLAGS);
- *
- * // Alternatively an existing netlink message header can be used
- * // to inherit the header values:
- * struct nlmsghdr hdr = {
- * 	.nlmsg_type = MY_TYPE,
- * 	.nlmsg_flags = MY_FLAGS,
- * };
- * struct nl_msg *msg = nlmsg_inherit(&hdr);
- *
- * // Last but not least, netlink messages received from netlink sockets
- * // can be converted into nl_msg objects using nlmsg_convert(). This
- * // will create a message with a maximum payload size which equals the
- * // length of the existing netlink message, therefore no more data can
- * // be appened without calling nlmsg_expand() first.
- * struct nl_msg *msg = nlmsg_convert(nlh_from_nl_sock);
- *
- * // Payload may be added to the message via nlmsg_append(). The fourth
- * // parameter specifies the number of alignment bytes the data should
- * // be padding with at the end. Common values are 0 to disable it or
- * // NLMSG_ALIGNTO to ensure proper netlink message padding.
- * nlmsg_append(msg, &mydata, sizeof(mydata), 0);
- *
- * // Sometimes it may be necessary to reserve room for data but defer
- * // the actual copying to a later point, nlmsg_reserve() can be used
- * // for this purpose:
- * void *data = nlmsg_reserve(msg, sizeof(mydata), NLMSG_ALIGNTO);
- *
- * // Attributes may be added using the attributes interface.
- *
- * // After successful use of the message, the memory must be freed
- * // using nlmsg_free()
- * nlmsg_free(msg);
- * @endcode
- * 
- * @par 4) Parsing messages
- * @code
- * int n;
- * unsigned char *buf;
- * struct nlmsghdr *hdr;
- *
- * n = nl_recv(handle, NULL, &buf);
- * 
- * hdr = (struct nlmsghdr *) buf;
- * while (nlmsg_ok(hdr, n)) {
- * 	// Process message here...
- * 	hdr = nlmsg_next(hdr, &n);
- * }
- * @endcode
  * @{
+ *
+ * Header
+ * ------
+ * ~~~~{.c}
+ * #include <netlink/msg.h>
+ * ~~~~
  */
 
-#include <netlink-local.h>
+#include "nl-default.h"
+
+#include <ctype.h>
+
+#include <linux/socket.h>
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/cache.h>
 #include <netlink/attr.h>
-#include <linux/socket.h>
 
-static size_t default_msg_size;
+#include "nl-core.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
+#include "nl-aux-core/nl-core.h"
 
-static void __init init_msg_size(void)
+static size_t default_msg_size; /* GLOBAL! */
+
+static void _nl_init init_msg_size(void)
 {
 	default_msg_size = getpagesize();
 }
@@ -178,17 +49,28 @@ static void __init init_msg_size(void)
  */
 
 /**
- * length of netlink message not including padding
- * @arg payload		length of message payload
+ * Calculates size of netlink message based on payload length.
+ * @arg payload		Length of payload
+ *
+ * @return size of netlink message without padding.
  */
-int nlmsg_msg_size(int payload)
+int nlmsg_size(int payload)
 {
 	return NLMSG_HDRLEN + payload;
 }
 
+static int nlmsg_msg_size(int payload)
+{
+	return nlmsg_size(payload);
+}
+
 /**
- * length of netlink message including padding
- * @arg payload		length of message payload
+ * Calculates size of netlink message including padding based on payload length
+ * @arg payload		Length of payload
+ *
+ * This function is idential to nlmsg_size() + nlmsg_padlen().
+ *
+ * @return Size of netlink message including padding.
  */
 int nlmsg_total_size(int payload)
 {
@@ -196,8 +78,14 @@ int nlmsg_total_size(int payload)
 }
 
 /**
- * length of padding at the message's tail
- * @arg payload		length of message payload
+ * Size of padding that needs to be added at end of message
+ * @arg payload		Length of payload
+ *
+ * Calculates the number of bytes of padding which is required to be added to
+ * the end of the message to ensure that the next netlink message header begins
+ * properly aligned to NLMSG_ALIGNTO.
+ *
+ * @return Number of bytes of padding needed.
  */
 int nlmsg_padlen(int payload)
 {
@@ -207,13 +95,15 @@ int nlmsg_padlen(int payload)
 /** @} */
 
 /**
- * @name Payload Access
+ * @name Access to Message Payload
  * @{
  */
 
 /**
- * head of message payload
- * @arg nlh		netlink messsage header
+ * Return pointer to message payload
+ * @arg nlh		Netlink message header
+ *
+ * @return Pointer to start of message payload.
  */
 void *nlmsg_data(const struct nlmsghdr *nlh)
 {
@@ -226,12 +116,19 @@ void *nlmsg_tail(const struct nlmsghdr *nlh)
 }
 
 /**
- * length of message payload
- * @arg nlh		netlink message header
+ * Return length of message payload
+ * @arg nlh		Netlink message header
+ *
+ * @return Length of message payload in bytes.
  */
-int nlmsg_len(const struct nlmsghdr *nlh)
+int nlmsg_datalen(const struct nlmsghdr *nlh)
 {
 	return nlh->nlmsg_len - NLMSG_HDRLEN;
+}
+
+static int nlmsg_len(const struct nlmsghdr *nlh)
+{
+	return nlmsg_datalen(nlh);
 }
 
 /** @} */
@@ -259,7 +156,7 @@ struct nlattr *nlmsg_attrdata(const struct nlmsghdr *nlh, int hdrlen)
  */
 int nlmsg_attrlen(const struct nlmsghdr *nlh, int hdrlen)
 {
-	return nlmsg_len(nlh) - NLMSG_ALIGN(hdrlen);
+	return _NL_MAX(nlmsg_len(nlh) - NLMSG_ALIGN(hdrlen), 0u);
 }
 
 /** @} */
@@ -271,7 +168,10 @@ int nlmsg_attrlen(const struct nlmsghdr *nlh, int hdrlen)
 
 int nlmsg_valid_hdr(const struct nlmsghdr *nlh, int hdrlen)
 {
-	if (nlh->nlmsg_len < nlmsg_msg_size(hdrlen))
+	int s;
+
+	s = nlmsg_msg_size(hdrlen);
+	if (s < 0 || nlh->nlmsg_len < ((unsigned)s))
 		return 0;
 
 	return 1;
@@ -286,7 +186,7 @@ int nlmsg_ok(const struct nlmsghdr *nlh, int remaining)
 {
 	return (remaining >= (int)sizeof(struct nlmsghdr) &&
 		nlh->nlmsg_len >= sizeof(struct nlmsghdr) &&
-		nlh->nlmsg_len <= remaining);
+		nlh->nlmsg_len <= ((unsigned)remaining));
 }
 
 /**
@@ -317,7 +217,7 @@ struct nlmsghdr *nlmsg_next(struct nlmsghdr *nlh, int *remaining)
  * See nla_parse()
  */
 int nlmsg_parse(struct nlmsghdr *nlh, int hdrlen, struct nlattr *tb[],
-		int maxtype, struct nla_policy *policy)
+		int maxtype, const struct nla_policy *policy)
 {
 	if (!nlmsg_valid_hdr(nlh, hdrlen))
 		return -NLE_MSG_TOOSHORT;
@@ -348,7 +248,7 @@ struct nlattr *nlmsg_find_attr(struct nlmsghdr *nlh, int hdrlen, int attrtype)
  * @arg policy		validation policy
  */
 int nlmsg_validate(struct nlmsghdr *nlh, int hdrlen, int maxtype,
-		   struct nla_policy *policy)
+		   const struct nla_policy *policy)
 {
 	if (!nlmsg_valid_hdr(nlh, hdrlen))
 		return -NLE_MSG_TOOSHORT;
@@ -368,17 +268,18 @@ static struct nl_msg *__nlmsg_alloc(size_t len)
 {
 	struct nl_msg *nm;
 
+	if (len < sizeof(struct nlmsghdr))
+		len = sizeof(struct nlmsghdr);
+
 	nm = calloc(1, sizeof(*nm));
 	if (!nm)
 		goto errout;
 
 	nm->nm_refcnt = 1;
 
-	nm->nm_nlh = malloc(len);
+	nm->nm_nlh = calloc(1, len);
 	if (!nm->nm_nlh)
 		goto errout;
-
-	memset(nm->nm_nlh, 0, sizeof(struct nlmsghdr));
 
 	nm->nm_protocol = -1;
 	nm->nm_size = len;
@@ -454,6 +355,8 @@ struct nl_msg *nlmsg_alloc_simple(int nlmsgtype, int flags)
 	struct nlmsghdr nlh = {
 		.nlmsg_type = nlmsgtype,
 		.nlmsg_flags = flags,
+		.nlmsg_seq = NL_AUTO_SEQ,
+		.nlmsg_pid = NL_AUTO_PID,
 	};
 
 	msg = nlmsg_inherit(&nlh);
@@ -469,8 +372,11 @@ struct nl_msg *nlmsg_alloc_simple(int nlmsgtype, int flags)
  */
 void nlmsg_set_default_size(size_t max)
 {
-	if (max < nlmsg_total_size(0))
-		max = nlmsg_total_size(0);
+	size_t s;
+
+	s = nlmsg_total_size(0);
+	if (max < s)
+		max = s;
 
 	default_msg_size = max;
 }
@@ -490,14 +396,11 @@ struct nl_msg *nlmsg_convert(struct nlmsghdr *hdr)
 
 	nm = __nlmsg_alloc(NLMSG_ALIGN(hdr->nlmsg_len));
 	if (!nm)
-		goto errout;
+		return NULL;
 
 	memcpy(nm->nm_nlh, hdr, hdr->nlmsg_len);
 
 	return nm;
-errout:
-	nlmsg_free(nm);
-	return NULL;
 }
 
 /**
@@ -514,9 +417,12 @@ errout:
  */
 void *nlmsg_reserve(struct nl_msg *n, size_t len, int pad)
 {
-	void *buf = n->nm_nlh;
+	char *buf = (char *) n->nm_nlh;
 	size_t nlmsg_len = n->nm_nlh->nlmsg_len;
 	size_t tlen;
+
+	if (len > n->nm_size)
+		return NULL;
 
 	tlen = pad ? ((len + (pad - 1)) & ~(pad - 1)) : len;
 
@@ -529,8 +435,8 @@ void *nlmsg_reserve(struct nl_msg *n, size_t len, int pad)
 	if (tlen > len)
 		memset(buf + len, 0, tlen - len);
 
-	NL_DBG(2, "msg %p: Reserved %zu bytes, pad=%d, nlmsg_len=%d\n",
-		  n, len, pad, n->nm_nlh->nlmsg_len);
+	NL_DBG(2, "msg %p: Reserved %zu (%zu) bytes, pad=%d, nlmsg_len=%d\n",
+		  n, tlen, len, pad, n->nm_nlh->nlmsg_len);
 
 	return buf;
 }
@@ -677,8 +583,8 @@ void nlmsg_free(struct nl_msg *msg)
 
 	if (msg->nm_refcnt <= 0) {
 		free(msg->nm_nlh);
-		free(msg);
 		NL_DBG(2, "msg %p: Freed\n", msg);
+		free(msg);
 	}
 }
 
@@ -744,11 +650,11 @@ struct ucred *nlmsg_get_creds(struct nl_msg *msg)
  * @{
  */
 
-static struct trans_tbl nl_msgtypes[] = {
-	__ADD(NLMSG_NOOP,NOOP)
-	__ADD(NLMSG_ERROR,ERROR)
-	__ADD(NLMSG_DONE,DONE)
-	__ADD(NLMSG_OVERRUN,OVERRUN)
+static const struct trans_tbl nl_msgtypes[] = {
+	__ADD(NLMSG_NOOP,NOOP),
+	__ADD(NLMSG_ERROR,ERROR),
+	__ADD(NLMSG_DONE,DONE),
+	__ADD(NLMSG_OVERRUN,OVERRUN),
 };
 
 char *nl_nlmsgtype2str(int type, char *buf, size_t size)
@@ -836,14 +742,18 @@ int nl_msg_parse(struct nl_msg *msg, void (*cb)(struct nl_object *, void *),
 		.cb = cb,
 		.arg = arg,
 	};
+	int err;
 
-	ops = nl_cache_ops_associate(nlmsg_get_proto(msg),
-				     nlmsg_hdr(msg)->nlmsg_type);
+	ops = nl_cache_ops_associate_safe(nlmsg_get_proto(msg),
+					  nlmsg_hdr(msg)->nlmsg_type);
 	if (ops == NULL)
 		return -NLE_MSGTYPE_NOSUPPORT;
 	p.pp_arg = &x;
 
-	return nl_cache_parse(ops, NULL, nlmsg_hdr(msg), &p);
+	err = nl_cache_parse(ops, NULL, nlmsg_hdr(msg), &p);
+	nl_cache_ops_put(ops);
+
+	return err;
 }
 
 /** @} */
@@ -866,7 +776,7 @@ static inline void dump_hex(FILE *ofd, char *start, int len, int prefix)
 	int i, a, c, limit;
 	char ascii[21] = {0};
 
-	limit = 18 - (prefix * 2);
+	limit = 16 - (prefix * 2);
 	prefix_line(ofd, prefix);
 	fprintf(ofd, "    ");
 
@@ -876,7 +786,7 @@ static inline void dump_hex(FILE *ofd, char *start, int len, int prefix)
 		fprintf(ofd, "%02x ", v);
 		ascii[a++] = isprint(v) ? v : '.';
 
-		if (c == limit-1) {
+		if (++c >= limit) {
 			fprintf(ofd, "%s\n", ascii);
 			if (i < (len - 1)) {
 				prefix_line(ofd, prefix);
@@ -884,8 +794,7 @@ static inline void dump_hex(FILE *ofd, char *start, int len, int prefix)
 			}
 			a = c = 0;
 			memset(ascii, 0, sizeof(ascii));
-		} else
-			c++;
+		}
 	}
 
 	if (c != 0) {
@@ -904,22 +813,71 @@ static void print_hdr(FILE *ofd, struct nl_msg *msg)
 
 	fprintf(ofd, "    .nlmsg_len = %d\n", nlh->nlmsg_len);
 
-	ops = nl_cache_ops_associate(nlmsg_get_proto(msg), nlh->nlmsg_type);
+	ops = nl_cache_ops_associate_safe(nlmsg_get_proto(msg), nlh->nlmsg_type);
 	if (ops) {
 		mt = nl_msgtype_lookup(ops, nlh->nlmsg_type);
 		if (!mt)
 			BUG();
 
 		snprintf(buf, sizeof(buf), "%s::%s", ops->co_name, mt->mt_name);
+		nl_cache_ops_put(ops);
 	} else
 		nl_nlmsgtype2str(nlh->nlmsg_type, buf, sizeof(buf));
 
-	fprintf(ofd, "    .nlmsg_type = %d <%s>\n", nlh->nlmsg_type, buf);
-	fprintf(ofd, "    .nlmsg_flags = %d <%s>\n", nlh->nlmsg_flags,
+	fprintf(ofd, "    .type = %d <%s>\n", nlh->nlmsg_type, buf);
+	fprintf(ofd, "    .flags = %d <%s>\n", nlh->nlmsg_flags,
 		nl_nlmsg_flags2str(nlh->nlmsg_flags, buf, sizeof(buf)));
-	fprintf(ofd, "    .nlmsg_seq = %d\n", nlh->nlmsg_seq);
-	fprintf(ofd, "    .nlmsg_pid = %d\n", nlh->nlmsg_pid);
+	fprintf(ofd, "    .seq = %d\n", nlh->nlmsg_seq);
+	fprintf(ofd, "    .port = %d\n", nlh->nlmsg_pid);
 
+}
+
+static void print_genl_hdr(FILE *ofd, void *start)
+{
+	struct genlmsghdr *ghdr = start;
+
+	fprintf(ofd, "  [GENERIC NETLINK HEADER] %zu octets\n", GENL_HDRLEN);
+	fprintf(ofd, "    .cmd = %u\n", ghdr->cmd);
+	fprintf(ofd, "    .version = %u\n", ghdr->version);
+	fprintf(ofd, "    .unused = %#x\n", ghdr->reserved);
+}
+
+static void *print_genl_msg(struct nl_msg *msg, FILE *ofd, struct nlmsghdr *hdr,
+			    struct nl_cache_ops *ops, int *payloadlen)
+{
+	char *data = nlmsg_data(hdr);
+
+	if (*payloadlen < (int)GENL_HDRLEN)
+		return data;
+
+	print_genl_hdr(ofd, data);
+
+	*payloadlen -= GENL_HDRLEN;
+	data += GENL_HDRLEN;
+
+	if (ops) {
+		int hdrsize = ops->co_hdrsize - GENL_HDRLEN;
+
+		if (hdrsize > 0) {
+			if (*payloadlen < hdrsize)
+				return data;
+
+			fprintf(ofd, "  [HEADER] %d octets\n", hdrsize);
+			dump_hex(ofd, data, hdrsize, 0);
+
+			*payloadlen -= hdrsize;
+			data += hdrsize;
+		}
+	}
+
+	return data;
+}
+
+static void dump_attr(FILE *ofd, struct nlattr *attr, int prefix)
+{
+	int len = nla_len(attr);
+
+	dump_hex(ofd, nla_data(attr), len, prefix);
 }
 
 static void dump_attrs(FILE *ofd, struct nlattr *attrs, int attrlen,
@@ -932,21 +890,25 @@ static void dump_attrs(FILE *ofd, struct nlattr *attrs, int attrlen,
 		int padlen, alen = nla_len(nla);
 
 		prefix_line(ofd, prefix);
-		fprintf(ofd, "  [ATTR %02d%s] %d octets\n", nla_type(nla),
-			nla->nla_type & NLA_F_NESTED ? " NESTED" : "",
-			alen);
 
-		if (nla->nla_type & NLA_F_NESTED)
+		if (nla->nla_type == 0)
+			fprintf(ofd, "  [ATTR PADDING] %d octets\n", alen);
+		else
+			fprintf(ofd, "  [ATTR %02d%s] %d octets\n", nla_type(nla),
+				nla_is_nested(nla) ? " NESTED" : "",
+				alen);
+
+		if (nla_is_nested(nla))
 			dump_attrs(ofd, nla_data(nla), alen, prefix+1);
 		else
-			dump_hex(ofd, nla_data(nla), alen, prefix);
+			dump_attr(ofd, nla, prefix);
 
 		padlen = nla_padlen(alen);
 		if (padlen > 0) {
 			prefix_line(ofd, prefix);
 			fprintf(ofd, "  [PADDING] %d octets\n",
 				padlen);
-			dump_hex(ofd, nla_data(nla) + alen,
+			dump_hex(ofd, (char *) nla_data(nla) + alen,
 				 padlen, prefix);
 		}
 	}
@@ -955,6 +917,64 @@ static void dump_attrs(FILE *ofd, struct nlattr *attrs, int attrlen,
 		prefix_line(ofd, prefix);
 		fprintf(ofd, "  [LEFTOVER] %d octets\n", rem);
 	}
+}
+
+static void dump_error_msg(struct nl_msg *msg, FILE *ofd)
+{
+	struct nlmsghdr *hdr = nlmsg_hdr(msg);
+	struct nlmsgerr *err = nlmsg_data(hdr);
+	int l;
+
+	fprintf(ofd, "  [ERRORMSG] %zu octets\n", sizeof(*err));
+
+	l = nlmsg_len(hdr);
+	if (l >= 0 && ((unsigned)l) >= sizeof(*err)) {
+		struct nl_msg *errmsg;
+
+		fprintf(ofd, "    .error = %d \"%s\"\n", err->error,
+			nl_strerror_l(-err->error));
+		fprintf(ofd, "  [ORIGINAL MESSAGE] %zu octets\n", sizeof(*hdr));
+
+		errmsg = nlmsg_inherit(&err->msg);
+		print_hdr(ofd, errmsg);
+		nlmsg_free(errmsg);
+	}
+}
+
+static void print_msg(struct nl_msg *msg, FILE *ofd, struct nlmsghdr *hdr)
+{
+	struct nl_cache_ops *ops;
+	int payloadlen = nlmsg_len(hdr);
+	int attrlen = 0;
+	void *data;
+
+	data = nlmsg_data(hdr);
+	ops = nl_cache_ops_associate_safe(nlmsg_get_proto(msg),
+					  hdr->nlmsg_type);
+	if (ops) {
+		attrlen = nlmsg_attrlen(hdr, ops->co_hdrsize);
+		payloadlen -= attrlen;
+	}
+
+	if (msg->nm_protocol == NETLINK_GENERIC)
+		data = print_genl_msg(msg, ofd, hdr, ops, &payloadlen);
+
+	if (payloadlen) {
+		fprintf(ofd, "  [PAYLOAD] %d octets\n", payloadlen);
+		dump_hex(ofd, data, payloadlen, 0);
+	}
+
+	if (attrlen) {
+		struct nlattr *attrs;
+		int attrlen;
+		
+		attrs = nlmsg_attrdata(hdr, ops->co_hdrsize);
+		attrlen = nlmsg_attrlen(hdr, ops->co_hdrsize);
+		dump_attrs(ofd, attrs, attrlen, 0);
+	}
+
+	if (ops)
+		nl_cache_ops_put(ops);
 }
 
 /**
@@ -967,53 +987,18 @@ void nl_msg_dump(struct nl_msg *msg, FILE *ofd)
 	struct nlmsghdr *hdr = nlmsg_hdr(msg);
 	
 	fprintf(ofd, 
-	"--------------------------   BEGIN NETLINK MESSAGE "
-	"---------------------------\n");
+	"--------------------------   BEGIN NETLINK MESSAGE ---------------------------\n");
 
-	fprintf(ofd, "  [HEADER] %Zu octets\n", sizeof(struct nlmsghdr));
+	fprintf(ofd, "  [NETLINK HEADER] %zu octets\n", sizeof(struct nlmsghdr));
 	print_hdr(ofd, msg);
 
-	if (hdr->nlmsg_type == NLMSG_ERROR &&
-	    hdr->nlmsg_len >= nlmsg_msg_size(sizeof(struct nlmsgerr))) {
-		struct nl_msg *errmsg;
-		struct nlmsgerr *err = nlmsg_data(hdr);
-
-		fprintf(ofd, "  [ERRORMSG] %Zu octets\n", sizeof(*err));
-		fprintf(ofd, "    .error = %d \"%s\"\n", err->error,
-			strerror(-err->error));
-		fprintf(ofd, "  [ORIGINAL MESSAGE] %Zu octets\n", sizeof(*hdr));
-
-		errmsg = nlmsg_inherit(&err->msg);
-		print_hdr(ofd, errmsg);
-		nlmsg_free(errmsg);
-	} else if (nlmsg_len(hdr) > 0) {
-		struct nl_cache_ops *ops;
-		int payloadlen = nlmsg_len(hdr);
-		int attrlen = 0;
-
-		ops = nl_cache_ops_associate(nlmsg_get_proto(msg),
-					     hdr->nlmsg_type);
-		if (ops) {
-			attrlen = nlmsg_attrlen(hdr, ops->co_hdrsize);
-			payloadlen -= attrlen;
-		}
-
-		fprintf(ofd, "  [PAYLOAD] %d octets\n", payloadlen);
-		dump_hex(ofd, nlmsg_data(hdr), payloadlen, 0);
-
-		if (attrlen) {
-			struct nlattr *attrs;
-			int attrlen;
-			
-			attrs = nlmsg_attrdata(hdr, ops->co_hdrsize);
-			attrlen = nlmsg_attrlen(hdr, ops->co_hdrsize);
-			dump_attrs(ofd, attrs, attrlen, 0);
-		}
-	}
+	if (hdr->nlmsg_type == NLMSG_ERROR)
+		dump_error_msg(msg, ofd);
+	else if (nlmsg_len(hdr) > 0)
+		print_msg(msg, ofd, hdr);
 
 	fprintf(ofd, 
-	"---------------------------  END NETLINK MESSAGE   "
-	"---------------------------\n");
+	"---------------------------  END NETLINK MESSAGE   ---------------------------\n");
 }
 
 /** @} */

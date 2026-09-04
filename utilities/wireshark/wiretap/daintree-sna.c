@@ -11,20 +11,7 @@
  * remains. Borrowed many snippets from dbs-etherwatch.c, the
  * daintree_sna_process_hex_data function having the largest chunk.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301,
- * USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* This module reads capture files saved by Daintree's Sensor Network Analyzer.
@@ -45,44 +32,46 @@
 */
 
 #include "config.h"
-
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-
-#include "wtap-int.h"
-#include "file_wrappers.h"
 #include "daintree-sna.h"
 
+#include <stdlib.h>
+#include <string.h>
+
+#include "wtap_module.h"
+#include "file_wrappers.h"
+
 typedef struct daintree_sna_header {
-	guint32 len;
-	guint64 ts;
+	uint32_t len;
+	uint64_t ts;
 } daintree_sna_header_t;
 
 #define DAINTREE_SNA_HEADER_SIZE 2
 #define FCS_LENGTH 2
 
-static const char daintree_magic_text[] =
-{ '#', 'F', 'o', 'r', 'm', 'a', 't', '=' };
+static const char daintree_magic_text[] = "#Format=";
 
-#define DAINTREE_MAGIC_TEXT_SIZE (sizeof daintree_magic_text)
+#define DAINTREE_MAGIC_TEXT_SIZE (sizeof daintree_magic_text - 1)
 #define DAINTREE_MAX_LINE_SIZE 512
 #define READDATA_BUF_SIZE (DAINTREE_MAX_LINE_SIZE/2)
 #define READDATA_MAX_FIELD_SIZE "255"  /* DAINTREE_MAX_LINE_SIZE/2 -1 */
 
 #define COMMENT_LINE daintree_magic_text[0]
 
-static gboolean daintree_sna_read(wtap *wth, int *err, gchar **err_info,
-	gint64 *data_offset);
+static bool daintree_sna_read(wtap *wth, wtap_rec *rec,
+	int *err, char **err_info, int64_t *data_offset);
 
-static gboolean daintree_sna_seek_read(wtap *wth, gint64 seek_off,
-	struct wtap_pkthdr *phdr, Buffer *buf, int *err, gchar **err_info);
+static bool daintree_sna_seek_read(wtap *wth, int64_t seek_off,
+	wtap_rec *rec, int *err, char **err_info);
 
-static gboolean daintree_sna_read_packet(FILE_T fh, struct wtap_pkthdr *phdr,
-	Buffer *buf, int *err, gchar **err_info);
+static bool daintree_sna_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,
+	int *err, char **err_info);
+
+static int daintree_sna_file_type_subtype = -1;
+
+void register_daintree_sna(void);
 
 /* Open a file and determine if it's a Daintree file */
-wtap_open_return_val daintree_sna_open(wtap *wth, int *err, gchar **err_info)
+wtap_open_return_val daintree_sna_open(wtap *wth, int *err, char **err_info)
 {
 	char readLine[DAINTREE_MAX_LINE_SIZE];
 
@@ -95,7 +84,7 @@ wtap_open_return_val daintree_sna_open(wtap *wth, int *err, gchar **err_info)
 	}
 
 	/* check magic text */
-	if (memcmp(readLine, daintree_magic_text, DAINTREE_MAGIC_TEXT_SIZE) != 0)
+	if (strncmp(readLine, daintree_magic_text, DAINTREE_MAGIC_TEXT_SIZE) != 0)
 		return WTAP_OPEN_NOT_MINE; /* not daintree format */
 
 	/* read second header line */
@@ -113,101 +102,113 @@ wtap_open_return_val daintree_sna_open(wtap *wth, int *err, gchar **err_info)
 	wth->subtype_seek_read = daintree_sna_seek_read;
 
 	/* set up for file type */
-	wth->file_type_subtype = WTAP_FILE_TYPE_SUBTYPE_DAINTREE_SNA;
+	wth->file_type_subtype = daintree_sna_file_type_subtype;
 	wth->file_encap = WTAP_ENCAP_IEEE802_15_4_NOFCS;
 	wth->file_tsprec = WTAP_TSPREC_USEC;
 	wth->snapshot_length = 0; /* not available in header */
+
+	/*
+	 * Add an IDB; we don't know how many interfaces were
+	 * involved, so we just say one interface, about which
+	 * we only know the link-layer type, snapshot length,
+	 * and time stamp resolution.
+	 */
+	wtap_add_generated_idb(wth);
 
 	return WTAP_OPEN_MINE; /* it's a Daintree file */
 }
 
 /* Read the capture file sequentially
  * Wireshark scans the file with sequential reads during preview and initial display. */
-static gboolean
-daintree_sna_read(wtap *wth, int *err, gchar **err_info, gint64 *data_offset)
+static bool
+daintree_sna_read(wtap *wth, wtap_rec *rec,
+	int *err, char **err_info, int64_t *data_offset)
 {
 	*data_offset = file_tell(wth->fh);
 
 	/* parse that line and the following packet data */
-	return daintree_sna_read_packet(wth->fh, &wth->phdr,
-	    wth->frame_buffer, err, err_info);
+	return daintree_sna_read_packet(wth, wth->fh, rec, err, err_info);
 }
 
 /* Read the capture file randomly
  * Wireshark opens the capture file for random access when displaying user-selected packets */
-static gboolean
-daintree_sna_seek_read(wtap *wth, gint64 seek_off, struct wtap_pkthdr *phdr,
-	Buffer *buf, int *err, gchar **err_info)
+static bool
+daintree_sna_seek_read(wtap *wth, int64_t seek_off, wtap_rec *rec,
+	int *err, char **err_info)
 {
 	if(file_seek(wth->random_fh, seek_off, SEEK_SET, err) == -1)
-		return FALSE;
+		return false;
 
 	/* parse that line and the following packet data */
-	return daintree_sna_read_packet(wth->random_fh, phdr, buf, err,
-	    err_info);
+	return daintree_sna_read_packet(wth, wth->random_fh, rec, err, err_info);
 }
 
-/* Read a header line, scan it, and fill in a struct wtap_pkthdr.
+/* Read a header line, scan it, and fill in a struct wtap_rec.
  * Then convert packet data from ASCII hex string to binary in place,
  * sanity-check its length against what we assume is the packet length field,
  * and copy it into a Buffer. */
-static gboolean
-daintree_sna_read_packet(FILE_T fh, struct wtap_pkthdr *phdr, Buffer *buf,
-    int *err, gchar **err_info)
+static bool
+daintree_sna_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec, int *err, char **err_info)
 {
-	guint64 seconds;
-	int useconds;
+	uint64_t seconds;
+	char useconds[10];
 	char readLine[DAINTREE_MAX_LINE_SIZE];
 	char readData[READDATA_BUF_SIZE];
-	guchar *str = (guchar *)readData;
-	guint bytes;
-	guint8 *p;
+	unsigned char *str = (unsigned char *)readData;
+	unsigned bytes;
+	uint8_t *p;
 
 	/* we've only seen file header lines starting with '#', but
 	 * if others appear in the file, they are tossed */
 	do {
 		if (file_gets(readLine, DAINTREE_MAX_LINE_SIZE, fh) == NULL) {
 			*err = file_error(fh, err_info);
-			return FALSE; /* all done */
+			return false; /* all done */
 		}
 	} while (readLine[0] == COMMENT_LINE);
 
-	phdr->rec_type = REC_TYPE_PACKET;
-	phdr->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
+	wtap_setup_packet_rec(rec, wth->file_encap);
+	rec->block = wtap_block_create(WTAP_BLOCK_PACKET);
+	rec->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
 
-	if (sscanf(readLine, "%*s %18" G_GINT64_MODIFIER "u.%9d %9u %" READDATA_MAX_FIELD_SIZE "s",
-	    &seconds, &useconds, &phdr->len, readData) != 4) {
+	memset(useconds, 0, sizeof(useconds));
+	if (sscanf(readLine, "%*s %18" SCNu64 ".%9[0-9] %9u %" READDATA_MAX_FIELD_SIZE "s",
+	    &seconds, useconds, &rec->rec_header.packet_header.len, readData) != 4) {
 		*err = WTAP_ERR_BAD_FILE;
 		*err_info = g_strdup("daintree_sna: invalid read record");
-		return FALSE;
+		return false;
+	}
+
+	while (strlen(useconds) < 9) {
+		useconds[strlen(useconds)] = '0';
 	}
 
 	/* Daintree doesn't store the FCS, but pads end of packet with 0xffff, which we toss */
-	if (phdr->len <= FCS_LENGTH) {
+	if (rec->rec_header.packet_header.len <= FCS_LENGTH) {
 		*err = WTAP_ERR_BAD_FILE;
-		*err_info = g_strdup_printf("daintree_sna: packet length <= %u bytes, no frame data present",
+		*err_info = ws_strdup_printf("daintree_sna: packet length <= %u bytes, no frame data present",
 		    FCS_LENGTH);
-		return FALSE;
+		return false;
 	}
-	phdr->len -= FCS_LENGTH;
+	rec->rec_header.packet_header.len -= FCS_LENGTH;
 
-	phdr->ts.secs = (time_t) seconds;
-	phdr->ts.nsecs = useconds * 1000; /* convert mS to nS */
+	rec->ts.secs = (time_t) seconds;
+	sscanf(useconds, "%9u", &rec->ts.nsecs);
 
 	/*
-	 * READDATA_BUF_SIZE is < WTAP_MAX_PACKET_SIZE, and is the maximum
+	 * READDATA_BUF_SIZE is < WTAP_MAX_PACKET_SIZE_STANDARD, and is the maximum
 	 * number of bytes of packet data we can generate, so we don't
 	 * need to check the packet length.
 	 */
 	p = str; /* overlay source buffer */
 	bytes = 0;
-	/* convert hex string to guint8 */
+	/* convert hex string to uint8_t */
 	while(*str) {
 		/* most significant nibble */
 		if (!g_ascii_isxdigit(*str)) {
 			*err = WTAP_ERR_BAD_FILE;
 			*err_info = g_strdup("daintree_sna: non-hex digit in hex data");
-			return FALSE;
+			return false;
 		}
 		if(g_ascii_isdigit(*str)) {
 			*p = (*str - '0') << 4;
@@ -220,7 +221,7 @@ daintree_sna_read_packet(FILE_T fh, struct wtap_pkthdr *phdr, Buffer *buf,
 		if (!g_ascii_isxdigit(*str)) {
 			*err = WTAP_ERR_BAD_FILE;
 			*err_info = g_strdup("daintree_sna: non-hex digit in hex data");
-			return FALSE;
+			return false;
 		}
 		if(g_ascii_isdigit(*str)) {
 			*p += *str - '0';
@@ -237,27 +238,51 @@ daintree_sna_read_packet(FILE_T fh, struct wtap_pkthdr *phdr, Buffer *buf,
 	/* Daintree doesn't store the FCS, but pads end of packet with 0xffff, which we toss */
 	if (bytes <= FCS_LENGTH) {
 		*err = WTAP_ERR_BAD_FILE;
-		*err_info = g_strdup_printf("daintree_sna: Only %u bytes of packet data",
+		*err_info = ws_strdup_printf("daintree_sna: Only %u bytes of packet data",
 		    bytes);
-		return FALSE;
+		return false;
 	}
 	bytes -= FCS_LENGTH;
-	if (bytes > phdr->len) {
+	if (bytes > rec->rec_header.packet_header.len) {
 		*err = WTAP_ERR_BAD_FILE;
-		*err_info = g_strdup_printf("daintree_sna: capture length (%u) > packet length (%u)",
-		    bytes, phdr->len);
-		return FALSE;
+		*err_info = ws_strdup_printf("daintree_sna: capture length (%u) > packet length (%u)",
+		    bytes, rec->rec_header.packet_header.len);
+		return false;
 	}
 
-	phdr->caplen = bytes;
+	rec->rec_header.packet_header.caplen = bytes;
 
-	ws_buffer_assure_space(buf, bytes);
-	memcpy(ws_buffer_start_ptr(buf), readData, bytes);
-	return TRUE;
+	ws_buffer_append(&rec->data, readData, bytes);
+	return true;
+}
+
+static const struct supported_block_type daintree_sna_blocks_supported[] = {
+	/*
+	 * We support packet blocks, with no comments or other options.
+	 */
+	{ WTAP_BLOCK_PACKET, MULTIPLE_BLOCKS_SUPPORTED, NO_OPTIONS_SUPPORTED }
+};
+
+static const struct file_type_subtype_info daintree_sna_info = {
+	"Daintree SNA", "dsna", "dcf", NULL,
+	false, BLOCKS_SUPPORTED(daintree_sna_blocks_supported),
+	NULL, NULL, NULL
+};
+
+void register_daintree_sna(void)
+{
+	daintree_sna_file_type_subtype = wtap_register_file_type_subtype(&daintree_sna_info);
+
+	/*
+	 * Register name for backwards compatibility with the
+	 * wtap_filetypes table in Lua.
+	 */
+	wtap_register_backwards_compatibility_lua_name("DAINTREE_SNA",
+	    daintree_sna_file_type_subtype);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

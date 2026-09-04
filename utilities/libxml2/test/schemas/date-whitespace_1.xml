@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<test>
+  <date>2000 -01-01</date>
+  <date>2000-01 -01</date>
+  <date>2000-01-01 Z</date>
+  <date>2000-01-01+99:00 </date> <!-- invalid timezone -->
+  <dateTime>2000 -01-01T00:00:00</dateTime>
+  <dateTime>2000-01 -01T00:00:00</dateTime>
+  <dateTime>2000-01-01 T00:00:00</dateTime>
+  <dateTime>2000-01-01T00 :00:00</dateTime>
+  <dateTime>2000-01-01T00:00 :00</dateTime>
+  <dateTime>2000-01-01T00:00:00 Z</dateTime>
+  <dateTime>2000-01-01T00:00:00+99:00 </dateTime> <!-- invalid timezone -->
+  <time>00 :00:00</time>
+  <time>00:00 :00</time>
+  <time>00:00:00 Z</time>
+  <gYear>2000 Z</gYear>
+  <gYearMonth>2000 -01</gYearMonth>
+  <gYearMonth>2000-01 Z</gYearMonth>
+  <gMonth>--01 Z</gMonth>
+  <gMonthDay>--01 -01</gMonthDay>
+  <gMonthDay>--01-01 Z</gMonthDay>
+  <gDay>---01 Z</gDay>
+  <duration>P 1Y</duration>
+  <duration>P1 Y</duration>
+  <duration>P1Y 1M1DT1H1M1S</duration>
+  <duration>P1Y1M 1DT1H1M1S</duration>
+  <duration>P1Y1M1D T1H1M1S</duration>
+  <duration>P1Y1M1DT 1H1M1S</duration>
+  <duration>P1Y1M1DT1 H1M1S</duration>
+  <duration>P1Y1M1DT1H 1M1S</duration>
+  <duration>P1Y1M1DT1H1M 1S</duration>
+</test>

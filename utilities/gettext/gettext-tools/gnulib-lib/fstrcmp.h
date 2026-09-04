@@ -1,12 +1,12 @@
 /* Fuzzy string comparison.
-   Copyright (C) 1995, 2000, 2002-2003, 2006, 2008-2016 Free Software
+   Copyright (C) 1995, 2000, 2002-2003, 2006, 2008-2026 Free Software
    Foundation, Inc.
 
    This file was written by Peter Miller <pmiller@agso.gov.au>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3 of the License, or
+the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef _FSTRCMP_H
 #define _FSTRCMP_H
@@ -37,6 +37,15 @@ extern double fstrcmp_bounded (const char *s1, const char *s2,
 
 /* A shortcut for fstrcmp.  Avoids a function call.  */
 #define fstrcmp(s1,s2) fstrcmp_bounded (s1, s2, 0.0)
+
+/* Frees the per-thread resources allocated by this module for the current
+   thread.
+   You don't need to call this function in threads other than the main thread,
+   because per-thread resources are reclaimed automatically when the thread
+   exits.  However, per-thread resources allocated by the main thread are
+   comparable to static allocations; calling this function can be useful to
+   avoid an error report from valgrind.  */
+extern void fstrcmp_free_resources (void);
 
 #ifdef __cplusplus
 }

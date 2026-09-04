@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,44 +16,46 @@
 void proto_register_cpha(void);
 void proto_reg_handoff_cpha(void);
 
-static int proto_cphap = -1;
+static dissector_handle_t cpha_handle;
 
-static int hf_magic_number = -1;
-static int hf_cpha_protocol_ver = -1;
-static int hf_cluster_number = -1;
-static int hf_opcode = -1;
-static int hf_payload = -1;
-static int hf_src_if_num = -1;
-static int hf_random_id = -1;
-static int hf_src_machine_id = -1;
-static int hf_dst_machine_id = -1;
-static int hf_policy_id = -1;
-static int hf_filler = -1;
-static int hf_unknown_data = -1;
-static int hf_id_num = -1;
-static int hf_report_code = -1;
-static int hf_ha_mode = -1;
-static int hf_ha_time_unit = -1;
-static int hf_machine_states = -1;
-static int hf_state_node = -1;
-static int hf_interface_states = -1;
-static int hf_num_reported_ifs = -1;
-static int hf_ethernet_add = -1;
-static int hf_is_if_trusted = -1;
-static int hf_ip = -1;
-static int hf_slot_num = -1;
-static int hf_machine_num = -1;
-static int hf_seed = -1;
-static int hf_hash_len = -1;
-static int hf_status = -1;
-static int hf_in_up_num = -1;
-static int hf_in_assumed_up_num = -1;
-static int hf_out_up_num = -1;
-static int hf_out_assumed_up_num = -1;
-static int hf_cluster_last_packet = -1;
-static int hf_ifn = -1;
+static int proto_cphap;
 
-static gint ett_cphap = -1;
+static int hf_magic_number;
+static int hf_cpha_protocol_ver;
+static int hf_cluster_number;
+static int hf_opcode;
+static int hf_payload;
+static int hf_src_if_num;
+static int hf_random_id;
+static int hf_src_machine_id;
+static int hf_dst_machine_id;
+static int hf_policy_id;
+static int hf_filler;
+static int hf_unknown_data;
+static int hf_id_num;
+static int hf_report_code;
+static int hf_ha_mode;
+static int hf_ha_time_unit;
+static int hf_machine_states;
+static int hf_state_node;
+static int hf_interface_states;
+static int hf_num_reported_ifs;
+static int hf_ethernet_add;
+static int hf_is_if_trusted;
+static int hf_ip;
+static int hf_slot_num;
+static int hf_machine_num;
+static int hf_seed;
+static int hf_hash_len;
+static int hf_status;
+static int hf_in_up_num;
+static int hf_in_assumed_up_num;
+static int hf_out_up_num;
+static int hf_out_assumed_up_num;
+static int hf_cluster_last_packet;
+static int hf_ifn;
+
+static int ett_cphap;
 
 #define UDP_PORT_CPHA        8116
 #define CPHA_MAGIC 0x1A90
@@ -256,9 +246,9 @@ dissect_cpha(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
   proto_item *          nti;
   proto_tree *          cpha_tree = NULL;
   proto_tree *          ntree = NULL;
-  guint16               opcode;
-  guint16               magic_number;
-  guint16               ha_version;
+  uint16_t              opcode;
+  uint16_t              magic_number;
+  uint16_t              ha_version;
   /*
    * If the magic number or protocol version is unknown, don't treat this
    * frame as a CPHA frame.
@@ -280,13 +270,12 @@ dissect_cpha(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
   opcode  = tvb_get_ntohs(tvb, 6);
 
   col_add_fstr(pinfo->cinfo, COL_INFO, "CPHAv%d: %s",
-      ha_version, val_to_str(opcode, opcode_type_vals, "Unknown %d"));
+      ha_version, val_to_str(pinfo->pool, opcode, opcode_type_vals, "Unknown %d"));
 
   if (tree) {
     ti = proto_tree_add_item(tree, proto_cphap, tvb, offset, -1, ENC_NA);
     cpha_tree = proto_item_add_subtree(ti, ett_cphap);
-  }
-  if (tree) {
+
     proto_tree_add_item(cpha_tree, hf_magic_number, tvb, offset, 2, ENC_BIG_ENDIAN);
     offset += 2;
 
@@ -318,7 +307,7 @@ dissect_cpha(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
         offset += 2;
     }
     nti = proto_tree_add_item(cpha_tree, hf_payload, tvb, offset, -1, ENC_NA);
-    proto_item_append_text(nti, " - %s", val_to_str(opcode, opcode_type_vals, "Unknown %d"));
+    proto_item_append_text(nti, " - %s", val_to_str(pinfo->pool, opcode, opcode_type_vals, "Unknown %d"));
     ntree = proto_item_add_subtree(nti, ett_cphap);
 
     switch(opcode) {
@@ -347,7 +336,7 @@ static int dissect_my_state(tvbuff_t * tvb, int offset, proto_tree * tree) {
   int i;
   proto_item *  nti = NULL;
   proto_tree *  ntree = NULL;
-  guint16       report_code, id_num;
+  uint16_t      report_code, id_num;
 
   proto_tree_add_item(tree, hf_id_num, tvb, offset, 2, ENC_BIG_ENDIAN);
   id_num = tvb_get_ntohs(tvb, offset);
@@ -439,7 +428,7 @@ static int dissect_conf_reply(tvbuff_t * tvb, int offset, proto_tree * tree) {
   proto_tree_add_item(tree, hf_is_if_trusted, tvb, offset, 2, ENC_BIG_ENDIAN);
   offset += 2;
 
-  proto_tree_add_item(tree, hf_ip, tvb, offset, 4, ENC_NA);
+  proto_tree_add_item(tree, hf_ip, tvb, offset, 4, ENC_BIG_ENDIAN);
   offset += 4;
 
   return offset;
@@ -518,23 +507,21 @@ proto_register_cpha(void)
     { &hf_ifn,
     { "Interface Number", "cpha.ifn", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL}},
   };
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_cphap,
   };
 
-  proto_cphap = proto_register_protocol("Check Point High Availability Protocol",
-                                              "CPHA", "cpha");
+  proto_cphap = proto_register_protocol("Check Point High Availability Protocol", "CPHA", "cpha");
   proto_register_field_array(proto_cphap, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+
+  cpha_handle = register_dissector("cpha", dissect_cpha, proto_cphap);
 }
 
 void
 proto_reg_handoff_cpha(void)
 {
-  dissector_handle_t cpha_handle;
-
-  cpha_handle = create_dissector_handle(dissect_cpha, proto_cphap);
-  dissector_add_uint("udp.port", UDP_PORT_CPHA, cpha_handle);
+  dissector_add_uint_with_preference("udp.port", UDP_PORT_CPHA, cpha_handle);
 }
 /*
  * Editor modelines

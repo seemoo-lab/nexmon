@@ -24,7 +24,10 @@
 # define WINVER 0x0500
 #endif
 
-#define STRICT
+#ifndef STRICT
+# define STRICT
+#endif
+
 #include <windows.h>
 #include <errno.h>
 #include <string.h>
@@ -1087,7 +1090,7 @@ ucs4_to_utf16(uint wc, ushort *wbuf, int *wbufsize)
 /*
  * Check if codepage is one of those for which the dwFlags parameter
  * to MultiByteToWideChar() must be zero. Return zero or
- * MB_ERR_INVALID_CHARS.  The docs in Platform SDK for for Windows
+ * MB_ERR_INVALID_CHARS.  The docs in Platform SDK for Windows
  * Server 2003 R2 claims that also codepage 65001 is one of these, but
  * that doesn't seem to be the case. The MSDN docs for MSVS2008 leave
  * out 65001 (UTF-8), and that indeed seems to be the case on XP, it
@@ -1128,7 +1131,7 @@ must_use_null_useddefaultchar(int codepage)
 static char *
 strrstr(const char *str, const char *token)
 {
-    int len = strlen(token);
+    size_t len = strlen(token);
     const char *p = str + strlen(str);
 
     while (str <= --p)
@@ -1680,7 +1683,7 @@ utf32_wctomb(csconv_t *cv, ushort *wbuf, int wbufsize, uchar *buf, int bufsize)
  * Use MLang instead.
  */
 
-#define ISO2022_MODE(cs, shift) (((cs) << 8) | (shift))
+#define ISO2022_MODE(cs, shift) ((((DWORD) cs) << 8) | (shift))
 #define ISO2022_MODE_CS(mode) (((mode) >> 8) & 0xFF)
 #define ISO2022_MODE_SHIFT(mode) ((mode) & 0xFF)
 
@@ -1989,6 +1992,7 @@ main(int argc, char **argv)
     size_t r;
     FILE *in = stdin;
     FILE *out = stdout;
+    FILE *in_allocated = NULL, *out_allocated = NULL;
     int ignore = 0;
     char *p;
 
@@ -2012,7 +2016,7 @@ main(int argc, char **argv)
             ignore = 1;
         else if (strcmp(argv[i], "--output") == 0)
         {
-            out = fopen(argv[++i], "wb");
+            out_allocated = out = fopen(argv[++i], "wb");
             if(out == NULL)
             {
                 fprintf(stderr, "cannot open %s\n", argv[i]);
@@ -2021,7 +2025,7 @@ main(int argc, char **argv)
         }
         else
         {
-            in = fopen(argv[i], "rb");
+            in_allocated = in = fopen(argv[i], "rb");
             if (in == NULL)
             {
                 fprintf(stderr, "cannot open %s\n", argv[i]);
@@ -2033,7 +2037,8 @@ main(int argc, char **argv)
 
     if (fromcode == NULL || tocode == NULL)
     {
-        printf("usage: %s [-c] -f from-enc -t to-enc [file]\n", argv[0]);
+        printf("usage: %s [-c] -f from-enc -t to-enc [file]\n",
+               (argc > 0) ? argv[0] : "win_iconv");
         return 0;
     }
 
@@ -2085,6 +2090,11 @@ main(int argc, char **argv)
     }
 
     iconv_close(cd);
+
+    if (in_allocated != NULL)
+        fclose (in_allocated);
+    if (out_allocated != NULL)
+        fclose (out_allocated);
 
     return 0;
 }

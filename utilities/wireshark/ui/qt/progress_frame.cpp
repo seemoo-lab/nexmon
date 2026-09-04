@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,42 +19,47 @@
 #include <QBoxLayout>
 #include <QPropertyAnimation>
 
-#include "stock_icon_tool_button.h"
-#include "wireshark_application.h"
+#include <ui/qt/widgets/stock_icon_tool_button.h>
+#include "main_application.h"
 
 // To do:
-// - Add an NSProgressIndicator to the dock icon on OS X.
+// - Add an NSProgressIndicator to the dock icon on macOS.
 // - Start adding the progress bar to dialogs.
 // - Don't complain so loudly when the user stops a capture.
 
 progdlg_t *
-create_progress_dlg(gpointer top_level_window, const gchar *, const gchar *,
-                               gboolean terminate_is_stop, gboolean *stop_flag) {
+create_progress_dlg(void *top_level_window, const char *task_title, const char *item_title,
+                               bool terminate_is_stop, bool *stop_flag) {
     ProgressFrame *pf;
     QWidget *main_window;
 
     if (!top_level_window) {
-        return NULL;
+        return nullptr;
     }
 
     main_window = qobject_cast<QWidget *>((QObject *)top_level_window);
 
     if (!main_window) {
-        return NULL;
+        return nullptr;
     }
 
     pf = main_window->findChild<ProgressFrame *>();
 
     if (!pf) {
-        return NULL;
+        return nullptr;
     }
-    return pf->showProgress(true, terminate_is_stop, stop_flag, 0);
+
+    QString title = task_title;
+    if (item_title && strlen(item_title) > 0) {
+        title.append(" ").append(item_title);
+    }
+    return pf->showProgress(title, true, terminate_is_stop, stop_flag, 0);
 }
 
 progdlg_t *
-delayed_create_progress_dlg(gpointer top_level_window, const gchar *task_title, const gchar *item_title,
-                            gboolean terminate_is_stop, gboolean *stop_flag,
-                            const GTimeVal *, gfloat progress)
+delayed_create_progress_dlg(void *top_level_window, const char *task_title, const char *item_title,
+                            bool terminate_is_stop, bool *stop_flag,
+                            float progress)
 {
     progdlg_t *progress_dialog = create_progress_dlg(top_level_window, task_title, item_title, terminate_is_stop, stop_flag);
     update_progress_dlg(progress_dialog, progress, item_title);
@@ -77,19 +70,16 @@ delayed_create_progress_dlg(gpointer top_level_window, const gchar *task_title, 
  * Update the progress information of the progress bar box.
  */
 void
-update_progress_dlg(progdlg_t *dlg, gfloat percentage, const gchar *)
+update_progress_dlg(progdlg_t *dlg, float percentage, const char *)
 {
     if (!dlg) return;
 
-    dlg->progress_frame->setValue(percentage * 100);
+    dlg->progress_frame->setValue((int)(percentage * 100));
 
     /*
      * Flush out the update and process any input events.
      */
-    WiresharkApplication::processEvents();
-
-    /* Redraw so the progress bar shows the update */
-    dlg->progress_frame->update();
+    MainApplication::processEvents();
 }
 
 /*
@@ -105,12 +95,10 @@ ProgressFrame::ProgressFrame(QWidget *parent) :
     QFrame(parent),
     ui(new Ui::ProgressFrame)
   , terminate_is_stop_(false)
-  , stop_flag_(NULL)
-#if !defined(Q_OS_MAC) || QT_VERSION > QT_VERSION_CHECK(5, 0, 0)
+  , stop_flag_(nullptr)
   , show_timer_(-1)
-  , effect_(NULL)
-  , animation_(NULL)
-#endif
+  , effect_(nullptr)
+  , animation_(nullptr)
 #ifdef QWINTASKBARPROGRESS_H
   , update_taskbar_(false)
   , taskbar_progress_(NULL)
@@ -121,7 +109,16 @@ ProgressFrame::ProgressFrame(QWidget *parent) :
     progress_dialog_.progress_frame = this;
     progress_dialog_.top_level_window = window();
 
-    ui->progressBar->setStyleSheet(QString(
+#ifdef Q_OS_MAC
+    ui->label->setAttribute(Qt::WA_MacSmallSize, true);
+#endif
+
+    ui->label->setStyleSheet(QStringLiteral(
+            "QLabel {"
+            "  background: transparent;"
+            "}"));
+
+    ui->progressBar->setStyleSheet(QStringLiteral(
             "QProgressBar {"
             "  max-width: 20em;"
             "  min-height: 0.5em;"
@@ -146,13 +143,9 @@ ProgressFrame::ProgressFrame(QWidget *parent) :
             "}"
             );
 
-#if !defined(Q_OS_MAC) || QT_VERSION > QT_VERSION_CHECK(5, 0, 0)
     effect_ = new QGraphicsOpacityEffect(this);
     animation_ = new QPropertyAnimation(effect_, "opacity", this);
-#endif
-
-    connect(this, SIGNAL(showRequested(bool,bool,gboolean*)),
-            this, SLOT(show(bool,bool,gboolean*)));
+    connect(this, &ProgressFrame::showRequested, this, &ProgressFrame::show);
     hide();
 }
 
@@ -161,15 +154,23 @@ ProgressFrame::~ProgressFrame()
     delete ui;
 }
 
-struct progdlg *ProgressFrame::showProgress(bool animate, bool terminate_is_stop, gboolean *stop_flag, int value)
+struct progdlg *ProgressFrame::showProgress(const QString &title, bool animate, bool terminate_is_stop, bool *stop_flag, int value)
 {
     setMaximumValue(100);
     ui->progressBar->setValue(value);
+    QString elided_title = title;
+    int max_w = fontMetrics().height() * 20; // em-widths, arbitrary
+    int title_w = fontMetrics().horizontalAdvance(title);
+    if (title_w > max_w) {
+        elided_title = fontMetrics().elidedText(title, Qt::ElideRight, max_w);
+    }
+    // If we're in the main status bar, should we push this as a status message instead?
+    ui->label->setText(elided_title);
     emit showRequested(animate, terminate_is_stop, stop_flag);
     return &progress_dialog_;
 }
 
-progdlg *ProgressFrame::showBusy(bool animate, bool terminate_is_stop, gboolean *stop_flag)
+progdlg *ProgressFrame::showBusy(bool animate, bool terminate_is_stop, bool *stop_flag)
 {
     setMaximumValue(0);
     emit showRequested(animate, terminate_is_stop, stop_flag);
@@ -203,29 +204,24 @@ void ProgressFrame::addToButtonBox(QDialogButtonBox *button_box, QObject *main_w
 
     int one_em = progress_frame->fontMetrics().height();
     progress_frame->setMaximumWidth(one_em * 8);
-    connect(main_progress_frame, SIGNAL(showRequested(bool,bool,gboolean*)),
-            progress_frame, SLOT(show(bool,bool,gboolean*)));
-    connect(main_progress_frame, SIGNAL(maximumValueChanged(int)),
-            progress_frame, SLOT(setMaximumValue(int)));
-    connect(main_progress_frame, SIGNAL(valueChanged(int)),
-            progress_frame, SLOT(setValue(int)));
-    connect(main_progress_frame, SIGNAL(setHidden()),
-            progress_frame, SLOT(hide()));
+    connect(main_progress_frame, &ProgressFrame::showRequested, progress_frame, &ProgressFrame::show);
+    connect(main_progress_frame, &ProgressFrame::maximumValueChanged, progress_frame, &ProgressFrame::setMaximumValue);
+    connect(main_progress_frame, &ProgressFrame::valueChanged, progress_frame, &ProgressFrame::setValue);
+    connect(main_progress_frame, &ProgressFrame::setHidden, progress_frame, &ProgressFrame::hide);
 
-    connect(progress_frame, SIGNAL(stopLoading()),
-            main_progress_frame, SIGNAL(stopLoading()));
+    connect(progress_frame, &ProgressFrame::stopLoading, main_progress_frame, &ProgressFrame::stopLoading);
 }
 
 void ProgressFrame::captureFileClosing()
 {
     // Hide any paired ProgressFrames and disconnect from them.
+    // Old-style connect
     emit setHidden();
-    disconnect(SIGNAL(showRequested(bool,bool,gboolean*)));
-    disconnect(SIGNAL(maximumValueChanged(int)));
-    disconnect(SIGNAL(valueChanged(int)));
+    disconnect(this, &ProgressFrame::showRequested, nullptr, nullptr);
+    disconnect(this, &ProgressFrame::maximumValueChanged, nullptr, nullptr);
+    disconnect(this, &ProgressFrame::valueChanged, nullptr, nullptr);
 
-    connect(this, SIGNAL(showRequested(bool,bool,gboolean*)),
-            this, SLOT(show(bool,bool,gboolean*)));
+    connect(this, &ProgressFrame::showRequested, this, &ProgressFrame::show);
 }
 
 void ProgressFrame::setValue(int value)
@@ -234,7 +230,6 @@ void ProgressFrame::setValue(int value)
     emit valueChanged(value);
 }
 
-#if !defined(Q_OS_MAC) || QT_VERSION > QT_VERSION_CHECK(5, 0, 0)
 void ProgressFrame::timerEvent(QTimerEvent *event)
 {
     if (event->timerId() == show_timer_) {
@@ -243,7 +238,7 @@ void ProgressFrame::timerEvent(QTimerEvent *event)
 
         this->setGraphicsEffect(effect_);
 
-        animation_->setDuration(750);
+        animation_->setDuration(200);
         animation_->setStartValue(0.1);
         animation_->setEndValue(1.0);
         animation_->setEasingCurve(QEasingCurve::InOutQuad);
@@ -254,18 +249,15 @@ void ProgressFrame::timerEvent(QTimerEvent *event)
         QFrame::timerEvent(event);
     }
 }
-#endif
 
 void ProgressFrame::hide()
 {
-#if !defined(Q_OS_MAC) || QT_VERSION > QT_VERSION_CHECK(5, 0, 0)
     show_timer_ = -1;
-#endif
     emit setHidden();
     QFrame::hide();
 #ifdef QWINTASKBARPROGRESS_H
     if (taskbar_progress_) {
-        disconnect(this, SIGNAL(valueChanged(int)), taskbar_progress_, SLOT(setValue(int)));
+        disconnect(this, &ProgressFrame::valueChanged, taskbar_progress_, &QWinTaskbarProgress::setValue);
         taskbar_progress_->reset();
         taskbar_progress_->hide();
     }
@@ -277,11 +269,9 @@ void ProgressFrame::on_stopButton_clicked()
     emit stopLoading();
 }
 
-#if !defined(Q_OS_MAC) || QT_VERSION > QT_VERSION_CHECK(5, 0, 0)
-const int show_delay_ = 500; // ms
-#endif
+const int show_delay_ = 150; // ms
 
-void ProgressFrame::show(bool animate, bool terminate_is_stop, gboolean *stop_flag)
+void ProgressFrame::show(bool animate, bool terminate_is_stop, bool *stop_flag)
 {
     terminate_is_stop_ = terminate_is_stop;
     stop_flag_ = stop_flag;
@@ -292,16 +282,11 @@ void ProgressFrame::show(bool animate, bool terminate_is_stop, gboolean *stop_fl
         ui->stopButton->hide();
     }
 
-#if !defined(Q_OS_MAC) || QT_VERSION > QT_VERSION_CHECK(5, 0, 0)
     if (animate) {
         show_timer_ = startTimer(show_delay_);
     } else {
         QFrame::show();
     }
-#else
-    Q_UNUSED(animate);
-    QFrame::show();
-#endif
 
 #ifdef QWINTASKBARPROGRESS_H
     // windowHandle() is picky about returning a non-NULL value so we check it
@@ -316,7 +301,7 @@ void ProgressFrame::show(bool animate, bool terminate_is_stop, gboolean *stop_fl
     if (taskbar_progress_) {
         taskbar_progress_->show();
         taskbar_progress_->reset();
-        connect(this, SIGNAL(valueChanged(int)), taskbar_progress_, SLOT(setValue(int)));
+        connect(this, &ProgressFrame::valueChanged, taskbar_progress_, &QWinTaskbarProgress::setValue);
     }
 #endif
 }
@@ -326,16 +311,3 @@ void ProgressFrame::setMaximumValue(int value)
     ui->progressBar->setMaximum(value);
     emit maximumValueChanged(value);
 }
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

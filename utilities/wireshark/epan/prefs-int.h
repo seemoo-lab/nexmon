@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PREFS_INT_H__
@@ -26,7 +14,11 @@
 
 #include <stdio.h>
 #include "ws_symbol_export.h"
-#include <epan/wmem/wmem.h>
+#include <epan/wmem_scopes.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 /**
  *@file
@@ -36,22 +28,26 @@ struct pref_module {
     const char *name;           /**< name of module */
     const char *title;          /**< title of module (displayed in preferences list) */
     const char *description;    /**< Description of module (displayed in preferences notebook) */
+    const char *help;           /**< Module help page (passed to user_guide_url() to generate a URL) */
     void (*apply_cb)(void);     /**< routine to call when preferences applied */
     GList *prefs;               /**< list of its preferences */
     struct pref_module *parent; /**< parent module */
     wmem_tree_t *submodules;    /**< list of its submodules */
     int numprefs;               /**< number of non-obsolete preferences */
-    gboolean prefs_changed;     /**< if TRUE, a preference has changed since we last checked */
-    gboolean obsolete;          /**< if TRUE, this is a module that used to
+    unsigned int prefs_changed_flags;    /**< Bitmask of the types of changes done by module preferences since we last checked */
+    bool obsolete;              /**< if true, this is a module that used to
                                  * exist but no longer does
                                  */
-    gboolean use_gui;           /**< Determines whether or not the module will use the generic
+    bool use_gui;               /**< Determines whether or not the module will use the generic
                                   * GUI interface/APIs with the preference value or if its own
                                   * independent GUI will be provided.  This allows all preferences
                                   * to have a common API for reading/writing, but not require them to
                                   * use simple GUI controls to change the options.  In general, the "general"
-                                  * Wireshark preferences should have this set to FALSE, while the protocol
-                                  * modules will have this set to TRUE */
+                                  * Wireshark preferences should have this set to false, while the protocol
+                                  * modules will have this set to true */
+    unsigned int effect_flags;  /**< Flags of types effected by preference (PREF_TYPE_DISSECTION, PREF_EFFECT_CAPTURE, etc).
+                                     These flags will be set in all module's preferences on creation. Flags must be non-zero
+                                     to ensure saving to disk */
 };
 
 typedef struct {
@@ -67,13 +63,13 @@ WS_DLL_PUBLIC module_t *protocols_module;
 
 typedef void (*pref_custom_free_cb) (pref_t* pref);
 typedef void (*pref_custom_reset_cb) (pref_t* pref);
-typedef prefs_set_pref_e (*pref_custom_set_cb) (pref_t* pref, const gchar* value, gboolean* changed);
+typedef prefs_set_pref_e (*pref_custom_set_cb) (pref_t* pref, const char* value, unsigned int* changed_flags);
 /* typedef void (*pref_custom_write_cb) (pref_t* pref, write_pref_arg_t* arg); Deprecated. */
 /* pref_custom_type_name_cb should return NULL for internal / hidden preferences. */
 typedef const char * (*pref_custom_type_name_cb) (void);
 typedef char * (*pref_custom_type_description_cb) (void);
-typedef gboolean (*pref_custom_is_default_cb) (pref_t* pref);
-typedef char * (*pref_custom_to_str_cb) (pref_t* pref, gboolean default_val);
+typedef bool (*pref_custom_is_default_cb) (pref_t* pref);
+typedef char * (*pref_custom_to_str_cb) (pref_t* pref, bool default_val);
 
 /** Structure to hold callbacks for PREF_CUSTOM type */
 struct pref_custom_cbs {
@@ -87,79 +83,34 @@ struct pref_custom_cbs {
     pref_custom_to_str_cb to_str_cb;
 };
 
-/**
- * PREF_OBSOLETE is used for preferences that a module used to support
- * but no longer supports; we give different error messages for them.
- */
-#define PREF_UINT        (1u << 0)
-#define PREF_BOOL        (1u << 1)
-#define PREF_ENUM        (1u << 2)
-#define PREF_STRING      (1u << 3)
-#define PREF_RANGE       (1u << 4)
-#define PREF_STATIC_TEXT (1u << 5)
-#define PREF_UAT         (1u << 6)
-#define PREF_FILENAME    (1u << 7)
-#define PREF_COLOR       (1u << 8) /* XXX - These are only supported for "internal" (non-protocol) */
-#define PREF_CUSTOM      (1u << 9) /* use and not as a generic protocol preference */
-#define PREF_OBSOLETE    (1u << 10)
-#define PREF_DIRNAME     (1u << 11)
-
 typedef enum {
-	GUI_ALL,
-	GUI_GTK,
-	GUI_QT
-} gui_type_t;
+    PREF_UINT,
+    PREF_BOOL,
+    PREF_ENUM,
+    PREF_STRING,
+    PREF_RANGE,
+    PREF_STATIC_TEXT,
+    PREF_UAT,
+    PREF_SAVE_FILENAME,
+    PREF_COLOR,                 // (1)
+    PREF_CUSTOM,                // (1)
+    PREF_DIRNAME,
+    PREF_DECODE_AS_RANGE,       // (2)
+    PREF_OPEN_FILENAME,
+    PREF_PASSWORD,              // (3)
+    PREF_PROTO_TCP_SNDAMB_ENUM, // (4)
+    PREF_DISSECTOR              // (5)
+} pref_type_e;
 
-/** Struct to hold preference data */
-struct preference {
-    const char *name;                /**< name of preference */
-    const char *title;               /**< title to use in GUI */
-    const char *description;         /**< human-readable description of preference */
-    int ordinal;                     /**< ordinal number of this preference */
-    int type;                        /**< type of that preference */
-    gui_type_t gui;                  /**< type of the GUI (QT, GTK or both) the preference is registered for */
-    union {                          /* The Qt preference code assumes that these will all be pointers (and unique) */
-        guint *uint;
-        gboolean *boolp;
-        gint *enump;
-        char **string;
-        range_t **range;
-        struct epan_uat* uat;
-        color_t *colorp;
-        GList** list;
-    } varp;                          /**< pointer to variable storing the value */
-    union {
-        guint uint;
-        gboolean boolval;
-        gint enumval;
-        char *string;
-        range_t *range;
-        color_t color;
-        GList* list;
-    } stashed_val;                     /**< original value, when editing from the GUI */
-    union {
-        guint uint;
-        gboolean boolval;
-        gint enumval;
-        char *string;
-        range_t *range;
-        color_t color;
-        GList* list;
-    } default_val;                   /**< the default value of the preference */
-    union {
-      guint base;                    /**< input/output base, for PREF_UINT */
-      guint32 max_value;             /**< maximum value of a range */
-      struct {
-        const enum_val_t *enumvals;  /**< list of name & values */
-        gboolean radio_buttons;      /**< TRUE if it should be shown as
-                                          radio buttons rather than as an
-                                          option menu or combo box in
-                                          the preferences tab */
-      } enum_info;                   /**< for PREF_ENUM */
-    } info;                          /**< display/text file information */
-    struct pref_custom_cbs custom_cbs;   /**< for PREF_CUSTOM */
-    void    *control;                /**< handle for GUI control for this preference. GTK+ only? */
-};
+/*
+ * (1) These are only supported for "internal" (non-protocol) use
+ *     and not as a generic protocol preference.
+ * (2) Internal use only, not a generic protocol preference.
+ * (3) Like string, but never saved to prefs file.
+ * (4) Dedicated to TCP PROTOCOL for handling manual SEQ interpretation,
+ *     and allow users manage the sender traffic ambiguities
+ * (5) Like string, but with dissector name syntax check.
+ */
 
 /* read_prefs_file: read in a generic config file and do a callback to */
 /* pref_set_pair_fct() for every key/value pair found */
@@ -170,22 +121,144 @@ struct preference {
  * @return an indication of whether it succeeded or failed
  * in some fashion.
  */
-typedef prefs_set_pref_e (*pref_set_pair_cb) (gchar *key, const gchar *value, void *private_data, gboolean return_range_errors);
+typedef prefs_set_pref_e (*pref_set_pair_cb) (char *key, const char *value, void *private_data, bool return_range_errors);
 
-/** Set the value of a string-like preference. */
+WS_DLL_PUBLIC
+const char* prefs_get_description(pref_t *pref);
+
+WS_DLL_PUBLIC
+const char* prefs_get_title(pref_t *pref);
+
+WS_DLL_PUBLIC
+const char* prefs_get_name(pref_t *pref);
+
+WS_DLL_PUBLIC
+int prefs_get_type(pref_t *pref);
+
+WS_DLL_PUBLIC uint32_t prefs_get_max_value(pref_t *pref);
+
+/* Bitmask of flags for the effect of a preference in Wireshark */
+#define PREF_EFFECT_DISSECTION        (1u << 0)
+#define PREF_EFFECT_CAPTURE           (1u << 1)
+#define PREF_EFFECT_GUI_LAYOUT        (1u << 2)
+#define PREF_EFFECT_FIELDS            (1u << 3)
+#define PREF_EFFECT_GUI               (1u << 4)
+#define PREF_EFFECT_GUI_COLOR         (1u << 5)
+
+/** Fetch flags that show the effect of the preference
+ *
+ * @param pref A preference.
+ *
+ * @return A bitmask of the types of things the preference will
+ * effect.
+ */
+WS_DLL_PUBLIC
+unsigned int prefs_get_effect_flags(pref_t *pref);
+
+/** Set flags for the effect of the preference
+ * The intention is to distinguish preferences that affect
+ * dissection from those that don't. A bitmask was added to
+ * provide greater flexibility in the types of effects
+ * preferences can have.
+ *
+ * @param pref A preference.
+ * @param flags Bitmask of flags to apply to preference. Note that flags
+ * must be non-zero to ensure preference is properly saved to disk.
+ *
+ */
+WS_DLL_PUBLIC
+void prefs_set_effect_flags(pref_t *pref, unsigned int flags);
+
+/** Same as prefs_set_effect_flags, just different way to get preference
+ */
+WS_DLL_PUBLIC
+void prefs_set_effect_flags_by_name(module_t * module, const char *pref, unsigned int flags);
+
+/** Fetch flags that show module's preferences effect
+ * The flag values of the module will be applied to any individual preferences
+ * of the module when they are created
+ *
+ * @param module A preference module.
+ *
+ * @return A bitmask of the types of things the module's preferences will
+ * effect.
+ */
+WS_DLL_PUBLIC
+unsigned int prefs_get_module_effect_flags(module_t * module);
+
+/** Set flags for module's preferences effect
+ * The intention is to distinguish preferences that affect
+ * dissection from those that don't. Since modules are a grouping
+ * of preferences, it's likely that a whole module will want the
+ * same flags for its preferences. The flag values of the module will
+ * be applied to any individual preferences of the module when they
+ * are created
+ *
+ * @param module A preference module.
+ * @param flags Bitmask of flags to apply to module. Note that flags
+ * must be non-zero to ensure preferences are properly saved to disk.
+ *
+ */
+WS_DLL_PUBLIC
+void prefs_set_module_effect_flags(module_t * module, unsigned int flags);
+
+WS_DLL_PUBLIC
+bool prefs_set_range_value_work(pref_t *pref, const char *value,
+                           bool return_range_errors, unsigned int *changed_flags);
+
+WS_DLL_PUBLIC
+unsigned int
+prefs_set_stashed_range_value(pref_t *pref, const char *value);
+
+/** Add a range value of a range preference. */
 WS_DLL_PUBLIC
 void
-prefs_set_string_like_value(pref_t *pref, const gchar *value, gboolean *changed);
+prefs_range_add_value(pref_t *pref, uint32_t val);
 
-/** Set the value of a range preference.  Return FALSE on error, TRUE otherwise. */
-WS_DLL_PUBLIC
-gboolean
-prefs_set_range_value(pref_t *pref, const gchar *value, gboolean *changed);
-
-/** Set the value of an enum preference. */
+/** Remove a range value of a range preference. */
 WS_DLL_PUBLIC
 void
-prefs_set_enum_value(pref_t *pref, const gchar *value, gboolean *changed);
+prefs_range_remove_value(pref_t *pref, uint32_t val);
+
+
+WS_DLL_PUBLIC unsigned int prefs_set_bool_value(pref_t *pref, bool value, pref_source_t source);
+WS_DLL_PUBLIC bool prefs_get_bool_value(pref_t *pref, pref_source_t source);
+WS_DLL_PUBLIC void prefs_invert_bool_value(pref_t *pref, pref_source_t source);
+
+WS_DLL_PUBLIC unsigned int prefs_set_uint_value(pref_t *pref, unsigned value, pref_source_t source);
+WS_DLL_PUBLIC unsigned prefs_get_uint_base(pref_t *pref);
+WS_DLL_PUBLIC unsigned prefs_get_uint_value(pref_t *pref, pref_source_t source);
+
+
+WS_DLL_PUBLIC unsigned int prefs_set_enum_value(pref_t *pref, int value, pref_source_t source);
+WS_DLL_PUBLIC unsigned int prefs_set_enum_string_value(pref_t *pref, const char *value, pref_source_t source);
+WS_DLL_PUBLIC int prefs_get_enum_value(pref_t *pref, pref_source_t source);
+WS_DLL_PUBLIC const enum_val_t* prefs_get_enumvals(pref_t *pref);
+WS_DLL_PUBLIC bool prefs_get_enum_radiobuttons(pref_t *pref);
+
+WS_DLL_PUBLIC bool prefs_set_color_value(pref_t *pref, color_t value, pref_source_t source);
+WS_DLL_PUBLIC color_t* prefs_get_color_value(pref_t *pref, pref_source_t source);
+
+WS_DLL_PUBLIC unsigned int prefs_set_custom_value(pref_t *pref, const char *value, pref_source_t source);
+
+WS_DLL_PUBLIC unsigned int prefs_set_string_value(pref_t *pref, const char* value, pref_source_t source);
+WS_DLL_PUBLIC char* prefs_get_string_value(pref_t *pref, pref_source_t source);
+
+WS_DLL_PUBLIC struct epan_uat* prefs_get_uat_value(pref_t *pref);
+
+WS_DLL_PUBLIC bool prefs_set_range_value(pref_t *pref, range_t *value, pref_source_t source);
+WS_DLL_PUBLIC range_t* prefs_get_range_value_real(pref_t *pref, pref_source_t source);
+
+WS_DLL_PUBLIC bool prefs_add_decode_as_value(pref_t *pref, unsigned value, bool replace);
+WS_DLL_PUBLIC bool prefs_remove_decode_as_value(pref_t *pref, unsigned value, bool set_default);
+
+WS_DLL_PUBLIC unsigned int prefs_set_password_value(pref_t *pref, const char* value, pref_source_t source);
+WS_DLL_PUBLIC char* prefs_get_password_value(pref_t *pref, pref_source_t source);
+
+WS_DLL_PUBLIC bool prefs_add_list_value(pref_t *pref, void *value, pref_source_t source);
+WS_DLL_PUBLIC GList* prefs_get_list_value(pref_t *pref, pref_source_t source);
+
+WS_DLL_PUBLIC void reset_pref(pref_t *pref);
 
 /** read the preferences file (or similar) and call the callback
  * function to set each key/value pair found
@@ -194,9 +267,82 @@ WS_DLL_PUBLIC
 int
 read_prefs_file(const char *pf_path, FILE *pf, pref_set_pair_cb pref_set_pair_fct, void *private_data);
 
+/** Given a module name, read the preferences associated with only that module.
+ * Checks for a file in the personal configuration directory named after the
+ * module with a ".cfg" extension added first.
+ *
+ * @param name The preference module name, e.g. "extcap".
+ */
+WS_DLL_PUBLIC
+void
+prefs_read_module(const char *name);
+
+WS_DLL_PUBLIC
+bool
+prefs_pref_is_default(pref_t *pref);
+
+/** "Stash" a preference.
+ * Copy a preference to its stashed value. Can be called from prefs_pref_foreach().
+ *
+ * @param pref A preference.
+ * @param unused unused
+ */
+WS_DLL_PUBLIC
+unsigned pref_stash(pref_t *pref, void *unused);
+
+typedef struct pref_unstash_data
+{
+    /* Used to set prefs_changed member to true if the preference
+       differs from its stashed values. */
+    module_t *module;
+    /* Qt uses stashed values to then "applies" them
+      during unstash.  Use this flag for that behavior */
+    bool handle_decode_as;
+} pref_unstash_data_t;
+
+/** Get the effect_flags from a stashed preference.
+ * Can be called from prefs_pref_foreach().
+ *
+ * @param pref A preference.
+ * @param unstash_data_p A pointer to a pref_unstash_data_t structure.
+ *
+ * @return Always returns 0.
+ */
+WS_DLL_PUBLIC
+unsigned pref_get_changed_flags(pref_t *pref, void *unstash_data_p);
+
+/** "Unstash" a preference.
+ * Set a preference to its stashed value. Can be called from prefs_pref_foreach().
+ *
+ * @param pref A preference.
+ * @param unstash_data_p A pointer to a pref_unstash_data_t structure.
+ *
+ * @return Always returns 0.
+ */
+WS_DLL_PUBLIC
+unsigned pref_unstash(pref_t *pref, void *unstash_data_p);
+
+/** Clean up a stashed preference.
+ * Can be called from prefs_pref_foreach().
+ *
+ * @param pref A preference.
+ * @param unused unused
+ *
+ * @return Always returns 0.
+ */
+WS_DLL_PUBLIC
+unsigned pref_clean_stash(pref_t *pref, void *unused);
+
+/** Set a stashed preference to its default value.
+ *
+ *@param pref A preference.
+ */
+WS_DLL_PUBLIC
+void reset_stashed_pref(pref_t *pref);
+
 /** Convert a string list preference to a preference string.
  *
- * Given a GList of gchar pointers, create a quoted, comma-separated
+ * Given a GList of char pointers, create a quoted, comma-separated
  * string. Should be used with prefs_get_string_list() and
  * prefs_clear_string_list().
  *
@@ -206,5 +352,9 @@ read_prefs_file(const char *pf_path, FILE *pf, pref_set_pair_cb pref_set_pair_fc
 WS_DLL_PUBLIC
 char *
 join_string_list(GList *sl);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 #endif /* prefs-int.h */

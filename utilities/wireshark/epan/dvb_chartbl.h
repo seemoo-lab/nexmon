@@ -1,23 +1,11 @@
-/* dvb_chartbl.h
+/** @file
  * Routines for handling DVB-SI character tables (as defined in EN 300 468)
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #ifndef __DVB_CHARTBL_H__
 #define __DVB_CHARTBL_H__
@@ -27,7 +15,6 @@
 #include <epan/proto.h>
 #include <epan/to_str.h>
 #include <epan/tvbuff.h>
-#include <epan/value_string.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,15 +51,15 @@ typedef enum {
 } dvb_encoding_e;
 
 WS_DLL_PUBLIC
-guint dvb_analyze_string_charset(tvbuff_t *tvb, int offset, int length,
+unsigned dvb_analyze_string_charset(tvbuff_t *tvb, int offset, int length,
       dvb_encoding_e *encoding);
 
 WS_DLL_PUBLIC
-guint dvb_enc_to_item_enc(dvb_encoding_e encoding);
+unsigned dvb_enc_to_item_enc(dvb_encoding_e encoding);
 
 WS_DLL_PUBLIC
 void dvb_add_chartbl(proto_tree *tree, int hf,
-        tvbuff_t *tvb, gint offset, gint length,
+        tvbuff_t *tvb, int offset, int length,
         dvb_encoding_e  encoding);
 
 #ifdef __cplusplus
@@ -82,7 +69,7 @@ void dvb_add_chartbl(proto_tree *tree, int hf,
 #endif /* __DVB_CHARTBL_H__ */
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

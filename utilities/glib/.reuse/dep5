@@ -1,0 +1,68 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: GLib
+Upstream-Contact: https://gitlab.gnome.org/GNOME/glib/-/issues
+Source: https://gitlab.gnome.org/GNOME/glib/
+
+# These test files are too simple to be copyrightable, but adding
+# copyright/licensing headers to them (or beside them in a .license file) may
+# affect the tests
+Files:
+ fuzzing/*.corpus
+ fuzzing/*.dict
+ gio/tests/cert-tests/*.p12
+ gio/tests/cert-tests/*.pem
+ gio/tests/desktop-files/**.desktop
+ gio/tests/schema-tests/*.gschema.xml
+ gio/tests/thumbnails/*.png
+ glib/tests/bookmarks/*.xbel
+ glib/tests/markups/*.cdata-as-text
+ glib/tests/markups/*.expected
+ glib/tests/markups/*.gmarkup
+Copyright: See individual files
+License: CC0-1.0
+
+# .gitignore files are too simple to be copyrightable
+Files:
+ .gitignore
+ **/.gitignore
+Copyright: See individual files
+License: CC0-1.0
+
+# Translation files are explicitly contributed under the license of the project,
+# but by multiple authors
+Files: po/*.po
+Copyright: See individual files
+License: LGPL-2.1-or-later
+
+# Subproject wrap files are too simple to be copyrightable, but adding
+# copyright/licensing headers to them will get lost when they’re next updated
+# from wrapdb
+Files:
+ subprojects/*.wrap
+Copyright: Meson Wrap Database (wrapdb) contributors
+License: CC0-1.0
+
+Files: docs/reference/glib/file-name-encodings*.odg
+Copyright:
+  2004-2006 Federico Mena Quintero <federico@ximian.com>
+  2025 Frank Dana
+License: CC0-1.0
+
+# libgirepository uses cmph as a copylib. Adding copyright/license data to the
+# files there would cause divergence from upstream. See
+# girepository/cmph/README-CMPH-IMPORT.txt.
+Files: girepository/cmph/*
+Copyright: CMPH contributors
+License: LGPL-2.1-only or MPL-1.1
+
+# gnulib is a copylib. Adding copyright/license data to the files there would
+# cause divergence from upstream. See glib/gnulib/README.
+Files: glib/gnulib/*
+Copyright: gnulib contributors
+License: LGPL-2.1-or-later
+
+# libcharset is a copylib. Adding copyright/license data to the files there
+# would cause divergence from upstream. See glib/libcharset/README.
+Files: glib/libcharset/*
+Copyright: libcharset contributors
+License: LGPL-2.1-or-later

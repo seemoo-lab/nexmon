@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  */
 
@@ -50,83 +38,79 @@
 void proto_register_packetcable(void);
 void proto_reg_handoff_packetcable(void);
 
-static int proto_packetcable = -1;
+static int proto_packetcable;
 
-static int hf_packetcable_em_header_version_id = -1;
-static int hf_packetcable_bcid_timestamp = -1;
-static int hf_packetcable_bcid_event_counter = -1;
-static int hf_packetcable_em_header_event_message_type = -1;
-static int hf_packetcable_em_header_element_type = -1;
-static int hf_packetcable_em_header_sequence_number = -1;
-static int hf_packetcable_em_header_status = -1;
-static int hf_packetcable_em_header_status_error_indicator = -1;
-static int hf_packetcable_em_header_status_event_origin = -1;
-static int hf_packetcable_em_header_status_event_message_proxied = -1;
-static int hf_packetcable_em_header_priority = -1;
-static int hf_packetcable_em_header_attribute_count = -1;
-static int hf_packetcable_em_header_event_object = -1;
-static int hf_packetcable_call_termination_cause_source_document = -1;
-static int hf_packetcable_call_termination_cause_code = -1;
-static int hf_packetcable_trunk_group_id_trunk_type = -1;
-static int hf_packetcable_trunk_group_id_trunk_number = -1;
-static int hf_packetcable_qos_status = -1;
-static int hf_packetcable_qos_status_indication = -1;
-static int hf_packetcable_time_adjustment = -1;
-static int hf_packetcable_redirected_from_info_number_of_redirections = -1;
-static int hf_packetcable_electronic_surveillance_indication_df_cdc_address = -1;
-static int hf_packetcable_electronic_surveillance_indication_df_ccc_address = -1;
-static int hf_packetcable_electronic_surveillance_indication_cdc_port = -1;
-static int hf_packetcable_electronic_surveillance_indication_ccc_port = -1;
-static int hf_packetcable_terminal_display_info_terminal_display_status_bitmask = -1;
-static int hf_packetcable_terminal_display_info_sbm_general_display = -1;
-static int hf_packetcable_terminal_display_info_sbm_calling_number = -1;
-static int hf_packetcable_terminal_display_info_sbm_calling_name = -1;
-static int hf_packetcable_terminal_display_info_sbm_message_waiting = -1;
-static int hf_packetcable_terminal_display_info_general_display = -1;
-static int hf_packetcable_terminal_display_info_calling_number = -1;
-static int hf_packetcable_terminal_display_info_calling_name = -1;
-static int hf_packetcable_terminal_display_info_message_waiting = -1;
-static int hf_packetcable_qos_desc_flags_sfst = -1;
-static int hf_packetcable_qos_desc_flags_gi = -1;
-static int hf_packetcable_qos_desc_flags_tgj = -1;
-static int hf_packetcable_qos_desc_flags_gpi = -1;
-static int hf_packetcable_qos_desc_flags_ugs = -1;
-static int hf_packetcable_qos_desc_flags_tp = -1;
-static int hf_packetcable_qos_desc_flags_msr = -1;
-static int hf_packetcable_qos_desc_flags_mtb = -1;
-static int hf_packetcable_qos_desc_flags_mrtr = -1;
-static int hf_packetcable_qos_desc_flags_mps = -1;
-static int hf_packetcable_qos_desc_flags_mcb = -1;
-static int hf_packetcable_qos_desc_flags_srtp = -1;
-static int hf_packetcable_qos_desc_flags_npi = -1;
-static int hf_packetcable_qos_desc_flags_tpj = -1;
-static int hf_packetcable_qos_desc_flags_toso = -1;
-static int hf_packetcable_qos_desc_flags_mdl = -1;
+static int hf_packetcable_em_header_version_id;
+static int hf_packetcable_bcid_timestamp;
+static int hf_packetcable_bcid_event_counter;
+static int hf_packetcable_em_header_event_message_type;
+static int hf_packetcable_em_header_element_type;
+static int hf_packetcable_em_header_sequence_number;
+static int hf_packetcable_em_header_status;
+static int hf_packetcable_em_header_status_error_indicator;
+static int hf_packetcable_em_header_status_event_origin;
+static int hf_packetcable_em_header_status_event_message_proxied;
+static int hf_packetcable_em_header_priority;
+static int hf_packetcable_em_header_attribute_count;
+static int hf_packetcable_em_header_event_object;
+static int hf_packetcable_call_termination_cause_source_document;
+static int hf_packetcable_call_termination_cause_code;
+static int hf_packetcable_trunk_group_id_trunk_type;
+static int hf_packetcable_trunk_group_id_trunk_number;
+static int hf_packetcable_qos_status;
+static int hf_packetcable_qos_status_indication;
+static int hf_packetcable_time_adjustment;
+static int hf_packetcable_redirected_from_info_number_of_redirections;
+static int hf_packetcable_electronic_surveillance_indication_df_cdc_address;
+static int hf_packetcable_electronic_surveillance_indication_df_ccc_address;
+static int hf_packetcable_electronic_surveillance_indication_cdc_port;
+static int hf_packetcable_electronic_surveillance_indication_ccc_port;
+static int hf_packetcable_terminal_display_info_terminal_display_status_bitmask;
+static int hf_packetcable_terminal_display_info_sbm_general_display;
+static int hf_packetcable_terminal_display_info_sbm_calling_number;
+static int hf_packetcable_terminal_display_info_sbm_calling_name;
+static int hf_packetcable_terminal_display_info_sbm_message_waiting;
+static int hf_packetcable_terminal_display_info_general_display;
+static int hf_packetcable_terminal_display_info_calling_number;
+static int hf_packetcable_terminal_display_info_calling_name;
+static int hf_packetcable_terminal_display_info_message_waiting;
+static int hf_packetcable_qos_desc_flags_sfst;
+static int hf_packetcable_qos_desc_flags_gi;
+static int hf_packetcable_qos_desc_flags_tgj;
+static int hf_packetcable_qos_desc_flags_gpi;
+static int hf_packetcable_qos_desc_flags_ugs;
+static int hf_packetcable_qos_desc_flags_tp;
+static int hf_packetcable_qos_desc_flags_msr;
+static int hf_packetcable_qos_desc_flags_mtb;
+static int hf_packetcable_qos_desc_flags_mrtr;
+static int hf_packetcable_qos_desc_flags_mps;
+static int hf_packetcable_qos_desc_flags_mcb;
+static int hf_packetcable_qos_desc_flags_srtp;
+static int hf_packetcable_qos_desc_flags_npi;
+static int hf_packetcable_qos_desc_flags_tpj;
+static int hf_packetcable_qos_desc_flags_toso;
+static int hf_packetcable_qos_desc_flags_mdl;
 
 /* Generated from convert_proto_tree_add_text.pl */
-static int hf_packetcable_bcid_time_zone_offset = -1;
-static int hf_packetcable_bcid_element_id = -1;
-static int hf_packetcable_electronic_surveillance_indication_df_df_key = -1;
-static int hf_packetcable_redirected_from_original_called_party = -1;
-static int hf_packetcable_em_header_element_id = -1;
-static int hf_packetcable_redirected_from_last_redirecting_party = -1;
-static int hf_packetcable_bcid_time_zone_dst = -1;
-static int hf_packetcable_em_header_time_zone_offset = -1;
-static int hf_packetcable_qos_service_class_name = -1;
-static int hf_packetcable_em_header_event_time = -1;
-static int hf_packetcable_em_header_time_zone_dst = -1;
+static int hf_packetcable_bcid_time_zone_offset;
+static int hf_packetcable_bcid_element_id;
+static int hf_packetcable_electronic_surveillance_indication_df_df_key;
+static int hf_packetcable_redirected_from_original_called_party;
+static int hf_packetcable_em_header_element_id;
+static int hf_packetcable_redirected_from_last_redirecting_party;
+static int hf_packetcable_bcid_time_zone_dst;
+static int hf_packetcable_em_header_time_zone_offset;
+static int hf_packetcable_qos_service_class_name;
+static int hf_packetcable_em_header_event_time;
+static int hf_packetcable_em_header_time_zone_dst;
 
 /* This is slightly ugly.  */
-static int hf_packetcable_qos_desc_fields[] =
-{
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-};
+static int hf_packetcable_qos_desc_fields[16];
 
-
-static gint ett_radius_vendor_packetcable_bcid = -1;
-static gint ett_radius_vendor_packetcable_status = -1;
-static gint ett_radius_vendor_packetcable_qos_status = -1;
-static gint ett_packetcable_term_dsply = -1;
+static int ett_radius_vendor_packetcable_bcid;
+static int ett_radius_vendor_packetcable_status;
+static int ett_radius_vendor_packetcable_qos_status;
+static int ett_packetcable_term_dsply;
 
 
 #define PACKETCABLE_QOS_STATE_INDICATION_MASK 0X0003
@@ -149,13 +133,13 @@ static gint ett_packetcable_term_dsply = -1;
 
 #define PACKETCABLE_QOS_DESC_BITFIELDS 16
 
-#define PACKETCABLE_EMHS_EI_MASK 0X0003
-#define PACKETCABLE_EMHS_EO_MASK 0X0004
-#define PACKETCABLE_EMHS_EMP_MASK 0X0008
-#define PACKETCABLE_EMHS_RESERVED_MASK 0Xfff0
+#define PACKETCABLE_EMHS_EI_MASK       0x0003
+#define PACKETCABLE_EMHS_EO_MASK       0x0004
+#define PACKETCABLE_EMHS_EMP_MASK      0x0008
+#define PACKETCABLE_EMHS_RESERVED_MASK 0xfff0
 
 
-static guint32 packetcable_qos_desc_mask[] =
+static uint32_t packetcable_qos_desc_mask[] =
 {
 	PACKETCABLE_SERVICE_FLOW_SCHEDULING_TYPE_MASK,
 	PACKETCABLE_NOMINAL_GRANT_INTERVAL_MASK,
@@ -272,13 +256,13 @@ static void decode_packetcable_bcid (tvbuff_t *tvb, proto_tree *tree, int offset
 {
 
 	proto_tree_add_item(tree, hf_packetcable_bcid_timestamp, tvb, offset, 4, ENC_BIG_ENDIAN);
-	proto_tree_add_item(tree, hf_packetcable_bcid_element_id, tvb, offset + 4, 8, ENC_ASCII|ENC_NA);
+	proto_tree_add_item(tree, hf_packetcable_bcid_element_id, tvb, offset + 4, 8, ENC_ASCII);
 	proto_tree_add_item(tree, hf_packetcable_bcid_time_zone_dst, tvb, offset + 12, 1, ENC_BIG_ENDIAN);
-	proto_tree_add_item(tree, hf_packetcable_bcid_time_zone_offset, tvb, offset + 13, 7, ENC_ASCII|ENC_NA);
+	proto_tree_add_item(tree, hf_packetcable_bcid_time_zone_offset, tvb, offset + 13, 7, ENC_ASCII);
 	proto_tree_add_item(tree, hf_packetcable_bcid_event_counter, tvb, offset + 20, 4, ENC_BIG_ENDIAN);
 }
 
-static const gchar* dissect_packetcable_em_hdr(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
+static const char* dissect_packetcable_em_hdr(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
 	proto_item *ti;
 	proto_tree *obj_tree;
 
@@ -288,11 +272,11 @@ static const gchar* dissect_packetcable_em_hdr(proto_tree* tree, tvbuff_t* tvb, 
 
 	proto_tree_add_item(tree, hf_packetcable_em_header_event_message_type, tvb,  26, 2, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_packetcable_em_header_element_type, tvb,  28, 2, ENC_BIG_ENDIAN);
-	proto_tree_add_item(tree, hf_packetcable_em_header_element_id, tvb, 30, 8, ENC_ASCII|ENC_NA);
+	proto_tree_add_item(tree, hf_packetcable_em_header_element_id, tvb, 30, 8, ENC_ASCII);
 	proto_tree_add_item(tree, hf_packetcable_em_header_time_zone_dst, tvb, 38, 1, ENC_BIG_ENDIAN);
-	proto_tree_add_item(tree, hf_packetcable_em_header_time_zone_offset, tvb, 39, 7, ENC_ASCII|ENC_NA);
+	proto_tree_add_item(tree, hf_packetcable_em_header_time_zone_offset, tvb, 39, 7, ENC_ASCII);
 	proto_tree_add_item(tree, hf_packetcable_em_header_sequence_number, tvb,  46, 4, ENC_BIG_ENDIAN);
-	proto_tree_add_item(tree, hf_packetcable_em_header_event_time, tvb, 50, 18, ENC_ASCII|ENC_NA);
+	proto_tree_add_item(tree, hf_packetcable_em_header_event_time, tvb, 50, 18, ENC_ASCII);
 
 	ti = proto_tree_add_item(tree, hf_packetcable_em_header_status, tvb,  68, 4, ENC_BIG_ENDIAN);
 	obj_tree = proto_item_add_subtree(ti, ett_radius_vendor_packetcable_status);
@@ -306,7 +290,7 @@ static const gchar* dissect_packetcable_em_hdr(proto_tree* tree, tvbuff_t* tvb, 
 	return "";
 }
 
-static const gchar* dissect_packetcable_call_term_cause(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
+static const char* dissect_packetcable_call_term_cause(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
 	proto_tree_add_item(tree, hf_packetcable_call_termination_cause_source_document,
 						tvb, 0, 2, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_packetcable_call_termination_cause_code,
@@ -315,12 +299,12 @@ static const gchar* dissect_packetcable_call_term_cause(proto_tree* tree, tvbuff
 	return "";
 }
 
-static const gchar* dissect_packetcable_rel_call_billing_correlation(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
+static const char* dissect_packetcable_rel_call_billing_correlation(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
 	decode_packetcable_bcid(tvb, tree, 0);
 	return "";
 }
 
-static const gchar* dissect_packetcable_trunk_group_id(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
+static const char* dissect_packetcable_trunk_group_id(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
 	proto_tree_add_item(tree, hf_packetcable_trunk_group_id_trunk_type,
 						tvb, 0, 2, ENC_BIG_ENDIAN);
 	proto_tree_add_item(tree, hf_packetcable_trunk_group_id_trunk_number,
@@ -328,12 +312,12 @@ static const gchar* dissect_packetcable_trunk_group_id(proto_tree* tree, tvbuff_
 	return "";
 }
 
-static const gchar* dissect_packetcable_qos_descriptor(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
-	guint32 intval;
-	guint32 packetcable_qos_flags = tvb_get_ntohl(tvb, 0);
-	guint packetcable_qos_off = 20;
-	static const int * qos_flags[] = {
-        &hf_packetcable_qos_status_indication,
+static const char* dissect_packetcable_qos_descriptor(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
+	uint32_t intval;
+	uint32_t packetcable_qos_flags = tvb_get_ntohl(tvb, 0);
+	unsigned packetcable_qos_off = 20;
+	static int * const qos_flags[] = {
+		&hf_packetcable_qos_status_indication,
 		&hf_packetcable_qos_desc_flags_sfst,
 		&hf_packetcable_qos_desc_flags_gi,
 		&hf_packetcable_qos_desc_flags_tgj,
@@ -356,7 +340,7 @@ static const gchar* dissect_packetcable_qos_descriptor(proto_tree* tree, tvbuff_
 	proto_tree_add_bitmask(tree, tvb, 0, hf_packetcable_qos_status,
 			       ett_radius_vendor_packetcable_qos_status, qos_flags, ENC_BIG_ENDIAN);
 
-	proto_tree_add_item(tree, hf_packetcable_qos_service_class_name, tvb, 4, 16, ENC_ASCII|ENC_NA);
+	proto_tree_add_item(tree, hf_packetcable_qos_service_class_name, tvb, 4, 16, ENC_ASCII);
 
 	for (intval = 0; intval < PACKETCABLE_QOS_DESC_BITFIELDS; intval++) {
 		if (packetcable_qos_flags & packetcable_qos_desc_mask[intval]) {
@@ -369,17 +353,17 @@ static const gchar* dissect_packetcable_qos_descriptor(proto_tree* tree, tvbuff_
 	return "";
 }
 
-static const gchar* dissect_packetcable_time_adjustment(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
+static const char* dissect_packetcable_time_adjustment(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
 	proto_tree_add_item(tree, hf_packetcable_time_adjustment, tvb, 0, 8, ENC_BIG_ENDIAN);
 
 	return "";
 }
 
-static const gchar* dissect_packetcable_redirected_from_info(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
+static const char* dissect_packetcable_redirected_from_info(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
 
-	proto_tree_add_item(tree, hf_packetcable_redirected_from_last_redirecting_party, tvb, 0, 20, ENC_ASCII|ENC_NA);
+	proto_tree_add_item(tree, hf_packetcable_redirected_from_last_redirecting_party, tvb, 0, 20, ENC_ASCII);
 
-	proto_tree_add_item(tree, hf_packetcable_redirected_from_original_called_party, tvb, 20, 20, ENC_ASCII|ENC_NA);
+	proto_tree_add_item(tree, hf_packetcable_redirected_from_original_called_party, tvb, 20, 20, ENC_ASCII);
 
 	proto_tree_add_item(tree, hf_packetcable_redirected_from_info_number_of_redirections,
 						tvb, 40, 2, ENC_BIG_ENDIAN);
@@ -387,7 +371,7 @@ static const gchar* dissect_packetcable_redirected_from_info(proto_tree* tree, t
 	return "";
 }
 
-static const gchar* dissect_packetcable_time_electr_surv_ind(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
+static const char* dissect_packetcable_time_electr_surv_ind(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
 
 	if (tvb_reported_length(tvb) == 0)
 		return "None";
@@ -405,7 +389,7 @@ static const gchar* dissect_packetcable_time_electr_surv_ind(proto_tree* tree, t
 	return "";
 }
 
-static const gchar* dissect_packetcable_surv_df_sec(proto_tree* tree _U_, tvbuff_t* tvb _U_, packet_info *pinfo _U_) {
+static const char* dissect_packetcable_surv_df_sec(proto_tree* tree _U_, tvbuff_t* tvb _U_, packet_info *pinfo _U_) {
 		return "";
 }
 
@@ -414,11 +398,11 @@ static const gchar* dissect_packetcable_surv_df_sec(proto_tree* tree _U_, tvbuff
 #define PACKETCABLE_CALLING_NAME    (1 << 2)
 #define PACKETCABLE_MESSAGE_WAITING (1 << 3)
 
-static const gchar* dissect_packetcable_term_dsply_info(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
+static const char* dissect_packetcable_term_dsply_info(proto_tree* tree, tvbuff_t* tvb, packet_info *pinfo _U_) {
 	/* XXX - this logic seems buggy because the offsets don't line up */
-	guint8 bitmask = tvb_get_guint8(tvb, 2);
-	guint intval = 1;
-	static const int * flags[] = {
+	uint8_t bitmask = tvb_get_uint8(tvb, 2);
+	unsigned intval = 1;
+	static int * const flags[] = {
 		&hf_packetcable_terminal_display_info_sbm_general_display,
 		&hf_packetcable_terminal_display_info_sbm_calling_number,
 		&hf_packetcable_terminal_display_info_sbm_calling_name,
@@ -433,25 +417,25 @@ static const gchar* dissect_packetcable_term_dsply_info(proto_tree* tree, tvbuff
 
 	if (bitmask & PACKETCABLE_GENERAL_DISPLAY) {
 		proto_tree_add_item(obj_tree, hf_packetcable_terminal_display_info_general_display,
-							tvb, intval, 80, ENC_ASCII|ENC_NA);
+							tvb, intval, 80, ENC_ASCII);
 		intval += 80;
 	}
 
 	if (bitmask & PACKETCABLE_CALLING_NUMBER) {
 		proto_tree_add_item(obj_tree, hf_packetcable_terminal_display_info_calling_number,
-							tvb, intval, 40, ENC_ASCII|ENC_NA);
+							tvb, intval, 40, ENC_ASCII);
 		intval += 40;
 	}
 
 	if (bitmask & PACKETCABLE_CALLING_NAME) {
 		proto_tree_add_item(obj_tree, hf_packetcable_terminal_display_info_calling_name,
-							tvb, intval, 40, ENC_ASCII|ENC_NA);
+							tvb, intval, 40, ENC_ASCII);
 		intval += 40;
 	}
 
 	if (bitmask & PACKETCABLE_MESSAGE_WAITING) {
 		proto_tree_add_item(obj_tree, hf_packetcable_terminal_display_info_message_waiting,
-							tvb, intval, 40, ENC_ASCII|ENC_NA);
+							tvb, intval, 40, ENC_ASCII);
 	}
 
 	return "";
@@ -809,7 +793,7 @@ void proto_register_packetcable(void) {
 		{ &hf_packetcable_electronic_surveillance_indication_df_df_key, { "DF-DF-Key", "packetcable_avps.esi.df_df_key", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_radius_vendor_packetcable_bcid,
 		&ett_radius_vendor_packetcable_status,
 		&ett_radius_vendor_packetcable_qos_status,
@@ -843,7 +827,7 @@ proto_reg_handoff_packetcable(void)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -4,10 +4,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -252,7 +254,7 @@ g_unix_volume_get_mount (GVolume *volume)
   GUnixVolume *unix_volume = G_UNIX_VOLUME (volume);
 
   if (unix_volume->mount != NULL)
-    return g_object_ref (unix_volume->mount);
+    return g_object_ref (G_MOUNT (unix_volume->mount));
 
   return NULL;
 }
@@ -274,6 +276,7 @@ eject_mount_done (GObject      *source,
   GTask *task = user_data;
   GError *error = NULL;
   gchar *stderr_str;
+  GUnixVolume *unix_volume;
 
   if (!g_subprocess_communicate_utf8_finish (subprocess, result, NULL, &stderr_str, &error))
     {
@@ -284,10 +287,14 @@ eject_mount_done (GObject      *source,
     {
       if (!g_subprocess_get_successful (subprocess))
         /* ...but bad exit code */
-        g_task_return_new_error (task, G_IO_ERROR, G_IO_ERROR_FAILED, "%s", stderr_str);
+        g_task_return_new_error_literal (task, G_IO_ERROR, G_IO_ERROR_FAILED, stderr_str);
       else
-        /* ...and successful exit code */
-        g_task_return_boolean (task, TRUE);
+        {
+          /* ...and successful exit code */
+          unix_volume = G_UNIX_VOLUME (g_task_get_source_object (task));
+          _g_unix_volume_monitor_update (G_UNIX_VOLUME_MONITOR (unix_volume->volume_monitor));
+          g_task_return_boolean (task, TRUE);
+        }
 
       g_free (stderr_str);
     }
@@ -300,13 +307,16 @@ eject_mount_do (GVolume              *volume,
                 GCancellable         *cancellable,
                 GAsyncReadyCallback   callback,
                 gpointer              user_data,
-                const gchar * const  *argv)
+                const gchar * const  *argv,
+                const gchar          *task_name)
 {
   GSubprocess *subprocess;
   GError *error = NULL;
   GTask *task;
 
   task = g_task_new (volume, cancellable, callback, user_data);
+  g_task_set_source_tag (task, eject_mount_do);
+  g_task_set_name (task, task_name);
 
   if (g_task_return_error_if_cancelled (task))
     {
@@ -315,7 +325,12 @@ eject_mount_do (GVolume              *volume,
     }
 
   subprocess = g_subprocess_newv (argv, G_SUBPROCESS_FLAGS_STDOUT_SILENCE | G_SUBPROCESS_FLAGS_STDERR_PIPE, &error);
-  g_assert_no_error (error);
+  if (error != NULL)
+    {
+      g_task_return_error (task, g_steal_pointer (&error));
+      g_object_unref (task);
+      return;
+    }
 
   g_subprocess_communicate_utf8_async (subprocess, NULL,
                                        g_task_get_cancellable (task),
@@ -338,7 +353,7 @@ g_unix_volume_mount (GVolume            *volume,
   else
     argv[1] = unix_volume->device_path;
 
-  eject_mount_do (volume, cancellable, callback, user_data, argv);
+  eject_mount_do (volume, cancellable, callback, user_data, argv, "[gio] mount volume");
 }
 
 static gboolean
@@ -363,7 +378,7 @@ g_unix_volume_eject (GVolume             *volume,
 
   argv[1] = unix_volume->device_path;
 
-  eject_mount_do (volume, cancellable, callback, user_data, argv);
+  eject_mount_do (volume, cancellable, callback, user_data, argv, "[gio] eject volume");
 }
 
 static gboolean

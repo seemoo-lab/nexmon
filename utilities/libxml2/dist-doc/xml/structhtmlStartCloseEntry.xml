@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="structhtmlStartCloseEntry" kind="struct" language="C++" prot="public">
+    <compoundname>htmlStartCloseEntry</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structhtmlStartCloseEntry_1ab38cafcef16df72a2338d13e7a0f677f" prot="public" static="no" mutable="no">
+        <type>const char *</type>
+        <definition>const char* oldTag</definition>
+        <argsstring></argsstring>
+        <name>oldTag</name>
+        <qualifiedname>htmlStartCloseEntry::oldTag</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/HTMLparser.c" line="907" column="16" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="907" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structhtmlStartCloseEntry_1a637b5d03b8608d31e462222d74ba368d" prot="public" static="no" mutable="no">
+        <type>const char *</type>
+        <definition>const char* newTag</definition>
+        <argsstring></argsstring>
+        <name>newTag</name>
+        <qualifiedname>htmlStartCloseEntry::newTag</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/HTMLparser.c" line="908" column="16" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="908" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/HTMLparser.c" line="906" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="906" bodyend="909"/>
+    <listofallmembers>
+      <member refid="structhtmlStartCloseEntry_1a637b5d03b8608d31e462222d74ba368d" prot="public" virt="non-virtual"><scope>htmlStartCloseEntry</scope><name>newTag</name></member>
+      <member refid="structhtmlStartCloseEntry_1ab38cafcef16df72a2338d13e7a0f677f" prot="public" virt="non-virtual"><scope>htmlStartCloseEntry</scope><name>oldTag</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

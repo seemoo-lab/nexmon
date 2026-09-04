@@ -3282,122 +3282,122 @@ msgid "%I:%M:%S %p"
 msgstr "%I:%M:%S %p"
 
 #: ../glib/gdatetime.c:228
-msgctxt "full month nami"
+msgctxt "full month name"
 msgid "January"
 msgstr "Januar"
 
 #: ../glib/gdatetime.c:230
-msgctxt "full month nami"
+msgctxt "full month name"
 msgid "February"
 msgstr "Februar"
 
 #: ../glib/gdatetime.c:232
-msgctxt "full month nami"
+msgctxt "full month name"
 msgid "March"
 msgstr "Mart"
 
 #: ../glib/gdatetime.c:234
-msgctxt "full month nami"
+msgctxt "full month name"
 msgid "April"
 msgstr "April"
 
 #: ../glib/gdatetime.c:236
-msgctxt "full month nami"
+msgctxt "full month name"
 msgid "May"
 msgstr "Maj"
 
 #: ../glib/gdatetime.c:238
-msgctxt "full month nami"
+msgctxt "full month name"
 msgid "June"
 msgstr "Juni"
 
 #: ../glib/gdatetime.c:240
-msgctxt "full month nami"
+msgctxt "full month name"
 msgid "July"
 msgstr "Juli"
 
 #: ../glib/gdatetime.c:242
-msgctxt "full month nami"
+msgctxt "full month name"
 msgid "August"
 msgstr "August"
 
 #: ../glib/gdatetime.c:244
-msgctxt "full month nami"
+msgctxt "full month name"
 msgid "September"
 msgstr "Septembar"
 
 #: ../glib/gdatetime.c:246
-msgctxt "full month nami"
+msgctxt "full month name"
 msgid "October"
 msgstr "Oktobar"
 
 #: ../glib/gdatetime.c:248
-msgctxt "full month nami"
+msgctxt "full month name"
 msgid "November"
 msgstr "Novembar"
 
 #: ../glib/gdatetime.c:250
-msgctxt "full month nami"
+msgctxt "full month name"
 msgid "December"
 msgstr "Decembar"
 
 #: ../glib/gdatetime.c:265
-msgctxt "abbreviated month nami"
+msgctxt "abbreviated month name"
 msgid "Jan"
 msgstr "Jan"
 
 #: ../glib/gdatetime.c:267
-msgctxt "abbreviated month nami"
+msgctxt "abbreviated month name"
 msgid "Feb"
 msgstr "Feb"
 
 #: ../glib/gdatetime.c:269
-msgctxt "abbreviated month nami"
+msgctxt "abbreviated month name"
 msgid "Mar"
 msgstr "Mar"
 
 #: ../glib/gdatetime.c:271
-msgctxt "abbreviated month nami"
+msgctxt "abbreviated month name"
 msgid "Apr"
 msgstr "Apr"
 
 #: ../glib/gdatetime.c:273
-msgctxt "abbreviated month nami"
+msgctxt "abbreviated month name"
 msgid "May"
 msgstr "Maj"
 
 #: ../glib/gdatetime.c:275
-msgctxt "abbreviated month nami"
+msgctxt "abbreviated month name"
 msgid "Jun"
 msgstr "Jun"
 
 #: ../glib/gdatetime.c:277
-msgctxt "abbreviated month nami"
+msgctxt "abbreviated month name"
 msgid "Jul"
 msgstr "Jul"
 
 #: ../glib/gdatetime.c:279
-msgctxt "abbreviated month nami"
+msgctxt "abbreviated month name"
 msgid "Aug"
 msgstr "Aug"
 
 #: ../glib/gdatetime.c:281
-msgctxt "abbreviated month nami"
+msgctxt "abbreviated month name"
 msgid "Sep"
 msgstr "Sep."
 
 #: ../glib/gdatetime.c:283
-msgctxt "abbreviated month nami"
+msgctxt "abbreviated month name"
 msgid "Oct"
 msgstr "Okt."
 
 #: ../glib/gdatetime.c:285
-msgctxt "abbreviated month nami"
+msgctxt "abbreviated month name"
 msgid "Nov"
 msgstr "Nov."
 
 #: ../glib/gdatetime.c:287
-msgctxt "abbreviated month nami"
+msgctxt "abbreviated month name"
 msgid "Dec"
 msgstr "Dec"
 
@@ -4582,3 +4582,99 @@ msgstr[2] "%s bajtova"
 #, c-format
 msgid "%.1f KB"
 msgstr "%.1f KB"
+
+msgctxt "full month name with day"
+msgid "January"
+msgstr "Januar"
+
+msgctxt "full month name with day"
+msgid "February"
+msgstr "Februar"
+
+msgctxt "full month name with day"
+msgid "March"
+msgstr "Mart"
+
+msgctxt "full month name with day"
+msgid "April"
+msgstr "April"
+
+msgctxt "full month name with day"
+msgid "May"
+msgstr "Maj"
+
+msgctxt "full month name with day"
+msgid "June"
+msgstr "Juni"
+
+msgctxt "full month name with day"
+msgid "July"
+msgstr "Juli"
+
+msgctxt "full month name with day"
+msgid "August"
+msgstr "August"
+
+msgctxt "full month name with day"
+msgid "September"
+msgstr "Septembar"
+
+msgctxt "full month name with day"
+msgid "October"
+msgstr "Oktobar"
+
+msgctxt "full month name with day"
+msgid "November"
+msgstr "Novembar"
+
+msgctxt "full month name with day"
+msgid "December"
+msgstr "Decembar"
+
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "Jan"
+
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "Feb"
+
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "Mar"
+
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "Apr"
+
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "Maj"
+
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "Jun"
+
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "Jul"
+
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "Aug"
+
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "Sep."
+
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "Okt."
+
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "Nov."
+
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "Dec"

@@ -57,6 +57,11 @@ $foo = $Some->thing->method ? 1 : 0;
 print __"Chained method calls without parentheses do not accept arguments!";
 # ?; Re-sync.
 
+condition() ? 1 : 0;
+
+print __"Question mark after an explicit function call is always an operator!";
+# ?;
+
 print __"Synching works.";
 EOF
 
@@ -112,7 +117,11 @@ msgstr ""
 msgid "Chained method calls without parentheses do not accept arguments!"
 msgstr ""
 
-#: xg-pl-8.pl:51
+#: xg-pl-8.pl:53
+msgid "Question mark after an explicit function call is always an operator!"
+msgstr ""
+
+#: xg-pl-8.pl:56
 msgid "Synching works."
 msgstr ""
 EOF

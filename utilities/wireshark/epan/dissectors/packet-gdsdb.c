@@ -9,190 +9,184 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/expert.h>
+
+#include <wsutil/ws_roundup.h>
 
 void proto_register_gdsdb(void);
 void proto_reg_handoff_gdsdb(void);
 
+static dissector_handle_t gdsdb_handle;
 #define TCP_PORT	3050
 
-static int proto_gdsdb = -1;
-static gint ett_gdsdb = -1;
-static int hf_gdsdb_opcode = -1;
-/* static gint ett_gdsdb_opcode = -1; */
+static int proto_gdsdb;
+static int ett_gdsdb;
+static int hf_gdsdb_opcode;
+/* static int ett_gdsdb_opcode; */
 
 /* gdsdb_dummy */
 /* gdsdb_connect */
-static int hf_gdsdb_connect_operation = -1;
-static int hf_gdsdb_connect_version = -1;
-static int hf_gdsdb_connect_client = -1;
-static int hf_gdsdb_connect_filename = -1;
-static int hf_gdsdb_connect_count = -1;
-static int hf_gdsdb_connect_userid = -1;
-static int hf_gdsdb_connect_pref = -1;
-static gint ett_gdsdb_connect_pref = -1;
-static int hf_gdsdb_connect_pref_version = -1;
-static int hf_gdsdb_connect_pref_architecture = -1;
-static int hf_gdsdb_connect_pref_mintype = -1;
-static int hf_gdsdb_connect_pref_maxtype = -1;
-static int hf_gdsdb_connect_pref_weight = -1;
+static int hf_gdsdb_connect_operation;
+static int hf_gdsdb_connect_version;
+static int hf_gdsdb_connect_client;
+static int hf_gdsdb_connect_filename;
+static int hf_gdsdb_connect_count;
+static int hf_gdsdb_connect_userid;
+static int hf_gdsdb_connect_pref;
+static int ett_gdsdb_connect_pref;
+static int hf_gdsdb_connect_pref_version;
+static int hf_gdsdb_connect_pref_architecture;
+static int hf_gdsdb_connect_pref_mintype;
+static int hf_gdsdb_connect_pref_maxtype;
+static int hf_gdsdb_connect_pref_weight;
 /* gdsdb_accept */
-static int hf_gdsdb_accept_version = -1;
-static int hf_gdsdb_accept_architecture = -1;
-static int hf_gdsdb_accept_proto_min_type = -1;
+static int hf_gdsdb_accept_version;
+static int hf_gdsdb_accept_architecture;
+static int hf_gdsdb_accept_proto_min_type;
 /* gdsdb_request */
-static int hf_gdsdb_request_type = -1;
-static int hf_gdsdb_request_object = -1;
-static int hf_gdsdb_request_partner = -1;
+static int hf_gdsdb_request_type;
+static int hf_gdsdb_request_object;
+static int hf_gdsdb_request_partner;
 /* gdsdb_attach */
-static int hf_gdsdb_attach_database_object_id = -1;
-static int hf_gdsdb_attach_database_path = -1;
-static int hf_gdsdb_attach_database_param_buf = -1;
+static int hf_gdsdb_attach_database_object_id;
+static int hf_gdsdb_attach_database_path;
+static int hf_gdsdb_attach_database_param_buf;
 /* gdsdb_compile */
-static int hf_gdsdb_compile_database = -1;
-static int hf_gdsdb_compile_blr = -1;
+static int hf_gdsdb_compile_database;
+static int hf_gdsdb_compile_blr;
 /* gdsdb_receive */
-static int hf_gdsdb_receive_request = -1;
-static int hf_gdsdb_receive_incarnation = -1;
-static int hf_gdsdb_receive_transaction = -1;
-static int hf_gdsdb_receive_msgnr = -1;
-static int hf_gdsdb_receive_messages = -1;
-static int hf_gdsdb_receive_direction = -1;
-static int hf_gdsdb_receive_offset = -1;
+static int hf_gdsdb_receive_request;
+static int hf_gdsdb_receive_incarnation;
+static int hf_gdsdb_receive_transaction;
+static int hf_gdsdb_receive_msgnr;
+static int hf_gdsdb_receive_messages;
+static int hf_gdsdb_receive_direction;
+static int hf_gdsdb_receive_offset;
 /* gdsdb_send */
-static int hf_gdsdb_send_request = -1;
-static int hf_gdsdb_send_incarnation = -1;
-static int hf_gdsdb_send_transaction = -1;
-static int hf_gdsdb_send_msgnr = -1;
-static int hf_gdsdb_send_messages = -1;
+static int hf_gdsdb_send_request;
+static int hf_gdsdb_send_incarnation;
+static int hf_gdsdb_send_transaction;
+static int hf_gdsdb_send_msgnr;
+static int hf_gdsdb_send_messages;
 /* gdsdb_response */
-static int hf_gdsdb_response_object = -1;
-static int hf_gdsdb_response_blobid = -1;
-static int hf_gdsdb_response_datasize = -1;
-static int hf_gdsdb_response_data = -1;
+static int hf_gdsdb_response_object;
+static int hf_gdsdb_response_blobid;
+static int hf_gdsdb_response_datasize;
+static int hf_gdsdb_response_data;
 /* gdsdb_status_vector */
-static int hf_gdsdb_status_vector_arg = -1;
-static int hf_gdsdb_status_vector_error_code = -1;
-static int hf_gdsdb_status_vector_number = -1;
-static int hf_gdsdb_status_vector_string = -1;
-static int hf_gdsdb_status_vector_sql_state = -1;
+static int hf_gdsdb_status_vector_arg;
+static int hf_gdsdb_status_vector_error_code;
+static int hf_gdsdb_status_vector_number;
+static int hf_gdsdb_status_vector_string;
+static int hf_gdsdb_status_vector_sql_state;
 /* gdsdb_transact */
-static int hf_gdsdb_transact_database = -1;
-static int hf_gdsdb_transact_transaction = -1;
+static int hf_gdsdb_transact_database;
+static int hf_gdsdb_transact_transaction;
 #if 0
-static int hf_gdsdb_transact_messages = -1;
+static int hf_gdsdb_transact_messages;
 #endif
 /* gdsdb_transact_response */
-static int hf_gdsdb_transactresponse_messages = -1;
+static int hf_gdsdb_transactresponse_messages;
 /* gdsdb_open_blob2 */
-static int hf_gdsdb_openblob2_bpb = -1;
+static int hf_gdsdb_openblob2_bpb;
 /* gdsdb_open_blob */
-static int hf_gdsdb_openblob_transaction = -1;
-static int hf_gdsdb_openblob_id = -1;
+static int hf_gdsdb_openblob_transaction;
+static int hf_gdsdb_openblob_id;
 #if 0
 /* gdsdb_segment */
-static int hf_gdsdb_segment_blob = -1;
-static int hf_gdsdb_segment_length = -1;
-static int hf_gdsdb_segment_segment = -1;
+static int hf_gdsdb_segment_blob;
+static int hf_gdsdb_segment_length;
+static int hf_gdsdb_segment_segment;
 /* gdsdb_seek_blob */
-static int hf_gdsdb_seekblob_blob = -1;
-static int hf_gdsdb_seekblob_mode = -1;
+static int hf_gdsdb_seekblob_blob;
+static int hf_gdsdb_seekblob_mode;
 #endif
 /* gdsdb_reconnect */
-static int hf_gdsdb_reconnect_handle = -1;
-static int hf_gdsdb_reconnect_database_size = -1;
-static int hf_gdsdb_reconnect_database = -1;
+static int hf_gdsdb_reconnect_handle;
+static int hf_gdsdb_reconnect_database_size;
+static int hf_gdsdb_reconnect_database;
 /* gdsdb_info & gdsdb_service_start */
-static int hf_gdsdb_info_object = -1;
-static int hf_gdsdb_info_incarnation = -1;
-static int hf_gdsdb_info_items = -1;
-static int hf_gdsdb_info_recv_items = -1;
-static int hf_gdsdb_info_buffer_length = -1;
+static int hf_gdsdb_info_object;
+static int hf_gdsdb_info_incarnation;
+static int hf_gdsdb_info_items;
+static int hf_gdsdb_info_recv_items;
+static int hf_gdsdb_info_buffer_length;
 /* gdsdb_release */
-static int hf_gdsdb_release_object = -1;
+static int hf_gdsdb_release_object;
 #if 0
 /* gdsdb_prepare2 */
-static int hf_gdsdb_prepare2_transaction = -1;
+static int hf_gdsdb_prepare2_transaction;
 /* gdsdb_event & gdsdb_cancel_events */
-static int hf_gdsdb_event_database = -1;
-static int hf_gdsdb_event_items = -1;
-static int hf_gdsdb_event_ast = -1;
-static int hf_gdsdb_event_arg = -1;
-static int hf_gdsdb_event_rid = -1;
+static int hf_gdsdb_event_database;
+static int hf_gdsdb_event_items;
+static int hf_gdsdb_event_ast;
+static int hf_gdsdb_event_arg;
+static int hf_gdsdb_event_rid;
 /* gdsdb_ddl */
-static int hf_gdsdb_ddl_database = -1;
-static int hf_gdsdb_ddl_transaction = -1;
-static int hf_gdsdb_ddl_blr = -1;
+static int hf_gdsdb_ddl_database;
+static int hf_gdsdb_ddl_transaction;
+static int hf_gdsdb_ddl_blr;
 /* gdsdb_slice */
-static int hf_gdsdb_slice_transaction = -1;
-static int hf_gdsdb_slice_id = -1;
-static int hf_gdsdb_slice_sdl = -1;
-static int hf_gdsdb_slice_parameters = -1;
+static int hf_gdsdb_slice_transaction;
+static int hf_gdsdb_slice_id;
+static int hf_gdsdb_slice_sdl;
+static int hf_gdsdb_slice_parameters;
 /* gdsdb_slice_response */
-static int hf_gdsdb_sliceresponse_length = -1;
+static int hf_gdsdb_sliceresponse_length;
 #endif
 /* gdsdb_execute */
-static int hf_gdsdb_execute_statement = -1;
-static int hf_gdsdb_execute_transaction = -1;
-static int hf_gdsdb_execute_message_number = -1;
-static int hf_gdsdb_execute_messages = -1;
+static int hf_gdsdb_execute_statement;
+static int hf_gdsdb_execute_transaction;
+static int hf_gdsdb_execute_message_number;
+static int hf_gdsdb_execute_messages;
 #if 0
 /* gdsdb_execute2 */
-static int hf_gdsdb_execute_outblr = -1;
-static int hf_gdsdb_execute_outmsgnr = -1;
+static int hf_gdsdb_execute_outblr;
+static int hf_gdsdb_execute_outmsgnr;
 /* gdsdb_exec_immediate2 */
-static int hf_gdsdb_prepare2_blr = -1;
-static int hf_gdsdb_prepare2_number = -1;
-static int hf_gdsdb_prepare2_messages = -1;
-static int hf_gdsdb_prepare2_outblr = -1;
-static int hf_gdsdb_prepare2_outmsgnr = -1;
+static int hf_gdsdb_prepare2_blr;
+static int hf_gdsdb_prepare2_number;
+static int hf_gdsdb_prepare2_messages;
+static int hf_gdsdb_prepare2_outblr;
+static int hf_gdsdb_prepare2_outmsgnr;
 #endif
 /* gdsdb_prepare */
-static int hf_gdsdb_prepare_transaction = -1;
-static int hf_gdsdb_prepare_statement = -1;
-static int hf_gdsdb_prepare_dialect = -1;
-static int hf_gdsdb_prepare_querystr = -1;
-static int hf_gdsdb_prepare_bufferlength = -1;
+static int hf_gdsdb_prepare_transaction;
+static int hf_gdsdb_prepare_statement;
+static int hf_gdsdb_prepare_dialect;
+static int hf_gdsdb_prepare_querystr;
+static int hf_gdsdb_prepare_bufferlength;
 #if 0
 /* gdsdb_fetch */
-static int hf_gdsdb_fetch_statement = -1;
-static int hf_gdsdb_fetch_message_number = -1;
-static int hf_gdsdb_fetch_messages = -1;
+static int hf_gdsdb_fetch_statement;
+static int hf_gdsdb_fetch_message_number;
+static int hf_gdsdb_fetch_messages;
 /* gdsdb_fetch_response */
-static int hf_gdsdb_fetchresponse_status = -1;
-static int hf_gdsdb_fetchresponse_messages = -1;
+static int hf_gdsdb_fetchresponse_status;
+static int hf_gdsdb_fetchresponse_messages;
 #endif
 /* gdsdb_free_statement */
-static int hf_gdsdb_free_statement = -1;
-static int hf_gdsdb_free_option = -1;
+static int hf_gdsdb_free_statement;
+static int hf_gdsdb_free_option;
 #if 0
 /* gdsdb_insert */
-static int hf_gdsdb_insert_statement = -1;
-static int hf_gdsdb_insert_message_number = -1;
-static int hf_gdsdb_insert_messages = -1;
+static int hf_gdsdb_insert_statement;
+static int hf_gdsdb_insert_message_number;
+static int hf_gdsdb_insert_messages;
 /* gdsdb_cursor */
-static int hf_gdsdb_cursor_statement = -1;
-static int hf_gdsdb_cursor_type = -1;
+static int hf_gdsdb_cursor_statement;
+static int hf_gdsdb_cursor_type;
 /* gdsdb_sql_response */
-static int hf_gdsdb_sqlresponse_messages = -1;
+static int hf_gdsdb_sqlresponse_messages;
 #endif
+
+static expert_field ei_gdsdb_invalid_length;
 
 enum
 {
@@ -474,7 +468,7 @@ static const value_string gdsdb_arg_types[] = {
 
 static int dword_align(int length)
 {
-	return (length + (4-(length&3)));
+	return WS_ROUNDUP_4(length);
 }
 
 static int add_uint_string(proto_tree *tree, int hf_string, tvbuff_t *tvb, int offset)
@@ -486,13 +480,18 @@ static int add_uint_string(proto_tree *tree, int hf_string, tvbuff_t *tvb, int o
 						offset, 4, ENC_ASCII|ENC_BIG_ENDIAN);
 	length = dword_align(tvb_get_ntohl(tvb, offset))+4;
 	proto_item_set_len(ti, length);
-	return offset + length;
+	int ret_offset = offset + length;
+	if (length < 4 || ret_offset < offset) {
+		expert_add_info_format(NULL, ti, &ei_gdsdb_invalid_length, "Invalid length: %d", length);
+		return tvb_reported_length(tvb);
+	}
+	return ret_offset;
 }
 
 static int add_byte_array(proto_tree *tree, int hf_len, int hf_byte, tvbuff_t *tvb, int offset)
 {
 	proto_item* ti;
-	guint32 length;
+	uint32_t length;
 
 	proto_tree_add_item_ret_uint(tree, hf_len, tvb,
 						offset, 4, ENC_BIG_ENDIAN, &length);
@@ -550,7 +549,7 @@ gdsdb_connect(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 	proto_tree_add_item(tree, hf_gdsdb_connect_count, tvb,
 							offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
-	col_append_fstr(pinfo->cinfo, COL_INFO, ": %s", tvb_format_text(tvb, offset+4, tvb_get_ntohl(tvb, offset)));
+	col_append_fstr(pinfo->cinfo, COL_INFO, ": %s", tvb_format_text(pinfo->pool, tvb, offset+4, tvb_get_ntohl(tvb, offset)));
 	offset = add_uint_string(tree, hf_gdsdb_connect_userid, tvb, offset);
 
 	for(i=0;i<count;i++){
@@ -642,7 +641,7 @@ gdsdb_attach(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 	proto_tree_add_item(tree, hf_gdsdb_attach_database_object_id, tvb, offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
 
-	col_append_fstr(pinfo->cinfo, COL_INFO, ": %s", tvb_format_text(tvb, offset+4, tvb_get_ntohl(tvb, offset)));
+	col_append_fstr(pinfo->cinfo, COL_INFO, ": %s", tvb_format_text(pinfo->pool, tvb, offset+4, tvb_get_ntohl(tvb, offset)));
 	offset = add_uint_string(tree, hf_gdsdb_attach_database_path, tvb, offset);
 	offset = add_uint_string(tree, hf_gdsdb_attach_database_param_buf, tvb, offset);
 
@@ -738,7 +737,7 @@ gdsdb_send(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset)
 static int
 gdsdb_status_vector(proto_tree *tree, tvbuff_t *tvb, int offset)
 {
-	guint32 arg;
+	uint32_t arg;
 	while (tvb_reported_length_remaining(tvb, offset) >= 4)
 	{
 		proto_tree_add_item_ret_uint(tree, hf_gdsdb_status_vector_arg, tvb,
@@ -778,7 +777,7 @@ gdsdb_response(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offs
 {
 	int total_length = 16;
 	int length = tvb_reported_length_remaining(tvb, offset);
-	guint32 size_length;
+	uint32_t size_length;
 
 	/* Calculate if we need more data */
 	if (length < total_length) {
@@ -943,7 +942,7 @@ gdsdb_reconnect(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int off
 static int
 gdsdb_info(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset)
 {
-	guint opcode;
+	unsigned opcode;
 	int total_length = 16;
 	int length = tvb_reported_length_remaining(tvb, offset);
 
@@ -1181,7 +1180,7 @@ gdsdb_prepare(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 	proto_tree_add_item(tree, hf_gdsdb_prepare_dialect, tvb,
 							offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
-	col_append_fstr(pinfo->cinfo, COL_INFO, ": %s", tvb_format_text(tvb, offset+4, tvb_get_ntohl(tvb, offset)));
+	col_append_fstr(pinfo->cinfo, COL_INFO, ": %s", tvb_format_text(pinfo->pool, tvb, offset+4, tvb_get_ntohl(tvb, offset)));
 	offset = add_uint_string(tree, hf_gdsdb_prepare_querystr, tvb, offset);
 
 	proto_tree_add_item(tree, hf_gdsdb_prepare_bufferlength, tvb,
@@ -1390,7 +1389,7 @@ dissect_gdsdb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
 {
 	proto_item  *ti;
 	proto_tree  *gdsdb_tree;
-	guint        opcode;
+	unsigned     opcode;
 	int          offset = 0;
 
 	if (tvb_reported_length(tvb) < 4)
@@ -1411,7 +1410,7 @@ dissect_gdsdb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
 			return 0;
 
 		col_append_sep_str(pinfo->cinfo, COL_INFO, ", ",
-				val_to_str(opcode, gdsdb_opcode, "Unknown opcode %u"));
+				val_to_str(pinfo->pool, opcode, gdsdb_opcode, "Unknown opcode %u"));
 
 		ti = proto_tree_add_item(tree, proto_gdsdb, tvb, offset, -1, ENC_NA);
 		gdsdb_tree = proto_item_add_subtree(ti, ett_gdsdb);
@@ -1419,7 +1418,12 @@ dissect_gdsdb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
 								offset, 4, ENC_BIG_ENDIAN);
 
 		/* opcode < op_max */
+		int old_offset = offset;
 		offset = gdsdb_handle_opcode[opcode](tvb, pinfo, gdsdb_tree, offset+4);
+		if (offset <= old_offset) {
+			expert_add_info(NULL, ti, &ei_gdsdb_invalid_length);
+			return tvb_reported_length_remaining(tvb, old_offset);
+		}
 		if (offset < 0)
 		{
 			/* But at this moment we don't know how much we will need */
@@ -1594,7 +1598,7 @@ proto_register_gdsdb(void)
 		},
 		{ &hf_gdsdb_receive_offset,
 			{ "Scroll offset", "gdsdb.receive.offset",
-			FT_UINT32, BASE_DEC, NULL, 0x0,
+			FT_UINT64, BASE_DEC, NULL, 0x0,
 			NULL, HFILL }
 		},
 		/* gdsdb_send */
@@ -2028,34 +2032,36 @@ proto_register_gdsdb(void)
 #endif
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_gdsdb,
 		/* &ett_gdsdb_opcode, */
 		&ett_gdsdb_connect_pref
 	};
 
-	proto_gdsdb = proto_register_protocol(
-		"Firebird SQL Database Remote Protocol",
-		"FB/IB GDS DB", "gdsdb");
+/* Expert info */
+	static ei_register_info ei[] = {
+		{ &ei_gdsdb_invalid_length, { "gdsdb.invalid_length", PI_MALFORMED, PI_ERROR,
+			"Invalid length", EXPFILL }},
+	};
+
+	proto_gdsdb = proto_register_protocol("Firebird SQL Database Remote Protocol", "FB/IB GDS DB", "gdsdb");
 
 	proto_register_field_array(proto_gdsdb, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+	expert_module_t *expert_gdsdb = expert_register_protocol(proto_gdsdb);
+	expert_register_field_array(expert_gdsdb, ei, array_length(ei));
+
+	gdsdb_handle = register_dissector("gdsdb", dissect_gdsdb, proto_gdsdb);
 }
 
 void
 proto_reg_handoff_gdsdb(void)
 {
-	/* Main dissector */
-
-	dissector_handle_t gdsdb_handle;
-
-	gdsdb_handle = create_dissector_handle(dissect_gdsdb,
-								 proto_gdsdb);
-	dissector_add_uint("tcp.port", TCP_PORT, gdsdb_handle);
+	dissector_add_uint_with_preference("tcp.port", TCP_PORT, gdsdb_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

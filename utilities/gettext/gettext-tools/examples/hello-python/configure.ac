@@ -3,9 +3,9 @@ dnl This file is in the public domain.
 dnl
 dnl Configuration file - processed by autoconf.
 
-AC_INIT
-AC_CONFIG_SRCDIR(hello.py.in)
-AM_INIT_AUTOMAKE(hello-python, 0)
+AC_INIT([hello-python], [0])
+AC_CONFIG_SRCDIR([hello.py.in])
+AM_INIT_AUTOMAKE([1.11])
 
 dnl Check for availability of the Python interpreter.
 AM_PATH_PYTHON
@@ -24,9 +24,9 @@ fi
 save_prefix="$prefix"
 prefix="$final_prefix"
 eval "datarootdir=\"${datarootdir}\""
-eval "localedir=\"${datadir}/locale\""
+eval "localedir=\"${datarootdir}/locale\""
 prefix="$save_prefix"
-AC_SUBST(localedir)
+AC_SUBST([localedir])
 
 dnl Support for the po directory.
 AM_PO_SUBDIRS

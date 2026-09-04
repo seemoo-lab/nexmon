@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/netfilter/queue.h	Netfilter Queue
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2007, 2008 Patrick McHardy <kaber@trash.net>
  */
 
@@ -54,7 +48,7 @@ extern enum nfnl_queue_copy_mode nfnl_queue_get_copy_mode(const struct nfnl_queu
 
 extern char *			nfnl_queue_copy_mode2str(enum nfnl_queue_copy_mode,
 							 char *, size_t);
-extern enum nfnl_queue_copy_mode nfnl_queue_str2copy_mode(const char *);
+extern int			nfnl_queue_str2copy_mode(const char *);
 
 extern void			nfnl_queue_set_copy_range(struct nfnl_queue *,
 							  uint32_t);

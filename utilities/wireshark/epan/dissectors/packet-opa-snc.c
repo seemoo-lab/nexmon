@@ -6,26 +6,16 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/expert.h>
-#include <wiretap/erf.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
+#include <wiretap/erf_record.h>
 
 void proto_reg_handoff_opa_snc(void);
 void proto_register_opa_snc(void);
@@ -70,39 +60,39 @@ static const value_string vals_opa_snc_rhf_rcvtype[] = {
 };
 
 /* Wireshark ID */
-static gint proto_opa_snc = -1;
+static int proto_opa_snc;
 
 /* Variables to hold expansion values between packets */
-static gint ett_snc = -1;
-static gint ett_sncpbc = -1;
-static gint ett_sncrhf = -1;
+static int ett_snc;
+static int ett_sncpbc;
+static int ett_sncrhf;
 
 /* SnC Fields */
-static gint hf_opa_snc_direction = -1;
-static gint hf_opa_snc_portnumber = -1;
-static gint hf_opa_snc_Reserved16 = -1;
-static gint hf_opa_snc_Reserved32 = -1;
-static gint hf_opa_snc_Reserved64 = -1;
-static gint hf_opa_snc_pbc_reserved_63_48 = -1;
-static gint hf_opa_snc_pbc_pbcstaticratecontrolcnt = -1;
-static gint hf_opa_snc_pbc_pbcintr = -1;
-static gint hf_opa_snc_pbc_pbcdcinfo = -1;
-static gint hf_opa_snc_pbc_pbctestebp = -1;
-static gint hf_opa_snc_pbc_pbcpacketbypass = -1;
-static gint hf_opa_snc_pbc_pbcinserthcrc = -1;
-static gint hf_opa_snc_pbc_pbccreditreturn = -1;
-static gint hf_opa_snc_pbc_pbcinsertbypassicrc = -1;
-static gint hf_opa_snc_pbc_pbctestbadicrc = -1;
-static gint hf_opa_snc_pbc_pbcfecn = -1;
-static gint hf_opa_snc_pbc_reserved_21_16 = -1;
-static gint hf_opa_snc_pbc_pbcvl = -1;
-static gint hf_opa_snc_pbc_pbclengthdws = -1;
-static const gint *_snc_pbc_1[] = {
+static int hf_opa_snc_direction;
+static int hf_opa_snc_portnumber;
+static int hf_opa_snc_Reserved16;
+static int hf_opa_snc_Reserved32;
+static int hf_opa_snc_Reserved64;
+static int hf_opa_snc_pbc_reserved_63_48;
+static int hf_opa_snc_pbc_pbcstaticratecontrolcnt;
+static int hf_opa_snc_pbc_pbcintr;
+static int hf_opa_snc_pbc_pbcdcinfo;
+static int hf_opa_snc_pbc_pbctestebp;
+static int hf_opa_snc_pbc_pbcpacketbypass;
+static int hf_opa_snc_pbc_pbcinserthcrc;
+static int hf_opa_snc_pbc_pbccreditreturn;
+static int hf_opa_snc_pbc_pbcinsertbypassicrc;
+static int hf_opa_snc_pbc_pbctestbadicrc;
+static int hf_opa_snc_pbc_pbcfecn;
+static int hf_opa_snc_pbc_reserved_21_16;
+static int hf_opa_snc_pbc_pbcvl;
+static int hf_opa_snc_pbc_pbclengthdws;
+static int * const _snc_pbc_1[] = {
     &hf_opa_snc_pbc_reserved_63_48,
     &hf_opa_snc_pbc_pbcstaticratecontrolcnt,
     NULL
 };
-static const gint *_snc_pbc_2[] = {
+static int * const _snc_pbc_2[] = {
     &hf_opa_snc_pbc_pbcintr,
     &hf_opa_snc_pbc_pbcdcinfo,
     &hf_opa_snc_pbc_pbctestebp,
@@ -117,24 +107,24 @@ static const gint *_snc_pbc_2[] = {
     &hf_opa_snc_pbc_pbclengthdws,
     NULL
 };
-static gint hf_opa_snc_rhf_icrcerr = -1;
-static gint hf_opa_snc_rhf_reserved_62 = -1;
-static gint hf_opa_snc_rhf_eccerr = -1;
-static gint hf_opa_snc_rhf_lenerr = -1;
-static gint hf_opa_snc_rhf_tiderr = -1;
-static gint hf_opa_snc_rhf_rcvtypeerr = -1;
-static gint hf_opa_snc_rhf_dcerr = -1;
-static gint hf_opa_snc_rhf_dcuncerr = -1;
-static gint hf_opa_snc_rhf_khdrlenerr = -1;
-static gint hf_opa_snc_rhf_hdrqoffset = -1;
-static gint hf_opa_snc_rhf_egroffset = -1;
-static gint hf_opa_snc_rhf_rcvseq = -1;
-static gint hf_opa_snc_rhf_dcinfo = -1;
-static gint hf_opa_snc_rhf_egrindex = -1;
-static gint hf_opa_snc_rhf_useegrbfr = -1;
-static gint hf_opa_snc_rhf_rcvtype = -1;
-static gint hf_opa_snc_rhf_pktlen = -1;
-static const gint *_snc_rhf_1[] = {
+static int hf_opa_snc_rhf_icrcerr;
+static int hf_opa_snc_rhf_reserved_62;
+static int hf_opa_snc_rhf_eccerr;
+static int hf_opa_snc_rhf_lenerr;
+static int hf_opa_snc_rhf_tiderr;
+static int hf_opa_snc_rhf_rcvtypeerr;
+static int hf_opa_snc_rhf_dcerr;
+static int hf_opa_snc_rhf_dcuncerr;
+static int hf_opa_snc_rhf_khdrlenerr;
+static int hf_opa_snc_rhf_hdrqoffset;
+static int hf_opa_snc_rhf_egroffset;
+static int hf_opa_snc_rhf_rcvseq;
+static int hf_opa_snc_rhf_dcinfo;
+static int hf_opa_snc_rhf_egrindex;
+static int hf_opa_snc_rhf_useegrbfr;
+static int hf_opa_snc_rhf_rcvtype;
+static int hf_opa_snc_rhf_pktlen;
+static int * const _snc_rhf_1[] = {
     &hf_opa_snc_rhf_icrcerr,
     &hf_opa_snc_rhf_reserved_62,
     &hf_opa_snc_rhf_eccerr,
@@ -148,7 +138,7 @@ static const gint *_snc_rhf_1[] = {
     &hf_opa_snc_rhf_egroffset,
     NULL
 };
-static const gint *_snc_rhf_2[] = {
+static int * const _snc_rhf_2[] = {
     &hf_opa_snc_rhf_rcvseq,
     &hf_opa_snc_rhf_dcinfo,
     &hf_opa_snc_rhf_egrindex,
@@ -158,15 +148,15 @@ static const gint *_snc_rhf_2[] = {
     NULL
 };
 
-static expert_field ei_opa_snc_nobypass = EI_INIT;
+static expert_field ei_opa_snc_nobypass;
 
-static void cf_opa_snc_dw_to_b(gchar *buf, guint32 value)
+static void cf_opa_snc_dw_to_b(char *buf, uint32_t value)
 {
-    g_snprintf(buf, ITEM_LABEL_LENGTH, "%u DWORDS, %u Bytes", value, value * 4);
+    snprintf(buf, ITEM_LABEL_LENGTH, "%u DWORDS, %u Bytes", value, value * 4);
 }
-static void cf_opa_snc_qw_to_b(gchar *buf, guint32 value)
+static void cf_opa_snc_qw_to_b(char *buf, uint32_t value)
 {
-    g_snprintf(buf, ITEM_LABEL_LENGTH, "%u QWORDS, %u Bytes", value, value * 8);
+    snprintf(buf, ITEM_LABEL_LENGTH, "%u QWORDS, %u Bytes", value, value * 8);
 }
 
 /* Dissector Declarations */
@@ -175,11 +165,11 @@ static dissector_handle_t opa_9b_handle;
 
 static int dissect_opa_snc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    gint offset = 0;    /* Current Offset */
+    int offset = 0;    /* Current Offset */
 
-    gboolean isBypass = TRUE;  /* Tracks if we are parsing a bypass packet or Not */
-    guint8 Direction = tvb_get_guint8(tvb, offset + 1);
-    guint64 RHF_PBC;
+    bool isBypass = true;  /* Tracks if we are parsing a bypass packet or Not */
+    uint8_t Direction = tvb_get_uint8(tvb, offset + 1);
+    uint64_t RHF_PBC;
     proto_item *SnC_item;
     proto_tree * SnC_tree,*PBC_tree,*RHF_tree;
 
@@ -195,9 +185,9 @@ static int dissect_opa_snc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     offset += 1;
     proto_tree_add_item(SnC_tree, hf_opa_snc_direction, tvb, offset, 1, ENC_LITTLE_ENDIAN);
     offset += 1;
-    proto_tree_add_item(SnC_tree, hf_opa_snc_Reserved16, tvb, offset, 2, ENC_NA);
+    proto_tree_add_item(SnC_tree, hf_opa_snc_Reserved16, tvb, offset, 2, ENC_LITTLE_ENDIAN);
     offset += 2;
-    proto_tree_add_item(SnC_tree, hf_opa_snc_Reserved32, tvb, offset, 4, ENC_NA);
+    proto_tree_add_item(SnC_tree, hf_opa_snc_Reserved32, tvb, offset, 4, ENC_LITTLE_ENDIAN);
     offset += 4;
 
     RHF_PBC = tvb_get_letoh64(tvb, offset);
@@ -215,11 +205,11 @@ static int dissect_opa_snc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
         isBypass = (((RHF_PBC >> 12) & 7) == 4);
         break;
     case 2:     /* For use with internal debugging tools */
-        proto_tree_add_item(SnC_tree, hf_opa_snc_Reserved64, tvb, offset, 8, ENC_NA);
-        isBypass = FALSE;
+        proto_tree_add_item(SnC_tree, hf_opa_snc_Reserved64, tvb, offset, 8, ENC_LITTLE_ENDIAN);
+        isBypass = false;
         break;
     default:
-        isBypass = FALSE;
+        isBypass = false;
     }
     offset += 8;
 
@@ -324,7 +314,7 @@ void proto_register_opa_snc(void)
         },
         { &hf_opa_snc_rhf_eccerr, {
                 "Internal memory Uncorrectable error", "opa.snc.rhf.eccerr",
-                FT_BOOLEAN, 32, TFS(&tfs_error_ok), 0x200000000, NULL, HFILL }
+                FT_BOOLEAN, 32, TFS(&tfs_error_ok), 0x20000000, NULL, HFILL }
         },
         { &hf_opa_snc_rhf_lenerr, {
                 "Length Error", "opa.snc.rhf.lenerr",
@@ -384,7 +374,7 @@ void proto_register_opa_snc(void)
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_snc,
         &ett_sncpbc,
         &ett_sncrhf,
@@ -397,9 +387,7 @@ void proto_register_opa_snc(void)
         }
     };
 
-    proto_opa_snc = proto_register_protocol(
-        "Intel Omni-Path SnC - Omni-Path Snoop and Capture MetaData Header",
-        "OPA SnC", "opa.snc");
+    proto_opa_snc = proto_register_protocol("Intel Omni-Path SnC - Omni-Path Snoop and Capture MetaData Header", "OPA SnC", "opa.snc");
     opa_snc_handle = register_dissector("opa.snc", dissect_opa_snc, proto_opa_snc);
 
     proto_register_field_array(proto_opa_snc, hf, array_length(hf));

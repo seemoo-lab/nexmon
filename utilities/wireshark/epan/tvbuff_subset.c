@@ -1,4 +1,4 @@
-/* tvbuff_real.c
+/* tvbuff_subset.c
  *
  * Copyright (c) 2000 by Gilbert Ramirez <gram@alumni.rice.edu>
  *
@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,9 +21,9 @@ typedef struct {
 	struct tvbuff	*tvb;
 
 	/** The offset of 'tvb' to which I'm privy */
-	guint		offset;
+	unsigned		offset;
 	/** The length of 'tvb' to which I'm privy */
-	guint		length;
+	unsigned		length;
 
 } tvb_backing_t;
 
@@ -45,8 +33,8 @@ struct tvb_subset {
 	tvb_backing_t	subset;
 };
 
-static guint
-subset_offset(const tvbuff_t *tvb, const guint counter)
+static unsigned
+subset_offset(const tvbuff_t *tvb, const unsigned counter)
 {
 	const struct tvb_subset *subset_tvb = (const struct tvb_subset *) tvb;
 	const tvbuff_t *member = subset_tvb->subset.tvb;
@@ -55,39 +43,59 @@ subset_offset(const tvbuff_t *tvb, const guint counter)
 }
 
 static void *
-subset_memcpy(tvbuff_t *tvb, void *target, guint abs_offset, guint abs_length)
+subset_memcpy(tvbuff_t *tvb, void *target, unsigned abs_offset, unsigned abs_length)
 {
 	struct tvb_subset *subset_tvb = (struct tvb_subset *) tvb;
 
 	return tvb_memcpy(subset_tvb->subset.tvb, target, subset_tvb->subset.offset + abs_offset, abs_length);
 }
 
-static const guint8 *
-subset_get_ptr(tvbuff_t *tvb, guint abs_offset, guint abs_length)
+static const uint8_t *
+subset_get_ptr(tvbuff_t *tvb, unsigned abs_offset, unsigned abs_length)
 {
 	struct tvb_subset *subset_tvb = (struct tvb_subset *) tvb;
 
 	return tvb_get_ptr(subset_tvb->subset.tvb, subset_tvb->subset.offset + abs_offset, abs_length);
 }
 
-static gint
-subset_find_guint8(tvbuff_t *tvb, guint abs_offset, guint limit, guint8 needle)
+static int
+subset_find_uint8(tvbuff_t *tvb, unsigned abs_offset, unsigned limit, uint8_t needle)
 {
 	struct tvb_subset *subset_tvb = (struct tvb_subset *) tvb;
+	int result;
 
-	return tvb_find_guint8(subset_tvb->subset.tvb, subset_tvb->subset.offset + abs_offset, limit, needle);
+	result = tvb_find_uint8(subset_tvb->subset.tvb, subset_tvb->subset.offset + abs_offset, limit, needle);
+	if (result == -1)
+		return result;
+
+	/*
+	 * Make the result relative to the beginning of the tvbuff we
+	 * were handed, *not* relative to the beginning of its parent
+	 * tvbuff.
+	 */
+	return result - subset_tvb->subset.offset;
 }
 
-static gint
-subset_pbrk_guint8(tvbuff_t *tvb, guint abs_offset, guint limit, const ws_mempbrk_pattern* pattern, guchar *found_needle)
+static int
+subset_pbrk_uint8(tvbuff_t *tvb, unsigned abs_offset, unsigned limit, const ws_mempbrk_pattern* pattern, unsigned char *found_needle)
 {
 	struct tvb_subset *subset_tvb = (struct tvb_subset *) tvb;
+	int result;
 
-	return tvb_ws_mempbrk_pattern_guint8(subset_tvb->subset.tvb, subset_tvb->subset.offset + abs_offset, limit, pattern, found_needle);
+	result = tvb_ws_mempbrk_pattern_uint8(subset_tvb->subset.tvb, subset_tvb->subset.offset + abs_offset, limit, pattern, found_needle);
+	if (result == -1)
+		return result;
+
+	/*
+	 * Make the result relative to the beginning of the tvbuff we
+	 * were handed, *not* relative to the beginning of its parent
+	 * tvbuff.
+	 */
+	return result - subset_tvb->subset.offset;
 }
 
 static tvbuff_t *
-subset_clone(tvbuff_t *tvb, guint abs_offset, guint abs_length)
+subset_clone(tvbuff_t *tvb, unsigned abs_offset, unsigned abs_length)
 {
 	struct tvb_subset *subset_tvb = (struct tvb_subset *) tvb;
 
@@ -101,14 +109,14 @@ static const struct tvb_ops tvb_subset_ops = {
 	subset_offset,        /* offset */
 	subset_get_ptr,       /* get_ptr */
 	subset_memcpy,        /* memcpy */
-	subset_find_guint8,   /* find_guint8 */
-	subset_pbrk_guint8,   /* pbrk_guint8 */
+	subset_find_uint8,   /* find_uint8 */
+	subset_pbrk_uint8,   /* pbrk_uint8 */
 	subset_clone,         /* clone */
 };
 
 static tvbuff_t *
-tvb_new_with_subset(tvbuff_t *backing, const gint reported_length,
-    const guint subset_tvb_offset, const guint subset_tvb_length)
+tvb_new_with_subset(tvbuff_t *backing, const unsigned reported_length,
+    const unsigned subset_tvb_offset, const unsigned subset_tvb_length)
 {
 	tvbuff_t *tvb = tvb_new(&tvb_subset_ops);
 	struct tvb_subset *subset_tvb = (struct tvb_subset *) tvb;
@@ -118,15 +126,15 @@ tvb_new_with_subset(tvbuff_t *backing, const gint reported_length,
 
 	subset_tvb->subset.tvb	     = backing;
 	tvb->length		     = subset_tvb_length;
+	/*
+	 * The contained length must not exceed what remains in the
+	 * backing tvbuff.
+	 */
+	tvb->contained_length        = MIN(reported_length, backing->contained_length - subset_tvb_offset);
 	tvb->flags		     = backing->flags;
 
-	if (reported_length == -1) {
-		tvb->reported_length = backing->reported_length - subset_tvb_offset;
-	}
-	else {
-		tvb->reported_length = reported_length;
-	}
-	tvb->initialized	     = TRUE;
+	tvb->reported_length	     = reported_length;
+	tvb->initialized	     = true;
 
 	/* Optimization. If the backing buffer has a pointer to contiguous, real data,
 	 * then we can point directly to our starting offset in that buffer */
@@ -144,11 +152,12 @@ tvb_new_with_subset(tvbuff_t *backing, const gint reported_length,
 }
 
 tvbuff_t *
-tvb_new_subset(tvbuff_t *backing, const gint backing_offset, const gint backing_length, const gint reported_length)
+tvb_new_subset_length_caplen(tvbuff_t *backing, const int backing_offset, const int backing_length, const int reported_length)
 {
 	tvbuff_t *tvb;
-	guint	  subset_tvb_offset;
-	guint	  subset_tvb_length;
+	unsigned	  subset_tvb_offset;
+	unsigned	  subset_tvb_length;
+	unsigned	  actual_reported_length;
 
 	DISSECTOR_ASSERT(backing && backing->initialized);
 
@@ -158,7 +167,19 @@ tvb_new_subset(tvbuff_t *backing, const gint backing_offset, const gint backing_
 			        &subset_tvb_offset,
 			        &subset_tvb_length);
 
-	tvb = tvb_new_with_subset(backing, reported_length,
+	if (reported_length == -1)
+		actual_reported_length = backing->reported_length - subset_tvb_offset;
+	else
+		actual_reported_length = (unsigned)reported_length;
+
+	/*
+	 * Cut the captured length short, so it doesn't go past the subset's
+	 * reported length.
+	 */
+	if (subset_tvb_length > actual_reported_length)
+		subset_tvb_length = actual_reported_length;
+
+	tvb = tvb_new_with_subset(backing, actual_reported_length,
 	    subset_tvb_offset, subset_tvb_length);
 
 	tvb_add_to_chain(backing, tvb);
@@ -167,30 +188,47 @@ tvb_new_subset(tvbuff_t *backing, const gint backing_offset, const gint backing_
 }
 
 tvbuff_t *
-tvb_new_subset_length(tvbuff_t *backing, const gint backing_offset, const gint backing_length)
+tvb_new_subset_length(tvbuff_t *backing, const int backing_offset, const int reported_length)
 {
-	gint	  captured_length;
+	int	  captured_length;
+	int	  actual_reported_length;
 	tvbuff_t *tvb;
-	guint	  subset_tvb_offset;
-	guint	  subset_tvb_length;
+	unsigned	  subset_tvb_offset;
+	unsigned	  subset_tvb_length;
 
 	DISSECTOR_ASSERT(backing && backing->initialized);
 
-	THROW_ON(backing_length < 0, ReportedBoundsError);
+	THROW_ON(reported_length < -1, ReportedBoundsError);
+
+	if (reported_length == -1)
+		actual_reported_length = backing->reported_length;
+	else
+		actual_reported_length = reported_length;
 
 	/*
-	 * Give the next dissector only captured_length bytes.
+	 * Cut the captured length short, so it doesn't go past the subset's
+	 * reported length.
 	 */
 	captured_length = tvb_captured_length_remaining(backing, backing_offset);
 	THROW_ON(captured_length < 0, BoundsError);
-	if (captured_length > backing_length)
-		captured_length = backing_length;
+	if (captured_length > actual_reported_length)
+		captured_length = actual_reported_length;
 
 	tvb_check_offset_length(backing, backing_offset, captured_length,
 			        &subset_tvb_offset,
 			        &subset_tvb_length);
 
-	tvb = tvb_new_with_subset(backing, backing_length,
+	/*
+         * If the requested reported length is "to the end of the buffer",
+         * subtract the offset from the total length. We do this now, because
+         * the user might have passed in a negative offset.
+         */
+	if (reported_length == -1) {
+		THROW_ON(backing->reported_length < subset_tvb_offset, ReportedBoundsError);
+		actual_reported_length -= subset_tvb_offset;
+	}
+
+	tvb = tvb_new_with_subset(backing, (unsigned)actual_reported_length,
 	    subset_tvb_offset, subset_tvb_length);
 
 	tvb_add_to_chain(backing, tvb);
@@ -199,17 +237,21 @@ tvb_new_subset_length(tvbuff_t *backing, const gint backing_offset, const gint b
 }
 
 tvbuff_t *
-tvb_new_subset_remaining(tvbuff_t *backing, const gint backing_offset)
+tvb_new_subset_remaining(tvbuff_t *backing, const int backing_offset)
 {
 	tvbuff_t *tvb;
-	guint	  subset_tvb_offset;
-	guint	  subset_tvb_length;
+	unsigned	  subset_tvb_offset;
+	unsigned	  subset_tvb_length;
+	unsigned	  reported_length;
 
 	tvb_check_offset_length(backing, backing_offset, -1 /* backing_length */,
 			        &subset_tvb_offset,
 			        &subset_tvb_length);
 
-	tvb = tvb_new_with_subset(backing, -1 /* reported_length */,
+	THROW_ON(backing->reported_length < subset_tvb_offset, ReportedBoundsError);
+	reported_length = backing->reported_length - subset_tvb_offset;
+
+	tvb = tvb_new_with_subset(backing, reported_length,
 	    subset_tvb_offset, subset_tvb_length);
 
 	tvb_add_to_chain(backing, tvb);
@@ -234,7 +276,7 @@ tvb_new_proxy(tvbuff_t *backing)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

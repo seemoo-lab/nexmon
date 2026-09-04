@@ -3,14 +3,18 @@ dnl This file is in the public domain.
 dnl
 dnl Configuration file - processed by autoconf.
 
-AC_INIT
-AC_CONFIG_SRCDIR(hello.c)
-AM_INIT_AUTOMAKE(hello-c-gnome3, 0)
+AC_INIT([hello-c-gnome3], [0])
+AC_CONFIG_SRCDIR([hello.c])
+AM_INIT_AUTOMAKE([1.11])
 
 AC_PROG_CC
-AC_CHECK_HEADERS([unistd.h])
 AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION(0.19)
+AM_GNU_GETTEXT_VERSION([1.0])
+
+dnl Define localedir_c and localedir_c_make.
+gl_BUILD_TO_HOST_LOCALEDIR
+dnl Define pkgdatadir_c and pkgdatadir_c_make.
+gl_BUILD_TO_HOST_PKGDATADIR
 
 dnl Check GNOME specific stuff.
 dnl
@@ -24,12 +28,12 @@ dnl
 dnl Here, in gettext-tools/examples, we do the checks manually for
 dnl simplicity.
 
-AC_PATH_PROG(GLIB_COMPILE_RESOURCES, [glib-compile-resources])
+AC_PATH_PROG([GLIB_COMPILE_RESOURCES], [glib-compile-resources])
 AS_IF([test -z "$GLIB_COMPILE_RESOURCES"], [
   AC_MSG_ERROR([can't find glib-compile-resources])
 ])
 
-AC_PATH_PROG(GLIB_COMPILE_SCHEMAS, [glib-compile-schemas])
+AC_PATH_PROG([GLIB_COMPILE_SCHEMAS], [glib-compile-schemas])
 AS_IF([test -z "$GLIB_COMPILE_SCHEMAS"], [
   AC_MSG_ERROR([can't find glib-compile-schemas])
 ])
@@ -45,10 +49,10 @@ AS_IF(["$PKG_CONFIG" --exists "$GTK"], , [
 ])
 
 GTK_CFLAGS=`"$PKG_CONFIG" --cflags "$GTK"`
-AC_SUBST(GTK_CFLAGS)
+AC_SUBST([GTK_CFLAGS])
 
 GTK_LIBS=`"$PKG_CONFIG" --libs "$GTK"`
-AC_SUBST(GTK_LIBS)
+AC_SUBST([GTK_LIBS])
 
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([m4/Makefile])

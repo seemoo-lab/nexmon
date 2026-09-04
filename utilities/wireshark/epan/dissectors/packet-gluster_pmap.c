@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  *
  * References to source files point in general to the glusterfs sources.
@@ -44,26 +32,26 @@ void proto_register_gluster_dump(void);
 void proto_reg_handoff_gluster_dump(void);
 
 /* Initialize the protocol and registered fields */
-static gint proto_gluster_pmap = -1;
-static gint proto_gluster_dump = -1;
+static int proto_gluster_pmap;
+static int proto_gluster_dump;
 
 /* programs and procedures */
-static gint hf_gluster_pmap_proc = -1;
-static gint hf_gluster_dump_proc = -1;
+static int hf_gluster_pmap_proc;
+static int hf_gluster_dump_proc;
 
 /* fields used by multiple programs/procedures */
-static gint hf_gluster_brick = -1;
-static gint hf_gluster_brick_status = -1;
-static gint hf_gluster_brick_port = -1;
-static gint hf_gluster_gfsid = -1;
-static gint hf_gluster_progname = -1;
-static gint hf_gluster_prognum = -1;
-static gint hf_gluster_progver = -1;
+static int hf_gluster_brick;
+static int hf_gluster_brick_status;
+static int hf_gluster_brick_port;
+static int hf_gluster_gfsid;
+static int hf_gluster_progname;
+static int hf_gluster_prognum;
+static int hf_gluster_progver;
 
 /* Initialize the subtree pointers */
-static gint ett_gluster_pmap = -1;
-static gint ett_gluster_dump = -1;
-static gint ett_gluster_dump_detail = -1;
+static int ett_gluster_pmap;
+static int ett_gluster_dump;
+static int ett_gluster_dump_detail;
 
 /* PMAP PORTBYBRICK */
 static int
@@ -80,9 +68,9 @@ gluster_pmap_portbybrick_reply(tvbuff_t *tvb, packet_info *pinfo,
 
 static int
 gluster_pmap_portbybrick_call(tvbuff_t *tvb,
-				packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+				packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	return dissect_rpc_string(tvb, tree, hf_gluster_brick, 0, NULL);
+	return dissect_rpc_string(tvb, pinfo, tree, hf_gluster_brick, 0, NULL);
 }
 
 /* Based on rpc/rpc-lib/src/rpc-common.c, but xdr encoding/decoding is broken.
@@ -90,18 +78,18 @@ gluster_pmap_portbybrick_call(tvbuff_t *tvb,
  * encode/decode, xdr_u_quad_t() is used (which is uint32_t).
  */
 static int
-gluster_dump_reply_detail(tvbuff_t *tvb, int offset, packet_info *pinfo _U_,
+gluster_dump_reply_detail(tvbuff_t *tvb, int offset, packet_info *pinfo,
 							proto_tree *tree, void* data _U_)
 {
 	proto_item *detail_item;
 	proto_tree *detail_tree;
-	const gchar *progname = NULL;
+	const char *progname = NULL;
 
 	detail_tree = proto_tree_add_subtree(tree, tvb, offset, -1,
-							ett_gluster_dump_detail, &detail_item, "Available Progam: ");
+							ett_gluster_dump_detail, &detail_item, "Available Program: ");
 
 	/* progname */
-	offset = dissect_rpc_string(tvb, detail_tree, hf_gluster_progname,
+	offset = dissect_rpc_string(tvb, pinfo, detail_tree, hf_gluster_progname,
 							offset, &progname);
 	proto_item_append_text(detail_item, "%s", progname);
 
@@ -208,12 +196,11 @@ proto_register_gluster_pmap(void)
 	};
 
 	/* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_gluster_pmap
 	};
 
-	proto_gluster_pmap = proto_register_protocol("Gluster Portmap",
-					"Gluster Portmap", "gluster.pmap");
+	proto_gluster_pmap = proto_register_protocol("Gluster Portmap", "Gluster Portmap", "gluster.pmap");
 	proto_register_subtree_array(ett, array_length(ett));
 	proto_register_field_array(proto_gluster_pmap, hf, array_length(hf));
 }
@@ -256,7 +243,7 @@ proto_register_gluster_dump(void)
 	};
 
 	/* Setup protocol subtree array */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_gluster_dump,
 		&ett_gluster_dump_detail
 	};
@@ -276,7 +263,7 @@ proto_reg_handoff_gluster_dump(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

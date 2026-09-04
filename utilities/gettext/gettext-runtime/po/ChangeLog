@@ -1,3 +1,1070 @@
+2026-01-29  Bruno Haible  <bruno@clisp.org>
+
+	Update translations from TP.
+
+2025-10-24  Bruno Haible  <bruno@clisp.org>
+
+	Update translations from TP.
+	* gettext-runtime/po/*.po: Update from TP.
+	* gettext-tools/po/*.po: Update from TP.
+	* gettext-tools/examples/po/*.po: Update from TP.
+
+2025-10-24  Bruno Haible  <bruno@clisp.org>
+
+	build: Add scripts for fetching the PO files.
+	* gettext-runtime/po/fetch-po: New file.
+	* gettext-tools/po/fetch-po: New file.
+	* gettext-tools/examples/po/fetch-po: New file.
+	* check-copyright-headers (func_check_file): Don't complain about the LINGUAS
+	files, that will now have more than 10 lines.
+
+2025-10-18  Bruno Haible  <bruno@clisp.org>
+
+	New directory gettext-tools/wizard/po-templates/traditional/.
+	* gettext-tools/wizard/po-templates/traditional/*: New files, moved here from
+	gettext-runtime/po/.
+	* gettext-tools/wizard/po-templates/traditional/Makefile.in.in (install-data,
+	installdirs-data, uninstall-data, dist2): Remove special code for the
+	'gettext-tools' package.
+	* gettext-tools/wizard/po-templates/traditional/Makevars.template: Moved here
+	from gettext-tools/po/.
+	* autogen.sh: Copy the contents of the gettext-runtime/po/ and gettext-tools/po/
+	directories from gettext-tools/wizard/po-templates/traditional/.
+	* gettext-tools/wizard/Makefile.am (pkgdatadir, podir): New variables.
+	(po_DATA): Add po-templates/traditional/*.
+	(EXTRA_DIST): Likewise.
+	(uninstall-sources): Also remove $(podir)/Makevars.
+	* Makefile.am (distcheck-hook): Update.
+
+2025-10-14  Bruno Haible  <bruno@clisp.org>
+
+	po: Don't msgmerge the PO files through Makefile.in.in.
+	* gettext-runtime/po/Makefile.in.in (MSGMERGE_UPDATE): Remove variable.
+	(UPDATEPOFILES): Remove variable.
+	(POFILESDEPS*): Remove variables.
+	(.SUFFIXES): Add '.gpo'. Remove '.po-update'.
+	(.po.gpo): New rule.
+	($(POFILES)): Remove dependencies. Don't invoke MSGMERGE_UPDATE.
+	(mostlyclean): Add *.gpo.
+	(update-po): Don't make $(UPDATEPOFILES).
+	(.nop.po-update): Remove rule.
+	* gettext-runtime/po/Makevars (PO_DEPENDS_ON_POT): Remove variable.
+	* gettext-tools/po/Makevars (PO_DEPENDS_ON_POT): Likewise.
+	* gettext-tools/po/Makevars.template (PO_DEPENDS_ON_POT): Likewise.
+	* gettext-tools/examples/hello-c/po/Makevars (PO_DEPENDS_ON_POT): Likewise.
+	* gettext-tools/examples/hello-c-gnome2/po/Makevars (PO_DEPENDS_ON_POT):
+	Likewise.
+	* gettext-tools/examples/hello-c-gnome3/po/Makevars (PO_DEPENDS_ON_POT):
+	Likewise.
+	* gettext-tools/examples/hello-c-http/po/Makevars (PO_DEPENDS_ON_POT): Likewise.
+	* gettext-tools/examples/hello-c++/po/Makevars (PO_DEPENDS_ON_POT): Likewise.
+	* gettext-tools/examples/hello-c++20/po/Makevars (PO_DEPENDS_ON_POT): Likewise.
+	* gettext-tools/examples/hello-c++-gnome2/po/Makevars (PO_DEPENDS_ON_POT):
+	Likewise.
+	* gettext-tools/examples/hello-c++-gnome3/po/Makevars (PO_DEPENDS_ON_POT):
+	Likewise.
+	* gettext-tools/examples/hello-c++-kde/po/Makevars (PO_DEPENDS_ON_POT):
+	Likewise.
+	* gettext-tools/examples/hello-objc/po/Makevars (PO_DEPENDS_ON_POT): Likewise.
+	* gettext-tools/examples/hello-objc-gnome2/po/Makevars (PO_DEPENDS_ON_POT):
+	Likewise.
+	* gettext-tools/examples/hello-c++-wxwidgets/po/Makefile.am (MSGMERGE_UPDATE):
+	Remove variable.
+	(UPDATEPOFILES): Remove variable.
+	(.SUFFIXES): Add '.gpo'. Remove '.po-update'.
+	(.po.gpo): New rule.
+	($(POFILES)): Remove dependencies. Don't invoke MSGMERGE_UPDATE.
+	(MOSTLYCLEANFILES): Add *.gpo.
+	(update-po): Don't make $(UPDATEPOFILES).
+	(.nop.po-update): Remove rule.
+	* gettext-tools/examples/hello-python/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-guile/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-clisp/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-librep/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-rust/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-go/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-go-http/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-ruby/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-sh/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-gawk/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-pascal/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-modula2/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-d/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-ocaml/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-smalltalk/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-perl/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-php/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-ycp/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-c++-qt/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-java/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-java-awt/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-java-swing/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-java-qtjambi/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-csharp/po/Makefile.am (MSGMERGE_UPDATE): Remove
+	variable.
+	(UPDATEPOFILES): Remove variable.
+	(RESOURCESDLLFILES): Change emitted commands to use an intermediate .gpo file.
+	(.SUFFIXES): Add '.gpo'. Remove '.po-update'.
+	(.po.gpo): New rule.
+	($(POFILES)): Remove dependencies. Don't invoke MSGMERGE_UPDATE.
+	(MOSTLYCLEANFILES): Add *.gpo.
+	(update-po): Don't make $(UPDATEPOFILES).
+	(.nop.po-update): Remove rule.
+	* gettext-tools/examples/hello-csharp-forms/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-tcl/po/Makefile.am (MSGMERGE_UPDATE): Remove
+	variable.
+	(UPDATEPOFILES): Remove variable.
+	(MSGFILES): Change emitted commands to use an intermediate .gpo file.
+	(.SUFFIXES): Add '.gpo'. Remove '.po-update'.
+	(.po.gpo): New rule.
+	($(POFILES)): Remove dependencies. Don't invoke MSGMERGE_UPDATE.
+	(MOSTLYCLEANFILES): Add *.gpo.
+	(update-po): Don't make $(UPDATEPOFILES).
+	(.nop.po-update): Remove rule.
+	* gettext-tools/examples/hello-tcl-tk/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile (MSGMERGE_UPDATE):
+	Remove variable.
+	(UPDATEPOFILES): Remove variable.
+	(.SUFFIXES): Add '.gpo'. Remove '.po-update'.
+	($(POFILES)): Remove dependencies. Don't invoke MSGMERGE_UPDATE.
+	(update-po): Don't make $(UPDATEPOFILES).
+	(.nop.po-update): Remove rule.
+	* gettext-tools/examples/po/Makefile.am (MSGMERGE_OPTIONS): Add
+	--no-fuzzy-matching --quiet.
+	(MSGMERGE_UPDATE): Remove variable.
+	(UPDATEPOFILES): Remove variable.
+	(GPOFILES): New variable.
+	(.SUFFIXES): Add '.gpo'. Remove '.nop', '.po-update'.
+	(.po.gpo): New rule.
+	($(POFILES)): Remove rule.
+	(DISTCLEANFILES): New variable.
+	(update-po): Don't make $(UPDATEPOFILES). Make the small PO files.
+	(.nop.po-update): Remove rule.
+	* gettext-tools/examples/po/mmsmallpo.sh: Use $language.gpo instead of
+	$language.po.
+	* gettext-tools/doc/gettext.texi (Translations under Version Control): Remove
+	documentation of PO_DEPENDS_ON_POT.
+	(Release Management): Update wording.
+	* Admin/release-steps: Don't msgmerge the PO files from translationproject.org.
+	* NEWS: Mention the change.
+
+2025-10-12  Bruno Haible  <bruno@clisp.org>
+
+	po: Improve error message when there is a mistake in a PO file.
+	* gettext-runtime/po/Makefile.in.in (.po.gmo): Use suffix .gpo instead of .1po.
+
+2025-10-12  Bruno Haible  <bruno@clisp.org>
+
+	po: Simplify.
+	* gettext-runtime/po/Makefile.in.in (.NOEXPORT): Remove workaround for versions
+	of GNU make from before 1993.
+
+2025-07-19  Bruno Haible  <bruno@clisp.org>
+
+	Update translations from TP.
+	* gettext-runtime/po/*.po: Update from TP.
+	* gettext-tools/po/*.po: Update from TP.
+	* gettext-tools/examples/po/*.po: Update from TP.
+
+2025-07-19  Bruno Haible  <bruno@clisp.org>
+
+	Prepare for 0.26 release.
+	* gettext-runtime/doc/matrix.texi: Update from TP.
+	* gettext-runtime/doc/nls.texi (STATUS): Update.
+	* gettext-runtime/intl/libgnuintl.in.h (LIBINTL_VERSION): Bump.
+	* libtextstyle/version.sh: Update VERSION_NUMBER, RELEASE_DATE.
+	* gettext-tools/libgettextpo/gettext-po.in.h (LIBGETTEXTPO_VERSION): Bump.
+	* gettext-runtime/po/Makefile.in.in: Update Origin.
+	* gettext-runtime/intl/Makefile.am (LTV_*): Bump to 12:5:4.
+	* libtextstyle/lib/Makefile.am (LTV_*): Bump to 2:6:2.
+	* gettext-tools/libgettextpo/Makefile.am (LTV_*): Bump to 5:15:5.
+	* gettext-tools/misc/autopoint.in: Likewise. Accept version 0.26.
+	* gettext-tools/configure.ac (ARCHIVE_VERSION): Bump to 0.26.
+
+2025-06-25  Bruno Haible  <bruno@clisp.org>
+
+	gettext-runtime: New programs 'printf_gettext', 'printf_ngettext'.
+	* autogen.sh (GNULIB_MODULES_RUNTIME_FOR_SRC): Add c-ctype, c-strtold,
+	fzprintf-posix, mbrtoc32, mbszero, quote, stdint-h, strtoimax, strtold,
+	strtoumax, xstrtold.
+	* gettext-runtime/src/printf-command.h: New file.
+	* gettext-runtime/src/printf-command.c: New file.
+	* gettext-runtime/src/printf_gettext.c: New file.
+	* gettext-runtime/src/Makefile.am (bin_PROGRAMS): Add printf_gettext,
+	printf_ngettext.
+	(noinst_LIBRARIES, libgrtsrc_a_SOURCES): New variables.
+	(printf_gettext_SOURCES, printf_gettext_CFLAGS, printf_gettext_LDFLAGS): New
+	variables.
+	(printf_ngettext_SOURCES, printf_ngettext_CFLAGS, printf_ngettext_LDFLAGS): New
+	variables.
+	(LDADD): Add libgrtsrc.a.
+	* gettext-runtime/po/POTFILES.in: Add src/printf-command.c,
+	src/printf_gettext.c, src/printf_ngettext.c.
+	* gettext-runtime/man/printf_gettext.x: New file.
+	* gettext-runtime/man/printf_ngettext.x: New file.
+	* gettext-runtime/man/Makefile.am (man_aux): Add printf_gettext.x,
+	printf_ngettext.x.
+	(man_MAN1GEN): Add printf_gettext.1, printf_ngettext.1.
+	(man_MAN1IN): Add printf_gettext.1.in, printf_ngettext.1.in.
+	(man_HTML1GEN): Add printf_gettext.1.html, printf_ngettext.1.html.
+	(man_HTML1IN): Add printf_gettext.1.html.in, printf_ngettext.1.html.in.
+	(printf_gettext.1, rintf_ngettext.1, printf_gettext.1.in, printf_ngettext.1.in):
+	Add dependencies.
+	(printf_gettext.1.html, printf_ngettext.1.html, printf_gettext.1.html.in,
+	printf_ngettext.1.html.in): Likewise.
+	* gettext-runtime/Makefile.am (distdir1): Depend on man/printf_gettext.1 and
+	man/printf_ngettext.1.
+	(man/printf_gettext.1, man/printf_ngettext.1): Depend on gen-man1.
+	(gen-man1): Make src/printf_gettext, src/printf_ngettext and printf_gettext.1,
+	printf_ngettext.1.
+	* gettext-runtime/doc/rt-printf_gettext.texi: New file.
+	* gettext-runtime/doc/rt-printf_ngettext.texi: New file.
+	* gettext-runtime/doc/Makefile.am (EXTRA_DIST): Add them.
+	* gettext-tools/doc/lang-sh.texi (printf_gettext Invocation,
+	printf_ngettext Invocation): New subsubsections.
+	* gettext-tools/doc/gettext.texi (@direntry): Add printf_gettext, .
+	* gettext-tools/doc/Makefile.am (gettext_TEXINFOS): Add rt-printf_gettext.texi,
+	rt-printf_ngettext.texi.
+	* gettext-runtime/NEWS: Mention the new programs.
+	* NEWS: Likewise.
+	* PACKAGING: Add the printf_gettext and printf_ngettext programs and their
+	documentation.
+
+2025-05-07  Bruno Haible  <bruno@clisp.org>
+
+	Update translations from TP.
+	* gettext-runtime/po/*.po: Update from TP.
+	* gettext-tools/po/*.po: Update from TP.
+	* gettext-tools/examples/po/*.po: Update from TP.
+
+2025-05-07  Bruno Haible  <bruno@clisp.org>
+
+	Prepare for 0.25 release.
+	* gettext-runtime/doc/matrix.texi: Update from TP.
+	* gettext-runtime/doc/nls.texi (STATUS): Update.
+	* gettext-runtime/intl/libgnuintl.in.h (LIBINTL_VERSION): Bump.
+	* libtextstyle/version.sh: Update VERSION_NUMBER, RELEASE_DATE.
+	* gettext-tools/libgettextpo/gettext-po.in.h (LIBGETTEXTPO_VERSION): Bump.
+	* gettext-runtime/po/Makefile.in.in: Update Origin.
+	* gettext-runtime/intl/Makefile.am (LTV_*): Bump to 12:4:4.
+	* libtextstyle/lib/Makefile.am (LTV_*): Bump to 2:5:2.
+	* gettext-tools/libgettextpo/Makefile.am (LTV_*): Bump to 5:14:5.
+	* gettext-tools/misc/autopoint.in: Likewise. Accept version 0.25.
+	* gettext-tools/configure.ac (ARCHIVE_VERSION): Bump to 0.25.
+
+2025-03-20  Bruno Haible  <bruno@clisp.org>
+
+	Makevars template: Fix small mistake.
+	* gettext-tools/po/Makevars.template: Correct statement about copyright.
+	* gettext-runtime/po/Makevars: Likewise.
+	* gettext-tools/po/Makevars: Likewise.
+	* gettext-tools/examples/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-*/po/Makevars: Likewise.
+	* gettext-tools/examples/hello-*/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile: Likewise.
+
+2025-02-25  Bruno Haible  <bruno@clisp.org>
+
+	Update translations from TP.
+	* gettext-runtime/po/*.po: Update from TP.
+	* gettext-tools/po/*.po: Update from TP.
+	* gettext-tools/examples/po/*.po: Update from TP.
+
+2025-01-24  Bruno Haible  <bruno@clisp.org>
+
+	Temporarily revert "po: Rename Makefile.in.in to Makefile.in."
+
+2024-12-20  Bruno Haible  <bruno@clisp.org>
+
+	po: Remove a comment that is not valid any more since 2002-01-07.
+	The comment "Target 'all' must not depend on target '$(DOMAIN).pot-update'"
+	does not hold any more:
+	  all <- all-yes <- $(srcdir)/stamp-po <- $(srcdir)/$(DOMAIN).pot
+	and the latter rule executes
+	  $(MAKE) $(DOMAIN).pot-update
+
+	* gettext-runtime/po/Makefile.in: Remove comment.
+	* gettext-tools/examples/po/Makefile.am: Likewise.
+	* gettext-tools/examples/*/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile: Likewise.
+
+2024-12-16  Bruno Haible  <bruno@clisp.org>
+
+	Fix "make distcheck" failure (regression from "po: Rename Makefile.in.in to Makefile.in.").
+	* gettext-runtime/po/Makefile.in (DISTFILES.common): Remove Makefile.in.
+
+2024-12-10  Bruno Haible  <bruno@clisp.org>
+
+	po: Rename Makefile.in.in to Makefile.in.
+	* gettext-runtime/po/Makefile.in: Renamed from gettext-runtime/po/Makefile.in.in.
+	(distclean): Don't remove Makefile.in.
+	* gettext-runtime/m4/po.m4 (AM_PO_SUBDIRS): Remove the 'po-directories'
+	commands.
+	* gettext-runtime/configure.ac: Update AC_OUTPUT invocation.
+	* gettext-runtime/Makefile.am (maintainer-update-po): Update.
+	* gettext-tools/configure.ac: Update AC_OUTPUT invocation.
+	* gettext-tools/Makefile.am (maintainer-update-po): Update.
+	* gettext-tools/doc/gettext.texi (Translator advice, po/Rules-*, configure.ac,
+	Files under Version Control, Maintainers for other Languages): Update.
+	* gettext-tools/doc/gettextize.texi: Update.
+	* gettext-tools/examples/README: Update.
+	* gettext-tools/examples/hello-c/autoclean.sh: Update.
+	* gettext-tools/examples/hello-c-gnome/autoclean.sh: Likewise.
+	* gettext-tools/examples/hello-c-gnome3/autoclean.sh: Likewise.
+	* gettext-tools/examples/hello-c++/autoclean.sh: Likewise.
+	* gettext-tools/examples/hello-c++-gnome/autoclean.sh: Likewise.
+	* gettext-tools/examples/hello-c++-kde/autoclean.sh: Likewise.
+	* gettext-tools/examples/hello-c++20/autoclean.sh: Likewise.
+	* gettext-tools/examples/hello-objc/autoclean.sh: Likewise.
+	* gettext-tools/examples/hello-objc-gnome/autoclean.sh: Likewise.
+	* gettext-tools/misc/autopoint.in: Update search for po directories.
+	* gettext-tools/misc/gettextize.in: Treat Makefile.in like Makefile.in.in
+	before. Treat Makefile.in.in as a removed file.
+	* gettext-tools/tests/autopoint-2: Prepare for bumping ARCHIVE_VERSION.
+	* gettext-tools/tests/autopoint-3: Likewise.
+	* autogen.sh: Copy po/Makefile.in instead of po/Makefile.in.in.
+	* Makefile.am (distcheck-hook): Update.
+	* NEWS: Mention the change.
+
+2024-12-09  Bruno Haible  <bruno@clisp.org>
+
+	Use new approach for gnulib localizations.
+	* gettext-runtime/po/POTFILES.in: Remove files that come from gnulib.
+	* gettext-tools/po/POTFILES.in: Likewise.
+	* gettext-runtime/src/envsubst.c (main): Invoke bindtextdomain for the domain
+	'gnulib'.
+	* gettext-runtime/src/gettext.c (main): Likewise.
+	* gettext-runtime/src/ngettext.c (main): Likewise.
+	* gettext-tools/src/cldr-plurals.c (main): Likewise.
+	* gettext-tools/src/hostname.c (main): Likewise.
+	* gettext-tools/src/msgattrib.c (main): Likewise.
+	* gettext-tools/src/msgcat.c (main): Likewise.
+	* gettext-tools/src/msgcmp.c (main): Likewise.
+	* gettext-tools/src/msgcomm.c (main): Likewise.
+	* gettext-tools/src/msgconv.c (main): Likewise.
+	* gettext-tools/src/msgen.c (main): Likewise.
+	* gettext-tools/src/msgexec.c (main): Likewise.
+	* gettext-tools/src/msgfilter.c (main): Likewise.
+	* gettext-tools/src/msgfmt.c (main): Likewise.
+	* gettext-tools/src/msggrep.c (main): Likewise.
+	* gettext-tools/src/msginit.c (main): Likewise.
+	* gettext-tools/src/msgmerge.c (main): Likewise.
+	* gettext-tools/src/msgunfmt.c (main): Likewise.
+	* gettext-tools/src/msguniq.c (main): Likewise.
+	* gettext-tools/src/recode-sr-latin.c (main): Likewise.
+	* gettext-tools/src/urlget.c (main): Likewise.
+	* gettext-tools/src/xgettext.c (main): Likewise.
+
+2024-12-07  Bruno Haible  <bruno@clisp.org>
+
+	build: Include the Rules-* files at 'make' time, not at 'configure' time.
+	* gettext-runtime/m4/po.m4 (AM_PO_SUBDIRS): Don't splice in the Rules-* files
+	here.
+	* gettext-runtime/po/Makefile.in.in: Collect and include the Rules-* files
+	explicitly.
+
+2024-12-07  Bruno Haible  <bruno@clisp.org>
+
+	po: Support more than 3 Rules-* extensions.
+	* gettext-runtime/po/Makefile.in.in (DISTFILES.common): Add placeholders for
+	extensions 4..6.
+	(DISTFILES): Likewise.
+
+2024-12-07  Bruno Haible  <bruno@clisp.org>
+
+	build: Include Makevars at 'make' time, not at 'configure' time.
+	* gettext-runtime/m4/po.m4 (AM_PO_SUBDIRS): Don't splice in Makevars here.
+	* gettext-runtime/po/Makefile.in.in: Include Makevars explicitly.
+
+2024-12-07  Bruno Haible  <bruno@clisp.org>
+
+	build: No more need to rebuild a Makefile after POTFILES.in or LINGUAS changed.
+	* gettext-runtime/m4/po.m4 (AM_PO_SUBDIRS): Don't set or substitute
+	POMAKEFILEDEPS.
+	(AM_POSTPROCESS_PO_MAKEFILE): Remove dependency from Makefile on LINGUAS.
+	* gettext-runtime/po/Makefile.in.in (Makefile): Remove dependency on
+	@POMAKEFILEDEPS@.
+
+2024-12-07  Bruno Haible  <bruno@clisp.org>
+
+	build: Read LINGUAS at 'make' time, not at 'configure' time.
+	* gettext-runtime/m4/po.m4 (AM_PO_SUBDIRS): Move the obsolete ALL_LINGUAS check.
+	Define DESIRED_LINGUAS. Don't compute ALL_LINGUAS, POFILES, UPDATEPOFILES,
+	DUMMYPOFILES, GMOFILES, INST_LINGUAS, CATALOGS any more.
+	(AM_POSTPROCESS_PO_MAKEFILE): Don't compute and substitute ALL_LINGUAS, POFILES,
+	UPDATEPOFILES, DUMMYPOFILES, GMOFILES, PROPERTIESFILES, CLASSFILES, QMFILES,
+	MSGFILES, RESOURCESDLLFILES, INST_LINGUAS, CATALOGS, JAVACATALOGS, QTCATALOGS,
+	TCLCATALOGS, CSHARPCATALOGS any more. Don't add rules for Tcl and C# catalogs
+	any more.
+	* gettext-runtime/po/Makefile.in.in (ALL_LINGUAS, POFILES, GMOFILES,
+	UPDATEPOFILES, DUMMYPOFILES): Define with a computed value.
+	(DESIRED_LINGUAS): New macro.
+	(INST_LINGUAS, CATALOGS): Define with a computed value.
+	* gettext-tools/examples/po/Makefile.am (ALL_LINGUAS, POFILES, UPDATEPOFILES,
+	DUMMYPOFILES): Define with a computed value.
+	* gettext-tools/examples/hello-*/po/Makefile.am (ALL_LINGUAS, POFILES, GMOFILES,
+	UPDATEPOFILES, DUMMYPOFILES): Define with a computed value.
+	(DESIRED_LINGUAS): New macro.
+	(INST_LINGUAS, CATALOGS): Define with a computed value.
+	* gettext-tools/examples/hello-csharp*/po/Makefile.am (ALL_LINGUAS, POFILES,
+	UPDATEPOFILES, DUMMYPOFILES, RESOURCESDLLFILES): Define with a computed value.
+	Include .csharp-rules.
+	(DESIRED_LINGUAS): New macro.
+	(INST_LINGUAS, CATALOGS): Define with a computed value.
+	(DISTCLEANFILES): New variable.
+	* gettext-tools/examples/hello-tcl*/po/Makefile.am (ALL_LINGUAS, POFILES,
+	UPDATEPOFILES, DUMMYPOFILES, MSGFILES): Define with a computed value.
+	Include .tcl-rules.
+	(DESIRED_LINGUAS): New macro.
+	(INST_LINGUAS, CATALOGS): Define with a computed value.
+	(DISTCLEANFILES): New variable.
+
+2024-12-06  Bruno Haible  <bruno@clisp.org>
+
+	build: Read POTFILES.in at 'make' time, not at 'configure' time.
+	* gettext-runtime/m4/po.m4 (AM_PO_SUBDIRS): Bump GETTEXT_MACRO_VERSION to 0.24.
+	Don't create POTFILES any more.
+	(AM_POSTPROCESS_PO_MAKEFILE): Don't substitute POTFILES_DEPS any more.
+	* gettext-runtime/po/Makefile.in.in (GETTEXT_MACRO_VERSION): Bump to 0.24.
+	Mention 'make' requirements.
+	(POTFILES, POTFILES_DEPS): Define with a computed value.
+	($(DOMAIN).pot-update): Depend on POTFILES_DEPS, not POTFILES.
+	(distclean): Don't remove POTFILES any more.
+	* gettext-tools/examples/README: Mention 'make' requirements.
+	* gettext-tools/examples/po/Makefile.am (POTFILES_DEPS): Define with a computed
+	value.
+	* gettext-tools/examples/hello-*/po/Makefile.am (POTFILES_DEPS): Likewise.
+
+2024-12-06  Bruno Haible  <bruno@clisp.org>
+
+	build: Remove left-overs from remove-potcdate.sin.
+	* gettext-runtime/po/Makefile.in.in (.SUFFIXES): Remove '.sed'.
+	* gettext-tools/examples/po/Makefile.am (.SUFFIXES): Remove '.sed' and '.sin'.
+	(.sin.sed): Remove rule.
+	* gettext-tools/examples/hello-*/po/Makefile.am: Likewise.
+
+2024-12-01  Bruno Haible  <bruno@clisp.org>
+
+	Update translations from TP.
+	* gettext-runtime/po/*.po: Update from TP.
+	* gettext-tools/po/*.po: Update from TP.
+	* gettext-tools/po/LINGUAS: Add ka.
+	* gettext-tools/examples/po/*.po: Update from TP.
+
+2024-12-01  Bruno Haible  <bruno@clisp.org>
+
+	Prepare for 0.23 release.
+	* gettext-runtime/doc/matrix.texi: Update from TP.
+	* gettext-runtime/doc/nls.texi (STATUS): Update.
+	* gettext-runtime/po/Makefile.in.in: Bump Origin version and
+	GETTEXT_MACRO_VERSION.
+	* gettext-runtime/m4/po.m4 (AM_PO_SUBDIRS): Bump GETTEXT_MACRO_VERSION
+	accordingly.
+	* gettext-runtime/m4/gettext.m4: Update comments.
+	* gettext-runtime/intl/libgnuintl.in.h (LIBINTL_VERSION): Bump.
+	* libtextstyle/version.sh: Update VERSION_NUMBER, RELEASE_DATE.
+	* gettext-tools/libgettextpo/gettext-po.in.h (LIBGETTEXTPO_VERSION): Bump.
+	* gettext-runtime/intl/Makefile.am (LTV_*): Bump to 12:1:4.
+	* libtextstyle/lib/Makefile.am (LTV_*): Bump to 2:2:2.
+	* gettext-tools/libgettextpo/Makefile.am (LTV_*): Bump to 5:11:5.
+	* gettext-runtime/src/envsubst.c (main): Update copyright year in --version
+	output.
+	* gettext-runtime/src/gettext.c (main): Likewise.
+	* gettext-runtime/src/gettext.sh.in (func_version): Likewise.
+	* gettext-runtime/src/ngettext.c (main): Likewise.
+	* gettext-tools/src/cldr-plurals.c (main): Likewise.
+	* gettext-tools/src/hostname.c (main): Likewise.
+	* gettext-tools/src/msgattrib.c (main): Likewise.
+	* gettext-tools/src/msgcat.c (main): Likewise.
+	* gettext-tools/src/msgcmp.c (main): Likewise.
+	* gettext-tools/src/msgcomm.c (main): Likewise.
+	* gettext-tools/src/msgconv.c (main): Likewise.
+	* gettext-tools/src/msgen.c (main): Likewise.
+	* gettext-tools/src/msgexec.c (main): Likewise.
+	* gettext-tools/src/msgfilter.c (main): Likewise.
+	* gettext-tools/src/msgfmt.c (main): Likewise.
+	* gettext-tools/src/msggrep.c (main): Likewise.
+	* gettext-tools/src/msginit.c (main): Likewise.
+	* gettext-tools/src/msgmerge.c (main): Likewise.
+	* gettext-tools/src/msgunfmt.c (main): Likewise.
+	* gettext-tools/src/msguniq.c (main): Likewise.
+	* gettext-tools/src/recode-sr-latin.c (main): Likewise.
+	* gettext-tools/src/urlget.c (main): Likewise.
+	* gettext-tools/src/xgettext.c (main): Likewise.
+	* gettext-tools/misc/convert-archive.in (func_version): Likewise.
+	* gettext-tools/misc/gettextize.in (func_version): Likewise.
+	* gettext-tools/misc/autopoint.in: Likewise. Accept version 0.23.
+	* gettext-tools/configure.ac (ARCHIVE_VERSION): Bump to 0.23.
+	* NEWS, gettext-runtime/NEWS: Update.
+
+2024-11-19  Bruno Haible  <bruno@clisp.org>
+
+	po: Fix build failure with parallel make.
+	Reported by Lubomir Rintel <lkundrak@v3.sk> in
+	<https://lists.gnu.org/archive/html/bug-gettext/2022-06/msg00022.html>.
+
+	* gettext-runtime/po/Makefile.in.in (.NOTPARALLEL): Add this special target.
+
+2024-10-14  Bruno Haible  <bruno@clisp.org>
+
+	po: Add a copyright and license notice to the Rules-quot auxiliary files.
+	Reported by Joël Krähemann <jkraehemann@gmail.com>
+	at <https://savannah.gnu.org/bugs/?57973>.
+
+	* gettext-runtime/po/quot.sed: Add a copyright and all-permissive license
+	notice.
+	* gettext-runtime/po/boldquot.sed: Likewise.
+	* gettext-runtime/po/en@quot.header: Likewise.
+	* gettext-runtime/po/en@boldquot.header: Likewise.
+	* gettext-runtime/po/insert-header.sed: Use an all-permissive license notice.
+	* gettext-runtime/po/Rules-quot: Likewise.
+	(.insert-header.po-update-en): After running the *.insert-header script,
+	eliminate lines that start with %%.
+
+2024-10-14  Bruno Haible  <bruno@clisp.org>
+
+	po: Assume a 'sed' that supports '#' for introducing comments.
+	This is standardized in POSIX since POSIX:2001 (= SUSv3).
+	It is supported on all platforms that I could test:
+	GNU, macOS 10.5, FreeBSD 5, NetBSD 7, OpenBSD 6, AIX 7, Solaris 10 and 11,
+	busybox (2019).
+
+	* gettext-runtime/po/remove-potcdate.sed: Renamed from
+	gettext-runtime/po/remove-potcdate.sin.
+	* gettext-runtime/po/Makefile.in.in (DISTFILES.common): Update.
+	(.SUFFIXES): Remove .sin.
+	(.sin.sed): Remove rule.
+	($(DOMAIN).pot-update): Use remove-potcdate.sed in $(srcdir).
+	(mostlyclean): Don't remove remove-potcdate.sed.
+	* autogen.sh: Update.
+	* Makefile.am (distcheck-hook): Update.
+	* gettext-tools/examples/po/remove-potcdate.sed: Renamed from
+	gettext-tools/examples/po/remove-potcdate.sin.
+	* gettext-tools/examples/po/Makefile.am ($(DOMAIN).pot-update): Use
+	remove-potcdate.sed in $(srcdir).
+	(MOSTLYCLEANFILES): Don't add remove-potcdate.sed.
+	(EXTRA_DIST): Update.
+	* gettext-tools/examples/hello-*/po/Makefile.am ($(DOMAIN).pot-update): Use
+	remove-potcdate.sed in $(srcdir).
+	(MOSTLYCLEANFILES): Don't add remove-potcdate.sed.
+	(EXTRA_DIST): Update.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile
+	($(DOMAIN).pot-update): Remove dependency on remove-potcdate.sed.
+	(internal-clean): Remove rule.
+	* gettext-tools/examples/hello-*/autogen.sh: Update.
+	* gettext-tools/examples/hello-*/autoclean.sh: Update.
+
+2024-10-14  Bruno Haible  <bruno@clisp.org>
+
+	po: Assume a 'sed' that supports '#' for introducing comments.
+	This is standardized in POSIX since POSIX:2001 (= SUSv3).
+	It is supported on all platforms that I could test:
+	GNU, macOS 10.5, FreeBSD 5, NetBSD 7, OpenBSD 6, AIX 7, Solaris 10 and 11,
+	busybox (2019).
+
+	* gettext-runtime/po/insert-header.sed: Renamed from
+	gettext-runtime/po/insert-header.sin.
+	* gettext-runtime/po/Rules-quot (DISTFILES.common.extra1): Update.
+	(en@quot.insert-header, en@boldquot.insert-header): Use insert-header.sed
+	instead of insert-header.sin.
+	* autogen.sh: Update.
+	* Makefile.am (distcheck-hook): Update.
+	* gettext-tools/examples/hello-*/autogen.sh: Update.
+	* gettext-tools/doc/gettext.texi (po/LINGUAS): Update.
+
+2024-09-16  Bruno Haible  <bruno@clisp.org>
+
+	Update copyright year.
+
+2024-09-16  Bruno Haible  <bruno@clisp.org>
+
+	build: Fix "make distcheck" after the line-breaking algorithm changed.
+	* gettext-runtime/po/Makefile.in.in (.po.gmo, $(POFILES)): In the gettext-tools
+	package, when not cross-compiling, use the locally built msg* programs.
+	* gettext-tools/configure.ac: When not cross-compiling, set MSGMERGE and
+	MSGMERGE_FOR_MSGFMT_OPTION to point to locally built msgmerge program.
+
+2023-09-19  Bruno Haible  <bruno@clisp.org>
+
+	Merge from 0.22.x branch: Update translations from TP.
+
+2023-06-17  Bruno Haible  <bruno@clisp.org>
+
+	Update translations from TP.
+	* gettext-runtime/po/*.po: Update from TP.
+	* gettext-runtime/po/LINGUAS: Add ka.
+	* gettext-tools/po/*.po: Update from TP.
+	* gettext-tools/po/LINGUAS: Add hr.
+	* gettext-tools/examples/po/*.po: Update from TP.
+
+2023-06-17  Bruno Haible  <bruno@clisp.org>
+
+	Prepare for 0.22 release.
+	* gettext-runtime/doc/matrix.texi: Update from TP.
+	* gettext-runtime/doc/nls.texi (STATUS): Update.
+	* gettext-runtime/intl/libgnuintl.in.h (LIBINTL_VERSION): Bump.
+	* gettext-tools/libgettextpo/gettext-po.in.h (LIBGETTEXTPO_VERSION): Bump.
+	* libtextstyle/version.sh: Update VERSION_NUMBER, RELEASE_DATE.
+	* gettext-runtime/po/Makefile.in.in: Bump Origin version.
+	* gettext-runtime/m4/gettext.m4: Update version at the first line.
+	* gettext-runtime/m4/intl.m4: Likewise.
+	* NEWS, libtextstyle/NEWS: Update.
+	* libtextstyle/lib/Makefile.am (LTV_*): Bump to 2:0:2.
+	* gettext-tools/libgettextpo/Makefile.am (LTV_*): Bump to 5:9:5.
+	* gettext-tools/emacs/po-mode.el (po-mode-version-string): Bump.
+	* gettext-tools/configure.ac (ARCHIVE_VERSION): Bump to 0.22.
+	* gettext-tools/misc/autopoint.in: Allow version 0.22.
+
+2023-06-17  Bruno Haible  <bruno@clisp.org>
+
+	Update POTFILES.in.
+	* gettext-runtime/po/POTFILES.in: Update.
+	* gettext-tools/po/POTFILES.in: Update.
+
+2023-03-14  Bruno Haible  <bruno@clisp.org>
+
+	po: In the Makefiles, enable --quiet by default when possible.
+	This is possible because msgmerge became faster
+	- through an index-based fuzzy search (msgl-fsearch.c) in 2006,
+	- through OpenMP parallelization in 2006,
+	- through processor speedups over the years.
+	The only case where msgmerge is still slow is when a compendium is in use.
+
+	Suggested by Marcus Müller <marcus_savannah@hostalia.de> in
+	<https://lists.gnu.org/archive/html/bug-gnulib/2023-03/msg00034.html>.
+
+	* gettext-runtime/po/Makefile.in.in ($(POFILES), update-po): If msgmerge has
+	version ≥ 0.11, pass option --quiet.
+	* gettext-runtime/po/Makevars (MSGMERGE_OPTIONS): Don't suggest --quiet any
+	more.
+	* gettext-tools/po/Makevars (MSGMERGE_OPTIONS): Likewise.
+	* gettext-tools/examples/hello-*/po/Makevars (MSGMERGE_OPTIONS): Likewise.
+	* gettext-tools/examples/hello-*/po/Makefile.am ($(POFILES), update-po): If
+	msgmerge has version ≥ 0.11, pass option --quiet.
+	(MSGMERGE_OPTIONS): Don't suggest --quiet any more.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile: Likewise.
+	* gettext-tools/examples/po/Makefile.am ($(POFILES), update-po): Pass option
+	--quiet to msgmerge.
+	(MSGMERGE_OPTIONS): Don't suggest --quiet any more.
+
+2022-10-10  Bruno Haible  <bruno@clisp.org>
+
+	Merge from 0.21.x branch: Prepare for 0.21.1 release: Update translations.
+	* gettext-runtime/po/*.po: Update from TP.
+	* gettext-tools/po/*.po: Likewise.
+	* gettext-tools/examples/po/*.po: Likewise.
+	* gettext-tools/examples/po/LINGUAS: Add 'ka'.
+	* gettext-tools/examples/hello-*/po/LINGUAS: Likewise.
+	* gettext-tools/examples/Makefile.am (EXAMPLESPOFILES): Add ka.po.
+
+2020-07-26  Bruno Haible  <bruno@clisp.org>
+
+	Update translations (from the TP).
+	* gettext-runtime/po/*.po: Update.
+	* gettext-tools/po/*.po: Update.
+	* gettext-tools/examples/po/*.po: Update.
+	* gettext-tools/examples/po/LINGUAS: Add 'nn'.
+	* gettext-tools/examples/hello-*/po/LINGUAS: Likewise.
+	* gettext-tools/examples/Makefile.am (EXAMPLESPOFILES): Add nn.po.
+
+2020-07-26  Bruno Haible  <bruno@clisp.org>
+
+	Prepare for 0.21 release.
+	* gettext-runtime/doc/matrix.texi: Update from TP.
+	* gettext-runtime/doc/nls.texi (STATUS): Update.
+	* gettext-runtime/intl/libgnuintl.in.h (LIBINTL_VERSION): Bump.
+	* gettext-tools/libgettextpo/gettext-po.in.h (LIBGETTEXTPO_VERSION): Bump.
+	* libtextstyle/version.sh: Update VERSION_NUMBER, RELEASE_DATE.
+	* gettext-runtime/po/Makefile.in.in: Bump Origin version.
+	* NEWS, libtextstyle/NEWS, gettext-runtime/NEWS: Update.
+	* libtextstyle/lib/Makefile.am (LTV_*): Bump to 1:1:1.
+	* gettext-runtime/intl/Makefile.am (LTV_*): Bump to 10:0:2.
+	* gettext-tools/libgettextpo/Makefile.am (LTV_*): Bump to 5:7:5.
+	* gettext-tools/configure.ac (ARCHIVE_VERSION): Bump to 0.21.
+	* gettext-tools/misc/autopoint.in: Allow version 0.21.
+
+2020-04-14  Bruno Haible  <bruno@clisp.org>
+
+	Merge from 0.20.x branch: Update translations (from the TP).
+	* gettext-runtime/po/*.po: Update.
+	* gettext-tools/po/*.po: Update.
+	* gettext-tools/examples/po/*.po: Update.
+	* gettext-tools/examples/po/LINGUAS: Add 'sq'.
+	* gettext-tools/examples/hello-*/po/LINGUAS: Likewise.
+	* gettext-tools/examples/Makefile.am (EXAMPLESPOFILES): Add sq.po.
+
+2020-04-11  Bruno Haible  <bruno@clisp.org>
+
+	po: Emit a warning when creating a tarball without POT file.
+	* gettext-runtime/po/Makefile.in.in (dist2): Emit a warning when the POT file
+	does not exist.
+	* gettext-tools/examples/hello-*/po/Makefile.am (distdir1): Likewise.
+
+2020-04-05  Bruno Haible  <bruno@clisp.org>
+
+	po, examples: In the .po -> .gmo rules, really consider the newest changes to the POT file.
+	Reported by Petr Ovtchenkov <ptr@void-ptr.info> in
+	<https://lists.gnu.org/archive/html/bug-gnulib/2020-04/msg00000.html>.
+	Helped by Paul Smith.
+
+	* gettext-runtime/po/Makefile.in.in (.po.gmo): Write dependency on the POT file
+	as a target rule, since inference rules don't support prerequisites.
+	* gettext-tools/examples/hello-*/po/Makefile.am: Likewise, also for the .po.qm
+	rule.
+	* NEWS: Mention the fix.
+
+2019-05-12  Bruno Haible  <bruno@clisp.org>
+
+	Update translations (from the TP).
+
+2019-05-12  Bruno Haible  <bruno@clisp.org>
+
+	Update bug reporting instructions.
+	* README: Tell users to report bugs in the bug tracker or by email. Use the
+	mailing list address, not the alias.
+	* gettext-runtime/libasprintf/README: Likewise.
+	* gettext-tools/doc/gettext.texi (Introduction): Likewise.
+	(Plural forms): Use the mailing list address, not the alias.
+	* configure.ac (AC_INIT): Use the mailing list address, not the alias.
+	* gettext-runtime/configure.ac (AC_INIT): Likewise.
+	* gettext-tools/configure.ac (AC_INIT): Likewise.
+	* gettext-tools/examples/configure.ac (AC_INIT): Likewise.
+	* gettext-runtime/po/Makevars (MSGID_BUGS_ADDRESS): Use the mailing list
+	address, not the alias.
+	* gettext-tools/po/Makevars (MSGID_BUGS_ADDRESS): Likewise.
+	* gettext-tools/examples/po/Makefile.am (MSGID_BUGS_ADDRESS): Likewise.
+	* gettext-tools/examples/hello-*/po/Makevars (MSGID_BUGS_ADDRESS): Likewise.
+	* gettext-tools/examples/hello-*/po/Makefile.am (MSGID_BUGS_ADDRESS): Likewise.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile (MSGID_BUGS_ADDRESS):
+	Likewise.
+	* gettext-tools/examples/hello-c++-kde/hello.cc (main): Likewise.
+	* gettext-runtime/src/envsubst.c (main): Move URL out of translatable string.
+	(usage): Tell users to report bugs in the bug tracker or by email. Use the
+	mailing list address, not the alias.
+	* gettext-runtime/src/gettext.c: Likewise.
+	* gettext-runtime/src/ngettext.c: Likewise.
+	* gettext-tools/src/cldr-plurals.c: Likewise.
+	* gettext-tools/src/hostname.c: Likewise.
+	* gettext-tools/src/msgattrib.c: Likewise.
+	* gettext-tools/src/msgcat.c: Likewise.
+	* gettext-tools/src/msgcmp.c: Likewise.
+	* gettext-tools/src/msgcomm.c: Likewise.
+	* gettext-tools/src/msgconv.c: Likewise.
+	* gettext-tools/src/msgen.c: Likewise.
+	* gettext-tools/src/msgexec.c: Likewise.
+	* gettext-tools/src/msgfilter.c: Likewise.
+	* gettext-tools/src/msgfmt.c: Likewise.
+	* gettext-tools/src/msggrep.c: Likewise.
+	* gettext-tools/src/msginit.c: Likewise.
+	* gettext-tools/src/msgmerge.c: Likewise.
+	* gettext-tools/src/msgunfmt.c: Likewise.
+	* gettext-tools/src/msguniq.c: Likewise.
+	* gettext-tools/src/recode-sr-latin.c: Likewise.
+	* gettext-tools/src/urlget.c: Likewise.
+	* gettext-tools/src/xgettext.c: Likewise.
+	* gettext-tools/tests/tstgettext.c: Likewise.
+	* gettext-tools/tests/tstngettext.c: Likewise.
+	* gettext-tools/misc/autopoint.in (func_usage): Tell users to report bugs in the
+	bug tracker or by email. Use the mailing list address, not the alias.
+	* gettext-tools/misc/convert-archive.in (func_usage): Likewise.
+	* gettext-tools/misc/gettextize.in (func_usage): Likewise.
+
+2019-05-08  Bruno Haible  <bruno@clisp.org>
+
+	Update translations (from the TP).
+
+2019-04-28  Bruno Haible  <bruno@clisp.org>
+
+	In the POT files, talk about the "GNU gettext package".
+	Reported by Benno Schulenberg <coordinator@translationproject.org>.
+
+	* gettext-runtime/po/Makevars (XGETTEXT_OPTIONS): Add --package-name option.
+	* gettext-tools/po/Makevars (XGETTEXT_OPTIONS): Likewise.
+	* gettext-tools/examples/po/Makefile.am (XGETTEXT_OPTIONS): New variable.
+
+2019-04-28  Bruno Haible  <bruno@clisp.org>
+
+	po: Make it possible to override xgettext options from Makefile.in.in.
+	* gettext-runtime/po/Makefile.in.in ($(DOMAIN).pot-update): List the
+	XGETTEXT_OPTIONS and the XGETTEXT_EXTRA_OPTIONS after all other options.
+	* gettext-tools/examples/po/Makefile.am ($(DOMAIN).pot-update): Likewise.
+	* gettext-tools/examples/hello-*/po/Makefile.am ($(DOMAIN).pot-update):
+	Likewise.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile
+	($(DOMAIN).pot-update): Likewise.
+	* NEWS: Mention the change.
+	* gettext-tools/doc/gettext.texi (po/Makevars): Fix typo.
+
+2019-04-14  Bruno Haible  <bruno@clisp.org>
+
+	Update translations (from the TP).
+	* gettext-runtime/po/*.po: Update.
+	* gettext-runtime/po/LINGUAS: Add 'ast'.
+	* gettext-tools/po/*.po: Update.
+	* gettext-tools/examples/po/*.po: Update.
+	* gettext-tools/examples/po/LINGUAS: Add 'ta'.
+	* gettext-tools/examples/hello-*/po/LINGUAS: Likewise.
+	* gettext-tools/examples/Makefile.am (EXAMPLESPOFILES): Add ta.po.
+
+2019-04-14  Bruno Haible  <bruno@clisp.org>
+
+	Prepare for 0.20 release.
+	* gettext-runtime/intl/libgnuintl.in.h (LIBINTL_VERSION): Update.
+	* gettext-tools/libgettextpo/gettext-po.in.h (LIBGETTEXTPO_VERSION): Update.
+	* gettext-runtime/m4/gettext.m4: Bump version number in comment.
+	* gettext-runtime/m4/intl.m4: Likewise.
+	* gettext-runtime/m4/intlmacosx.m4: Likewise.
+	* gettext-runtime/m4/po.m4: Likewise.
+	(GETTEXT_MACRO_VERSION): Bump to 0.20.
+	* gettext-runtime/po/Makefile.in.in (GETTEXT_MACRO_VERSION): Likewise.
+	* gettext-runtime/intl/Makefile.am (LTV_*): Bump to 9:6:2.
+	* gettext-tools/libgettextpo/Makefile.am (LTV_*): Bump to 5:5:5.
+	* gettext-tools/configure.ac (ARCHIVE_VERSION): Set to 0.20.
+	* gettext-tools/misc/autopoint.in: Accept version 0.20.
+	* gettext-runtime/doc/matrix.texi: Update from TP.
+	* gettext-runtime/doc/nls.texi (STATUS): Update.
+	* gettext-runtime/src/envsubst.c (main): Update copyright year in --version
+	output.
+	* gettext-runtime/src/gettext.c (main): Likewise.
+	* gettext-runtime/src/ngettext.c (main): Likewise.
+	* gettext-tools/src/cldr-plurals.c (main): Likewise.
+	* gettext-tools/src/hostname.c (main): Likewise.
+	* gettext-tools/src/msgattrib.c (main): Likewise.
+	* gettext-tools/src/msgcat.c (main): Likewise.
+	* gettext-tools/src/msgcmp.c (main): Likewise.
+	* gettext-tools/src/msgcomm.c (main): Likewise.
+	* gettext-tools/src/msgconv.c (main): Likewise.
+	* gettext-tools/src/msgen.c (main): Likewise.
+	* gettext-tools/src/msgexec.c (main): Likewise.
+	* gettext-tools/src/msgfilter.c (main): Likewise.
+	* gettext-tools/src/msgfmt.c (main): Likewise.
+	* gettext-tools/src/msggrep.c (main): Likewise.
+	* gettext-tools/src/msginit.c (main): Likewise.
+	* gettext-tools/src/msgmerge.c (main): Likewise.
+	* gettext-tools/src/msgunfmt.c (main): Likewise.
+	* gettext-tools/src/msguniq.c (main): Likewise.
+	* gettext-tools/src/recode-sr-latin.c (main): Likewise.
+	* gettext-tools/src/urlget.c (main): Likewise.
+	* gettext-tools/src/xgettext.c (main): Likewise.
+	* gettext-runtime/src/gettext.sh.in (func_version): Update copyright year.
+	* gettext-tools/misc/convert-archive.in (func_version): Likewise.
+	* gettext-tools/misc/gettextize.in (func_version): Likewise.
+	* libtextstyle/version.sh: Use version number 0.20 here as well.
+	* gettext-runtime/NEWS: Mention changes (from main NEWS).
+	* libtextstyle/NEWS: Mention changes.
+
+2019-04-04  Bruno Haible  <bruno@clisp.org>
+
+	Add copyright notices in several files.
+	Reported by <ineiev@gnu.org> in <https://savannah.gnu.org/bugs/?54809>.
+
+	* gettext-runtime/m4/Makefile.am: Add GPL copyright notice.
+	* gettext-tools/m4/Makefile.am: Likewise.
+	* gettext-tools/doc/iso-639.sed: Likewise.
+	* gettext-tools/doc/iso-639-2.sed: Likewise.
+	* gettext-tools/doc/iso-3166.sed: Likewise.
+	* gettext-tools/its/glade1.its: Likewise.
+	* gettext-tools/its/glade2.its: Likewise.
+	* gettext-tools/its/gsettings.its: Likewise.
+	* gettext-tools/its/gtkbuilder.its: Likewise.
+	* gettext-tools/misc/cvsuser.c: Likewise.
+	* gettext-tools/projects/team-address: Likewise.
+	* gettext-tools/projects/GNOME/team-address: Likewise.
+	* gettext-tools/projects/GNOME/trigger: Likewise.
+	* gettext-tools/projects/KDE/team-address: Likewise.
+	* gettext-tools/projects/KDE/trigger: Likewise.
+	* gettext-tools/projects/TP/team-address: Likewise.
+	* windows/windres-options: Likewise.
+	* gettext-runtime/po/insert-header.sin: Add copyright notice, based on the one
+	in Rules-quot.
+	* gettext-tools/doc/FAQ.html: Add copyright notice, suitable for documentation.
+
+2018-11-25  Bruno Haible  <bruno@clisp.org>
+
+	build: Remove generated files from version control.
+	This creates a bootstrapping issue, but it can be mitigated:
+	If a user wants to build GNU gettext on a platform which does not have the
+	GNU gettext programs installed, they first need to build and install a tarball
+	of GNU gettext; then only they can build GNU gettext from the git repository.
+
+	* gettext-runtime/po/gettext-runtime.pot: Remove file.
+	* gettext-tools/po/gettext-tools.pot: Remove file.
+	* gettext-tools/examples/po/gettext-examples.pot: Remove file.
+
+2018-10-25  Bruno Haible  <bruno@clisp.org>
+
+	po, examples: Change .po -> .gmo rules to consider the newest changes to the POT file.
+	Reported by Claude Paroz <claude@2xlibre.net>
+	in <https://savannah.gnu.org/bugs/?50910>.
+
+	* gettext-runtime/m4/po.m4 (AM_PO_SUBDIRS): Set MSGMERGE_FOR_MSGFMT_OPTION.
+	* gettext-runtime/po/Makefile.in.in (MSGMERGE): Use GNU msgmerge, even if not
+	first in $PATH.
+	(MSGMERGE_FOR_MSGFMT_OPTION): New variable.
+	(.po.gmo): Depend on the POT file. Use msgmerge on the fly, to take into
+	account the most recent POT file changes.
+	* gettext-tools/examples/hello-*/po/Makefile.am: Likewise, also for the .po.qm,
+	update-properties, update-classes targets.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile
+	(MSGMERGE_FOR_MSGFMT_OPTION): New variable.
+	($(STRINGSFILES)): Depend on the POT file. Use msgmerge on the fly, to take
+	into account the most recent POT file changes.
+
+2018-10-24  Bruno Haible  <bruno@clisp.org>
+
+	po, examples: Put stamp-po in the source directory.
+	Rationale: <https://www.gnu.org/prep/standards/html_node/Makefile-Basics.html>.
+
+	* gettext-runtime/po/Makefile.in.in: Use $(srcdir)/stamp-po instead of stamp-po.
+	Talk about "version control system", not CVS.
+	* gettext-tools/examples/hello-*/po/Makefile.am: Likewise.
+	* gettext-tools/examples/po/Makefile.am: Likewise.
+	* gettext-tools/examples/check-examples (func_check_dist_vpath): Verify the
+	stamp-po file does not exist in the build dir, except when using the older
+	Makefile.in.in infrastructure.
+
+2018-10-24  Bruno Haible  <bruno@clisp.org>
+
+	po: Make "make maintainer-clean" erase the .pot file.
+	Rationale:
+	<https://www.gnu.org/prep/standards/html_node/Standard-Targets.html>
+	<https://www.gnu.org/software/automake/manual/html_node/Clean.html>
+
+	* NEWS: Mention the change.
+	* gettext-runtime/po/Makefile.in.in (maintainer-clean): Remove the .pot file.
+	* gettext-tools/examples/hello-*/po/Makefile.am (MAINTAINERCLEANFILES): Add
+	the .pot file.
+	* gettext-tools/examples/po/Makefile.am (MAINTAINERCLEANFILES): Likewise.
+	* gettext-tools/examples/check-examples (func_check_maintainerclean,
+	func_check_maintainerclean_vpath): Verify the .pot file is removed after
+	'make maintainer-clean', except when using the older Makefile.in.in
+	infrastructure.
+
+2018-10-24  Bruno Haible  <bruno@clisp.org>
+
+	po, examples: Use case-insensitive search for "GNU <PACKAGE_NAME>".
+	Reported by Akim Demaille <akim@lrde.epita.fr> in
+	<https://lists.gnu.org/archive/html/bug-gettext/2018-10/msg00020.html>.
+
+	* gettext-runtime/po/Makefile.in.in ($(DOMAIN).pot-update): Use a
+	case-insensitive search for "GNU <PACKAGE_NAME>".
+	* gettext-tools/examples/hello-*/po/Makefile.am ($(DOMAIN).pot-update):
+	Likewise.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile
+	($(DOMAIN).pot-update): Likewise.
+
+2018-10-24  Bruno Haible  <bruno@clisp.org>
+
+	po: Remove obsolete Makefile rules for .mo files.
+	* gettext-runtime/po/Makefile.in.in (MSGFMT*): Remove variables.
+	(.SUFFIXES): Remove .mo.
+	(.po.mo): Remove rule.
+	(distclean): Don't remove *.mo files.
+	* gettext-tools/examples/hello-*/po/Makefile.am (.SUFFIXES): Remove .mo.
+	(.po.mo): Remove rule.
+	(DISTCLEANFILES): Remove *.mo.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile (.SUFFIXES):
+	Remove .mo.
+	* gettext-runtime/m4/po.m4 (AM_PO_SUBDIRS): Don't set MSGFMT_015.
+
+2018-10-24  Bruno Haible  <bruno@clisp.org>
+
+	examples: Add an option to claim the package as GNU/non-GNU.
+	This mirrors the Makefile.in.in and Makevars change from 2014-05-01.
+
+	Reported by David Shea at <https://savannah.gnu.org/bugs/?40520>.
+
+	* gettext-runtime/po/Makefile.in.in ($(DOMAIN).pot-update): Tweak whitespace.
+	* gettext-tools/examples/hello-*/po/Makefile.am (PACKAGE_GNU): New variable.
+	($(DOMAIN).pot-update): Don't search for "GNU packagename" if $(PACKAGE_GNU) is
+	set.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile: Likewise.
+
+2018-10-24  Bruno Haible  <bruno@clisp.org>
+
+	po: Make the insertion of the .pot-header file more robust.
+	This improves on the 2015-09-01 patch.
+
+	* gettext-runtime/po/Makefile.in.in ($(DOMAIN).pot-update): Fail if the 'cat'
+	command fails.
+
+2018-10-24  Bruno Haible  <bruno@clisp.org>
+
+	po: When doing msgmerge --version, use the correct msgmerge program.
+	This reverts the patch from
+	<https://lists.gnu.org/archive/html/bug-gettext/2015-06/msg00000.html>.
+	Rationale:
+	<https://lists.gnu.org/archive/html/bug-gettext/2018-10/msg00000.html>.
+
+	* gettext-runtime/po/Makefile.in.in ($(POFILES)): Use $(MSGMERGE_UPDATE),
+	not $(MSGMERGE).
+
+2018-10-24  Bruno Haible  <bruno@clisp.org>
+
+	po: Make $(POFILES) target more robust.
+	It was introduced on 2014-05-01.
+
+	* gettext-runtime/po/Makefile.in.in ($(POFILES)): Create POT file also when the
+	PO file does not yet exist. Fail if creation of the POT file fails.
+
+2018-05-05  Bruno Haible  <bruno@clisp.org>
+
+	all: Replace more http and ftp URLs by https URLs.
+	* autogen.sh: Use https: URLs.
+	* gettext-runtime/doc/nls.texi (Translating Teams, Available Packages): Likewise.
+	* gettext-tools/doc/gettext.texi: Likewise.
+	* gettext-tools/doc/FAQ.html: Likewise.
+	* gettext-tools/doc/tutorial.html: Likewise.
+	* gettext-tools/misc/gettextize.in: Likewise.
+	* gettext-tools/projects/GNOME/team-address: Likewise.
+	* gettext-tools/projects/GNOME/teams.url: Likewise.
+	* gettext-tools/projects/KDE/team-address: Likewise.
+	* gettext-tools/projects/KDE/teams.url: Likewise.
+	* gettext-tools/projects/TP/teams.url: Likewise.
+	* gettext-tools/src/x-python.c: Likewise.
+	* gettext-tools/tests/xgettext-its-1: Likewise.
+
+2017-10-15  Bruno Haible  <bruno@clisp.org>
+
+	Clarify copyright and license of some files.
+	Reported by Joël Krähemann at <https://savannah.gnu.org/bugs/?52227>.
+
+	* gettext-runtime/po/Makefile.in.in: Correct copyright holder.
+	* gettext-runtime/po/remove-potcdate.sin: Use the same licensing terms as Makefile.in.in.
+	* gettext-runtime/po/Rules-quot: Use an all-permissive license.
+	* gettext-tools/po/Makevars.template: Likewise.
+	* gettext-runtime/po/Makevars: Likewise.
+	* gettext-tools/po/Makevars: Likewise.
+	* gettext-runtime/po/POTFILES.in: Use GPLv3+.
+	* gettext-tools/po/POTFILES.in: Likewise.
+
+2017-02-16  Bruno Haible  <bruno@clisp.org>
+
+	Support for Automake targets install-{dvi,ps,pdf,html}.
+	Reported by Eric Blake at https://debbugs.gnu.org/cgi/bugreport.cgi?bug=25690
+	via Assaf Gordon.
+
+	* gettext-runtime/po/Makefile.in.in (install-dvi, install-ps, install-pdf,
+	install-html): New empty targets.
+
+2016-12-11  Bruno Haible  <bruno@clisp.org>
+
+	Merge all .gitignore files into a single .gitignore file.
+
+2016-12-11  Bruno Haible  <bruno@clisp.org>
+
+	Update and organize the .gitignore files.
+
+2016-07-09  Stanislav Brabec  <sbrabec@suse.com>
+
+	Add support for msgmerge --previous
+	msgmerge --previous is a very useful feature that makes adjusting of
+	translation much easier when small changes in the source code are done.
+	msgmerge supports it for 10 years, but it is not used by most projects,
+	as Makefile.in.in never added support for it.
+
+	Use msgmerge --previous as default on all systems with gettext >= 0.16.
+
 2016-06-09  Daiki Ueno  <ueno@gnu.org>
 
 	Update translations
@@ -21,13 +1088,15 @@
 	* gettext-tools/po/uk.po: Update from Yuri Chornoivan <yurchor@ukr.net>
 	* gettext-tools/po/vi.po: Update from Trần Ngọc Quân <vnwildman@gmail.com>
 
+2016-06-09  Daiki Ueno  <ueno@gnu.org>
+
 	Prepare for 0.19.8
 
 2016-01-02  Daiki Ueno  <ueno@gnu.org>
 
 	maint: Update copyright year
 
-2015-12-28  Daiki Ueno  <ueno@gnu.org>
+2015-12-27  Daiki Ueno  <ueno@gnu.org>
 
 	Update translations
 	* gettext-runtime/po/fr.po: Update from Stéphane Aulery <lkppo@free.fr>.
@@ -51,6 +1120,8 @@
 	* gettext-tools/po/sr.po: Update from Мирослав Николић <miroslavnikolic@rocketmail.com>.
 	* gettext-tools/po/uk.po: Update from Yuri Chornoivan <yurchor@ukr.net>.
 	* gettext-tools/po/vi.po: Update from Trần Ngọc Quân <vnwildman@gmail.com>.
+
+2015-12-27  Daiki Ueno  <ueno@gnu.org>
 
 	Prepare for 0.19.7
 

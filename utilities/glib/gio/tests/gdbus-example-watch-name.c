@@ -9,7 +9,7 @@ static GOptionEntry opt_entries[] =
   { "name", 'n', 0, G_OPTION_ARG_STRING, &opt_name, "Name to watch", NULL },
   { "system-bus", 's', 0, G_OPTION_ARG_NONE, &opt_system_bus, "Use the system-bus instead of the session-bus", NULL },
   { "auto-start", 'a', 0, G_OPTION_ARG_NONE, &opt_auto_start, "Instruct the bus to launch an owner for the name", NULL},
-  { NULL}
+  G_OPTION_ENTRY_NULL
 };
 
 static void

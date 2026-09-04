@@ -4,29 +4,19 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "sequence_diagram.h"
 
 #include "epan/addr_resolv.h"
+#include "epan/sequence_analysis.h"
+#include "epan/column.h"
 
-#include "ui/tap-sequence-analysis.h"
-
-#include "color_utils.h"
-#include "qt_ui_utils.h"
+#include <ui/qt/utils/color_utils.h>
+#include <ui/qt/utils/qt_ui_utils.h>
+#include <ui/qt/widgets/qcp_axis_ticker_elided.h>
+#include "ui/recent.h"
 
 #include <QFont>
 #include <QFontMetrics>
@@ -37,7 +27,7 @@
 const int max_comment_em_width_ = 20;
 
 // UML-like network node sequence diagrams.
-// http://www.ibm.com/developerworks/rational/library/3101.html
+// https://developer.ibm.com/articles/the-sequence-diagram/
 
 WSCPSeqData::WSCPSeqData() :
   key(0),
@@ -67,17 +57,22 @@ SequenceDiagram::SequenceDiagram(QCPAxis *keyAxis, QCPAxis *valueAxis, QCPAxis *
     // yaxis2 (comment): Extra info ("Comment" in GTK+)
 
 //    valueAxis->setAutoTickStep(false);
+
+    /* The comments are not numbers, don't try to pretty print exponentials. */
+    commentAxis->setNumberFormat("f");
     QList<QCPAxis *> axes;
     axes << value_axis_ << key_axis_ << comment_axis_;
     QPen no_pen(Qt::NoPen);
     foreach (QCPAxis *axis, axes) {
-        axis->setAutoTicks(false);
-        axis->setTickStep(1.0);
-        axis->setAutoTickLabels(false);
+        QSharedPointer<QCPAxisTicker> ticker(new QCPAxisTickerText);
+        axis->setTicker(ticker);
         axis->setSubTickPen(no_pen);
         axis->setTickPen(no_pen);
-        axis->setBasePen(no_pen);
+        axis->setSelectedTickPen(no_pen);
     }
+
+    QSharedPointer<QCPAxisTicker> ticker(new QCPAxisTickerElided(comment_axis_));
+    comment_axis_->setTicker(ticker);
 
     value_axis_->grid()->setVisible(false);
 
@@ -92,6 +87,14 @@ SequenceDiagram::SequenceDiagram(QCPAxis *keyAxis, QCPAxis *valueAxis, QCPAxis *
     smooth_font_size(comment_font);
     comment_axis_->setTickLabelFont(comment_font);
     comment_axis_->setSelectedTickLabelFont(QFont(comment_font.family(), comment_font.pointSizeF(), QFont::Bold));
+
+    // By default QCPAxisRect auto resizes, which creates some slight but
+    // noticeable horizontal movement when scrolling vertically. Prevent that.
+    key_axis_->axisRect()->setAutoMargins(QCP::msTop | QCP::msBottom);
+    int time_margin = QFontMetrics(key_axis_->tickLabelFont()).horizontalAdvance(get_column_longest_string(COL_CLS_TIME)) + key_axis_->tickLabelPadding();
+    int comment_margin = QFontMetrics(comment_font).height() * (max_comment_em_width_ + 1); // Add 1 as using the exact elided width is slightly too narrow
+    key_axis_->axisRect()->setMargins(QMargins(time_margin, 0, comment_margin, 0));
+
     //             frame_label
     // port_src -----------------> port_dst
 
@@ -137,7 +140,7 @@ int SequenceDiagram::adjacentPacket(bool next)
         it = data_->constEnd();
         --it;
         while (it != data_->constBegin()) {
-            guint32 prev_frame = it.value().value->frame_number;
+            uint32_t prev_frame = it.value().value->frame_number;
             --it;
             if (prev_frame == selected_packet_) {
                 adjacent_packet = it.value().value->frame_number;
@@ -159,23 +162,21 @@ void SequenceDiagram::setData(_seq_analysis_info *sainfo)
     double cur_key = 0.0;
     QVector<double> key_ticks, val_ticks;
     QVector<QString> key_labels, val_labels, com_labels;
-    QFontMetrics com_fm(comment_axis_->tickLabelFont());
-    int elide_w = com_fm.height() * max_comment_em_width_;
     char* addr_str;
 
-    for (GList *cur = g_queue_peek_nth_link(sainfo->items, 0); cur; cur = g_list_next(cur)) {
-        seq_analysis_item_t *sai = (seq_analysis_item_t *) cur->data;
+    for (GList *cur = g_queue_peek_nth_link(sainfo->items, 0); cur; cur = gxx_list_next(cur)) {
+        seq_analysis_item_t *sai = gxx_list_data(seq_analysis_item_t *, cur);
         if (sai->display) {
             WSCPSeqData new_data;
 
             new_data.key = cur_key;
             new_data.value = sai;
-            data_->insertMulti(new_data.key, new_data);
+            data_->insert(new_data.key, new_data);
 
             key_ticks.append(cur_key);
             key_labels.append(sai->time_str);
 
-            com_labels.append(com_fm.elidedText(sai->comment, Qt::ElideRight, elide_w));
+            com_labels.append(sai->comment);
 
             cur_key++;
         }
@@ -183,20 +184,21 @@ void SequenceDiagram::setData(_seq_analysis_info *sainfo)
 
     for (unsigned int i = 0; i < sainfo_->num_nodes; i++) {
         val_ticks.append(i);
-        addr_str = address_to_display(NULL, &(sainfo_->nodes[i]));
+        addr_str = address_to_display(Q_NULLPTR, &(sainfo_->nodes[i]));
         val_labels.append(addr_str);
         if (i % 2 == 0) {
             val_labels.last().append("\n");
         }
 
-        wmem_free(NULL, addr_str);
+        wmem_free(Q_NULLPTR, addr_str);
     }
-    keyAxis()->setTickVector(key_ticks);
-    keyAxis()->setTickVectorLabels(key_labels);
-    valueAxis()->setTickVector(val_ticks);
-    valueAxis()->setTickVectorLabels(val_labels);
-    comment_axis_->setTickVector(key_ticks);
-    comment_axis_->setTickVectorLabels(com_labels);
+
+    QSharedPointer<QCPAxisTickerText> key_ticker = qSharedPointerCast<QCPAxisTickerText>(keyAxis()->ticker());
+    key_ticker->setTicks(key_ticks, key_labels);
+    QSharedPointer<QCPAxisTickerText> value_ticker = qSharedPointerCast<QCPAxisTickerText>(valueAxis()->ticker());
+    value_ticker->setTicks(val_ticks, val_labels);
+    QSharedPointer<QCPAxisTickerText> comment_ticker = qSharedPointerCast<QCPAxisTickerText>(comment_axis_->ticker());
+    comment_ticker->setTicks(key_ticks, com_labels);
 }
 
 void SequenceDiagram::setSelectedPacket(int selected_packet)
@@ -220,6 +222,20 @@ _seq_analysis_item *SequenceDiagram::itemForPosY(int ypos)
     return NULL;
 }
 
+bool SequenceDiagram::inComment(QPoint pos) const
+{
+    return pos.x() >= (comment_axis_->axisRect()->right()
+                        + comment_axis_->padding()
+                        + comment_axis_->tickLabelPadding()
+                        + comment_axis_->offset());
+}
+
+QString SequenceDiagram::elidedComment(const QString &text) const
+{
+    QSharedPointer<QCPAxisTickerElided> comment_ticker = qSharedPointerCast<QCPAxisTickerElided>(comment_axis_->ticker());
+    return comment_ticker->elidedText(text);
+}
+
 double SequenceDiagram::selectTest(const QPointF &pos, bool, QVariant *) const
 {
     double key_pos = qRound(key_axis_->pixelToCoord(pos.y()));
@@ -239,7 +255,7 @@ void SequenceDiagram::draw(QCPPainter *painter)
     // Lifelines (node lines). Will likely be overdrawn below.
     painter->save();
     painter->setOpacity(alpha);
-    fg_pen = mainPen();
+    fg_pen = pen();
     fg_pen.setStyle(Qt::DashLine);
     painter->setPen(fg_pen);
     for (int ll_x = value_axis_->range().lower; ll_x < value_axis_->range().upper; ll_x++) {
@@ -250,13 +266,12 @@ void SequenceDiagram::draw(QCPPainter *painter)
         painter->drawLine(ll_start, ll_end);
     }
     painter->restore();
-    fg_pen = mainPen();
+    fg_pen = pen();
 
     WSCPSeqDataMap::const_iterator it;
     for (it = data_->constBegin(); it != data_->constEnd(); ++it) {
         double cur_key = it.key();
         seq_analysis_item_t *sai = it.value().value;
-        QPen fg_pen(mainPen());
         QColor bg_color;
 
         if (sai->frame_number == selected_packet_) {
@@ -264,12 +279,10 @@ void SequenceDiagram::draw(QCPPainter *painter)
             fg_pen.setColor(sel_pal.color(QPalette::HighlightedText));
             bg_color = sel_pal.color(QPalette::Highlight);
             selected_key_ = cur_key;
-        } else if (sainfo_->type == SEQ_ANALYSIS_ANY) {
-            if (sai->has_color_filter) {
-                fg_pen.setColor(QColor().fromRgb(sai->fg_color));
-                bg_color = QColor().fromRgb(sai->bg_color);
-            }
-        } else { // SEQ_ANALYSIS_VOIP, SEQ_ANALYSIS_TCP
+        } else if ((sai->has_color_filter) && (recent.packet_list_colorize)) {
+            fg_pen.setColor(QColor().fromRgb(sai->fg_color));
+            bg_color = QColor().fromRgb(sai->bg_color);
+        } else {
             fg_pen.setColor(Qt::black);
             bg_color = ColorUtils::sequenceColor(sai->conv_num);
         }
@@ -311,7 +324,7 @@ void SequenceDiagram::draw(QCPPainter *painter)
         }
 
         // Message
-        if (mainPen().style() != Qt::NoPen && mainPen().color().alpha() != 0) {
+        if (pen().style() != Qt::NoPen && pen().color().alpha() != 0) {
             painter->save();
 
             QFontMetrics cfm(comment_axis_->tickLabelFont());
@@ -338,7 +351,9 @@ void SequenceDiagram::draw(QCPPainter *painter)
                     ? arrow_start.x() : arrow_end.x();
             double arrow_width = (arrow_end.x() - arrow_start.x()) * dir_mul;
             QString arrow_label = cfm.elidedText(sai->frame_label, Qt::ElideRight, arrow_width);
-            QPoint text_pt(comment_start + ((arrow_width - cfm.width(arrow_label)) / 2),
+            int arrow_label_width = 0;
+            arrow_label_width = cfm.horizontalAdvance(arrow_label);
+            QPoint text_pt(comment_start + ((arrow_width - arrow_label_width) / 2),
                           arrow_start.y() - (en_w / 2));
 
             painter->setFont(comment_axis_->tickLabelFont());
@@ -349,9 +364,9 @@ void SequenceDiagram::draw(QCPPainter *painter)
                 int right_x = dir_mul > 0 ? arrow_end.x() : arrow_start.x();
                 QString port_left = QString::number(dir_mul > 0 ? sai->port_src : sai->port_dst);
                 QString port_right = QString::number(dir_mul > 0 ? sai->port_dst : sai->port_src);
-
-                text_pt = QPoint(left_x - en_w - cfm.width(port_left),
-                                arrow_start.y() + (en_w / 2));
+                int port_left_width = 0;
+                port_left_width = cfm.horizontalAdvance(port_left);
+                text_pt = QPoint(left_x - en_w - port_left_width, arrow_start.y() + (en_w / 2));
                 painter->drawText(text_pt, port_left);
 
                 text_pt.setX(right_x + en_w);
@@ -366,7 +381,7 @@ void SequenceDiagram::drawLegendIcon(QCPPainter *, const QRectF &) const
 {
 }
 
-QCPRange SequenceDiagram::getKeyRange(bool &validRange, QCPAbstractPlottable::SignDomain) const
+QCPRange SequenceDiagram::getKeyRange(bool &validRange, QCP::SignDomain) const
 {
     QCPRange range;
     bool valid = false;
@@ -388,7 +403,7 @@ QCPRange SequenceDiagram::getKeyRange(bool &validRange, QCPAbstractPlottable::Si
     return range;
 }
 
-QCPRange SequenceDiagram::getValueRange(bool &validRange, QCPAbstractPlottable::SignDomain) const
+QCPRange SequenceDiagram::getValueRange(bool &validRange, QCP::SignDomain, const QCPRange &) const
 {
     QCPRange range;
     bool valid = false;
@@ -401,16 +416,3 @@ QCPRange SequenceDiagram::getValueRange(bool &validRange, QCPAbstractPlottable::
     validRange = valid;
     return range;
 }
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

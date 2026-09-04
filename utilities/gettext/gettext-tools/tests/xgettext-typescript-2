@@ -1,0 +1,110 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test of TypeScript support.
+# Playing with regex and division operator
+
+cat <<\EOF > xg-ts-2.ts
+// RegExp literals containing string quotes must not desync the parser
+const d: number = 1 / 2 / 4;
+const s: string = " x " + (/^\d/.exec("0815")?.[0] || "").replace(/[a-z]/g, '@');
+const s1: RegExpMatchArray | null = /"/.exec(_("RegExp test string #1"));
+const s2: RegExpMatchArray | null = /'/.exec(_("RegExp test string #2"));
+const s3: RegExpMatchArray | null = /['a-b]/.exec(_('RegExp test string #3'));
+const s4: RegExpMatchArray | null = /["a-b]/.exec(_('RegExp test string #4'));
+const s5: RegExpMatchArray | null = /[a-b']/.exec(_('RegExp test string #5'));
+const s6: RegExpMatchArray | null = /[a-b"]/.exec(_('RegExp test string #6'));
+const c: number = 35 / 2 / 8 + _( "RegExp test string #7").length / 32.0;
+const sizestr: string = Math.round(size/1024*factor)/factor+_( "RegExp test string #8");
+const cssClassType: string = attr.type.replace(/^.*\//, _('RegExp test string #9')).replace(/\./g, '-');
+const lookup: number = lookuptable[idx]/factor+_( "RegExp test string #10");
+function doit(): RegExpMatchArray | null {
+  return /\./.exec(_("RegExp test string #11"));
+}
+if (false)
+  /foo/.exec(_("RegExp test string #12"));
+else
+  /foo/.exec(_("RegExp test string #13"));
+const s7: boolean = /a\/\f\r\n\t\v\0\b\s\S\w\W\d\D\b\Bb/.test(_("RegExp test string #14"));
+const s8: RegExpExecArray | null = /(?=(a+))a*b\1/.exec(_("RegExp test string #15"));
+const s9: RegExpExecArray | null = /_\("a+"\)/.exec(_("RegExp test string #16"));
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --add-comments --no-location -o xg-ts-2.tmp xg-ts-2.ts 2>xg-ts-2.err
+test $? = 0 || { cat xg-ts-2.err; Exit 1; }
+func_filter_POT_Creation_Date xg-ts-2.tmp xg-ts-2.pot
+
+cat <<\EOF > xg-ts-2.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "RegExp test string #1"
+msgstr ""
+
+msgid "RegExp test string #2"
+msgstr ""
+
+msgid "RegExp test string #3"
+msgstr ""
+
+msgid "RegExp test string #4"
+msgstr ""
+
+msgid "RegExp test string #5"
+msgstr ""
+
+msgid "RegExp test string #6"
+msgstr ""
+
+msgid "RegExp test string #7"
+msgstr ""
+
+msgid "RegExp test string #8"
+msgstr ""
+
+msgid "RegExp test string #9"
+msgstr ""
+
+msgid "RegExp test string #10"
+msgstr ""
+
+msgid "RegExp test string #11"
+msgstr ""
+
+msgid "RegExp test string #12"
+msgstr ""
+
+msgid "RegExp test string #13"
+msgstr ""
+
+msgid "RegExp test string #14"
+msgstr ""
+
+msgid "RegExp test string #15"
+msgstr ""
+
+msgid "RegExp test string #16"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-ts-2.ok xg-ts-2.pot
+result=$?
+
+exit $result

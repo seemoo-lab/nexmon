@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -29,7 +17,7 @@
  *
  * See
  *
- *    https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/plain/Documentation/usb/usbip_protocol.txt
+ *    https://www.kernel.org/doc/Documentation/usb/usbip_protocol.txt
  */
 
 #include <config.h>
@@ -46,67 +34,69 @@
 void proto_register_usbip(void);
 void proto_reg_handoff_usbip(void);
 
+static dissector_handle_t usbip_handle;
+
 /* Initialize the protocol and registered fields
  */
-static int proto_usbip = -1;
+static int proto_usbip;
 
-static int hf_usbip_version = -1;
-static int hf_usbip_operation = -1;
-static int hf_usbip_command = -1;
-static int hf_usbip_status = -1;
-static int hf_usbip_number_devices = -1;
-static int hf_usbip_path = -1;
-static int hf_usbip_devid = -1;
-static int hf_usbip_busid = -1;
-static int hf_usbip_busnum = -1;
-static int hf_usbip_devnum = -1;
-static int hf_usbip_speed = -1;
-static int hf_usbip_idVendor = -1;
-static int hf_usbip_idProduct = -1;
-static int hf_usbip_bcdDevice = -1;
-static int hf_usbip_bDeviceClass = -1;
-static int hf_usbip_bDeviceSubClass = -1;
-static int hf_usbip_bDeviceProtocol = -1;
-static int hf_usbip_bConfigurationValue = -1;
-static int hf_usbip_bNumConfigurations = -1;
-static int hf_usbip_bNumInterfaces = -1;
-static int hf_usbip_bInterfaceClass = -1;
-static int hf_usbip_bInterfaceSubClass = -1;
-static int hf_usbip_bInterfaceProtocol = -1;
-static int hf_usbip_padding = -1;
+static int hf_usbip_version;
+static int hf_usbip_operation;
+static int hf_usbip_command;
+static int hf_usbip_status;
+static int hf_usbip_number_devices;
+static int hf_usbip_path;
+static int hf_usbip_devid;
+static int hf_usbip_busid;
+static int hf_usbip_busnum;
+static int hf_usbip_devnum;
+static int hf_usbip_speed;
+static int hf_usbip_idVendor;
+static int hf_usbip_idProduct;
+static int hf_usbip_bcdDevice;
+static int hf_usbip_bDeviceClass;
+static int hf_usbip_bDeviceSubClass;
+static int hf_usbip_bDeviceProtocol;
+static int hf_usbip_bConfigurationValue;
+static int hf_usbip_bNumConfigurations;
+static int hf_usbip_bNumInterfaces;
+static int hf_usbip_bInterfaceClass;
+static int hf_usbip_bInterfaceSubClass;
+static int hf_usbip_bInterfaceProtocol;
+static int hf_usbip_padding;
 
-static int hf_usbip_device = -1;
-static int hf_usbip_interface = -1;
-static int hf_usbip_interval = -1;
+static int hf_usbip_device;
+static int hf_usbip_interface;
+static int hf_usbip_interval;
 
-static int hf_usbip_actual_length = -1;
-static int hf_usbip_error_count = -1;
+static int hf_usbip_actual_length;
+static int hf_usbip_error_count;
 
-static int hf_usbip_seqnum = -1;
-static int hf_usbip_cmd_frame = -1;
-static int hf_usbip_ret_frame = -1;
-static int hf_usbip_vic_frame = -1;
-static int hf_usbip_direction = -1;
-static int hf_usbip_ep = -1;
-static int hf_usbip_transfer_flags = -1;
-static int hf_usbip_transfer_buffer_length = -1;
-static int hf_usbip_start_frame = -1;
-static int hf_usbip_number_of_packets = -1;
-static int hf_usbip_setup = -1;
-static int hf_usbip_urb_data = -1;
+static int hf_usbip_seqnum;
+static int hf_usbip_cmd_frame;
+static int hf_usbip_ret_frame;
+static int hf_usbip_vic_frame;
+static int hf_usbip_direction;
+static int hf_usbip_ep;
+static int hf_usbip_transfer_flags;
+static int hf_usbip_transfer_buffer_length;
+static int hf_usbip_start_frame;
+static int hf_usbip_number_of_packets;
+static int hf_usbip_setup;
+static int hf_usbip_urb_data;
 
 /* Initialize the subtree pointers */
-static gint ett_usbip = -1;
-static gint ett_usbip_dev = -1;
-static gint ett_usbip_intf = -1;
+static int ett_usbip;
+static int ett_usbip_dev;
+static int ett_usbip_intf;
 
 enum usb_device_speed {
-        USB_SPEED_UNKNOWN = 0,                  /* enumerating */
-        USB_SPEED_LOW,                          /* usb 1.0 */
-        USB_SPEED_FULL,                         /* usb 1.1 */
-        USB_SPEED_HIGH,                         /* usb 2.0 */
-        USB_SPEED_WIRELESS,                     /* wireless (usb 2.5) */
-        USB_SPEED_SUPER,                        /* usb 3.0 */
+        USBIP_SPEED_UNKNOWN = 0,                  /* enumerating */
+        USBIP_SPEED_LOW,                          /* usb 1.0 */
+        USBIP_SPEED_FULL,                         /* usb 1.1 */
+        USBIP_SPEED_HIGH,                         /* usb 2.0 */
+        USBIP_SPEED_WIRELESS,                     /* wireless (usb 2.5) */
+        USBIP_SPEED_SUPER,                        /* usb 3.0 */
 };
 
 #define USBIP_SUPPORTED_VERSION 0x111
@@ -149,12 +139,12 @@ static const value_string usbip_urb_vals[] = {
 };
 
 static const value_string usbip_speed_vals[] = {
-    {USB_SPEED_UNKNOWN,  "Speed Unknown"                                   },
-    {USB_SPEED_LOW,      "Low Speed"                                       },
-    {USB_SPEED_FULL,     "Full Speed"                                      },
-    {USB_SPEED_HIGH,     "High Speed"                                      },
-    {USB_SPEED_WIRELESS, "Wireless Speed"                                  },
-    {USB_SPEED_SUPER,    "Super Speed"                                     },
+    {USBIP_SPEED_UNKNOWN,  "Speed Unknown"                                   },
+    {USBIP_SPEED_LOW,      "Low Speed"                                       },
+    {USBIP_SPEED_FULL,     "Full Speed"                                      },
+    {USBIP_SPEED_HIGH,     "High Speed"                                      },
+    {USBIP_SPEED_WIRELESS, "Wireless Speed"                                  },
+    {USBIP_SPEED_SUPER,    "Super Speed"                                     },
     {0,                  NULL                                              }
 };
 
@@ -164,6 +154,7 @@ static value_string_ext usbip_urb_vals_ext = VALUE_STRING_EXT_INIT(usbip_urb_val
 
 extern value_string_ext ext_usb_vendors_vals;
 extern value_string_ext ext_usb_products_vals;
+extern value_string_ext linux_negative_errno_vals_ext;
 
 static const value_string usb_endpoint_direction_vals[] = {
     {USBIP_DIR_OUT, "OUT"                        },
@@ -171,17 +162,17 @@ static const value_string usb_endpoint_direction_vals[] = {
     {0,             NULL                         }
 };
 
-static expert_field ei_usbip = EI_INIT;
+static expert_field ei_usbip;
 
 typedef struct _usbip_transaction_t
 {
-    guint32 seqnum;
-    guint32 devid;
-    guint32 ep;
-    guint32 dir;
-    guint32 cmd_frame;
-    guint32 ret_frame;
-    guint32 unlink_seqnum;
+    uint32_t seqnum;
+    uint32_t devid;
+    uint32_t ep;
+    uint32_t dir;
+    uint32_t cmd_frame;
+    uint32_t ret_frame;
+    uint32_t unlink_seqnum;
 } usbip_transaction_t;
 
 typedef struct _usbip_conv_info_t
@@ -200,16 +191,16 @@ dissect_device_list_request(packet_info *pinfo)
 static int
 dissect_device(proto_tree *tree, tvbuff_t *tvb, int offset)
 {
-    guint32 product;
-    guint32 vendor_id;
-    guint32 product_id;
+    uint32_t product;
+    uint32_t vendor_id;
+    uint32_t product_id;
 
     /* Device path on host (usually /sys/devices/usb/... */
-    proto_tree_add_item(tree, hf_usbip_path, tvb, offset, 256, ENC_ASCII | ENC_NA);
+    proto_tree_add_item(tree, hf_usbip_path, tvb, offset, 256, ENC_ASCII);
     offset += 256;
 
     /* Bus id string - Id of the bus the device is connected to */
-    proto_tree_add_item(tree, hf_usbip_busid, tvb, offset, 32, ENC_ASCII | ENC_NA);
+    proto_tree_add_item(tree, hf_usbip_busid, tvb, offset, 32, ENC_ASCII);
     offset += 32;
 
     /* bus number */
@@ -276,10 +267,10 @@ dissect_device_list_response(packet_info *pinfo, proto_tree *tree,
     proto_item *ti_dev;
     proto_tree *intf_tree = NULL;
     proto_tree *dev_tree = NULL;
-    guint32 num_of_devs;
-    guint32 i;
-    guint8 num_of_intf;
-    guint8 j;
+    uint32_t num_of_devs;
+    uint32_t i;
+    uint8_t num_of_intf;
+    uint8_t j;
 
     col_set_str(pinfo->cinfo, COL_INFO, "Device List Response");
 
@@ -288,10 +279,10 @@ dissect_device_list_response(packet_info *pinfo, proto_tree *tree,
     offset += 4;
 
     for (i = 0; i < num_of_devs; i++) {
-        num_of_intf = tvb_get_guint8(tvb, offset + 0x137);
+        num_of_intf = tvb_get_uint8(tvb, offset + 0x137);
         ti_dev = proto_tree_add_uint(tree, hf_usbip_device, tvb, offset,
                                      0x138 + 4 * num_of_intf, i + 1);
-        PROTO_ITEM_SET_GENERATED(ti_dev);
+        proto_item_set_generated(ti_dev);
 
         dev_tree = proto_item_add_subtree(ti_dev, ett_usbip_dev);
         offset = dissect_device(dev_tree, tvb, offset);
@@ -326,13 +317,13 @@ dissect_import_request(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
                        int offset)
 {
     col_set_str(pinfo->cinfo, COL_INFO, "Import Request");
-    proto_tree_add_item(tree, hf_usbip_busid, tvb, offset, 32, ENC_ASCII | ENC_NA);
+    proto_tree_add_item(tree, hf_usbip_busid, tvb, offset, 32, ENC_ASCII);
     return offset + 32;
 }
 
 static int
 dissect_import_response(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
-                        int offset, guint32 status)
+                        int offset, uint32_t status)
 {
     col_set_str(pinfo->cinfo, COL_INFO, "Import Response");
     if (status == 0)
@@ -346,8 +337,8 @@ dissect_cmd_submit(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
 {
     col_set_str(pinfo->cinfo, COL_INFO, "URB Submit");
 
-    proto_tree_add_item(tree, hf_usbip_transfer_flags, tvb, offset, 4,
-                        ENC_BIG_ENDIAN);
+    dissect_urb_transfer_flags(tvb, offset, tree, hf_usbip_transfer_flags,
+                               ENC_BIG_ENDIAN);
     offset += 4;
 
     proto_tree_add_item(tree, hf_usbip_transfer_buffer_length, tvb, offset, 4,
@@ -406,7 +397,7 @@ dissect_cmd_unlink(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
                    usbip_transaction_t *trans)
 {
     usbip_transaction_t *victim;
-    guint32 seqnum;
+    uint32_t seqnum;
 
     col_set_str(pinfo->cinfo, COL_INFO, "URB Unlink");
 
@@ -420,7 +411,7 @@ dissect_cmd_unlink(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
 
         ti = proto_tree_add_uint(tree, hf_usbip_vic_frame, NULL, 0, 0,
                                  victim->cmd_frame);
-        PROTO_ITEM_SET_GENERATED(ti);
+        proto_item_set_generated(ti);
     }
     return offset;
 }
@@ -428,7 +419,7 @@ dissect_cmd_unlink(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
 static int
 dissect_ret_unlink(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
                    int offset, usbip_conv_info_t *usbip_info,
-                   guint32 seqnum)
+                   uint32_t seqnum)
 {
     usbip_transaction_t *victim;
 
@@ -441,7 +432,7 @@ dissect_ret_unlink(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb,
         victim->ret_frame = pinfo->num;
         ti = proto_tree_add_uint(tree, hf_usbip_vic_frame, NULL, 0, 0,
                                  victim->cmd_frame);
-        PROTO_ITEM_SET_GENERATED(ti);
+        proto_item_set_generated(ti);
     }
     proto_tree_add_item(tree, hf_usbip_status, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
@@ -470,8 +461,8 @@ usbip_dissect_op(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tree,
                  int offset)
 {
     proto_item *ti = NULL;
-    guint32 operation;
-    gint32 status;
+    uint32_t operation;
+    int32_t status;
 
     proto_tree_add_item(tree, hf_usbip_version, tvb, offset, 2, ENC_BIG_ENDIAN);
     offset += 2;
@@ -521,11 +512,11 @@ usbip_dissect_urb(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tree,
 {
     proto_item *ti = NULL;
     usbip_transaction_t *usbip_trans;
-    guint32 command;
-    guint32 devid;
-    guint32 seqnum;
-    guint32 dir;
-    guint32 ep;
+    uint32_t command;
+    uint32_t devid;
+    uint32_t seqnum;
+    uint32_t dir;
+    uint32_t ep;
     struct usbip_header header;
 
     proto_tree_add_item_ret_uint(tree, hf_usbip_command, tvb, offset, 4, ENC_BIG_ENDIAN, &command);
@@ -558,7 +549,7 @@ usbip_dissect_urb(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tree,
     }
 
     if (!usbip_trans) {
-        usbip_trans = wmem_new(wmem_packet_scope(), usbip_transaction_t);
+        usbip_trans = wmem_new(pinfo->pool, usbip_transaction_t);
         usbip_trans->cmd_frame = 0;
         usbip_trans->ret_frame = 0;
         usbip_trans->devid = 0;
@@ -575,16 +566,16 @@ usbip_dissect_urb(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tree,
 
     ti = proto_tree_add_uint(tree, hf_usbip_cmd_frame, NULL, 0, 0,
                              usbip_trans->cmd_frame);
-    PROTO_ITEM_SET_GENERATED(ti);
+    proto_item_set_generated(ti);
     ti = proto_tree_add_uint(tree, hf_usbip_ret_frame, NULL, 0, 0,
                              usbip_trans->ret_frame);
-    PROTO_ITEM_SET_GENERATED(ti);
+    proto_item_set_generated(ti);
     ti = proto_tree_add_uint(tree, hf_usbip_devid, NULL, 0, 0, devid);
-    PROTO_ITEM_SET_GENERATED(ti);
+    proto_item_set_generated(ti);
     ti = proto_tree_add_uint(tree, hf_usbip_direction, NULL, 0, 0, dir);
-    PROTO_ITEM_SET_GENERATED(ti);
+    proto_item_set_generated(ti);
     ti = proto_tree_add_uint(tree, hf_usbip_ep, NULL, 0, 0, ep);
-    PROTO_ITEM_SET_GENERATED(ti);
+    proto_item_set_generated(ti);
 
     proto_tree_add_item(tree, hf_usbip_devid, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
@@ -612,7 +603,7 @@ usbip_dissect_urb(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tree,
         break;
 
     case OP_RET_SUBMIT: {
-        guint32 status;
+        uint32_t status;
 
         status = tvb_get_ntohl(tvb, offset);
         offset = dissect_ret_submit(pinfo, tree, tvb, offset);
@@ -645,7 +636,7 @@ static int
 dissect_usbip_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                      void *data _U_)
 {
-    guint16 version;
+    uint16_t version;
     int offset = 0;
 
     proto_item *ti = NULL;
@@ -693,7 +684,7 @@ static unsigned int
 get_usbip_message_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset,
                       void *data _U_)
 {
-    guint16 version;
+    uint16_t version;
 
     /* Get some values from the packet header */
     version = tvb_get_ntohs(tvb, offset);
@@ -718,7 +709,7 @@ get_usbip_message_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset,
      */
 
     if (version == USBIP_SUPPORTED_VERSION) {
-        guint16 op = tvb_get_ntohs(tvb, offset + 2);
+        uint16_t op = tvb_get_ntohs(tvb, offset + 2);
 
         switch (op) {
 
@@ -755,11 +746,11 @@ get_usbip_message_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset,
             if (num_of_devs == 0)
                 return expected_size;
 
-            if (tvb_captured_length_remaining(tvb, offset) < (gint) (0x138 * num_of_devs))
+            if (tvb_captured_length_remaining(tvb, offset) < (int) (0x138 * num_of_devs))
                 return 0;
 
             for (i = 0; i < num_of_devs; i++) {
-                guint8 num_of_intf = tvb_get_guint8(tvb, offset + 0x137);
+                uint8_t num_of_intf = tvb_get_uint8(tvb, offset + 0x137);
                 int skip = num_of_intf * 4;
 
                 expected_size += 0x138 + skip;
@@ -769,7 +760,7 @@ get_usbip_message_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset,
         }
         }
     } else if (version == 0x0000) {
-        guint32 cmd = tvb_get_ntohl(tvb, offset);
+        uint32_t cmd = tvb_get_ntohl(tvb, offset);
 
         if (tvb_captured_length_remaining(tvb, offset) < USBIP_HEADER_LEN)
             return 0;
@@ -784,30 +775,40 @@ get_usbip_message_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset,
 
         case OP_CMD_SUBMIT: {
             int expected_size = USBIP_HEADER_LEN;
+            int actual_length = tvb_get_ntohl(tvb, offset + 0x18);
+            int dir = tvb_get_ntohl(tvb, offset + 0xc);
+            int n_iso = tvb_get_ntohl(tvb, offset + 0x20);
 
-            if (tvb_get_ntohl(tvb, offset + 0xc) == USBIP_DIR_OUT)
-                expected_size += tvb_get_ntohl(tvb, offset + 0x18);
+            if (dir == USBIP_DIR_OUT)
+                expected_size += actual_length;
 
-            expected_size += tvb_get_ntohl(tvb, offset + 0x20) * 4 * 4;
+            if (n_iso > 0)
+                expected_size += n_iso * 4 * 4;
+
             return expected_size;
         }
 
         case OP_RET_SUBMIT: {
             int expected_size = USBIP_HEADER_LEN;
+            int actual_length = tvb_get_ntohl(tvb, offset + 0x18);
+            int n_iso = tvb_get_ntohl(tvb, offset + 0x20);
+
             usbip_transaction_t *usbip_trans = NULL;
             usbip_conv_info_t *usbip_info = usbip_get_usbip_conv(pinfo);
-            guint32 status = tvb_get_ntohl(tvb, offset + 0x14);
+            uint32_t status = tvb_get_ntohl(tvb, offset + 0x14);
 
             if (usbip_info) {
                 usbip_trans = (usbip_transaction_t *) wmem_tree_lookup32(
                     usbip_info->pdus, tvb_get_ntohl(tvb, offset + 4));
 
                 if (usbip_trans && usbip_trans->dir == USBIP_DIR_IN && status == 0)
-                    expected_size += tvb_get_ntohl(tvb, offset + 0x18);
+                    expected_size += actual_length;
             }
 
-            if (status == 0)
-                expected_size += tvb_get_ntohl(tvb, offset + 0x20) * 4 * 4;
+            if (status == 0) {
+                if (n_iso >= 0)
+                    expected_size += n_iso * 4 * 4;
+            }
             else
                 expected_size = tvb_captured_length(tvb);
 
@@ -822,13 +823,7 @@ get_usbip_message_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset,
 static int
 dissect_usbip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    /* Check that there's enough data */
-    if (tvb_reported_length(tvb) < 4) {
-        /* usbip's smallest packet size is 4 */
-        return 0;
-    }
-
-    tcp_dissect_pdus(tvb, pinfo, tree, TRUE, FRAME_HEADER_LEN,
+    tcp_dissect_pdus(tvb, pinfo, tree, true, FRAME_HEADER_LEN,
                      get_usbip_message_len, dissect_usbip_common, data);
 
     return tvb_captured_length(tvb);
@@ -859,7 +854,7 @@ proto_register_usbip(void)
 
         {&hf_usbip_status,
          {"Status",                        "usbip.status",
-            FT_INT32, BASE_DEC | BASE_EXT_STRING, &usb_urb_status_vals_ext, 0,
+            FT_INT32, BASE_DEC | BASE_EXT_STRING, &linux_negative_errno_vals_ext, 0,
             "USBIP Status", HFILL}},
 
         {&hf_usbip_number_devices,
@@ -1010,12 +1005,12 @@ proto_register_usbip(void)
 
         {&hf_usbip_direction,
          {"Direction",                     "usbip.endpoint_number.direction",
-          FT_UINT8, BASE_HEX, VALS(usb_endpoint_direction_vals), 0x1,
+          FT_UINT32, BASE_HEX, VALS(usb_endpoint_direction_vals), 0x00000001,
           "USB endpoint direction", HFILL}},
 
         {&hf_usbip_ep,
          {"Endpoint",                      "usbip.endpoint_number",
-          FT_UINT8, BASE_HEX, NULL, 0xf,
+          FT_UINT32, BASE_HEX, NULL, 0x0000000f,
           "USB endpoint number", HFILL}},
 
         {&hf_usbip_transfer_flags,
@@ -1049,7 +1044,7 @@ proto_register_usbip(void)
           "Raw Data", HFILL}},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_usbip,
         &ett_usbip_dev,
         &ett_usbip_intf,
@@ -1063,24 +1058,26 @@ proto_register_usbip(void)
 
     expert_module_t *expert_usbip;
 
-    expert_usbip = expert_register_protocol(proto_usbip);
-    expert_register_field_array(expert_usbip, ei, array_length(ei));
     proto_usbip = proto_register_protocol("USBIP Protocol", "USBIP", "usbip");
+
     proto_register_field_array(proto_usbip, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    usbip_handle = register_dissector("usbip", dissect_usbip, proto_usbip);
+
+    expert_usbip = expert_register_protocol(proto_usbip);
+    expert_register_field_array(expert_usbip, ei, array_length(ei));
+
 }
 
 void
 proto_reg_handoff_usbip(void)
 {
-    dissector_handle_t usbip_handle;
-
-    usbip_handle = create_dissector_handle(dissect_usbip, proto_usbip);
-    dissector_add_for_decode_as("tcp.port", usbip_handle);
+    dissector_add_for_decode_as_with_preference("tcp.port", usbip_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

@@ -3,7 +3,7 @@
 
 # Test c-format handling.
 
-cat <<EOF >mf-test4.po
+cat <<\EOF >mf-test4.po
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.

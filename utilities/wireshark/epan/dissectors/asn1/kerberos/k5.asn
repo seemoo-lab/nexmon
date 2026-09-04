@@ -14,9 +14,16 @@ NAME-TYPE ::= INTEGER {
 	kRB5-NT-X500-PRINCIPAL(6), -- PKINIT
 	kRB5-NT-SMTP-NAME(7),	-- Name in form of SMTP email name
 	kRB5-NT-ENTERPRISE-PRINCIPAL(10), -- Windows 2000 UPN
+	kRB5-NT-WELLKNOWN(11),	-- Wellknown
+	kRB5-NT-SRV-HST-DOMAIN(12), -- Domain based service with host name as instance (RFC5179)
 	kRB5-NT-ENT-PRINCIPAL-AND-ID(-130), -- Windows 2000 UPN and SID
 	kRB5-NT-MS-PRINCIPAL(-128), -- NT 4 style name
-	kRB5-NT-MS-PRINCIPAL-AND-ID(-129) -- NT style name and SID
+	kRB5-NT-MS-PRINCIPAL-AND-ID(-129), -- NT style name and SID
+	kRB5-NT-NTLM(-1200), -- NTLM name, realm is domain
+	kRB5-NT-X509-GENERAL-NAME(-1201), -- x509 general name (base64 encoded)
+	kRB5-NT-GSS-HOSTBASED-SERVICE(-1202), -- not used; remove
+	kRB5-NT-CACHE-UUID(-1203), -- name is actually a uuid pointing to ccache, use client name in cache
+	kRB5-NT-SRV-HST-NEEDS-CANON (-195894762) -- Internal: indicates that name canonicalization is needed
 }
 
 -- message types
@@ -28,6 +35,8 @@ MESSAGE-TYPE ::= INTEGER {
 	krb-tgs-rep(13), -- Response to KRB_TGS_REQ request
 	krb-ap-req(14), -- application request to server
 	krb-ap-rep(15), -- Response to KRB_AP_REQ_MUTUAL
+	krb-tgt-req(16), -- TGT-REQ used in U2U
+	krb-tgt-rep(17), -- TGT-REP used in U2U
 	krb-safe(20), -- Safe (checksummed) application message
 	krb-priv(21), -- Private (encrypted) application message
 	krb-cred(22), -- Private (encrypted) message to forward credentials
@@ -37,65 +46,116 @@ MESSAGE-TYPE ::= INTEGER {
 
 -- pa-data types
 
+
 PADATA-TYPE ::= INTEGER {
-	kRB5-PADATA-NONE(0),
-	kRB5-PADATA-TGS-REQ(1),
-	kRB5-PADATA-AP-REQ(1),
-	kRB5-PADATA-ENC-TIMESTAMP(2),
-	kRB5-PADATA-PW-SALT(3),
-	kRB5-PADATA-ENC-UNIX-TIME(5),
-	kRB5-PADATA-SANDIA-SECUREID(6),
-	kRB5-PADATA-SESAME(7),
-	kRB5-PADATA-OSF-DCE(8),
-	kRB5-PADATA-CYBERSAFE-SECUREID(9),
-	kRB5-PADATA-AFS3-SALT(10),
-	kRB5-PADATA-ETYPE-INFO(11),
-	kRB5-PADATA-SAM-CHALLENGE(12), -- (sam/otp)
-	kRB5-PADATA-SAM-RESPONSE(13), -- (sam/otp)
-	kRB5-PADATA-PK-AS-REQ-19(14), -- (PKINIT-19)
-	kRB5-PADATA-PK-AS-REP-19(15), -- (PKINIT-19)
-	kRB5-PADATA-PK-AS-REQ-WIN(15), -- (PKINIT - old number)
-	kRB5-PADATA-PK-AS-REQ(16), -- (PKINIT-25)
-	kRB5-PADATA-PK-AS-REP(17), -- (PKINIT-25)
-	kRB5-PADATA-PA-PK-OCSP-RESPONSE(18),
-	kRB5-PADATA-ETYPE-INFO2(19),
-	kRB5-PADATA-USE-SPECIFIED-KVNO(20),
-	kRB5-PADATA-SVR-REFERRAL-INFO(20), --- old ms referral number
-	kRB5-PADATA-SAM-REDIRECT(21), -- (sam/otp)
-	kRB5-PADATA-GET-FROM-TYPED-DATA(22),
-	kRB5-PADATA-SAM-ETYPE-INFO(23),
-	kRB5-PADATA-SERVER-REFERRAL(25),
-	kRB5-PADATA-TD-KRB-PRINCIPAL(102),	-- PrincipalName
-	kRB5-PADATA-PK-TD-TRUSTED-CERTIFIERS(104), -- PKINIT
-	kRB5-PADATA-PK-TD-CERTIFICATE-INDEX(105), -- PKINIT
-	kRB5-PADATA-TD-APP-DEFINED-ERROR(106),	-- application specific
-	kRB5-PADATA-TD-REQ-NONCE(107),		-- INTEGER
-	kRB5-PADATA-TD-REQ-SEQ(108),		-- INTEGER
-	kRB5-PADATA-PA-PAC-REQUEST(128),	-- jbrezak@exchange.microsoft.com
-	kRB5-PADATA-S4U2SELF(129),
-	kRB5-PADATA-PK-AS-09-BINDING(132),	-- client send this to 
-						-- tell KDC that is supports 
+	pA-NONE(0),
+	pA-TGS-REQ(1),			-- [RFC4120]
+	pA-ENC-TIMESTAMP(2),		-- [RFC4120]
+	pA-PW-SALT(3),			-- [RFC4120]
+	-- [reserved](4), --		-- [RFC6113]
+	pA-ENC-UNIX-TIME(5),		-- (deprecated) [RFC4120]
+	pA-SANDIA-SECUREID(6),		-- [RFC4120]
+	pA-SESAME(7),			-- [RFC4120]
+	pA-OSF-DCE(8),			-- [RFC4120]
+	pA-CYBERSAFE-SECUREID(9),	-- [RFC4120]
+	pA-AFS3-SALT(10),		-- [RFC4120] [RFC3961]
+	pA-ETYPE-INFO(11),		-- [RFC4120]
+	pA-SAM-CHALLENGE(12),		-- [KRB-WG.SAM]
+	pA-SAM-RESPONSE(13),		-- [KRB-WG.SAM]
+	pA-PK-AS-REQ-19(14),		-- [PK-INIT-1999]
+	pA-PK-AS-REP-19(15),		-- [PK-INIT-1999]
+	pA-PK-AS-REQ(16),		-- [RFC4556]
+	pA-PK-AS-REP(17),		-- [RFC4556]
+	pA-PK-OCSP-RESPONSE(18),	-- [RFC4557]
+	pA-ETYPE-INFO2(19),		-- [RFC4120]
+	pA-USE-SPECIFIED-KVNO(20),	-- [RFC4120]
+--	pA-SVR-REFERRAL-INFO(20), --	-- [REFERRALS]
+	pA-SAM-REDIRECT(21),		-- [KRB-WG.SAM]
+--	pA-GET-FROM-TYPED-DATA(22), --	-- (embedded in typed data) [RFC4120]
+	tD-PADATA(22),			-- (embeds padata) [RFC4120]
+	pA-SAM-ETYPE-INFO(23),		-- (sam/otp) [KRB-WG.SAM]
+	pA-ALT-PRINC(24),		-- (crawdad@fnal.gov) [HW-AUTH]
+	pA-SERVER-REFERRAL(25),		-- [REFERRALS]
+	pA-SAM-CHALLENGE2(30),		-- (kenh@pobox.com) [KRB-WG.SAM]
+	pA-SAM-RESPONSE2(31),		-- (kenh@pobox.com) [KRB-WG.SAM]
+	pA-EXTRA-TGT(41),		-- Reserved extra TGT [RFC6113]
+--	pA-FX-FAST-ARMOR(71), --	-- fast armor
+	tD-PKINIT-CMS-CERTIFICATES(101),-- CertificateSet from CMS
+	tD-KRB-PRINCIPAL(102),		-- PrincipalName
+	tD-KRB-REALM(103),		-- Realm
+	tD-TRUSTED-CERTIFIERS(104),	-- [RFC4556]
+	tD-CERTIFICATE-INDEX(105),	-- [RFC4556]
+	tD-APP-DEFINED-ERROR(106),	-- Application specific [RFC6113]
+	tD-REQ-NONCE(107),		-- INTEGER [RFC6113]
+	tD-REQ-SEQ(108),		-- INTEGER [RFC6113]
+	tD-DH-PARAMETERS(109),		-- [RFC4556]
+	tD-CMS-DIGEST-ALGORITHMS(111),	-- [ALG-AGILITY]
+	tD-CERT-DIGEST-ALGORITHMS(112),	-- [ALG-AGILITY]
+	pA-PAC-REQUEST(128),		-- [MS-KILE]
+	pA-FOR-USER(129),		-- [MS-KILE]
+	pA-FOR-X509-USER(130),		-- [MS-KILE]
+	pA-FOR-CHECK-DUPS(131),		-- [MS-KILE]
+--	pA-AS-CHECKSUM(132), --		-- [MS-KILE]
+	pA-PK-AS-09-BINDING(132),	-- client send this to
+						-- tell KDC that is supports
 						-- the asCheckSum in the
 						--  PK-AS-REP
-	kRB5-PADATA-CLIENT-CANONICALIZED(133)	-- 
+	pA-FX-COOKIE(133),		-- [RFC6113]
+	pA-AUTHENTICATION-SET(134),	-- [RFC6113]
+	pA-AUTH-SET-SELECTED(135),	-- [RFC6113]
+	pA-FX-FAST(136),		-- [RFC6113]
+	pA-FX-ERROR(137),		-- [RFC6113]
+	pA-ENCRYPTED-CHALLENGE(138),	-- [RFC6113]
+	pA-OTP-CHALLENGE(141),		-- (gareth.richards@rsa.com) [OTP-PREAUTH]
+	pA-OTP-REQUEST(142),		-- (gareth.richards@rsa.com) [OTP-PREAUTH]
+	pA-OTP-CONFIRM(143),		-- (gareth.richards@rsa.com) [OTP-PREAUTH]
+	pA-OTP-PIN-CHANGE(144),		-- (gareth.richards@rsa.com) [OTP-PREAUTH]
+	pA-EPAK-AS-REQ(145),		-- (sshock@gmail.com) [RFC6113]
+	pA-EPAK-AS-REP(146),		-- (sshock@gmail.com) [RFC6113]
+	pA-PKINIT-KX(147),		-- [RFC6112]
+	pA-PKU2U-NAME(148),		-- [PKU2U]
+	pA-REQ-ENC-PA-REP(149), 	-- [RFC6806]
+	pA-AS-FRESHNESS(150),		-- [RFC8070]
+	pA-SPAKE(151),			-- draft-ietf-kitten-krb-spake-preauth-09
+	pA-REDHAT-IDP-OAUTH2(152),	-- (pbrezina@redhat.com)
+	pA-REDHAT-PASSKEY(153),		-- (pbrezina@redhat.com)
+	pA-KERB-KEY-LIST-REQ(161), -- [MS-KILE]
+	pA-KERB-KEY-LIST-REP(162), -- [MS-KILE]
+	pA-SUPPORTED-ETYPES(165),	-- [MS-KILE]
+	pA-EXTENDED-ERROR(166),		-- [MS-KILE]
+	pA-PAC-OPTIONS(167),		-- [MS-KILE]
+	pA-SRP(250),			-- (lha@apple.com)
+	pA-PROV-SRV-LOCATION(-1)	-- 0xffffffff (gint32)0xFF) packetcable stuff
 }
 
 AUTHDATA-TYPE ::= INTEGER {
-	kRB5-AUTHDATA-IF-RELEVANT(1),
-	kRB5-AUTHDATA-INTENDED-FOR-SERVER(2),
-	kRB5-AUTHDATA-INTENDED-FOR-APPLICATION-CLASS(3),
-	kRB5-AUTHDATA-KDC-ISSUED(4),
-	kRB5-AUTHDATA-AND-OR(5),
-	kRB5-AUTHDATA-MANDATORY-TICKET-EXTENSIONS(6),
-	kRB5-AUTHDATA-IN-TICKET-EXTENSIONS(7),
-	kRB5-AUTHDATA-MANDATORY-FOR-KDC(8),
-	kRB5-AUTHDATA-INITIAL-VERIFIED-CAS(9),
-	kRB5-AUTHDATA-OSF-DCE(64),
-	kRB5-AUTHDATA-SESAME(65),
-	kRB5-AUTHDATA-OSF-DCE-PKI-CERTID(66),
-	kRB5-AUTHDATA-WIN2K-PAC(128),
-	kRB5-AUTHDATA-GSS-API-ETYPE-NEGOTIATION(129), -- Authenticator only
-	kRB5-AUTHDATA-SIGNTICKET(-17)
+	aD-IF-RELEVANT(1),
+	aD-INTENDED-FOR-SERVER(2),
+	aD-INTENDED-FOR-APPLICATION-CLASS(3),
+	aD-KDC-ISSUED(4),
+	aD-AND-OR(5),
+	aD-MANDATORY-TICKET-EXTENSIONS(6),
+	aD-IN-TICKET-EXTENSIONS(7),
+	aD-MANDATORY-FOR-KDC(8),
+	aD-INITIAL-VERIFIED-CAS(9),
+	aD-OSF-DCE(64),
+	aD-SESAME(65),
+	aD-OSF-DCE-PKI-CERTID(66),
+	aD-authentication-strength(70),	-- [RFC6113]
+	aD-fx-fast-armor(71),		-- [RFC6113]
+	aD-fx-fast-used(72),			-- [RFC6113]
+	aD-CAMMAC(96),  			-- [RFC7751]
+	aD-AUTHENTICATION-INDICATOR(97),        -- [RFC8129]
+	aD-WIN2K-PAC(128), 			-- [RFC4120] [MS-PAC]
+	aD-GSS-API-ETYPE-NEGOTIATION(129), -- Authenticator only
+	aD-TOKEN-RESTRICTIONS(141),		-- [MS-KILE]
+	aD-LOCAL(142),				-- [MS-KILE]
+	aD-AP-OPTIONS(143),			-- [MS-KILE]
+	aD-TARGET-PRINCIPAL(144),		-- [MS-KILE]
+	aD-SIGNTICKET-OLDER(-17),
+	-- aD-SIGNTICKET-OLD(142),
+	aD-SIGNTICKET(512),
+	aD-PFS(513)				-- (lha@apple.com)
 }
 
 -- checksumtypes
@@ -119,12 +179,14 @@ CKSUMTYPE ::= INTEGER {
 	cKSUMTYPE-HMAC-SHA1-96-AES-256(16),
 	cKSUMTYPE-CMAC-CAMELLIA128(17),
 	cKSUMTYPE-CMAC-CAMELLIA256(18),
+	cKSUMTYPE-HMAC-SHA256-128-AES128(19),
+	cKSUMTYPE-HMAC-SHA384-192-AES256(20),
 	cKSUMTYPE-GSSAPI(--0x8003--32771),
 	cKSUMTYPE-HMAC-MD5(-138),	-- unofficial microsoft number
 	cKSUMTYPE-HMAC-MD5-ENC(-1138)	-- even more unofficial
 }
 
---enctypes
+--enctypes https://www.iana.org/assignments/kerberos-parameters/kerberos-parameters.xhtml#kerberos-parameters-1
 ENCTYPE ::= INTEGER {
 	eTYPE-NULL(0),
 	eTYPE-DES-CBC-CRC(1),
@@ -143,6 +205,8 @@ ENCTYPE ::= INTEGER {
 	eTYPE-DES3-CBC-SHA1(16),	-- with key derivation
 	eTYPE-AES128-CTS-HMAC-SHA1-96(17),
 	eTYPE-AES256-CTS-HMAC-SHA1-96(18),
+	eTYPE-AES128-CTS-HMAC-SHA256-128(19), -- RFC 8009
+	eTYPE-AES256-CTS-HMAC-SHA384-192(20), -- RFC 8009
 	eTYPE-ARCFOUR-HMAC-MD5(23),
 	eTYPE-ARCFOUR-HMAC-MD5-56(24),
 	eTYPE-CAMELLIA128-CTS-CMAC(25),
@@ -181,7 +245,7 @@ ADDR-TYPE ::= INTEGER {
 
 -- error-codes (WS extension)
 ERROR-CODE ::= INTEGER {
---error table constants 
+--error table constants
 	eRR-NONE(0),
 	eRR-NAME-EXP(1),
 	eRR-SERVICE-EXP(2),
@@ -250,7 +314,10 @@ ERROR-CODE ::= INTEGER {
 	eRR-REVOCATION-STATUS-UNKNOWN(73),
 	eRR-REVOCATION-STATUS-UNAVAILABLE(74),
 	eRR-CLIENT-NAME-MISMATCH(75),
-	eRR-KDC-NAME-MISMATCH(76)
+	eRR-KDC-NAME-MISMATCH(76),
+	eRR-IAKERB-KDC-NOT-FOUND(85),
+	eRR-IAKERB-KDC-NO-RESPONSE(86),
+	eRR-KDC-MORE-PREAUTH-DATA-REQUIRED(91)
 }
 
 -- this is sugar to make something ASN1 does not have: unsigned
@@ -318,7 +385,9 @@ TicketFlags ::= BIT STRING {
 	hw-authent(11),
 	transited-policy-checked(12),
 	ok-as-delegate(13),
-	anonymous(14)
+	unused(14),
+	enc-pa-rep(15),
+	anonymous(16)
 }
 
 KDCOptions ::= BIT STRING {
@@ -334,12 +403,24 @@ KDCOptions ::= BIT STRING {
 	unused9(9),
 	unused10(10),
 	opt-hardware-auth(11), -- taken from KerberosV5Spec2.asn
-	request-anonymous(14),
+	unused12(12),
+	unused13(13),
+	constrained-delegation(14), -- ms extension (aka cname-in-addl-tkt)
 	canonicalize(15),
-	constrained-delegation(16), -- ms extension
+	request-anonymous(16),
+	unused17(17),
+	unused18(18),
+	unused19(19),
+	unused20(20),
+	unused21(21),
+	unused22(22),
+	unused23(23),
+	unused24(24),
+	unused25(25),
 	disable-transited-check(26),
 	renewable-ok(27),
 	enc-tkt-in-skey(28),
+	unused29(29),
 	renew(30),
 	validate(31)
 }
@@ -483,9 +564,12 @@ LR-TYPE ::= INTEGER {
 --	pausec[1]		Krb5int32 OPTIONAL
 --}
 
+-- WS put extensions found elsewhere here
 -- draft-brezak-win2k-krb-authz-01
+-- MS-KILE: https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-kile
+-- MS-SFU: https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-sfu
 PA-PAC-REQUEST ::= SEQUENCE {
-	include-pac[0]		BOOLEAN -- Indicates whether a PAC 
+	include-pac[0]		BOOLEAN -- Indicates whether a PAC
 					-- should be included or not
 }
 
@@ -716,6 +800,20 @@ PA-S4U2Self ::= SEQUENCE {
         auth[3]		GeneralString
 }
 
+PA-S4U-X509-USER::= SEQUENCE {
+	user-id[0] S4UUserID,
+	checksum[1] Checksum
+}
+
+S4UUserID ::= SEQUENCE {
+	nonce [0] UInt32, -- the nonce in KDC-REQ-BODY
+	cname [1] PrincipalName OPTIONAL, -- Certificate mapping hints
+	crealm [2] Realm,
+	subject-certificate [3] OCTET STRING OPTIONAL,
+	options [4] BIT STRING OPTIONAL,
+	...
+}
+
 KRB5SignedPathPrincipals ::= SEQUENCE OF Principal
 
 -- never encoded on the wire, just used to checksum over
@@ -726,7 +824,7 @@ KRB5SignedPathData ::= SEQUENCE {
 
 KRB5SignedPath ::= SEQUENCE {
 	-- DERcoded KRB5SignedPathData
-	-- krbtgt key (etype), KeyUsage = XXX 
+	-- krbtgt key (etype), KeyUsage = XXX
 	etype[0]	ENCTYPE,
 	cksum[1]	Checksum,
 	-- srvs delegated though
@@ -763,13 +861,143 @@ PA-ServerReferralData ::= SEQUENCE {
 	referral-valid-until     [3] KerberosTime OPTIONAL,
 	...
 }
--- WS put extensions found elsewere here
--- http://msdn.microsoft.com/en-us/library/cc206948.aspx
+
+PAC-OPTIONS-FLAGS ::= BIT STRING {
+	claims(0),
+	branch-aware(1),
+	forward-to-full-dc(2),
+	resource-based-constrained-delegation(3)
+}
+
+PA-PAC-OPTIONS ::= SEQUENCE {
+	flags [0] PAC-OPTIONS-FLAGS
+}
+
+-- [MS-KILE]
+-- captures show that [UNIVERSAL 16] is required to parse it
+KERB-AD-RESTRICTION-ENTRY ::= [UNIVERSAL 16] SEQUENCE {
+	restriction-type	[0] Int32,
+	restriction		[1] OCTET STRING -- LSAP_TOKEN_INFO_INTEGRITY structure
+}
+
+-- [MS-KILE]
+
+-- Section 2.2.11
+PA-KERB-KEY-LIST-REQ ::= SEQUENCE OF ENCTYPE
+
+-- Section 2.2.12
+
+-- This is EncryptionKey but we're redefining it so it's named
+PA-KERB-KEY-LIST-REP-Key ::= EncryptionKey
+
+PA-KERB-KEY-LIST-REP ::= SEQUENCE OF PA-KERB-KEY-LIST-REP-Key
+
 --
-KERB-PA-PAC-REQUEST ::= SEQUENCE { 
-include-pac[0] BOOLEAN --If TRUE, and no pac present, include PAC. 
-                       --If FALSE, and PAC present, remove PAC 
-} 
+-- [SRP]
+-- https://github.com/apple-oss-distributions/Heimdal/blob/main/doc/standardisation/draft-srp.txt
+-- https://github.com/apple-oss-distributions/Heimdal/blob/main/lib/asn1/krb5.asn1
+--
+
+KRB5-SRP-GROUP ::= INTEGER {
+	kRB5-SRP-GROUP-INVALID(0),
+	kRB5-SRP-GROUP-RFC5054-4096-PBKDF2-SHA512(1)
+}
+
+KRB5-SRP-PA ::= SEQUENCE {
+	group		[0] KRB5-SRP-GROUP,
+	salt		[1] OCTET STRING,
+	iterations	[2] UInt32
+}
+
+KRB5-SRP-PA-ANNOUNCE ::= SEQUENCE {
+	groups		[0] SET OF KRB5-SRP-PA,		-- allowed groups and their salt
+	as-req		[1] Checksum			-- an unkeyed checksum of the AS-REQ using
+							-- an non weak checksum type that the KDC support
+							-- given the list of etype from the client
+}
+
+KRB5-SRP-PA-INIT ::= [APPLICATION 0] SEQUENCE  {
+	group	[0] UInt32,
+	a	[1] OCTET STRING
+}
+
+KRB5-SRP-PA-SERVER-CHALLENGE ::= [APPLICATION 1] OCTET STRING -- b
+
+KRB5-SRP-PA-CLIENT-RESPONSE ::= [APPLICATION 2] OCTET STRING -- m
+
+KRB5-SRP-PA-SERVER-VERIFIER ::= [APPLICATION 3] OCTET STRING -- hamk
+
+--
+-- PFS from
+-- https://github.com/apple-oss-distributions/Heimdal/blob/main/lib/asn1/krb5.asn1
+--
+KRB5-PFS-GROUP ::= INTEGER {
+	kRB5-PFS-INVALID(0),
+	kRB5-PFS-NIST-P256(1),
+	kRB5-PFS-X25519(2)
+}
+
+KRB5-PFS-SELECTION ::= SEQUENCE {
+	group		[0] KRB5-PFS-GROUP,
+	public-key	[1] OCTET STRING
+}
+
+KRB5-PFS-SELECTIONS ::= SEQUENCE OF KRB5-PFS-SELECTION
+
+KRB5-PFS-PROPOSE ::= SEQUENCE {
+	checksum	[0] Checksum OPTIONAL,
+	selections	[1] KRB5-PFS-SELECTIONS
+}
+
+KRB5-PFS-ACCEPT ::= SEQUENCE {
+	checksum	[0] Checksum OPTIONAL,
+	selection	[1] KRB5-PFS-SELECTION
+}
+
+KRB5-PFS-ERROR ::= SEQUENCE {
+	groups		[0] SEQUENCE OF KRB5-PFS-GROUP
+}
+
+AD-AUTHENTICATION-INDICATOR ::= SEQUENCE OF UTF8String -- RFC8129
+
+END
+
+-- RFC7751
+-- Kerberos Authorization Data Container Authenticated by Multiple
+--               Message Authentication Codes (MACs)
+
+KerberosV5CAMMAC {
+        iso(1) identified-organization(3) dod(6) internet(1)
+        security(5) kerberosV5(2) modules(4) cammac(7)
+} DEFINITIONS EXPLICIT TAGS ::= BEGIN
+
+IMPORTS
+      AuthorizationData, PrincipalName, Checksum, UInt32, Int32
+        FROM KerberosV5Spec2 { iso(1) identified-organization(3)
+          dod(6) internet(1) security(5) kerberosV5(2)
+          modules(4) krb5spec2(2) };
+          -- as defined in RFC 4120.
+
+AD-CAMMAC                   ::= SEQUENCE {
+      elements              [0] AuthorizationData,
+      kdc-verifier          [1] Verifier-MAC OPTIONAL,
+      svc-verifier          [2] Verifier-MAC OPTIONAL,
+      other-verifiers       [3] SEQUENCE (SIZE (1..MAX))
+                                OF Verifier OPTIONAL
+}
+
+Verifier             ::= CHOICE {
+      mac            Verifier-MAC,
+      ...
+}
+
+Verifier-MAC         ::= SEQUENCE {
+      identifier     [0] PrincipalName OPTIONAL,
+      kvno           [1] UInt32 OPTIONAL,
+      enctype        [2] Int32 OPTIONAL,
+      mac            [3] Checksum
+}
+
 END
 
 -- etags -r '/\([A-Za-z][-A-Za-z0-9]*\).*::=/\1/' k5.asn1

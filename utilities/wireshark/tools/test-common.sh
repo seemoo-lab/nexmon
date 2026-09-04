@@ -6,19 +6,7 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 
 # Common variables and functions for fuzz and randpkt tests.
 
@@ -29,18 +17,22 @@ if [ -z "$TEST_TYPE" ] ; then
 fi
 
 DATE=/bin/date
-BASE_NAME=$TEST_TYPE-`$DATE +%Y-%m-%d`-$$
+FUZZ_ID=$$
+if [ -n "$CI_JOB_ID" ] ; then
+    FUZZ_ID=$CI_JOB_ID
+fi
+BASE_NAME=$TEST_TYPE-$($DATE +%Y-%m-%d)-$FUZZ_ID
 
-# Directory containing binaries.  Default current directory.
+# Directory containing binaries.  Default: cmake run directory.
 if [ -z "$WIRESHARK_BIN_DIR" ]; then
-    WIRESHARK_BIN_DIR=.
+    WIRESHARK_BIN_DIR=run
 fi
 
 # Temporary file directory and names.
 # (had problems with this on cygwin, tried TMP_DIR=./ which worked)
 TMP_DIR=/tmp
 if [ "$OSTYPE" == "cygwin" ] ; then
-        TMP_DIR=`cygpath --windows "$TMP_DIR"`
+        TMP_DIR=$(cygpath --windows "$TMP_DIR")
 fi
 TMP_FILE=$BASE_NAME.pcap
 ERR_FILE=$BASE_NAME.err
@@ -53,15 +45,17 @@ MAX_PASSES=0
 MAX_CPU_TIME=600
 # Stop the child process if it's using more than y * 1024 bytes
 MAX_VMEM=1000000
-# Stop the child process if its stack is larger than than z * 1024 bytes
-# Windows XP:   2033
-# Windows 7:    2034
-# OS X 10.6:    8192
-# Linux 2.6.24: 8192
-# Solaris 10:   8192
+# Stop the child process if its stack is larger than z * 1024 bytes
+# Windows XP:    2033
+# Windows 7:     2034
+# Mac OS X 10.6: 8192
+# Linux 2.6.24:  8192
+# Solaris 10:    8192
 MAX_STACK=2033
 # Insert z times an error into the capture file (0.02 seems to be a good value to find errors)
 ERR_PROB=0.02
+# Maximum number of packets to fuzz
+MAX_FUZZ_PACKETS=50000
 
 # Call *after* any changes to WIRESHARK_BIN_DIR (e.g., via command-line options)
 function ws_bind_exec_paths() {
@@ -89,46 +83,18 @@ if [ $NOTFOUND -eq 1 ]; then
 fi
 }
 
-##############################################################################
-### Set up environment variables for fuzz testing			   ###
-##############################################################################
-# Use the Wmem strict allocator which does canaries and scrubbing etc.
-export WIRESHARK_DEBUG_WMEM_OVERRIDE=strict
-# Abort if a dissector adds too many items to the tree
-export WIRESHARK_ABORT_ON_TOO_MANY_ITEMS=
-
-# Turn on GLib memory debugging (since 2.13)
-export G_SLICE=debug-blocks
-# Cause glibc (Linux) to abort() if some memory errors are found
-export MALLOC_CHECK_=3
-# Cause FreeBSD (and other BSDs) to abort() on allocator warnings and
-# initialize allocated memory (to 0xa5) and freed memory (to 0x5a).  see:
-# http://www.freebsd.org/cgi/man.cgi?query=malloc&apropos=0&sektion=0&manpath=FreeBSD+8.2-RELEASE&format=html
-export MALLOC_OPTIONS=AJ
-
-# MacOS options; see http://developer.apple.com/library/mac/releasenotes/DeveloperTools/RN-MallocOptions/_index.html
-# Initialize allocated memory to 0xAA and freed memory to 0x55
-export MallocPreScribble=1
-export MallocScribble=1
-# Add guard pages before and after large allocations
-export MallocGuardEdges=1
-# Call abort() if heap corruption is detected.  Heap is checked every 1000
-# allocations (may need to be tuned!)
-export MallocCheckHeapStart=1000
-export MallocCheckHeapEach=1000
-export MallocCheckHeapAbort=1
-# Call abort() if an illegal free() call is made
-export MallocBadFreeAbort=1
+source "$(dirname "$0")"/debug-alloc.env
 
 # Address Sanitizer options
 export ASAN_OPTIONS=detect_leaks=0
 
 # See if we were configured with gcc or clang's AddressSanitizer.
 CONFIGURED_WITH_ASAN=0
-if [ -r "$WIRESHARK_BIN_DIR/Makefile" ] ; then
-    grep -- "-fsanitize=address" "$WIRESHARK_BIN_DIR/Makefile" > /dev/null 2>&1 && CONFIGURED_WITH_ASAN=1
-elif [ -r "$WIRESHARK_BIN_DIR/../CMakeFiles/tshark.dir/flags.make" ] ; then
-    grep -- "-fsanitize=address" "$WIRESHARK_BIN_DIR/../CMakeFiles/tshark.dir/flags.make" > /dev/null 2>&1 && CONFIGURED_WITH_ASAN=1
+# If tshark is built with ASAN this will generate an error. We could
+# also pass help=1 and look for help text.
+ASAN_OPTIONS=Invalid_Option_Flag $TSHARK -h > /dev/null 2>&1
+if [ $? -ne 0 ] ; then
+    CONFIGURED_WITH_ASAN=1
 fi
 export CONFIGURED_WITH_ASAN
 
@@ -142,28 +108,41 @@ function ws_exit_error() {
     echo
 
     # Fill in build information
-    echo -e "Input file: $CF\n" > $TMP_DIR/${ERR_FILE}.header
-    echo -e "Build host information:" >> $TMP_DIR/${ERR_FILE}.header
-    uname -a >> $TMP_DIR/${ERR_FILE}.header
-    lsb_release -a >> $TMP_DIR/${ERR_FILE}.header 2> /dev/null
+    {
+        if [ -n "$CI_COMMIT_BRANCH" ] ; then
+            printf "Branch: %s\\n" "$CI_COMMIT_BRANCH"
+        else
+            printf "Branch: %s\\n" "$(git rev-parse --abbrev-ref HEAD)"
+        fi
 
-    if [ -n "$BUILDBOT_BUILDERNAME" ] ; then
-        echo -e "\nBuildbot information:" >> $TMP_DIR/${ERR_FILE}.header
-        env | grep "^BUILDBOT_" >> $TMP_DIR/${ERR_FILE}.header
-    fi
+        printf "Input file: %s\\n" "$CF"
 
-    echo -e "\nReturn value: " $RETVAL >> $TMP_DIR/${ERR_FILE}.header
-    echo -e "\nDissector bug: " $DISSECTOR_BUG >> $TMP_DIR/${ERR_FILE}.header
-    echo -e "\nValgrind error count: " $VG_ERR_CNT >> $TMP_DIR/${ERR_FILE}.header
+        if [ -n "$CI_JOB_NAME" ] ; then
+            printf "CI job name: %s, ID: %s\\n" "$CI_JOB_NAME" "$CI_JOB_ID"
+            printf "CI job URL: %s\\n" "$CI_JOB_URL"
+        fi
 
-    echo -e "\n" >> $TMP_DIR/${ERR_FILE}.header
+        printf "Return value: %s\\n" "$RETVAL"
+        printf "Dissector bug: %s\\n" "$DISSECTOR_BUG"
+        if [ "$VALGRIND" -eq 1 ] ; then
+            printf "Valgrind error count: %s\\n" "$VG_ERR_CNT"
+        fi
 
-    if [ -d ${GIT_DIR:-.git} ] ; then
-        echo -e "\nGit commit" >> $TMP_DIR/${ERR_FILE}.header
-        git log -1 >> $TMP_DIR/${ERR_FILE}.header
-    fi
+        printf "Date and time: %s\\n" "$( date --utc )"
 
-    echo -e "\n" >> $TMP_DIR/${ERR_FILE}.header
+        SINCE_HOURS=48
+        if [ -d "${GIT_DIR:-.git}" ] ; then
+                printf "\\nCommits in the last %s hours:\\n" $SINCE_HOURS
+                git --no-pager log --oneline --no-decorate --since=${SINCE_HOURS}hours
+                printf "\\n"
+        fi
+
+        printf "Build host information:\\n"
+        uname -srvm
+        lsb_release -a 2> /dev/null
+        printf "\\n"
+
+    } > "$TMP_DIR/${ERR_FILE}.header"
 
     # Trim the stderr output if needed
     ERR_SIZE=$(du -sk $TMP_DIR/$ERR_FILE | awk '{ print $1 }')

@@ -1,22 +1,10 @@
-/* sequence_diagram.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef SEQUENCE_DIAGRAM_H
@@ -24,13 +12,11 @@
 
 #include <config.h>
 
-#include <glib.h>
-
 #include <epan/address.h>
 
 #include <QObject>
 #include <QMultiMap>
-#include "qcustomplot.h"
+#include <ui/qt/widgets/qcustomplot.h>
 
 struct _seq_analysis_info;
 struct _seq_analysis_item;
@@ -45,7 +31,7 @@ public:
   struct _seq_analysis_item *value;
 };
 
-typedef QMap<double, WSCPSeqData> WSCPSeqDataMap;
+typedef QMultiMap<double, WSCPSeqData> WSCPSeqDataMap;
 
 class SequenceDiagram : public QCPAbstractPlottable
 {
@@ -65,19 +51,21 @@ public:
 
     // non-property methods:
     struct _seq_analysis_item *itemForPosY(int ypos);
+    bool inComment(QPoint pos) const;
+    QString elidedComment(const QString &text) const;
 
     // reimplemented virtual methods:
     virtual void clearData() { data_->clear(); }
-    virtual double selectTest(const QPointF &pos, bool onlySelectable, QVariant *details=0) const;
+    virtual double selectTest(const QPointF &pos, bool onlySelectable, QVariant *details=0) const Q_DECL_OVERRIDE;
 
 public slots:
     void setSelectedPacket(int selected_packet);
 
 protected:
-    virtual void draw(QCPPainter *painter);
-    virtual void drawLegendIcon(QCPPainter *painter, const QRectF &rect) const;
-    virtual QCPRange getKeyRange(bool &validRange, SignDomain inSignDomain=sdBoth) const;
-    virtual QCPRange getValueRange(bool &validRange, SignDomain inSignDomain=sdBoth) const;
+    virtual void draw(QCPPainter *painter) Q_DECL_OVERRIDE;
+    virtual void drawLegendIcon(QCPPainter *painter, const QRectF &rect) const Q_DECL_OVERRIDE;
+    virtual QCPRange getKeyRange(bool &validRange, QCP::SignDomain inSignDomain=QCP::sdBoth) const Q_DECL_OVERRIDE;
+    virtual QCPRange getValueRange(bool &validRange, QCP::SignDomain inSignDomain=QCP::sdBoth, const QCPRange &inKeyRange = QCPRange()) const Q_DECL_OVERRIDE;
 
 private:
     QCPAxis *key_axis_;
@@ -85,21 +73,8 @@ private:
     QCPAxis *comment_axis_;
     WSCPSeqDataMap *data_;
     struct _seq_analysis_info *sainfo_;
-    guint32 selected_packet_;
+    uint32_t selected_packet_;
     double selected_key_;
 };
 
 #endif // SEQUENCE_DIAGRAM_H
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

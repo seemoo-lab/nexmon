@@ -37,6 +37,7 @@
 #include <string.h>
 #include <byteswap.h>
 
+#include "libnexio.h"
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -111,6 +112,10 @@ struct nex_ioctl {
     unsigned int driver;    /* to identify target driver */
 };
 
+void nex_free(struct nexio *nexio);
+/* internal alias used by the constructors' failure paths */
+static void nexio_free(struct nexio *nexio) { nex_free(nexio); }
+
 struct nexudp_header {
     char nex[3];
     char type;
@@ -144,8 +149,10 @@ __nex_driver_io(struct ifreq *ifr, struct nex_ioctl *ioc)
     ifr->ifr_data = (void *) ioc;
 
     /* open socket to kernel */
-    if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    if ((s = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         printf("error: socket\n");
+        return -1;
+    }
 
     ret = ioctl(s, SIOCDEVPRIVATE, ifr);
     if (ret < 0 && errno != EAGAIN)
@@ -159,10 +166,22 @@ __nex_driver_io(struct ifreq *ifr, struct nex_ioctl *ioc)
 static int
 __nex_driver_udp(struct nexio *nexio, struct nex_ioctl *ioc)
 {
-	int frame_len = ioc->len + sizeof(struct nexudp_ioctl_header) - sizeof(char);
+	int frame_len;
 	int rx_frame_len = 0;
-	struct nexudp_ioctl_header *frame = (struct nexudp_ioctl_header *) malloc(frame_len);
+	struct nexudp_ioctl_header *frame;
 	int ret = 0;
+
+	if (ioc->len < 0) {
+		printf("ERR (%s): invalid ioctl length\n", __FUNCTION__);
+		return -1;
+	}
+
+	frame_len = ioc->len + sizeof(struct nexudp_ioctl_header) - sizeof(char);
+	frame = (struct nexudp_ioctl_header *) malloc(frame_len);
+	if (!frame) {
+		printf("ERR (%s): out of memory\n", __FUNCTION__);
+		return -1;
+	}
 
 	memcpy(&frame->nexudphdr.nex, "NEX", 3);
 	frame->nexudphdr.type = NEXUDP_IOCTL;
@@ -177,10 +196,17 @@ __nex_driver_udp(struct nexio *nexio, struct nex_ioctl *ioc)
 
 	rx_frame_len = recv(nexio->sock_rx_ioctl, frame, frame_len, 0);
 
-	if (ioc->set == 0 && rx_frame_len > 0 && *(unsigned int *) frame == ioc->cmd) {
-		memcpy(ioc->buf, ((char *) frame) + sizeof(frame->cmd) + sizeof(frame->set),
-			(rx_frame_len - sizeof(frame->cmd) - sizeof(frame->set)) < ioc->len ?
-            (rx_frame_len - sizeof(frame->cmd) - sizeof(frame->set)) : ioc->len);
+	/* The reply is laid out as cmd(4) | set(4) | payload; require at least
+	 * that 8-byte header before dereferencing / copying, and compute the
+	 * payload length with signed arithmetic so a short reply cannot underflow
+	 * into a huge unsigned copy count. */
+	if (ioc->set == 0 &&
+	    rx_frame_len >= (int)(sizeof(frame->cmd) + sizeof(frame->set)) &&
+	    *(unsigned int *) frame == (unsigned int) ioc->cmd) {
+		int avail = rx_frame_len - (int)(sizeof(frame->cmd) + sizeof(frame->set));
+		int copy = (avail < ioc->len) ? avail : ioc->len;
+		if (copy > 0)
+			memcpy(ioc->buf, ((char *) frame) + sizeof(frame->cmd) + sizeof(frame->set), copy);
 	}
 
 	free(frame);
@@ -196,15 +222,26 @@ __nex_driver_udp(struct nexio *nexio, struct nex_ioctl *ioc)
 static int
 __nex_driver_netlink(struct nexio *nexio, struct nex_ioctl *ioc)
 {
-        int frame_len = ioc->len + sizeof(struct nexudp_ioctl_header) - sizeof(char);
+        int frame_len;
         int rx_frame_len = 0;
         struct nexudp_ioctl_header *frame;
         int ret = 0;
 
         struct iovec iov = { 0 };
         struct msghdr msg = { 0 };
+        struct nlmsghdr *nlh;
 
-        struct nlmsghdr *nlh = (struct nlmsghdr *) malloc(NLMSG_SPACE(frame_len));
+        if (ioc->len < 0) {
+                printf("ERR (%s): invalid ioctl length\n", __FUNCTION__);
+                return -1;
+        }
+
+        frame_len = ioc->len + sizeof(struct nexudp_ioctl_header) - sizeof(char);
+        nlh = (struct nlmsghdr *) malloc(NLMSG_SPACE(frame_len));
+        if (!nlh) {
+                printf("ERR (%s): out of memory\n", __FUNCTION__);
+                return -1;
+        }
         memset(nlh, 0, NLMSG_SPACE(frame_len));
         nlh->nlmsg_len = NLMSG_SPACE(frame_len);
         nlh->nlmsg_pid = getpid();
@@ -227,10 +264,16 @@ __nex_driver_netlink(struct nexio *nexio, struct nex_ioctl *ioc)
 
 //	printf("%s: framelen %d %d %s\n", __FUNCTION__, rx_frame_len, nlh->nlmsg_len, (char *) frame);
 
-        if (ioc->set == 0 && rx_frame_len > 0 && frame->cmd == ioc->cmd) {
-                memcpy(ioc->buf, frame->payload,
-                        (rx_frame_len - sizeof(struct nexudp_ioctl_header) + sizeof(char)) < ioc->len ?
-            (rx_frame_len - sizeof(struct nexudp_ioctl_header) + sizeof(char)) : ioc->len);
+        /* Require a full nexudp_ioctl_header worth of payload before copying,
+         * and use signed arithmetic so a short reply cannot underflow the
+         * copy count into a huge unsigned value. */
+        if (ioc->set == 0 &&
+            rx_frame_len >= (int)(sizeof(struct nexudp_ioctl_header) - sizeof(char)) &&
+            frame->cmd == ioc->cmd) {
+                int avail = rx_frame_len - (int)(sizeof(struct nexudp_ioctl_header) - sizeof(char));
+                int copy = (avail < ioc->len) ? avail : ioc->len;
+                if (copy > 0)
+                        memcpy(ioc->buf, frame->payload, copy);
         }
 
         free(nlh);
@@ -349,7 +392,9 @@ __nex_driver_vendor_cmd(struct nexio *nexio, struct nex_ioctl *ioc)
 		nl_recvmsgs(nexio->nl_sock, nexio->nl_cb);
 
 out:
-	nl_cb_put(nexio->nl_cb);
+	/* nl_cb is owned by the handle (obtained once via nl_socket_get_cb in
+	 * nex_init_vendor_cmd) and released in nex_free(); do not put it here or
+	 * the refcount underflows across repeated nex_ioctl() calls. */
 	nlmsg_free(msg);
 	return ret;
 }
@@ -401,17 +446,75 @@ nex_ioctl(struct nexio *nexio, int cmd, void *buf, int len, bool set)
     return ret;
 }
 
+/* Release everything a nex_init_* constructor allocated: sockets, the ifreq,
+ * and (for the vendor-cmd path) the netlink socket/callback. Safe on a
+ * partially-initialised handle and on NULL. */
+void
+nex_free(struct nexio *nexio)
+{
+	if (!nexio)
+		return;
+
+	/* sock_tx may alias sock_rx_ioctl (netlink path); close each fd once. */
+	if (nexio->sock_tx >= 0) {
+		close(nexio->sock_tx);
+		if (nexio->sock_rx_ioctl == nexio->sock_tx)
+			nexio->sock_rx_ioctl = -1;
+		if (nexio->sock_rx_frame == nexio->sock_tx)
+			nexio->sock_rx_frame = -1;
+		nexio->sock_tx = -1;
+	}
+	if (nexio->sock_rx_ioctl >= 0) {
+		close(nexio->sock_rx_ioctl);
+		if (nexio->sock_rx_frame == nexio->sock_rx_ioctl)
+			nexio->sock_rx_frame = -1;
+		nexio->sock_rx_ioctl = -1;
+	}
+	if (nexio->sock_rx_frame >= 0) {
+		close(nexio->sock_rx_frame);
+		nexio->sock_rx_frame = -1;
+	}
+
+	if (nexio->ifr) {
+		free(nexio->ifr);
+		nexio->ifr = NULL;
+	}
+
+#ifdef USE_VENDOR_CMD
+	if (nexio->nl_cb) {
+		nl_cb_put(nexio->nl_cb);
+		nexio->nl_cb = NULL;
+	}
+	if (nexio->nl_sock) {
+		nl_close(nexio->nl_sock);
+		nl_socket_free(nexio->nl_sock);
+		nexio->nl_sock = NULL;
+	}
+#endif
+
+	free(nexio);
+}
+
 struct nexio *
 nex_init_ioctl(const char *ifname)
 {
 	struct nexio *nexio = (struct nexio *) malloc(sizeof(struct nexio));
+	if (!nexio)
+		return NULL;
 	memset(nexio, 0, sizeof(struct nexio));
 
 	nexio->ifr = (struct ifreq *) malloc(sizeof(struct ifreq));
+	if (!nexio->ifr) {
+		free(nexio);
+		return NULL;
+	}
 	memset(nexio->ifr, 0, sizeof(struct ifreq));
 	snprintf(nexio->ifr->ifr_name, sizeof(nexio->ifr->ifr_name), "%s", ifname);
 
 	nexio->type = NEXIO_TYPE_IOCTL;
+	nexio->sock_rx_ioctl = -1;
+	nexio->sock_rx_frame = -1;
+	nexio->sock_tx = -1;
 
 	return nexio;
 }
@@ -419,94 +522,124 @@ nex_init_ioctl(const char *ifname)
 struct nexio *
 nex_init_udp(unsigned int securitycookie, unsigned int txip)
 {
+	struct sockaddr_in sin_tx = { 0 };
+	struct sockaddr_in sin_rx_ioctl = { 0 };
+	struct sockaddr_in sin_rx_frame = { 0 };
+	int broadcast_enable = 1;
+	struct timeval tv = { .tv_sec = 1, .tv_usec = 0 };
+
 	struct nexio *nexio = (struct nexio *) malloc(sizeof(struct nexio));
+	if (!nexio)
+		return NULL;
 	memset(nexio, 0, sizeof(struct nexio));
+	nexio->sock_tx = nexio->sock_rx_ioctl = nexio->sock_rx_frame = -1;
 
 	nexio->securitycookie = securitycookie;
 
-	struct sockaddr_in *sin_tx = (struct sockaddr_in *) malloc(sizeof(struct sockaddr_in));
-	struct sockaddr_in *sin_rx_ioctl = (struct sockaddr_in *) malloc(sizeof(struct sockaddr_in));
-	struct sockaddr_in *sin_rx_frame = (struct sockaddr_in *) malloc(sizeof(struct sockaddr_in));
+	sin_tx.sin_family = AF_INET;
+	sin_tx.sin_port = htons(5500);
+	sin_tx.sin_addr.s_addr = txip;
 
-	memset(sin_tx, 0, sizeof(struct sockaddr_in));
-	memset(sin_rx_ioctl, 0, sizeof(struct sockaddr_in));
-	memset(sin_rx_frame, 0, sizeof(struct sockaddr_in));
+	sin_rx_ioctl.sin_family = AF_INET;
+	sin_rx_ioctl.sin_port = htons(5500);
+	sin_rx_ioctl.sin_addr.s_addr = IPADDR(255,255,255,255);
 
-	sin_tx->sin_family = AF_INET;
-	sin_tx->sin_port = htons(5500);
-	sin_tx->sin_addr.s_addr = txip;
+	sin_rx_frame.sin_family = AF_INET;
+	sin_rx_frame.sin_port = htons(5600);
+	sin_rx_frame.sin_addr.s_addr = IPADDR(255,255,255,255);
 
-	sin_rx_ioctl->sin_family = AF_INET;
-	sin_rx_ioctl->sin_port = htons(5500);
-	sin_rx_ioctl->sin_addr.s_addr = IPADDR(255,255,255,255);
+	nexio->sock_tx = socket(sin_tx.sin_family, SOCK_DGRAM, IPPROTO_UDP);
+	nexio->sock_rx_ioctl = socket(sin_rx_ioctl.sin_family, SOCK_DGRAM, IPPROTO_UDP);
+	nexio->sock_rx_frame = socket(sin_rx_frame.sin_family, SOCK_DGRAM, IPPROTO_UDP);
 
-	sin_rx_frame->sin_family = AF_INET;
-	sin_rx_frame->sin_port = htons(5600);
-	sin_rx_frame->sin_addr.s_addr = IPADDR(255,255,255,255);
+	if (nexio->sock_tx < 0 || nexio->sock_rx_ioctl < 0 || nexio->sock_rx_frame < 0) {
+		printf("%s: socket error (%d: %s)\n", __FUNCTION__, errno, strerror(errno));
+		goto fail;
+	}
 
-    nexio->sock_tx = socket(sin_tx->sin_family, SOCK_DGRAM, IPPROTO_UDP);
-    nexio->sock_rx_ioctl = socket(sin_rx_ioctl->sin_family, SOCK_DGRAM, IPPROTO_UDP);
-    nexio->sock_rx_frame = socket(sin_rx_frame->sin_family, SOCK_DGRAM, IPPROTO_UDP);
+	// Enable broadcasts for transmit socket
+	setsockopt(nexio->sock_tx, SOL_SOCKET, SO_BROADCAST, &broadcast_enable, sizeof(broadcast_enable));
 
-    // Enable broadcasts for transmit socket
-    int broadcast_enable = 1;
-    setsockopt(nexio->sock_tx, SOL_SOCKET, SO_BROADCAST, &broadcast_enable, sizeof(broadcast_enable));
+	// Set 1 second timeout on ioctl receive socket
+	setsockopt(nexio->sock_rx_ioctl, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
-    // Set 1 second timeout on ioctl receive socket
-    struct timeval tv = {
-    	.tv_sec = 1,
-    	.tv_usec = 0
-    };
-    setsockopt(nexio->sock_rx_ioctl, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-
-    connect(nexio->sock_tx, (struct sockaddr *) sin_tx, sizeof(struct sockaddr));
-    bind(nexio->sock_rx_ioctl, (struct sockaddr *) sin_rx_ioctl, sizeof(struct sockaddr));
-    bind(nexio->sock_rx_frame, (struct sockaddr *) sin_rx_frame, sizeof(struct sockaddr));
+	if (connect(nexio->sock_tx, (struct sockaddr *) &sin_tx, sizeof(sin_tx)) < 0 ||
+	    bind(nexio->sock_rx_ioctl, (struct sockaddr *) &sin_rx_ioctl, sizeof(sin_rx_ioctl)) < 0 ||
+	    bind(nexio->sock_rx_frame, (struct sockaddr *) &sin_rx_frame, sizeof(sin_rx_frame)) < 0) {
+		printf("%s: connect/bind error (%d: %s)\n", __FUNCTION__, errno, strerror(errno));
+		goto fail;
+	}
 
 	nexio->type = NEXIO_TYPE_UDP;
 
 	return nexio;
+
+fail:
+	nexio_free(nexio);
+	return NULL;
 }
 
 struct nexio *
-nex_init_netlink(void)
+nex_init_netlink_ifname(const char *ifname)
 {
 //    printf("%s: Enter\n", __FUNCTION__);
     int err = 0;
+    struct sockaddr_nl snl_tx = { 0 };
+    struct sockaddr_nl snl_rx_ioctl = { 0 };
+    struct timeval tv = { .tv_sec = 1, .tv_usec = 0 };
+
     struct nexio *nexio = (struct nexio *) malloc(sizeof(struct nexio));
+    if (!nexio)
+        return NULL;
     memset(nexio, 0, sizeof(struct nexio));
+    nexio->sock_tx = nexio->sock_rx_ioctl = nexio->sock_rx_frame = -1;
 
-    struct sockaddr_nl *snl_tx = (struct sockaddr_nl *) malloc(sizeof(struct sockaddr_nl));
-    struct sockaddr_nl *snl_rx_ioctl = (struct sockaddr_nl *) malloc(sizeof(struct sockaddr_nl));
+    snl_tx.nl_family = AF_NETLINK;
+    snl_tx.nl_pid = 0; /* For Linux Kernel */
+    snl_tx.nl_groups = 0; /* unicast */
 
-    memset(snl_tx, 0, sizeof(struct sockaddr_nl));
-    memset(snl_rx_ioctl, 0, sizeof(struct sockaddr_nl));
+    snl_rx_ioctl.nl_family = AF_NETLINK;
+    snl_rx_ioctl.nl_pid = getpid();
 
-    snl_tx->nl_family = AF_NETLINK;
-    snl_tx->nl_pid = 0; /* For Linux Kernel */
-    snl_tx->nl_groups = 0; /* unicast */
-
-    snl_rx_ioctl->nl_family = AF_NETLINK;
-    snl_rx_ioctl->nl_pid = getpid();
-
-    nexio->sock_tx = socket(PF_NETLINK, SOCK_RAW, NETLINK_USER);
-    if (nexio->sock_tx < 0) printf("%s: socket error (%d: %s)\n", __FUNCTION__, errno, strerror(errno));
     nexio->sock_rx_ioctl = socket(PF_NETLINK, SOCK_RAW, NETLINK_USER);
-    if (nexio->sock_rx_ioctl < 0) printf("%s: socket error (%d: %s)\n", __FUNCTION__, errno, strerror(errno));
+    if (nexio->sock_rx_ioctl < 0) {
+        printf("%s: socket error (%d: %s)\n", __FUNCTION__, errno, strerror(errno));
+        nexio_free(nexio);
+        return NULL;
+    }
 
     // Set 1 second timeout on ioctl receive socket
-    struct timeval tv = {
-        .tv_sec = 1,
-        .tv_usec = 0
-    };
     setsockopt(nexio->sock_rx_ioctl, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
 //    printf("%s: Before connect\n", __FUNCTION__);
-    err = bind(nexio->sock_rx_ioctl, (struct sockaddr *) snl_rx_ioctl, sizeof(struct sockaddr));
-    if (err) printf("%s: bind error (%d: %s)\n", __FUNCTION__, errno, strerror(errno));
+    err = bind(nexio->sock_rx_ioctl, (struct sockaddr *) &snl_rx_ioctl, sizeof(snl_rx_ioctl));
+    if (err) {
+        printf("%s: bind error (%d: %s)\n", __FUNCTION__, errno, strerror(errno));
+        nexio_free(nexio);
+        return NULL;
+    }
 
-    err = connect(nexio->sock_tx, (struct sockaddr *) snl_tx, sizeof(struct sockaddr));
-    if (err) printf("%s: connect error (%d: %s)\n", __FUNCTION__, errno, strerror(errno));
+    err = connect(nexio->sock_rx_ioctl, (struct sockaddr *) &snl_tx, sizeof(snl_tx));
+    if (err) {
+        printf("%s: connect error (%d: %s)\n", __FUNCTION__, errno, strerror(errno));
+        nexio_free(nexio);
+        return NULL;
+    }
+
+    /* Send and receive on the same socket.  The kernel can now reply to the
+     * authenticated sender port ID rather than trusting nlmsg_pid. */
+    nexio->sock_tx = nexio->sock_rx_ioctl;
+
+    if (ifname && ifname[0]) {
+        struct ifreq ifr = { 0 };
+        int fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+        snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s", ifname);
+        if (fd >= 0 && ioctl(fd, SIOCGIFINDEX, &ifr) == 0)
+            nexio->securitycookie = ifr.ifr_ifindex;
+        if (fd >= 0)
+            close(fd);
+    }
 
 //    printf("%s: Exit\n", __FUNCTION__);
 
@@ -515,40 +648,47 @@ nex_init_netlink(void)
     return nexio;
 }
 
+struct nexio *
+nex_init_netlink(void)
+{
+    return nex_init_netlink_ifname(NULL);
+}
+
 #ifdef USE_VENDOR_CMD
 struct nexio *
 nex_init_vendor_cmd(const char *ifname)
 {
-	int err;
-
 	struct nexio *nexio = (struct nexio *) malloc(sizeof(struct nexio));
+	if (!nexio)
+		return NULL;
 	memset(nexio, 0, sizeof(struct nexio));
+	nexio->sock_tx = nexio->sock_rx_ioctl = nexio->sock_rx_frame = -1;
 
 	nexio->ifr = (struct ifreq *) malloc(sizeof(struct ifreq));
+	if (!nexio->ifr) {
+		free(nexio);
+		return NULL;
+	}
 	memset(nexio->ifr, 0, sizeof(struct ifreq));
 	snprintf(nexio->ifr->ifr_name, sizeof(nexio->ifr->ifr_name), "%s", ifname);
 
 	nexio->nl_sock = nl_socket_alloc();
 	if (!nexio->nl_sock) {
 		printf("%s: failed to allocate netlink socket, error %d\n", __FUNCTION__, -ENOMEM);
-		free(nexio);
+		nex_free(nexio);
 		return 0;
 	}
 
 	if (genl_connect(nexio->nl_sock)) {
 		printf("%s: failed to connect to generic netlink, error %d\n", __FUNCTION__, -ENOLINK);
-		nl_close(nexio->nl_sock);
-		nl_socket_free(nexio->nl_sock);
-		free(nexio);
+		nex_free(nexio);
 		return 0;
 	}
 
 	nexio->nl80211_id = genl_ctrl_resolve(nexio->nl_sock, "nl80211");
 	if (nexio->nl80211_id < 0) {
 		printf("%s: nl80211 not found, error %d\n", __FUNCTION__, -ENOENT);
-		nl_close(nexio->nl_sock);
-		nl_socket_free(nexio->nl_sock);
-		free(nexio);
+		nex_free(nexio);
 		return 0;
 	}
 

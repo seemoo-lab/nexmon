@@ -1,0 +1,57 @@
+# The linker version script controls which symbols are exported.
+# Version tags that correspond to past releases group the symbols
+# that were part of that release. Hence, such a version tag is sealed
+# and MUST not be extended.
+# Any new symbols MUST only be added to the bottom of the file, in
+# the version tag for the next upcoming release.
+libnl_3 {
+global:
+	# these functions are in private header files and should have never
+	# been exported. We might hide them later.
+	genl_resolve_id;
+
+	genl_connect;
+	genl_ctrl_alloc_cache;
+	genl_ctrl_resolve;
+	genl_ctrl_resolve_grp;
+	genl_ctrl_search;
+	genl_ctrl_search_by_name;
+	genl_family_add_grp;
+	genl_family_add_op;
+	genl_family_alloc;
+	genl_family_get_hdrsize;
+	genl_family_get_id;
+	genl_family_get_maxattr;
+	genl_family_get_name;
+	genl_family_get_version;
+	genl_family_ops;
+	genl_family_put;
+	genl_family_set_hdrsize;
+	genl_family_set_id;
+	genl_family_set_maxattr;
+	genl_family_set_name;
+	genl_family_set_version;
+	genl_handle_msg;
+	genl_mngt_resolve;
+	genl_op2name;
+	genl_ops_resolve;
+	genl_register;
+	genl_register_family;
+	genl_send_simple;
+	genl_unregister;
+	genl_unregister_family;
+	genlmsg_attrdata;
+	genlmsg_attrlen;
+	genlmsg_data;
+	genlmsg_hdr;
+	genlmsg_len;
+	genlmsg_parse;
+	genlmsg_put;
+	genlmsg_user_data;
+	genlmsg_user_datalen;
+	genlmsg_user_hdr;
+	genlmsg_valid_hdr;
+	genlmsg_validate;
+local:
+	*;
+};

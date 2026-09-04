@@ -1,18 +1,18 @@
 /* A POSIX-like <sys/wait.h>.
-   Copyright (C) 2001-2003, 2005-2016 Free Software Foundation, Inc.
+   Copyright (C) 2001-2003, 2005-2026 Free Software Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 
 #ifndef _@GUARD_PREFIX@_SYS_WAIT_H
@@ -23,12 +23,17 @@
 @PRAGMA_COLUMNS@
 
 /* The include_next requires a split double-inclusion guard.  */
-#if !((defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__)
+#if !(defined _WIN32 && ! defined __CYGWIN__)
 # @INCLUDE_NEXT@ @NEXT_SYS_WAIT_H@
 #endif
 
 #ifndef _@GUARD_PREFIX@_SYS_WAIT_H
 #define _@GUARD_PREFIX@_SYS_WAIT_H
+
+/* This file uses GNULIB_POSIXCHECK, HAVE_RAW_DECL_*.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
 
 /* Get pid_t.  */
 #include <sys/types.h>
@@ -39,7 +44,7 @@
 /* The definition of _GL_WARN_ON_USE is copied here.  */
 
 
-#if !((defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__)
+#if !(defined _WIN32 && ! defined __CYGWIN__)
 /* Unix API.  */
 
 /* The following macros apply to an argument x, that is a status of a process,
@@ -75,7 +80,7 @@
 #  define WSTOPSIG(x) (((x) >> 8) & 0x7f)
 # endif
 
-/* True if the process dumped core.  Not standardized by POSIX.  */
+/* True if the process dumped core.  */
 # ifndef WCOREDUMP
 #  define WCOREDUMP(x) ((x) & 0x80)
 # endif
@@ -111,13 +116,14 @@
 /* Declarations of functions.  */
 
 #if @GNULIB_WAITPID@
-# if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
-_GL_FUNCDECL_SYS (waitpid, pid_t, (pid_t pid, int *statusp, int options));
+# if defined _WIN32 && ! defined __CYGWIN__
+_GL_FUNCDECL_SYS (waitpid, pid_t, (pid_t pid, int *statusp, int options), );
 # endif
-_GL_CXXALIAS_SYS (waitpid, pid_t, (pid_t pid, int *statusp, int options));
+/* Need to cast, because on Cygwin, the second parameter is
+                                                __wait_status_ptr_t statusp.  */
+_GL_CXXALIAS_SYS_CAST (waitpid, pid_t, (pid_t pid, int *statusp, int options));
 _GL_CXXALIASWARN (waitpid);
 #elif defined GNULIB_POSIXCHECK
-# undef waitpid
 # if HAVE_RAW_DECL_WAITPID
 _GL_WARN_ON_USE (waitpid, "waitpid is unportable - "
                  "use gnulib module sys_wait for portability");

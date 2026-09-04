@@ -1,0 +1,55 @@
+/* versioninfo.rc.in - for libgcrypt
+ *    Copyright (C) 2005, 2006 g10 Code GmbH
+ *
+ * This file is free software; as a special exception the author gives
+ * unlimited permission to copy and/or distribute it, with or without
+ * modifications, as long as this notice is preserved.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
+ * implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
+/* This file is processed by configure to create versioninfo.rc */
+
+#line __LINE__ "versioninfo.rc.in"
+
+#include <afxres.h>
+
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION @BUILD_FILEVERSION@
+ PRODUCTVERSION @BUILD_FILEVERSION@
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x21L   /* VS_FF_SPECIALBUILD (0x20) | VS_FF_DEBUG (0x1) */
+#else
+ FILEFLAGS 0x20L
+#endif
+ FILEOS 0x40004L   /* VOS_NT (0x40000) | VOS__WINDOWS32 (0x4)  */
+ FILETYPE 0x2L     /* VFT_DLL (0x2)  */
+ FILESUBTYPE 0x0L  /* VFT2_UNKNOWN   */
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "Comments", "Provided under the terms of the GNU Lesser General Public License (LGPLv2.1+).\0"
+            VALUE "CompanyName", "g10 Code GmbH\0"
+            VALUE "FileDescription", "Libgcrypt - The GNU Crypto Library\0"
+            VALUE "FileVersion", "@LIBGCRYPT_LT_CURRENT@.@LIBGCRYPT_LT_AGE@.@LIBGCRYPT_LT_REVISION@.@BUILD_REVISION@\0"
+            VALUE "InternalName", "libgcrypt\0"
+            VALUE "LegalCopyright", "Copyright © 2026 g10 Code GmbH\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "libgcrypt.dll\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "libgcrypt\0"
+            VALUE "ProductVersion", "@VERSION@\0"
+            VALUE "SpecialBuild", "@BUILD_TIMESTAMP@\0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+      VALUE "Translation", 0x409, 0x4b0  /* US English, Unicode */
+    END
+END

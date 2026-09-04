@@ -8,40 +8,29 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 #include <epan/expert.h>
 #include <epan/decode_as.h>
 
 void proto_register_moldudp64(void);
 void proto_reg_handoff_moldudp64(void);
 
+static dissector_handle_t moldudp64_handle;
+
 /* Initialize the protocol and registered fields */
-static int proto_moldudp64       = -1;
-static int hf_moldudp64_session  = -1;
-static int hf_moldudp64_sequence = -1;
-static int hf_moldudp64_count    = -1;
-static int hf_moldudp64_msgblk   = -1;
-static int hf_moldudp64_msglen   = -1;
-static int hf_moldudp64_msgseq   = -1;
-static int hf_moldudp64_msgdata  = -1;
+static int proto_moldudp64;
+static int hf_moldudp64_session;
+static int hf_moldudp64_sequence;
+static int hf_moldudp64_count;
+static int hf_moldudp64_msgblk;
+static int hf_moldudp64_msglen;
+static int hf_moldudp64_msgseq;
+static int hf_moldudp64_msgdata;
 
 #define MOLDUDP64_SESSION_LEN  10
 #define MOLDUDP64_SEQUENCE_LEN  8
@@ -51,39 +40,31 @@ static int hf_moldudp64_msgdata  = -1;
 #define MOLDUDP64_HEARTBEAT 0x0000
 #define MOLDUDP64_ENDOFSESS 0xFFFF
 
-/* Global port pref */
-static guint pf_moldudp64_port = 0;
-
 /* Initialize the subtree pointers */
-static gint ett_moldudp64        = -1;
-static gint ett_moldudp64_msgblk = -1;
+static int ett_moldudp64;
+static int ett_moldudp64_msgblk;
 
-static expert_field ei_moldudp64_msglen_invalid = EI_INIT;
-static expert_field ei_moldudp64_end_of_session_extra = EI_INIT;
-static expert_field ei_moldudp64_count_invalid = EI_INIT;
-static expert_field ei_moldudp64_request = EI_INIT;
+static expert_field ei_moldudp64_msglen_invalid;
+static expert_field ei_moldudp64_end_of_session_extra;
+static expert_field ei_moldudp64_count_invalid;
+static expert_field ei_moldudp64_request;
 
 static dissector_table_t moldudp64_payload_table;
 
-static void moldudp64_prompt(packet_info *pinfo _U_, gchar* result)
+static void moldudp64_prompt(packet_info *pinfo _U_, char* result)
 {
-    g_snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "Payload as");
-}
-
-static gpointer moldudp64_value(packet_info *pinfo _U_)
-{
-    return 0;
+    snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "Payload as");
 }
 
 /* Code to dissect a message block */
-static guint
+static unsigned
 dissect_moldudp64_msgblk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-        guint offset, guint64 sequence)
+        unsigned offset, uint64_t sequence)
 {
     proto_item *ti;
     proto_tree *blk_tree;
-    guint16     msglen, real_msglen, whole_len;
-    gint        remaining;
+    uint16_t    msglen, real_msglen, whole_len;
+    int         remaining;
     tvbuff_t*   next_tvb;
 
     if (tvb_captured_length_remaining(tvb, offset) < MOLDUDP64_MSGLEN_LEN)
@@ -111,7 +92,7 @@ dissect_moldudp64_msgblk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     ti = proto_tree_add_uint64(blk_tree, hf_moldudp64_msgseq,
             tvb, offset, 0, sequence);
 
-    PROTO_ITEM_SET_GENERATED(ti);
+    proto_item_set_generated(ti);
 
     ti = proto_tree_add_item(blk_tree, hf_moldudp64_msglen,
             tvb, offset, MOLDUDP64_MSGLEN_LEN, ENC_BIG_ENDIAN);
@@ -123,10 +104,8 @@ dissect_moldudp64_msgblk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
     offset += MOLDUDP64_MSGLEN_LEN;
 
-    /* Functionality for choosing subdissector is controlled through Decode As as CAN doesn't
-       have a unique identifier to determine subdissector */
     next_tvb = tvb_new_subset_length(tvb, offset, real_msglen);
-    if (!dissector_try_uint_new(moldudp64_payload_table, 0, next_tvb, pinfo, tree, FALSE, NULL))
+    if (!dissector_try_payload_with_data(moldudp64_payload_table, next_tvb, pinfo, tree, false, NULL))
     {
         proto_tree_add_item(blk_tree, hf_moldudp64_msgdata, tvb, offset, real_msglen, ENC_NA);
     }
@@ -140,9 +119,9 @@ dissect_moldudp64(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
 {
     proto_item *ti;
     proto_tree *moldudp64_tree;
-    guint       offset            = 0;
-    guint16     count, real_count = 0;
-    guint64     sequence;
+    unsigned    offset            = 0;
+    uint16_t    count, real_count = 0;
+    uint64_t    sequence;
 
     /* Check that there's enough data */
     if (tvb_reported_length(tvb) < (MOLDUDP64_SESSION_LEN  +
@@ -178,7 +157,7 @@ dissect_moldudp64(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     moldudp64_tree = proto_item_add_subtree(ti, ett_moldudp64);
 
     proto_tree_add_item(moldudp64_tree, hf_moldudp64_session,
-                        tvb, offset, MOLDUDP64_SESSION_LEN, ENC_ASCII|ENC_NA);
+                        tvb, offset, MOLDUDP64_SESSION_LEN, ENC_ASCII);
     offset += MOLDUDP64_SESSION_LEN;
 
     proto_tree_add_item(moldudp64_tree, hf_moldudp64_sequence,
@@ -220,8 +199,6 @@ dissect_moldudp64(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
 void
 proto_register_moldudp64(void)
 {
-    module_t *moldudp64_module;
-
     /* Setup list of header fields */
     static hf_register_info hf[] = {
 
@@ -255,7 +232,7 @@ proto_register_moldudp64(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_moldudp64,
         &ett_moldudp64_msgblk
     };
@@ -269,17 +246,8 @@ proto_register_moldudp64(void)
 
     expert_module_t* expert_moldudp64;
 
-    /* Decode As handling */
-    static build_valid_func moldudp64_da_build_value[1] = {moldudp64_value};
-    static decode_as_value_t moldudp64_da_values = {moldudp64_prompt, 1, moldudp64_da_build_value};
-    static decode_as_t moldudp64_da = {"moldudp64", "MoldUDP64 Payload", "moldudp64.payload", 1, 0, &moldudp64_da_values, NULL, NULL,
-                                        decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
-
     /* Register the protocol name and description */
-    proto_moldudp64 = proto_register_protocol("MoldUDP64",
-            "MoldUDP64", "moldudp64");
-
-    moldudp64_payload_table = register_dissector_table("moldudp64.payload", "MoldUDP64 Payload", proto_moldudp64, FT_UINT32, BASE_DEC);
+    proto_moldudp64 = proto_register_protocol("MoldUDP64", "MoldUDP64", "moldudp64");
 
     /* Required function calls to register the header fields and subtrees used */
     proto_register_field_array(proto_moldudp64, hf, array_length(hf));
@@ -287,44 +255,22 @@ proto_register_moldudp64(void)
     expert_moldudp64 = expert_register_protocol(proto_moldudp64);
     expert_register_field_array(expert_moldudp64, ei, array_length(ei));
 
-    /* Register preferences module */
-    moldudp64_module = prefs_register_protocol(proto_moldudp64,
-            proto_reg_handoff_moldudp64);
+    moldudp64_payload_table = register_decode_as_next_proto(proto_moldudp64, "moldudp64.payload",
+                                                            "MoldUDP64 Payload", moldudp64_prompt);
 
-    /* Register a sample port preference   */
-    prefs_register_uint_preference(moldudp64_module, "udp.port", "MoldUDP64 UDP Port",
-            "MoldUDP64 UDP port to dissect on.",
-            10, &pf_moldudp64_port);
-
-    register_decode_as(&moldudp64_da);
+    /* Register the dissector */
+    moldudp64_handle = register_dissector("moldudp64", dissect_moldudp64, proto_moldudp64);
 }
 
 
 void
 proto_reg_handoff_moldudp64(void)
 {
-    static gboolean           initialized = FALSE;
-    static dissector_handle_t moldudp64_handle;
-    static int                currentPort;
-
-    if (!initialized) {
-
-        moldudp64_handle = create_dissector_handle(dissect_moldudp64,
-                proto_moldudp64);
-        initialized = TRUE;
-    } else {
-
-        dissector_delete_uint("udp.port", currentPort, moldudp64_handle);
-    }
-
-    currentPort = pf_moldudp64_port;
-
-    dissector_add_uint("udp.port", currentPort, moldudp64_handle);
-
+    dissector_add_for_decode_as_with_preference("udp.port", moldudp64_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

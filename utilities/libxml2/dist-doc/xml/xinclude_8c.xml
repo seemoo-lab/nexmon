@@ -1,0 +1,2037 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="xinclude_8c" kind="file" language="C++">
+    <compoundname>xinclude.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">string.h</includes>
+    <includes refid="xmlmemory_8h" local="no">libxml/xmlmemory.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includes refid="uri_8h" local="no">libxml/uri.h</includes>
+    <includes refid="xpath_8h" local="no">libxml/xpath.h</includes>
+    <includes refid="xpointer_8h" local="no">libxml/xpointer.h</includes>
+    <includes refid="parserInternals_8h" local="no">libxml/parserInternals.h</includes>
+    <includes refid="xmlerror_8h" local="no">libxml/xmlerror.h</includes>
+    <includes refid="encoding_8h" local="no">libxml/encoding.h</includes>
+    <includes refid="xinclude_8h" local="no">libxml/xinclude.h</includes>
+    <includes local="yes">private/buf.h</includes>
+    <includes local="yes">private/error.h</includes>
+    <includes local="yes">private/memory.h</includes>
+    <includes local="yes">private/parser.h</includes>
+    <includes local="yes">private/tree.h</includes>
+    <includes local="yes">private/xinclude.h</includes>
+    <incdepgraph>
+      <node id="30">
+        <label>libxml/HTMLparser.h</label>
+        <link refid="HTMLparser_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="31">
+        <label>libxml/chvalid.h</label>
+        <link refid="chvalid_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+      </node>
+      <node id="29">
+        <label>libxml/parserInternals.h</label>
+        <link refid="parserInternals_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+        <childnode refid="31" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="26">
+        <label>libxml/uri.h</label>
+        <link refid="uri_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="32">
+        <label>libxml/xinclude.h</label>
+        <link refid="xinclude_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="27">
+        <label>libxml/xpath.h</label>
+        <link refid="xpath_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="28">
+        <label>libxml/xpointer.h</label>
+        <link refid="xpointer_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/xinclude.c</label>
+        <link refid="xinclude_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="32" relation="include">
+        </childnode>
+        <childnode refid="33" relation="include">
+        </childnode>
+        <childnode refid="34" relation="include">
+        </childnode>
+        <childnode refid="35" relation="include">
+        </childnode>
+        <childnode refid="36" relation="include">
+        </childnode>
+        <childnode refid="37" relation="include">
+        </childnode>
+        <childnode refid="38" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="7">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="9">
+        <label>limits.h</label>
+      </node>
+      <node id="33">
+        <label>private/buf.h</label>
+      </node>
+      <node id="34">
+        <label>private/error.h</label>
+      </node>
+      <node id="35">
+        <label>private/memory.h</label>
+      </node>
+      <node id="36">
+        <label>private/parser.h</label>
+      </node>
+      <node id="37">
+        <label>private/tree.h</label>
+      </node>
+      <node id="38">
+        <label>private/xinclude.h</label>
+      </node>
+      <node id="11">
+        <label>stdarg.h</label>
+      </node>
+      <node id="15">
+        <label>stddef.h</label>
+      </node>
+      <node id="5">
+        <label>stdio.h</label>
+      </node>
+      <node id="3">
+        <label>string.h</label>
+      </node>
+    </incdepgraph>
+    <innerclass refid="struct__xmlXIncludeRef" prot="public">_xmlXIncludeRef</innerclass>
+    <innerclass refid="struct__xmlXIncludeDoc" prot="public">_xmlXIncludeDoc</innerclass>
+    <innerclass refid="struct__xmlXIncludeTxt" prot="public">_xmlXIncludeTxt</innerclass>
+    <innerclass refid="struct__xmlXIncludeCtxt" prot="public">_xmlXIncludeCtxt</innerclass>
+    <innerclass refid="struct__xmlXIncludeMergeData" prot="public">_xmlXIncludeMergeData</innerclass>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="xinclude_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="12" column="9" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="12" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xinclude_8c_1a43836d16af6b4fb4bb543c657a6fc62c" prot="public" static="no">
+        <name>XINCLUDE_MAX_DEPTH</name>
+        <initializer>40</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="36" column="9" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="36" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="xinclude_8c_1acc6151b12d4cf8227754d422a6886907" prot="public" static="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>typedef xmlChar* xmlURL</definition>
+        <argsstring></argsstring>
+        <name>xmlURL</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="47" column="17" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="47" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xinclude_8c_1a57b15ef9200e9aa636faef6223997f8f" prot="public" static="no">
+        <type>struct _xmlXIncludeRef</type>
+        <definition>typedef struct _xmlXIncludeRef xmlXIncludeRef</definition>
+        <argsstring></argsstring>
+        <name>xmlXIncludeRef</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="49" column="30" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="49" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xinclude_8c_1a3b3221f9f3ce324ad18316449d9987e8" prot="public" static="no">
+        <type>xmlXIncludeRef *</type>
+        <definition>typedef xmlXIncludeRef* xmlXIncludeRefPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlXIncludeRefPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="50" column="24" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="50" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xinclude_8c_1a8c85a3669057134fb604394abbf9ac09" prot="public" static="no">
+        <type>struct _xmlXIncludeDoc</type>
+        <definition>typedef struct _xmlXIncludeDoc xmlXIncludeDoc</definition>
+        <argsstring></argsstring>
+        <name>xmlXIncludeDoc</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="63" column="30" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="63" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xinclude_8c_1ab1966d6d3fbde731f5254e9a32ce0add" prot="public" static="no">
+        <type>xmlXIncludeDoc *</type>
+        <definition>typedef xmlXIncludeDoc* xmlXIncludeDocPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlXIncludeDocPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="64" column="24" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="64" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xinclude_8c_1a37b752a01dbdc185cd8291709f7c6732" prot="public" static="no">
+        <type>struct _xmlXIncludeTxt</type>
+        <definition>typedef struct _xmlXIncludeTxt xmlXIncludeTxt</definition>
+        <argsstring></argsstring>
+        <name>xmlXIncludeTxt</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="71" column="30" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="71" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xinclude_8c_1a4d261d16cecbec6d1da42e3e4b86967c" prot="public" static="no">
+        <type>xmlXIncludeTxt *</type>
+        <definition>typedef xmlXIncludeTxt* xmlXIncludeTxtPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlXIncludeTxtPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="72" column="24" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="72" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xinclude_8c_1a17133bb69be7287583bb670ec99750a0" prot="public" static="no">
+        <type>struct _xmlXIncludeMergeData</type>
+        <definition>typedef struct _xmlXIncludeMergeData xmlXIncludeMergeData</definition>
+        <argsstring></argsstring>
+        <name>xmlXIncludeMergeData</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="905" column="36" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="905" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xinclude_8c_1a16c47f576d70a7a1ec8db53ec850afe6" prot="public" static="no">
+        <type>xmlXIncludeMergeData *</type>
+        <definition>typedef xmlXIncludeMergeData* xmlXIncludeMergeDataPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlXIncludeMergeDataPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="906" column="30" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="906" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="xinclude_8c_1a5c36c00e62ce46a6241a1c81523fe8c6" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlXIncludeRefPtr</type>
+        <definition>static xmlXIncludeRefPtr xmlXIncludeExpandNode</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlNodePtr node)</argsstring>
+        <name>xmlXIncludeExpandNode</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>If the XInclude node wasn&apos;t processed yet, create a new RefPtr, add it to ctxt-&gt;incTab and load the included items. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XInclude node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new or existing xmlXIncludeRef, or NULL in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="1575" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="1575" bodyend="1634" declfile="/builds/GNOME/libxml2/xinclude.c" declline="118" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1aecab19bc09bfce3718c7b64f94593456" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlXIncludeLoadNode</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlXIncludeRefPtr ref)</argsstring>
+        <name>xmlXIncludeLoadNode</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlXIncludeRefPtr</type>
+          <declname>ref</declname>
+        </param>
+        <briefdescription>
+<para>Find and load the infoset replacement for the given node. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ref</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an xmlXIncludeRef </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if substitution succeeded, -1 if some processing failed </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="1644" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="1644" bodyend="1687" declfile="/builds/GNOME/libxml2/xinclude.c" declline="121" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1aa5d9364e556473d9c560c1e964b45670" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlXIncludeDoProcess</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlNodePtr tree)</argsstring>
+        <name>xmlXIncludeDoProcess</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>tree</declname>
+        </param>
+        <briefdescription>
+<para>Implement the XInclude substitution on the XML document <computeroutput>doc</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude processing context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>tree</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the top of the tree to process </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if no substitution were done, -1 if some processing failed or the number of substitutions done. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="1881" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="1881" bodyend="1951" declfile="/builds/GNOME/libxml2/xinclude.c" declline="124" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a892ef81a1fe87bc5d205ec75f27eaf7a" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlXIncludeErrMemory</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt)</argsstring>
+        <name>xmlXIncludeErrMemory</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Handle an out of memory condition. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XInclude context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="139" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="139" bodyend="147"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a0c35fa8c8fd1e90b8ac07e2c1a160ddc" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlXIncludeErr</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlNodePtr node, int error, const char *msg, const xmlChar *extra)</argsstring>
+        <name>xmlXIncludeErr</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>error</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>msg</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>extra</declname>
+        </param>
+        <briefdescription>
+<para>Handle an XInclude error. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the context node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>error</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error code </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error message </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>extra</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra information </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="159" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="159" bodyend="202"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1ae17505d5c4d5830fdf6ad704bc46a67f" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>static xmlChar * xmlXIncludeGetProp</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlNodePtr cur, const xmlChar *name)</argsstring>
+        <name>xmlXIncludeGetProp</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Get an XInclude attribute. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the attribute name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the value (to be freed) or NULL if not found </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="213" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="213" bodyend="232"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a408c8af2bb8c37a7e1d0a982ccb7026d" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlXIncludeFreeRef</definition>
+        <argsstring>(xmlXIncludeRefPtr ref)</argsstring>
+        <name>xmlXIncludeFreeRef</name>
+        <param>
+          <type>xmlXIncludeRefPtr</type>
+          <declname>ref</declname>
+        </param>
+        <briefdescription>
+<para>Free an XInclude reference. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ref</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude reference </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="239" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="239" bodyend="249"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a94c5ab5218c17cd68fc40dc825636831" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xinclude_8h_1ac696145a69920b566bc94d13681967e4" kindref="member">xmlXIncludeCtxt</ref> *</type>
+        <definition>xmlXIncludeCtxt * xmlXIncludeNewContext</definition>
+        <argsstring>(xmlDoc *doc)</argsstring>
+        <name>xmlXIncludeNewContext</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Creates a new XInclude context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XML Document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new set </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="258" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="258" bodyend="273"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a9e957b93ca0fbac135f342aef43ca8f0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlXIncludeFreeContext</definition>
+        <argsstring>(xmlXIncludeCtxt *ctxt)</argsstring>
+        <name>xmlXIncludeFreeContext</name>
+        <param>
+          <type><ref refid="xinclude_8h_1ac696145a69920b566bc94d13681967e4" kindref="member">xmlXIncludeCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Free an XInclude context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="281" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="281" bodyend="311"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a6da2624129ae31ac888a6eac55e2048b" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlDocPtr</type>
+        <definition>static xmlDocPtr xmlXIncludeParseFile</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, const char *URL)</argsstring>
+        <name>xmlXIncludeParseFile</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>URL</declname>
+        </param>
+        <briefdescription>
+<para>parse a document for XInclude </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>URL</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URL or file path </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="320" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="320" bodyend="387"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a9b889fb03f204e6e93ece11334efa0f7" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlXIncludeRefPtr</type>
+        <definition>static xmlXIncludeRefPtr xmlXIncludeAddNode</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlNodePtr cur)</argsstring>
+        <name>xmlXIncludeAddNode</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <briefdescription>
+<para>Add a new node to process to an XInclude context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the new node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="396" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="396" bodyend="590"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a0d84b5bc385c55c9978df5ce2928fab0" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlXIncludeRecurseDoc</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlDocPtr doc)</argsstring>
+        <name>xmlXIncludeRecurseDoc</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlDocPtr</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>The XInclude recursive nature is handled at this point. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the new document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="599" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="599" bodyend="629"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1ac539526d2207e7d34c51b086b0e4cf87" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlXIncludeBaseFixup</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlNodePtr cur, xmlNodePtr copy, const xmlChar *targetBase)</argsstring>
+        <name>xmlXIncludeBaseFixup</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>copy</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>targetBase</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="638" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="638" bodyend="692"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1aa89c4606fc49f0f9d06b1f46cb0b07fc" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlNodePtr</type>
+        <definition>static xmlNodePtr xmlXIncludeCopyNode</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlNodePtr elem, int copyChildren, const xmlChar *targetBase)</argsstring>
+        <name>xmlXIncludeCopyNode</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>elem</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>copyChildren</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>targetBase</declname>
+        </param>
+        <briefdescription>
+<para>Make a copy of the node while expanding nested XIncludes. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>elem</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the element </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>copyChildren</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>copy children instead of node if true </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>targetBase</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the xml:base of the target node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a node list, not a single node. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="704" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="704" bodyend="812"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1ad82455f2107a3c31cccea2aa5b46891c" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xmlNodePtr</type>
+        <definition>static xmlNodePtr xmlXIncludeCopyXPointer</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlXPathObjectPtr obj, const xmlChar *targetBase)</argsstring>
+        <name>xmlXIncludeCopyXPointer</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlXPathObjectPtr</type>
+          <declname>obj</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>targetBase</declname>
+        </param>
+        <briefdescription>
+<para>Build a node list tree copy of the XPointer result. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This will drop Attributes and Namespace declarations.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>obj</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XPointer result from the evaluation. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>targetBase</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the xml:base of the target node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> list or NULL. the caller has to free the node tree. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="826" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="826" bodyend="896"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1aa75ceb01cd3936da95dbac8c62613d8d" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>static void xmlXIncludeMergeEntity</definition>
+        <argsstring>(void *payload, void *vdata, const xmlChar *name)</argsstring>
+        <name>xmlXIncludeMergeEntity</name>
+        <param>
+          <type>void *</type>
+          <declname>payload</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>vdata</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Implements the merge of one entity. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>payload</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>vdata</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the merge data </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>unused </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="920" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="920" bodyend="990"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a9a70863890a4dc809469991d55468de8" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlXIncludeMergeEntities</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlDocPtr doc, xmlDocPtr from)</argsstring>
+        <name>xmlXIncludeMergeEntities</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlDocPtr</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>xmlDocPtr</type>
+          <declname>from</declname>
+        </param>
+        <briefdescription>
+<para>Implements the entity merge. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the including doc </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>from</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the included doc </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if merge succeeded, -1 if some processing failed </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="1001" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="1001" bodyend="1051"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a16102330ccc6ad951a0716562ecc96bc" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlXIncludeLoadDoc</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlXIncludeRefPtr ref)</argsstring>
+        <name>xmlXIncludeLoadDoc</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlXIncludeRefPtr</type>
+          <declname>ref</declname>
+        </param>
+        <briefdescription>
+<para>Load the document, and store the result in the XInclude context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ref</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XMLXincludeRefPtr </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, -1 in case of failure </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="1061" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="1061" bodyend="1325"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1ade795ed292d129bfe3072f6b7139a98f" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlXIncludeLoadTxt</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlXIncludeRefPtr ref)</argsstring>
+        <name>xmlXIncludeLoadTxt</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlXIncludeRefPtr</type>
+          <declname>ref</declname>
+        </param>
+        <briefdescription>
+<para>Load the content, and store the result in the XInclude context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ref</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XMLXincludeRefPtr </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, -1 in case of failure </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="1335" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="1335" bodyend="1524"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a596c386598114129f1f33f83bea873fb" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlXIncludeLoadFallback</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlNodePtr fallback, xmlXIncludeRefPtr ref)</argsstring>
+        <name>xmlXIncludeLoadFallback</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>fallback</declname>
+        </param>
+        <param>
+          <type>xmlXIncludeRefPtr</type>
+          <declname>ref</declname>
+        </param>
+        <briefdescription>
+<para>Load the content of the fallback node, and store the result in the XInclude context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>fallback</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the fallback node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ref</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XMLXincludeRefPtr </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, -1 in case of failure </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="1536" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="1536" bodyend="1558"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a2ed6689adb18b1d9bbd78e36a1807a93" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlXIncludeIncludeNode</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlXIncludeRefPtr ref)</argsstring>
+        <name>xmlXIncludeIncludeNode</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlXIncludeRefPtr</type>
+          <declname>ref</declname>
+        </param>
+        <briefdescription>
+<para>Implement the infoset replacement for the given node. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ref</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an xmlXIncludeRef </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if substitution succeeded, -1 if some processing failed </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="1697" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="1697" bodyend="1801"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a44c284fffd262f073c6f88a370cd0839" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlXIncludeTestNode</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlNodePtr node)</argsstring>
+        <name>xmlXIncludeTestNode</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>test if the node is an XInclude node </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude processing context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XInclude node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 true, 0 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="1811" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="1811" bodyend="1870"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a2eb76026fe23afbdbba7b5141d0a58cc" prot="public" static="yes" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>static int xmlXIncludeDoProcessRoot</definition>
+        <argsstring>(xmlXIncludeCtxtPtr ctxt, xmlNodePtr tree)</argsstring>
+        <name>xmlXIncludeDoProcessRoot</name>
+        <param>
+          <type>xmlXIncludeCtxtPtr</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>xmlNodePtr</type>
+          <declname>tree</declname>
+        </param>
+        <briefdescription>
+<para>Implement the XInclude substitution on the XML document <computeroutput>doc</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the XInclude processing context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>tree</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the top of the tree to process </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if no substitution were done, -1 if some processing failed or the number of substitutions done. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="1962" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="1962" bodyend="1969"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1ab2ac87a969b8dcccd4da9feef8b319d3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlXIncludeGetLastError</definition>
+        <argsstring>(xmlXIncludeCtxt *ctxt)</argsstring>
+        <name>xmlXIncludeGetLastError</name>
+        <param>
+          <type><ref refid="xinclude_8h_1ac696145a69920b566bc94d13681967e4" kindref="member">xmlXIncludeCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XInclude processing context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the last error code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="1978" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="1978" bodyend="1982"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a9cdfa104cc6daeff5876365bfdd7f02d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlXIncludeSetErrorHandler</definition>
+        <argsstring>(xmlXIncludeCtxt *ctxt, xmlStructuredErrorFunc handler, void *data)</argsstring>
+        <name>xmlXIncludeSetErrorHandler</name>
+        <param>
+          <type><ref refid="xinclude_8h_1ac696145a69920b566bc94d13681967e4" kindref="member">xmlXIncludeCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+          <declname>handler</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>Register a callback function that will be called on errors and warnings. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If handler is NULL, the error handler will be deactivated.</para>
+<para><simplesect kind="since"><para>2.13.0 </para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XInclude processing context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>handler</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>error handler </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data which will be passed to the handler </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="1994" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="1994" bodyend="2000"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a745f07954d566274149a235ec484ff95" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlXIncludeSetResourceLoader</definition>
+        <argsstring>(xmlXIncludeCtxt *ctxt, xmlResourceLoader loader, void *data)</argsstring>
+        <name>xmlXIncludeSetResourceLoader</name>
+        <param>
+          <type><ref refid="xinclude_8h_1ac696145a69920b566bc94d13681967e4" kindref="member">xmlXIncludeCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="parser_8h_1a7c18bf0fce4a02394bd219d9422c27ed" kindref="member">xmlResourceLoader</ref></type>
+          <declname>loader</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>Register a callback function that will be called to load included documents. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="since"><para>2.14.0 </para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XInclude processing context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>loader</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>resource loader </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data which will be passed to the loader </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="2012" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="2012" bodyend="2018"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a961274d65dae86bb825022cbe6adf4eb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlXIncludeSetFlags</definition>
+        <argsstring>(xmlXIncludeCtxt *ctxt, int flags)</argsstring>
+        <name>xmlXIncludeSetFlags</name>
+        <param>
+          <type><ref refid="xinclude_8h_1ac696145a69920b566bc94d13681967e4" kindref="member">xmlXIncludeCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flags</declname>
+        </param>
+        <briefdescription>
+<para>Set the flags used for further processing of XML resources. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XInclude processing context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>flags</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a set of <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> used for parsing XML includes </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="2028" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="2028" bodyend="2033"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1acd3ebacbbc25af1fe6fda85ff4d5d763" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlXIncludeSetStreamingMode</definition>
+        <argsstring>(xmlXIncludeCtxt *ctxt, int mode)</argsstring>
+        <name>xmlXIncludeSetStreamingMode</name>
+        <param>
+          <type><ref refid="xinclude_8h_1ac696145a69920b566bc94d13681967e4" kindref="member">xmlXIncludeCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>mode</declname>
+        </param>
+        <briefdescription>
+<para>In streaming mode, XPointer expressions aren&apos;t allowed. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XInclude processing context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mode</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>whether streaming mode should be enabled </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success and -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="2043" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="2043" bodyend="2048"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a4113ad7ecd2f1f4886d680cfb387a4a8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlXIncludeProcessTreeFlagsData</definition>
+        <argsstring>(xmlNode *tree, int flags, void *data)</argsstring>
+        <name>xmlXIncludeProcessTreeFlagsData</name>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>tree</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flags</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>Implement the XInclude substitution on the XML node <computeroutput>tree</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>tree</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XML node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>flags</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a set of <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> used for parsing XML includes </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>application data that will be passed to the parser context in the _private field of the parser context(s) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if no substitution were done, -1 if some processing failed or the number of substitutions done. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="2062" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="2062" bodyend="2081"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a1ce0a7a6c8c67f5e2df2eff7a1d4ee3a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlXIncludeProcessFlagsData</definition>
+        <argsstring>(xmlDoc *doc, int flags, void *data)</argsstring>
+        <name>xmlXIncludeProcessFlagsData</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flags</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>Implement the XInclude substitution on the XML document <computeroutput>doc</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XML document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>flags</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a set of <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> used for parsing XML includes </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>application data that will be passed to the parser context in the _private field of the parser context(s) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if no substitution were done, -1 if some processing failed or the number of substitutions done. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="2094" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="2094" bodyend="2103"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a9cda55502370eb7744b17c0c4b87a982" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlXIncludeProcessFlags</definition>
+        <argsstring>(xmlDoc *doc, int flags)</argsstring>
+        <name>xmlXIncludeProcessFlags</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flags</declname>
+        </param>
+        <briefdescription>
+<para>Implement the XInclude substitution on the XML document <computeroutput>doc</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XML document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>flags</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a set of <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> used for parsing XML includes </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if no substitution were done, -1 if some processing failed or the number of substitutions done. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="2114" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="2114" bodyend="2116"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1aa9c7fc0ee49827ee70e8a7dce9a0779e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlXIncludeProcess</definition>
+        <argsstring>(xmlDoc *doc)</argsstring>
+        <name>xmlXIncludeProcess</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Implement the XInclude substitution on the XML document <computeroutput>doc</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an XML document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if no substitution were done, -1 if some processing failed or the number of substitutions done. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="2126" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="2126" bodyend="2128"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1aec000d15a7a1c12403f4f440cb94fff5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlXIncludeProcessTreeFlags</definition>
+        <argsstring>(xmlNode *tree, int flags)</argsstring>
+        <name>xmlXIncludeProcessTreeFlags</name>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>tree</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>flags</declname>
+        </param>
+        <briefdescription>
+<para>Implement the XInclude substitution for the given subtree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>tree</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a node in an XML document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>flags</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a set of <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref> used for parsing XML includes </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if no substitution were done, -1 if some processing failed or the number of substitutions done. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="2139" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="2139" bodyend="2156"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1a8e01899bfa415b5f1620691f67c37bb7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlXIncludeProcessTree</definition>
+        <argsstring>(xmlNode *tree)</argsstring>
+        <name>xmlXIncludeProcessTree</name>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>tree</declname>
+        </param>
+        <briefdescription>
+<para>Implement the XInclude substitution for the given subtree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>tree</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a node in an XML document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if no substitution were done, -1 if some processing failed or the number of substitutions done. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="2166" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="2166" bodyend="2168"/>
+      </memberdef>
+      <memberdef kind="function" id="xinclude_8c_1acdc361f9b39017f8f800248f33e0195b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlXIncludeProcessNode</definition>
+        <argsstring>(xmlXIncludeCtxt *ctxt, xmlNode *node)</argsstring>
+        <name>xmlXIncludeProcessNode</name>
+        <param>
+          <type><ref refid="xinclude_8h_1ac696145a69920b566bc94d13681967e4" kindref="member">xmlXIncludeCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>Implement the XInclude substitution for the given subtree reusing the information and data coming from the given context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an existing XInclude context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a node in an XML document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if no substitution were done, -1 if some processing failed or the number of substitutions done. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xinclude.c" line="2180" column="1" bodyfile="/builds/GNOME/libxml2/xinclude.c" bodystart="2180" bodyend="2190"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xinclude.c"/>
+  </compounddef>
+</doxygen>

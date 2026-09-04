@@ -1,0 +1,3 @@
+XPath error : Unregistered function: falae
+./test/schematron/zvon16_0.xml:2: element book: schematron error : /library/book line 2: Book 
+./test/schematron/zvon16_0.xml fails to validate

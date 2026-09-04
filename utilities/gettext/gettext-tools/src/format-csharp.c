@@ -1,7 +1,5 @@
 /* C# format strings.
-   Copyright (C) 2003-2004, 2006-2007, 2009, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2003.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -32,10 +30,7 @@
 #define _(str) gettext (str)
 
 /* C# format strings are described in the description of the .NET System.String
-   class and implemented in
-     pnetlib-0.5.6/runtime/System/String.cs
-   and
-     mcs-0.28/class/corlib/System/String.cs
+   class and implemented in mcs-0.28/class/corlib/System/String.cs .
    A format string consists of literal text (that is output verbatim), doubled
    braces ('{{' and '}}', that lead to a single brace when output), and
    directives.
@@ -52,8 +47,8 @@
 
 struct spec
 {
-  unsigned int directives;
-  unsigned int numbered_arg_count;
+  size_t directives;
+  size_t numbered_arg_count;
 };
 
 static void *
@@ -61,9 +56,8 @@ format_parse (const char *format, bool translated, char *fdi,
               char **invalid_reason)
 {
   const char *const format_start = format;
-  struct spec spec;
-  struct spec *result;
 
+  struct spec spec;
   spec.directives = 0;
   spec.numbered_arg_count = 0;
 
@@ -79,14 +73,13 @@ format_parse (const char *format, bool translated, char *fdi,
           else
             {
               /* A directive.  */
-              unsigned int number;
-
               spec.directives++;
 
+              size_t number;
               if (!c_isdigit (*format))
                 {
                   *invalid_reason =
-                    xasprintf (_("In the directive number %u, '{' is not followed by an argument number."), spec.directives);
+                    xasprintf (_("In the directive number %zu, '{' is not followed by an argument number."), spec.directives);
                   FDI_SET (*format == '\0' ? format - 1 : format, FMTDIR_ERROR);
                   return NULL;
                 }
@@ -107,7 +100,7 @@ format_parse (const char *format, bool translated, char *fdi,
                   if (!c_isdigit (*format))
                     {
                       *invalid_reason =
-                        xasprintf (_("In the directive number %u, ',' is not followed by a number."), spec.directives);
+                        xasprintf (_("In the directive number %zu, ',' is not followed by a number."), spec.directives);
                       FDI_SET (*format == '\0' ? format - 1 : format,
                                FMTDIR_ERROR);
                       return NULL;
@@ -137,8 +130,8 @@ format_parse (const char *format, bool translated, char *fdi,
                 {
                   *invalid_reason =
                     (c_isprint (*format)
-                     ? xasprintf (_("The directive number %u ends with an invalid character '%c' instead of '}'."), spec.directives, *format)
-                     : xasprintf (_("The directive number %u ends with an invalid character instead of '}'."), spec.directives));
+                     ? xasprintf (_("The directive number %zu ends with an invalid character '%c' instead of '}'."), spec.directives, *format)
+                     : xasprintf (_("The directive number %zu ends with an invalid character instead of '}'."), spec.directives));
                   FDI_SET (format, FMTDIR_ERROR);
                   return NULL;
                 }
@@ -160,7 +153,7 @@ format_parse (const char *format, bool translated, char *fdi,
               *invalid_reason =
                 (spec.directives == 0
                  ? xstrdup (_("The string starts in the middle of a directive: found '}' without matching '{'."))
-                 : xasprintf (_("The string contains a lone '}' after directive number %u."), spec.directives));
+                 : xasprintf (_("The string contains a lone '}' after directive number %zu."), spec.directives));
               FDI_SET (*format == '\0' ? format - 1 : format, FMTDIR_ERROR);
               return NULL;
             }
@@ -168,7 +161,7 @@ format_parse (const char *format, bool translated, char *fdi,
         }
     }
 
-  result = XMALLOC (struct spec);
+  struct spec *result = XMALLOC (struct spec);
   *result = spec;
   return result;
 }
@@ -191,7 +184,7 @@ format_get_number_of_directives (void *descr)
 
 static bool
 format_check (void *msgid_descr, void *msgstr_descr, bool equality,
-              formatstring_error_logger_t error_logger,
+              formatstring_error_logger_t error_logger, void *error_logger_data,
               const char *pretty_msgid, const char *pretty_msgstr)
 {
   struct spec *spec1 = (struct spec *) msgid_descr;
@@ -204,7 +197,8 @@ format_check (void *msgid_descr, void *msgstr_descr, bool equality,
       : spec1->numbered_arg_count < spec2->numbered_arg_count)
     {
       if (error_logger)
-        error_logger (_("number of format specifications in '%s' and '%s' does not match"),
+        error_logger (error_logger_data,
+                      _("number of format specifications in '%s' and '%s' does not match"),
                       pretty_msgid, pretty_msgstr);
       err = true;
     }
@@ -234,7 +228,6 @@ static void
 format_print (void *descr)
 {
   struct spec *spec = (struct spec *) descr;
-  unsigned int i;
 
   if (spec == NULL)
     {
@@ -243,7 +236,7 @@ format_print (void *descr)
     }
 
   printf ("(");
-  for (i = 0; i < spec->numbered_arg_count; i++)
+  for (size_t i = 0; i < spec->numbered_arg_count; i++)
     {
       if (i > 0)
         printf (" ");
@@ -259,18 +252,14 @@ main ()
     {
       char *line = NULL;
       size_t line_size = 0;
-      int line_len;
-      char *invalid_reason;
-      void *descr;
-
-      line_len = getline (&line, &line_size, stdin);
+      int line_len = getline (&line, &line_size, stdin);
       if (line_len < 0)
         break;
       if (line_len > 0 && line[line_len - 1] == '\n')
         line[--line_len] = '\0';
 
-      invalid_reason = NULL;
-      descr = format_parse (line, false, NULL, &invalid_reason);
+      char *invalid_reason = NULL;
+      void *descr = format_parse (line, false, NULL, &invalid_reason);
 
       format_print (descr);
       printf ("\n");
@@ -287,7 +276,7 @@ main ()
 /*
  * For Emacs M-x compile
  * Local Variables:
- * compile-command: "/bin/sh ../libtool --tag=CC --mode=link gcc -o a.out -static -O -g -Wall -I.. -I../gnulib-lib -I../intl -DHAVE_CONFIG_H -DTEST format-csharp.c ../gnulib-lib/libgettextlib.la"
+ * compile-command: "/bin/sh ../libtool --tag=CC --mode=link gcc -o a.out -static -O -g -Wall -I.. -I../gnulib-lib -I../../gettext-runtime/intl -DTEST format-csharp.c ../gnulib-lib/libgettextlib.la"
  * End:
  */
 

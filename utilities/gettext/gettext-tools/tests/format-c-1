@@ -22,6 +22,8 @@ cat <<\EOF > f-c-1.data
 "abc%x"
 # Valid: one integer argument
 "abc%X"
+# Valid: one integer argument
+"abc%b"
 # Valid: one floating-point argument
 "abc%e"
 # Valid: one floating-point argument
@@ -76,12 +78,108 @@ cat <<\EOF > f-c-1.data
 "abc%zi"
 # Valid: one argument with size specifier
 "abc%ti"
+# Valid: one argument with size specifier
+"abc%w8i"
+# Valid: one argument with size specifier
+"abc%w16i"
+# Valid: one argument with size specifier
+"abc%w32i"
+# Valid: one argument with size specifier
+"abc%w64i"
+# Valid: one argument with size specifier
+"abc%wf8i"
+# Valid: one argument with size specifier
+"abc%wf16i"
+# Valid: one argument with size specifier
+"abc%wf32i"
+# Valid: one argument with size specifier
+"abc%wf64i"
+# Invalid: one argument with unsupported size specifier
+"abc%w4i"
+# Invalid: one argument with unsupported size specifier
+"abc%wf4i"
+# Invalid: one floating-point argument with integer size specifier
+"abc%hhg"
+# Invalid: one floating-point argument with integer size specifier
+"abc%hg"
+# Invalid: one floating-point argument with integer size specifier
+"abc%lg"
+# Valid: one floating-point argument with integer size specifier equivalent to 'L'
+"abc%llg"
+# Valid: one floating-point argument with integer size specifier equivalent to 'L'
+"abc%qg"
+# Invalid: one floating-point argument with integer size specifier
+"abc%jg"
+# Invalid: one floating-point argument with integer size specifier
+"abc%zg"
+# Invalid: one floating-point argument with integer size specifier
+"abc%tg"
+# Invalid: one floating-point argument with integer size specifier
+"abc%w8g"
+# Invalid: one floating-point argument with integer size specifier
+"abc%w16g"
+# Invalid: one floating-point argument with integer size specifier
+"abc%w32g"
+# Invalid: one floating-point argument with integer size specifier
+"abc%w64g"
+# Invalid: one floating-point argument with integer size specifier
+"abc%wf8g"
+# Invalid: one floating-point argument with integer size specifier
+"abc%wf16g"
+# Invalid: one floating-point argument with integer size specifier
+"abc%wf32g"
+# Invalid: one floating-point argument with integer size specifier
+"abc%wf64g"
+# Valid: one argument with size specifier
+"abc%lc"
+# Invalid: one character argument with integer size specifier
+"abc%llc"
+# Invalid: one character argument with integer size specifier
+"abc%Lc"
+# Invalid: one character argument with integer size specifier
+"abc%qc"
+# Valid: one argument with size specifier
+"abc%ls"
+# Invalid: one string argument with integer size specifier
+"abc%hhs"
+# Invalid: one string argument with integer size specifier
+"abc%hs"
+# Invalid: one string argument with integer size specifier
+"abc%lls"
+# Invalid: one string argument with integer size specifier
+"abc%Ls"
+# Invalid: one string argument with integer size specifier
+"abc%qs"
+# Invalid: one string argument with integer size specifier
+"abc%js"
+# Invalid: one string argument with integer size specifier
+"abc%zs"
+# Invalid: one string argument with integer size specifier
+"abc%ts"
+# Invalid: one string argument with integer size specifier
+"abc%w8s"
+# Invalid: one string argument with integer size specifier
+"abc%w16s"
+# Invalid: one string argument with integer size specifier
+"abc%w32s"
+# Invalid: one string argument with integer size specifier
+"abc%w64s"
+# Invalid: one string argument with integer size specifier
+"abc%wf8s"
+# Invalid: one string argument with integer size specifier
+"abc%wf16s"
+# Invalid: one string argument with integer size specifier
+"abc%wf32s"
+# Invalid: one string argument with integer size specifier
+"abc%wf64s"
 # Invalid: unterminated
 "abc%"
 # Invalid: unknown format specifier
 "abc%y"
 # Invalid: flags after width
 "abc%*0g"
+# Valid: null precision
+"abc%.f"
 # Invalid: twice precision
 "abc%.4.2g"
 # Valid: three arguments
@@ -96,12 +194,10 @@ cat <<\EOF > f-c-1.data
 "abc%1"
 # Invalid: flags before number
 "abc%+1$d"
-# Valid: three arguments, two with same number
+# Valid: three arguments, two with same number, no conflict
 "abc%1$4x,%2$c,%1$u"
 # Invalid: argument with conflicting types
 "abc%1$4x,%2$c,%1$s"
-# Valid: no conflict
-"abc%1$4x,%2$c,%1$u"
 # Invalid: mixing of numbered and unnumbered arguments
 "abc%d%2$x"
 # Valid: numbered argument with constant precision

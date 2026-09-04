@@ -6,57 +6,48 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/expert.h>
-#include <epan/oui.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 void proto_register_iapp(void);
 void proto_reg_handoff_iapp(void);
 
+static dissector_handle_t iapp_handle;
+
 /* Initialize the protocol and registered fields */
-static int proto_iapp = -1;
-static int hf_iapp_version = -1;
-static int hf_iapp_type = -1;
-static int hf_iapp_cap_forwarding = -1;
-static int hf_iapp_cap_wep = -1;
-static int hf_iapp_auth_status = -1;
-static int hf_iapp_auth_string = -1;
-static int hf_iapp_auth_uint = -1;
-static int hf_iapp_auth_ipaddr = -1;
-static int hf_iapp_auth_trailer = -1;
-static int hf_iapp_pdu_ssid = -1;
-static int hf_iapp_pdu_bytes = -1;
-static int hf_iapp_pdu_uint = -1;
-static int hf_iapp_pdu_phytype = -1;
-static int hf_iapp_pdu_regdomain = -1;
-static int hf_iapp_pdu_oui_ident = -1;
+static int proto_iapp;
+static int hf_iapp_version;
+static int hf_iapp_type;
+static int hf_iapp_cap_forwarding;
+static int hf_iapp_cap_wep;
+static int hf_iapp_auth_status;
+static int hf_iapp_auth_string;
+static int hf_iapp_auth_uint;
+static int hf_iapp_auth_ipaddr;
+static int hf_iapp_auth_trailer;
+static int hf_iapp_pdu_ssid;
+static int hf_iapp_pdu_bytes;
+static int hf_iapp_pdu_uint;
+static int hf_iapp_pdu_phytype;
+static int hf_iapp_pdu_regdomain;
+static int hf_iapp_pdu_oui_ident;
 
 /* Initialize the subtree pointers */
-static gint ett_iapp = -1;
-static gint ett_iapp_pdu = -1;
-static gint ett_iapp_subpdu = -1;
-static gint ett_iapp_cap = -1;
-static gint ett_iapp_auth = -1;
-static gint ett_iapp_authinfo = -1;
+static int ett_iapp;
+static int ett_iapp_pdu;
+static int ett_iapp_subpdu;
+static int ett_iapp_cap;
+static int ett_iapp_auth;
+static int ett_iapp_authinfo;
 
-static expert_field ei_iapp_no_pdus = EI_INIT;
+static expert_field ei_iapp_no_pdus;
 
 #define UDP_PORT_IAPP     2313
 
@@ -196,12 +187,12 @@ add_authval_str(proto_tree *tree, int type, int len, tvbuff_t *tvb, int offset)
     switch (type)
     {
         case IAPP_AUTH_STATUS:
-            val = tvb_get_guint8(tvb, offset);
+            val = tvb_get_uint8(tvb, offset);
             proto_tree_add_uint_format_value(tree, hf_iapp_auth_status, tvb, offset, 1, val, "%s", val ? "Authenticated" : "Not authenticated");
             break;
         case IAPP_AUTH_USERNAME:
         case IAPP_AUTH_PROVNAME:
-            proto_tree_add_item(tree, hf_iapp_auth_string, tvb, offset, 1, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(tree, hf_iapp_auth_string, tvb, offset, 1, ENC_ASCII);
             break;
         case IAPP_AUTH_RXPKTS:
         case IAPP_AUTH_TXPKTS:
@@ -232,14 +223,14 @@ add_authval_str(proto_tree *tree, int type, int len, tvbuff_t *tvb, int offset)
 static void dissect_authinfo(proto_item *pitem, tvbuff_t *tvb, int offset, int sumlen)
 {
     proto_tree *authtree, *value_tree;
-    guint8 pdu_type;
-    guint16 len;
+    uint8_t pdu_type;
+    uint16_t len;
 
     authtree = proto_item_add_subtree(pitem, ett_iapp_auth);
 
     while (sumlen > 0)
     {
-        pdu_type = tvb_get_guint8(tvb, offset);
+        pdu_type = tvb_get_uint8(tvb, offset);
         len = tvb_get_ntohs(tvb, offset+1);
 
         value_tree = proto_tree_add_subtree_format(authtree, tvb, offset, len + 3,
@@ -255,16 +246,16 @@ static void dissect_authinfo(proto_item *pitem, tvbuff_t *tvb, int offset, int s
 
 /* get displayable values of PDU contents */
 
-static gboolean
+static bool
 append_pduval_str(proto_tree *tree, int type, int len, tvbuff_t *tvb, int offset,
-    gboolean is_fhss)
+    bool is_fhss)
 {
     int val;
 
     switch (type)
     {
         case IAPP_PDU_SSID:
-            proto_tree_add_item(tree, hf_iapp_pdu_ssid, tvb, offset, len, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(tree, hf_iapp_pdu_ssid, tvb, offset, len, ENC_ASCII);
             break;
         case IAPP_PDU_BSSID:
         case IAPP_PDU_OLDBSSID:
@@ -288,7 +279,7 @@ append_pduval_str(proto_tree *tree, int type, int len, tvbuff_t *tvb, int offset
             break;
         case IAPP_PDU_PHYTYPE:
             proto_tree_add_item(tree, hf_iapp_pdu_phytype, tvb, offset, 1, ENC_BIG_ENDIAN);
-            is_fhss = (tvb_get_guint8(tvb, offset) == IAPP_PHY_FHSS);
+            is_fhss = (tvb_get_uint8(tvb, offset) == IAPP_PHY_FHSS);
             break;
         case IAPP_PDU_REGDOMAIN:
             proto_tree_add_item(tree, hf_iapp_pdu_regdomain, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -296,7 +287,7 @@ append_pduval_str(proto_tree *tree, int type, int len, tvbuff_t *tvb, int offset
         case IAPP_PDU_CHANNEL:
             if (is_fhss)
             {
-                val = tvb_get_guint8(tvb, offset);
+                val = tvb_get_uint8(tvb, offset);
                 proto_tree_add_uint_format(tree, hf_iapp_pdu_uint, tvb, offset, 1, val,
                         "Pattern set %d, sequence %d", ((val >> 6) & 3) + 1, (val & 31) + 1);
             }
@@ -315,10 +306,10 @@ append_pduval_str(proto_tree *tree, int type, int len, tvbuff_t *tvb, int offset
 static void
 dissect_pdus(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *pdutree, proto_item *pduitem, int pdulen)
 {
-    guint8 pdu_type;
-    guint16 len;
+    uint8_t pdu_type;
+    uint16_t len;
     proto_item *ti;
-    gboolean is_fhss;
+    bool is_fhss;
     proto_tree *subtree;
 
     if (!pdulen)
@@ -327,10 +318,10 @@ dissect_pdus(tvbuff_t *tvb, packet_info *pinfo, int offset, proto_tree *pdutree,
         return;
     }
 
-    is_fhss = FALSE;
+    is_fhss = false;
     while (pdulen > 0)
     {
-        pdu_type = tvb_get_guint8(tvb, offset);
+        pdu_type = tvb_get_uint8(tvb, offset);
         len = tvb_get_ntohs(tvb, offset+1);
 
         subtree = proto_tree_add_subtree_format(pdutree, tvb, offset, len + 3,
@@ -354,16 +345,16 @@ dissect_iapp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 {
     proto_item *ti, *pduitem;
     proto_tree *iapp_tree, *pdutree;
-    guint8 ia_version;
-    guint8 ia_type;
-    const gchar *codestrval;
+    uint8_t ia_version;
+    uint8_t ia_type;
+    const char *codestrval;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "IAPP");
 
     col_clear(pinfo->cinfo, COL_INFO);
 
-    ia_version = tvb_get_guint8(tvb, 0);
-    ia_type = tvb_get_guint8(tvb, 1);
+    ia_version = tvb_get_uint8(tvb, 0);
+    ia_type = tvb_get_uint8(tvb, 1);
 
     codestrval = val_to_str_const(ia_type, iapp_vals, "Unknown Packet");
     col_add_fstr(pinfo->cinfo, COL_INFO, "%s(%d) (version=%d)", codestrval, ia_type, ia_version);
@@ -440,11 +431,11 @@ proto_register_iapp(void)
             { "Reg domain", "iapp.pdu.regdomain", FT_UINT8, BASE_DEC, VALS(iapp_dom_vals), 0x00, NULL, HFILL }
         },
         { &hf_iapp_pdu_oui_ident,
-            { "OUI", "iapp.pdu.oui_ident", FT_UINT24, BASE_DEC, VALS(oui_vals), 0x00, NULL, HFILL }
+            { "OUI", "iapp.pdu.oui_ident", FT_UINT24, BASE_OUI, NULL, 0x00, NULL, HFILL }
         },
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_iapp,
         &ett_iapp_pdu,
         &ett_iapp_subpdu,
@@ -467,6 +458,8 @@ proto_register_iapp(void)
     proto_register_subtree_array(ett, array_length(ett));
     expert_iapp = expert_register_protocol(proto_iapp);
     expert_register_field_array(expert_iapp, ei, array_length(ei));
+
+    iapp_handle = register_dissector("iapp", dissect_iapp, proto_iapp);
 }
 
 
@@ -477,13 +470,10 @@ proto_register_iapp(void)
 void
 proto_reg_handoff_iapp(void)
 {
-    dissector_handle_t iapp_handle;
-
-    iapp_handle = create_dissector_handle(dissect_iapp, proto_iapp);
-    dissector_add_uint("udp.port", UDP_PORT_IAPP, iapp_handle);
+    dissector_add_uint_with_preference("udp.port", UDP_PORT_IAPP, iapp_handle);
 }
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -44,17 +32,17 @@ void proto_register_h248_3gpp(void);
  * 3GUP Package
  * 3GPP TS 29.232 -- 15.1.1
  */
-static int proto_h248_package_3GUP = -1;
+static int proto_h248_package_3GUP;
 
-static int hf_h248_package_3GUP_Mode = -1;
-static int hf_h248_package_3GUP_UPversions = -1;
-static int hf_h248_package_3GUP_delerrsdu = -1;
-static int hf_h248_package_3GUP_interface = -1;
-static int hf_h248_package_3GUP_initdir = -1;
+static int hf_h248_package_3GUP_Mode;
+static int hf_h248_package_3GUP_UPversions;
+static int hf_h248_package_3GUP_delerrsdu;
+static int hf_h248_package_3GUP_interface;
+static int hf_h248_package_3GUP_initdir;
 
-static gint ett_h248_package_3GUP = -1;
+static int ett_h248_package_3GUP;
 
-static gboolean implicit = FALSE;
+static bool implicit;
 
 static const value_string h248_3GUP_properties_vals[] = {
 	{ 0x0000, "threegup (3G User Plane)" },
@@ -149,28 +137,28 @@ static h248_package_t h248_package_3GUP = {
  * 3GPP TS 29.232 -- 15.2.1
  */
 
-static int hf_h248_package_3GCSD = -1;
+static int hf_h248_package_3GCSD;
 
-static int hf_h248_package_3GCSD_plmnbc = -1;
-static int hf_h248_package_3GCSD_gsmchancod = -1;
-static int hf_h248_pkg_3GCSD_evt_protres = -1;
-static int hf_h248_pkg_3GCSD_evt_protres_result = -1;
-static int hf_h248_pkg_3GCSD_evt_protres_cause = -1;
-static int hf_h248_pkg_3GCSD_evt_ratechg = -1;
-static int hf_h248_pkg_3GCSD_evt_ratechg_rate = -1;
-static int hf_h248_pkg_3GCSD_sig_actprot = -1;
-static int hf_h248_pkg_3GCSD_actprot_sig_localpeer = -1;
+static int hf_h248_package_3GCSD_plmnbc;
+static int hf_h248_package_3GCSD_gsmchancod;
+static int hf_h248_pkg_3GCSD_evt_protres;
+static int hf_h248_pkg_3GCSD_evt_protres_result;
+static int hf_h248_pkg_3GCSD_evt_protres_cause;
+static int hf_h248_pkg_3GCSD_evt_ratechg;
+static int hf_h248_pkg_3GCSD_evt_ratechg_rate;
+static int hf_h248_pkg_3GCSD_sig_actprot;
+static int hf_h248_pkg_3GCSD_actprot_sig_localpeer;
 
-static gint ett_h248_package_3GCSD = -1;
-static gint ett_h248_3GCSD_evt_protres = -1;
-static gint ett_h248_3GCSD_evt_ratechg = -1;
-static gint ett_pkg_3GCSD_sig_actprot = -1;
+static int ett_h248_package_3GCSD;
+static int ett_h248_3GCSD_evt_protres;
+static int ett_h248_3GCSD_evt_ratechg;
+static int ett_pkg_3GCSD_sig_actprot;
 
 static void dissect_3gcsd_plmnbc(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int hfid, h248_curr_info_t* cu _U_, void* implicit_param) {
 	asn1_ctx_t asn1_ctx;
 
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
-	dissect_ber_octet_string(implicit_param ? *((gboolean*)implicit_param) : FALSE, &asn1_ctx, tree, tvb, 0, hfid, NULL);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
+	dissect_ber_octet_string(implicit_param ? *((bool*)implicit_param) : false, &asn1_ctx, tree, tvb, 0, hfid, NULL);
 	de_bearer_cap(tvb, tree, pinfo, 4, tvb_reported_length(tvb)-4, NULL, 0);
 }
 
@@ -181,7 +169,7 @@ static const value_string h248_3GCSD_properties_vals[] = {
 	{0,     NULL}
 };
 
-static const value_string h248_3GCSD_signals_vals[] _U_ = {
+static const value_string h248_3GCSD_signals_vals[] = {
 	{ 0x0001, "actprot" },
 	{0,     NULL}
 };
@@ -191,7 +179,7 @@ static const value_string h248_3GCSD_signal_actprot_vals[] = {
 	{0,     NULL}
 };
 
-static const value_string h248_3GCSD_events_vals[] _U_ = {
+static const value_string h248_3GCSD_events_vals[] = {
 	{ 0x0001, "protres"},
 	{ 0x0002, "ratechg"},
 	{0,     NULL}
@@ -278,39 +266,39 @@ static h248_package_t h248_package_3GCSD = {
  * TFO package
  * 3GPP TS 29.232 -- 15.2.2
  */
-static int hf_h248_package_3GTFO = -1;
+static int hf_h248_package_3GTFO;
 
-static int hf_h248_pkg_3GTFO_evt_codec_modify = -1;
-static int hf_h248_pkg_3GTFO_evt_distant_codec_list = -1;
-static int hf_h248_pkg_3GTFO_evt_status = -1;
-static int hf_h248_pkg_3GTFO_enable = -1;
-static int hf_h248_pkg_3GTFO_codeclist = -1;
-static int hf_h248_pkg_3GTFO_evt_codec_modify_optimalcodec = -1;
-static int hf_h248_pkg_3GTFO_evt_distant_codec_list_distlist = -1;
-static int hf_h248_pkg_3GTFO_evt_status_tfostatus = -1;
+static int hf_h248_pkg_3GTFO_evt_codec_modify;
+static int hf_h248_pkg_3GTFO_evt_distant_codec_list;
+static int hf_h248_pkg_3GTFO_evt_status;
+static int hf_h248_pkg_3GTFO_enable;
+static int hf_h248_pkg_3GTFO_codeclist;
+static int hf_h248_pkg_3GTFO_evt_codec_modify_optimalcodec;
+static int hf_h248_pkg_3GTFO_evt_distant_codec_list_distlist;
+static int hf_h248_pkg_3GTFO_evt_status_tfostatus;
 
-static gint ett_h248_package_3GTFO = -1;
-static gint ett_h248_3GTFO_evt_status = -1;
-static gint ett_h248_3GTFO_evt_distant_codec_list = -1;
-static gint ett_h248_3GTFO_evt_codec_modify = -1;
-static gint ett_h248_3GTFO_codec_list = -1;
-static gint ett_h248_3GTFO_codec = -1;
+static int ett_h248_package_3GTFO;
+static int ett_h248_3GTFO_evt_status;
+static int ett_h248_3GTFO_evt_distant_codec_list;
+static int ett_h248_3GTFO_evt_codec_modify;
+static int ett_h248_3GTFO_codec_list;
+static int ett_h248_3GTFO_codec;
 
 
 static void dissect_3GTFO_codec_mode(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int hfid, h248_curr_info_t* cu _U_, void* ignored _U_) {
 	tvbuff_t* sub_tvb = NULL;
-	gint8 appclass;
-	gboolean pc;
-	gint32 tag;
+	int8_t appclass;
+	bool pc;
+	int32_t tag;
 	asn1_ctx_t asn1_ctx;
 
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
 	get_ber_identifier(tvb, 0, &appclass, &pc, &tag);
 
 	/* XXX: is this enough to guess it? */
 	if (tag==BER_UNI_TAG_OCTETSTRING) {
-		dissect_ber_octet_string(FALSE, &asn1_ctx, tree, tvb, 0, hfid, &sub_tvb );
+		dissect_ber_octet_string(false, &asn1_ctx, tree, tvb, 0, hfid, &sub_tvb );
 
 		if (sub_tvb) {
 			proto_tree* pt = proto_item_add_subtree(asn1_ctx.created_item, ett_h248_3GTFO_codec);
@@ -324,17 +312,17 @@ static void dissect_3GTFO_codec_mode(proto_tree* tree, tvbuff_t* tvb, packet_inf
 
 static void dissect_3GTFO_codec_list(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int hfid, h248_curr_info_t* cu _U_, void* ignored _U_) {
 	tvbuff_t* sub_tvb = NULL;
-	gint8 appclass;
-	gboolean pc;
-	gint32 tag;
+	int8_t appclass;
+	bool pc;
+	int32_t tag;
 	asn1_ctx_t asn1_ctx;
 
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
 	get_ber_identifier(tvb, 0, &appclass, &pc, &tag);
 
 	if (tag==BER_UNI_TAG_OCTETSTRING) {
-		dissect_ber_octet_string(FALSE, &asn1_ctx, tree, tvb, 0, hfid, &sub_tvb );
+		dissect_ber_octet_string(false, &asn1_ctx, tree, tvb, 0, hfid, &sub_tvb );
 
 		if (sub_tvb) {
 			proto_tree* pt = proto_item_add_subtree(asn1_ctx.created_item,ett_h248_3GTFO_codec_list);
@@ -450,6 +438,42 @@ static h248_package_t h248_package_3GTFO = {
  * IP transport package
  * 3GPP TS 29.232 -- 15.2.7
  */
+static int hf_h248_package_threegiptra;
+static int hf_h248_package_threegiptra_ipv4trans;
+static int hf_h248_package_threegiptra_ipv6trans;
+static int hf_h248_package_threegiptra_UDport;
+
+static int ett_h248_package_threegiptra;
+
+static const value_string h248_threegiptra_properties_vals[] = {
+	{ 0x0000, "threegiptra (3G IP transport)" },
+	{ 0001,  "IP V4 transport address" },
+	{ 0002,  "IP V6 transport address" },
+	{ 0003,  "UDP port" },
+	{ 0,  NULL }
+};
+
+static const h248_pkg_param_t h248_package_threegiptra_properties[] = {
+	{ 0x0001, &hf_h248_package_threegiptra_ipv4trans, h248_param_ber_octetstring, &implicit },
+	{ 0x0002, &hf_h248_package_threegiptra_ipv6trans, h248_param_ber_octetstring, &implicit },
+	{ 0x0003, &hf_h248_package_threegiptra_UDport, h248_param_ber_integer, &implicit },
+	{ 0x0000, NULL, NULL, NULL }
+};
+
+static h248_package_t h248_package_threegiptra = {
+	0x0083,                                    /* Package ID = threegiptra  */
+	&hf_h248_package_threegiptra,              /* hf_id */
+	&ett_h248_package_threegiptra,
+	h248_threegiptra_properties_vals,
+	NULL,                                      /* signal_names */
+	NULL,                                      /* event_names */
+	NULL,                                      /* stats_names */
+	h248_package_threegiptra_properties,       /* h248_pkg_param_t */
+	NULL,
+	NULL,
+	NULL
+};
+
 /*
  * Flexible Tone Generator Package
  * 3GPP TS 29.232 -- 15.2.8
@@ -466,10 +490,10 @@ static h248_package_t h248_package_3GTFO = {
  * 3G Interface Type package
  * 3GPP TS 29.232 -- 15.2.11
  */
-static int hf_h248_package_threegint = -1;
-static int hf_h248_package_threegint_ipint = -1;
+static int hf_h248_package_threegint;
+static int hf_h248_package_threegint_ipint;
 
-static int ett_h248_package_threegint = -1;
+static int ett_h248_package_threegint;
 
 static const value_string h248_threegint_properties_vals[] = {
 	{0000,  "3G Interface Type"},
@@ -619,9 +643,27 @@ void proto_register_h248_3gpp(void) {
 			FT_UINT32, BASE_DEC, VALS(h248_threegint_ipint_vals), 0,
 			NULL, HFILL }},
 
+
+		{ &hf_h248_package_threegiptra,
+		{ "IP transport", "h248.package_threegiptra",
+			FT_BYTES, BASE_NONE, NULL, 0,
+			"This package contains the information needed to be able to support IP transport from RAN to the media gateway", HFILL }},
+		{ &hf_h248_package_threegiptra_ipv4trans,
+		{ "IPv4 Address", "h248.package_threegiptra.ipv4trans",
+			FT_BYTES, BASE_NONE, NULL, 0,
+			NULL, HFILL }},
+		{ &hf_h248_package_threegiptra_ipv6trans,
+		{ "IPv6 Address", "h248.package_threegiptra.ipv6trans",
+			FT_BYTES, BASE_NONE, NULL, 0,
+			NULL, HFILL }},
+		{ &hf_h248_package_threegiptra_UDport,
+		{ "UDP Port", "h248.package_threegiptra.udport",
+			FT_UINT32, BASE_DEC, NULL, 0,
+			NULL, HFILL }},
+
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_h248_package_3GUP,
 		&ett_h248_package_3GCSD,
 		&ett_h248_3GCSD_evt_protres,
@@ -632,7 +674,9 @@ void proto_register_h248_3gpp(void) {
 		&ett_h248_3GTFO_evt_codec_modify,
 		&ett_h248_3GTFO_codec_list,
 		&ett_h248_3GTFO_codec,
-		&ett_pkg_3GCSD_sig_actprot
+		&ett_pkg_3GCSD_sig_actprot,
+		&ett_h248_package_threegiptra,
+		&ett_h248_package_threegint
 	};
 
 	proto_h248_package_3GUP = proto_register_protocol(PNAME, PSNAME, PFNAME);
@@ -645,10 +689,12 @@ void proto_register_h248_3gpp(void) {
 	h248_register_package(&h248_package_3GCSD, REPLACE_PKG);
 	h248_register_package(&h248_package_3GTFO, REPLACE_PKG);
 	h248_register_package(&h248_package_threegint, REPLACE_PKG);
+	h248_register_package(&h248_package_threegiptra, REPLACE_PKG);
+
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

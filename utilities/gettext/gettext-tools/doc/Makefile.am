@@ -1,6 +1,5 @@
 ## Makefile for the gettext-tools/doc subdirectory of GNU gettext
-## Copyright (C) 1995-1997, 2001-2007, 2009, 2015-2016 Free Software
-## Foundation, Inc.
+## Copyright (C) 1995-2025 Free Software Foundation, Inc.
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -13,11 +12,16 @@
 ## GNU General Public License for more details.
 ##
 ## You should have received a copy of the GNU General Public License
-## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ## Process this file with automake to produce Makefile.in.
 
 AUTOMAKE_OPTIONS = 1.2 gnits
+
+# This directory does not support parallel make.
+# So, turn off parallel execution (at least in GNU make >= 4.0).
+GNUMAKEFLAGS = -j1
+
 EXTRA_DIST =
 MOSTLYCLEANFILES =
 
@@ -28,20 +32,80 @@ TEXINCLUDES = -I $(top_srcdir)/../gettext-runtime/doc
 SED = sed
 RM = rm -f
 
-MAKEINFO = env LANG= LC_MESSAGES= LC_ALL= LANGUAGE= @MAKEINFO@
+# The customization variable CHECK_NORMAL_MENU_STRUCTURE is necessary with
+# makeinfo versions ≥ 6.8.
+MAKEINFO = \
+  env LANG= LC_MESSAGES= LC_ALL= LANGUAGE= \
+  @MAKEINFO@ -c CHECK_NORMAL_MENU_STRUCTURE=1
 MAKEINFOFLAGS = $(TEXINCLUDES) --no-split
 
 info_TEXINFOS = gettext.texi
 # List of texinfo sources @included by gettext.texi, excluding version.texi.
 gettext_TEXINFOS = \
-  xgettext.texi msginit.texi msgmerge.texi msgcat.texi msgconv.texi \
-  msggrep.texi msgfilter.texi msguniq.texi msgcomm.texi msgcmp.texi \
-  msgattrib.texi msgen.texi msgexec.texi msgfmt.texi msgunfmt.texi \
-  gettextize.texi autopoint.texi iso-639.texi iso-639-2.texi iso-3166.texi \
-  gpl.texi lgpl.texi fdl.texi \
-  $(top_srcdir)/../gettext-runtime/doc/rt-gettext.texi \
-  $(top_srcdir)/../gettext-runtime/doc/rt-ngettext.texi \
-  $(top_srcdir)/../gettext-runtime/doc/rt-envsubst.texi
+  xgettext.texi \
+  msginit.texi \
+  msgmerge.texi \
+  msgpre.texi \
+  spit.texi \
+  msgcat.texi \
+  msgconv.texi \
+  msggrep.texi \
+  msgfilter.texi \
+  msguniq.texi \
+  msgcomm.texi \
+  msgcmp.texi \
+  msgattrib.texi \
+  msgen.texi \
+  msgexec.texi \
+  msgfmt.texi \
+  msgunfmt.texi \
+  gettextize.texi \
+  autopoint.texi \
+  po-fetch.texi \
+  lang-c.texi \
+  lang-python.texi \
+  lang-java.texi \
+  lang-csharp.texi \
+  lang-javascript.texi \
+  lang-typescript.texi \
+  lang-scheme.texi \
+  lang-lisp.texi \
+  lang-clisp-c.texi \
+  lang-elisp.texi \
+  lang-librep.texi \
+  lang-rust.texi \
+  lang-go.texi \
+  lang-ruby.texi \
+  lang-sh.texi \
+    $(top_srcdir)/../gettext-runtime/doc/rt-gettext.texi \
+    $(top_srcdir)/../gettext-runtime/doc/rt-ngettext.texi \
+    $(top_srcdir)/../gettext-runtime/doc/rt-printf_gettext.texi \
+    $(top_srcdir)/../gettext-runtime/doc/rt-printf_ngettext.texi \
+    $(top_srcdir)/../gettext-runtime/doc/rt-envsubst.texi \
+  lang-bash.texi \
+  lang-gawk.texi \
+  lang-lua.texi \
+  lang-pascal.texi \
+  lang-modula2.texi \
+  lang-d.texi \
+  lang-ocaml.texi \
+  lang-smalltalk.texi \
+  lang-vala.texi \
+  lang-wxwidgets.texi \
+  lang-tcl.texi \
+  lang-perl.texi \
+  lang-php.texi \
+  lang-pike.texi \
+  lang-gcc-source.texi \
+  lang-ycp.texi \
+  $(top_srcdir)/../gettext-runtime/doc/nls.texi \
+    $(top_srcdir)/../gettext-runtime/doc/matrix.texi \
+  iso-639.texi \
+  iso-639-2.texi \
+  iso-3166.texi \
+  gpl.texi \
+  lgpl.texi \
+  fdl.texi
 
 # The FAQ. To be edited with Mozilla.
 # The tutorial. To be edited by hand.
@@ -50,8 +114,7 @@ EXTRA_DIST += $(doc_DATA)
 
 EXTRA_DIST += \
   iso-639.sed iso-639-2.sed iso-3166.sed \
-  ISO_639 ISO_639-2 ISO_3166 ISO_3166_de \
-  texi2html
+  ISO_639 ISO_639-2 ISO_3166 ISO_3166_de
 
 iso-639.texi: ISO_639 iso-639.sed
 	$(SED) -f $(srcdir)/iso-639.sed $(srcdir)/ISO_639 > iso-639.tmp
@@ -79,11 +142,11 @@ $(srcdir)/stamp-vti: $(info_TEXINFOS) $(gettext_TEXINFOS) $(top_srcdir)/../.vers
 	echo "@set EDITION $(VERSION)"; \
 	echo "@set VERSION $(VERSION)"; \
 	echo "@set ARCHIVE-VERSION $(ARCHIVE_VERSION)") > vti.tmp
-	cmp -s vti.tmp version.texi \
-	  || (echo "Updating version.texi"; \
-	      cp vti.tmp version.texi)
+	cmp -s vti.tmp $(srcdir)/version.texi \
+	  || (echo "Updating $(srcdir)/version.texi"; \
+	      cp vti.tmp $(srcdir)/version.texi)
 	rm -f vti.tmp
-	cp version.texi $@
+	cp $(srcdir)/version.texi $@
 
 # We distribute only the split HTML documentation.
 # The user can generate the others, via
@@ -173,7 +236,7 @@ uninstall-pdf:
 
 # Documentation in HTML format.
 
-TEXI2HTML = @PERL@ $(srcdir)/texi2html
+TEXI2HTML = @PERL@ $(top_srcdir)/../build-aux/texi2html
 
 html-monolithic: gettext.html
 html-split: gettext_toc.html
@@ -182,15 +245,21 @@ html-split: gettext_toc.html
 # We want to use texi2html, not makeinfo --html.
 # Newer versions of texi2html also need the options --no-menu --no-sec-nav.
 gettext.html: gettext.texi version.texi $(gettext_TEXINFOS)
-	$(TEXI2HTML) $(TEXINCLUDES) -number -monolithic `if test -f gettext.texi; then echo gettext.texi; else echo $(srcdir)/gettext.texi; fi`
+	$(TEXI2HTML) $(TEXINCLUDES) -no-sec-nav -no-menu -toc-links -number -monolithic $(srcdir)/gettext.texi
 
 gettext_toc.html: gettext.texi version.texi $(gettext_TEXINFOS)
 	case "@PERL@" in \
 	  *"/missing perl") \
-	     $(TEXI2HTML) $(TEXINCLUDES) -number -split_chapter `if test -f gettext.texi; then echo gettext.texi; else echo $(srcdir)/gettext.texi; fi` || exit 0 ;; \
+	     $(TEXI2HTML) $(TEXINCLUDES) -no-sec-nav -no-menu -toc-links -number -split_chapter $(srcdir)/gettext.texi || exit 0 ;; \
 	  *) $(RM) gettext_*.html ; \
-	     $(TEXI2HTML) $(TEXINCLUDES) -number -split_chapter `if test -f gettext.texi; then echo gettext.texi; else echo $(srcdir)/gettext.texi; fi` ;; \
-	esac
+	     $(TEXI2HTML) $(TEXINCLUDES) -no-sec-nav -no-menu -toc-links -number -split_chapter $(srcdir)/gettext.texi ;; \
+	esac \
+	&& { mv gettext/gettext.html gettext_toc.html; \
+	     for file in gettext/*.html; do \
+	       sed -e 's/gettext\.html/gettext_toc.html/g' < $$file > `basename $$file` && rm -f $$file; \
+	     done; \
+	     rmdir gettext; \
+	   }
 
 install-html-monolithic: gettext.html
 	$(MKDIR_P) $(DESTDIR)$(htmldir)

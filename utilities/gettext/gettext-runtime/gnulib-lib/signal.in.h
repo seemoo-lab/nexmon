@@ -1,26 +1,26 @@
 /* A GNU-like <signal.h>.
 
-   Copyright (C) 2006-2016 Free Software Foundation, Inc.
+   Copyright (C) 2006-2026 Free Software Foundation, Inc.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #if __GNUC__ >= 3
 @PRAGMA_SYSTEM_HEADER@
 #endif
 @PRAGMA_COLUMNS@
 
-#if defined __need_sig_atomic_t || defined __need_sigset_t || defined _GL_ALREADY_INCLUDING_SIGNAL_H || (defined _SIGNAL_H && !defined __SIZEOF_PTHREAD_MUTEX_T)
+#if defined __need_sig_atomic_t || defined __need_sigset_t || defined _@GUARD_PREFIX@_ALREADY_INCLUDING_SIGNAL_H || (defined _SIGNAL_H && !defined __SIZEOF_PTHREAD_MUTEX_T)
 /* Special invocation convention:
    - Inside glibc header files.
    - On glibc systems we have a sequence of nested includes
@@ -39,7 +39,7 @@
 
 #ifndef _@GUARD_PREFIX@_SIGNAL_H
 
-#define _GL_ALREADY_INCLUDING_SIGNAL_H
+#define _@GUARD_PREFIX@_ALREADY_INCLUDING_SIGNAL_H
 
 /* Define pid_t, uid_t.
    Also, mingw defines sigset_t not in <signal.h>, but in <sys/types.h>.
@@ -50,18 +50,31 @@
 /* The include_next requires a split double-inclusion guard.  */
 #@INCLUDE_NEXT@ @NEXT_SIGNAL_H@
 
-#undef _GL_ALREADY_INCLUDING_SIGNAL_H
+#undef _@GUARD_PREFIX@_ALREADY_INCLUDING_SIGNAL_H
 
 #ifndef _@GUARD_PREFIX@_SIGNAL_H
 #define _@GUARD_PREFIX@_SIGNAL_H
 
-/* Mac OS X 10.3, FreeBSD 6.4, OpenBSD 3.8, OSF/1 4.0, Solaris 2.6, Android
-   declare pthread_sigmask in <pthread.h>, not in <signal.h>.
+/* This file uses GNULIB_POSIXCHECK, HAVE_RAW_DECL_*.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
+
+/* For testing the OpenBSD version.  */
+#if (@GNULIB_PTHREAD_SIGMASK@ || defined GNULIB_POSIXCHECK) \
+    && defined __OpenBSD__
+# include <sys/param.h>
+#endif
+
+/* Mac OS X 10.3, FreeBSD < 8.0, OpenBSD < 5.1, Solaris 2.6, Android,
+   OS/2 kLIBC declare pthread_sigmask in <pthread.h>, not in <signal.h>.
    But avoid namespace pollution on glibc systems.*/
 #if (@GNULIB_PTHREAD_SIGMASK@ || defined GNULIB_POSIXCHECK) \
     && ((defined __APPLE__ && defined __MACH__) \
-        || defined __FreeBSD__ || defined __OpenBSD__ || defined __osf__ \
-        || defined __sun || defined __ANDROID__) \
+        || (defined __FreeBSD__ && __FreeBSD__ < 8) \
+        || (defined __OpenBSD__ && OpenBSD < 201205) \
+        || defined __sun || defined __ANDROID__ \
+        || defined __KLIBC__) \
     && ! defined __GLIBC__
 # include <pthread.h>
 #endif
@@ -126,6 +139,45 @@ typedef void (*sighandler_t) (int);
 #endif
 
 
+/* Maximum size of a signal name returned by sig2str(), including the
+   terminating NUL byte.  */
+#ifndef SIG2STR_MAX
+/* The longest one: "RTMAX", then "+" or "-", then up to 10 digits, then NUL.
+   Add + 2 as a reserve for the future.  */
+# define SIG2STR_MAX (5 + 1 + 10 + 1 + 2)
+#endif
+
+#if @GNULIB_SIG2STR@
+# if !@HAVE_SIG2STR@
+_GL_FUNCDECL_SYS (sig2str, int, (int signo, char *str), );
+# endif
+_GL_CXXALIAS_SYS (sig2str, int, (int signo, char *str));
+# if __GLIBC__ >= 2
+_GL_CXXALIASWARN (sig2str);
+# endif
+#elif defined GNULIB_POSIXCHECK
+# if HAVE_RAW_DECL_SIG2STR
+_GL_WARN_ON_USE (sig2str, "sig2str is not portable - "
+                 "use gnulib module sig2str for portability");
+# endif
+#endif
+
+#if @GNULIB_SIG2STR@
+# if !@HAVE_STR2SIG@
+_GL_FUNCDECL_SYS (str2sig, int, (char const *str, int *signo_p), );
+# endif
+_GL_CXXALIAS_SYS (str2sig, int, (char const *str, int *signo_p));
+# if __GLIBC__ >= 2
+_GL_CXXALIASWARN (str2sig);
+# endif
+#elif defined GNULIB_POSIXCHECK
+# if HAVE_RAW_DECL_STR2SIG
+_GL_WARN_ON_USE (str2sig, "str2sig is not portable - "
+                 "use gnulib module sig2str for portability");
+# endif
+#endif
+
+
 #if @GNULIB_PTHREAD_SIGMASK@
 # if @REPLACE_PTHREAD_SIGMASK@
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
@@ -133,20 +185,29 @@ typedef void (*sighandler_t) (int);
 #   define pthread_sigmask rpl_pthread_sigmask
 #  endif
 _GL_FUNCDECL_RPL (pthread_sigmask, int,
-                  (int how, const sigset_t *new_mask, sigset_t *old_mask));
+                  (int how,
+                   const sigset_t *restrict new_mask,
+                   sigset_t *restrict old_mask), );
 _GL_CXXALIAS_RPL (pthread_sigmask, int,
-                  (int how, const sigset_t *new_mask, sigset_t *old_mask));
+                  (int how,
+                   const sigset_t *restrict new_mask,
+                   sigset_t *restrict old_mask));
 # else
-#  if !@HAVE_PTHREAD_SIGMASK@
+#  if !(@HAVE_PTHREAD_SIGMASK@ || defined pthread_sigmask)
 _GL_FUNCDECL_SYS (pthread_sigmask, int,
-                  (int how, const sigset_t *new_mask, sigset_t *old_mask));
+                  (int how,
+                   const sigset_t *restrict new_mask,
+                   sigset_t *restrict old_mask), );
 #  endif
 _GL_CXXALIAS_SYS (pthread_sigmask, int,
-                  (int how, const sigset_t *new_mask, sigset_t *old_mask));
+                  (int how,
+                   const sigset_t *restrict new_mask,
+                   sigset_t *restrict old_mask));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (pthread_sigmask);
+# endif
 #elif defined GNULIB_POSIXCHECK
-# undef pthread_sigmask
 # if HAVE_RAW_DECL_PTHREAD_SIGMASK
 _GL_WARN_ON_USE (pthread_sigmask, "pthread_sigmask is not portable - "
                  "use gnulib module pthread_sigmask for portability");
@@ -160,17 +221,18 @@ _GL_WARN_ON_USE (pthread_sigmask, "pthread_sigmask is not portable - "
 #   undef raise
 #   define raise rpl_raise
 #  endif
-_GL_FUNCDECL_RPL (raise, int, (int sig));
+_GL_FUNCDECL_RPL (raise, int, (int sig), );
 _GL_CXXALIAS_RPL (raise, int, (int sig));
 # else
 #  if !@HAVE_RAISE@
-_GL_FUNCDECL_SYS (raise, int, (int sig));
+_GL_FUNCDECL_SYS (raise, int, (int sig), );
 #  endif
 _GL_CXXALIAS_SYS (raise, int, (int sig));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (raise);
+# endif
 #elif defined GNULIB_POSIXCHECK
-# undef raise
 /* Assume raise is always declared.  */
 _GL_WARN_ON_USE (raise, "raise can crash on native Windows - "
                  "use gnulib module raise for portability");
@@ -200,7 +262,7 @@ typedef int verify_NSIG_constraint[NSIG <= 32 ? 1 : -1];
 /* When also using extern inline, suppress the use of static inline in
    standard headers of problematic Apple configurations, as Libc at
    least through Libc-825.26 (2013-04-09) mishandles it; see, e.g.,
-   <http://lists.gnu.org/archive/html/bug-gnulib/2012-12/msg00023.html>.
+   <https://lists.gnu.org/r/bug-gnulib/2012-12/msg00023.html>.
    Perhaps Apple will fix this some day.  */
 #if (defined _GL_EXTERN_INLINE_IN_USE && defined __APPLE__ \
      && (defined __i386__ || defined __x86_64__))
@@ -218,7 +280,7 @@ typedef int verify_NSIG_constraint[NSIG <= 32 ? 1 : -1];
 #   undef sigismember
 #  endif
 # else
-_GL_FUNCDECL_SYS (sigismember, int, (const sigset_t *set, int sig)
+_GL_FUNCDECL_SYS (sigismember, int, (const sigset_t *set, int sig),
                                     _GL_ARG_NONNULL ((1)));
 # endif
 _GL_CXXALIAS_SYS (sigismember, int, (const sigset_t *set, int sig));
@@ -231,7 +293,7 @@ _GL_CXXALIASWARN (sigismember);
 #   undef sigemptyset
 #  endif
 # else
-_GL_FUNCDECL_SYS (sigemptyset, int, (sigset_t *set) _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_SYS (sigemptyset, int, (sigset_t *set), _GL_ARG_NONNULL ((1)));
 # endif
 _GL_CXXALIAS_SYS (sigemptyset, int, (sigset_t *set));
 _GL_CXXALIASWARN (sigemptyset);
@@ -243,7 +305,7 @@ _GL_CXXALIASWARN (sigemptyset);
 #   undef sigaddset
 #  endif
 # else
-_GL_FUNCDECL_SYS (sigaddset, int, (sigset_t *set, int sig)
+_GL_FUNCDECL_SYS (sigaddset, int, (sigset_t *set, int sig),
                                   _GL_ARG_NONNULL ((1)));
 # endif
 _GL_CXXALIAS_SYS (sigaddset, int, (sigset_t *set, int sig));
@@ -256,7 +318,7 @@ _GL_CXXALIASWARN (sigaddset);
 #   undef sigdelset
 #  endif
 # else
-_GL_FUNCDECL_SYS (sigdelset, int, (sigset_t *set, int sig)
+_GL_FUNCDECL_SYS (sigdelset, int, (sigset_t *set, int sig),
                                   _GL_ARG_NONNULL ((1)));
 # endif
 _GL_CXXALIAS_SYS (sigdelset, int, (sigset_t *set, int sig));
@@ -269,14 +331,14 @@ _GL_CXXALIASWARN (sigdelset);
 #   undef sigfillset
 #  endif
 # else
-_GL_FUNCDECL_SYS (sigfillset, int, (sigset_t *set) _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_SYS (sigfillset, int, (sigset_t *set), _GL_ARG_NONNULL ((1)));
 # endif
 _GL_CXXALIAS_SYS (sigfillset, int, (sigset_t *set));
 _GL_CXXALIASWARN (sigfillset);
 
 /* Return the set of those blocked signals that are pending.  */
 # if !@HAVE_POSIX_SIGNALBLOCKING@
-_GL_FUNCDECL_SYS (sigpending, int, (sigset_t *set) _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_SYS (sigpending, int, (sigset_t *set), _GL_ARG_NONNULL ((1)));
 # endif
 _GL_CXXALIAS_SYS (sigpending, int, (sigset_t *set));
 _GL_CXXALIASWARN (sigpending);
@@ -291,10 +353,14 @@ _GL_CXXALIASWARN (sigpending);
 #  define SIG_SETMASK 1  /* blocked_set = *set; */
 #  define SIG_UNBLOCK 2  /* blocked_set = blocked_set & ~*set; */
 _GL_FUNCDECL_SYS (sigprocmask, int,
-                  (int operation, const sigset_t *set, sigset_t *old_set));
+                  (int operation,
+                   const sigset_t *restrict set,
+                   sigset_t *restrict old_set), );
 # endif
 _GL_CXXALIAS_SYS (sigprocmask, int,
-                  (int operation, const sigset_t *set, sigset_t *old_set));
+                  (int operation,
+                   const sigset_t *restrict set,
+                   sigset_t *restrict old_set));
 _GL_CXXALIASWARN (sigprocmask);
 
 /* Install the handler FUNC for signal SIG, and return the previous
@@ -314,14 +380,22 @@ typedef void (*_gl_function_taking_int_returning_void_t) (int);
 #   define signal rpl_signal
 #  endif
 _GL_FUNCDECL_RPL (signal, _gl_function_taking_int_returning_void_t,
-                  (int sig, _gl_function_taking_int_returning_void_t func));
+                  (int sig, _gl_function_taking_int_returning_void_t func), );
 _GL_CXXALIAS_RPL (signal, _gl_function_taking_int_returning_void_t,
                   (int sig, _gl_function_taking_int_returning_void_t func));
 # else
+/* On OpenBSD, the declaration of 'signal' may not be present at this point,
+   because it occurs in <sys/signal.h>, not <signal.h> directly.  */
+#  if defined __OpenBSD__
+_GL_FUNCDECL_SYS (signal, _gl_function_taking_int_returning_void_t,
+                  (int sig, _gl_function_taking_int_returning_void_t func), );
+#  endif
 _GL_CXXALIAS_SYS (signal, _gl_function_taking_int_returning_void_t,
                   (int sig, _gl_function_taking_int_returning_void_t func));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (signal);
+# endif
 
 # if !@HAVE_POSIX_SIGNALBLOCKING@ && GNULIB_defined_SIGPIPE
 /* Raise signal SIGPIPE.  */
@@ -329,37 +403,30 @@ _GL_EXTERN_C int _gl_raise_SIGPIPE (void);
 # endif
 
 #elif defined GNULIB_POSIXCHECK
-# undef sigaddset
 # if HAVE_RAW_DECL_SIGADDSET
 _GL_WARN_ON_USE (sigaddset, "sigaddset is unportable - "
                  "use the gnulib module sigprocmask for portability");
 # endif
-# undef sigdelset
 # if HAVE_RAW_DECL_SIGDELSET
 _GL_WARN_ON_USE (sigdelset, "sigdelset is unportable - "
                  "use the gnulib module sigprocmask for portability");
 # endif
-# undef sigemptyset
 # if HAVE_RAW_DECL_SIGEMPTYSET
 _GL_WARN_ON_USE (sigemptyset, "sigemptyset is unportable - "
                  "use the gnulib module sigprocmask for portability");
 # endif
-# undef sigfillset
 # if HAVE_RAW_DECL_SIGFILLSET
 _GL_WARN_ON_USE (sigfillset, "sigfillset is unportable - "
                  "use the gnulib module sigprocmask for portability");
 # endif
-# undef sigismember
 # if HAVE_RAW_DECL_SIGISMEMBER
 _GL_WARN_ON_USE (sigismember, "sigismember is unportable - "
                  "use the gnulib module sigprocmask for portability");
 # endif
-# undef sigpending
 # if HAVE_RAW_DECL_SIGPENDING
 _GL_WARN_ON_USE (sigpending, "sigpending is unportable - "
                  "use the gnulib module sigprocmask for portability");
 # endif
-# undef sigprocmask
 # if HAVE_RAW_DECL_SIGPROCMASK
 _GL_WARN_ON_USE (sigprocmask, "sigprocmask is unportable - "
                  "use the gnulib module sigprocmask for portability");
@@ -432,7 +499,7 @@ struct sigaction
 #  endif
 
 _GL_FUNCDECL_SYS (sigaction, int, (int, const struct sigaction *restrict,
-                                   struct sigaction *restrict));
+                                   struct sigaction *restrict), );
 
 # elif !@HAVE_STRUCT_SIGACTION_SA_SIGACTION@
 
@@ -445,7 +512,6 @@ _GL_CXXALIAS_SYS (sigaction, int, (int, const struct sigaction *restrict,
 _GL_CXXALIASWARN (sigaction);
 
 #elif defined GNULIB_POSIXCHECK
-# undef sigaction
 # if HAVE_RAW_DECL_SIGACTION
 _GL_WARN_ON_USE (sigaction, "sigaction is unportable - "
                  "use the gnulib module sigaction for portability");

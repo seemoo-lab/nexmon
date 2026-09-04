@@ -1,11 +1,8 @@
 /* Do not modify this file. Changes will be overwritten.                      */
 /* Generated automatically by the ASN.1 to Wireshark dissector compiler       */
 /* packet-mpeg-audio.c                                                        */
-/* asn2wrs.py -p mpeg-audio -c ./mpeg-audio.cnf -s ./packet-mpeg-audio-template -D . -O ../.. mpeg-audio.asn */
+/* asn2wrs.py -q -L -p mpeg-audio -c ./mpeg-audio.cnf -s ./packet-mpeg-audio-template -D . -O ../.. mpeg-audio.asn */
 
-/* Input file: packet-mpeg-audio-template.c */
-
-#line 1 "./asn1/mpeg-audio/packet-mpeg-audio-template.c"
 /* MPEG audio packet decoder.
  * Written by Shaun Jackman <sjackman@gmail.com>.
  * Copyright 2007 Shaun Jackman
@@ -13,19 +10,7 @@
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -34,54 +19,40 @@
 #include <epan/asn1.h>
 
 #include <wsutil/mpeg-audio.h>
+#include <wsutil/array.h>
 
 #include "packet-per.h"
 
-
-/*--- Included file: packet-mpeg-audio-hf.c ---*/
-#line 1 "./asn1/mpeg-audio/packet-mpeg-audio-hf.c"
-static int hf_mpeg_audio_sync = -1;               /* BIT_STRING_SIZE_11 */
-static int hf_mpeg_audio_version = -1;            /* T_version */
-static int hf_mpeg_audio_layer = -1;              /* T_layer */
-static int hf_mpeg_audio_protection = -1;         /* T_protection */
-static int hf_mpeg_audio_bitrate = -1;            /* INTEGER_0_15 */
-static int hf_mpeg_audio_frequency = -1;          /* INTEGER_0_3 */
-static int hf_mpeg_audio_padding = -1;            /* BOOLEAN */
-static int hf_mpeg_audio_private = -1;            /* BOOLEAN */
-static int hf_mpeg_audio_channel_mode = -1;       /* T_channel_mode */
-static int hf_mpeg_audio_mode_extension = -1;     /* INTEGER_0_3 */
-static int hf_mpeg_audio_copyright = -1;          /* BOOLEAN */
-static int hf_mpeg_audio_original = -1;           /* BOOLEAN */
-static int hf_mpeg_audio_emphasis = -1;           /* T_emphasis */
-static int hf_mpeg_audio_tag = -1;                /* OCTET_STRING_SIZE_3 */
-static int hf_mpeg_audio_title = -1;              /* OCTET_STRING_SIZE_30 */
-static int hf_mpeg_audio_artist = -1;             /* OCTET_STRING_SIZE_30 */
-static int hf_mpeg_audio_album = -1;              /* OCTET_STRING_SIZE_30 */
-static int hf_mpeg_audio_year = -1;               /* OCTET_STRING_SIZE_4 */
-static int hf_mpeg_audio_comment = -1;            /* OCTET_STRING_SIZE_28 */
-static int hf_mpeg_audio_must_be_zero = -1;       /* INTEGER_0_255 */
-static int hf_mpeg_audio_track = -1;              /* INTEGER_0_255 */
-static int hf_mpeg_audio_genre = -1;              /* T_genre */
-
-/*--- End of included file: packet-mpeg-audio-hf.c ---*/
-#line 33 "./asn1/mpeg-audio/packet-mpeg-audio-template.c"
-
-/*--- Included file: packet-mpeg-audio-ett.c ---*/
-#line 1 "./asn1/mpeg-audio/packet-mpeg-audio-ett.c"
-static gint ett_mpeg_audio_Audio = -1;
-static gint ett_mpeg_audio_ID3v1 = -1;
-
-/*--- End of included file: packet-mpeg-audio-ett.c ---*/
-#line 34 "./asn1/mpeg-audio/packet-mpeg-audio-template.c"
-
-/*--- Included file: packet-mpeg-audio-fn.c ---*/
-#line 1 "./asn1/mpeg-audio/packet-mpeg-audio-fn.c"
+static int hf_mpeg_audio_sync;                    /* BIT_STRING_SIZE_11 */
+static int hf_mpeg_audio_version;                 /* T_version */
+static int hf_mpeg_audio_layer;                   /* T_layer */
+static int hf_mpeg_audio_protection;              /* T_protection */
+static int hf_mpeg_audio_bitrate;                 /* INTEGER_0_15 */
+static int hf_mpeg_audio_frequency;               /* INTEGER_0_3 */
+static int hf_mpeg_audio_padding;                 /* BOOLEAN */
+static int hf_mpeg_audio_private;                 /* BOOLEAN */
+static int hf_mpeg_audio_channel_mode;            /* T_channel_mode */
+static int hf_mpeg_audio_mode_extension;          /* INTEGER_0_3 */
+static int hf_mpeg_audio_copyright;               /* BOOLEAN */
+static int hf_mpeg_audio_original;                /* BOOLEAN */
+static int hf_mpeg_audio_emphasis;                /* T_emphasis */
+static int hf_mpeg_audio_tag;                     /* OCTET_STRING_SIZE_3 */
+static int hf_mpeg_audio_title;                   /* OCTET_STRING_SIZE_30 */
+static int hf_mpeg_audio_artist;                  /* OCTET_STRING_SIZE_30 */
+static int hf_mpeg_audio_album;                   /* OCTET_STRING_SIZE_30 */
+static int hf_mpeg_audio_year;                    /* OCTET_STRING_SIZE_4 */
+static int hf_mpeg_audio_comment;                 /* OCTET_STRING_SIZE_28 */
+static int hf_mpeg_audio_must_be_zero;            /* INTEGER_0_255 */
+static int hf_mpeg_audio_track;                   /* INTEGER_0_255 */
+static int hf_mpeg_audio_genre;                   /* T_genre */
+static int ett_mpeg_audio_Audio;
+static int ett_mpeg_audio_ID3v1;
 
 
 static int
 dissect_mpeg_audio_BIT_STRING_SIZE_11(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     11, 11, FALSE, NULL, NULL);
+                                     11, 11, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -99,7 +70,7 @@ static const value_string mpeg_audio_T_version_vals[] = {
 static int
 dissect_mpeg_audio_T_version(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, FALSE, 0, NULL);
+                                     4, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -117,7 +88,7 @@ static const value_string mpeg_audio_T_layer_vals[] = {
 static int
 dissect_mpeg_audio_T_layer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, FALSE, 0, NULL);
+                                     4, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -133,7 +104,7 @@ static const value_string mpeg_audio_T_protection_vals[] = {
 static int
 dissect_mpeg_audio_T_protection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -143,7 +114,7 @@ dissect_mpeg_audio_T_protection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_mpeg_audio_INTEGER_0_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 15U, NULL, FALSE);
+                                                            0U, 15U, NULL, false);
 
   return offset;
 }
@@ -153,7 +124,7 @@ dissect_mpeg_audio_INTEGER_0_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_mpeg_audio_INTEGER_0_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 3U, NULL, FALSE);
+                                                            0U, 3U, NULL, false);
 
   return offset;
 }
@@ -180,7 +151,7 @@ static const value_string mpeg_audio_T_channel_mode_vals[] = {
 static int
 dissect_mpeg_audio_T_channel_mode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, FALSE, 0, NULL);
+                                     4, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -198,7 +169,7 @@ static const value_string mpeg_audio_T_emphasis_vals[] = {
 static int
 dissect_mpeg_audio_T_emphasis(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, FALSE, 0, NULL);
+                                     4, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -234,7 +205,7 @@ dissect_mpeg_audio_Audio(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_mpeg_audio_OCTET_STRING_SIZE_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       3, 3, FALSE, NULL);
+                                       3, 3, false, NULL);
 
   return offset;
 }
@@ -244,7 +215,7 @@ dissect_mpeg_audio_OCTET_STRING_SIZE_3(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_mpeg_audio_OCTET_STRING_SIZE_30(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       30, 30, FALSE, NULL);
+                                       30, 30, false, NULL);
 
   return offset;
 }
@@ -254,7 +225,7 @@ dissect_mpeg_audio_OCTET_STRING_SIZE_30(tvbuff_t *tvb _U_, int offset _U_, asn1_
 static int
 dissect_mpeg_audio_OCTET_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       4, 4, FALSE, NULL);
+                                       4, 4, false, NULL);
 
   return offset;
 }
@@ -264,7 +235,7 @@ dissect_mpeg_audio_OCTET_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_mpeg_audio_OCTET_STRING_SIZE_28(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       28, 28, FALSE, NULL);
+                                       28, 28, false, NULL);
 
   return offset;
 }
@@ -274,7 +245,7 @@ dissect_mpeg_audio_OCTET_STRING_SIZE_28(tvbuff_t *tvb _U_, int offset _U_, asn1_
 static int
 dissect_mpeg_audio_INTEGER_0_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
+                                                            0U, 255U, NULL, false);
 
   return offset;
 }
@@ -348,7 +319,7 @@ static const value_string mpeg_audio_T_genre_vals[] = {
   {  64, "native-american" },
   {  65, "cabaret" },
   {  66, "new-wave" },
-  {  67, "psychadelic" },
+  {  67, "psychedelic" },
   {  68, "rave" },
   {  69, "showtunes" },
   {  70, "trailer" },
@@ -414,7 +385,7 @@ static const value_string mpeg_audio_T_genre_vals[] = {
 static int
 dissect_mpeg_audio_T_genre(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
+                                                            0U, 255U, NULL, false);
 
   return offset;
 }
@@ -442,23 +413,64 @@ dissect_mpeg_audio_ID3v1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 }
 
 
-/*--- End of included file: packet-mpeg-audio-fn.c ---*/
-#line 35 "./asn1/mpeg-audio/packet-mpeg-audio-template.c"
-
 void proto_register_mpeg_audio(void);
 void proto_reg_handoff_mpeg_audio(void);
 
-static int proto_mpeg_audio = -1;
+dissector_handle_t mpeg_audio_handle;
 
-static int hf_mpeg_audio_data = -1;
-static int hf_mpeg_audio_padbytes = -1;
-static int hf_id3v1 = -1;
-static int hf_id3v2 = -1;
+static int proto_mpeg_audio;
+static dissector_handle_t id3v2_handle;
 
-static gboolean
+static int hf_mpeg_audio_header;
+static int hf_mpeg_audio_data;
+static int hf_mpeg_audio_padbytes;
+static int hf_id3v1;
+
+static int ett_mpeg_audio;
+
+static bool
+test_mpeg_audio(tvbuff_t *tvb, int offset)
+{
+	uint32_t hdr;
+	struct mpa mpa;
+
+	if (!tvb_bytes_exist(tvb, offset, 4))
+		return false;
+	if (tvb_strneql(tvb, offset, "TAG", 3) == 0)
+		return true;
+	if (tvb_strneql(tvb, offset, "ID3", 3) == 0)
+		return true;
+
+	hdr = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN);
+	MPA_UNMARSHAL(&mpa, hdr);
+	return MPA_VALID(&mpa);
+}
+
+static int
+mpeg_resync(tvbuff_t *tvb, int offset)
+{
+	uint32_t hdr;
+	struct mpa mpa;
+
+	/* This only looks to resync on another frame; it doesn't
+	 * look for an ID3 tag.
+	 */
+	offset = tvb_find_uint8(tvb, offset, -1, '\xff');
+	while (offset != -1 && tvb_bytes_exist(tvb, offset, 4)) {
+		hdr = tvb_get_uint32(tvb, offset, ENC_BIG_ENDIAN);
+		MPA_UNMARSHAL(&mpa, hdr);
+		if (MPA_VALID(&mpa)) {
+			return offset;
+		}
+		offset = tvb_find_uint8(tvb, offset + 1, -1, '\xff');
+	}
+	return tvb_reported_length(tvb);
+}
+
+static int
 dissect_mpeg_audio_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	guint32 h;
+	uint32_t h;
 	struct mpa mpa;
 	int data_size = 0;
 	asn1_ctx_t asn1_ctx;
@@ -466,16 +478,13 @@ dissect_mpeg_audio_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	static const char *version_names[] = { "1", "2", "2.5" };
 
 	if (!tvb_bytes_exist(tvb, 0, 4))
-		return FALSE;	/* not enough data for an MPEG audio frame */
+		return 0;
 
 	h = tvb_get_ntohl(tvb, 0);
 	MPA_UNMARSHAL(&mpa, h);
-	if (!MPA_SYNC_VALID(&mpa))
-		return FALSE;
-	if (!MPA_VERSION_VALID(&mpa))
-		return FALSE;
-	if (!MPA_LAYER_VALID(&mpa))
-		return FALSE;
+	if (!MPA_SYNC_VALID(&mpa) || !MPA_VERSION_VALID(&mpa) || !MPA_LAYER_VALID(&mpa)) {
+		return 0;
+	}
 
 	col_add_fstr(pinfo->cinfo, COL_PROTOCOL,
 			"MPEG-%s", version_names[mpa_version(&mpa)]);
@@ -489,12 +498,9 @@ dissect_mpeg_audio_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 						mpa_frequency(&mpa) / (float)1000);
 	}
 
-	if (tree == NULL)
-		return TRUE;
-
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
 	offset = dissect_mpeg_audio_Audio(tvb, offset, &asn1_ctx,
-			tree, proto_mpeg_audio);
+			tree, hf_mpeg_audio_header);
 	if (data_size > 0) {
 		unsigned int padding;
 
@@ -505,61 +511,71 @@ dissect_mpeg_audio_frame(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 		if (padding > 0) {
 			proto_tree_add_item(tree, hf_mpeg_audio_padbytes, tvb,
 					offset / 8, padding, ENC_NA);
+			offset += padding * 8;
 		}
 	}
-	return TRUE;
+	return offset / 8;
 }
 
-static void
+static int
 dissect_id3v1(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 	asn1_ctx_t asn1_ctx;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "ID3v1");
 	col_clear(pinfo->cinfo, COL_INFO);
-	if (tree == NULL)
-		return;
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
-	dissect_mpeg_audio_ID3v1(tvb, 0, &asn1_ctx,
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
+	return dissect_mpeg_audio_ID3v1(tvb, 0, &asn1_ctx,
 			tree, hf_id3v1);
 }
 
-static void
-dissect_id3v2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
-{
-	col_set_str(pinfo->cinfo, COL_PROTOCOL, "ID3v2");
-	col_clear(pinfo->cinfo, COL_INFO);
-	proto_tree_add_item(tree, hf_id3v2, tvb,
-			0, -1, ENC_NA);
-}
-
-static gboolean
+static int
 dissect_mpeg_audio(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-	int magic;
+	proto_item *ti;
+	proto_tree *mpeg_audio_tree;
 
-	if (!tvb_bytes_exist(tvb, 0, 3))
-		return FALSE;	/* not enough data for an ID tag or audio frame */
-	magic = tvb_get_ntoh24(tvb, 0);
-	switch (magic) {
-		case 0x544147: /* TAG */
-			dissect_id3v1(tvb, pinfo, tree);
-			return TRUE;
-		case 0x494433: /* ID3 */
-			dissect_id3v2(tvb, pinfo, tree);
-			return TRUE;
-		default:
-			return dissect_mpeg_audio_frame(tvb, pinfo, tree);
+	int magic, offset = 0;
+	uint32_t frame_len;
+	tvbuff_t *next_tvb;
+
+	ti = proto_tree_add_item(tree, proto_mpeg_audio, tvb, offset, -1, ENC_NA);
+	mpeg_audio_tree = proto_item_add_subtree(ti, ett_mpeg_audio);
+	while (tvb_reported_length_remaining(tvb, offset) >= 4) {
+		next_tvb = tvb_new_subset_remaining(tvb, offset);
+		magic = tvb_get_ntoh24(next_tvb, 0);
+		switch (magic) {
+			case 0x544147: /* TAG */
+				offset += dissect_id3v1(next_tvb, pinfo, mpeg_audio_tree);
+				break;
+			case 0x494433: /* ID3 */
+				offset += call_dissector(id3v2_handle, tvb, pinfo, mpeg_audio_tree);
+				break;
+			default:
+				frame_len = dissect_mpeg_audio_frame(next_tvb, pinfo, mpeg_audio_tree);
+				if (frame_len == 0) {
+					frame_len = mpeg_resync(next_tvb, 0);
+				}
+				offset += frame_len;
+		}
 	}
+	return tvb_reported_length(tvb);
+}
+
+static bool
+dissect_mpeg_audio_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+	if (!test_mpeg_audio(tvb, 0)) {
+		return false;
+	}
+	dissect_mpeg_audio(tvb, pinfo, tree, data);
+	return true;
 }
 
 void
 proto_register_mpeg_audio(void)
 {
 	static hf_register_info hf[] = {
-
-/*--- Included file: packet-mpeg-audio-hfarr.c ---*/
-#line 1 "./asn1/mpeg-audio/packet-mpeg-audio-hfarr.c"
     { &hf_mpeg_audio_sync,
       { "sync", "mpeg-audio.sync",
         FT_BYTES, BASE_NONE, NULL, 0,
@@ -648,9 +664,9 @@ proto_register_mpeg_audio(void)
       { "genre", "mpeg-audio.genre",
         FT_UINT32, BASE_DEC, VALS(mpeg_audio_T_genre_vals), 0,
         NULL, HFILL }},
-
-/*--- End of included file: packet-mpeg-audio-hfarr.c ---*/
-#line 149 "./asn1/mpeg-audio/packet-mpeg-audio-template.c"
+		{ &hf_mpeg_audio_header,
+			{ "Frame Header", "mpeg-audio.header",
+				FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 		{ &hf_mpeg_audio_data,
 			{ "Data", "mpeg-audio.data",
 				FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL }},
@@ -661,30 +677,30 @@ proto_register_mpeg_audio(void)
 		{ &hf_id3v1,
 			{ "ID3v1", "mpeg-audio.id3v1",
 				FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
-		{ &hf_id3v2,
-			{ "ID3v2", "mpeg-audio.id3v2",
-				FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	};
 
-	static gint *ett[] = {
-
-/*--- Included file: packet-mpeg-audio-ettarr.c ---*/
-#line 1 "./asn1/mpeg-audio/packet-mpeg-audio-ettarr.c"
+	static int *ett[] = {
+		&ett_mpeg_audio,
     &ett_mpeg_audio_Audio,
     &ett_mpeg_audio_ID3v1,
-
-/*--- End of included file: packet-mpeg-audio-ettarr.c ---*/
-#line 166 "./asn1/mpeg-audio/packet-mpeg-audio-template.c"
 	};
 
-	proto_mpeg_audio = proto_register_protocol(
-			"Moving Picture Experts Group Audio", "MPEG Audio", "mpeg-audio");
+	proto_mpeg_audio = proto_register_protocol("Moving Picture Experts Group Audio", "MPEG Audio", "mpeg-audio");
 	proto_register_field_array(proto_mpeg_audio, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	mpeg_audio_handle = register_dissector("mpeg-audio", dissect_mpeg_audio, proto_mpeg_audio);
 }
 
 void
 proto_reg_handoff_mpeg_audio(void)
 {
-	heur_dissector_add("mpeg", dissect_mpeg_audio, "MPEG Audio", "mpeg_audio", proto_mpeg_audio, HEURISTIC_ENABLE);
+	dissector_add_string("media_type", "audio/mpeg", mpeg_audio_handle);
+	/* "audio/mp3" used by Chrome before 2020 */
+	/* https://chromium.googlesource.com/chromium/src/+/842f46a95f49e24534ad35c7a71e5c425d426550 */
+	dissector_add_string("media_type", "audio/mp3", mpeg_audio_handle);
+
+	heur_dissector_add("mpeg", dissect_mpeg_audio_heur, "MPEG Audio", "mpeg_audio", proto_mpeg_audio, HEURISTIC_ENABLE);
+
+	id3v2_handle = find_dissector("id3v2");
 }

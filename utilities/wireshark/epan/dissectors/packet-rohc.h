@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Ref:
  * http://www.ietf.org/rfc/rfc3095.txt         RObust Header Compression (ROHC): Framework and four profiles: RTP, UDP, ESP, and uncompressed
@@ -32,6 +20,13 @@
 
 #define MAX_CID      15
 
+ /* ROHC Profiles */
+#define ROHC_PROFILE_UNCOMPRESSED   0
+#define ROHC_PROFILE_RTP            1
+#define ROHC_PROFILE_UDP            2
+#define ROHC_PROFILE_IP             4
+#define ROHC_PROFILE_UNKNOWN        0xFFFF
+
 enum rohc_mode
 {
   MODE_NOT_SET = 0,
@@ -40,38 +35,18 @@ enum rohc_mode
   RELIABLE_BIDIRECTIONAL = 3
 };
 
-enum rohc_d_mode
-{
-  NO_CONTEXT = 1,
-  STATIC_CONTEXT = 2,
-  FULL_CONTEXT = 3
-};
+
 typedef struct rohc_info
 {
-    gboolean           rohc_compression;
-    guint16            rohc_ip_version;
-    gboolean           cid_inclusion_info;
-    gboolean           large_cid_present;
+    bool               rohc_compression;
+    uint8_t            rohc_ip_version;
+    bool               cid_inclusion_info;
+    bool               large_cid_present;
     enum rohc_mode     mode;
-    gboolean           rnd;
-    gboolean           udp_checksum_present;
-    guint16            profile;
+    bool               rnd;
+    bool               udp_checksum_present;
+    uint16_t           profile;
     proto_item         *last_created_item;
 } rohc_info;
-
-
-typedef struct rohc_context
-{
-    guint16            rohc_ip_version[MAX_CID+1];
-    gboolean           large_cid_present[MAX_CID+1];
-    enum rohc_mode     mode[MAX_CID+1];
-    enum rohc_d_mode   d_mode[MAX_CID+1];
-    gboolean           rnd[MAX_CID+1];
-    gboolean           udp_checkum_present[MAX_CID+1];
-    guint16            profile[MAX_CID+1];
-	gboolean           rohc_context_init[MAX_CID+1];
-	gint               ir_frame_number[MAX_CID+1];        /* The frame number of the last IR packet seen */
-
-} rohc_context;
 
 #endif /* PACKET_ROHC_H */

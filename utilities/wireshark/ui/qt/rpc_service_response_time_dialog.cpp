@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 // warning C4267: 'argument' : conversion from 'size_t' to 'int', possible loss of data
@@ -35,7 +23,7 @@
 #include <epan/guid-utils.h>
 #include <epan/srt_table.h>
 
-#include "qt_ui_utils.h"
+#include <ui/qt/utils/qt_ui_utils.h>
 
 #include <QComboBox>
 #include <QHBoxLayout>
@@ -56,7 +44,7 @@
 
 extern "C" {
 static void
-dce_rpc_add_program(gpointer key_ptr, gpointer value_ptr, gpointer rsrtd_ptr)
+dce_rpc_add_program(void *key_ptr, void *value_ptr, void *rsrtd_ptr)
 {
     RpcServiceResponseTimeDialog *rsrt_dlg = dynamic_cast<RpcServiceResponseTimeDialog *>((RpcServiceResponseTimeDialog *)rsrtd_ptr);
     if (!rsrt_dlg) return;
@@ -68,7 +56,7 @@ dce_rpc_add_program(gpointer key_ptr, gpointer value_ptr, gpointer rsrtd_ptr)
 }
 
 static void
-dce_rpc_find_versions(gpointer key_ptr, gpointer, gpointer rsrtd_ptr)
+dce_rpc_find_versions(void *key_ptr, void *, void *rsrtd_ptr)
 {
     RpcServiceResponseTimeDialog *rsrt_dlg = dynamic_cast<RpcServiceResponseTimeDialog *>((RpcServiceResponseTimeDialog *)rsrtd_ptr);
     if (!rsrt_dlg) return;
@@ -78,19 +66,19 @@ dce_rpc_find_versions(gpointer key_ptr, gpointer, gpointer rsrtd_ptr)
 }
 
 static void
-onc_rpc_add_program(gpointer prog_ptr, gpointer value_ptr, gpointer rsrtd_ptr)
+onc_rpc_add_program(void *prog_ptr, void *value_ptr, void *rsrtd_ptr)
 {
     RpcServiceResponseTimeDialog *rsrt_dlg = dynamic_cast<RpcServiceResponseTimeDialog *>((RpcServiceResponseTimeDialog *)rsrtd_ptr);
     if (!rsrt_dlg) return;
 
-    guint32 program = GPOINTER_TO_UINT(prog_ptr);
+    uint32_t program = GPOINTER_TO_UINT(prog_ptr);
     rpc_prog_info_value *value = (rpc_prog_info_value *) value_ptr;
 
     rsrt_dlg->addOncRpcProgram(program, value);
 }
 
 static void
-onc_rpc_find_versions(const gchar *, ftenum_t , gpointer rpik_ptr, gpointer, gpointer rsrtd_ptr)
+onc_rpc_find_versions(const char *, ftenum_t , void *rpik_ptr, void *, void *rsrtd_ptr)
 {
     RpcServiceResponseTimeDialog *rsrt_dlg = dynamic_cast<RpcServiceResponseTimeDialog *>((RpcServiceResponseTimeDialog *)rsrtd_ptr);
     if (!rsrt_dlg) return;
@@ -101,7 +89,7 @@ onc_rpc_find_versions(const gchar *, ftenum_t , gpointer rpik_ptr, gpointer, gpo
 }
 
 static void
-onc_rpc_count_procedures(const gchar *, ftenum_t , gpointer rpik_ptr, gpointer, gpointer rsrtd_ptr)
+onc_rpc_count_procedures(const char *, ftenum_t , void *rpik_ptr, void *, void *rsrtd_ptr)
 {
     RpcServiceResponseTimeDialog *rsrt_dlg = dynamic_cast<RpcServiceResponseTimeDialog *>((RpcServiceResponseTimeDialog *)rsrtd_ptr);
     if (!rsrt_dlg) return;
@@ -138,16 +126,16 @@ RpcServiceResponseTimeDialog::RpcServiceResponseTimeDialog(QWidget &parent, Capt
         // full-height list to the left of the stats tree instead.
         QStringList programs = dce_name_to_uuid_key_.keys();
         std::sort(programs.begin(), programs.end(), qStringCaseLessThan);
-        connect(program_combo_, SIGNAL(currentIndexChanged(QString)),
-                this, SLOT(dceRpcProgramChanged(QString)));
+        connect(program_combo_, SIGNAL(currentTextChanged(const QString)),
+                this, SLOT(dceRpcProgramChanged(const QString)));
         program_combo_->addItems(programs);
     } else {
         setWindowSubtitle(tr("ONC-RPC Service Response Times"));
         g_hash_table_foreach(rpc_progs, onc_rpc_add_program, this);
         QStringList programs = onc_name_to_program_.keys();
         std::sort(programs.begin(), programs.end(), qStringCaseLessThan);
-        connect(program_combo_, SIGNAL(currentIndexChanged(QString)),
-                this, SLOT(oncRpcProgramChanged(QString)));
+        connect(program_combo_, SIGNAL(currentTextChanged(const QString)),
+                this, SLOT(oncRpcProgramChanged(const QString)));
         program_combo_->addItems(programs);
     }
 }
@@ -163,9 +151,9 @@ TapParameterDialog *RpcServiceResponseTimeDialog::createDceRpcSrtDialog(QWidget 
     // dcerpc,srt,<uuid>,<major version>.<minor version>[,<filter>]
     QStringList args_l = QString(opt_arg).split(',');
     if (args_l.length() > 1) {
-        // Alas, QUuid requires Qt 4.8.
+        // XXX Switch to QUuid.
         unsigned d1, d2, d3, d4_0, d4_1, d4_2, d4_3, d4_4, d4_5, d4_6, d4_7;
-        if(sscanf(args_l[0].toUtf8().constData(),
+        if (sscanf(args_l[0].toUtf8().constData(),
                   "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
                   &d1, &d2, &d3,
                   &d4_0, &d4_1, &d4_2, &d4_3, &d4_4, &d4_5, &d4_6, &d4_7) == 11) {
@@ -253,12 +241,12 @@ void RpcServiceResponseTimeDialog::addDceRpcProgramVersion(_guid_key *key)
     std::sort(versions_.begin(), versions_.end());
 }
 
-void RpcServiceResponseTimeDialog::addOncRpcProgram(guint32 program, _rpc_prog_info_value *value)
+void RpcServiceResponseTimeDialog::addOncRpcProgram(uint32_t program, _rpc_prog_info_value *value)
 {
     onc_name_to_program_.insert(value->progname, program);
 }
 
-void RpcServiceResponseTimeDialog::addOncRpcProgramVersion(guint32 program, guint32 version)
+void RpcServiceResponseTimeDialog::addOncRpcProgramVersion(uint32_t program, uint32_t version)
 {
     if (onc_name_to_program_[program_combo_->currentText()] != program) return;
 
@@ -274,7 +262,7 @@ void RpcServiceResponseTimeDialog::addOncRpcProgramVersion(guint32 program, guin
     }
 }
 
-void RpcServiceResponseTimeDialog::updateOncRpcProcedureCount(guint32 program, guint32 version, int procedure)
+void RpcServiceResponseTimeDialog::updateOncRpcProcedureCount(uint32_t program, uint32_t version, int procedure)
 {
     if (onc_name_to_program_[program_combo_->currentText()] != program) return;
     if (version_combo_->itemData(version_combo_->currentIndex()).toUInt() != version) return;
@@ -378,16 +366,15 @@ void RpcServiceResponseTimeDialog::fillVersionCombo()
     }
     if (versions_.count() > 0) {
         // Select the highest-numbered version.
-        version_combo_->setCurrentIndex(versions_.count() - 1);
+        version_combo_->setCurrentIndex(static_cast<int>(versions_.count()) - 1);
     }
 }
 
-void RpcServiceResponseTimeDialog::fillTree()
+void RpcServiceResponseTimeDialog::provideParameterData()
 {
     void *tap_data = NULL;
     const QString program_name = program_combo_->currentText();
-    gchar *program_name_cptr = qstring_strdup(program_name);
-    guint32 max_procs = 0;
+    uint32_t max_procs = 0;
 
     switch (dlg_type_) {
     case DceRpc:
@@ -395,12 +382,15 @@ void RpcServiceResponseTimeDialog::fillTree()
         if (!dce_name_to_uuid_key_.contains(program_name)) return;
 
         guid_key *dkey = dce_name_to_uuid_key_[program_name];
+        uint16_t version = (uint16_t) version_combo_->itemData(version_combo_->currentIndex()).toUInt();
+        const dcerpc_sub_dissector *procs = dcerpc_get_proto_sub_dissector(&(dkey->guid), version);
+        if (!procs) return;
+
         dcerpcstat_tap_data_t *dtap_data = g_new0(dcerpcstat_tap_data_t, 1);
         dtap_data->uuid = dkey->guid;
-        dtap_data->prog = program_name_cptr;
-        dtap_data->ver = (guint16) version_combo_->itemData(version_combo_->currentIndex()).toUInt();
+        dtap_data->ver = version;
+        dtap_data->prog = dcerpc_get_proto_name(&dtap_data->uuid, dtap_data->ver);
 
-        dcerpc_sub_dissector *procs = dcerpc_get_proto_sub_dissector(&(dkey->guid), dtap_data->ver);
         for (int i = 0; procs[i].name; i++) {
             if (procs[i].num > max_procs) max_procs = procs[i].num;
         }
@@ -414,9 +404,9 @@ void RpcServiceResponseTimeDialog::fillTree()
         if (!onc_name_to_program_.contains(program_name)) return;
 
         rpcstat_tap_data_t *otap_data = g_new0(rpcstat_tap_data_t, 1);
-        otap_data->prog = program_name_cptr;
         otap_data->program = onc_name_to_program_[program_name];
-        otap_data->version = (guint32) version_combo_->itemData(version_combo_->currentIndex()).toUInt();
+        otap_data->prog = rpc_prog_name(otap_data->program);
+        otap_data->version = (uint32_t) version_combo_->itemData(version_combo_->currentIndex()).toUInt();
 
         onc_rpc_num_procedures_ = -1;
         dissector_table_foreach ("rpc.call", onc_rpc_count_procedures, this);
@@ -429,21 +419,4 @@ void RpcServiceResponseTimeDialog::fillTree()
     }
 
     set_srt_table_param_data(srt_, tap_data);
-
-    ServiceResponseTimeDialog::fillTree();
-    g_free(program_name_cptr);
-    g_free(tap_data);
 }
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

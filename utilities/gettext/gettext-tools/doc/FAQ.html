@@ -1,5 +1,30 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
+<!--
+  Copyright (C) 2004-2026 Free Software Foundation, Inc.
+
+  This manual is free documentation.  It is dually licensed under the
+  GNU FDL and the GNU GPL.  This means that you can redistribute this
+  manual under either of these two licenses, at your choice.
+
+  This manual is covered by the GNU FDL.  Permission is granted to copy,
+  distribute and/or modify this document under the terms of the
+  GNU Free Documentation License (FDL), either version 1.2 of the
+  License, or (at your option) any later version published by the
+  Free Software Foundation (FSF); with no Invariant Sections, with no
+  Front-Cover Text, and with no Back-Cover Texts.
+  A copy of the license is at
+  <https://www.gnu.org/licenses/old-licenses/fdl-1.2>.
+
+  This manual is covered by the GNU GPL.  You can redistribute it and/or
+  modify it under the terms of the GNU General Public License (GPL), either
+  version 2 of the License, or (at your option) any later version published
+  by the Free Software Foundation (FSF).
+  A copy of the license is at
+  <https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html>.
+
+  Written by Bruno Haible.
+-->
 <head>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <title>GNU gettext FAQ</title>
@@ -82,28 +107,26 @@ internationalization, and for discussions of translator tools,
 including but not limited to GNU gettext.</li>
   <li><span style="font-family: monospace;">coordinator@translationproject.org</span><br>
 This is the email address of the <a
- href="http://translationproject.org/">Translation Project</a>,
+ href="https://translationproject.org/">Translation Project</a>,
 that is the project which manages the translated message
 catalogs for many free software packages. Note that KDE and GNOME
 packages are not part of this project; they have their own translation
-projects: <a href="http://i18n.kde.org/">i18n.kde.org</a> and <a
+projects: <a href="https://l10n.kde.org/">l10n.kde.org</a> and <a
  href="https://wiki.gnome.org/TranslationProject/">GNOME Translation Project</a>.<br>
   </li>
 </ul>
-The <span style="font-family: monospace;">bug-gnu-gettext</span> list
-is archived as part of the <a
- href="http://mail.gnu.org/archive/html/bug-gnu-utils/"><span
- style="font-family: monospace;">bug-gnu-utils</span></a> archives. <span
- style="font-family: monospace;">bug-gnu-gettext</span> cannot be
-subscribed on its own; to receive its contents by mail, subscribe to <span
- style="font-family: monospace;">bug-gnu-utils</span>.<br>
+The <span style="font-family: monospace;">bug-gettext</span> list
+is archived <a href="https://lists.gnu.org/archive/html/bug-gettext/">here</a>.
+You may occasionally also see
+<span style="font-family: monospace;">bug-gnu-gettext</span>; this is an alias
+of <span style="font-family: monospace;">bug-gettext</span>.<br>
 <h4><a name="general_source"></a>Where is the newest gettext source?</h4>
 The newest gettext release is available on <span
  style="font-family: monospace;">ftp.gnu.org</span> and its mirrors, in
-<a href="http://ftp.gnu.org/gnu/gettext/">http://ftp.gnu.org/gnu/gettext/</a>.<br>
+<a href="https://ftp.gnu.org/gnu/gettext/">https://ftp.gnu.org/gnu/gettext/</a>.<br>
 <br>
 Prereleases are announced on the <a
- href="http://mail.gnu.org/pipermail/autotools-announce"><span
+ href="https://lists.gnu.org/mailman/listinfo/autotools-announce"><span
  style="font-family: monospace;">autotools-announce</span> mailing list</a>.
 Note that prereleases are meant for testing and not meant for use in
 production environments. Please don't use the “gettextize” program of a
@@ -111,7 +134,7 @@ prerelease on projects which you share with other programmers via CVS.<br>
 <br>
 If you want to live on the bleeding edge, you can also use the
 development sources. Instructions for retrieving the gettext CVS are
-found <a href="http://savannah.gnu.org/projects/gettext">here</a>.
+found <a href="https://savannah.gnu.org/projects/gettext">here</a>.
 Note that building from CVS requires special tools (autoconf, automake,
 m4, groff, bison, etc.) and requires that you pay attention to the <span
  style="font-family: monospace;">README-alpha</span> and <span
@@ -119,18 +142,18 @@ m4, groff, bison, etc.) and requires that you pay attention to the <span
 <h4><a name="general_announce"></a>I want to be notified of new gettext
 releases.</h4>
 If you are interested in stable gettext releases, you can follow the <a
- href="http://mail.gnu.org/pipermail/info-gnu"><span
+ href="https://lists.gnu.org/mailman/listinfo/info-gnu"><span
  style="font-family: monospace;">info-gnu</span> mailing list</a>. It
 is also available as a newsgroup <a
  href="nntp://news.gmane.org/gmane.org.fsf.announce"><span
  style="font-family: monospace;">gmane.org.fsf.announce</span></a>
-through <a href="http://www.gmane.org/"><span
+through <a href="https://www.gmane.org/"><span
  style="font-family: monospace;">gmane.org</span></a>.<br>
 <br>
 You can also periodically check the download location.<br>
 <br>
 If you are interested in testing prereleases as well, you can subscribe
-to the <a href="http://mail.gnu.org/pipermail/autotools-announce"><span
+to the <a href="://lists.gnu.org/mailman/listinfo/autotools-announce"><span
  style="font-family: monospace;">autotools-announce</span> mailing
 list</a>.<br>
 <h3>Problems building GNU gettext</h3>
@@ -664,11 +687,11 @@ other software that looks in</code><br>
 to see the value. Even if it's</code><br>
     <code>&nbsp;&nbsp;&nbsp;&nbsp; a bit slow. See also</code><br>
     <code>&nbsp;&nbsp;&nbsp;&nbsp; &lt;<a
- href="http://article.gmane.org/gmane.comp.gnu.mingw.user/8272">http://article.gmane.org/gmane.comp.gnu.mingw.user/8272</a>&gt;</code><br>
+ href="https://article.gmane.org/gmane.comp.gnu.mingw.user/8272">https://article.gmane.org/gmane.comp.gnu.mingw.user/8272</a>&gt;</code><br>
     <code>&nbsp;&nbsp;&nbsp;&nbsp; &lt;<a
- href="http://article.gmane.org/gmane.comp.gnu.mingw.user/8273">http://article.gmane.org/gmane.comp.gnu.mingw.user/8273</a>&gt;</code><br>
+ href="https://article.gmane.org/gmane.comp.gnu.mingw.user/8273">https://article.gmane.org/gmane.comp.gnu.mingw.user/8273</a>&gt;</code><br>
     <code>&nbsp;&nbsp;&nbsp;&nbsp; &lt;<a
- href="http://www.cygwin.com/ml/cygwin/1999-04/msg00478.html">http://www.cygwin.com/ml/cygwin/1999-04/msg00478.html</a>&gt;
+ href="https://www.cygwin.com/ml/cygwin/1999-04/msg00478.html">https://www.cygwin.com/ml/cygwin/1999-04/msg00478.html</a>&gt;
 */</code><br>
     <code>&nbsp; if (!SetEnvironmentVariableA(name,value))</code><br>
     <code>&nbsp;&nbsp;&nbsp; return -1; </code><br>
@@ -740,8 +763,7 @@ nothing or an invalid locale. The fix for the user is then to set <span
 environment variable is ignored after I set <span
  style="font-family: monospace;">LANG=en</span></h4>
 This is because “en” is a language name, but not a valid locale name.
-The <span style="font-family: monospace;">ABOUT-NLS</span>&nbsp; file
-says:<br>
+The <a href="https://www.gnu.org/software/gettext/manual/html_node/The-LANGUAGE-variable.html">documentation</a> says:<br>
 <blockquote>
 In the <span style="font-family: monospace;">LANGUAGE</span>
 environment variable, but not in the <span
@@ -783,7 +805,7 @@ how standard functions like <span style="font-family: monospace;">isprint()</spa
 how strings written to standard output should be encoded. This
 character encoding is specified by POSIX to depend on the LC_CTYPE
 locale in effect when the program is executed; see also the description
-in the <span style="font-family: monospace;">ABOUT-NLS</span> file.<br>
+in the <a href="https://www.gnu.org/software/gettext/manual/html_node/Locale-Names.html">documentation</a>.<br>
 Strings in the compiled code are not magically converted between the
 time the program is compiled and the time it is run.<br>
 <br>
@@ -837,7 +859,7 @@ converts all string literals to UTF-8.</li>
 <hr style="width: 100%; height: 2px;">
 <address>GNU gettext FAQ<br>
 Bruno Haible &lt;<a href="mailto:bruno@clisp.org">bruno@clisp.org</a>&gt;</address>
-<p>Last modified: 24 February 2004
+<p>Last modified: 6 June 2020
 </p>
 </body>
 </html>

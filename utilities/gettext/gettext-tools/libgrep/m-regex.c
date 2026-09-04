@@ -1,6 +1,5 @@
 /* Pattern Matchers for Regular Expressions.
-   Copyright (C) 1992, 1998, 2000, 2005-2006, 2010, 2015-2016 Free Software
-   Foundation, Inc.
+   Copyright (C) 1992-2025 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,11 +12,9 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include <config.h>
 
 /* Specification.  */
 #include "libgrep.h"
@@ -28,7 +25,7 @@
 #include <string.h>
 #include <regex.h>
 
-#include "error.h"
+#include <error.h>
 #include "exitfail.h"
 #include "xalloc.h"
 
@@ -189,7 +186,7 @@ EGexecute (const void *compiled_pattern,
                 {
                   /* If -w, check if the match aligns with word boundaries.
                      We do this iteratively because:
-                     (a) the line may contain more than one occurence of the
+                     (a) the line may contain more than one occurrence of the
                          pattern, and
                      (b) Several alternatives in the pattern might be valid at
                          a given point, and we may need to consider a shorter

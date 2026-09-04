@@ -1,0 +1,184 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlURI" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlURI</compoundname>
+    <includes local="no">uri.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlURI_1ac386fe0902e2c7802ee782d8aaca75e5" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* scheme</definition>
+        <argsstring></argsstring>
+        <name>scheme</name>
+        <qualifiedname>_xmlURI::scheme</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="uri.h" line="39" column="10" bodyfile="uri.h" bodystart="39" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlURI_1adb63a38cb2e704dc0d28907cc4f956f1" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* opaque</definition>
+        <argsstring></argsstring>
+        <name>opaque</name>
+        <qualifiedname>_xmlURI::opaque</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="uri.h" line="40" column="10" bodyfile="uri.h" bodystart="40" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlURI_1acb504c3f479d97d34e5650f927e549ab" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* authority</definition>
+        <argsstring></argsstring>
+        <name>authority</name>
+        <qualifiedname>_xmlURI::authority</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="uri.h" line="41" column="10" bodyfile="uri.h" bodystart="41" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlURI_1affeefede74d4b54c220f6a43dd2beabd" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* server</definition>
+        <argsstring></argsstring>
+        <name>server</name>
+        <qualifiedname>_xmlURI::server</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="uri.h" line="42" column="10" bodyfile="uri.h" bodystart="42" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlURI_1a14871705f45ccdc5bb9f4549efd8e119" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* user</definition>
+        <argsstring></argsstring>
+        <name>user</name>
+        <qualifiedname>_xmlURI::user</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="uri.h" line="43" column="10" bodyfile="uri.h" bodystart="43" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlURI_1a63c89c04d1feae07ca35558055155ffb" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int port</definition>
+        <argsstring></argsstring>
+        <name>port</name>
+        <qualifiedname>_xmlURI::port</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="uri.h" line="44" column="9" bodyfile="uri.h" bodystart="44" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlURI_1a44196e6a5696d10442c29e639437196e" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* path</definition>
+        <argsstring></argsstring>
+        <name>path</name>
+        <qualifiedname>_xmlURI::path</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="uri.h" line="45" column="10" bodyfile="uri.h" bodystart="45" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlURI_1af26982218484ec3fdcb8f7d92e864a9b" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* query</definition>
+        <argsstring></argsstring>
+        <name>query</name>
+        <qualifiedname>_xmlURI::query</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="uri.h" line="46" column="10" bodyfile="uri.h" bodystart="46" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlURI_1a5abc7cb9044d6e0c2d6206c8abb00dfa" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* fragment</definition>
+        <argsstring></argsstring>
+        <name>fragment</name>
+        <qualifiedname>_xmlURI::fragment</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="uri.h" line="47" column="10" bodyfile="uri.h" bodystart="47" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlURI_1ae573b6c90f23c32872ddaa8cff40557e" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int cleanup</definition>
+        <argsstring></argsstring>
+        <name>cleanup</name>
+        <qualifiedname>_xmlURI::cleanup</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="uri.h" line="48" column="10" bodyfile="uri.h" bodystart="48" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlURI_1a1575bab62cabfdb1045dd953bc6b0905" prot="public" static="no" mutable="no">
+        <type>char *</type>
+        <definition>char* query_raw</definition>
+        <argsstring></argsstring>
+        <name>query_raw</name>
+        <qualifiedname>_xmlURI::query_raw</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="uri.h" line="49" column="10" bodyfile="uri.h" bodystart="49" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>A parsed URI reference. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>This is a struct containing the various fields as described in RFC 2396 but separated for further processing.</para>
+<para>Note: query is a deprecated field which is incorrectly unescaped. query_raw takes precedence over query if the former is set. See: <ulink url="http://mail.gnome.org/archives/xml/2007-April/thread.html">http://mail.gnome.org/archives/xml/2007-April/thread.html</ulink>#00127 </para>
+    </detaileddescription>
+    <location file="uri.h" line="38" column="1" bodyfile="uri.h" bodystart="38" bodyend="50"/>
+    <listofallmembers>
+      <member refid="struct__xmlURI_1acb504c3f479d97d34e5650f927e549ab" prot="public" virt="non-virtual"><scope>_xmlURI</scope><name>authority</name></member>
+      <member refid="struct__xmlURI_1ae573b6c90f23c32872ddaa8cff40557e" prot="public" virt="non-virtual"><scope>_xmlURI</scope><name>cleanup</name></member>
+      <member refid="struct__xmlURI_1a5abc7cb9044d6e0c2d6206c8abb00dfa" prot="public" virt="non-virtual"><scope>_xmlURI</scope><name>fragment</name></member>
+      <member refid="struct__xmlURI_1adb63a38cb2e704dc0d28907cc4f956f1" prot="public" virt="non-virtual"><scope>_xmlURI</scope><name>opaque</name></member>
+      <member refid="struct__xmlURI_1a44196e6a5696d10442c29e639437196e" prot="public" virt="non-virtual"><scope>_xmlURI</scope><name>path</name></member>
+      <member refid="struct__xmlURI_1a63c89c04d1feae07ca35558055155ffb" prot="public" virt="non-virtual"><scope>_xmlURI</scope><name>port</name></member>
+      <member refid="struct__xmlURI_1af26982218484ec3fdcb8f7d92e864a9b" prot="public" virt="non-virtual"><scope>_xmlURI</scope><name>query</name></member>
+      <member refid="struct__xmlURI_1a1575bab62cabfdb1045dd953bc6b0905" prot="public" virt="non-virtual"><scope>_xmlURI</scope><name>query_raw</name></member>
+      <member refid="struct__xmlURI_1ac386fe0902e2c7802ee782d8aaca75e5" prot="public" virt="non-virtual"><scope>_xmlURI</scope><name>scheme</name></member>
+      <member refid="struct__xmlURI_1affeefede74d4b54c220f6a43dd2beabd" prot="public" virt="non-virtual"><scope>_xmlURI</scope><name>server</name></member>
+      <member refid="struct__xmlURI_1a14871705f45ccdc5bb9f4549efd8e119" prot="public" virt="non-virtual"><scope>_xmlURI</scope><name>user</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

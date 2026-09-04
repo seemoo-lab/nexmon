@@ -1,6 +1,5 @@
 /* Reading PO files.
-   Copyright (C) 1995-1996, 1998, 2000-2006, 2015-2016 Free Software
-   Foundation, Inc.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,33 +12,34 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Peter Miller, Ulrich Drepper, and Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "read-po.h"
 
-#include "po-lex.h"
-#include "po-gram.h"
+#include <limits.h>
 
-/* For compiling this file in C++ mode.  */
-#ifdef __cplusplus
-# define this thiss
-#endif
+#include "read-po-lex.h"
+#include "read-po-internal.h"
 
 
 /* Read a .po / .pot file from a stream, and dispatch to the various
    abstract_catalog_reader_class_ty methods.  */
 static void
-po_parse (abstract_catalog_reader_ty *this, FILE *fp,
-          const char *real_filename, const char *logical_filename)
+po_parse (abstract_catalog_reader_ty *catr, FILE *fp,
+          const char *real_filename, const char *logical_filename,
+          bool is_pot_role, string_list_ty *arena)
 {
-  lex_start (fp, real_filename, logical_filename);
-  po_gram_parse ();
-  lex_end ();
+  struct po_parser_state ps;
+  ps.catr = catr;
+  ps.gram_pot_role = is_pot_role;
+  lex_start (&ps, fp, real_filename, logical_filename, arena);
+  po_gram_parse (&ps);
+  lex_end (&ps);
 }
 
 const struct catalog_input_format input_format_po =
@@ -47,3 +47,8 @@ const struct catalog_input_format input_format_po =
   po_parse,                             /* parse */
   false                                 /* produces_utf8 */
 };
+
+
+/* Lexer variables.  */
+
+unsigned int gram_max_allowed_errors = UINT_MAX;

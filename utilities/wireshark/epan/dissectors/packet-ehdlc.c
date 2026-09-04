@@ -1,6 +1,6 @@
 /* packet-ehdlc.c
  * Routines for packet dissection of Ericsson HDLC as used in A-bis over IP
- * Copyright 2010-2012 by Harald Welte <laforge@gnumonks.org>
+ * Copyright 2010-2012, 2016 by Harald Welte <laforge@gnumonks.org>
  *
  * This code is based on pure educational guesses while looking at protocol
  * traces, as there is no publicly available protocol description by Ericsson.
@@ -11,54 +11,51 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/xdlc.h>
-#include "packet-l2tp.h"
+#include <epan/tfs.h>
+#include "packet-xdlc.h"
 
 void proto_register_ehdlc(void);
 void proto_reg_handoff_ehdlc(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_ehdlc = -1;
+static int proto_ehdlc;
 
-static int hf_ehdlc_data_len = -1;
-static int hf_ehdlc_protocol = -1;
-/* static int hf_ehdlc_sapi = -1; */
-/* static int hf_ehdlc_c_r = -1; */
+static int hf_ehdlc_data_len;
+static int hf_ehdlc_csapi;
+static int hf_ehdlc_ctei;
 
-static int hf_ehdlc_xid_payload = -1;
-static int hf_ehdlc_control = -1;
+static int hf_ehdlc_sapi;
+static int hf_ehdlc_tei;
+static int hf_ehdlc_c_r;
 
-static int hf_ehdlc_p = -1;
-static int hf_ehdlc_f = -1;
-static int hf_ehdlc_u_modifier_cmd = -1;
-static int hf_ehdlc_u_modifier_resp = -1;
-static int hf_ehdlc_ftype_s_u = -1;
+static int hf_ehdlc_xid_payload;
+static int hf_ehdlc_xid_win_tx;
+static int hf_ehdlc_xid_win_rx;
+static int hf_ehdlc_xid_ack_tmr_ms;
+static int hf_ehdlc_xid_format_id;
+static int hf_ehdlc_xid_group_id;
+static int hf_ehdlc_xid_len;
+static int hf_ehdlc_control;
 
-static int hf_ehdlc_n_r = -1;
-static int hf_ehdlc_n_s = -1;
-static int hf_ehdlc_p_ext = -1;
-static int hf_ehdlc_f_ext = -1;
-static int hf_ehdlc_s_ftype = -1;
-static int hf_ehdlc_ftype_i = -1;
-static int hf_ehdlc_ftype_s_u_ext = -1;
+static int hf_ehdlc_p;
+static int hf_ehdlc_f;
+static int hf_ehdlc_u_modifier_cmd;
+static int hf_ehdlc_u_modifier_resp;
+static int hf_ehdlc_ftype_s_u;
+
+static int hf_ehdlc_n_r;
+static int hf_ehdlc_n_s;
+static int hf_ehdlc_p_ext;
+static int hf_ehdlc_f_ext;
+static int hf_ehdlc_s_ftype;
+static int hf_ehdlc_ftype_i;
+static int hf_ehdlc_ftype_s_u_ext;
 
 static dissector_handle_t ehdlc_handle;
 
@@ -89,25 +86,111 @@ static const xdlc_cf_items ehdlc_cf_items_ext = {
 };
 
 /* Initialize the subtree pointers */
-static gint ett_ehdlc = -1;
-static gint ett_ehdlc_control = -1;
-
-static const value_string ehdlc_protocol_vals[] = {
-	{ 0x20,		"RSL" },
-	{ 0xa0,		"ACK" },
-	{ 0xc0,		"OML" },
-	{ 0, 		NULL }
-};
+static int ett_ehdlc;
+static int ett_ehdlc_xid;
+static int ett_ehdlc_control;
 
 enum {
 	SUB_RSL,
 	SUB_OML,
+	SUB_TFP,
+	SUB_PGSL,
 	SUB_DATA,
 
 	SUB_MAX
 };
 
+/* Determine TEI from Compressed TEI */
+static uint8_t tei_from_ctei(uint8_t ctei)
+{
+	if (ctei < 12)
+		return ctei;
+	else
+		return 60 + (ctei - 12);
+}
+
+static uint8_t c_r_from_csapi(uint8_t csapi)
+{
+	switch (csapi) {
+	case 1:
+	case 6:
+		return 1;
+	default:
+		return 0;
+	}
+}
+
+static uint8_t sapi_from_csapi(uint8_t csapi)
+{
+	switch (csapi) {
+	case 0:
+	case 1: /* RSL */
+		return 0;
+	case 2: /* TFP */
+		return 10;
+	case 3: /* TFP */
+		return 11;
+	case 4: /* P-GSL */
+		return 12;
+	case 5:
+	case 6: /* OML */
+		return 62;
+	case 7:
+	default:
+		/* error! */
+		return 0;
+	}
+}
+
 static dissector_handle_t sub_handles[SUB_MAX];
+
+static int
+dissect_ehdlc_xid(proto_tree *tree, tvbuff_t *tvb, unsigned base_offset, unsigned len)
+{
+	unsigned offset = base_offset;
+	proto_item *ti;
+	proto_tree *xid_tree;
+
+	/* XID is formatted like ISO 8885, typically we see
+	 * something like
+	 * 82		format identifier
+	 * 80		group identifier
+	 * 00 09 	length
+	 * 07 01 05 	Window Size Tx
+	 * 09 01 04	Ack Timer (msec)
+	 * 08 01 05	Window Size Rx */
+	ti = proto_tree_add_item(tree, hf_ehdlc_xid_payload,
+				 tvb, offset, len, ENC_NA);
+	xid_tree = proto_item_add_subtree(ti, ett_ehdlc_xid);
+
+	proto_tree_add_item(xid_tree, hf_ehdlc_xid_format_id, tvb, offset++, 1, ENC_NA);
+	proto_tree_add_item(xid_tree, hf_ehdlc_xid_group_id, tvb, offset++, 1, ENC_NA);
+	proto_tree_add_item(xid_tree, hf_ehdlc_xid_len, tvb, offset, 2, ENC_BIG_ENDIAN);
+	offset += 2;
+
+	while (tvb_reported_length_remaining(tvb, offset) >= 2) {
+		uint8_t iei = tvb_get_uint8(tvb, offset++);
+		uint8_t ie_len = tvb_get_uint8(tvb, offset++);
+
+		switch (iei) {
+		case 0x07:
+			proto_tree_add_item(xid_tree, hf_ehdlc_xid_win_tx, tvb,
+					offset, ie_len, ENC_NA);
+			break;
+		case 0x08:
+			proto_tree_add_item(xid_tree, hf_ehdlc_xid_win_rx, tvb,
+					offset, ie_len, ENC_NA);
+			break;
+		case 0x09:
+			proto_tree_add_item(xid_tree, hf_ehdlc_xid_ack_tmr_ms, tvb,
+					offset, ie_len, ENC_NA);
+			break;
+		}
+		offset += ie_len;
+	}
+
+	return offset - base_offset;
+}
 
 /* Code to actually dissect the packets */
 static int
@@ -121,60 +204,81 @@ dissect_ehdlc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 	while (tvb_reported_length_remaining(tvb, offset) > 0) {
 		proto_item *ti            = NULL;
 		proto_tree *ehdlc_tree    = NULL;
-		guint16     len, msg_type;
+		uint16_t    len, hdr2;
+		uint8_t     csapi, ctei, sapi, tei, c_r;
 		tvbuff_t   *next_tvb;
-		guint16     control;
-		gboolean    is_response   = FALSE, is_extended = TRUE;
-		gint        header_length = 2; /* Address + Length field */
+		uint16_t    control;
+		bool        is_response   = false, is_extended = true;
+		int         header_length = 2; /* Address + Length field */
 
-		msg_type      = tvb_get_guint8(tvb, offset);
-		len           = tvb_get_guint8(tvb, offset+1);
-#if 0
-		col_append_fstr(pinfo->cinfo, COL_INFO, "%s ",
-		                val_to_str(msg_type, ehdlc_protocol_vals,
-		                           "unknown 0x%02x"));
-#endif
+		hdr2 = tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN);
+		len = hdr2 & 0x1FF;
+		csapi = hdr2 >> 13;
+		sapi = sapi_from_csapi(csapi);
+		c_r = c_r_from_csapi(csapi);
+		ctei = (hdr2 >> 9) & 0xF;
+		tei = tei_from_ctei(ctei);
+
+		/* Add TEI to INFO column */
+		col_append_fstr(pinfo->cinfo, COL_INFO, " | TEI:%02u | ", tei);
+		col_set_fence(pinfo->cinfo, COL_INFO);
+
 		if (tree) {
 			/* Use MIN(...,...) in the following to prevent a premature */
 			/* exception before we try to dissect whatever is available. */
 			ti = proto_tree_add_protocol_format(tree, proto_ehdlc,
 					tvb, offset, MIN(len, tvb_captured_length_remaining(tvb,offset)),
-					"Ericsson HDLC protocol, type: %s",
-					val_to_str(msg_type, ehdlc_protocol_vals,
-						   "unknown 0x%02x"));
+					"Ericsson HDLC protocol");
 			ehdlc_tree = proto_item_add_subtree(ti, ett_ehdlc);
-			proto_tree_add_item(ehdlc_tree, hf_ehdlc_protocol,
+
+			proto_tree_add_item(ehdlc_tree, hf_ehdlc_csapi,
 					    tvb, offset, 1, ENC_BIG_ENDIAN);
-#if 0
-			proto_tree_add_item(ehdlc_tree, hf_ehdlc_sapi,
+			proto_tree_add_item(ehdlc_tree, hf_ehdlc_ctei,
 					    tvb, offset, 1, ENC_BIG_ENDIAN);
-			proto_tree_add_item(ehdlc_tree, hf_ehdlc_c_r,
-					    tvb, offset, 1, ENC_BIG_ENDIAN);
-#endif
+			ti = proto_tree_add_uint(ehdlc_tree, hf_ehdlc_c_r,
+							 tvb, offset, 1, c_r);
+			proto_item_set_generated(ti);
+			ti = proto_tree_add_uint(ehdlc_tree, hf_ehdlc_sapi,
+							 tvb, offset, 1, sapi);
+			proto_item_set_generated(ti);
+			ti = proto_tree_add_uint(ehdlc_tree, hf_ehdlc_tei,
+							 tvb, offset, 1, tei);
+			proto_item_set_generated(ti);
 			proto_tree_add_item(ehdlc_tree, hf_ehdlc_data_len,
-					    tvb, offset+1, 1, ENC_BIG_ENDIAN);
+					    tvb, offset, 2, ENC_BIG_ENDIAN);
+		}
+
+		if (sapi == 10 || sapi == 11) {
+			/* Voice TRAU */
+			next_tvb = tvb_new_subset_length(tvb, offset+2, len-2);
+			call_dissector(sub_handles[SUB_TFP], next_tvb, pinfo, tree);
+			offset += len;
+			continue;
+		} else if (sapi == 12) {
+			/* GPRS TRAU */
+			next_tvb = tvb_new_subset_length(tvb, offset+2, len-2);
+			call_dissector(sub_handles[SUB_PGSL], next_tvb, pinfo, tree);
+			offset += len;
+			continue;
 		}
 
 		control = dissect_xdlc_control(tvb, offset+2, pinfo, ehdlc_tree, hf_ehdlc_control,
 					       ett_ehdlc_control, &ehdlc_cf_items, &ehdlc_cf_items_ext,
-					       NULL, NULL, is_response, is_extended, FALSE);
+					       NULL, NULL, is_response, is_extended, false);
 		header_length += XDLC_CONTROL_LEN(control, is_extended);
 
 		if (XDLC_IS_INFORMATION(control)) {
 			next_tvb = tvb_new_subset_length(tvb, offset+header_length,
 						  len-header_length);
 
-			switch (msg_type) {
-			case 0x20:
+			switch (sapi) {
+			case 0:
 				/* len == 4 seems to be some kind of ACK */
 				if (len <= 4)
 					break;
 				call_dissector(sub_handles[SUB_RSL], next_tvb, pinfo, tree);
 				break;
-			case 0xbc:
-			case 0xdc:
-			case 0xa0:
-			case 0xc0:
+			case 62:
 				/* len == 4 seems to be some kind of ACK */
 				if (len <= 4)
 					break;
@@ -185,17 +289,8 @@ dissect_ehdlc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 				break;
 			}
 		} else if (control == (XDLC_U | XDLC_XID)) {
-			/* XID is formatted like ISO 8885, typically we see
- 			 * something like
-			 * 82		format identifier
-			 * 80		group identifier
-			 * 00 09 	length
-			 * 07 01 05 	Window Size Tx
-			 * 09 01 04	Ack Timer (msec)
-			 * 08 01 05	Window Size Rx */
-			proto_tree_add_item(ehdlc_tree, hf_ehdlc_xid_payload,
-					    tvb, offset+header_length,
-					    len-header_length, ENC_NA);
+			dissect_ehdlc_xid(ehdlc_tree, tvb, offset+header_length,
+					  len-header_length);
 		}
 
 		if (len == 0)
@@ -211,29 +306,68 @@ proto_register_ehdlc(void)
 	static hf_register_info hf[] = {
 		{ &hf_ehdlc_data_len,
 		  { "DataLen", "ehdlc.data_len",
-		    FT_UINT8, BASE_DEC, NULL, 0x0,
+		    FT_UINT16, BASE_DEC, NULL, 0x01FF,
 		    "The length of the data (in bytes)", HFILL }
 		},
-		{ &hf_ehdlc_protocol,
-		  { "Protocol", "ehdlc.protocol",
-		    FT_UINT8, BASE_HEX, VALS(ehdlc_protocol_vals), 0x0,
-		    "The HDLC Sub-Protocol", HFILL }
+		{ &hf_ehdlc_csapi,
+		  { "Compressed SAPI", "ehdlc.csapi",
+		    FT_UINT8, BASE_DEC, NULL, 0xE0,
+		    NULL, HFILL}
 		},
-#if 0
+		{ &hf_ehdlc_ctei,
+		  { "Compressed TEI", "ehdlc.ctei",
+		    FT_UINT8, BASE_DEC, NULL, 0x1E,
+		    NULL, HFILL}
+		},
 		{ &hf_ehdlc_sapi,
 		  { "SAPI", "ehdlc.sapi",
-		    FT_UINT8, BASE_DEC, NULL, 0x1f,
+		    FT_UINT8, BASE_DEC, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_ehdlc_tei,
+		  { "TEI", "ehdlc.tei",
+		    FT_UINT8, BASE_DEC, NULL, 0,
 		    NULL, HFILL }
 		},
 		{ &hf_ehdlc_c_r,
 		  { "C/R", "ehdlc.c_r",
-		    FT_UINT8, BASE_HEX, NULL, 0x20,
+		    FT_UINT8, BASE_DEC, NULL, 0,
 		    NULL, HFILL }
 		},
-#endif
+
 		{ &hf_ehdlc_xid_payload,
 		  { "XID Payload", "ehdlc.xid_payload",
 		    FT_BYTES, BASE_NONE, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_ehdlc_xid_win_tx,
+		  { "Transmit Window", "ehdlc.xid.win_tx",
+		    FT_UINT8, BASE_DEC, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_ehdlc_xid_win_rx,
+		  { "Receive Window", "ehdlc.xid.win_rx",
+		    FT_UINT8, BASE_DEC, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_ehdlc_xid_ack_tmr_ms,
+		  { "Timer (ms)", "ehdlc.xid.ack_tmr_ms",
+		    FT_UINT8, BASE_DEC, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_ehdlc_xid_format_id,
+		  { "Format Identifier", "ehdlc.xid.format_id",
+		    FT_UINT8, BASE_HEX, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_ehdlc_xid_group_id,
+		  { "Group Identifier", "ehdlc.xid.group_id",
+		    FT_UINT8, BASE_HEX, NULL, 0,
+		    NULL, HFILL }
+		},
+		{ &hf_ehdlc_xid_len,
+		  { "XID Length", "ehdlc.xid.len",
+		    FT_UINT16, BASE_DEC, NULL, 0,
 		    NULL, HFILL }
 		},
 		{ &hf_ehdlc_control,
@@ -303,8 +437,9 @@ proto_register_ehdlc(void)
 		},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ehdlc,
+		&ett_ehdlc_xid,
 		&ett_ehdlc_control,
 	};
 
@@ -323,13 +458,15 @@ proto_reg_handoff_ehdlc(void)
 {
 	sub_handles[SUB_RSL]  = find_dissector_add_dependency("gsm_abis_rsl", proto_ehdlc);
 	sub_handles[SUB_OML]  = find_dissector_add_dependency("gsm_abis_oml", proto_ehdlc);
+	sub_handles[SUB_TFP]  = find_dissector_add_dependency("gsm_abis_tfp", proto_ehdlc);
+	sub_handles[SUB_PGSL]  = find_dissector_add_dependency("gsm_abis_pgsl", proto_ehdlc);
 	sub_handles[SUB_DATA] = find_dissector("data");
 
-	dissector_add_uint("l2tp.pw_type", L2TPv3_PROTOCOL_ERICSSON, ehdlc_handle);
+	dissector_add_for_decode_as("l2tp.pw_type", ehdlc_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -1,4 +1,4 @@
-/* crc16-tvb.h
+/** @file
  * Declaration of CRC-16 tvbuff routines
  *
  * 2004 Richard van der Hoff <richardv@mxtelecom.com>
@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
 */
 
 #ifndef __CRC16_TVB_H__
@@ -35,27 +23,27 @@ extern "C" {
  @param tvb The tv buffer containing the data.
  @param len The number of bytes to include in the computation.
  @return The CRC16 CCITT checksum. */
-WS_DLL_PUBLIC guint16 crc16_ccitt_tvb(tvbuff_t *tvb, guint len);
+WS_DLL_PUBLIC uint16_t crc16_ccitt_tvb(tvbuff_t *tvb, unsigned len);
 
 /** Compute CRC16 X.25 CCITT checksum of a tv buffer.
  @param tvb The tv buffer containing the data.
  @param len The number of bytes to include in the computation.
  @return The CRC16 X.25 CCITT checksum. */
-WS_DLL_PUBLIC guint16 crc16_x25_ccitt_tvb(tvbuff_t *tvb, guint len);
+WS_DLL_PUBLIC uint16_t crc16_x25_ccitt_tvb(tvbuff_t *tvb, unsigned len);
 
 /** Compute CRC16 ASSA R3 CCITT checksum of a tv buffer.
  @param tvb The tv buffer containing the data.
  @param offset The offset into tv buffer containing the data.
  @param len The number of bytes to include in the computation.
  @return The CRC16 X.25 CCITT checksum. */
-WS_DLL_PUBLIC guint16 crc16_r3_ccitt_tvb(tvbuff_t *tvb, int offset, guint len);
+WS_DLL_PUBLIC uint16_t crc16_r3_ccitt_tvb(tvbuff_t *tvb, int offset, unsigned len);
 
 /** Compute CRC16 CCITT checksum of a tv buffer.
  @param tvb The tv buffer containing the data.
  @param offset The offset into the tv buffer.
  @param len The number of bytes to include in the computation.
  @return The CRC16 CCITT checksum. */
-WS_DLL_PUBLIC guint16 crc16_ccitt_tvb_offset(tvbuff_t *tvb, guint offset, guint len);
+WS_DLL_PUBLIC uint16_t crc16_ccitt_tvb_offset(tvbuff_t *tvb, unsigned offset, unsigned len);
 
 /** Compute CRC16 CCITT checksum of a tv buffer.  If computing the
  *  checksum over multiple tv buffers and you want to feed the partial CRC16
@@ -64,7 +52,7 @@ WS_DLL_PUBLIC guint16 crc16_ccitt_tvb_offset(tvbuff_t *tvb, guint offset, guint 
  @param len The number of bytes to include in the computation.
  @param seed The seed to use.
  @return The CRC16 CCITT checksum (using the given seed). */
-WS_DLL_PUBLIC guint16 crc16_ccitt_tvb_seed(tvbuff_t *tvb, guint len, guint16 seed);
+WS_DLL_PUBLIC uint16_t crc16_ccitt_tvb_seed(tvbuff_t *tvb, unsigned len, uint16_t seed);
 
 /** Compute CRC16 CCITT checksum of a tv buffer.  If computing the
  *  checksum over multiple tv buffers and you want to feed the partial CRC16
@@ -74,15 +62,22 @@ WS_DLL_PUBLIC guint16 crc16_ccitt_tvb_seed(tvbuff_t *tvb, guint len, guint16 see
  @param len The number of bytes to include in the computation.
  @param seed The seed to use.
  @return The CRC16 CCITT checksum (using the given seed). */
-WS_DLL_PUBLIC guint16 crc16_ccitt_tvb_offset_seed(tvbuff_t *tvb, guint offset,
-                                           guint len, guint16 seed);
+WS_DLL_PUBLIC uint16_t crc16_ccitt_tvb_offset_seed(tvbuff_t *tvb, unsigned offset,
+                                           unsigned len, uint16_t seed);
 
 /** Compute the 16bit CRC_A value of a tv buffer as defined in ISO14443-3.
  @param tvb The tv buffer containing the data.
  @param offset The offset into the tv buffer.
  @param len The number of bytes to include in the computation.
  @return The calculated CRC_A. */
-WS_DLL_PUBLIC guint16 crc16_iso14443a_tvb_offset(tvbuff_t *tvb, guint offset, guint len);
+WS_DLL_PUBLIC uint16_t crc16_iso14443a_tvb_offset(tvbuff_t *tvb, unsigned offset, unsigned len);
+
+/** Compute the 16bit CRC value of a tv buffer as defined in USB Standard.
+ @param tvb The tv buffer containing the data.
+ @param offset The offset into the tv buffer.
+ @param len The number of bytes to include in the computation.
+ @return The calculated CRC. */
+WS_DLL_PUBLIC uint16_t crc16_usb_tvb_offset(tvbuff_t *tvb, unsigned offset, unsigned len);
 
 /** Compute the "plain" CRC16 checksum of a tv buffer using the following
  * parameters:
@@ -98,7 +93,7 @@ WS_DLL_PUBLIC guint16 crc16_iso14443a_tvb_offset(tvbuff_t *tvb, guint offset, gu
  @param offset The offset into the tv buffer.
  @param len The number of bytes to include in the computation.
  @return The CRC16 checksum. */
-WS_DLL_PUBLIC guint16 crc16_plain_tvb_offset(tvbuff_t *tvb, guint offset, guint len);
+WS_DLL_PUBLIC uint16_t crc16_plain_tvb_offset(tvbuff_t *tvb, unsigned offset, unsigned len);
 
 /** Compute the "plain" CRC16 checksum of a tv buffer using the following
  * parameters:
@@ -115,7 +110,7 @@ WS_DLL_PUBLIC guint16 crc16_plain_tvb_offset(tvbuff_t *tvb, guint offset, guint 
  @param len The number of bytes to include in the computation.
  @param crc Starting CRC value
  @return The CRC16 checksum. */
-WS_DLL_PUBLIC guint16 crc16_plain_tvb_offset_seed(tvbuff_t *tvb, guint offset, guint len, guint16 crc);
+WS_DLL_PUBLIC uint16_t crc16_plain_tvb_offset_seed(tvbuff_t *tvb, unsigned offset, unsigned len, uint16_t crc);
 
 /** Compute CRC16 checksum of a tv buffer using the parameters
  *    Width        = 16 bits
@@ -127,7 +122,7 @@ WS_DLL_PUBLIC guint16 crc16_plain_tvb_offset_seed(tvbuff_t *tvb, guint offset, g
  @param len The number of bytes to include in the computation.
  @param seed The seed to use.
  @return The CRC16 checksum. */
-WS_DLL_PUBLIC guint16 crc16_0x9949_tvb_offset_seed(tvbuff_t *tvb, guint offset, guint len, guint16 seed);
+WS_DLL_PUBLIC uint16_t crc16_0x9949_tvb_offset_seed(tvbuff_t *tvb, unsigned offset, unsigned len, uint16_t seed);
 
 /** Compute CRC16 checksum of a tv buffer using the parameters
  *    Width        = 16 bits
@@ -139,7 +134,7 @@ WS_DLL_PUBLIC guint16 crc16_0x9949_tvb_offset_seed(tvbuff_t *tvb, guint offset, 
  @param len The number of bytes to include in the computation.
  @param seed The seed to use.
  @return The CRC16 checksum. */
-WS_DLL_PUBLIC guint16 crc16_0x3D65_tvb_offset_seed(tvbuff_t *tvb, guint offset, guint len, guint16 seed);
+WS_DLL_PUBLIC uint16_t crc16_0x3D65_tvb_offset_seed(tvbuff_t *tvb, unsigned offset, unsigned len, uint16_t seed);
 
 #ifdef __cplusplus
 }

@@ -12,146 +12,134 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/expert.h>
+#include <wsutil/array.h>
 #include "packet-csn1.h"
 
 void proto_register_gmr1_bcch(void);
 
 /* GMR-1 BCCH proto */
-static int proto_gmr1_bcch = -1;
+static int proto_gmr1_bcch;
 
 /* GMR-1 BCCH sub tree */
-static gint ett_gmr1_bcch = -1;
+static int ett_gmr1_bcch;
 
-static expert_field ei_unknown_segment = EI_INIT;
+static expert_field ei_unknown_segment;
 
 /* ------------------------------------------------------------------------ */
 /* CSN1 fields                                                              */
 /* ------------------------------------------------------------------------ */
 
 /* Segment 1A fields - [3] 11.5.2.66 */
-static int hf_seg1a_class_2_version = -1;
-static int hf_seg1a_class_3_version = -1;
+static int hf_seg1a_class_2_version;
+static int hf_seg1a_class_3_version;
 
-static int hf_seg1a_syncinfo_sb_frame_ts_offset = -1;
-static int hf_seg1a_syncinfo_sb_symbol_offset = -1;
-static int hf_seg1a_syncinfo_sa_freq_offset = -1;
+static int hf_seg1a_syncinfo_sb_frame_ts_offset;
+static int hf_seg1a_syncinfo_sb_symbol_offset;
+static int hf_seg1a_syncinfo_sa_freq_offset;
 
-static int hf_seg1a_rachctrl_max_retrans = -1;
-static int hf_seg1a_rachctrl_acc[16] = { -1, -1, -1, -1, -1, -1, -1, -1,
-					 -1, -1, -1, -1, -1, -1, -1, -1 };
-static int hf_seg1a_rachctrl_cell_bar_access = -1;
+static int hf_seg1a_rachctrl_max_retrans;
+static int hf_seg1a_rachctrl_acc[16];
+static int hf_seg1a_rachctrl_cell_bar_access;
 
-static int hf_seg1a_miscinfo_sb_reselection_hysteresis = -1;
-static int hf_seg1a_miscinfo_spare = -1;
-static int hf_seg1a_miscinfo_priority_access_ind = -1;
+static int hf_seg1a_miscinfo_sb_reselection_hysteresis;
+static int hf_seg1a_miscinfo_spare;
+static int hf_seg1a_miscinfo_priority_access_ind;
 
-static int hf_seg1a_gbch_present = -1;
-static int hf_seg1a_test_gs = -1;
-static int hf_seg1a_test_gs2 = -1;
-static int hf_seg1a_spare1 = -1;
-static int hf_seg1a_cell_bar_access_extension2 = -1;
-static int hf_seg1a_spare2 = -1;
-static int hf_seg1a_cell_bar_access_extension = -1;
+static int hf_seg1a_gbch_present;
+static int hf_seg1a_test_gs;
+static int hf_seg1a_test_gs2;
+static int hf_seg1a_spare1;
+static int hf_seg1a_cell_bar_access_extension2;
+static int hf_seg1a_spare2;
+static int hf_seg1a_cell_bar_access_extension;
 
 /* Segment 2A & 2Abis fields - [3] 11.5.2.67 / 11.5.2.68 */
-static int hf_seg2a_class_4_version = -1;
+static int hf_seg2a_class_4_version;
 
-static int hf_seg2a_syncinfo_sa_sirfn_delay = -1;
-static int hf_seg2a_syncinfo_sa_bcch_stn = -1;
-static int hf_seg2a_syncinfo_superframe_num = -1;
-static int hf_seg2a_syncinfo_multiframe_num = -1;
-static int hf_seg2a_syncinfo_mffn_high_bit = -1;
+static int hf_seg2a_syncinfo_sa_sirfn_delay;
+static int hf_seg2a_syncinfo_sa_bcch_stn;
+static int hf_seg2a_syncinfo_superframe_num;
+static int hf_seg2a_syncinfo_multiframe_num;
+static int hf_seg2a_syncinfo_mffn_high_bit;
 
-static int hf_seg2a_selcrit_rxlev_select_min = -1;
+static int hf_seg2a_selcrit_rxlev_select_min;
 
-static int hf_seg2a_miscinfo_sb_selection_power = -1;
+static int hf_seg2a_miscinfo_sb_selection_power;
 
-static int hf_seg2a_lainfo_sa_pch_config = -1;
-static int hf_seg2a_lainfo_sa_bach_config = -1;
-static int hf_seg2a_lainfo_rach_ts_offset = -1;
-static int hf_seg2a_lainfo_n_page_occurrences = -1;
-static int hf_seg2a_lainfo_imsi_attach_detach_ind = -1;
-static int hf_seg2a_lainfo_ecsc_indication = -1;
-static int hf_seg2a_lainfo_si_update_ind = -1;
+static int hf_seg2a_lainfo_sa_pch_config;
+static int hf_seg2a_lainfo_sa_bach_config;
+static int hf_seg2a_lainfo_rach_ts_offset;
+static int hf_seg2a_lainfo_n_page_occurrences;
+static int hf_seg2a_lainfo_imsi_attach_detach_ind;
+static int hf_seg2a_lainfo_ecsc_indication;
+static int hf_seg2a_lainfo_si_update_ind;
 
-static int hf_seg2a_class_type = -1;
-static int hf_seg2a_segment_type_a = -1;
-static int hf_seg2a_segment_type_abis = -1;
+static int hf_seg2a_class_type;
+static int hf_seg2a_segment_type_a;
+static int hf_seg2a_segment_type_abis;
 
 /* Segment 2B fields */
-static int hf_seg2b_segment_type_b = -1;
+static int hf_seg2b_segment_type_b;
 /* Segment 2Bbis fields */
-static int hf_seg2b_segment_type_bbis = -1;
+static int hf_seg2b_segment_type_bbis;
 
 /* Segment 3A fields - [1] 11.5.2.71 */
-static int hf_seg3a_class_type = -1;
-static int hf_seg3a_segment_type_a = -1;
-static int hf_seg3a_lai_dissector = -1;
-static int hf_seg3a_lai_mcc = -1;
-static int hf_seg3a_lai_mnc = -1;
-static int hf_seg3a_lai_lac = -1;
-static int hf_seg3a_lai_msc_id = -1;
-static int hf_seg3a_lai_spot_beam_id = -1;
+static int hf_seg3a_class_type;
+static int hf_seg3a_segment_type_a;
+static int hf_seg3a_lai_dissector;
+static int hf_seg3a_lai_mcc;
+static int hf_seg3a_lai_mnc;
+static int hf_seg3a_lai_lac;
+static int hf_seg3a_lai_msc_id;
+static int hf_seg3a_lai_spot_beam_id;
 
-static int hf_seg3a_system_sat_id = -1;
-static int hf_seg3a_system_sys_id = -1;
+static int hf_seg3a_system_sat_id;
+static int hf_seg3a_system_sys_id;
 
-static int hf_seg3a_satpos_latitude = -1;
-static int hf_seg3a_satpos_longitude = -1;
-static int hf_seg3a_satpos_radius = -1;
+static int hf_seg3a_satpos_latitude;
+static int hf_seg3a_satpos_longitude;
+static int hf_seg3a_satpos_radius;
 
-static int hf_seg3a_beam_latitude = -1;
-static int hf_seg3a_beam_longitude = -1;
+static int hf_seg3a_beam_latitude;
+static int hf_seg3a_beam_longitude;
 
-static int hf_seg3a_miscinfo_sb_reselection_timer = -1;
+static int hf_seg3a_miscinfo_sb_reselection_timer;
 
-static int hf_seg3a_spare = -1;
+static int hf_seg3a_spare;
 
-static int hf_seg3b_segment_type_b = -1;
-static int hf_seg3b_segment_type_bbis = -1;
-static int hf_seg3c_segment_type_c = -1;
-static int hf_seg3d_segment_type_d = -1;
-static int hf_seg3e_segment_type_e = -1;
-static int hf_seg3e_segment_type_ebis = -1;
-static int hf_seg3f_segment_type_f = -1;
-static int hf_seg3g_segment_type_g = -1;
-static int hf_seg3g_segment_type_gbis = -1;
-static int hf_seg3h_segment_type_h = -1;
-static int hf_seg3i_segment_type_i = -1;
-static int hf_seg3j_segment_type_j = -1;
-static int hf_seg3j_segment_type_jbis = -1;
-static int hf_seg3k_segment_type_kbis = -1;
-static int hf_seg4a_class_type = -1;
-static int hf_seg4a_segment_type_a = -1;
-static int hf_seg4b_segment_type_b = -1;
-static int hf_seg4c_segment_type_c = -1;
-static int hf_seg4d_segment_type_d = -1;
-static int hf_seg4e_segment_type_e = -1;
-static int hf_seg4f_segment_type_f = -1;
-static int hf_seg4g_segment_type_g = -1;
-static int hf_seg4h_segment_type_h = -1;
-static int hf_seg4i_segment_type_i = -1;
-static int hf_seg4j_segment_type_j = -1;
-static int hf_seg4k_segment_type_k = -1;
+static int hf_seg3b_segment_type_b;
+static int hf_seg3b_segment_type_bbis;
+static int hf_seg3c_segment_type_c;
+static int hf_seg3d_segment_type_d;
+static int hf_seg3e_segment_type_e;
+static int hf_seg3e_segment_type_ebis;
+static int hf_seg3f_segment_type_f;
+static int hf_seg3g_segment_type_g;
+static int hf_seg3g_segment_type_gbis;
+static int hf_seg3h_segment_type_h;
+static int hf_seg3i_segment_type_i;
+static int hf_seg3j_segment_type_j;
+static int hf_seg3j_segment_type_jbis;
+static int hf_seg3k_segment_type_kbis;
+static int hf_seg4a_class_type;
+static int hf_seg4a_segment_type_a;
+static int hf_seg4b_segment_type_b;
+static int hf_seg4c_segment_type_c;
+static int hf_seg4d_segment_type_d;
+static int hf_seg4e_segment_type_e;
+static int hf_seg4f_segment_type_f;
+static int hf_seg4g_segment_type_g;
+static int hf_seg4h_segment_type_h;
+static int hf_seg4i_segment_type_i;
+static int hf_seg4j_segment_type_j;
+static int hf_seg4k_segment_type_k;
 
 /* Segment 3B fields */
 /* Segment 3Bbis fields */
@@ -182,12 +170,12 @@ static int hf_seg4k_segment_type_k = -1;
 /* Segment 4K fields */
 
 /* System Information fields [1] 10.1.31 & 10.1.32 */
-static int hf_si1_segment_choice = -1;
-static int hf_si_protocol_version = -1;
-static int hf_si_block_type = -1;
-static int hf_si_spare = -1;
+static int hf_si1_segment_choice;
+static int hf_si_protocol_version;
+static int hf_si_block_type;
+static int hf_si_spare;
 
-static int hf_si1_randomization_period = -1;
+static int hf_si1_randomization_period;
 
 
 /* ------------------------------------------------------------------------ */
@@ -198,86 +186,86 @@ static int hf_si1_randomization_period = -1;
 
 	/* Segment 1A - [3] 11.5.2.66 */
 typedef struct {
-	guint8	SB_FRAME_TS_OFFSET;
-	gint8	SB_SYMBOL_OFFSET;
-	gint8	SA_FREQ_OFFSET;
+	uint8_t	SB_FRAME_TS_OFFSET;
+	int8_t	SB_SYMBOL_OFFSET;
+	int8_t	SA_FREQ_OFFSET;
 } Seg1A_SyncInfo_t;
 
 typedef struct {
-	guint8	AC15;
-	guint8	AC14;
-	guint8	AC13;
-	guint8	AC12;
-	guint8	AC11;
-	guint8	EC10;
-	guint8	AC9;
-	guint8	AC8;
-	guint8	AC7;
-	guint8	AC6;
-	guint8	AC5;
-	guint8	AC4;
-	guint8	AC3;
-	guint8	AC2;
-	guint8	AC1;
-	guint8	AC0;
+	uint8_t	AC15;
+	uint8_t	AC14;
+	uint8_t	AC13;
+	uint8_t	AC12;
+	uint8_t	AC11;
+	uint8_t	EC10;
+	uint8_t	AC9;
+	uint8_t	AC8;
+	uint8_t	AC7;
+	uint8_t	AC6;
+	uint8_t	AC5;
+	uint8_t	AC4;
+	uint8_t	AC3;
+	uint8_t	AC2;
+	uint8_t	AC1;
+	uint8_t	AC0;
 } Seg1A_AccessClasses_t;
 
 typedef struct {
-	guint8	Max_Retrans;
+	uint8_t	Max_Retrans;
 	Seg1A_AccessClasses_t AccessClasses;
-	guint8	CELL_BAR_ACCESS;
+	uint8_t	CELL_BAR_ACCESS;
 } Seg1A_RACHCtrlParams_t;
 
 typedef struct {
-	guint8	SB_RESELECTION_HYSTERESIS;
-	guint8	Spare;
-	guint8	PriorityAccessInd;
+	uint8_t	SB_RESELECTION_HYSTERESIS;
+	uint8_t	Spare;
+	uint8_t	PriorityAccessInd;
 } Seg1A_MiscInfo_t;
 
 typedef struct {
-	guint8	Class_2_version;
-	guint8	Class_3_version;
+	uint8_t	Class_2_version;
+	uint8_t	Class_3_version;
 	Seg1A_SyncInfo_t SyncInfo;
 	Seg1A_RACHCtrlParams_t RACHCtrlParams;
 	Seg1A_MiscInfo_t MiscInfo;
-	guint8	GBCH_Present;
-	guint8	Test_GS;
-	guint8	Test_GS2;
-	guint8	Spare1;
-	guint8	CELL_BAR_ACCESS_EXTENSION2;
-	guint8	Spare2;
-	guint8	CELL_BAR_ACCESS_EXTENSION;
+	uint8_t	GBCH_Present;
+	uint8_t	Test_GS;
+	uint8_t	Test_GS2;
+	uint8_t	Spare1;
+	uint8_t	CELL_BAR_ACCESS_EXTENSION2;
+	uint8_t	Spare2;
+	uint8_t	CELL_BAR_ACCESS_EXTENSION;
 } Segment1A_t;
 
 	/* Segment 2A & 2Abis - [3] 11.5.2.67 / 11.5.2.68 */
 typedef struct {
-	guint8	SA_SIRFN_DELAY;
-	guint8	SA_BCCH_STN;
-	guint16	SuperframeNum;
-	guint8	MultiframeNum;
-	guint8	MFFN_HighBit;
+	uint8_t	SA_SIRFN_DELAY;
+	uint8_t	SA_BCCH_STN;
+	uint16_t	SuperframeNum;
+	uint8_t	MultiframeNum;
+	uint8_t	MFFN_HighBit;
 } Seg2A_SyncInfo_t;
 
 typedef struct {
-	guint8	RXLEV_SELECT_MIN;
+	uint8_t	RXLEV_SELECT_MIN;
 } Seg2A_SelectionCriterion_t;
 
 typedef struct {
-	guint8	SB_SELECTION_POWER;
+	uint8_t	SB_SELECTION_POWER;
 } Seg2A_MiscInfo_t;
 
 typedef struct {
-	guint8	SA_PCH_CONFIG;
-	guint8	SA_BACH_CONFIG;
-	guint8	RACH_TS_OFFSET;
-	guint8	N_Page_Occurrences;
-	guint8	IMSI_attach_detach_ind;
-	guint8	ECSC_ind;
-	guint8	SI_update_ind;
+	uint8_t	SA_PCH_CONFIG;
+	uint8_t	SA_BACH_CONFIG;
+	uint8_t	RACH_TS_OFFSET;
+	uint8_t	N_Page_Occurrences;
+	uint8_t	IMSI_attach_detach_ind;
+	uint8_t	ECSC_ind;
+	uint8_t	SI_update_ind;
 } Seg2A_LAInfo_t;
 
 typedef struct {
-	guint8	Class_4_version;
+	uint8_t	Class_4_version;
 	Seg2A_SyncInfo_t SyncInfo;
 	Seg2A_SelectionCriterion_t SelectionCriterion;
 	Seg2A_MiscInfo_t MiscInfo;
@@ -285,7 +273,7 @@ typedef struct {
 } Segment2A_t;
 
 typedef struct {
-	guint8	Class_4_version;
+	uint8_t	Class_4_version;
 	Seg2A_SyncInfo_t SyncInfo;
 	Seg2A_SelectionCriterion_t SelectionCriterion;
 	Seg2A_MiscInfo_t MiscInfo;
@@ -293,40 +281,40 @@ typedef struct {
 } Segment2Abis_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment2B_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment2Bbis_t;
 
 	/* Segment 3A - [1] 11.5.2.71 */
 typedef struct {
-	guint16 MCC;
-	guint16 MNC;
-	guint16 LAC;
-	guint8 MSC_ID;		/* splitted version of LAC */
-	guint16 Spot_Beam_ID;	/* splitted version of LAC */
+	uint16_t MCC;
+	uint16_t MNC;
+	uint16_t LAC;
+	uint8_t MSC_ID;		/* split version of LAC */
+	uint16_t Spot_Beam_ID;	/* split version of LAC */
 } Seg3A_LAI_t;
 
 typedef struct {
-	guint8 Satellite_ID;
-	guint8 System_ID;
+	uint8_t Satellite_ID;
+	uint8_t System_ID;
 } Seg3A_System_t;
 
 typedef struct {
-	gint8   Latitude;
-	guint16 Longitude;
-	gint16  Radius;
+	int8_t  Latitude;
+	uint16_t Longitude;
+	int16_t Radius;
 } Seg3A_SatellitePosition_t;
 
 typedef struct {
-	gint16  Latitude;
-	guint16 Longitude;
+	int16_t Latitude;
+	uint16_t Longitude;
 } Seg3A_BeamPosition_t;
 
 typedef struct {
-	guint8 SB_RESELECTION_TIMER;
+	uint8_t SB_RESELECTION_TIMER;
 } Seg3A_MiscInfo_t;
 
 typedef struct {
@@ -335,131 +323,131 @@ typedef struct {
 	Seg3A_SatellitePosition_t SatellitePosition;
 	Seg3A_BeamPosition_t BeamPosition;
 	Seg3A_MiscInfo_t MiscInfo;
-	guint8 Spare;
+	uint8_t Spare;
 } Segment3A_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3B_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3Bbis_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3C_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3D_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3E_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3Ebis_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3F_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3G_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3Gbis_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3H_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3I_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3J_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3Jbis_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3Kbis_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3L_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment3M_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment4A_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment4B_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment4C_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment4D_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment4E_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment4F_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment4G_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment4H_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment4I_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment4J_t;
 
 typedef struct {
-	guint8 _dummy; /* Remove when dissection is written */
+	uint8_t _dummy; /* Remove when dissection is written */
 } Segment4K_t;
 
 /* System informations structures */
 
 	/* System Information type 1 - [1] 10.1.31 */
 typedef struct {
-	guint8		Protocol_Version;
-	guint8		Block_Type;
-	guint8		Randomization_Period;
-	guint8		Spare;
+	uint8_t		Protocol_Version;
+	uint8_t		Block_Type;
+	uint8_t		Randomization_Period;
+	uint8_t		Spare;
 } SI1_Block_Header_t;
 
 typedef struct {
 	SI1_Block_Header_t	Block_Header;
 	Segment1A_t		Segment1A;
-	guint8			SegmentType;
+	uint8_t			SegmentType;
 	union {
 		Segment2Abis_t		Segment2Abis;
 		Segment2Bbis_t		Segment2Bbis;
@@ -490,14 +478,14 @@ typedef struct {
 
 	/* System Information type 2 - [1] 10.1.32 */
 typedef struct {
-	guint8		Protocol_Version;
-	guint8		Block_Type;
-	guint8		Spare;
+	uint8_t		Protocol_Version;
+	uint8_t		Block_Type;
+	uint8_t		Spare;
 } SI2_Block_Header_t;
 
 typedef struct {
 	SI2_Block_Header_t	Block_Header;
-	guint8			SegmentType;
+	uint8_t			SegmentType;
 	union {
 		Segment2A_t		Segment2A;
 		Segment2B_t		Segment2B;
@@ -639,13 +627,13 @@ CSN_DESCR_BEGIN(Segment2Bbis_t)
 CSN_DESCR_END  (Segment2Bbis_t)
 
 	/* Segment 3A - [1] 11.5.2.71 */
-static gint16
+static int16_t
 Seg3A_LAI_Dissector(proto_tree *tree, csnStream_t* ar, tvbuff_t *tvb, void* data, int ett_csn1)
 {
 	Seg3A_LAI_t *LAI = (Seg3A_LAI_t *)data;
 	proto_item *lac_item;
 	proto_tree *lac_tree;
-	guint8 c[5];
+	uint8_t c[5];
 	int i;
 
 	if (ar->remaining_bits_len < 5*8)
@@ -661,14 +649,14 @@ Seg3A_LAI_Dissector(proto_tree *tree, csnStream_t* ar, tvbuff_t *tvb, void* data
 	LAI->MSC_ID = (LAI->LAC >> 10) & 0x3f;
 	LAI->Spot_Beam_ID = LAI->LAC & 0x03ff;
 
-	proto_tree_add_uint_bits_format_value(tree, hf_seg3a_lai_mcc, tvb, ar->bit_offset, 16, (guint32)LAI->MCC, "%d", LAI->MCC);
-	proto_tree_add_uint_bits_format_value(tree, hf_seg3a_lai_mnc, tvb, ar->bit_offset+16, 8, (guint32)LAI->MNC, "%d", LAI->MNC);
+	proto_tree_add_uint_bits_format_value(tree, hf_seg3a_lai_mcc, tvb, ar->bit_offset, 16, (uint32_t)LAI->MCC, ENC_BIG_ENDIAN, "%d", LAI->MCC);
+	proto_tree_add_uint_bits_format_value(tree, hf_seg3a_lai_mnc, tvb, ar->bit_offset+16, 8, (uint32_t)LAI->MNC, ENC_BIG_ENDIAN, "%d", LAI->MNC);
 
-	lac_item = proto_tree_add_uint_bits_format_value(tree, hf_seg3a_lai_lac, tvb, ar->bit_offset+24, 16, (guint32)LAI->LAC, "0x%04x", LAI->LAC);
+	lac_item = proto_tree_add_uint_bits_format_value(tree, hf_seg3a_lai_lac, tvb, ar->bit_offset+24, 16, (uint32_t)LAI->LAC, ENC_BIG_ENDIAN, "0x%04x", LAI->LAC);
 	lac_tree = proto_item_add_subtree(lac_item, ett_csn1);
 
-	proto_tree_add_uint_bits_format_value(lac_tree, hf_seg3a_lai_msc_id, tvb, ar->bit_offset+24, 6, (guint32)LAI->MSC_ID, "%d", LAI->MSC_ID);
-	proto_tree_add_uint_bits_format_value(lac_tree, hf_seg3a_lai_spot_beam_id, tvb, ar->bit_offset+30, 10, (guint32)LAI->Spot_Beam_ID, "%d", LAI->Spot_Beam_ID);
+	proto_tree_add_uint_bits_format_value(lac_tree, hf_seg3a_lai_msc_id, tvb, ar->bit_offset+24, 6, (uint32_t)LAI->MSC_ID, ENC_BIG_ENDIAN, "%d", LAI->MSC_ID);
+	proto_tree_add_uint_bits_format_value(lac_tree, hf_seg3a_lai_spot_beam_id, tvb, ar->bit_offset+30, 10, (uint32_t)LAI->Spot_Beam_ID, ENC_BIG_ENDIAN, "%d", LAI->Spot_Beam_ID);
 
 	ar->remaining_bits_len -= 5*8;
 	ar->bit_offset += 5*8;
@@ -925,12 +913,12 @@ static const
 CSN_DESCR_BEGIN(SystemInformation1_t)
   M_TYPE_LABEL (SystemInformation1_t, Block_Header, SI1_Block_Header_t, "Block Header"),
   M_TYPE_LABEL (SystemInformation1_t, Segment1A, Segment1A_t, "Segment 1A"),
-  M_CHOICE_IL  (SystemInformation1_t, SegmentType, SI1_SegmentChoice, ElementsOf(SI1_SegmentChoice), &hf_si1_segment_choice),
+  M_CHOICE_IL  (SystemInformation1_t, SegmentType, SI1_SegmentChoice, array_length(SI1_SegmentChoice), &hf_si1_segment_choice),
 CSN_DESCR_END  (SystemInformation1_t)
 
 	/* System Information type 2 - [1] 10.1.32 */
 
-CSN_DESCR_BEGIN(SI2_Block_Header_t)
+static CSN_DESCR_BEGIN(SI2_Block_Header_t)
   M_UINT       (SI2_Block_Header_t, Protocol_Version, 4, &hf_si_protocol_version),
   M_UINT       (SI2_Block_Header_t, Block_Type, 1, &hf_si_block_type),
   M_UINT       (SI2_Block_Header_t, Spare, 3, &hf_si_spare),
@@ -951,7 +939,7 @@ CSN_ChoiceElement_t SI2_SegmentChoice[] =
 static const
 CSN_DESCR_BEGIN(SystemInformation2_t)
   M_TYPE_LABEL (SystemInformation2_t, Block_Header, SI2_Block_Header_t, "Block Header"),
-  M_CHOICE_IL  (SystemInformation2_t, SegmentType, SI2_SegmentChoice, ElementsOf(SI2_SegmentChoice), &hf_si1_segment_choice),
+  M_CHOICE_IL  (SystemInformation2_t, SegmentType, SI2_SegmentChoice, array_length(SI2_SegmentChoice), &hf_si1_segment_choice),
 CSN_DESCR_END  (SystemInformation2_t)
 
 
@@ -961,17 +949,17 @@ CSN_DESCR_END  (SystemInformation2_t)
 
 /* Common stuff */
 static void
-segx_half_db_value_fmt(gchar *s, guint32 v)
+segx_half_db_value_fmt(char *s, uint32_t v)
 {
-	g_snprintf(s, ITEM_LABEL_LENGTH, "%2.1f dB (%u)", v * 0.5f, v);
+	snprintf(s, ITEM_LABEL_LENGTH, "%2.1f dB (%u)", v * 0.5f, v);
 }
 
 /* Segment 1A - [3] 11.5.2.66 */
 static void
-seg1a_syncinfo_sa_freq_offset_fmt(gchar *s, guint32 v)
+seg1a_syncinfo_sa_freq_offset_fmt(char *s, uint32_t v)
 {
-	gint32 sv = (gint32)v;
-	g_snprintf(s, ITEM_LABEL_LENGTH, "%d Hz (%d)", sv * 5, sv);
+	int32_t sv = (int32_t)v;
+	snprintf(s, ITEM_LABEL_LENGTH, "%d Hz (%d)", sv * 5, sv);
 }
 
 static const value_string seg1a_rachctrl_acc_vals[] = {
@@ -1001,9 +989,9 @@ static const value_string seg2a_lainfo_ecsc_indication_vals[] = {
 
 /* Segment 3A - [1] 11.5.2.71 */
 static void
-seg3a_latitude_fmt(gchar *s, guint32 v)
+seg3a_latitude_fmt(char *s, uint32_t v)
 {
-	gint32 sv = (gint32)v;
+	int32_t sv = (int32_t)v;
 	char c;
 
 	if (sv < 0) {
@@ -1012,13 +1000,13 @@ seg3a_latitude_fmt(gchar *s, guint32 v)
 	} else
 		c = 'N';
 
-	g_snprintf(s, ITEM_LABEL_LENGTH, "%.1f %c (%d)", sv / 10.0f, c, sv);
+	snprintf(s, ITEM_LABEL_LENGTH, "%.1f %c (%d)", sv / 10.0f, c, sv);
 }
 
 static void
-seg3a_longitude_fmt(gchar *s, guint32 v)
+seg3a_longitude_fmt(char *s, uint32_t v)
 {
-	gint32 sv;
+	int32_t sv;
 	char c;
 
 	if (v < 1800) {
@@ -1029,21 +1017,21 @@ seg3a_longitude_fmt(gchar *s, guint32 v)
 		sv = 3600 - v;
 	}
 
-	g_snprintf(s, ITEM_LABEL_LENGTH, "%.1f %c (%u)", sv / 10.0f, c, v);
+	snprintf(s, ITEM_LABEL_LENGTH, "%.1f %c (%u)", sv / 10.0f, c, v);
 }
 
 static void
-seg3a_satpos_radius_fmt(gchar *s, guint32 v)
+seg3a_satpos_radius_fmt(char *s, uint32_t v)
 {
-	gint32 sv = (gint32)v;
-	gint32 a = (42162 * 1000) + (sv * 5);
-	g_snprintf(s, ITEM_LABEL_LENGTH, "%.3lf km (%u)", a / 1000.0, sv);
+	int32_t sv = (int32_t)v;
+	int32_t a = (42162 * 1000) + (sv * 5);
+	snprintf(s, ITEM_LABEL_LENGTH, "%.3lf km (%u)", a / 1000.0, sv);
 }
 
 static void
-seg3a_miscinfo_sb_reselection_timer_fmt(gchar *s, guint32 v)
+seg3a_miscinfo_sb_reselection_timer_fmt(char *s, uint32_t v)
 {
-	g_snprintf(s, ITEM_LABEL_LENGTH, "%d minutes (%u)", v*4, v);
+	snprintf(s, ITEM_LABEL_LENGTH, "%d minutes (%u)", v*4, v);
 }
 
 /* System Information 1 - [1] 10.3.31 */
@@ -1066,7 +1054,7 @@ dissect_gmr1_bcch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dis
 	proto_item  *bcch_item = NULL;
 	proto_tree  *bcch_tree = NULL;
 	csnStream_t  ar;
-	gboolean     is_si1;
+	bool         is_si1;
 
 	col_append_str(pinfo->cinfo, COL_INFO, "(BCCH) ");
 
@@ -1083,7 +1071,7 @@ dissect_gmr1_bcch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dis
 	/* SI1 or SI2 */
 	if (is_si1) {
 		SystemInformation1_t *data;
-		data = wmem_new(wmem_packet_scope(), SystemInformation1_t);
+		data = wmem_new(pinfo->pool, SystemInformation1_t);
 		/* Initialize the type to the last element, which is an
 		 * "Unknown", in case the dissector bails before getting this
 		 * far. */
@@ -1096,7 +1084,7 @@ dissect_gmr1_bcch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dis
 		);
 	} else {
 		SystemInformation2_t *data;
-		data = wmem_new(wmem_packet_scope(), SystemInformation2_t);
+		data = wmem_new(pinfo->pool, SystemInformation2_t);
 		/* Initialize the type to the last element, which is an
 		 * "Unknown", in case the dissector bails before getting this
 		 * far. */
@@ -1632,7 +1620,7 @@ proto_register_gmr1_bcch(void)
 		},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_gmr1_bcch,
 	};
 
@@ -1653,7 +1641,7 @@ proto_register_gmr1_bcch(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

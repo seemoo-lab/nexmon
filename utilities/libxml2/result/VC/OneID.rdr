@@ -1,0 +1,3 @@
+./test/VC/OneID:4: validity error : Element doc has 2 ID attribute defined in the internal subset : id
+<!ATTLIST doc id ID #IMPLIED>
+                            ^

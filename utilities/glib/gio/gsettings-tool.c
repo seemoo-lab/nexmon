@@ -1,10 +1,12 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,9 +27,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifdef G_OS_WIN32
 #include "glib/glib-private.h"
-#endif
 
 static GSettingsSchemaSource   *global_schema_source;
 static GSettings               *global_settings;
@@ -48,13 +48,13 @@ check_relocatable_schema (GSettingsSchema *schema,
 {
   if (schema == NULL)
     {
-      g_printerr (_("No such schema '%s'\n"), schema_id);
+      g_printerr (_("No such schema “%s”\n"), schema_id);
       return FALSE;
     }
 
   if (!is_relocatable_schema (schema))
     {
-      g_printerr (_("Schema '%s' is not relocatable "
+      g_printerr (_("Schema “%s” is not relocatable "
                     "(path must not be specified)\n"),
                   schema_id);
       return FALSE;
@@ -69,13 +69,13 @@ check_schema (GSettingsSchema *schema,
 {
   if (schema == NULL)
     {
-      g_printerr (_("No such schema '%s'\n"), schema_id);
+      g_printerr (_("No such schema “%s”\n"), schema_id);
       return FALSE;
     }
 
   if (is_relocatable_schema (schema))
     {
-      g_printerr (_("Schema '%s' is relocatable "
+      g_printerr (_("Schema “%s” is relocatable "
                     "(path must be specified)\n"),
                   schema_id);
       return FALSE;
@@ -114,11 +114,19 @@ check_path (const gchar *path)
   return TRUE;
 }
 
+static int
+qsort_cmp (const void *a,
+           const void *b)
+{
+  return g_strcmp0 (*(gchar* const*)a, *(gchar* const*)b);
+}
+
 static void
 output_list (gchar **list)
 {
   gint i;
 
+  qsort (list, g_strv_length (list), sizeof (gchar*), qsort_cmp);
   for (i = 0; list[i]; i++)
     g_print ("%s\n", list[i]);
 }
@@ -136,6 +144,35 @@ gsettings_list_schemas (void)
   gchar **schemas;
 
   g_settings_schema_source_list_schemas (global_schema_source, TRUE, &schemas, NULL);
+  output_list (schemas);
+  g_strfreev (schemas);
+}
+
+static void
+gsettings_list_schemas_with_paths (void)
+{
+  gchar **schemas;
+  gsize i;
+
+  g_settings_schema_source_list_schemas (global_schema_source, TRUE, &schemas, NULL);
+
+  for (i = 0; schemas[i] != NULL; i++)
+    {
+      GSettingsSchema *schema;
+      gchar *schema_name;
+      const gchar *schema_path;
+
+      schema_name = g_steal_pointer (&schemas[i]);
+
+      schema = g_settings_schema_source_lookup (global_schema_source, schema_name, TRUE);
+      schema_path = g_settings_schema_get_path (schema);
+
+      schemas[i] = g_strconcat (schema_name, " ", schema_path, NULL);
+
+      g_settings_schema_unref (schema);
+      g_free (schema_name);
+    }
+
   output_list (schemas);
   g_strfreev (schemas);
 }
@@ -164,13 +201,17 @@ static void
 gsettings_list_children (void)
 {
   gchar **children;
-  gint max = 0;
+  gsize max = 0;
   gint i;
 
   children = g_settings_list_children (global_settings);
+  qsort (children, g_strv_length (children), sizeof (gchar*), qsort_cmp);
   for (i = 0; children[i]; i++)
-    if (strlen (children[i]) > max)
-      max = strlen (children[i]);
+    {
+      gsize len = strlen (children[i]);
+      if (len > max)
+        max = len;
+    }
 
   for (i = 0; children[i]; i++)
     {
@@ -185,9 +226,11 @@ gsettings_list_children (void)
                     NULL);
 
       if (g_settings_schema_get_path (schema) != NULL)
-        g_print ("%-*s   %s\n", max, children[i], g_settings_schema_get_id (schema));
+        g_print ("%-*s   %s\n", (int) MIN (max, G_MAXINT), children[i],
+                 g_settings_schema_get_id (schema));
       else
-        g_print ("%-*s   %s:%s\n", max, children[i], g_settings_schema_get_id (schema), path);
+        g_print ("%-*s   %s:%s\n", (int) MIN (max, G_MAXINT), children[i],
+                 g_settings_schema_get_id (schema), path);
 
       g_object_unref (child);
       g_settings_schema_unref (schema);
@@ -207,6 +250,7 @@ enumerate (GSettings *settings)
   g_object_get (settings, "settings-schema", &schema, NULL);
 
   keys = g_settings_schema_list_keys (schema);
+  qsort (keys, g_strv_length (keys), sizeof (gchar*), qsort_cmp);
   for (i = 0; keys[i]; i++)
     {
       GVariant *value;
@@ -231,12 +275,31 @@ list_recursively (GSettings *settings)
 
   enumerate (settings);
   children = g_settings_list_children (settings);
+  qsort (children, g_strv_length (children), sizeof (gchar*), qsort_cmp);
   for (i = 0; children[i]; i++)
     {
+      gboolean will_see_elsewhere = FALSE;
       GSettings *child;
 
       child = g_settings_get_child (settings, children[i]);
-      list_recursively (child);
+
+      if (global_settings == NULL)
+        {
+	  /* we're listing all non-relocatable settings objects from the
+	   * top-level, so if this one is non-relocatable, don't recurse,
+	   * because we will pick it up later on.
+	   */
+
+	  GSettingsSchema *child_schema;
+
+	  g_object_get (child, "settings-schema", &child_schema, NULL);
+	  will_see_elsewhere = !is_relocatable_schema (child_schema);
+	  g_settings_schema_unref (child_schema);
+        }
+
+      if (!will_see_elsewhere)
+        list_recursively (child);
+
       g_object_unref (child);
     }
 
@@ -256,18 +319,34 @@ gsettings_list_recursively (void)
       gint i;
 
       g_settings_schema_source_list_schemas (global_schema_source, TRUE, &schemas, NULL);
+      qsort (schemas, g_strv_length (schemas), sizeof (gchar*), qsort_cmp);
 
       for (i = 0; schemas[i]; i++)
         {
           GSettings *settings;
+          GSettingsSchema *schema;
 
-          settings = g_settings_new (schemas[i]);
+          schema = g_settings_schema_source_lookup (global_schema_source, schemas[i], FALSE);
+          if (!schema)
+            continue;
+          settings = g_settings_new_full (schema, NULL, NULL);
           list_recursively (settings);
           g_object_unref (settings);
+          g_settings_schema_unref (schema);
         }
 
       g_strfreev (schemas);
     }
+}
+
+static void
+gsettings_description (void)
+{
+  const gchar *description;
+  description = g_settings_schema_key_get_description (global_schema_key);
+  if (description == NULL)
+    description = g_settings_schema_key_get_summary (global_schema_key);
+  g_print ("%s\n", description);
 }
 
 static void
@@ -432,7 +511,6 @@ gsettings_set (void)
   const GVariantType *type;
   GError *error = NULL;
   GVariant *new;
-  gchar *freeme = NULL;
 
   type = g_settings_schema_key_get_value_type (global_schema_key);
 
@@ -465,6 +543,7 @@ gsettings_set (void)
     {
       g_clear_error (&error);
       new = g_variant_new_string (global_value);
+      g_variant_ref_sink (new);
     }
 
   if (new == NULL)
@@ -473,6 +552,7 @@ gsettings_set (void)
 
       context = g_variant_parse_error_print_context (error, global_value);
       g_printerr ("%s", context);
+      g_free (context);
       exit (1);
     }
 
@@ -486,20 +566,21 @@ gsettings_set (void)
   if (!g_settings_set_value (global_settings, global_key, new))
     {
       g_printerr (_("The key is not writable\n"));
+      g_variant_unref (new);
       exit (1);
     }
 
   g_settings_sync ();
 
-  g_free (freeme);
+  g_variant_unref (new);
 }
 
 static int
 gsettings_help (gboolean     requested,
                 const gchar *command)
 {
-  const gchar *description;
-  const gchar *synopsis;
+  const gchar *description = NULL;
+  const gchar *synopsis = NULL;
   GString *string;
 
   string = g_string_new (NULL);
@@ -522,7 +603,7 @@ gsettings_help (gboolean     requested,
   else if (strcmp (command, "list-schemas") == 0)
     {
       description = _("List the installed (non-relocatable) schemas");
-      synopsis = "";
+      synopsis = "[--print-paths]";
     }
 
   else if (strcmp (command, "list-relocatable-schemas") == 0)
@@ -559,6 +640,12 @@ gsettings_help (gboolean     requested,
   else if (strcmp (command, "range") == 0)
     {
       description = _("Query the range of valid values for KEY");
+      synopsis = N_("SCHEMA[:PATH] KEY");
+    }
+
+  else if (strcmp (command, "describe") == 0)
+    {
+      description = _("Query the description for KEY");
       synopsis = N_("SCHEMA[:PATH] KEY");
     }
 
@@ -605,7 +692,7 @@ gsettings_help (gboolean     requested,
       g_string_append (string,
       _("Usage:\n"
         "  gsettings --version\n"
-        "  gsettings [--schemadir SCHEMADIR] COMMAND [ARGS...]\n"
+        "  gsettings [--schemadir SCHEMADIR] COMMAND [ARGS…]\n"
         "\n"
         "Commands:\n"
         "  help                      Show this information\n"
@@ -615,6 +702,7 @@ gsettings_help (gboolean     requested,
         "  list-children             List children of a schema\n"
         "  list-recursively          List keys and values, recursively\n"
         "  range                     Queries the range of a key\n"
+        "  describe                  Queries the description of a key\n"
         "  get                       Get the value of a key\n"
         "  set                       Set the value of a key\n"
         "  reset                     Reset the value of a key\n"
@@ -622,7 +710,7 @@ gsettings_help (gboolean     requested,
         "  writable                  Check if a key is writable\n"
         "  monitor                   Watch for changes\n"
         "\n"
-        "Use 'gsettings help COMMAND' to get detailed help.\n\n"));
+        "Use “gsettings help COMMAND” to get detailed help.\n\n"));
     }
   else
     {
@@ -673,13 +761,13 @@ int
 main (int argc, char **argv)
 {
   void (* function) (void);
-  gboolean need_settings;
+  gboolean need_settings, skip_third_arg_test;
 
 #ifdef G_OS_WIN32
   gchar *tmp;
 #endif
 
-  setlocale (LC_ALL, "");
+  setlocale (LC_ALL, GLIB_DEFAULT_LOCALE);
   textdomain (GETTEXT_PACKAGE);
 
 #ifdef G_OS_WIN32
@@ -727,6 +815,7 @@ main (int argc, char **argv)
     g_settings_schema_source_ref (global_schema_source);
 
   need_settings = TRUE;
+  skip_third_arg_test = FALSE;
 
   if (strcmp (argv[1], "help") == 0)
     return gsettings_help (TRUE, argv[2]);
@@ -736,6 +825,13 @@ main (int argc, char **argv)
 
   else if (argc == 2 && strcmp (argv[1], "list-schemas") == 0)
     function = gsettings_list_schemas;
+
+  else if (argc == 3 && strcmp (argv[1], "list-schemas") == 0
+                     && strcmp (argv[2], "--print-paths") == 0)
+    {
+      skip_third_arg_test = TRUE;
+      function = gsettings_list_schemas_with_paths;
+    }
 
   else if (argc == 2 && strcmp (argv[1], "list-relocatable-schemas") == 0)
     function = gsettings_list_relocatable_schemas;
@@ -751,6 +847,12 @@ main (int argc, char **argv)
 
   else if ((argc == 2 || argc == 3) && strcmp (argv[1], "list-recursively") == 0)
     function = gsettings_list_recursively;
+
+  else if (argc == 4 && strcmp (argv[1], "describe") == 0)
+    {
+      need_settings = FALSE;
+      function = gsettings_description;
+    }
 
   else if (argc == 4 && strcmp (argv[1], "range") == 0)
     {
@@ -779,7 +881,7 @@ main (int argc, char **argv)
   else
     return gsettings_help (FALSE, argv[1]);
 
-  if (argc > 2)
+  if (argc > 2 && !skip_third_arg_test)
     {
       gchar **parts;
 
@@ -798,14 +900,20 @@ main (int argc, char **argv)
           if (parts[1])
             {
               if (!check_relocatable_schema (global_schema, parts[0]) || !check_path (parts[1]))
-                return 1;
+                {
+                  g_strfreev (parts);
+                  return 1;
+                }
 
               global_settings = g_settings_new_full (global_schema, NULL, parts[1]);
             }
           else
             {
               if (!check_schema (global_schema, parts[0]))
-                return 1;
+                {
+                  g_strfreev (parts);
+                  return 1;
+                }
 
               global_settings = g_settings_new_full (global_schema, NULL, NULL);
             }
@@ -821,13 +929,17 @@ main (int argc, char **argv)
           if (parts[1])
             {
               if (!check_relocatable_schema (global_schema, parts[0]) || !check_path (parts[1]))
-                return 1;
+                {
+                  g_strfreev (parts);
+                  return 1;
+                }
             }
           else
             {
               if (global_schema == NULL)
                 {
-                  g_printerr (_("No such schema '%s'\n"), parts[0]);
+                  g_printerr (_("No such schema “%s”\n"), parts[0]);
+                  g_strfreev (parts);
                   return 1;
                 }
             }
@@ -840,7 +952,7 @@ main (int argc, char **argv)
     {
       if (!g_settings_schema_has_key (global_schema, argv[3]))
         {
-          g_printerr (_("No such key '%s'\n"), argv[3]);
+          g_printerr (_("No such key “%s”\n"), argv[3]);
           return 1;
         }
 

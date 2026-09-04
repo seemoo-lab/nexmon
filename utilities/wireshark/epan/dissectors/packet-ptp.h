@@ -4,28 +4,26 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_PTP_H__
 #define __PACKET_PTP_H__
 
-extern value_string_ext ptp_v2_networkProtocol_vals_ext;
 extern value_string_ext ptp_v2_clockAccuracy_vals_ext;
 extern value_string_ext ptp_v2_timeSource_vals_ext;
 extern value_string_ext ptp_v2_portState_vals_ext;
 extern const value_string ptp_v2_delayMechanism_vals[];
+
+void dissect_ptp_v2_timeInterval(tvbuff_t *tvb, int *cur_offset, proto_tree *tree,
+                                 const char* name,
+                                 int hf_ptp_v2_timeInterval_ns, int hf_ptp_v2_timeInterval_subns,
+                                 proto_tree **tree_out, int64_t *ns_out);
+
+typedef struct ptp_v2_tlv_org_ext_info {
+    bool        is_802_1as;
+    uint16_t    ptp_v2_flags;
+    uint8_t     ptp_v2_messageid;
+} ptp_v2_tlv_org_ext_info_t;
 
 #endif /* packet-ptp.h */

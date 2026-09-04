@@ -3,17 +3,17 @@ dnl This file is in the public domain.
 dnl
 dnl Configuration file - processed by autoconf.
 
-AC_INIT
-AC_CONFIG_SRCDIR(hello.awk)
-AM_INIT_AUTOMAKE(hello-gawk, 0)
+AC_INIT([hello-gawk], [0])
+AC_CONFIG_SRCDIR([hello.awk])
+AM_INIT_AUTOMAKE([1.11])
 
 dnl Check for availability of GNU awk.
-AC_PATH_PROG(GAWK, gawk)
+AC_PATH_PROG([GAWK], [gawk])
 if test -z "$GAWK"; then
   echo "*** Essential program gawk not found" 1>&2
   exit 1
 fi
-AC_SUBST(GAWK)
+AC_SUBST([GAWK])
 
 dnl The installed program must know where to find its message catalogs.
 dnl Unfortunately, prefix gets only finally determined at the end of configure.
@@ -25,9 +25,9 @@ fi
 save_prefix="$prefix"
 prefix="$final_prefix"
 eval "datarootdir=\"${datarootdir}\""
-eval "localedir=\"${datadir}/locale\""
+eval "localedir=\"${datarootdir}/locale\""
 prefix="$save_prefix"
-AC_SUBST(localedir)
+AC_SUBST([localedir])
 
 dnl Support for the po directory.
 AM_PO_SUBDIRS

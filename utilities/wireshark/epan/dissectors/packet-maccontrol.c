@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -37,46 +25,48 @@
 void proto_register_macctrl(void);
 void proto_reg_handoff_macctrl(void);
 
-static int proto_macctrl = -1;
+static dissector_handle_t macctrl_handle;
 
-static int hf_macctrl_opcode       = -1;
-static int hf_macctrl_timestamp    = -1;
-static int hf_macctrl_pause_time   = -1;
-static int hf_macctrl_cbfc_enbv    = -1;
-static int hf_macctrl_cbfc_enbv_c0 = -1;
-static int hf_macctrl_cbfc_enbv_c1 = -1;
-static int hf_macctrl_cbfc_enbv_c2 = -1;
-static int hf_macctrl_cbfc_enbv_c3 = -1;
-static int hf_macctrl_cbfc_enbv_c4 = -1;
-static int hf_macctrl_cbfc_enbv_c5 = -1;
-static int hf_macctrl_cbfc_enbv_c6 = -1;
-static int hf_macctrl_cbfc_enbv_c7 = -1;
-static int hf_macctrl_cbfc_pause_time_c0 = -1;
-static int hf_macctrl_cbfc_pause_time_c1 = -1;
-static int hf_macctrl_cbfc_pause_time_c2 = -1;
-static int hf_macctrl_cbfc_pause_time_c3 = -1;
-static int hf_macctrl_cbfc_pause_time_c4 = -1;
-static int hf_macctrl_cbfc_pause_time_c5 = -1;
-static int hf_macctrl_cbfc_pause_time_c6 = -1;
-static int hf_macctrl_cbfc_pause_time_c7 = -1;
+static int proto_macctrl;
 
-static int hf_reg_flags      = -1;
-static int hf_reg_req_grants = -1;
-static int hf_reg_grants     = -1;
-static int hf_reg_port       = -1;
-static int hf_reg_ack_port   = -1;
-static int hf_reg_time       = -1;
-static int hf_reg_ack_time   = -1;
+static int hf_macctrl_opcode;
+static int hf_macctrl_timestamp;
+static int hf_macctrl_pause_time;
+static int hf_macctrl_cbfc_enbv;
+static int hf_macctrl_cbfc_enbv_c0;
+static int hf_macctrl_cbfc_enbv_c1;
+static int hf_macctrl_cbfc_enbv_c2;
+static int hf_macctrl_cbfc_enbv_c3;
+static int hf_macctrl_cbfc_enbv_c4;
+static int hf_macctrl_cbfc_enbv_c5;
+static int hf_macctrl_cbfc_enbv_c6;
+static int hf_macctrl_cbfc_enbv_c7;
+static int hf_macctrl_cbfc_pause_time_c0;
+static int hf_macctrl_cbfc_pause_time_c1;
+static int hf_macctrl_cbfc_pause_time_c2;
+static int hf_macctrl_cbfc_pause_time_c3;
+static int hf_macctrl_cbfc_pause_time_c4;
+static int hf_macctrl_cbfc_pause_time_c5;
+static int hf_macctrl_cbfc_pause_time_c6;
+static int hf_macctrl_cbfc_pause_time_c7;
 
-static gint ett_macctrl            = -1;
-static gint ett_macctrl_cbfc_enbv  = -1;
-static gint ett_macctrl_cbfc_pause_times = -1;
+static int hf_reg_flags;
+static int hf_reg_req_grants;
+static int hf_reg_grants;
+static int hf_reg_port;
+static int hf_reg_ack_port;
+static int hf_reg_time;
+static int hf_reg_ack_time;
 
-static expert_field ei_macctrl_opcode = EI_INIT;
-static expert_field ei_macctrl_cbfc_enbv = EI_INIT;
-static expert_field ei_macctrl_dst_address = EI_INIT;
+static int ett_macctrl;
+static int ett_macctrl_cbfc_enbv;
+static int ett_macctrl_cbfc_pause_times;
 
-static const int *macctrl_cbfc_enbv_list[] = {
+static expert_field ei_macctrl_opcode;
+static expert_field ei_macctrl_cbfc_enbv;
+static expert_field ei_macctrl_dst_address;
+
+static int * const macctrl_cbfc_enbv_list[] = {
   &hf_macctrl_cbfc_enbv_c0,
   &hf_macctrl_cbfc_enbv_c1,
   &hf_macctrl_cbfc_enbv_c2,
@@ -88,7 +78,7 @@ static const int *macctrl_cbfc_enbv_list[] = {
   NULL
 };
 
-static const int *macctrl_cbfc_pause_times_list[] = {
+static int * const macctrl_cbfc_pause_times_list[] = {
   &hf_macctrl_cbfc_pause_time_c0,
   &hf_macctrl_cbfc_pause_time_c1,
   &hf_macctrl_cbfc_pause_time_c2,
@@ -126,7 +116,7 @@ static const value_string reg_flags_vals[] = {
   { 0, NULL }
 };
 
-static const guint8 dst_addr[] = {0x01, 0x80, 0xC2, 0x00, 0x00, 0x01};
+static const uint8_t dst_addr[] = {0x01, 0x80, 0xC2, 0x00, 0x00, 0x01};
 static const address macctrl_dst_address = ADDRESS_INIT(AT_ETHER, 6, dst_addr);
 
 static int
@@ -135,10 +125,10 @@ dissect_macctrl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
   proto_item *ti, *opcode_item;
   proto_tree *macctrl_tree = NULL;
   proto_tree *pause_times_tree = NULL;
-  guint16     opcode;
-  guint16     pause_time;
+  uint16_t    opcode;
+  uint16_t    pause_time;
   int i;
-  gint offset = 0;
+  int offset = 0;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "MAC CTRL");
   col_clear(pinfo->cinfo, COL_INFO);
@@ -154,7 +144,7 @@ dissect_macctrl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
     proto_tree_add_item(macctrl_tree, hf_macctrl_timestamp, tvb, offset, 4, ENC_BIG_ENDIAN);
     offset += 4;
   }
-  col_add_str(pinfo->cinfo, COL_INFO, val_to_str(opcode, opcode_vals, "Unknown"));
+  col_set_str(pinfo->cinfo, COL_INFO, val_to_str_const(opcode, opcode_vals, "Unknown"));
 
   switch (opcode) {
 
@@ -233,7 +223,7 @@ dissect_macctrl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data 
 
       ti = proto_tree_add_bitmask(macctrl_tree, tvb, offset, hf_macctrl_cbfc_enbv,
                              ett_macctrl_cbfc_enbv, macctrl_cbfc_enbv_list, ENC_BIG_ENDIAN);
-      if (tvb_get_guint8(tvb, offset) != 0) {
+      if (tvb_get_uint8(tvb, offset) != 0) {
         expert_add_info(pinfo, ti, &ei_macctrl_cbfc_enbv);
       }
       offset += 2;
@@ -275,98 +265,98 @@ proto_register_macctrl(void)
 
     { &hf_macctrl_cbfc_enbv_c0,
       { "C0", "macc.cbfc.enbv.c0", FT_BOOLEAN, 16,
-        NULL, 0x01, NULL, HFILL }},
+        NULL, 0x0001, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_enbv_c1,
       { "C1", "macc.cbfc.enbv.c1", FT_BOOLEAN, 16,
-        NULL, 0x02, NULL, HFILL }},
+        NULL, 0x0002, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_enbv_c2,
       { "C2", "macc.cbfc.enbv.c2", FT_BOOLEAN, 16,
-        NULL, 0x04, NULL, HFILL }},
+        NULL, 0x0004, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_enbv_c3,
       { "C3", "macc.cbfc.enbv.c3", FT_BOOLEAN, 16,
-        NULL, 0x08, NULL, HFILL }},
+        NULL, 0x0008, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_enbv_c4,
       { "C4", "macc.cbfc.enbv.c4", FT_BOOLEAN, 16,
-        NULL, 0x10, NULL, HFILL }},
+        NULL, 0x0010, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_enbv_c5,
       { "C5", "macc.cbfc.enbv.c5", FT_BOOLEAN, 16,
-        NULL, 0x20, NULL, HFILL }},
+        NULL, 0x0020, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_enbv_c6,
       { "C6", "macc.cbfc.enbv.c6", FT_BOOLEAN, 16,
-        NULL, 0x40, NULL, HFILL }},
+        NULL, 0x0040, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_enbv_c7,
       { "C7", "macc.cbfc.enbv.c7", FT_BOOLEAN, 16,
-        NULL, 0x80, NULL, HFILL }},
+        NULL, 0x0080, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_pause_time_c0,
       { "C0", "macc.cbfc.pause_time.c0", FT_UINT16, BASE_DEC,
-        NULL, 0x00, NULL, HFILL }},
+        NULL, 0x0, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_pause_time_c1,
       { "C1", "macc.cbfc.pause_time.c1", FT_UINT16, BASE_DEC,
-        NULL, 0x00, NULL, HFILL }},
+        NULL, 0x0, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_pause_time_c2,
       { "C2", "macc.cbfc.pause_time.c2", FT_UINT16, BASE_DEC,
-        NULL, 0x00, NULL, HFILL }},
+        NULL, 0x0, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_pause_time_c3,
       { "C3", "macc.cbfc.pause_time.c3", FT_UINT16, BASE_DEC,
-        NULL, 0x00, NULL, HFILL }},
+        NULL, 0x0, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_pause_time_c4,
       { "C4", "macc.cbfc.pause_time.c4", FT_UINT16, BASE_DEC,
-        NULL, 0x00, NULL, HFILL }},
+        NULL, 0x0, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_pause_time_c5,
       { "C5", "macc.cbfc.pause_time.c5", FT_UINT16, BASE_DEC,
-        NULL, 0x00, NULL, HFILL }},
+        NULL, 0x0, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_pause_time_c6,
       { "C6", "macc.cbfc.pause_time.c6", FT_UINT16, BASE_DEC,
-        NULL, 0x00, NULL, HFILL }},
+        NULL, 0x0, NULL, HFILL }},
 
     { &hf_macctrl_cbfc_pause_time_c7,
       { "C7", "macc.cbfc.pause_time.c7", FT_UINT16, BASE_DEC,
-        NULL, 0x00, NULL, HFILL }},
+        NULL, 0x0, NULL, HFILL }},
 
     { &hf_reg_flags,
       { "Flags", "macc.reg.flags", FT_UINT8, BASE_HEX,
-        VALS(reg_flags_vals), 0x00, NULL, HFILL }},
+        VALS(reg_flags_vals), 0x0, NULL, HFILL }},
 
     { &hf_reg_req_grants,
       { "Pending Grants", "macc.regreq.grants", FT_UINT8, BASE_DEC,
-        NULL, 0x00, NULL, HFILL }},
+        NULL, 0x0, NULL, HFILL }},
 
     { &hf_reg_grants,
       { "Echoed Pending Grants", "macc.reg.grants", FT_UINT8, BASE_DEC,
-        NULL, 0x00, NULL, HFILL }},
+        NULL, 0x0, NULL, HFILL }},
 
     { &hf_reg_port,
       { "Assigned Port (LLID)", "macc.reg.assignedport", FT_UINT16, BASE_DEC,
-        NULL, 0x00, NULL, HFILL }},
+        NULL, 0x0, NULL, HFILL }},
 
     { &hf_reg_ack_port,
       { "Echoed Assigned Port (LLID)", "macc.regack.assignedport", FT_UINT16, BASE_DEC,
-        NULL, 0x00, NULL, HFILL }},
+        NULL, 0x0, NULL, HFILL }},
 
     { &hf_reg_time,
       { "Sync Time", "macc.reg.synctime", FT_UINT16, BASE_DEC,
-        NULL, 0x00, NULL, HFILL }},
+        NULL, 0x0, NULL, HFILL }},
 
     { &hf_reg_ack_time,
       { "Echoed Sync Time", "macc.regack.synctime", FT_UINT16, BASE_DEC,
-        NULL, 0x00, NULL, HFILL }}
+        NULL, 0x0, NULL, HFILL }}
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
         &ett_macctrl,
         &ett_macctrl_cbfc_enbv,
         &ett_macctrl_cbfc_pause_times
@@ -385,14 +375,13 @@ proto_register_macctrl(void)
   proto_register_subtree_array(ett, array_length(ett));
   expert_macctrl = expert_register_protocol(proto_macctrl);
   expert_register_field_array(expert_macctrl, ei, array_length(ei));
+
+  macctrl_handle = register_dissector("macc", dissect_macctrl, proto_macctrl);
 }
 
 void
 proto_reg_handoff_macctrl(void)
 {
-  dissector_handle_t macctrl_handle;
-
-  macctrl_handle = create_dissector_handle(dissect_macctrl, proto_macctrl);
   dissector_add_uint("ethertype", ETHERTYPE_MAC_CONTROL, macctrl_handle);
 }
 

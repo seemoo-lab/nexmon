@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="structxmlMemIOCtxt" kind="struct" language="C++" prot="public">
+    <compoundname>xmlMemIOCtxt</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structxmlMemIOCtxt_1a6956806aef21d9c922c75bebeb7cb886" prot="public" static="no" mutable="no">
+        <type>const char *</type>
+        <definition>const char* cur</definition>
+        <argsstring></argsstring>
+        <name>cur</name>
+        <qualifiedname>xmlMemIOCtxt::cur</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlIO.c" line="1895" column="16" bodyfile="/builds/GNOME/libxml2/xmlIO.c" bodystart="1895" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlMemIOCtxt_1a854352f53b148adc24983a58a1866d66" prot="public" static="no" mutable="no">
+        <type>size_t</type>
+        <definition>size_t size</definition>
+        <argsstring></argsstring>
+        <name>size</name>
+        <qualifiedname>xmlMemIOCtxt::size</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlIO.c" line="1896" column="12" bodyfile="/builds/GNOME/libxml2/xmlIO.c" bodystart="1896" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlIO.c" line="1894" column="1" bodyfile="/builds/GNOME/libxml2/xmlIO.c" bodystart="1894" bodyend="1897"/>
+    <listofallmembers>
+      <member refid="structxmlMemIOCtxt_1a6956806aef21d9c922c75bebeb7cb886" prot="public" virt="non-virtual"><scope>xmlMemIOCtxt</scope><name>cur</name></member>
+      <member refid="structxmlMemIOCtxt_1a854352f53b148adc24983a58a1866d66" prot="public" virt="non-virtual"><scope>xmlMemIOCtxt</scope><name>size</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

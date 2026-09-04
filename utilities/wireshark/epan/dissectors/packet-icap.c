@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,6 +16,7 @@
 
 #include <epan/packet.h>
 #include <epan/strutil.h>
+#include "packet-tls.h"
 
 void proto_register_icap(void);
 void proto_reg_handoff_icap(void);
@@ -40,19 +29,19 @@ typedef enum _icap_type {
     ICAP_OTHER
 } icap_type_t;
 
-static int proto_icap = -1;
-static int hf_icap_response = -1;
-static int hf_icap_reqmod = -1;
-static int hf_icap_respmod = -1;
-static int hf_icap_options = -1;
-/* static int hf_icap_other = -1; */
+static int proto_icap;
+static int hf_icap_response;
+static int hf_icap_reqmod;
+static int hf_icap_respmod;
+static int hf_icap_options;
+/* static int hf_icap_other; */
 
-static gint ett_icap = -1;
+static int ett_icap;
 
 static dissector_handle_t http_handle;
 
 #define TCP_PORT_ICAP           1344
-static int is_icap_message(const guchar *data, int linelen, icap_type_t *type);
+static int is_icap_message(const unsigned char *data, int linelen, icap_type_t *type);
 static int
 dissect_icap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
@@ -60,12 +49,12 @@ dissect_icap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     proto_item   *ti        = NULL;
     proto_item   *hidden_item;
     tvbuff_t     *new_tvb;
-    gint          offset    = 0;
-    const guchar *line;
-    gint          next_offset;
-    const guchar *linep, *lineend;
+    int           offset    = 0;
+    const unsigned char *line;
+    int           next_offset;
+    const unsigned char *linep, *lineend;
     int           linelen;
-    guchar        c;
+    unsigned char c;
     icap_type_t   icap_type;
     int           datalen;
 
@@ -81,12 +70,12 @@ dissect_icap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
      * is not longer than what's in the buffer, so the
      * "tvb_get_ptr()" call won't throw an exception.
      */
-    linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, FALSE);
+    linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, false);
     line = tvb_get_ptr(tvb, offset, linelen);
     icap_type = ICAP_OTHER; /* type not known yet */
     if (is_icap_message(line, linelen, &icap_type))
         col_add_str(pinfo->cinfo, COL_INFO,
-            format_text(line, linelen));
+            format_text(pinfo->pool, line, linelen));
     else
         col_set_str(pinfo->cinfo, COL_INFO, "Continuation");
 
@@ -101,13 +90,13 @@ dissect_icap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
      */
     icap_type = ICAP_OTHER; /* type not known yet */
     while (tvb_offset_exists(tvb, offset)) {
-        gboolean is_icap = FALSE;
-        gboolean loop_done = FALSE;
+        bool is_icap = false;
+        bool loop_done = false;
         /*
          * Find the end of the line.
          */
         linelen = tvb_find_line_end(tvb, offset, -1, &next_offset,
-            FALSE);
+            false);
 
         /*
          * Get a buffer that refers to the line.
@@ -133,7 +122,7 @@ dissect_icap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
          * No.  Does it look like a header?
          */
         linep = line;
-        loop_done = FALSE;
+        loop_done = false;
         while (linep < lineend && (!loop_done)) {
             c = *linep++;
 
@@ -145,7 +134,7 @@ dissect_icap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
              * lines of a header?
              */
             if (!g_ascii_isprint(c)) {
-                is_icap = FALSE;
+                is_icap = false;
                 break;
             }
 
@@ -178,8 +167,8 @@ dissect_icap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
                  * XXX - what about ' '?  HTTP's checks
                  * check for that.
                  */
-                is_icap = FALSE;
-                loop_done = TRUE;
+                is_icap = false;
+                loop_done = true;
                 break;
 
             case ':':
@@ -210,25 +199,25 @@ is_icap_header:
         case ICAP_OPTIONS:
             hidden_item = proto_tree_add_boolean(icap_tree,
                         hf_icap_options, tvb, 0, 0, 1);
-                        PROTO_ITEM_SET_HIDDEN(hidden_item);
+                        proto_item_set_hidden(hidden_item);
             break;
 
         case ICAP_REQMOD:
             hidden_item = proto_tree_add_boolean(icap_tree,
                         hf_icap_reqmod, tvb, 0, 0, 1);
-                        PROTO_ITEM_SET_HIDDEN(hidden_item);
+                        proto_item_set_hidden(hidden_item);
             break;
 
         case ICAP_RESPMOD:
             hidden_item = proto_tree_add_boolean(icap_tree,
                         hf_icap_respmod, tvb, 0, 0, 1);
-                        PROTO_ITEM_SET_HIDDEN(hidden_item);
+                        proto_item_set_hidden(hidden_item);
             break;
 
         case ICAP_RESPONSE:
             hidden_item = proto_tree_add_boolean(icap_tree,
                         hf_icap_response, tvb, 0, 0, 1);
-                        PROTO_ITEM_SET_HIDDEN(hidden_item);
+                        proto_item_set_hidden(hidden_item);
             break;
 
         case ICAP_OTHER:
@@ -250,13 +239,13 @@ is_icap_header:
 
 
 static int
-is_icap_message(const guchar *data, int linelen, icap_type_t *type)
+is_icap_message(const unsigned char *data, int linelen, icap_type_t *type)
 {
 #define ICAP_COMPARE(string, length, msgtype) {     \
     if (strncmp(data, string, length) == 0) {   \
         if (*type == ICAP_OTHER)        \
             *type = msgtype;        \
-        return TRUE;                \
+        return true;                \
     }                       \
 }
     /*
@@ -272,7 +261,7 @@ is_icap_message(const guchar *data, int linelen, icap_type_t *type)
         ICAP_COMPARE("OPTIONS ", 8, ICAP_OPTIONS); /* options */
         ICAP_COMPARE("RESPMOD ", 8, ICAP_RESPMOD); /* response mod */
     }
-    return FALSE;
+    return false;
 #undef ICAP_COMPARE
 }
 
@@ -283,33 +272,31 @@ proto_register_icap(void)
         { &hf_icap_response,
           { "Response",     "icap.response",
             FT_BOOLEAN, BASE_NONE, NULL, 0x0,
-            "TRUE if ICAP response", HFILL }},
+            "true if ICAP response", HFILL }},
         { &hf_icap_reqmod,
           { "Reqmod",       "icap.reqmod",
             FT_BOOLEAN, BASE_NONE, NULL, 0x0,
-            "TRUE if ICAP reqmod", HFILL }},
+            "true if ICAP reqmod", HFILL }},
         { &hf_icap_respmod,
           { "Respmod",      "icap.respmod",
             FT_BOOLEAN, BASE_NONE, NULL, 0x0,
-            "TRUE if ICAP respmod", HFILL }},
+            "true if ICAP respmod", HFILL }},
         { &hf_icap_options,
           { "Options",      "icap.options",
             FT_BOOLEAN, BASE_NONE, NULL, 0x0,
-            "TRUE if ICAP options", HFILL }},
+            "true if ICAP options", HFILL }},
 #if 0
         { &hf_icap_other,
           { "Other",        "icap.other",
             FT_BOOLEAN, BASE_NONE, NULL, 0x0,
-            "TRUE if ICAP other", HFILL }},
+            "true if ICAP other", HFILL }},
 #endif
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_icap,
     };
 
-    proto_icap = proto_register_protocol(
-            "Internet Content Adaptation Protocol",
-            "ICAP", "icap");
+    proto_icap = proto_register_protocol("Internet Content Adaptation Protocol", "ICAP", "icap");
     proto_register_field_array(proto_icap, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
@@ -322,12 +309,17 @@ proto_reg_handoff_icap(void)
 
     http_handle = find_dissector_add_dependency("http", proto_icap);
 
-    icap_handle = create_dissector_handle(dissect_icap, proto_icap);
-    dissector_add_uint("tcp.port", TCP_PORT_ICAP, icap_handle);
+    icap_handle = register_dissector("icap", dissect_icap, proto_icap);
+    dissector_add_uint_with_preference("tcp.port", TCP_PORT_ICAP, icap_handle);
+
+    /* As ICAPS port is not officially assigned by IANA
+     * (de facto standard is 11344), we default to 0
+     * to have "decode as" available */
+    ssl_dissector_add(0, icap_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

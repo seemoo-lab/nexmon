@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -32,11 +34,6 @@ G_BEGIN_DECLS
 #define G_IS_UNIX_OUTPUT_STREAM_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), G_TYPE_UNIX_OUTPUT_STREAM))
 #define G_UNIX_OUTPUT_STREAM_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), G_TYPE_UNIX_OUTPUT_STREAM, GUnixOutputStreamClass))
 
-/**
- * GUnixOutputStream:
- *
- * Implements #GOutputStream for outputting to selectable unix file descriptors
- **/
 typedef struct _GUnixOutputStream         GUnixOutputStream;
 typedef struct _GUnixOutputStreamClass    GUnixOutputStreamClass;
 typedef struct _GUnixOutputStreamPrivate  GUnixOutputStreamPrivate;
@@ -64,18 +61,18 @@ struct _GUnixOutputStreamClass
   void (*_g_reserved5) (void);
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType           g_unix_output_stream_get_type     (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType           g_unix_output_stream_get_type     (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GOutputStream * g_unix_output_stream_new          (gint     fd,
                                                    gboolean close_fd);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void            g_unix_output_stream_set_close_fd (GUnixOutputStream *stream,
                                                    gboolean           close_fd);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gboolean        g_unix_output_stream_get_close_fd (GUnixOutputStream *stream);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gint            g_unix_output_stream_get_fd       (GUnixOutputStream *stream);
 G_END_DECLS
 

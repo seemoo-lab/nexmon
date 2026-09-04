@@ -1,29 +1,19 @@
-/* timestamp.h
+/** @file
  * Defines for packet timestamps
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __TIMESTAMP_H__
 #define __TIMESTAMP_H__
 
 #include "ws_symbol_export.h"
+
+#include <wsutil/nstime.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,13 +42,23 @@ typedef enum {
 } ts_type;
 
 typedef enum {
-	TS_PREC_AUTO,
-	TS_PREC_FIXED_SEC,
-	TS_PREC_FIXED_DSEC,
-	TS_PREC_FIXED_CSEC,
-	TS_PREC_FIXED_MSEC,
-	TS_PREC_FIXED_USEC,
-	TS_PREC_FIXED_NSEC
+	TS_PREC_AUTO           = -1,	/* Use what the capture file specifies */
+	TS_PREC_FIXED_SEC      = WS_TSPREC_SEC,
+	TS_PREC_FIXED_100_MSEC = WS_TSPREC_100_MSEC,
+	TS_PREC_FIXED_10_MSEC  = WS_TSPREC_10_MSEC,
+	TS_PREC_FIXED_MSEC     = WS_TSPREC_MSEC,
+	TS_PREC_FIXED_100_USEC = WS_TSPREC_100_USEC,
+	TS_PREC_FIXED_10_USEC  = WS_TSPREC_10_USEC,
+	TS_PREC_FIXED_USEC     = WS_TSPREC_USEC,
+	TS_PREC_FIXED_100_NSEC = WS_TSPREC_100_NSEC,
+	TS_PREC_FIXED_10_NSEC  = WS_TSPREC_10_NSEC,
+	TS_PREC_FIXED_NSEC     = WS_TSPREC_NSEC,
+
+/*
+ * Special value used for the command-line setting in Wireshark, to indicate
+ * that no value has been set from the command line.
+ */
+	TS_PREC_NOT_SET    = -2
 } ts_precision;
 
 typedef enum {

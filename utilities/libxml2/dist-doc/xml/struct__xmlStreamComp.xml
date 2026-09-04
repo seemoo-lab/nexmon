@@ -1,0 +1,119 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlStreamComp" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlStreamComp</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlStreamComp_1ae6cb4bd5bd5a5f50be4c5edc678877a1" prot="public" static="no" mutable="no">
+        <type><ref refid="dict_8h_1a72d327232a49f4337b4357e6417cdad3" kindref="member">xmlDict</ref> *</type>
+        <definition>xmlDict* dict</definition>
+        <argsstring></argsstring>
+        <name>dict</name>
+        <qualifiedname>_xmlStreamComp::dict</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="101" column="13" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="101" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStreamComp_1adfbda717a0c93c03bd532b01afff8023" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbStep</definition>
+        <argsstring></argsstring>
+        <name>nbStep</name>
+        <qualifiedname>_xmlStreamComp::nbStep</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="102" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="102" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStreamComp_1a68defcf610c5210aa9a2b73fb4de6fbe" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxStep</definition>
+        <argsstring></argsstring>
+        <name>maxStep</name>
+        <qualifiedname>_xmlStreamComp::maxStep</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="103" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="103" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStreamComp_1a60ed208a575901b2610786fbc15c2127" prot="public" static="no" mutable="no">
+        <type>xmlStreamStepPtr</type>
+        <definition>xmlStreamStepPtr steps</definition>
+        <argsstring></argsstring>
+        <name>steps</name>
+        <qualifiedname>_xmlStreamComp::steps</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="104" column="22" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="104" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStreamComp_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int flags</definition>
+        <argsstring></argsstring>
+        <name>flags</name>
+        <qualifiedname>_xmlStreamComp::flags</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="105" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="105" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="2">
+        <label>_xmlDict</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlDictStrings</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlStreamComp</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>steps</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlStreamStep</label>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/pattern.c" line="100" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="100" bodyend="106"/>
+    <listofallmembers>
+      <member refid="struct__xmlStreamComp_1ae6cb4bd5bd5a5f50be4c5edc678877a1" prot="public" virt="non-virtual"><scope>_xmlStreamComp</scope><name>dict</name></member>
+      <member refid="struct__xmlStreamComp_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" virt="non-virtual"><scope>_xmlStreamComp</scope><name>flags</name></member>
+      <member refid="struct__xmlStreamComp_1a68defcf610c5210aa9a2b73fb4de6fbe" prot="public" virt="non-virtual"><scope>_xmlStreamComp</scope><name>maxStep</name></member>
+      <member refid="struct__xmlStreamComp_1adfbda717a0c93c03bd532b01afff8023" prot="public" virt="non-virtual"><scope>_xmlStreamComp</scope><name>nbStep</name></member>
+      <member refid="struct__xmlStreamComp_1a60ed208a575901b2610786fbc15c2127" prot="public" virt="non-virtual"><scope>_xmlStreamComp</scope><name>steps</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

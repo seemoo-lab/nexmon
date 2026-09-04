@@ -6,7 +6,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -39,7 +39,7 @@ G_BEGIN_DECLS
 typedef struct _GWinHttpFileInputStream         GWinHttpFileInputStream;
 typedef struct _GWinHttpFileInputStreamClass    GWinHttpFileInputStreamClass;
 
-GType _g_winhttp_file_input_stream_get_type (void) G_GNUC_CONST;
+GType _g_winhttp_file_input_stream_get_type (void);
 
 GFileInputStream *_g_winhttp_file_input_stream_new (GWinHttpFile *file,
                                                     HINTERNET     connection,

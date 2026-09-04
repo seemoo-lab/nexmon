@@ -1,0 +1,942 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="xmlsave_8h" kind="file" language="C++">
+    <compoundname>xmlsave.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includes refid="encoding_8h" local="no">libxml/encoding.h</includes>
+    <includes refid="xmlIO_8h" local="no">libxml/xmlIO.h</includes>
+    <includedby refid="entities_8c" local="no">/builds/GNOME/libxml2/entities.c</includedby>
+    <includedby refid="globals_8c" local="no">/builds/GNOME/libxml2/globals.c</includedby>
+    <includedby refid="parserInternals_8c" local="no">/builds/GNOME/libxml2/parserInternals.c</includedby>
+    <includedby refid="valid_8c" local="no">/builds/GNOME/libxml2/valid.c</includedby>
+    <includedby refid="xmlsave_8c" local="no">/builds/GNOME/libxml2/xmlsave.c</includedby>
+    <incdepgraph>
+      <node id="11">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>xmlsave.h</label>
+        <link refid="xmlsave_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="6">
+        <label>limits.h</label>
+      </node>
+      <node id="8">
+        <label>stdarg.h</label>
+      </node>
+      <node id="5">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlSaveOption</name>
+        <enumvalue id="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0ab90a75bebebb7971fc14280ae1f98bfb" prot="public">
+          <name>XML_SAVE_FORMAT</name>
+          <initializer>= 1&lt;&lt;0</initializer>
+          <briefdescription>
+<para>Format output. </para>
+          </briefdescription>
+          <detaileddescription>
+<para>This adds newlines and enables indenting by default. </para>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0a19cf1a0d0c010aa24366169837a13263" prot="public">
+          <name>XML_SAVE_NO_DECL</name>
+          <initializer>= 1&lt;&lt;1</initializer>
+          <briefdescription>
+<para>Don&apos;t emit an XML declaration. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0a023897c18eee08a4354b9aa6daa6fe32" prot="public">
+          <name>XML_SAVE_NO_EMPTY</name>
+          <initializer>= 1&lt;&lt;2</initializer>
+          <briefdescription>
+<para>Don&apos;t emit empty tags. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0a390ea961818d5d6bf5f7306c7c23aa1a" prot="public">
+          <name>XML_SAVE_NO_XHTML</name>
+          <initializer>= 1&lt;&lt;3</initializer>
+          <briefdescription>
+<para>Don&apos;t serialize as XHTML. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0a2417c10fb8768ccf27a1f97ce6df56cb" prot="public">
+          <name>XML_SAVE_XHTML</name>
+          <initializer>= 1&lt;&lt;4</initializer>
+          <briefdescription>
+<para>Always serialize as XHTML. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0a9024ee791360946e2c12e59fb0b297a7" prot="public">
+          <name>XML_SAVE_AS_XML</name>
+          <initializer>= 1&lt;&lt;5</initializer>
+          <briefdescription>
+<para>Serialize HTML documents as XML. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0a5e2111123b8f4728095f758827cedc16" prot="public">
+          <name>XML_SAVE_AS_HTML</name>
+          <initializer>= 1&lt;&lt;6</initializer>
+          <briefdescription>
+<para>Serialize XML documents as HTML. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0ac3f2c44d4b5002a72000ff967fdcc27f" prot="public">
+          <name>XML_SAVE_WSNONSIG</name>
+          <initializer>= 1&lt;&lt;7</initializer>
+          <briefdescription>
+<para>Format with non-significant whitespace. </para>
+          </briefdescription>
+          <detaileddescription>
+<para>TODO: What does this mean? </para>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0af947f5673383c6063e2255cd3672fb94" prot="public">
+          <name>XML_SAVE_EMPTY</name>
+          <initializer>= 1&lt;&lt;8</initializer>
+          <briefdescription>
+<para>Always emit empty tags. </para>
+          </briefdescription>
+          <detaileddescription>
+<para>This is the default unless the deprecated thread-local setting xmlSaveNoEmptyTags is set to 1.</para>
+<para><simplesect kind="since"><para>2.14 </para>
+</simplesect>
+</para>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0a6c85856d5950e8839a3d69a3c1346667" prot="public">
+          <name>XML_SAVE_NO_INDENT</name>
+          <initializer>= 1&lt;&lt;9</initializer>
+          <briefdescription>
+<para>Don&apos;t indent output when formatting. </para>
+          </briefdescription>
+          <detaileddescription>
+<para><simplesect kind="since"><para>2.14 </para>
+</simplesect>
+</para>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0a06d461970e2e5ee59d616e796a4984b0" prot="public">
+          <name>XML_SAVE_INDENT</name>
+          <initializer>= 1&lt;&lt;10</initializer>
+          <briefdescription>
+<para>Always indent output when formatting. </para>
+          </briefdescription>
+          <detaileddescription>
+<para>This is the default unless the deprecated thread-local setting xmlIndentTreeOutput is set to 0.</para>
+<para><simplesect kind="since"><para>2.14 </para>
+</simplesect>
+</para>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>This is the set of XML save options that can be passed down to the <ref refid="xmlsave_8h_1ab08dfe038bac9e9777fec9bfd5584880" kindref="member">xmlSaveToFd</ref> and similar calls. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="30" column="1" bodyfile="xmlsave.h" bodystart="30" bodyend="87"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" prot="public" static="no">
+        <type>struct _xmlSaveCtxt</type>
+        <definition>typedef struct _xmlSaveCtxt xmlSaveCtxt</definition>
+        <argsstring></argsstring>
+        <name>xmlSaveCtxt</name>
+        <briefdescription>
+<para>XML and HTML serializer. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="90" column="27" bodyfile="xmlsave.h" bodystart="90" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlsave_8h_1a4d3ba871be6ec848a6d47fee5641813e" prot="public" static="no">
+        <type><ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *</type>
+        <definition>typedef xmlSaveCtxt* xmlSaveCtxtPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSaveCtxtPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="91" column="21" bodyfile="xmlsave.h" bodystart="91" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="xmlsave_8h_1ab08dfe038bac9e9777fec9bfd5584880" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *</type>
+        <definition>xmlSaveCtxt * xmlSaveToFd</definition>
+        <argsstring>(int fd, const char *encoding, int options)</argsstring>
+        <name>xmlSaveToFd</name>
+        <param>
+          <type>int</type>
+          <declname>fd</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Create a document saving context serializing to a file descriptor with the encoding and the options given. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If <computeroutput>encoding</computeroutput> is NULL, <ref refid="xmlsave_8h_1aea4488b9ce630799d61709acdf31903a" kindref="member">xmlSaveDoc</ref> uses the document&apos;s encoding and <ref refid="xmlsave_8h_1a943b061206fde27ec1dc696d066e02e2" kindref="member">xmlSaveTree</ref> uses UTF-8.</para>
+<para>This function doesn&apos;t allow to distinguish unsupported encoding errors from failed memory allocations.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>fd</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a file descriptor number </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding name to use (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a set of xmlSaveOptions </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new serialization context or NULL in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="94" column="1" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="1831" bodyend="1844" declfile="xmlsave.h" declline="94" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlsave_8h_1addd795fafe9275a3a126c2496b234a34" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *</type>
+        <definition>xmlSaveCtxt * xmlSaveToFilename</definition>
+        <argsstring>(const char *filename, const char *encoding, int options)</argsstring>
+        <name>xmlSaveToFilename</name>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Create a document saving context serializing to a filename with the encoding and the options given. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If <computeroutput>encoding</computeroutput> is NULL, <ref refid="xmlsave_8h_1aea4488b9ce630799d61709acdf31903a" kindref="member">xmlSaveDoc</ref> uses the document&apos;s encoding and <ref refid="xmlsave_8h_1a943b061206fde27ec1dc696d066e02e2" kindref="member">xmlSaveTree</ref> uses UTF-8.</para>
+<para>This function doesn&apos;t allow to distinguish unsupported encoding errors from failed memory allocations.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a file name or an URL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding name to use or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a set of xmlSaveOptions </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new serialization context or NULL in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="98" column="1" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="1862" bodyend="1877" declfile="xmlsave.h" declline="98" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlsave_8h_1ac29074a3ecf6f54e54e2afda0048d8c4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *</type>
+        <definition>xmlSaveCtxt * xmlSaveToBuffer</definition>
+        <argsstring>(xmlBuffer *buffer, const char *encoding, int options)</argsstring>
+        <name>xmlSaveToBuffer</name>
+        <param>
+          <type><ref refid="tree_8h_1a2ee128432290a53a930b36702abd1ef4" kindref="member">xmlBuffer</ref> *</type>
+          <declname>buffer</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Create a document saving context serializing to a buffer with the encoding and the options given. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If <computeroutput>encoding</computeroutput> is NULL, <ref refid="xmlsave_8h_1aea4488b9ce630799d61709acdf31903a" kindref="member">xmlSaveDoc</ref> uses the document&apos;s encoding and <ref refid="xmlsave_8h_1a943b061206fde27ec1dc696d066e02e2" kindref="member">xmlSaveTree</ref> uses UTF-8.</para>
+<para>This function doesn&apos;t allow to distinguish unsupported encoding errors from failed memory allocations.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buffer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a buffer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding name to use or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a set of xmlSaveOptions </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new serialization context or NULL in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="103" column="1" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="1896" bodyend="1909" declfile="xmlsave.h" declline="103" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlsave_8h_1a1018780d48829895a01464335076748c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *</type>
+        <definition>xmlSaveCtxt * xmlSaveToIO</definition>
+        <argsstring>(xmlOutputWriteCallback iowrite, xmlOutputCloseCallback ioclose, void *ioctx, const char *encoding, int options)</argsstring>
+        <name>xmlSaveToIO</name>
+        <param>
+          <type><ref refid="xmlIO_8h_1a77e13204f2024d8643f29f98ec6f2f2b" kindref="member">xmlOutputWriteCallback</ref></type>
+          <declname>iowrite</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlIO_8h_1a1b78d8c2e0fa02f8aa1a2fd4dc9f6f57" kindref="member">xmlOutputCloseCallback</ref></type>
+          <declname>ioclose</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ioctx</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Create a document saving context serializing to a file descriptor with the encoding and the options given. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If <computeroutput>encoding</computeroutput> is NULL, <ref refid="xmlsave_8h_1aea4488b9ce630799d61709acdf31903a" kindref="member">xmlSaveDoc</ref> uses the document&apos;s encoding and <ref refid="xmlsave_8h_1a943b061206fde27ec1dc696d066e02e2" kindref="member">xmlSaveTree</ref> uses UTF-8.</para>
+<para>This function doesn&apos;t allow to distinguish unsupported encoding errors from failed memory allocations.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>iowrite</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an I/O write function </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ioclose</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an I/O close function </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ioctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an I/O handler </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding name to use or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a set of xmlSaveOptions </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a new serialization context or NULL in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="108" column="1" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="1929" bodyend="1944" declfile="xmlsave.h" declline="108" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlsave_8h_1aea4488b9ce630799d61709acdf31903a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>long</type>
+        <definition>long xmlSaveDoc</definition>
+        <argsstring>(xmlSaveCtxt *ctxt, xmlDoc *doc)</argsstring>
+        <name>xmlSaveDoc</name>
+        <param>
+          <type><ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Serialize a document. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If the save context has no encoding, uses the document&apos;s encoding. If the document has no encoding, uses ASCII without an encoding declaration.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document saving context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success or -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="115" column="1" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="1958" bodyend="1966" declfile="xmlsave.h" declline="115" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlsave_8h_1a943b061206fde27ec1dc696d066e02e2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>long</type>
+        <definition>long xmlSaveTree</definition>
+        <argsstring>(xmlSaveCtxt *ctxt, xmlNode *node)</argsstring>
+        <name>xmlSaveTree</name>
+        <param>
+          <type><ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>node</declname>
+          <defname>cur</defname>
+        </param>
+        <briefdescription>
+<para>Serialize a subtree starting. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If the save context has no encoding, uses UTF-8.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document saving context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the root of the subtree to save </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success or -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="118" column="1" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="1978" bodyend="1998" declfile="xmlsave.h" declline="118" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlsave_8h_1a9262a2052b138035fe8bd84c55c0e5c9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSaveFlush</definition>
+        <argsstring>(xmlSaveCtxt *ctxt)</argsstring>
+        <name>xmlSaveFlush</name>
+        <param>
+          <type><ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Flush a document saving context, i.e. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>make sure that all buffered input has been processed.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document saving context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written or -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="122" column="1" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="2038" bodyend="2043" declfile="xmlsave.h" declline="122" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlsave_8h_1a29cae0c577b8bfac64765a651ad5beb0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSaveClose</definition>
+        <argsstring>(xmlSaveCtxt *ctxt)</argsstring>
+        <name>xmlSaveClose</name>
+        <param>
+          <type><ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Close a document saving context, i.e. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>make sure that all buffered input has been processed and free the context struct.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document saving context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the number of bytes written or -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="124" column="1" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="2053" bodyend="2061" declfile="xmlsave.h" declline="124" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlsave_8h_1ae1519fde357e88b26dc5c5576adc1131" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref></type>
+        <definition>xmlParserErrors xmlSaveFinish</definition>
+        <argsstring>(xmlSaveCtxt *ctxt)</argsstring>
+        <name>xmlSaveFinish</name>
+        <param>
+          <type><ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Close a document saving context, i.e. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>make sure that all buffered input has been processed and free the context struct.</para>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document saving context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> code. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="126" column="1" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="2073" bodyend="2089" declfile="xmlsave.h" declline="126" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlsave_8h_1a770239ed982d5bf2d232bd4b20da2bbd" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSaveSetIndentString</definition>
+        <argsstring>(xmlSaveCtxt *ctxt, const char *indent)</argsstring>
+        <name>xmlSaveSetIndentString</name>
+        <param>
+          <type><ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>indent</declname>
+        </param>
+        <briefdescription>
+<para>Sets the indent string. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="since"><para>2.14.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>save context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>indent</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>indent string </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success, -1 if the string is NULL, empty or too long. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="128" column="1" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="126" bodyend="143" declfile="xmlsave.h" declline="128" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlsave_8h_1a6d500dd505af69195bbcb8a4eab86fa6" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSaveSetEscape</definition>
+        <argsstring>(xmlSaveCtxt *ctxt, xmlCharEncodingOutputFunc escape)</argsstring>
+        <name>xmlSaveSetEscape</name>
+        <param>
+          <type><ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1a167ac51fa3e644243494671248c56b67" kindref="member">xmlCharEncodingOutputFunc</ref></type>
+          <declname>escape</declname>
+        </param>
+        <briefdescription>
+<para>Set a custom escaping function to be used for text in element content. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000426"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document saving context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>escape</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the escaping function </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if successful or -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="132" column="1" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="2102" bodyend="2107" declfile="xmlsave.h" declline="132" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlsave_8h_1a5514f755d9404a1bb42d8ae6ab0a862d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSaveSetAttrEscape</definition>
+        <argsstring>(xmlSaveCtxt *ctxt, xmlCharEncodingOutputFunc escape)</argsstring>
+        <name>xmlSaveSetAttrEscape</name>
+        <param>
+          <type><ref refid="xmlsave_8h_1a4fff479c5425a129d2ed27b293ff3122" kindref="member">xmlSaveCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1a167ac51fa3e644243494671248c56b67" kindref="member">xmlCharEncodingOutputFunc</ref></type>
+          <declname>escape</declname>
+        </param>
+        <briefdescription>
+<para>Has no effect. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000427"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a document saving context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>escape</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the escaping function </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if successful or -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="136" column="1" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="2119" bodyend="2124" declfile="xmlsave.h" declline="136" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlsave_8h_1ac810f502e07784d0aaf4cd720b601685" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlThrDefIndentTreeOutput</definition>
+        <argsstring>(int v)</argsstring>
+        <name>xmlThrDefIndentTreeOutput</name>
+        <param>
+          <type>int</type>
+          <declname>v</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000146"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Indenting is enabled by default. Use the <ref refid="xmlsave_8h" kindref="compound">xmlsave.h</ref> API and <ref refid="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0" kindref="member">xmlSaveOption</ref> XML_SAVE_NO_INDENT to disable indenting.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>v</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="141" column="17" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="936" bodyend="943" declfile="xmlsave.h" declline="141" declcolumn="17"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlsave_8h_1a5cdac7cc9c7562aaebbff1c6b395b6b5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const char *</type>
+        <definition>const char * xmlThrDefTreeIndentString</definition>
+        <argsstring>(const char *v)</argsstring>
+        <name>xmlThrDefTreeIndentString</name>
+        <param>
+          <type>const char *</type>
+          <declname>v</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000147"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use the <ref refid="xmlsave_8h" kindref="compound">xmlsave.h</ref> API and <ref refid="xmlsave_8h_1a770239ed982d5bf2d232bd4b20da2bbd" kindref="member">xmlSaveSetIndentString</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>v</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="144" column="17" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="953" bodyend="960" declfile="xmlsave.h" declline="144" declcolumn="17"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlsave_8h_1a335cbce6a63ac0c054e50a67f30694c3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlThrDefSaveNoEmptyTags</definition>
+        <argsstring>(int v)</argsstring>
+        <name>xmlThrDefSaveNoEmptyTags</name>
+        <param>
+          <type>int</type>
+          <declname>v</declname>
+        </param>
+        <briefdescription>
+<para>Set per-thread default value. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000148"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use the <ref refid="xmlsave_8h" kindref="compound">xmlsave.h</ref> API and <ref refid="xmlsave_8h_1aad8ce95f34cf7d44adf8f69cdbc7d1b0" kindref="member">xmlSaveOption</ref> XML_SAVE_NO_EMPTY.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>v</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>new value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the old value </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlsave.h" line="147" column="17" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="970" bodyend="977" declfile="xmlsave.h" declline="147" declcolumn="17"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>XML/HTML serializer. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>API to save documents or subtrees of documents.</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="xmlsave.h"/>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,21 @@
+<grammar datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"
+  ns="http://relaxng.org/ns/structure/1.0"
+  xmlns="http://relaxng.org/ns/structure/1.0">
+
+  <start>
+    <ref name="listOfLists"/>
+  </start>
+  
+  <define name="listOfLists">
+    <element name="listOfLists">
+    <group>
+      <zeroOrMore>
+         <ref name="listOfLists"/>
+      </zeroOrMore>
+    </group>
+    <optional>
+      <attribute name="fail"/>
+    </optional>
+    </element>
+  </define>
+</grammar>

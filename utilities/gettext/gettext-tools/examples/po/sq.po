@@ -1,0 +1,164 @@
+# Albanian translation of gettext-example.
+# Copyright (C) 2020 Yoyodyne, Inc. (msgids)
+# This file is distributed under the same license as the gettext package.
+# Besnik Bleta <besnik@programeshqip.org>, 2020,2023,2024,2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: gettext-examples-0.26-pre1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2025-06-25 03:58+0200\n"
+"PO-Revision-Date: 2025-12-22 11:38+0200\n"
+"Last-Translator: Besnik Bleta <besnik@programeshqip.org>\n"
+"Language-Team: Albanian <translation-team-sq@lists.sourceforge.net>\n"
+"Language: sq\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+"X-Generator: Poedit 3.2.2\n"
+
+#: hello-c/hello.c:35 hello-c-gnome2/hello.c:51
+#: hello-c-gnome3/hello.desktop.in.in:4 hello-c-gnome3/hello2.desktop.in.in:4
+#: hello-c-http/hello-server.c:307 hello-c++/hello.cc:44
+#: hello-c++20/hello.cc:48 hello-c++-qt/hello.cc:50
+#: hello-c++-kde/hellowindow.cc:47 hello-c++-gnome2/hello.cc:55
+#: hello-c++-gnome3/hello.desktop.in.in:4 hello-c++-wxwidgets/hello.cc:73
+#: hello-objc/hello.m:35 hello-objc-gnustep/Hello.m:49
+#: hello-objc-gnome2/hello.m:52 hello-python/hello.py.in:12
+#: hello-java/Hello.java:14 hello-java-awt/Hello.java:23
+#: hello-java-swing/Hello.java:20 hello-java-qtjambi/Hello.java:27
+#: hello-csharp/hello.cs:14 hello-csharp-forms/hello.cs:29
+#: hello-guile/hello.scm:15 hello-clisp/hello.lisp.in:11
+#: hello-librep/hello.jl.in:12 hello-rust/src/main.rs.in:30
+#: hello-go/example1/hello1ml.go.in:42 hello-go/example1/hello1sl.go.in:40
+#: hello-go/example2/hello2sl.go.in:28 hello-go/example3/hello3ml.go.in:44
+#: hello-go-http/example1/hello1ml.go.in:59 hello-ruby/hello.rb:7
+#: hello-sh/hello-1.sh:14 hello-sh/hello-2.sh:12 hello-sh/hello-3.sh:12
+#: hello-gawk/hello.awk:11 hello-pascal/hello.hello_world
+#: hello-modula2/hello.mod.in:34 hello-d/hello.d.in:27
+#: hello-smalltalk/hello.st.in:31 hello-tcl/hello.tcl:11
+#: hello-tcl-tk/hello.tcl:13 hello-perl/hello-1.pl.in:17
+#: hello-perl/hello-2.pl.in:12 hello-php/hello.php:12 hello-ycp/hello.ycp:15
+msgid "Hello, world!"
+msgstr "Tungjatjeta, botë!"
+
+#: hello-c/hello.c:36 hello-c-gnome2/hello.c:56 hello-c++/hello.cc:45
+#: hello-c++-gnome2/hello.cc:60 hello-c++-wxwidgets/hello.cc:76
+#: hello-objc/hello.m:36 hello-objc-gnustep/Hello.m:58
+#: hello-objc-gnome2/hello.m:57 hello-librep/hello.jl.in:14
+#: hello-go/example1/hello1ml.go.in:43 hello-go/example1/hello1sl.go.in:41
+#: hello-go/example2/hello2sl.go.in:29 hello-go/example3/hello3ml.go.in:45
+#: hello-gawk/hello.awk:12 hello-pascal/hello.running_as
+#: hello-modula2/hello.mod.in:37 hello-d/hello.d.in:28 hello-tcl/hello.tcl:12
+#: hello-tcl-tk/hello.tcl:16 hello-perl/hello-1.pl.in:19 hello-php/hello.php:14
+#, php-format
+msgid "This program is running as process number %d."
+msgstr "Ky program po xhiron si procesi numër %d."
+
+#: hello-c-gnome3/hello.c:78 hello-c-gnome3/hello2.c:86
+#: hello-c++-gnome3/hello.cc:69
+msgid "Hello world!"
+msgstr "Tungjatjeta, botë!"
+
+#: hello-c-gnome3/hello.c:80 hello-c-gnome3/hello2.c:88
+#: hello-c++-gnome3/hello.cc:71
+#, c-format
+msgid "This program is running as process number %s."
+msgstr "Ky program po xhiron si procesi numër %s."
+
+#: hello-c-gnome3/hello.c:84 hello-c-gnome3/hello2.c:92
+#: hello-c++-gnome3/hello.cc:75
+msgid "This is another text"
+msgstr "Ja dhe një tekst tjetër"
+
+#: hello-c-gnome3/hello.c:86 hello-c-gnome3/hello2.c:94
+#: hello-c++-gnome3/hello.cc:77
+msgid "This is yet another text"
+msgstr "Ja edhe një tekst tjetër akoma"
+
+#: hello-c-gnome3/hello.desktop.in.in:3 hello-c-gnome3/hello2.desktop.in.in:3
+#: hello-c++-gnome3/hello.desktop.in.in:3
+msgid "Hello"
+msgstr "Tungjatjeta"
+
+#: hello-c-gnome3/hello.ui:6 hello-c-gnome3/hello2.ui:6
+#: hello-c++-gnome3/hello.ui:6
+msgid "Example Application"
+msgstr "Aplikacion Shembull"
+
+#: hello-c-gnome3/hello.ui:34 hello-c-gnome3/hello2.ui:34
+#: hello-c++-gnome3/hello.ui:34
+msgid "Update text"
+msgstr "Përditësojeni tekstin"
+
+#: hello-c-gnome3/hello2.gschema.xml:8
+msgid "Use XML markup"
+msgstr "Përdor markup XML"
+
+#: hello-c-gnome3/hello2.gschema.xml:9
+msgid "Whether to use XML markup in the text."
+msgstr "Të përdoret ose jo markup XML te teksti."
+
+#: hello-c++20/hello.cc:50 hello-c++20/hello.cc:53
+msgid "This program is running as process number {:d}."
+msgstr "Ky program po xhiron si procesi numër {:d}."
+
+#: hello-c++-qt/hello.cc:57 hello-c++-kde/hellowindow.cc:54
+#: hello-smalltalk/hello.st.in:32 hello-ycp/hello.ycp:19
+#, ycp-format
+msgid "This program is running as process number %1."
+msgstr "Ky program po xhiron si procesi numër %1."
+
+#: hello-c++-kde/hello.cc:46
+msgid "Hello example"
+msgstr "Shembull tungjatjete"
+
+#: hello-c++-kde/hello.cc:48
+msgid "Hello world example"
+msgstr "Shembull Tungjatjeta Botë"
+
+#: hello-python/hello.py.in:13
+#, python-format
+msgid "This program is running as process number %(pid)d."
+msgstr "Ky program po xhiron si procesi numër %(pid)d."
+
+#: hello-java/Hello.java:18 hello-java-awt/Hello.java:28
+#: hello-java-swing/Hello.java:25 hello-java-qtjambi/Hello.java:34
+#: hello-csharp/hello.cs:17 hello-csharp-forms/hello.cs:36
+#, csharp-format
+msgid "This program is running as process number {0}."
+msgstr "Ky program po xhiron si procesi numër {0}."
+
+#: hello-guile/hello.scm:17 hello-clisp/hello.lisp.in:13
+#, lisp-format
+msgid "This program is running as process number ~D."
+msgstr "Ky program po xhiron si procesi numër ~D."
+
+#: hello-rust/src/main.rs.in:31
+msgid "This program is running as process number {}."
+msgstr "Ky program po xhiron si procesi numër {}."
+
+#: hello-go-http/example1/hello1ml.go.in:60
+msgid "Hello %s"
+msgstr "Tungjatjeta %s"
+
+#: hello-ruby/hello.rb:8
+#, ruby-format
+msgid "This program is running as process number %{pid}."
+msgstr "Ky program po xhiron si procesi numër %{pid}."
+
+#: hello-sh/hello-1.sh:17
+#, sh-format
+msgid "This program is running as process number $pid."
+msgstr "Ky program po xhiron si procesi numër $pid."
+
+#: hello-sh/hello-2.sh:15 hello-sh/hello-3.sh:15
+msgid "This program is running as process number %u."
+msgstr "Ky program po xhiron si procesi numër %u."
+
+#: hello-perl/hello-2.pl.in:14
+#, perl-brace-format
+msgid "This program is running as process number {pid}."
+msgstr "Ky program po xhiron si procesi numër {pid}."

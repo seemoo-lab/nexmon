@@ -2,19 +2,7 @@
  * Routines for SIMPLE dissection
  * Copyright 2015 Peter Ross
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* SIMPLE (Standard Interface for Multiple Platform Link Evaluation)
@@ -28,7 +16,8 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include <epan/expert.h>
 #include "packet-link16.h"
 
@@ -98,12 +87,6 @@ static const value_string Link16_Subtype_Strings[] = {
     { 1, "Coded Free Text" },
     { SIMPLE_LINK16_FIXED_FORMAT, "Fixed Format" },
     { 0, NULL },
-};
-
-static const range_string Link16_RC_Strings[] = {
-    { 0, 0, "Not required" },
-    { 1, 255, "Required" },
-    { 0, 0, NULL },
 };
 
 static const value_string Status_Subtype_Strings[] = {
@@ -192,80 +175,81 @@ static const value_string Link11_Role[] = {
     { 0, NULL },
 };
 
-static int proto_simple = -1;
+static int proto_simple;
 
+static dissector_handle_t simple_dissector_handle;
 static dissector_handle_t link16_handle;
 
-static gint hf_simple_sync_byte_1 = -1;
-static gint hf_simple_sync_byte_2 = -1;
-static gint hf_simple_length = -1;
-static gint hf_simple_sequence_number = -1;
-static gint hf_simple_src_node = -1;
-static gint hf_simple_src_subnode = -1;
-static gint hf_simple_dst_node = -1;
-static gint hf_simple_dst_subnode = -1;
-static gint hf_simple_packet_size = -1;
-static gint hf_simple_packet_type = -1;
-static gint hf_simple_transit_time = -1;
-static gint hf_simple_link16_subtype = -1;
-static gint hf_simple_link16_rc = -1;
-static gint hf_simple_link16_network = -1;
-static gint hf_simple_link16_ssc2 = -1;
-static gint hf_simple_link16_npg = -1;
-static gint hf_simple_link16_ssc1 = -1;
-static gint hf_simple_link16_stn = -1;
-static gint hf_simple_link16_word_count = -1;
-static gint hf_simple_link16_loopback_id = -1;
-static gint hf_simple_status_subtype = -1;
-static gint hf_simple_status_word_count = -1;
-static gint hf_simple_status_name = -1;
-static gint hf_simple_status_time_hours = -1;
-static gint hf_simple_status_node_id = -1;
-static gint hf_simple_status_time_seconds = -1;
-static gint hf_simple_status_time_minutes = -1;
-static gint hf_simple_status_security_level = -1;
-static gint hf_simple_status_node_entry_flag = -1;
-static gint hf_simple_status_relay_hop = -1;
-static gint hf_simple_status_dx_flag_system_messages = -1;
-static gint hf_simple_status_dx_flag_common_tims_bims = -1;
-static gint hf_simple_status_dx_flag_common_toms_boms = -1;
-static gint hf_simple_status_dx_flag_simple_receive = -1;
-static gint hf_simple_status_dx_flag_simple_transmit = -1;
-static gint hf_simple_status_dx_flag_all_tims_bims = -1;
-static gint hf_simple_status_dx_flag_all_toms_boms = -1;
-static gint hf_simple_status_dx_file_id = -1;
-static gint hf_simple_status_spare_1 = -1;
-static gint hf_simple_status_link16_terminal_type = -1;
-static gint hf_simple_status_link16_role = -1;
-static gint hf_simple_status_link16_sync_status = -1;
-static gint hf_simple_status_link16_terminal_host_status = -1;
-static gint hf_simple_status_link16_stn = -1;
-static gint hf_simple_status_spare_2 = -1;
-static gint hf_simple_status_link11_dts_type = -1;
-static gint hf_simple_status_link11_role = -1;
-static gint hf_simple_status_link11_pu = -1;
-static gint hf_simple_status_link11_dts_host_status = -1;
-static gint hf_simple_status_spare_3 = -1;
-static gint hf_simple_checksum = -1;
-static gint hf_simple_checksum_status = -1;
+static int hf_simple_sync_byte_1;
+static int hf_simple_sync_byte_2;
+static int hf_simple_length;
+static int hf_simple_sequence_number;
+static int hf_simple_src_node;
+static int hf_simple_src_subnode;
+static int hf_simple_dst_node;
+static int hf_simple_dst_subnode;
+static int hf_simple_packet_size;
+static int hf_simple_packet_type;
+static int hf_simple_transit_time;
+static int hf_simple_link16_subtype;
+static int hf_simple_link16_rc;
+static int hf_simple_link16_network;
+static int hf_simple_link16_ssc2;
+static int hf_simple_link16_npg;
+static int hf_simple_link16_ssc1;
+static int hf_simple_link16_stn;
+static int hf_simple_link16_word_count;
+static int hf_simple_link16_loopback_id;
+static int hf_simple_status_subtype;
+static int hf_simple_status_word_count;
+static int hf_simple_status_name;
+static int hf_simple_status_time_hours;
+static int hf_simple_status_node_id;
+static int hf_simple_status_time_seconds;
+static int hf_simple_status_time_minutes;
+static int hf_simple_status_security_level;
+static int hf_simple_status_node_entry_flag;
+static int hf_simple_status_relay_hop;
+static int hf_simple_status_dx_flag_system_messages;
+static int hf_simple_status_dx_flag_common_tims_bims;
+static int hf_simple_status_dx_flag_common_toms_boms;
+static int hf_simple_status_dx_flag_simple_receive;
+static int hf_simple_status_dx_flag_simple_transmit;
+static int hf_simple_status_dx_flag_all_tims_bims;
+static int hf_simple_status_dx_flag_all_toms_boms;
+static int hf_simple_status_dx_file_id;
+static int hf_simple_status_spare_1;
+static int hf_simple_status_link16_terminal_type;
+static int hf_simple_status_link16_role;
+static int hf_simple_status_link16_sync_status;
+static int hf_simple_status_link16_terminal_host_status;
+static int hf_simple_status_link16_stn;
+static int hf_simple_status_spare_2;
+static int hf_simple_status_link11_dts_type;
+static int hf_simple_status_link11_role;
+static int hf_simple_status_link11_pu;
+static int hf_simple_status_link11_dts_host_status;
+static int hf_simple_status_spare_3;
+static int hf_simple_checksum;
+static int hf_simple_checksum_status;
 
-static gint ett_simple = -1;
-static gint ett_packet = -1;
-static gint ett_simple_status_dx_flag = -1;
+static int ett_simple;
+static int ett_packet;
+static int ett_simple_status_dx_flag;
 
-static expert_field ei_simple_sync_bytes_bad = EI_INIT;
-static expert_field ei_simple_length_bad = EI_INIT;
-static expert_field ei_simple_packet_size_bad = EI_INIT;
-static expert_field ei_simple_checksum_bad = EI_INIT;
+static expert_field ei_simple_sync_bytes_bad;
+static expert_field ei_simple_length_bad;
+static expert_field ei_simple_packet_size_bad;
+static expert_field ei_simple_checksum_bad;
 
-static void dissect_simple_link16(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, gint offset)
+static void dissect_simple_link16(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, int offset)
 {
-    guint subtype, stn, word_count, i;
+    unsigned subtype, stn, word_count, i;
     Link16State state;
     tvbuff_t *newtvb;
 
     proto_tree_add_item(tree, hf_simple_link16_subtype, tvb, offset, 1, ENC_NA);
-    subtype = tvb_get_guint8(tvb, offset);
+    subtype = tvb_get_uint8(tvb, offset);
     offset++;
 
     proto_tree_add_item(tree, hf_simple_link16_rc, tvb, offset, 1, ENC_NA);
@@ -288,7 +272,7 @@ static void dissect_simple_link16(tvbuff_t *tvb, packet_info *pinfo _U_, proto_t
     offset += 2;
 
     proto_tree_add_item(tree, hf_simple_link16_word_count, tvb, offset, 2, ENC_LITTLE_ENDIAN);
-    word_count = tvb_get_guint8(tvb, offset);
+    word_count = tvb_get_uint8(tvb, offset);
     offset += 2;
 
     proto_tree_add_item(tree, hf_simple_link16_loopback_id, tvb, offset, 2, ENC_LITTLE_ENDIAN);
@@ -300,7 +284,7 @@ static void dissect_simple_link16(tvbuff_t *tvb, packet_info *pinfo _U_, proto_t
     case SIMPLE_LINK16_FIXED_FORMAT:
         memset(&state, 0, sizeof(state));
         for (i = 0; i < word_count; i += 5) {
-            newtvb = tvb_new_subset(tvb, offset, 10, -1);
+            newtvb = tvb_new_subset_length_caplen(tvb, offset, 10, -1);
             add_new_data_source(pinfo, newtvb, "Link 16 Word");
             call_dissector_with_data(link16_handle, newtvb, pinfo, tree, &state);
             offset += 10;
@@ -309,7 +293,7 @@ static void dissect_simple_link16(tvbuff_t *tvb, packet_info *pinfo _U_, proto_t
     }
 }
 
-static const int *simple_status_dx_flag_fields[] = {
+static int * const simple_status_dx_flag_fields[] = {
     &hf_simple_status_dx_flag_system_messages,
     &hf_simple_status_dx_flag_common_tims_bims,
     &hf_simple_status_dx_flag_common_toms_boms,
@@ -322,7 +306,7 @@ static const int *simple_status_dx_flag_fields[] = {
 
 #define SIMPLE_STATUS_NAME_LEN 10
 
-static void dissect_simple_status(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint offset)
+static void dissect_simple_status(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
     char *name;
     int link16_status, pu;
@@ -333,9 +317,9 @@ static void dissect_simple_status(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
     proto_tree_add_item(tree, hf_simple_status_word_count, tvb, offset, 1, ENC_NA);
     offset++;
 
-    name = tvb_get_stringzpad(wmem_packet_scope(), tvb, offset, SIMPLE_STATUS_NAME_LEN, ENC_ASCII|ENC_NA);
+    name = tvb_get_stringzpad(pinfo->pool, tvb, offset, SIMPLE_STATUS_NAME_LEN, ENC_ASCII|ENC_NA);
     col_append_fstr(pinfo->cinfo, COL_INFO, ", Name: %s", name);
-    proto_tree_add_item(tree, hf_simple_status_name, tvb, offset, SIMPLE_STATUS_NAME_LEN, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(tree, hf_simple_status_name, tvb, offset, SIMPLE_STATUS_NAME_LEN, ENC_ASCII);
     offset += SIMPLE_STATUS_NAME_LEN;
 
     proto_tree_add_item(tree, hf_simple_status_time_hours, tvb, offset, 1, ENC_NA);
@@ -362,7 +346,7 @@ static void dissect_simple_status(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
     proto_tree_add_bitmask_text(tree, tvb, offset, 2, "Data Extraction Flags", NULL, ett_simple_status_dx_flag, simple_status_dx_flag_fields, ENC_LITTLE_ENDIAN, 0);
     offset += 2;
 
-    proto_tree_add_item(tree, hf_simple_status_dx_file_id, tvb, offset, 8, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(tree, hf_simple_status_dx_file_id, tvb, offset, 8, ENC_ASCII);
     offset += 8;
 
     proto_tree_add_item(tree, hf_simple_status_spare_1, tvb, offset, 2, ENC_NA);
@@ -378,7 +362,7 @@ static void dissect_simple_status(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
     offset++;
 
     proto_tree_add_item(tree, hf_simple_status_link16_terminal_host_status, tvb, offset, 1, ENC_NA);
-    link16_status = tvb_get_guint8(tvb, offset);
+    link16_status = tvb_get_uint8(tvb, offset);
     offset++;
 
     proto_tree_add_item(tree, hf_simple_status_link16_stn, tvb, offset, 2, ENC_LITTLE_ENDIAN);
@@ -396,22 +380,22 @@ static void dissect_simple_status(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
     offset++;
 
     proto_tree_add_item(tree, hf_simple_status_link11_pu, tvb, offset, 1, ENC_NA);
-    pu = tvb_get_guint8(tvb, offset);
+    pu = tvb_get_uint8(tvb, offset);
     offset++;
 
     proto_tree_add_item(tree, hf_simple_status_link11_dts_host_status, tvb, offset, 1, ENC_NA);
-    if (tvb_get_guint8(tvb, offset))
+    if (tvb_get_uint8(tvb, offset))
         col_append_fstr(pinfo->cinfo, COL_INFO, ", PU: %03o", pu);
     offset++;
 
     proto_tree_add_item(tree, hf_simple_status_spare_3, tvb, offset, 4, ENC_NA);
 }
 
-static void dissect_checksum(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gint offset)
+static void dissect_checksum(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset)
 {
-    const guint8 * v = tvb_get_ptr(tvb, 0, offset);
-    guint16 expected_checksum = 0;
-    gint i;
+    const uint8_t * v = tvb_get_ptr(tvb, 0, offset);
+    uint16_t expected_checksum = 0;
+    int i;
 
     for (i = 0; i < offset; i++)
         expected_checksum += v[i];
@@ -424,9 +408,9 @@ static int dissect_simple(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
 {
     proto_item *simple_item = NULL, *item;
     proto_tree *simple_tree = NULL, *packet_tree = NULL;
-    guint offset = 0, length, packet_size, packet_type;
-    const gchar *packet_type_string;
-    guint8 sync_bytes_bad = 0;
+    unsigned offset = 0, length, packet_size, packet_type;
+    const char *packet_type_string;
+    uint8_t sync_bytes_bad = 0;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "SIMPLE");
 
@@ -436,11 +420,11 @@ static int dissect_simple(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
     }
 
     proto_tree_add_item(simple_tree, hf_simple_sync_byte_1, tvb, offset, 1, ENC_NA);
-    sync_bytes_bad |= tvb_get_guint8(tvb, offset) ^ 0x49;
+    sync_bytes_bad |= tvb_get_uint8(tvb, offset) ^ 0x49;
     offset++;
 
     proto_tree_add_item(simple_tree, hf_simple_sync_byte_2, tvb, offset, 1, ENC_NA);
-    sync_bytes_bad |= tvb_get_guint8(tvb, offset) ^ 0x36;
+    sync_bytes_bad |= tvb_get_uint8(tvb, offset) ^ 0x36;
     offset++;
 
     if (sync_bytes_bad)
@@ -469,21 +453,21 @@ static int dissect_simple(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, v
     offset++;
 
     item = proto_tree_add_item(simple_tree, hf_simple_packet_size, tvb, offset, 1, ENC_NA);
-    packet_size = tvb_get_guint8(tvb, offset) * 2;
+    packet_size = tvb_get_uint8(tvb, offset) * 2;
     if (packet_size < 8 || packet_size - 8 > tvb_reported_length(tvb))
         expert_add_info(pinfo, item, &ei_simple_packet_size_bad);
     packet_size -= 8;
     offset++;
 
     proto_tree_add_item(simple_tree, hf_simple_packet_type, tvb, offset, 1, ENC_NA);
-    packet_type = tvb_get_guint8(tvb, offset);
+    packet_type = tvb_get_uint8(tvb, offset);
     offset++;
 
     proto_tree_add_item(simple_tree, hf_simple_transit_time, tvb, offset, 2, ENC_LITTLE_ENDIAN);
     offset += 2;
 
-    packet_type_string = val_to_str(packet_type, PacketType_Strings, "Unknown");
-    col_add_fstr(pinfo->cinfo, COL_INFO, "%s", packet_type_string);
+    packet_type_string = val_to_str_const(packet_type, PacketType_Strings, "Unknown");
+    col_add_str(pinfo->cinfo, COL_INFO, packet_type_string);
     packet_tree = proto_tree_add_subtree_format(simple_tree, tvb, offset, packet_size, ett_packet, NULL, "%s Packet", packet_type_string);
 
     switch(packet_type) {
@@ -540,7 +524,7 @@ void proto_register_simple(void)
           { "Subtype", "simple.link16.subtype", FT_UINT8, BASE_DEC, VALS(Link16_Subtype_Strings), 0x0,
             NULL, HFILL }},
         { &hf_simple_link16_rc,
-          { "R/C Flag", "simple.link16.rc", FT_UINT8, BASE_DEC, VALS(Link16_RC_Strings), 0x0,
+          { "R/C Flag", "simple.link16.rc", FT_BOOLEAN, BASE_NONE, TFS(&tfs_required_not_required), 0x0,
             NULL, HFILL }},
         { &hf_simple_link16_network,
           { "Network", "simple.link16.network", FT_UINT8, BASE_DEC, NULL, 0x0,
@@ -594,25 +578,25 @@ void proto_register_simple(void)
           { "Relay Hop", "simple.status.relay_hop", FT_BYTES, BASE_NONE, NULL, 0x0,
             NULL, HFILL }},
         { &hf_simple_status_dx_flag_system_messages,
-          { "DX System Messages", "simple.status.dx_flag.system_messages", FT_BOOLEAN, 16, NULL, 0x1,
+          { "DX System Messages", "simple.status.dx_flag.system_messages", FT_BOOLEAN, 16, NULL, 0x0001,
             NULL, HFILL }},
         { &hf_simple_status_dx_flag_common_tims_bims,
-          { "DX Common TIMS/BIMS", "simple.status.dx_flag.common_tims_bims", FT_BOOLEAN, 16, NULL, 0x2,
+          { "DX Common TIMS/BIMS", "simple.status.dx_flag.common_tims_bims", FT_BOOLEAN, 16, NULL, 0x0002,
             NULL, HFILL }},
         { &hf_simple_status_dx_flag_common_toms_boms,
-          { "DX Common TOMS/BOMS", "simple.status.dx_flag.common_toms_boms", FT_BOOLEAN, 16, NULL, 0x4,
+          { "DX Common TOMS/BOMS", "simple.status.dx_flag.common_toms_boms", FT_BOOLEAN, 16, NULL, 0x0004,
             NULL, HFILL }},
         { &hf_simple_status_dx_flag_simple_receive,
-          { "DX SIMPLE Recieve", "simple.status.dx_flag.simple_receive", FT_BOOLEAN, 16, NULL, 0x8,
+          { "DX SIMPLE Receive", "simple.status.dx_flag.simple_receive", FT_BOOLEAN, 16, NULL, 0x8,
             NULL, HFILL }},
         { &hf_simple_status_dx_flag_simple_transmit,
-          { "DX SIMPLE Transmit", "simple.status.dx_flag.simple_transmit", FT_BOOLEAN, 16, NULL, 0x10,
+          { "DX SIMPLE Transmit", "simple.status.dx_flag.simple_transmit", FT_BOOLEAN, 16, NULL, 0x0010,
             NULL, HFILL }},
         { &hf_simple_status_dx_flag_all_tims_bims,
-          { "DX All TIMS/BIMS", "simple.status.dx_flag.all_tims_bims", FT_BOOLEAN, 16, NULL, 0x20,
+          { "DX All TIMS/BIMS", "simple.status.dx_flag.all_tims_bims", FT_BOOLEAN, 16, NULL, 0x0020,
             NULL, HFILL }},
         { &hf_simple_status_dx_flag_all_toms_boms,
-          { "DX All TOMS/BOMS", "simple.status.dx_flag.all_toms_boms", FT_BOOLEAN, 16, NULL, 0x40,
+          { "DX All TOMS/BOMS", "simple.status.dx_flag.all_toms_boms", FT_BOOLEAN, 16, NULL, 0x0040,
             NULL, HFILL }},
         { &hf_simple_status_dx_file_id,
           { "DX File Id", "simple.status.dx_file_id", FT_STRING, BASE_NONE, NULL, 0x0,
@@ -660,7 +644,7 @@ void proto_register_simple(void)
           { "Checksum Status", "simple.checksum.status", FT_UINT8, BASE_NONE, VALS(proto_checksum_vals), 0x0,
             NULL, HFILL }}
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_simple,
         &ett_packet,
         &ett_simple_status_dx_flag,
@@ -678,20 +662,19 @@ void proto_register_simple(void)
     proto_register_subtree_array(ett, array_length(ett));
     expert_simple = expert_register_protocol(proto_simple);
     expert_register_field_array(expert_simple, ei, array_length(ei));
-    register_dissector("simple", dissect_simple, proto_simple);
+    simple_dissector_handle = register_dissector("simple", dissect_simple, proto_simple);
 }
 
 void proto_reg_handoff_simple(void)
 {
-    dissector_handle_t simple_dissector_handle;
-    simple_dissector_handle = create_dissector_handle(dissect_simple, proto_simple);
-    dissector_add_for_decode_as("udp.port", simple_dissector_handle);
+    dissector_add_for_decode_as_with_preference("udp.port", simple_dissector_handle);
+    dissector_add_for_decode_as_with_preference("tcp.port", simple_dissector_handle);
 
     link16_handle = find_dissector_add_dependency("link16", proto_simple);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

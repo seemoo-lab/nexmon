@@ -1,17 +1,46 @@
-/*
- * SAX2.c : Default SAX2 handler to build a tree.
+/* libxml2 - Library for parsing XML documents
+ * Copyright (C) 2006-2023 Free Software Foundation, Inc.
  *
- * See Copyright for the status of this software.
+ * This file is not part of the GNU gettext program, but is used with
+ * GNU gettext.
+ *
+ * The original copyright notice is as follows:
+ */
+
+/*
+ * Copyright (C) 1998-2012 Daniel Veillard.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is fur-
+ * nished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+ * NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
  *
  * Daniel Veillard <daniel@veillard.com>
  */
 
+/*
+ * SAX2.c : Default SAX2 handler to build a tree.
+ */
 
 #define IN_LIBXML
 #include "libxml.h"
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <stddef.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/tree.h>
 #include <libxml/parser.h>
@@ -55,7 +84,7 @@
  * @ctxt:  an XML validation parser context
  * @msg:   a string to accompany the error message
  */
-static void
+static void LIBXML_ATTR_FORMAT(2,0)
 xmlSAX2ErrMemory(xmlParserCtxtPtr ctxt, const char *msg) {
     xmlStructuredErrorFunc schannel = NULL;
     const char *str1 = "out of memory\n";
@@ -93,7 +122,7 @@ xmlSAX2ErrMemory(xmlParserCtxtPtr ctxt, const char *msg) {
  *
  * Handle a validation error
  */
-static void
+static void LIBXML_ATTR_FORMAT(3,0)
 xmlErrValid(xmlParserCtxtPtr ctxt, xmlParserErrors error,
             const char *msg, const char *str1, const char *str2)
 {
@@ -133,7 +162,7 @@ xmlErrValid(xmlParserCtxtPtr ctxt, xmlParserErrors error,
  *
  * Handle a fatal parser error, i.e. violating Well-Formedness constraints
  */
-static void
+static void LIBXML_ATTR_FORMAT(3,0)
 xmlFatalErrMsg(xmlParserCtxtPtr ctxt, xmlParserErrors error,
                const char *msg, const xmlChar *str1, const xmlChar *str2)
 {
@@ -164,7 +193,7 @@ xmlFatalErrMsg(xmlParserCtxtPtr ctxt, xmlParserErrors error,
  *
  * Handle a parser warning
  */
-static void
+static void LIBXML_ATTR_FORMAT(3,0)
 xmlWarnMsg(xmlParserCtxtPtr ctxt, xmlParserErrors error,
                const char *msg, const xmlChar *str1)
 {
@@ -189,7 +218,8 @@ xmlWarnMsg(xmlParserCtxtPtr ctxt, xmlParserErrors error,
  *
  * Handle a namespace error
  */
-static void
+_GL_ATTRIBUTE_MAYBE_UNUSED
+static void LIBXML_ATTR_FORMAT(3,0)
 xmlNsErrMsg(xmlParserCtxtPtr ctxt, xmlParserErrors error,
             const char *msg, const xmlChar *str1, const xmlChar *str2)
 {
@@ -213,7 +243,7 @@ xmlNsErrMsg(xmlParserCtxtPtr ctxt, xmlParserErrors error,
  *
  * Handle a namespace warning
  */
-static void
+static void LIBXML_ATTR_FORMAT(3,0)
 xmlNsWarnMsg(xmlParserCtxtPtr ctxt, xmlParserErrors error,
              const char *msg, const xmlChar *str1, const xmlChar *str2)
 {
@@ -735,7 +765,7 @@ xmlSAX2AttributeDecl(void *ctx, const xmlChar *elem, const xmlChar *fullname,
 	      xmlEnumerationPtr tree)
 {
     xmlParserCtxtPtr ctxt = (xmlParserCtxtPtr) ctx;
-    xmlAttributePtr attr;
+    _GL_ATTRIBUTE_MAYBE_UNUSED xmlAttributePtr attr;
     xmlChar *name = NULL, *prefix = NULL;
 
     if ((ctxt == NULL) || (ctxt->myDoc == NULL))
@@ -802,7 +832,7 @@ xmlSAX2ElementDecl(void *ctx, const xmlChar * name, int type,
             xmlElementContentPtr content)
 {
     xmlParserCtxtPtr ctxt = (xmlParserCtxtPtr) ctx;
-    xmlElementPtr elem = NULL;
+    _GL_ATTRIBUTE_MAYBE_UNUSED xmlElementPtr elem = NULL;
 
     if ((ctxt == NULL) || (ctxt->myDoc == NULL))
         return;
@@ -848,7 +878,7 @@ xmlSAX2NotationDecl(void *ctx, const xmlChar *name,
 	     const xmlChar *publicId, const xmlChar *systemId)
 {
     xmlParserCtxtPtr ctxt = (xmlParserCtxtPtr) ctx;
-    xmlNotationPtr nota = NULL;
+    _GL_ATTRIBUTE_MAYBE_UNUSED xmlNotationPtr nota = NULL;
 
     if ((ctxt == NULL) || (ctxt->myDoc == NULL))
         return;
@@ -1181,6 +1211,8 @@ xmlSAX2AttributeInternal(void *ctx, const xmlChar *fullname,
 	        xmlSAX2ErrMemory(ctxt, "xmlSAX2StartElement");
 		if (name != NULL)
 		    xmlFree(name);
+                if (nval != NULL)
+                    xmlFree(nval);
 		return;
 	    }
 	} else {
@@ -1242,6 +1274,8 @@ xmlSAX2AttributeInternal(void *ctx, const xmlChar *fullname,
 	        xmlFree(ns);
 		if (name != NULL)
 		    xmlFree(name);
+                if (nval != NULL)
+                    xmlFree(nval);
 		return;
 	    }
 	} else {
@@ -1311,6 +1345,8 @@ xmlSAX2AttributeInternal(void *ctx, const xmlChar *fullname,
                                              name, namespace->href);
                         ctxt->wellFormed = 0;
                         if (ctxt->recovery == 0) ctxt->disableSAX = 1;
+                        if (name != NULL)
+                            xmlFree(name);
                         goto error;
                     }
                 }
@@ -1658,7 +1694,11 @@ xmlSAX2StartElement(void *ctx, const xmlChar *fullname, const xmlChar **atts)
 #ifdef DEBUG_SAX_TREE
     xmlGenericError(xmlGenericErrorContext, "pushing(%s)\n", name);
 #endif
-    nodePush(ctxt, ret);
+    if (nodePush(ctxt, ret) < 0) {
+        xmlUnlinkNode(ret);
+        xmlFreeNode(ret);
+        return;
+    }
 
     /*
      * Link the child element
@@ -1908,7 +1948,7 @@ skip:
 	    else {
 	        ret->line = 65535;
 		if (ctxt->options & XML_PARSE_BIG_LINES)
-		    ret->psvi = (void *) (long) ctxt->input->line;
+		    ret->psvi = (void *) (ptrdiff_t) ctxt->input->line;
 	    }
 	}
     }
@@ -2250,6 +2290,7 @@ xmlSAX2StartElementNs(void *ctx,
 	ctxt->freeElems = ret->next;
 	ctxt->freeElemsNr--;
 	memset(ret, 0, sizeof(xmlNode));
+        ret->doc = ctxt->myDoc;
 	ret->type = XML_ELEMENT_NODE;
 
 	if (ctxt->dictNames)
@@ -2311,7 +2352,7 @@ xmlSAX2StartElementNs(void *ctx,
 	} else {
             /*
              * any out of memory error would already have been raised
-             * but we can't be garanteed it's the actual error due to the
+             * but we can't be guaranteed it's the actual error due to the
              * API, best is to skip in this case
              */
 	    continue;
@@ -2329,7 +2370,11 @@ xmlSAX2StartElementNs(void *ctx,
     /*
      * We are parsing a new node.
      */
-    nodePush(ctxt, ret);
+    if (nodePush(ctxt, ret) < 0) {
+        xmlUnlinkNode(ret);
+        xmlFreeNode(ret);
+        return;
+    }
 
     /*
      * Link the child element
@@ -2805,7 +2850,8 @@ xmlSAX2CDataBlock(void *ctx, const xmlChar *value, int len)
 	xmlTextConcat(lastChild, value, len);
     } else {
 	ret = xmlNewCDataBlock(ctxt->myDoc, value, len);
-	xmlAddChild(ctxt->node, ret);
+	if (xmlAddChild(ctxt->node, ret) == NULL)
+		xmlFreeNode(ret);
     }
 }
 

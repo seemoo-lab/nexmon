@@ -11,19 +11,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,31 +20,41 @@
 #include <epan/exceptions.h>
 #include <epan/prefs.h>
 #include <epan/show_exception.h>
+#include <epan/conversation.h>
 
 #include "packet-tpkt.h"
 
 void proto_register_tpkt(void);
 void proto_reg_handoff_tpkt(void);
 
+static heur_dissector_list_t tpkt_heur_subdissector_list;
+
 /* TPKT header fields             */
-static int proto_tpkt                = -1;
+static int proto_tpkt;
+static int proto_tpkt_heur;
 static protocol_t *proto_tpkt_ptr;
-static int hf_tpkt_version           = -1;
-static int hf_tpkt_reserved          = -1;
-static int hf_tpkt_length            = -1;
-static int hf_tpkt_continuation_data = -1;
+static int hf_tpkt_version;
+static int hf_tpkt_reserved;
+static int hf_tpkt_length;
+static int hf_tpkt_continuation_data;
 
 
 /* TPKT fields defining a sub tree */
-static gint ett_tpkt           = -1;
+static int ett_tpkt;
 
 /* desegmentation of OSI over TPKT over TCP */
-static gboolean tpkt_desegment = TRUE;
+static bool tpkt_desegment = true;
 
-#define TCP_PORT_TPKT       102
+#define TCP_PORT_TPKT_RANGE       "102"
+
+/* IANA registered port for RDP (as ms-wbt-server) */
+#define TCP_PORT_RDP 3389
 
 /* find the dissector for OSI TP (aka COTP) */
 static dissector_handle_t osi_tp_handle;
+static dissector_handle_t tpkt_handle;
+
+#define DEFAULT_TPKT_PORT_RANGE "102"
 
 /*
  * Check whether this could be a TPKT-encapsulated PDU.
@@ -70,7 +68,7 @@ static dissector_handle_t osi_tp_handle;
 int
 is_tpkt(tvbuff_t *tvb, int min_len)
 {
-    guint16 pkt_len;
+    uint16_t pkt_len;
 
     /*
      * If TPKT is disabled, don't dissect it, just return -1, meaning
@@ -88,7 +86,7 @@ is_tpkt(tvbuff_t *tvb, int min_len)
      * The H.323 implementers guide suggests that this might not
      * always be the case....
      */
-    if (!(tvb_get_guint8(tvb, 0) == 3 && tvb_get_guint8(tvb, 1) == 0))
+    if (!(tvb_get_uint8(tvb, 0) == 3 && tvb_get_uint8(tvb, 1) == 0))
         return -1;  /* they're not */
 
     /*
@@ -104,10 +102,10 @@ is_tpkt(tvbuff_t *tvb, int min_len)
      */
     return pkt_len;
 }
-guint16
+uint16_t
 is_asciitpkt(tvbuff_t *tvb)
 {
-    guint16 count;
+    uint16_t count;
         /*
          * If TPKT is disabled, don't dissect it, just return -1, meaning
          * "this isn't TPKT".
@@ -124,7 +122,7 @@ is_asciitpkt(tvbuff_t *tvb)
          */
     for (count = 0; count <=7 ; count ++)
         {
-        if(!g_ascii_isalnum(tvb_get_guint8(tvb,count)))
+        if(!g_ascii_isalnum(tvb_get_uint8(tvb,count)))
           {
           return 0;
           }
@@ -134,10 +132,10 @@ is_asciitpkt(tvbuff_t *tvb)
 
 }
 static int
-parseLengthText ( guint8* pTpktData )
+parseLengthText ( uint8_t* pTpktData )
 {
     int value = 0;
-    const guint8 * pData = pTpktData;
+    const uint8_t * pData = pTpktData;
     int bitvalue = 0, count1 = 3;
     int count;
     for (count = 0; count <= 3; count++)
@@ -155,10 +153,10 @@ parseLengthText ( guint8* pTpktData )
     return value;
 }
 static int
-parseVersionText ( guint8* pTpktData )
+parseVersionText ( uint8_t* pTpktData )
 {
     int value = 0;
-    guint8 * pData = pTpktData;
+    uint8_t * pData = pTpktData;
     int bitvalue = 0, count1 = 1;
     int count;
     for (count = 0; count <= 1; count++)
@@ -177,10 +175,10 @@ parseVersionText ( guint8* pTpktData )
     return value;
 }
 static int
-parseReservedText ( guint8* pTpktData )
+parseReservedText ( uint8_t* pTpktData )
 {
     int value = 0;
-    guint8 * pData = pTpktData;
+    uint8_t * pData = pTpktData;
     int bitvalue = 0, count1 = 1;
     int count;
     for (count = 0; count <= 1; count++)
@@ -222,7 +220,7 @@ dissect_asciitpkt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     volatile int length;
     tvbuff_t *volatile next_tvb;
     const char *saved_proto;
-    guint8 string[4];
+    uint8_t string[4];
 
     /*
      * If we're reassembling segmented TPKT PDUs, empty the COL_INFO
@@ -235,14 +233,14 @@ dissect_asciitpkt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
      * anyway.
      */
     if (tpkt_desegment)
-        col_set_str(pinfo->cinfo, COL_INFO, "");
+        col_clear(pinfo->cinfo, COL_INFO);
 
     while (tvb_reported_length_remaining(tvb, offset) != 0) {
         /*
          * Is the first byte of this putative TPKT header
          * a valid TPKT version number, i.e. 3?
          */
-        if (tvb_get_guint8(tvb, offset) != 48) {
+        if (tvb_get_uint8(tvb, offset) != 48) {
             /*
              * No, so don't assume this is a TPKT header;
              * we might be in the middle of TPKT data,
@@ -267,11 +265,11 @@ dissect_asciitpkt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
          * Get the length from the TPKT header.
          */
 
-        tvb_memcpy(tvb, (guint8 *)string, offset, 2);
+        tvb_memcpy(tvb, (uint8_t *)string, offset, 2);
         mgcp_version = parseVersionText(string);
-        tvb_memcpy(tvb, (guint8 *)string, offset +2, 2);
+        tvb_memcpy(tvb, (uint8_t *)string, offset +2, 2);
         mgcp_reserved = parseReservedText(string);
-        tvb_memcpy(tvb, (guint8 *)string, offset + 4, 4);
+        tvb_memcpy(tvb, (uint8_t *)string, offset + 4, 4);
         mgcp_packet_len = parseLengthText(string);
         data_len = mgcp_packet_len;
 
@@ -323,7 +321,7 @@ dissect_asciitpkt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         if (length > data_len)
             length = data_len;
 
-        next_tvb = tvb_new_subset(tvb, offset,length, data_len);
+        next_tvb = tvb_new_subset_length_caplen(tvb, offset,length, data_len);
 
         /*
          * Call the subdissector.
@@ -359,7 +357,7 @@ dissect_asciitpkt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
  */
 void
 dissect_tpkt_encap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-           gboolean desegment, dissector_handle_t subdissector_handle)
+           bool desegment, dissector_handle_t subdissector_handle)
 {
     proto_item *ti = NULL;
     proto_tree *tpkt_tree = NULL;
@@ -369,6 +367,7 @@ dissect_tpkt_encap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     volatile int length;
     tvbuff_t *volatile next_tvb;
     const char *saved_proto;
+    heur_dtbl_entry_t *hdtbl_entry;
 
     /*
      * If we're reassembling segmented TPKT PDUs, empty the COL_INFO
@@ -381,20 +380,27 @@ dissect_tpkt_encap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
      * anyway.
      */
     if (desegment)
-        col_set_str(pinfo->cinfo, COL_INFO, "");
+        col_clear(pinfo->cinfo, COL_INFO);
 
     while (tvb_reported_length_remaining(tvb, offset) != 0) {
         /*
          * Is the first byte of this putative TPKT header
          * a valid TPKT version number, i.e. 3?
          */
-        if (tvb_get_guint8(tvb, offset) != 3) {
+        if (tvb_get_uint8(tvb, offset) != 3) {
             /*
              * No, so don't assume this is a TPKT header;
              * we might be in the middle of TPKT data,
              * so don't get the length and don't try to
              * do reassembly.
              */
+
+            if (dissector_try_heuristic(tpkt_heur_subdissector_list, tvb,
+                                        pinfo, proto_tree_get_root(tree),
+                                        &hdtbl_entry, NULL)) {
+                return;
+            }
+
             col_set_str(pinfo->cinfo, COL_PROTOCOL, "TPKT");
             col_set_str(pinfo->cinfo, COL_INFO, "Continuation");
             if (tree) {
@@ -527,7 +533,7 @@ dissect_tpkt_encap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         length = length_remaining - 4;
         if (length > data_len)
             length = data_len;
-        next_tvb = tvb_new_subset(tvb, offset, length, data_len);
+        next_tvb = tvb_new_subset_length_caplen(tvb, offset, length, data_len);
 
         /*
          * Call the subdissector.
@@ -582,6 +588,28 @@ dissect_ascii_tpkt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 }
 #endif
 
+/* A heuristic dissector for TPKT. This is useful for RDP, where TLS may
+ * or may not be present depending on the RDP security settings.
+ */
+static int
+dissect_tpkt_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    if (is_tpkt(tvb, 0) == -1) {
+        /* Doesn't look like TPKT directly. Might be over TLS, so reject
+         * and let the TLS heuristic dissector take a look
+         */
+        return 0;
+    }
+
+    return dissect_tpkt(tvb, pinfo, tree, data);
+}
+
+static bool
+dissect_tpkt_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    return dissect_tpkt_tcp(tvb, pinfo, tree, data) > 0;
+}
+
 void
 proto_register_tpkt(void)
 {
@@ -591,7 +619,7 @@ proto_register_tpkt(void)
             {
                 "Version",
                 "tpkt.version",
-                FT_UINT8,
+                FT_UINT16,
                 BASE_DEC,
                 NULL,
                 0x0,
@@ -636,7 +664,7 @@ proto_register_tpkt(void)
         },
     };
 
-    static gint *ett[] =
+    static int *ett[] =
     {
         &ett_tpkt,
     };
@@ -646,7 +674,7 @@ proto_register_tpkt(void)
     proto_tpkt_ptr = find_protocol_by_id(proto_tpkt);
     proto_register_field_array(proto_tpkt, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
-    register_dissector("tpkt", dissect_tpkt, proto_tpkt);
+    tpkt_handle = register_dissector("tpkt", dissect_tpkt, proto_tpkt);
 
     tpkt_module = prefs_register_protocol(proto_tpkt, NULL);
     prefs_register_bool_preference(tpkt_module, "desegment",
@@ -654,16 +682,29 @@ proto_register_tpkt(void)
         "Whether the TPKT dissector should reassemble messages spanning multiple TCP segments. "
         "To use this option, you must also enable \"Allow subdissectors to reassemble TCP streams\" in the TCP protocol settings.",
         &tpkt_desegment);
+
+    /* heuristic dissectors for preamble CredSSP before RDP and Fast-Path RDP packets */
+    tpkt_heur_subdissector_list = register_heur_dissector_list_with_description("tpkt", "TPKT fragment", proto_tpkt);
+
+    proto_tpkt_heur = proto_register_protocol_in_name_only("TPKT Heuristic (for RDP)", "TPKT Heuristic (for RDP)", "tpkt", proto_tpkt, FT_PROTOCOL);
 }
 
 void
 proto_reg_handoff_tpkt(void)
 {
-    dissector_handle_t tpkt_handle;
-
     osi_tp_handle = find_dissector("ositp");
-    tpkt_handle = find_dissector("tpkt");
-    dissector_add_uint("tcp.port", TCP_PORT_TPKT, tpkt_handle);
+    dissector_add_uint_range_with_preference("tcp.port", TCP_PORT_TPKT_RANGE, tpkt_handle);
+
+    /* ssl_dissector_add registers TLS as the dissector for TCP for the
+     * given port. We can't use it, since on port 3389 TPKT (for RDP) can be
+     * over TLS or directly over TCP, depending on the RDP security settings.
+     * TPKT heuristics are also too weak to enable in general. Instead,
+     * use the heuristic dissector by default just on the RDP port, and
+     * if rejected the TLS heuristic dissector will be tried.
+     */
+    dissector_add_uint("tls.port", TCP_PORT_RDP, tpkt_handle);
+    dissector_add_uint("tcp.port", TCP_PORT_RDP, create_dissector_handle(dissect_tpkt_tcp, proto_tpkt_heur));
+    heur_dissector_add("tcp", dissect_tpkt_heur, "TPKT over TCP", "tpkt_tcp", proto_tpkt, HEURISTIC_DISABLE);
 
     /*
     tpkt_ascii_handle = create_dissector_handle(dissect_ascii_tpkt, proto_tpkt);
@@ -673,7 +714,7 @@ proto_reg_handoff_tpkt(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

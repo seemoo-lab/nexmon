@@ -3,7 +3,7 @@
 
 # Tests for C# plural keyword support
 
-cat <<EOF > xg-cs-4.cs
+cat <<\EOF > xg-cs-4.cs
 class TestCase {
   public static void Main (String[] args) {
     GetPluralString("test 1", "plural test");
@@ -17,7 +17,7 @@ ${XGETTEXT} --omit-header --no-location --keyword=MyPluralString:2,3 \
   -d xg-cs-4.tmp xg-cs-4.cs || Exit 1
 LC_ALL=C tr -d '\r' < xg-cs-4.tmp.po > xg-cs-4.po || Exit 1
 
-cat <<EOF > xg-cs-4.ok
+cat <<\EOF > xg-cs-4.ok
 msgid "test 1"
 msgid_plural "plural test"
 msgstr[0] ""

@@ -6,29 +6,14 @@
  * Copyright 1998 Gerald Combs
  *
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
-
-#include <glib.h>
-
 #include "bitswap.h"
 
 /* "swaptab[i]" is the value of "i" with the bits reversed. */
-static const guint8 swaptab[256] =
+static const uint8_t swaptab[256] =
 {
   0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0,
   0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0,
@@ -64,7 +49,7 @@ static const guint8 swaptab[256] =
   0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff,
 };
 
-void bitswap_buf_inplace(guint8 *buf, size_t len)
+void bitswap_buf_inplace(uint8_t *buf, size_t len)
 {
   size_t i;
 
@@ -73,7 +58,7 @@ void bitswap_buf_inplace(guint8 *buf, size_t len)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

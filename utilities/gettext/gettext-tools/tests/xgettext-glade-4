@@ -3,7 +3,7 @@
 
 # Test of Glade 2 support.
 
-cat <<EOF > xg-gl-4-empty.glade
+cat <<\EOF > xg-gl-4-empty.glade
 <?xml version="1.0"?>
 <GTK-Interface/>
 EOF
@@ -15,7 +15,7 @@ test $? = 0 || {
   Exit 77
 }
 
-cat <<EOF > xg-gl-4.glade
+cat <<\EOF > xg-gl-4.glade
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
 <!--Generated with glade3 3.4.3 on Sat May 16 19:53:48 2009 -->
@@ -36,9 +36,7 @@ EOF
 
 : ${XGETTEXT=xgettext}
 ${XGETTEXT} -o xg-gl-4.tmp xg-gl-4.glade || Exit 1
-# Don't simplify this to "grep ... < xg-gl-4.tmp", otherwise OpenBSD 4.0 grep
-# only outputs "Binary file (standard input) matches".
-cat xg-gl-4.tmp | grep -v 'POT-Creation-Date' > xg-gl-4.pot
+func_filter_POT_Creation_Date xg-gl-4.tmp xg-gl-4.pot
 
 cat <<\EOF > xg-gl-4.ok
 # SOME DESCRIPTIVE TITLE.
@@ -73,7 +71,7 @@ test $result = 0 || {
     rm -fr $tempfiles; exit $result
 }
 
-cat <<EOF > xg-gl-4a.glade
+cat <<\EOF > xg-gl-4a.glade
 <?xml version="1.0"?>
 <glade-interface>
   <!-- interface-requires gtk+ 2.6 -->
@@ -91,8 +89,7 @@ EOF
 
 : ${XGETTEXT=xgettext}
 ${XGETTEXT} -o xg-gl-4a.tmp xg-gl-4a.glade || Exit 1
-# Look upwards
-cat xg-gl-4a.tmp | grep -v 'POT-Creation-Date' > xg-gl-4a.pot
+func_filter_POT_Creation_Date xg-gl-4a.tmp xg-gl-4a.pot
 
 cat <<\EOF > xg-gl-4a.ok
 # SOME DESCRIPTIVE TITLE.

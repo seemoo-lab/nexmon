@@ -11,19 +11,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* TODO:
@@ -37,6 +25,8 @@
 #include <epan/prefs.h>
 #include <epan/conversation.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-sprt.h"
 
 void proto_register_sprt(void);
@@ -63,16 +53,16 @@ typedef enum {
  */
 struct _sprt_conversation_info
 {
-    gchar    method[SPRT_CONV_MAX_SETUP_METHOD_SIZE + 1];
-    gboolean stream_started;
-    guint32  frame_number;         /* the frame where this conversation is started */
+    char     method[SPRT_CONV_MAX_SETUP_METHOD_SIZE + 1];
+    bool stream_started;
+    uint32_t frame_number;         /* the frame where this conversation is started */
 
     /* sequence numbers for each channel: */
-    guint32 seqnum[4];
+    uint32_t seqnum[4];
 
     /* are we using the DLCI field in I_OCTET messages?  See CONNECT message ("DLCI enabled") */
     i_octet_dlci_status_t i_octet_dlci_status;
-    guint32 connect_frame_number; /* the CONNECT frame that tells us if the DLCI is enabled */
+    uint32_t connect_frame_number; /* the CONNECT frame that tells us if the DLCI is enabled */
 
     /* TODO - maintain state */
 
@@ -307,179 +297,179 @@ struct _sprt_conversation_info
 
 
 /* Initialize the protocol & registered fields */
-static int proto_sprt =                         -1;
+static int proto_sprt;
 
-static int hf_sprt_setup =                      -1;
-static int hf_sprt_setup_frame =                -1;
-static int hf_sprt_setup_method =               -1;
+static int hf_sprt_setup;
+static int hf_sprt_setup_frame;
+static int hf_sprt_setup_method;
 
-static int hf_sprt_header_extension_bit =       -1;
-static int hf_sprt_subsession_id =              -1;
-static int hf_sprt_reserved_bit =               -1;
-static int hf_sprt_payload_type =               -1;
-static int hf_sprt_transport_channel_id =       -1;
-static int hf_sprt_sequence_number =            -1;
-static int hf_sprt_number_of_ack_fields =       -1;
-static int hf_sprt_base_sequence_number =       -1;
-static int hf_sprt_ack_field_items =            -1;
-static int hf_sprt_transport_channel_item =     -1;
-static int hf_sprt_sequence_item =              -1;
+static int hf_sprt_header_extension_bit;
+static int hf_sprt_subsession_id;
+static int hf_sprt_reserved_bit;
+static int hf_sprt_payload_type;
+static int hf_sprt_transport_channel_id;
+static int hf_sprt_sequence_number;
+static int hf_sprt_number_of_ack_fields;
+static int hf_sprt_base_sequence_number;
+static int hf_sprt_ack_field_items;
+static int hf_sprt_transport_channel_item;
+static int hf_sprt_sequence_item;
 
-static int hf_sprt_payload_length =             -1;
-static int hf_sprt_payload_no_data =            -1;
-static int hf_sprt_payload_reserved_bit =       -1;
-static int hf_sprt_payload_message_id =         -1;
+static int hf_sprt_payload_length;
+static int hf_sprt_payload_no_data;
+static int hf_sprt_payload_reserved_bit;
+static int hf_sprt_payload_message_id;
 
-static int hf_sprt_payload_data =               -1; /* stuff after msgid */
+static int hf_sprt_payload_data; /* stuff after msgid */
 /* INIT msg: */
-static int hf_sprt_payload_msg_init_all_fields =                    -1;
-static int hf_sprt_payload_msg_init_necrxch =                       -1;
-static int hf_sprt_payload_msg_init_ecrxch =                        -1;
-static int hf_sprt_payload_msg_init_xid_prof_exch =                 -1;
-static int hf_sprt_payload_msg_init_assym_data_types =              -1;
-static int hf_sprt_payload_msg_init_opt_moip_types_i_raw_bit =      -1;
-static int hf_sprt_payload_msg_init_opt_moip_types_i_frame =        -1;
-static int hf_sprt_payload_msg_init_opt_moip_types_i_char_stat =    -1;
-static int hf_sprt_payload_msg_init_opt_moip_types_i_char_dyn =     -1;
-static int hf_sprt_payload_msg_init_opt_moip_types_i_octet_cs =     -1;
-static int hf_sprt_payload_msg_init_opt_moip_types_i_char_stat_cs = -1;
-static int hf_sprt_payload_msg_init_opt_moip_types_i_char_dyn_cs =  -1;
-static int hf_sprt_payload_msg_init_opt_moip_types_reserved =       -1;
+static int hf_sprt_payload_msg_init_all_fields;
+static int hf_sprt_payload_msg_init_necrxch;
+static int hf_sprt_payload_msg_init_ecrxch;
+static int hf_sprt_payload_msg_init_xid_prof_exch;
+static int hf_sprt_payload_msg_init_asymm_data_types;
+static int hf_sprt_payload_msg_init_opt_moip_types_i_raw_bit;
+static int hf_sprt_payload_msg_init_opt_moip_types_i_frame;
+static int hf_sprt_payload_msg_init_opt_moip_types_i_char_stat;
+static int hf_sprt_payload_msg_init_opt_moip_types_i_char_dyn;
+static int hf_sprt_payload_msg_init_opt_moip_types_i_octet_cs;
+static int hf_sprt_payload_msg_init_opt_moip_types_i_char_stat_cs;
+static int hf_sprt_payload_msg_init_opt_moip_types_i_char_dyn_cs;
+static int hf_sprt_payload_msg_init_opt_moip_types_reserved;
 /* XID_XCHG message: */
-static int hf_sprt_payload_msg_xidxchg_ecp =                                    -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr1_v42bis =                          -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr1_v44 =                             -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr1_mnp5 =                            -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr1_reserved =                        -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr2_v42bis_compr_req =                -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr3and4_v42bis_num_codewords =        -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr5_v42bis_max_strlen =               -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr6_v44_capability =                  -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr7_v44_compr_req =                   -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr8and9_v44_num_codewords_trans =     -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr10and11_v44_num_codewords_recv =    -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr12_v44_max_strlen_trans =           -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr13_v44_max_strlen_recv =            -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr14and15_v44_history_len_trans =     -1;
-static int hf_sprt_payload_msg_xidxchg_xidlr16and17_v44_history_len_recv =      -1;
+static int hf_sprt_payload_msg_xidxchg_ecp;
+static int hf_sprt_payload_msg_xidxchg_xidlr1_v42bis;
+static int hf_sprt_payload_msg_xidxchg_xidlr1_v44;
+static int hf_sprt_payload_msg_xidxchg_xidlr1_mnp5;
+static int hf_sprt_payload_msg_xidxchg_xidlr1_reserved;
+static int hf_sprt_payload_msg_xidxchg_xidlr2_v42bis_compr_req;
+static int hf_sprt_payload_msg_xidxchg_xidlr3and4_v42bis_num_codewords;
+static int hf_sprt_payload_msg_xidxchg_xidlr5_v42bis_max_strlen;
+static int hf_sprt_payload_msg_xidxchg_xidlr6_v44_capability;
+static int hf_sprt_payload_msg_xidxchg_xidlr7_v44_compr_req;
+static int hf_sprt_payload_msg_xidxchg_xidlr8and9_v44_num_codewords_trans;
+static int hf_sprt_payload_msg_xidxchg_xidlr10and11_v44_num_codewords_recv;
+static int hf_sprt_payload_msg_xidxchg_xidlr12_v44_max_strlen_trans;
+static int hf_sprt_payload_msg_xidxchg_xidlr13_v44_max_strlen_recv;
+static int hf_sprt_payload_msg_xidxchg_xidlr14and15_v44_history_len_trans;
+static int hf_sprt_payload_msg_xidxchg_xidlr16and17_v44_history_len_recv;
 /* V.8 JM_INFO msg: */
-static int hf_sprt_payload_msg_jminfo_category_data =           -1;
-static int hf_sprt_payload_msg_jminfo_category_id =             -1;
-static int hf_sprt_payload_msg_jminfo_category_ext_info =       -1;
-static int hf_sprt_payload_msg_jminfo_unk_category_info =       -1;
-static int hf_sprt_payload_msg_jminfo_category_leftover_bits =  -1;
-static int hf_sprt_payload_msg_jminfo_call_function =           -1;
-static int hf_sprt_payload_msg_jminfo_mod_v34_duplex =          -1;
-static int hf_sprt_payload_msg_jminfo_mod_v34_half_duplex =     -1;
-static int hf_sprt_payload_msg_jminfo_mod_v32bis_v32 =          -1;
-static int hf_sprt_payload_msg_jminfo_mod_v22bis_v22 =          -1;
-static int hf_sprt_payload_msg_jminfo_mod_v17 =                 -1;
-static int hf_sprt_payload_msg_jminfo_mod_v29_half_duplex =     -1;
-static int hf_sprt_payload_msg_jminfo_mod_v27ter =              -1;
-static int hf_sprt_payload_msg_jminfo_mod_v26ter =              -1;
-static int hf_sprt_payload_msg_jminfo_mod_v26bis =              -1;
-static int hf_sprt_payload_msg_jminfo_mod_v23_duplex =          -1;
-static int hf_sprt_payload_msg_jminfo_mod_v23_half_duplex =     -1;
-static int hf_sprt_payload_msg_jminfo_mod_v21 =                 -1;
-static int hf_sprt_payload_msg_jminfo_protocols =               -1;
-static int hf_sprt_payload_msg_jminfo_pstn_access_call_dce_cell =       -1;
-static int hf_sprt_payload_msg_jminfo_pstn_access_answ_dce_cell =       -1;
-static int hf_sprt_payload_msg_jminfo_pstn_access_dce_on_digital_net =  -1;
-static int hf_sprt_payload_msg_jminfo_pcm_modem_avail_v90_v92_analog =  -1;
-static int hf_sprt_payload_msg_jminfo_pcm_modem_avail_v90_v92_digital = -1;
-static int hf_sprt_payload_msg_jminfo_pcm_modem_avail_v91 =             -1;
+static int hf_sprt_payload_msg_jminfo_category_data;
+static int hf_sprt_payload_msg_jminfo_category_id;
+static int hf_sprt_payload_msg_jminfo_category_ext_info;
+static int hf_sprt_payload_msg_jminfo_unk_category_info;
+static int hf_sprt_payload_msg_jminfo_category_leftover_bits;
+static int hf_sprt_payload_msg_jminfo_call_function;
+static int hf_sprt_payload_msg_jminfo_mod_v34_duplex;
+static int hf_sprt_payload_msg_jminfo_mod_v34_half_duplex;
+static int hf_sprt_payload_msg_jminfo_mod_v32bis_v32;
+static int hf_sprt_payload_msg_jminfo_mod_v22bis_v22;
+static int hf_sprt_payload_msg_jminfo_mod_v17;
+static int hf_sprt_payload_msg_jminfo_mod_v29_half_duplex;
+static int hf_sprt_payload_msg_jminfo_mod_v27ter;
+static int hf_sprt_payload_msg_jminfo_mod_v26ter;
+static int hf_sprt_payload_msg_jminfo_mod_v26bis;
+static int hf_sprt_payload_msg_jminfo_mod_v23_duplex;
+static int hf_sprt_payload_msg_jminfo_mod_v23_half_duplex;
+static int hf_sprt_payload_msg_jminfo_mod_v21;
+static int hf_sprt_payload_msg_jminfo_protocols;
+static int hf_sprt_payload_msg_jminfo_pstn_access_call_dce_cell;
+static int hf_sprt_payload_msg_jminfo_pstn_access_answ_dce_cell;
+static int hf_sprt_payload_msg_jminfo_pstn_access_dce_on_digital_net;
+static int hf_sprt_payload_msg_jminfo_pcm_modem_avail_v90_v92_analog;
+static int hf_sprt_payload_msg_jminfo_pcm_modem_avail_v90_v92_digital;
+static int hf_sprt_payload_msg_jminfo_pcm_modem_avail_v91;
 /* CONNECT msg: */
-static int hf_sprt_payload_msg_connect_selmod =                         -1;
-static int hf_sprt_payload_msg_connect_compr_dir =                      -1;
-static int hf_sprt_payload_msg_connect_selected_compr =                 -1;
-static int hf_sprt_payload_msg_connect_selected_err_corr =              -1;
-static int hf_sprt_payload_msg_connect_tdsr =                           -1;
-static int hf_sprt_payload_msg_connect_rdsr =                           -1;
-static int hf_sprt_payload_msg_connect_dlci_enabled =                   -1;
-static int hf_sprt_payload_msg_connect_avail_data_types =               -1;
-static int hf_sprt_payload_msg_connect_adt_octet_no_format_no_dlci =    -1;
-static int hf_sprt_payload_msg_connect_adt_i_raw_bit =                  -1;
-static int hf_sprt_payload_msg_connect_adt_i_frame =                    -1;
-static int hf_sprt_payload_msg_connect_adt_i_char_stat =                -1;
-static int hf_sprt_payload_msg_connect_adt_i_char_dyn =                 -1;
-static int hf_sprt_payload_msg_connect_adt_i_octet_cs =                 -1;
-static int hf_sprt_payload_msg_connect_adt_i_char_stat_cs =             -1;
-static int hf_sprt_payload_msg_connect_adt_i_char_dyn_cs =              -1;
-static int hf_sprt_payload_msg_connect_adt_reserved =                   -1;
-static int hf_sprt_payload_msg_connect_compr_trans_dict_sz =            -1;
-static int hf_sprt_payload_msg_connect_compr_recv_dict_sz =             -1;
-static int hf_sprt_payload_msg_connect_compr_trans_str_len =            -1;
-static int hf_sprt_payload_msg_connect_compr_recv_str_len =             -1;
-static int hf_sprt_payload_msg_connect_compr_trans_hist_sz =            -1;
-static int hf_sprt_payload_msg_connect_compr_recv_hist_sz =             -1;
+static int hf_sprt_payload_msg_connect_selmod;
+static int hf_sprt_payload_msg_connect_compr_dir;
+static int hf_sprt_payload_msg_connect_selected_compr;
+static int hf_sprt_payload_msg_connect_selected_err_corr;
+static int hf_sprt_payload_msg_connect_tdsr;
+static int hf_sprt_payload_msg_connect_rdsr;
+static int hf_sprt_payload_msg_connect_dlci_enabled;
+static int hf_sprt_payload_msg_connect_avail_data_types;
+static int hf_sprt_payload_msg_connect_adt_octet_no_format_no_dlci;
+static int hf_sprt_payload_msg_connect_adt_i_raw_bit;
+static int hf_sprt_payload_msg_connect_adt_i_frame;
+static int hf_sprt_payload_msg_connect_adt_i_char_stat;
+static int hf_sprt_payload_msg_connect_adt_i_char_dyn;
+static int hf_sprt_payload_msg_connect_adt_i_octet_cs;
+static int hf_sprt_payload_msg_connect_adt_i_char_stat_cs;
+static int hf_sprt_payload_msg_connect_adt_i_char_dyn_cs;
+static int hf_sprt_payload_msg_connect_adt_reserved;
+static int hf_sprt_payload_msg_connect_compr_trans_dict_sz;
+static int hf_sprt_payload_msg_connect_compr_recv_dict_sz;
+static int hf_sprt_payload_msg_connect_compr_trans_str_len;
+static int hf_sprt_payload_msg_connect_compr_recv_str_len;
+static int hf_sprt_payload_msg_connect_compr_trans_hist_sz;
+static int hf_sprt_payload_msg_connect_compr_recv_hist_sz;
 /* BREAK msg: */
-static int hf_sprt_payload_msg_break_source_proto =     -1;
-static int hf_sprt_payload_msg_break_type =             -1;
-static int hf_sprt_payload_msg_break_length =           -1;
+static int hf_sprt_payload_msg_break_source_proto;
+static int hf_sprt_payload_msg_break_type;
+static int hf_sprt_payload_msg_break_length;
 /* MR_EVENT msg: */
-static int hf_sprt_payload_msg_mr_event_id =            -1;
-static int hf_sprt_payload_msg_mr_evt_reason_code =     -1;
-static int hf_sprt_payload_msg_mr_evt_selmod =          -1;
-static int hf_sprt_payload_msg_mr_evt_txsen =           -1;
-static int hf_sprt_payload_msg_mr_evt_rxsen =           -1;
-static int hf_sprt_payload_msg_mr_evt_tdsr =            -1;
-static int hf_sprt_payload_msg_mr_evt_rdsr =            -1;
-static int hf_sprt_payload_msg_mr_evt_txsr =            -1;
-static int hf_sprt_payload_msg_mr_evt_rxsr =            -1;
+static int hf_sprt_payload_msg_mr_event_id;
+static int hf_sprt_payload_msg_mr_evt_reason_code;
+static int hf_sprt_payload_msg_mr_evt_selmod;
+static int hf_sprt_payload_msg_mr_evt_txsen;
+static int hf_sprt_payload_msg_mr_evt_rxsen;
+static int hf_sprt_payload_msg_mr_evt_tdsr;
+static int hf_sprt_payload_msg_mr_evt_rdsr;
+static int hf_sprt_payload_msg_mr_evt_txsr;
+static int hf_sprt_payload_msg_mr_evt_rxsr;
 /* CLEARDOWN msg: */
-static int hf_sprt_payload_msg_cleardown_reason_code =  -1;
-static int hf_sprt_payload_msg_cleardown_vendor_tag =   -1;
-static int hf_sprt_payload_msg_cleardown_vendor_info =  -1;
+static int hf_sprt_payload_msg_cleardown_reason_code;
+static int hf_sprt_payload_msg_cleardown_vendor_tag;
+static int hf_sprt_payload_msg_cleardown_vendor_info;
 /* PROF_XCHG msg: */
-static int hf_sprt_payload_msg_profxchg_v42_lapm =                              -1;
-static int hf_sprt_payload_msg_profxchg_annex_av42 =                            -1;
-static int hf_sprt_payload_msg_profxchg_v44_compr =                             -1;
-static int hf_sprt_payload_msg_profxchg_v42bis_compr =                          -1;
-static int hf_sprt_payload_msg_profxchg_mnp5_compr =                            -1;
-static int hf_sprt_payload_msg_profxchg_reserved =                              -1;
-static int hf_sprt_payload_msg_profxchg_xidlr2_v42bis_compr_req =               -1;
-static int hf_sprt_payload_msg_profxchg_xidlr3and4_v42bis_num_codewords =       -1;
-static int hf_sprt_payload_msg_profxchg_xidlr5_v42bis_max_strlen =              -1;
-static int hf_sprt_payload_msg_profxchg_xidlr6_v44_capability =                 -1;
-static int hf_sprt_payload_msg_profxchg_xidlr7_v44_compr_req =                  -1;
-static int hf_sprt_payload_msg_profxchg_xidlr8and9_v44_num_codewords_trans =    -1;
-static int hf_sprt_payload_msg_profxchg_xidlr10and11_v44_num_codewords_recv =   -1;
-static int hf_sprt_payload_msg_profxchg_xidlr12_v44_max_strlen_trans =          -1;
-static int hf_sprt_payload_msg_profxchg_xidlr13_v44_max_strlen_recv =           -1;
-static int hf_sprt_payload_msg_profxchg_xidlr14and15_v44_history_len_trans =    -1;
-static int hf_sprt_payload_msg_profxchg_xidlr16and17_v44_history_len_recv =     -1;
+static int hf_sprt_payload_msg_profxchg_v42_lapm;
+static int hf_sprt_payload_msg_profxchg_annex_av42;
+static int hf_sprt_payload_msg_profxchg_v44_compr;
+static int hf_sprt_payload_msg_profxchg_v42bis_compr;
+static int hf_sprt_payload_msg_profxchg_mnp5_compr;
+static int hf_sprt_payload_msg_profxchg_reserved;
+static int hf_sprt_payload_msg_profxchg_xidlr2_v42bis_compr_req;
+static int hf_sprt_payload_msg_profxchg_xidlr3and4_v42bis_num_codewords;
+static int hf_sprt_payload_msg_profxchg_xidlr5_v42bis_max_strlen;
+static int hf_sprt_payload_msg_profxchg_xidlr6_v44_capability;
+static int hf_sprt_payload_msg_profxchg_xidlr7_v44_compr_req;
+static int hf_sprt_payload_msg_profxchg_xidlr8and9_v44_num_codewords_trans;
+static int hf_sprt_payload_msg_profxchg_xidlr10and11_v44_num_codewords_recv;
+static int hf_sprt_payload_msg_profxchg_xidlr12_v44_max_strlen_trans;
+static int hf_sprt_payload_msg_profxchg_xidlr13_v44_max_strlen_recv;
+static int hf_sprt_payload_msg_profxchg_xidlr14and15_v44_history_len_trans;
+static int hf_sprt_payload_msg_profxchg_xidlr16and17_v44_history_len_recv;
 /* I_OCTET */
-static int hf_sprt_payload_i_octet_no_dlci =                                    -1;
-static int hf_sprt_payload_i_octet_dlci_presence_unknown =                      -1;
-static int hf_sprt_payload_i_octet_dlci1 =                                      -1;
-static int hf_sprt_payload_i_octet_cr =                                         -1;
-static int hf_sprt_payload_i_octet_ea =                                         -1;
-static int hf_sprt_payload_i_octet_dlci2 =                                      -1;
-static int hf_sprt_payload_i_octet_dlci_setup_by_connect_frame =                -1;
+static int hf_sprt_payload_i_octet_no_dlci;
+static int hf_sprt_payload_i_octet_dlci_presence_unknown;
+static int hf_sprt_payload_i_octet_dlci1;
+static int hf_sprt_payload_i_octet_cr;
+static int hf_sprt_payload_i_octet_ea;
+static int hf_sprt_payload_i_octet_dlci2;
+static int hf_sprt_payload_i_octet_dlci_setup_by_connect_frame;
 
 /* I_OCTET_CS, I_CHAR_STAT_CS, I_CHAR_DYN_CS msgs: */
-static int hf_sprt_payload_data_cs =                                            -1;
-static int hf_sprt_payload_data_reserved_bit =                                  -1;
-static int hf_sprt_payload_data_num_data_bits =                                 -1;
-static int hf_sprt_payload_data_parity_type =                                   -1;
-static int hf_sprt_payload_num_stop_bits =                                      -1;
-static int hf_sprt_payload_frame_reserved_bits =                                -1;
-static int hf_sprt_payload_frame_state =                                        -1;
-static int hf_sprt_payload_rawoctet_n_field_present =                           -1;
-static int hf_sprt_payload_rawoctet_l =                                         -1;
-static int hf_sprt_payload_rawoctet_n =                                         -1;
-static int hf_sprt_payload_rawbit_included_fields_l =                           -1;
-static int hf_sprt_payload_rawbit_included_fields_lp =                          -1;
-static int hf_sprt_payload_rawbit_included_fields_lpn =                         -1;
-static int hf_sprt_payload_rawbit_len_a =                                       -1;
-static int hf_sprt_payload_rawbit_len_b =                                       -1;
-static int hf_sprt_payload_rawbit_len_c =                                       -1;
-static int hf_sprt_payload_rawbit_p =                                           -1;
-static int hf_sprt_payload_rawbit_n =                                           -1;
+static int hf_sprt_payload_data_cs;
+static int hf_sprt_payload_data_reserved_bit;
+static int hf_sprt_payload_data_num_data_bits;
+static int hf_sprt_payload_data_parity_type;
+static int hf_sprt_payload_num_stop_bits;
+static int hf_sprt_payload_frame_reserved_bits;
+static int hf_sprt_payload_frame_state;
+static int hf_sprt_payload_rawoctet_n_field_present;
+static int hf_sprt_payload_rawoctet_l;
+static int hf_sprt_payload_rawoctet_n;
+static int hf_sprt_payload_rawbit_included_fields_l;
+static int hf_sprt_payload_rawbit_included_fields_lp;
+static int hf_sprt_payload_rawbit_included_fields_lpn;
+static int hf_sprt_payload_rawbit_len_a;
+static int hf_sprt_payload_rawbit_len_b;
+static int hf_sprt_payload_rawbit_len_c;
+static int hf_sprt_payload_rawbit_p;
+static int hf_sprt_payload_rawbit_n;
 
 /* Preferences  */
-static gboolean global_sprt_show_setup_info = TRUE; /* show how this SPRT stream got started */
-static gboolean global_sprt_show_dlci_info  = TRUE; /* show DLCI in I_OCTET messages, including setup frame (if we can) */
+static bool global_sprt_show_setup_info = true; /* show how this SPRT stream got started */
+static bool global_sprt_show_dlci_info  = true; /* show DLCI in I_OCTET messages, including setup frame (if we can) */
 
 
 /* dissector handle */
@@ -487,15 +477,15 @@ static dissector_handle_t sprt_handle;
 
 
 /* initialize the subtree pointers */
-static gint ett_sprt =                  -1;
-static gint ett_sprt_setup =            -1;
-static gint ett_sprt_ack_fields =       -1;
-static gint ett_payload =               -1;
-static gint ett_init_msg_all_fields =   -1;
-static gint ett_jminfo_msg_cat_data =   -1;
-static gint ett_connect_msg_adt =       -1;
+static int ett_sprt;
+static int ett_sprt_setup;
+static int ett_sprt_ack_fields;
+static int ett_payload;
+static int ett_init_msg_all_fields;
+static int ett_jminfo_msg_cat_data;
+static int ett_connect_msg_adt;
 
-static expert_field ei_sprt_sequence_number_0 = EI_INIT;
+static expert_field ei_sprt_sequence_number_0;
 
 /* value strings & range strings */
 static const value_string sprt_transport_channel_characteristics[] = {
@@ -686,14 +676,14 @@ static const value_string sprt_prof_xchg_support[] = {
 
 static const range_string sprt_payload_dlci1[] = {
     { SPRT_VALUE_RANGE(SPRT_PAYLOAD_DLCI1_DTE2DTE),                               "DTE-to-DTE (V.24 interfaces) data" },
-    { SPRT_PAYLOAD_DLCI1_RESERVED_START,     SPRT_PAYLOAD_DLCI1_RESERVED_END,     "Reserved for for ITU-T" },
-    { SPRT_PAYLOAD_DLCI1_NOT_RESERVED_START, SPRT_PAYLOAD_DLCI1_NOT_RESERVED_END, "Not reserved for for ITU-T" },
+    { SPRT_PAYLOAD_DLCI1_RESERVED_START,     SPRT_PAYLOAD_DLCI1_RESERVED_END,     "Reserved for ITU-T" },
+    { SPRT_PAYLOAD_DLCI1_NOT_RESERVED_START, SPRT_PAYLOAD_DLCI1_NOT_RESERVED_END, "Not reserved for ITU-T" },
     { SPRT_VALUE_RANGE(SPRT_PAYLOAD_DLCI1_CTRLFN2CTRLFN),                         "Control-function to control-function information" },
     { 0, 0, NULL }
 };
 
-static const true_false_string sprt_payload_ea_bit[] = {
-    { "Last octet of address field", "Another octet of address field follows" }
+static const true_false_string sprt_payload_ea_bit = {
+    "Last octet of address field", "Another octet of address field follows"
 };
 
 static const range_string sprt_payload_dlci2[] = {
@@ -737,7 +727,10 @@ static const value_string sprt_payload_frame_state[] = {
     { 0, NULL }
 };
 
-
+/* Fix for SPRT Parser Crash (Gitlab Issue #19559)
+RTP Version is the first 2 bits of the first octet in the UDP payload */
+#define RTP_VERSION(octet)	((octet) >> 6)
+static dissector_handle_t rtp_handle;
 
 /* look for a conversation & return the associated data */
 static struct _sprt_conversation_info* find_sprt_conversation_data(packet_info *pinfo)
@@ -745,13 +738,7 @@ static struct _sprt_conversation_info* find_sprt_conversation_data(packet_info *
     conversation_t *p_conv = NULL;
     struct _sprt_conversation_info *p_conv_data = NULL;
     /* Use existing packet info if available */
-    p_conv = find_conversation(pinfo->num,
-                                &pinfo->src,
-                                &pinfo->dst,
-                                pinfo->ptype,
-                                pinfo->srcport,
-                                pinfo->destport,
-                                NO_ADDR_B|NO_PORT_B);
+    p_conv = find_conversation_pinfo_strat(pinfo, NO_ADDR_B|NO_PORT_B);
     if (p_conv)
     {
         p_conv_data = (struct _sprt_conversation_info*)conversation_get_proto_data(p_conv, proto_sprt);
@@ -765,8 +752,8 @@ static struct _sprt_conversation_info* find_sprt_conversation_data(packet_info *
 void sprt_add_address(packet_info *pinfo,
                       address *addr, int port,
                       int other_port,
-                      const gchar *setup_method,
-                      guint32 setup_frame_number)
+                      const char *setup_method,
+                      uint32_t setup_frame_number)
 {
     address null_addr;
     conversation_t* p_conv;
@@ -777,7 +764,7 @@ void sprt_add_address(packet_info *pinfo,
      * we've already done this work, so we don't need to do it
      * again.
      */
-    if (pinfo->fd->flags.visited)
+    if (pinfo->fd->visited)
     {
         return;
     }
@@ -788,15 +775,15 @@ void sprt_add_address(packet_info *pinfo,
      * Check if the ip address and port combination is not
      * already registered as a conversation.
      */
-    p_conv = find_conversation(setup_frame_number, addr, &null_addr, PT_UDP, port, other_port,
+    p_conv = find_conversation(setup_frame_number, addr, &null_addr, CONVERSATION_UDP, port, other_port,
                                 NO_ADDR_B | (!other_port ? NO_PORT_B : 0));
 
     /*
      * If not, create a new conversation.
      */
     if (!p_conv || p_conv->setup_frame != setup_frame_number) {
-        p_conv = conversation_new(setup_frame_number, addr, &null_addr, PT_UDP,
-                                    (guint32)port, (guint32)other_port,
+        p_conv = conversation_new(setup_frame_number, addr, &null_addr, CONVERSATION_UDP,
+                                    (uint32_t)port, (uint32_t)other_port,
                                     NO_ADDR2 | (!other_port ? NO_PORT2 : 0));
     }
 
@@ -814,7 +801,7 @@ void sprt_add_address(packet_info *pinfo,
     if (!p_conv_data) {
         /* Create conversation data */
         p_conv_data = wmem_new(wmem_file_scope(), struct _sprt_conversation_info);
-        p_conv_data->stream_started = FALSE;
+        p_conv_data->stream_started = false;
         p_conv_data->seqnum[0] = 0;
         p_conv_data->seqnum[1] = 0;
         p_conv_data->seqnum[2] = 0;
@@ -825,7 +812,7 @@ void sprt_add_address(packet_info *pinfo,
     }
 
     /* Update the conversation data. */
-    g_strlcpy(p_conv_data->method, setup_method, SPRT_CONV_MAX_SETUP_METHOD_SIZE);
+    (void) g_strlcpy(p_conv_data->method, setup_method, SPRT_CONV_MAX_SETUP_METHOD_SIZE);
     p_conv_data->frame_number = setup_frame_number;
 }
 
@@ -853,17 +840,17 @@ static void show_setup_info(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                                         "Stream setup by %s (frame %u)",
                                         p_conv_data->method,
                                         p_conv_data->frame_number);
-    PROTO_ITEM_SET_GENERATED(ti);
+    proto_item_set_generated(ti);
     sprt_setup_tree = proto_item_add_subtree(ti, ett_sprt_setup);
     if (sprt_setup_tree)
     {
         /* Add details into subtree */
         proto_item* item = proto_tree_add_uint(sprt_setup_tree, hf_sprt_setup_frame,
                                                 tvb, 0, 0, p_conv_data->frame_number);
-        PROTO_ITEM_SET_GENERATED(item);
+        proto_item_set_generated(item);
         item = proto_tree_add_string(sprt_setup_tree, hf_sprt_setup_method,
                                         tvb, 0, 0, p_conv_data->method);
-        PROTO_ITEM_SET_GENERATED(item);
+        proto_item_set_generated(item);
     }
 }
 
@@ -875,13 +862,13 @@ dissect_sprt_data(tvbuff_t *tvb,
                   struct _sprt_conversation_info *p_conv_data,
                   proto_tree *sprt_tree,
                   unsigned int offset,
-                  guint payload_length)
+                  unsigned payload_length)
 {
     proto_item *ti;
     proto_tree *sprt_payload_tree, *field_subtree;
-    guint8 octet, payload_msgid, category_id;
-    guint8 selcompr, mr_event_id;
-    guint16 word, category_count;
+    uint8_t octet, payload_msgid, category_id;
+    uint8_t selcompr, mr_event_id;
+    uint16_t word, category_count;
 
     if (payload_length > 0)
     {
@@ -890,7 +877,7 @@ dissect_sprt_data(tvbuff_t *tvb,
 
         sprt_payload_tree = proto_item_add_subtree(ti, ett_payload);
 
-        payload_msgid = tvb_get_guint8(tvb, offset) & 0x7F;
+        payload_msgid = tvb_get_uint8(tvb, offset) & 0x7F;
 
         proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_reserved_bit, tvb, offset, 1, ENC_BIG_ENDIAN);
         proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_message_id, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -898,7 +885,9 @@ dissect_sprt_data(tvbuff_t *tvb,
         payload_length--;
 
         /* what kind of message is this? */
-        col_append_fstr(pinfo->cinfo, COL_INFO, ", %s(%d)", rval_to_str(payload_msgid, sprt_modem_relay_msg_id_name, "Unknown"), payload_msgid);
+        col_append_fstr(pinfo->cinfo, COL_INFO, ", %s(%d)",
+                        rval_to_str_const(payload_msgid, sprt_modem_relay_msg_id_name, "Unknown"),
+                        payload_msgid);
 
         /* now parse payload stuff after ext. bit & msgid */
         switch(payload_msgid)
@@ -910,7 +899,7 @@ dissect_sprt_data(tvbuff_t *tvb,
             proto_tree_add_item(field_subtree, hf_sprt_payload_msg_init_necrxch, tvb, offset, 2, ENC_BIG_ENDIAN);
             proto_tree_add_item(field_subtree, hf_sprt_payload_msg_init_ecrxch, tvb, offset, 2, ENC_BIG_ENDIAN);
             proto_tree_add_item(field_subtree, hf_sprt_payload_msg_init_xid_prof_exch, tvb, offset, 2, ENC_BIG_ENDIAN);
-            proto_tree_add_item(field_subtree, hf_sprt_payload_msg_init_assym_data_types, tvb, offset, 2, ENC_BIG_ENDIAN);
+            proto_tree_add_item(field_subtree, hf_sprt_payload_msg_init_asymm_data_types, tvb, offset, 2, ENC_BIG_ENDIAN);
             proto_tree_add_item(field_subtree, hf_sprt_payload_msg_init_opt_moip_types_i_raw_bit, tvb, offset, 2, ENC_BIG_ENDIAN);
             proto_tree_add_item(field_subtree, hf_sprt_payload_msg_init_opt_moip_types_i_frame, tvb, offset, 2, ENC_BIG_ENDIAN);
             proto_tree_add_item(field_subtree, hf_sprt_payload_msg_init_opt_moip_types_i_char_stat, tvb, offset, 2, ENC_BIG_ENDIAN);
@@ -1019,7 +1008,7 @@ dissect_sprt_data(tvbuff_t *tvb,
             proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_msg_connect_selmod, tvb, offset, 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_msg_connect_compr_dir, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset++;
-            selcompr = (tvb_get_guint8(tvb, offset) & 0xF0) >> 4;
+            selcompr = (tvb_get_uint8(tvb, offset) & 0xF0) >> 4;
             proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_msg_connect_selected_compr, tvb, offset, 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_msg_connect_selected_err_corr, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset++;
@@ -1089,7 +1078,7 @@ dissect_sprt_data(tvbuff_t *tvb,
             /* No additional content */
             break;
         case SPRT_MODEM_RELAY_MSG_ID_MR_EVENT:
-            mr_event_id = tvb_get_guint8(tvb, offset);
+            mr_event_id = tvb_get_uint8(tvb, offset);
             proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_msg_mr_event_id, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset++;
             proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_msg_mr_evt_reason_code, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -1157,7 +1146,7 @@ dissect_sprt_data(tvbuff_t *tvb,
             offset += 2;
             break;
         case SPRT_MODEM_RELAY_MSG_ID_I_RAW_OCTET: /* data */
-            octet = tvb_get_guint8(tvb, offset);
+            octet = tvb_get_uint8(tvb, offset);
             proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_rawoctet_n_field_present, tvb, offset, 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_rawoctet_l, tvb, offset, 1, ENC_BIG_ENDIAN);
             if (octet & 0x80) /* is N field present? */
@@ -1172,7 +1161,7 @@ dissect_sprt_data(tvbuff_t *tvb,
             /*
              * L, P, N fields need to be parsed
              */
-            switch((tvb_get_guint8(tvb, offset) & 0xC0) >> 6)
+            switch((tvb_get_uint8(tvb, offset) & 0xC0) >> 6)
             {
             case 0x0: /* 00: get L (6 bits) */
                 /* display leading "00" bits, followed by L */
@@ -1212,7 +1201,7 @@ dissect_sprt_data(tvbuff_t *tvb,
                 switch(p_conv_data->i_octet_dlci_status)
                 {
                 case DLCI_PRESENT:
-                    octet = tvb_get_guint8(tvb, offset);
+                    octet = tvb_get_uint8(tvb, offset);
                     proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_i_octet_dlci1, tvb, offset, 1, ENC_BIG_ENDIAN);
                     proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_i_octet_cr, tvb, offset, 1, ENC_BIG_ENDIAN);
                     proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_i_octet_ea, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -1227,18 +1216,18 @@ dissect_sprt_data(tvbuff_t *tvb,
                         payload_length--;
                     }
                     ti = proto_tree_add_uint(sprt_payload_tree, hf_sprt_payload_i_octet_dlci_setup_by_connect_frame, tvb, 0, 0, p_conv_data->connect_frame_number);
-                    PROTO_ITEM_SET_GENERATED(ti);
+                    proto_item_set_generated(ti);
                     break;
                 case DLCI_ABSENT:
                     ti = proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_i_octet_no_dlci, tvb, 0, 0, ENC_NA);
-                    PROTO_ITEM_SET_GENERATED(ti);
+                    proto_item_set_generated(ti);
                     ti = proto_tree_add_uint(sprt_payload_tree, hf_sprt_payload_i_octet_dlci_setup_by_connect_frame, tvb, 0, 0, p_conv_data->connect_frame_number);
-                    PROTO_ITEM_SET_GENERATED(ti);
+                    proto_item_set_generated(ti);
                     break;
                 case DLCI_UNKNOWN: /* e.g., we didn't see the CONNECT msg so we don't know if there is a DLCI */
                 default:
                     ti = proto_tree_add_item(sprt_payload_tree, hf_sprt_payload_i_octet_dlci_presence_unknown, tvb, 0, 0, ENC_NA);
-                    PROTO_ITEM_SET_GENERATED(ti);
+                    proto_item_set_generated(ti);
                     break;
                 }
             }
@@ -1346,18 +1335,48 @@ dissect_sprt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
     proto_item *ti;
     proto_tree *sprt_tree = NULL;
     proto_tree *sprt_ack_field_tree;
-    guint16 word1;
+    uint16_t word1;
     unsigned int offset = 0;
-    guint payload_length;
+    unsigned payload_length;
     struct _sprt_conversation_info *p_conv_data = NULL;
     int i;
 
-    guint16 tc;
-    guint16 seqnum; /* 0 if TC = 0 or if no payload */
-    guint16 noa;
+    uint16_t tc;
+    uint16_t seqnum; /* 0 if TC = 0 or if no payload */
+    uint16_t noa;
     /* ack fields */
-    /*guint16 tcn;*/
-    /*guint16 sqn;*/
+    /*uint16_t tcn;*/
+    /*uint16_t sqn;*/
+
+    /* Fix for SPRT Parser Crash (Gitlab Issue #19559)
+     * XXX - heuristic to check for misidentified packets.
+     */
+
+    uint8_t octet1;
+    unsigned int version;
+    octet1 = tvb_get_uint8(tvb, offset);
+    version = RTP_VERSION( octet1 );
+
+    if (version == 2){
+            return call_dissector(rtp_handle,tvb,pinfo,tree);
+    }
+
+    /* Get conversation data, or create it if not found */
+    p_conv_data = find_sprt_conversation_data(pinfo);
+    if (!p_conv_data)
+    {
+        sprt_add_address(pinfo,
+            &pinfo->src, pinfo->srcport,
+            0,
+            "SPRT stream",
+            pinfo->num);
+        p_conv_data = find_sprt_conversation_data(pinfo);
+        if (!p_conv_data) {
+            // This shouldn't happen; likely a new RTP conversation was set up
+            // after this frame but with a setup frame before this one.
+            return 0;
+        }
+    }
 
     /* Make entries in Protocol column and Info column on summary display */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "SPRT");
@@ -1413,18 +1432,6 @@ dissect_sprt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 
     noa = (tvb_get_ntohs(tvb, offset + 4) & 0xC000) >> 14;
 
-    /* Get conversation data, or create it if not found */
-    p_conv_data = find_sprt_conversation_data(pinfo);
-    if (!p_conv_data)
-    {
-        sprt_add_address(pinfo,
-            &pinfo->src, pinfo->srcport,
-            0,
-            "SPRT stream",
-            pinfo->num);
-        p_conv_data = find_sprt_conversation_data(pinfo);
-    }
-
     proto_tree_add_item(sprt_tree, hf_sprt_header_extension_bit, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(sprt_tree, hf_sprt_subsession_id, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
@@ -1474,11 +1481,11 @@ dissect_sprt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 }
 
 /* heuristic dissector */
-static gboolean
-dissect_sprt_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool
+dissect_sprt_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    guint8 octet, extension_bit, reserved_bit, payload_type;
-    guint16 word, tc, seqnum;
+    uint8_t octet, extension_bit, reserved_bit, payload_type;
+    uint16_t word, tc, seqnum;
     unsigned int offset = 0;
 
     /* This is a heuristic dissector, which means we get all the UDP
@@ -1487,29 +1494,29 @@ dissect_sprt_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
      */
 
     if (tvb_captured_length(tvb) < 6)
-        return FALSE; /* packet is waay to short */
+        return false; /* packet is waay to short */
 
     /* Get the fields in the first two octets */
-    extension_bit = tvb_get_guint8(tvb, offset) & 0x7F;
+    extension_bit = tvb_get_uint8(tvb, offset) & 0x7F;
     if (extension_bit != 0) /* must be 0 */
-        return FALSE;
+        return false;
 
-    octet = tvb_get_guint8(tvb, offset + 1);
+    octet = tvb_get_uint8(tvb, offset + 1);
     reserved_bit = octet & 80;
     payload_type = octet & 0x7F;
     if (reserved_bit != 0) /* must be 0 */
-        return FALSE;
+        return false;
     if (payload_type < 96 || payload_type > 128) /* value within RTP dynamic payload type range */
-        return FALSE;
+        return false;
 
     word = tvb_get_ntohs(tvb, offset + 2);
     tc = word >> 14;
     seqnum = word & 0x3F;
     if ((tc == 0 || tc == 3) && (seqnum != 0)) /* seqnum only applies if tc is 1 or 2 */
-        return FALSE;
+        return false;
 
-    dissect_sprt(tvb, pinfo, tree, NULL);
-    return TRUE;
+    dissect_sprt(tvb, pinfo, tree, data);
+    return true;
 }
 
 /* register the protocol with Wireshark */
@@ -1792,10 +1799,10 @@ proto_register_sprt(void)
             }
         },
         {
-            &hf_sprt_payload_msg_init_assym_data_types,
+            &hf_sprt_payload_msg_init_asymm_data_types,
             {
                 "Asymmetrical data types",
-                "sprt.payload.msg_init.assym_data_types",
+                "sprt.payload.msg_init.asymm_data_types",
                 FT_BOOLEAN,
                 16,
                 TFS(&tfs_supported_not_supported),
@@ -2265,7 +2272,7 @@ proto_register_sprt(void)
             &hf_sprt_payload_msg_jminfo_mod_v26bis,
             {
                 "V.26bis",
-                "sprt.payload.msg_jminfo.mod_v16bis",
+                "sprt.payload.msg_jminfo.mod_v26bis",
                 FT_BOOLEAN,
                 16,
                 TFS(&tfs_available_not_available),
@@ -3383,7 +3390,7 @@ proto_register_sprt(void)
     }; /* hf_register_info hf[] */
 
     /* setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_sprt,
         &ett_sprt_setup,
         &ett_sprt_ack_fields,
@@ -3407,7 +3414,7 @@ proto_register_sprt(void)
     expert_register_field_array(expert_sprt, ei, array_length(ei));
 
     /* register the dissector */
-    register_dissector("sprt", dissect_sprt, proto_sprt);
+    sprt_handle = register_dissector("sprt", dissect_sprt, proto_sprt);
 
     sprt_module = prefs_register_protocol(proto_sprt, NULL);
 
@@ -3428,14 +3435,15 @@ proto_register_sprt(void)
 void
 proto_reg_handoff_sprt(void)
 {
-    sprt_handle = find_dissector("sprt");
-    dissector_add_for_decode_as("udp.port", sprt_handle);
+    rtp_handle = find_dissector_add_dependency("rtp", proto_sprt);
+
+    dissector_add_for_decode_as_with_preference("udp.port", sprt_handle);
 
     heur_dissector_add( "udp", dissect_sprt_heur, "SPRT over UDP", "sprt_udp", proto_sprt, HEURISTIC_ENABLE);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

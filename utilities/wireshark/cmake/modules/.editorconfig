@@ -1,0 +1,19 @@
+[FindAsciidoctor.cmake]
+indent_style = space
+indent_size = 4
+
+[FindSinsp.cmake]
+indent_style = space
+indent_size = 2
+
+[FindSMI.cmake]
+indent_style = space
+indent_size = 2
+
+[FindSPANDSP.cmake]
+indent_style = space
+indent_size = 2
+
+[Fetch*.cmake]
+indent_style = space
+indent_size = 2

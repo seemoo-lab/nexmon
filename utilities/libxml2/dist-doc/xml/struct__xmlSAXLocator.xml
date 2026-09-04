@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSAXLocator" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSAXLocator</compoundname>
+    <includes local="no">parser.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSAXLocator_1a6f05b65298b24df79f26ef52dd8ea304" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *(*</type>
+        <definition>const xmlChar *(* getPublicId) (void *ctx)</definition>
+        <argsstring>)(void *ctx)</argsstring>
+        <name>getPublicId</name>
+        <qualifiedname>_xmlSAXLocator::getPublicId</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="650" column="11" bodyfile="parser.h" bodystart="650" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXLocator_1a1c945a3f426db4e30be0c6aebb2f5a0c" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *(*</type>
+        <definition>const xmlChar *(* getSystemId) (void *ctx)</definition>
+        <argsstring>)(void *ctx)</argsstring>
+        <name>getSystemId</name>
+        <qualifiedname>_xmlSAXLocator::getSystemId</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="651" column="11" bodyfile="parser.h" bodystart="651" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXLocator_1ae2ff2e94dfb55470ae55a33f9675e221" prot="public" static="no" mutable="no">
+        <type>int(*</type>
+        <definition>int(* getLineNumber) (void *ctx)</definition>
+        <argsstring>)(void *ctx)</argsstring>
+        <name>getLineNumber</name>
+        <qualifiedname>_xmlSAXLocator::getLineNumber</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="652" column="5" bodyfile="parser.h" bodystart="652" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSAXLocator_1a8a99d9c19d703a8e2024568efe1fe66a" prot="public" static="no" mutable="no">
+        <type>int(*</type>
+        <definition>int(* getColumnNumber) (void *ctx)</definition>
+        <argsstring>)(void *ctx)</argsstring>
+        <name>getColumnNumber</name>
+        <qualifiedname>_xmlSAXLocator::getColumnNumber</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="parser.h" line="653" column="5" bodyfile="parser.h" bodystart="653" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>A SAX Locator. </para>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="parser.h" line="649" column="1" bodyfile="parser.h" bodystart="649" bodyend="654"/>
+    <listofallmembers>
+      <member refid="struct__xmlSAXLocator_1a8a99d9c19d703a8e2024568efe1fe66a" prot="public" virt="non-virtual"><scope>_xmlSAXLocator</scope><name>getColumnNumber</name></member>
+      <member refid="struct__xmlSAXLocator_1ae2ff2e94dfb55470ae55a33f9675e221" prot="public" virt="non-virtual"><scope>_xmlSAXLocator</scope><name>getLineNumber</name></member>
+      <member refid="struct__xmlSAXLocator_1a6f05b65298b24df79f26ef52dd8ea304" prot="public" virt="non-virtual"><scope>_xmlSAXLocator</scope><name>getPublicId</name></member>
+      <member refid="struct__xmlSAXLocator_1a1c945a3f426db4e30be0c6aebb2f5a0c" prot="public" virt="non-virtual"><scope>_xmlSAXLocator</scope><name>getSystemId</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

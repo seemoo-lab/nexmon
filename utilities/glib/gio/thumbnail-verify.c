@@ -1,9 +1,11 @@
 /* Copyright © 2013 Canonical Limited
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -37,7 +39,7 @@ typedef struct
 /* We *require* matches on URI and MTime, but the Size field is optional
  * (as per the spec).
  *
- * http://specifications.freedesktop.org/thumbnail-spec/thumbnail-spec-latest.html
+ * https://specifications.freedesktop.org/thumbnail-spec/latest/
  */
 #define MATCHED_URI    (1u << 0)
 #define MATCHED_MTIME  (1u << 1)
@@ -232,8 +234,12 @@ thumbnail_verify (const char     *thumbnail_path,
     return FALSE;
 
   expected_info.uri = file_uri;
-  expected_info.mtime = file_stat_buf->st_mtime;
-  expected_info.size = file_stat_buf->st_size;
+#ifdef G_OS_WIN32
+  expected_info.mtime = (guint64) file_stat_buf->st_mtim.tv_sec;
+#else
+  expected_info.mtime = _g_stat_mtime (file_stat_buf);
+#endif
+  expected_info.size = _g_stat_size (file_stat_buf);
 
   file = g_mapped_file_new (thumbnail_path, FALSE, NULL);
   if (file)

@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,6 +18,7 @@
 #include <epan/reassemble.h>
 #include <epan/expert.h>
 #include <epan/nlpid.h>
+#include <epan/tfs.h>
 
 #include "packet-osi.h"
 #include "packet-osi-options.h"
@@ -39,43 +28,42 @@ void proto_reg_handoff_clnp(void);
 
 /* protocols and fields */
 
-static int  proto_clnp         = -1;
-static gint ett_clnp           = -1;
-static gint ett_clnp_type      = -1;
-static gint ett_clnp_segments  = -1;
-static gint ett_clnp_segment   = -1;
-static gint ett_clnp_disc_pdu  = -1;
+static int  proto_clnp;
+static int ett_clnp;
+static int ett_clnp_type;
+static int ett_clnp_segments;
+static int ett_clnp_segment;
+static int ett_clnp_disc_pdu;
 
-static int hf_clnp_id          = -1;
-static int hf_clnp_length      = -1;
-static int hf_clnp_version     = -1;
-static int hf_clnp_ttl         = -1;
-static int hf_clnp_type        = -1;
-static int hf_clnp_cnf_segmentation         = -1;
-static int hf_clnp_cnf_more_segments        = -1;
-static int hf_clnp_cnf_report_error         = -1;
-static int hf_clnp_cnf_type    = -1;
-static int hf_clnp_pdu_length  = -1;
-static int hf_clnp_data_unit_identifier     = -1;
-static int hf_clnp_segment_offset           = -1;
-static int hf_clnp_total_length             = -1;
-static int hf_clnp_checksum    = -1;
-static int hf_clnp_dest_length = -1;
-static int hf_clnp_dest        = -1;
-static int hf_clnp_src_length  = -1;
-static int hf_clnp_src         = -1;
-       int hf_clnp_atntt       = -1; /* as referenced in packet-osi-options.c */
-       int hf_clnp_atnsc       = -1; /* as referenced in packet-osi-options.c */
-static int hf_clnp_segments    = -1;
-static int hf_clnp_segment     = -1;
-static int hf_clnp_segment_overlap          = -1;
-static int hf_clnp_segment_overlap_conflict = -1;
-static int hf_clnp_segment_multiple_tails   = -1;
-static int hf_clnp_segment_too_long_segment = -1;
-static int hf_clnp_segment_error            = -1;
-static int hf_clnp_segment_count            = -1;
-static int hf_clnp_reassembled_in           = -1;
-static int hf_clnp_reassembled_length       = -1;
+static int hf_clnp_id;
+static int hf_clnp_length;
+static int hf_clnp_version;
+static int hf_clnp_ttl;
+static int hf_clnp_type;
+static int hf_clnp_cnf_segmentation;
+static int hf_clnp_cnf_more_segments;
+static int hf_clnp_cnf_report_error;
+static int hf_clnp_cnf_type;
+static int hf_clnp_pdu_length;
+static int hf_clnp_data_unit_identifier;
+static int hf_clnp_segment_offset;
+static int hf_clnp_total_length;
+static int hf_clnp_checksum;
+static int hf_clnp_checksum_status;
+static int hf_clnp_dest_length;
+static int hf_clnp_dest;
+static int hf_clnp_src_length;
+static int hf_clnp_src;
+static int hf_clnp_segments;
+static int hf_clnp_segment;
+static int hf_clnp_segment_overlap;
+static int hf_clnp_segment_overlap_conflict;
+static int hf_clnp_segment_multiple_tails;
+static int hf_clnp_segment_too_long_segment;
+static int hf_clnp_segment_error;
+static int hf_clnp_segment_count;
+static int hf_clnp_reassembled_in;
+static int hf_clnp_reassembled_length;
 
 static const fragment_items clnp_frag_items = {
     &ett_clnp_segment,
@@ -95,7 +83,8 @@ static const fragment_items clnp_frag_items = {
     "segments"
 };
 
-static expert_field ei_clnp_length = EI_INIT;
+static expert_field ei_clnp_length;
+static expert_field ei_clnp_checksum;
 
 static dissector_handle_t clnp_handle;
 static dissector_handle_t ositp_handle;
@@ -170,9 +159,9 @@ static const value_string npdu_type_vals[] = {
 #define SEGMENTATION_PART_LEN   6
 
 struct clnp_segment {
-    gushort       cng_id;         /* data unit identifier */
-    gushort       cng_off;        /* segment offset */
-    gushort       cng_tot_len;    /* total length */
+    uint16_t      cng_id;         /* data unit identifier */
+    uint16_t      cng_off;        /* segment offset */
+    uint16_t      cng_tot_len;    /* total length */
 };
 
 /* NSAP selector */
@@ -192,10 +181,9 @@ static heur_dissector_list_t clnp_heur_subdissector_list;
 static reassembly_table clnp_reassembly_table;
 
 /* options */
-static guint tp_nsap_selector = NSEL_TP;
-static gboolean always_decode_transport = FALSE;
-static gboolean clnp_reassemble = TRUE;
-gboolean clnp_decode_atn_options = FALSE;
+static unsigned tp_nsap_selector = NSEL_TP;
+static bool always_decode_transport;
+static bool clnp_reassemble = true;
 
 /* function definitions */
 
@@ -208,35 +196,35 @@ dissect_clnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 {
     proto_tree     *clnp_tree;
     proto_item     *ti, *ti_len = NULL, *ti_pdu_len = NULL, *ti_tot_len = NULL;
-    guint8          cnf_proto_id;
-    guint8          cnf_hdr_len;
-    guint8          cnf_vers;
-    guint8          cnf_ttl;
-    guint8          cnf_type;
+    uint8_t         cnf_proto_id;
+    uint8_t         cnf_hdr_len;
+    uint8_t         cnf_vers;
+    uint8_t         cnf_ttl;
+    uint8_t         cnf_type;
     char            flag_string[6+1];
     const char     *pdu_type_string;
     proto_tree     *type_tree;
-    guint16         segment_length;
-    guint16         du_id = 0;
-    guint16         segment_offset = 0;
-    guint16         total_length;
-    guint16         cnf_cksum;
-    gboolean        cksum_valid = TRUE;
+    uint16_t        segment_length;
+    uint16_t        du_id = 0;
+    uint16_t        segment_offset = 0;
+    uint16_t        total_length;
+    uint16_t        cnf_cksum;
+    bool            cksum_valid = true;
     int             offset;
-    guchar          src_len, dst_len, nsel, opt_len = 0;
-    guint           next_length;
+    unsigned char   src_len, dst_len, nsel, opt_len = 0;
+    unsigned        next_length;
     proto_tree     *discpdu_tree;
-    gboolean        save_in_error_pkt;
+    bool            save_in_error_pkt;
     fragment_head  *fd_head;
     tvbuff_t       *next_tvb;
-    gboolean        update_col_info = TRUE;
-    gboolean        save_fragmented;
+    bool            update_col_info = true;
+    bool            save_fragmented;
     heur_dtbl_entry_t *hdtbl_entry;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "CLNP");
     col_clear(pinfo->cinfo, COL_INFO);
 
-    cnf_proto_id = tvb_get_guint8(tvb, P_CLNP_PROTO_ID);
+    cnf_proto_id = tvb_get_uint8(tvb, P_CLNP_PROTO_ID);
     if (cnf_proto_id == NLPID_NULL) {
         col_set_str(pinfo->cinfo, COL_INFO, "Inactive subset");
         ti = proto_tree_add_item(tree, proto_clnp, tvb, P_CLNP_PROTO_ID, 1, ENC_NA);
@@ -249,14 +237,14 @@ dissect_clnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     }
 
     /* return if version not known */
-    cnf_vers = tvb_get_guint8(tvb, P_CLNP_VERS);
+    cnf_vers = tvb_get_uint8(tvb, P_CLNP_VERS);
     if (cnf_vers != ISO8473_V1) {
         call_data_dissector(tvb, pinfo, tree);
         return tvb_captured_length(tvb);
     }
 
     /* fixed part decoding */
-    cnf_hdr_len = tvb_get_guint8(tvb, P_CLNP_HDR_LEN);
+    cnf_hdr_len = tvb_get_uint8(tvb, P_CLNP_HDR_LEN);
 
     ti = proto_tree_add_item(tree, proto_clnp, tvb, 0, cnf_hdr_len, ENC_NA);
     clnp_tree = proto_item_add_subtree(ti, ett_clnp);
@@ -274,21 +262,21 @@ dissect_clnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     }
     proto_tree_add_uint(clnp_tree, hf_clnp_version, tvb, P_CLNP_VERS, 1,
                 cnf_vers);
-    cnf_ttl = tvb_get_guint8(tvb, P_CLNP_TTL);
+    cnf_ttl = tvb_get_uint8(tvb, P_CLNP_TTL);
     proto_tree_add_uint_format(clnp_tree, hf_clnp_ttl, tvb, P_CLNP_TTL, 1,
             cnf_ttl,
             "Holding Time : %u (%u.%u secs)",
             cnf_ttl, cnf_ttl / 2, (cnf_ttl % 2) * 5);
-    cnf_type = tvb_get_guint8(tvb, P_CLNP_TYPE);
-    pdu_type_string = val_to_str(cnf_type & CNF_TYPE, npdu_type_abbrev_vals,
+    cnf_type = tvb_get_uint8(tvb, P_CLNP_TYPE);
+    pdu_type_string = val_to_str(pinfo->pool, cnf_type & CNF_TYPE, npdu_type_abbrev_vals,
             "Unknown (0x%02x)");
     flag_string[0] = '\0';
     if (cnf_type & CNF_SEG_OK)
-        g_strlcat(flag_string, "S ", 7);
+        (void) g_strlcat(flag_string, "S ", 7);
     if (cnf_type & CNF_MORE_SEGS)
-        g_strlcat(flag_string, "M ", 7);
+        (void) g_strlcat(flag_string, "M ", 7);
     if (cnf_type & CNF_ERR_OK)
-        g_strlcat(flag_string, "E ", 7);
+        (void) g_strlcat(flag_string, "E ", 7);
     ti = proto_tree_add_uint_format(clnp_tree, hf_clnp_type, tvb, P_CLNP_TYPE, 1,
             cnf_type,
             "PDU Type     : 0x%02x (%s%s)",
@@ -322,16 +310,16 @@ dissect_clnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     cnf_cksum = tvb_get_ntohs(tvb, P_CLNP_CKSUM);
     if (cnf_cksum == 0) {
         /* No checksum present */
-        proto_tree_add_checksum(clnp_tree, tvb, P_CLNP_CKSUM, hf_clnp_checksum, -1, NULL, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NOT_PRESENT);
+        proto_tree_add_checksum(clnp_tree, tvb, P_CLNP_CKSUM, hf_clnp_checksum, hf_clnp_checksum_status, &ei_clnp_checksum, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NOT_PRESENT);
     } else {
-        guint32 c0 = 0, c1 = 0;
+        uint32_t c0 = 0, c1 = 0;
 
         if (osi_calc_checksum(tvb, 0, cnf_hdr_len, &c0, &c1)) {
             /* Successfully processed checksum, verify it */
-            proto_tree_add_checksum(clnp_tree, tvb, P_CLNP_CKSUM, hf_clnp_checksum, -1, NULL, pinfo, c0 | c1, ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY|PROTO_CHECKSUM_ZERO);
-            cksum_valid = (c0 | c1) ? FALSE : TRUE;
+            proto_tree_add_checksum(clnp_tree, tvb, P_CLNP_CKSUM, hf_clnp_checksum, hf_clnp_checksum_status, &ei_clnp_checksum, pinfo, c0 | c1, ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY|PROTO_CHECKSUM_ZERO);
+            cksum_valid = (c0 | c1) ? false : true;
         } else {
-            proto_tree_add_checksum(clnp_tree, tvb, P_CLNP_CKSUM, hf_clnp_checksum, -1, NULL, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
+            proto_tree_add_checksum(clnp_tree, tvb, P_CLNP_CKSUM, hf_clnp_checksum, hf_clnp_checksum_status, &ei_clnp_checksum, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
         }
     }
 
@@ -349,7 +337,7 @@ dissect_clnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
                 FIXED_PART_LEN + 1);
         return offset;
     }
-    dst_len  = tvb_get_guint8(tvb, offset);
+    dst_len  = tvb_get_uint8(tvb, offset);
     if (tree) {
         proto_tree_add_uint(clnp_tree, hf_clnp_dest_length, tvb, offset, 1,
                 dst_len);
@@ -366,13 +354,13 @@ dissect_clnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
                 FIXED_PART_LEN + 1 + dst_len);
         return offset;
     }
-    nsel     = tvb_get_guint8(tvb, offset + dst_len - 1);
+    nsel     = tvb_get_uint8(tvb, offset + dst_len - 1);
     set_address_tvb(&pinfo->net_dst, get_osi_address_type(), dst_len, tvb, offset);
     copy_address_shallow(&pinfo->dst, &pinfo->net_dst);
     proto_tree_add_bytes_format_value(clnp_tree, hf_clnp_dest, tvb, offset, dst_len,
             NULL,
             "%s",
-            print_nsap_net(tvb, offset, dst_len));
+            print_nsap_net(pinfo->pool, tvb, offset, dst_len));
     offset += dst_len;
     opt_len -= dst_len;
 
@@ -385,7 +373,7 @@ dissect_clnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
                 FIXED_PART_LEN + 1 + dst_len + 1);
         return offset;
     }
-    src_len  = tvb_get_guint8(tvb, offset);
+    src_len  = tvb_get_uint8(tvb, offset);
     if (tree) {
         proto_tree_add_uint(clnp_tree, hf_clnp_src_length, tvb,
                 offset, 1, src_len);
@@ -408,7 +396,7 @@ dissect_clnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     proto_tree_add_bytes_format_value(clnp_tree, hf_clnp_src, tvb, offset, src_len,
             NULL,
             "%s",
-            print_nsap_net(tvb, offset, src_len));
+            print_nsap_net(pinfo->pool, tvb, offset, src_len));
     offset += src_len;
     opt_len -= src_len;
 
@@ -455,7 +443,7 @@ dissect_clnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
             ((cnf_type & CNF_MORE_SEGS) || segment_offset != 0) &&
             tvb_bytes_exist(tvb, offset, segment_length - cnf_hdr_len) &&
             segment_length > cnf_hdr_len &&
-            cksum_valid != FALSE) {
+            cksum_valid != false) {
         fd_head = fragment_add_check(&clnp_reassembly_table,
                 tvb, offset, pinfo, du_id, NULL,
                 segment_offset, segment_length - cnf_hdr_len,
@@ -489,9 +477,9 @@ dissect_clnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
              * tell the next protocol that.
              */
             if ((cnf_type & (CNF_SEG_OK|CNF_MORE_SEGS)) == (CNF_SEG_OK|CNF_MORE_SEGS))
-                pinfo->fragmented = TRUE;
+                pinfo->fragmented = true;
             else
-                pinfo->fragmented = FALSE;
+                pinfo->fragmented = false;
         }
     }
 
@@ -516,13 +504,13 @@ dissect_clnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
                    XXX - if this isn't the first Derived PDU of a segmented Initial
                    PDU, skip that? */
 
-                if (nsel==NSEL_NET && tvb_get_guint8(next_tvb, 0)==NLPID_ISO10747_IDRP) {
+                if (nsel==NSEL_NET && tvb_get_uint8(next_tvb, 0)==NLPID_ISO10747_IDRP) {
                     if(call_dissector(idrp_handle, next_tvb, pinfo, tree) != 0) {
                         pinfo->fragmented = save_fragmented;
                         return tvb_captured_length(tvb);
                     }
                 }
-                if (nsel == (guchar)tp_nsap_selector || always_decode_transport) {
+                if (nsel == (unsigned char)tp_nsap_selector || always_decode_transport) {
                     if (call_dissector(ositp_handle, next_tvb, pinfo, tree) != 0) {
                         pinfo->fragmented = save_fragmented;
                         return tvb_captured_length(tvb);       /* yes, it appears to be COTP or CLTP */
@@ -553,7 +541,7 @@ dissect_clnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
                        that are the payload of error packets differently from
                        "real" packets. */
                     save_in_error_pkt = pinfo->flags.in_error_pkt;
-                    pinfo->flags.in_error_pkt = TRUE;
+                    pinfo->flags.in_error_pkt = true;
 
                     call_dissector(clnp_handle, next_tvb, pinfo, discpdu_tree);
 
@@ -574,19 +562,6 @@ dissect_clnp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     pinfo->fragmented = save_fragmented;
     return tvb_captured_length(tvb);
 } /* dissect_clnp */
-
-static void
-clnp_reassemble_init(void)
-{
-    reassembly_table_init(&clnp_reassembly_table,
-            &addresses_reassembly_table_functions);
-}
-
-static void
-clnp_reassemble_cleanup(void)
-{
-    reassembly_table_destroy(&clnp_reassembly_table);
-}
 
 void
 proto_register_clnp(void)
@@ -635,6 +610,9 @@ proto_register_clnp(void)
         { &hf_clnp_checksum,
             { "Checksum", "clnp.checksum", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }},
 
+        { &hf_clnp_checksum_status,
+            { "Checksum Status", "clnp.checksum.status", FT_UINT8, BASE_NONE, VALS(proto_checksum_vals), 0x0, NULL, HFILL }},
+
         { &hf_clnp_dest_length,
             { "DAL", "clnp.dsap.len", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }},
 
@@ -646,12 +624,6 @@ proto_register_clnp(void)
 
         { &hf_clnp_src,
             { "SA", "clnp.ssap",     FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }},
-
-        { &hf_clnp_atntt,
-            { "ATN traffic type", "clnp.atn.tt",     FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }},
-
-        { &hf_clnp_atnsc,
-            { "ATN security classification", "clnp.atn.sc",     FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }},
 
         { &hf_clnp_segment_overlap,
             { "Segment overlap", "clnp.segment.overlap", FT_BOOLEAN, BASE_NONE, NULL, 0x0,
@@ -693,7 +665,7 @@ proto_register_clnp(void)
             { "Reassembled CLNP length", "clnp.reassembled.length", FT_UINT32, BASE_DEC, NULL, 0x0,
                 "The total length of the reassembled payload", HFILL }}
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_clnp,
         &ett_clnp_type,
         &ett_clnp_segments,
@@ -703,6 +675,7 @@ proto_register_clnp(void)
 
     static ei_register_info ei[] = {
         { &ei_clnp_length, { "clnp.len.bad", PI_MALFORMED, PI_ERROR, "Header length value bad", EXPFILL }},
+        { &ei_clnp_checksum, { "clnp.bad_checksum", PI_CHECKSUM, PI_ERROR, "Bad checksum", EXPFILL }},
     };
 
     module_t *clnp_module;
@@ -714,9 +687,10 @@ proto_register_clnp(void)
     expert_clnp = expert_register_protocol(proto_clnp);
     expert_register_field_array(expert_clnp, ei, array_length(ei));
     clnp_handle = register_dissector("clnp", dissect_clnp, proto_clnp);
-    clnp_heur_subdissector_list = register_heur_dissector_list("clnp", proto_clnp);
-    register_init_routine(clnp_reassemble_init);
-    register_cleanup_routine(clnp_reassemble_cleanup);
+    clnp_heur_subdissector_list = register_heur_dissector_list_with_description("clnp", "CLNP DT/MD payload", proto_clnp);
+
+    reassembly_table_register(&clnp_reassembly_table,
+            &addresses_reassembly_table_functions);
 
     register_osi_address_type();
 
@@ -733,10 +707,8 @@ proto_register_clnp(void)
             "Reassemble segmented CLNP datagrams",
             "Whether segmented CLNP datagrams should be reassembled",
             &clnp_reassemble);
-    prefs_register_bool_preference(clnp_module, "decode_atn_options",
-            "Decode ATN security label",
-            "Whether ATN security label should be decoded",
-            &clnp_decode_atn_options);
+    /* XXX - catch this and tweak the decode_as settings? */
+    prefs_register_obsolete_preference(clnp_module, "decode_atn_options");
 }
 
 void
@@ -752,7 +724,7 @@ proto_reg_handoff_clnp(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

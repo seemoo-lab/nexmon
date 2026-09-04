@@ -11,19 +11,7 @@
  * By Gerald Combs <gerald[AT]wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * The MMRP Protocol specification can be found at the following:
  * http://standards.ieee.org/about/get/802/802.1.html
@@ -37,6 +25,8 @@
 
 void proto_register_mrp_mmrp(void);
 void proto_reg_handoff_mrp_mmrp(void);
+
+static dissector_handle_t mmrp_handle;
 
 /* MMRP End Mark Sequence */
 #define MMRP_END_MARK       0x0000
@@ -104,37 +94,40 @@ static const value_string three_packed_vals[] = {
 /**********************************************************/
 /* Initialize the protocol and registered fields          */
 /**********************************************************/
-static int proto_mmrp = -1;
-static int hf_mmrp_proto_id = -1;
-static int hf_mmrp_message = -1; /* Message is a group of fields */
-static int hf_mmrp_attribute_type = -1;
-static int hf_mmrp_attribute_length = -1;
-static int hf_mmrp_attribute_list = -1; /* AttributeList is a group of fields */
-static int hf_mmrp_vector_attribute = -1; /* VectorAttribute is a group of fields */
+static int proto_mmrp;
+static int hf_mmrp_proto_id;
+static int hf_mmrp_message; /* Message is a group of fields */
+static int hf_mmrp_attribute_type;
+static int hf_mmrp_attribute_length;
+static int hf_mmrp_attribute_list; /* AttributeList is a group of fields */
+static int hf_mmrp_vector_attribute; /* VectorAttribute is a group of fields */
 
 /* The following VectorHeader contains the LeaveAllEvent and NumberOfValues */
-static int hf_mmrp_vector_header = -1;
-static int hf_mmrp_leave_all_event = -1;
-static int hf_mmrp_number_of_values = -1;
-static gint ett_vector_header = -1;
-static const int *vector_header_fields[] = {
+static int hf_mmrp_vector_header;
+static int hf_mmrp_leave_all_event;
+static int hf_mmrp_number_of_values;
+static int ett_vector_header;
+static int * const vector_header_fields[] = {
     &hf_mmrp_leave_all_event,
     &hf_mmrp_number_of_values,
     NULL
 };
 
-static int hf_mmrp_first_value = -1; /* FirstValue is a group of fields */
+static int hf_mmrp_first_value; /* FirstValue is a group of fields */
 
-static int hf_mmrp_three_packed_event = -1;
+static int hf_mmrp_mac;
+static int hf_mmrp_ser_req;
 
-static int hf_mmrp_end_mark = -1;
+static int hf_mmrp_three_packed_event;
+
+static int hf_mmrp_end_mark;
 
 /* Initialize the subtree pointers */
-static gint ett_mmrp = -1;
-static gint ett_msg = -1;
-static gint ett_attr_list = -1;
-static gint ett_vect_attr = -1;
-static gint ett_first_value = -1;
+static int ett_mmrp;
+static int ett_msg;
+static int ett_attr_list;
+static int ett_vect_attr;
+static int ett_first_value;
 
 
 
@@ -176,39 +169,39 @@ dissect_mmrp_common2(proto_tree *vect_attr_tree, tvbuff_t *tvb, int msg_offset)
  *
  * dissect one or more ThreePackedEvents
  */
-static guint
-dissect_mmrp_three_packed_event(proto_tree *vect_attr_tree, tvbuff_t *tvb, guint offset, guint16 number_of_values)
+static unsigned
+dissect_mmrp_three_packed_event(proto_tree *vect_attr_tree, tvbuff_t *tvb, unsigned offset, uint16_t number_of_values)
 {
-    guint counter;
+    unsigned counter;
 
     for ( counter = 0; counter < number_of_values; ) {
-        guint8 value;
-        guint8 three_packed_event[3];
+        uint8_t value;
+        uint8_t three_packed_event[3];
 
-        value = tvb_get_guint8(tvb, offset);
+        value = tvb_get_uint8(tvb, offset);
         three_packed_event[0] = value / 36;
         value -= 36 * three_packed_event[0];
         three_packed_event[1] = value / 6;
         value -=  6 * three_packed_event[1];
         three_packed_event[2] = value;
 
-        proto_tree_add_uint(vect_attr_tree, hf_mmrp_three_packed_event, tvb, offset, sizeof(guint8),
+        proto_tree_add_uint(vect_attr_tree, hf_mmrp_three_packed_event, tvb, offset, sizeof(uint8_t),
                             three_packed_event[0]);
         counter++;
         if ( counter < number_of_values ) {
-            proto_tree_add_uint(vect_attr_tree, hf_mmrp_three_packed_event, tvb, offset, sizeof(guint8),
+            proto_tree_add_uint(vect_attr_tree, hf_mmrp_three_packed_event, tvb, offset, sizeof(uint8_t),
                                 three_packed_event[1]);
             counter++;
         }
         if ( counter < number_of_values ) {
-            proto_tree_add_uint(vect_attr_tree, hf_mmrp_three_packed_event, tvb, offset, sizeof(guint8),
+            proto_tree_add_uint(vect_attr_tree, hf_mmrp_three_packed_event, tvb, offset, sizeof(uint8_t),
                                 three_packed_event[2]);
             counter++;
         }
 
         offset++;
     }
-    return( offset );
+    return offset;
 }
 
 /* dissect_main
@@ -218,8 +211,8 @@ dissect_mmrp_three_packed_event(proto_tree *vect_attr_tree, tvbuff_t *tvb, guint
 static int
 dissect_mmrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_) {
     /* Set up structures needed to add the protocol subtrees and manage them */
-    proto_item *ti, *msg_ti, *attr_list_ti, *vect_attr_ti;
-    proto_tree *mmrp_tree, *msg_tree, *attr_list_tree, *vect_attr_tree;
+    proto_item *ti, *msg_ti, *attr_list_ti, *vect_attr_ti, *first_value_ti;
+    proto_tree *mmrp_tree, *msg_tree, *attr_list_tree, *vect_attr_tree, *first_value_tree;
 
     /* Make entries in Protocol column and Info column on summary display */
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "MRP-MMRP");
@@ -227,10 +220,10 @@ dissect_mmrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     col_set_str(pinfo->cinfo, COL_INFO, "Multiple Mac Registration Protocol");
 
     if (tree) {
-        guint8 attribute_type;
-        guint8 attribute_length;
-        guint16 number_of_values;
-        guint offset = 0;
+        uint8_t attribute_type;
+        uint8_t attribute_length;
+        uint16_t number_of_values;
+        unsigned offset = 0;
         int vect_attr_len;
         int msg_offset;  /* Use when handling multiple messages.  This points to current msg being decoded. */
         int vect_offset; /* Use when handling multiple vector attributes.  This points to the current vector attribute being decoded. */
@@ -248,8 +241,8 @@ dissect_mmrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         msg_offset = 0;
         while (tvb_get_ntohs(tvb, MMRP_ATTRIBUTE_TYPE_OFFSET + msg_offset) != MMRP_END_MARK) {
 
-            attribute_type = tvb_get_guint8(tvb, MMRP_ATTRIBUTE_TYPE_OFFSET + msg_offset);
-            attribute_length = tvb_get_guint8(tvb, MMRP_ATTRIBUTE_LENGTH_OFFSET + msg_offset);
+            attribute_type = tvb_get_uint8(tvb, MMRP_ATTRIBUTE_TYPE_OFFSET + msg_offset);
+            attribute_length = tvb_get_uint8(tvb, MMRP_ATTRIBUTE_LENGTH_OFFSET + msg_offset);
 
             /* MMRP Message is a group of fields
              *
@@ -310,24 +303,34 @@ dissect_mmrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
                 if (attribute_type == MMRP_ATTRIBUTE_TYPE_MAC) {
                     /* MMRP FirstValue is a Mac Address*/
-                    proto_tree_add_item(vect_attr_tree, hf_mmrp_first_value, tvb,
+                    first_value_ti = proto_tree_add_item(vect_attr_tree, hf_mmrp_first_value, tvb,
                                         MMRP_FIRST_VALUE_GROUP_OFFSET + msg_offset + vect_offset,
                                         attribute_length, ENC_NA);
+                    first_value_tree = proto_item_add_subtree(first_value_ti, ett_first_value);
+
+                    /* Add MAC components to First Value tree */
+                    proto_tree_add_item(first_value_tree, hf_mmrp_mac, tvb,
+                                        MMRP_FIRST_VALUE_GROUP_OFFSET + msg_offset + vect_offset, 6, ENC_NA);
+
                     /* Decode three packed events. */
                     offset = dissect_mmrp_three_packed_event(vect_attr_tree, tvb,
                                                              MMRP_MAC_THREE_PACKED_OFFSET + msg_offset + vect_offset,
                                                              number_of_values);
-
                 }
                 else if (attribute_type == MMRP_ATTRIBUTE_TYPE_SERVICE) {
                     /* MMRP Service Requirement*/
-                    proto_tree_add_item(vect_attr_tree, hf_mmrp_first_value, tvb,
+                    first_value_ti = proto_tree_add_item(vect_attr_tree, hf_mmrp_first_value, tvb,
                                         MMRP_FIRST_VALUE_GROUP_OFFSET + msg_offset + vect_offset,
                                         attribute_length, ENC_NA);
-                    offset = dissect_mmrp_three_packed_event(vect_attr_tree, tvb,
-                                                             MMRP_MAC_THREE_PACKED_OFFSET + msg_offset + vect_offset,
-                                                             number_of_values);
+                    first_value_tree = proto_item_add_subtree(first_value_ti, ett_first_value);
 
+                    /* Add ServiceRequirement components to First Value tree */
+                    proto_tree_add_item(first_value_tree, hf_mmrp_ser_req, tvb,
+                                        MMRP_FIRST_VALUE_GROUP_OFFSET + msg_offset + vect_offset, 1, ENC_BIG_ENDIAN);
+
+                    offset = dissect_mmrp_three_packed_event(vect_attr_tree, tvb,
+                                                             MMRP_SERVICE_THREE_PACKED_OFFSET + msg_offset + vect_offset,
+                                                             number_of_values);
                 }
 
                 vect_offset += vect_attr_len; /* Move to next Vector Attribute, if there is one */
@@ -335,9 +338,7 @@ dissect_mmrp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
             proto_tree_add_item(attr_list_tree, hf_mmrp_end_mark, tvb, offset, 2, ENC_BIG_ENDIAN); /* VectorAttribute EndMark */
 
-            proto_item_set_len(attr_list_ti, vect_offset); /*without an endmark*/
-            msg_offset += vect_offset + 2; /*  + endmark; Move to next Message, if there is one */
-            proto_item_set_len(msg_ti, vect_offset + 2); /*length of message*/
+            msg_offset += vect_offset + 2/* + VectorHeader */ + 2/* + endmark */;
 
         } /* Multiple Message while() */
 
@@ -392,6 +393,14 @@ proto_register_mrp_mmrp(void)
             { "First Value",           "mrp-mmrp.first_value",
               FT_NONE,  BASE_NONE, NULL, 0x0, NULL, HFILL }
         },
+        { &hf_mmrp_mac,
+            { "MAC",                   "mrp-mmrp.mac",
+              FT_ETHER,  BASE_NONE, NULL, 0x00, NULL, HFILL }
+        },
+        { &hf_mmrp_ser_req,
+            { "Service Requirement",   "mrp-mmrp.service_requirement",
+              FT_UINT8, BASE_DEC,  NULL, 0x0, NULL, HFILL }
+        },
         { &hf_mmrp_three_packed_event,
             { "Attribute Event",       "mrp-mmrp.three_packed_event",
               FT_UINT8, BASE_DEC,  VALS(three_packed_vals), 0x0, NULL, HFILL }
@@ -403,7 +412,7 @@ proto_register_mrp_mmrp(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_mmrp,
         &ett_msg,
         &ett_attr_list,
@@ -419,19 +428,19 @@ proto_register_mrp_mmrp(void)
     /* Required function calls to register the header fields and subtrees used */
     proto_register_field_array(proto_mmrp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    /* Register the dissector */
+    mmrp_handle = register_dissector("mrp-mmrp", dissect_mmrp, proto_mmrp);
 }
 
 void
 proto_reg_handoff_mrp_mmrp(void)
 {
-    dissector_handle_t mmrp_handle;
-
-    mmrp_handle = create_dissector_handle(dissect_mmrp, proto_mmrp);
     dissector_add_uint("ethertype", ETHERTYPE_MMRP, mmrp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -1,4 +1,4 @@
-<!ELEMENT schemalist (schema|enum)* >
+<!ELEMENT schemalist (schema|enum|flags)* >
 <!ATTLIST schemalist gettext-domain CDATA #IMPLIED >
 
 <!ELEMENT schema (key|child|override)* >
@@ -33,7 +33,7 @@
               enum  CDATA #IMPLIED
               flags CDATA #IMPLIED >
 
-<!-- the default value is specified a a serialized GVariant,
+<!-- the default value is specified as a serialized GVariant,
      i.e. you have to include the quotes when specifying a string -->
 <!ELEMENT default (#PCDATA) >
 <!-- the presence of the l10n attribute marks a default value for
@@ -47,9 +47,10 @@
 
 <!-- range is only allowed for keys with numeric type -->
 <!ELEMENT range EMPTY >
-<!-- min and max must be parseable as values of the key type and min < max -->
-<!ATTLIST range min CDATA #REQUIRED
-                max CDATA #REQUIRED >
+<!-- min and max must be parseable as values of the key type and
+     min must be less than or equal to max -->
+<!ATTLIST range min CDATA #IMPLIED
+                max CDATA #IMPLIED >
 
 <!-- choices is only allowed for keys with string or string array type -->
 <!ELEMENT choices (choice+) >
@@ -61,7 +62,8 @@
 <!ELEMENT aliases (alias+) >
 <!-- each alias element specifies an alias for one of the possible values -->
 <!ELEMENT alias EMPTY >
-<!ATTLIST alias value CDATA #REQUIRED >
+<!ATTLIST alias value  CDATA #REQUIRED
+                target CDATA #REQUIRED >
 
 <!ELEMENT child EMPTY >
 <!ATTLIST child name   CDATA #REQUIRED

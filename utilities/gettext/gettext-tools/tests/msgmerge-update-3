@@ -27,7 +27,7 @@ msgid "white"
 msgstr "weiﬂ"
 EOF
 
-cat <<EOF > mm-u-3.pot
+cat <<\EOF > mm-u-3.pot
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.

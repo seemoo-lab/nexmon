@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource>
+    <!-- An arbitrary text file which is large enough to have a non-trivial compressed form -->
+    <file compressed="true" alias="test-corrupt-compression.txt">test.gresource.xml</file>
+  </gresource>
+</gresources>

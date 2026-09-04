@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 /* References:
  * BTNR188
@@ -36,16 +24,16 @@ void proto_reg_handoff_dpnss_link(void);
 static dissector_handle_t dpnss_handle; /* DPNSS UI frame dissector */
 #define LINK_HEADER_SIZE 3
 
-static int proto_dpnss_link = -1;
+static int proto_dpnss_link;
 
-static int hf_dpnss_link_address_framegroup = -1;
-static int hf_dpnss_link_address_crbit = -1;
-static int hf_dpnss_link_address_extension = -1;
-static int hf_dpnss_link_address2_reserved = -1;
-static int hf_dpnss_link_address2_dlcId = -1;
-static int hf_dpnss_link_address2_dlcIdNr = -1;
-static int hf_dpnss_link_address2_extension = -1;
-static int hf_dpnss_link_control_frameType = -1;
+static int hf_dpnss_link_address_framegroup;
+static int hf_dpnss_link_address_crbit;
+static int hf_dpnss_link_address_extension;
+static int hf_dpnss_link_address2_reserved;
+static int hf_dpnss_link_address2_dlcId;
+static int hf_dpnss_link_address2_dlcIdNr;
+static int hf_dpnss_link_address2_extension;
+static int hf_dpnss_link_control_frameType;
 
 static const value_string dpnss_link_framegroup_vals[] = {
 	{ 0x11, "Information Frame" },
@@ -90,7 +78,9 @@ static const value_string dpnss_link_frameType_vals[] = {
 	{ 0, NULL }
 };
 
-static int ett_dpnss_link = -1;
+static int ett_dpnss_link;
+
+static dissector_handle_t dpnss_link_handle;
 
 /* Code to actually dissect the packets */
 static int
@@ -98,10 +88,10 @@ dissect_dpnss_link(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 {
 	proto_item *item;
 	proto_tree *dpnss_link_tree;
-	guint8      octet;
+	uint8_t     octet;
 	tvbuff_t   *protocol_data_tvb;
-	guint16     protocol_data_length;
-	gboolean    uton;
+	uint16_t    protocol_data_length;
+	bool        uton;
 
 	uton = pinfo->pseudo_header->l1event.uton;
 	/* Make entries in src and dst column */
@@ -135,7 +125,7 @@ dissect_dpnss_link(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 	 */
 	proto_tree_add_item(dpnss_link_tree, hf_dpnss_link_control_frameType,
 			    tvb, 2, 1, ENC_BIG_ENDIAN);
-	octet = tvb_get_guint8(tvb, 2);
+	octet = tvb_get_uint8(tvb, 2);
 	switch (octet){
 	case FRAME_TYPE_UI_EVEN:
 	case FRAME_TYPE_UI_ODD:
@@ -195,18 +185,18 @@ proto_register_dpnss_link(void)
 		},
 		{ &hf_dpnss_link_control_frameType,
 		  { "Frame Type", "dpnss_link.frameType",
-		    FT_UINT8, BASE_DEC, VALS(dpnss_link_frameType_vals), 0xff,
+		    FT_UINT8, BASE_DEC, VALS(dpnss_link_frameType_vals), 0x0,
 		    NULL, HFILL }
 		}
 	};
 
-	static gint *ett[] = { &ett_dpnss_link };
+	static int *ett[] = { &ett_dpnss_link };
 
 
 	/* Register the protocol name and description */
 	proto_dpnss_link = proto_register_protocol("Digital Private Signalling System No 1 Link Layer",
 						   "DPNSS Link", "dpnss_link");
-	register_dissector("dpnss_link", dissect_dpnss_link, proto_dpnss_link);
+	dpnss_link_handle = register_dissector("dpnss_link", dissect_dpnss_link, proto_dpnss_link);
 
 	/* Required function calls to register the header fields and subtrees used */
 	proto_register_field_array(proto_dpnss_link, hf, array_length(hf));
@@ -216,16 +206,13 @@ proto_register_dpnss_link(void)
 void
 proto_reg_handoff_dpnss_link(void)
 {
-	dissector_handle_t dpnss_link_handle;
-
-	dpnss_link_handle = find_dissector("dpnss_link");
 	dissector_add_uint("wtap_encap", WTAP_ENCAP_DPNSS, dpnss_link_handle);
 
 	dpnss_handle = find_dissector_add_dependency("dpnss", proto_dpnss_link);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

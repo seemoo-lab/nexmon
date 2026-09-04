@@ -1,10 +1,12 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,41 +27,31 @@
 #include "gaction.h"
 
 /**
- * SECTION:gremoteactiongroup
- * @title: GRemoteActionGroup
- * @short_description: A GActionGroup that interacts with other processes
- * @include: gio/gio.h
+ * GRemoteActionGroup:
  *
- * The GRemoteActionGroup interface is implemented by #GActionGroup
+ * The `GRemoteActionGroup` interface is implemented by [iface@Gio.ActionGroup]
  * instances that either transmit action invocations to other processes
  * or receive action invocations in the local process from other
  * processes.
  *
  * The interface has `_full` variants of the two
- * methods on #GActionGroup used to activate actions:
- * g_action_group_activate_action() and
- * g_action_group_change_action_state(). These variants allow a
- * "platform data" #GVariant to be specified: a dictionary providing
+ * methods on [iface@Gio.ActionGroup] used to activate actions:
+ * [method@Gio.ActionGroup.activate_action] and
+ * [method@Gio.ActionGroup.change_action_state]. These variants allow a
+ * ‘platform data’ [struct@GLib.Variant] to be specified: a dictionary providing
  * context for the action invocation (for example: timestamps, startup
  * notification IDs, etc).
  *
- * #GDBusActionGroup implements #GRemoteActionGroup.  This provides a
+ * [class@Gio.DBusActionGroup] implements `GRemoteActionGroup`.  This provides a
  * mechanism to send platform data for action invocations over D-Bus.
  *
- * Additionally, g_dbus_connection_export_action_group() will check if
- * the exported #GActionGroup implements #GRemoteActionGroup and use the
- * `_full` variants of the calls if available.  This
+ * Additionally, [method@Gio.DBusConnection.export_action_group] will check if
+ * the exported [iface@Gio.ActionGroup] implements `GRemoteActionGroup` and use
+ * the `_full` variants of the calls if available.  This
  * provides a mechanism by which to receive platform data for action
  * invocations that arrive by way of D-Bus.
  *
  * Since: 2.32
- **/
-
-/**
- * GRemoteActionGroup:
- *
- * #GRemoteActionGroup is an opaque data structure and can only be accessed
- * using the following functions.
  **/
 
 /**
@@ -87,7 +79,7 @@ g_remote_action_group_default_init (GRemoteActionGroupInterface *iface)
  * g_remote_action_group_activate_action_full:
  * @remote: a #GDBusActionGroup
  * @action_name: the name of the action to activate
- * @parameter: (allow-none): the optional parameter to the activation
+ * @parameter: (nullable): the optional parameter to the activation
  * @platform_data: the platform data to send
  *
  * Activates the remote action.

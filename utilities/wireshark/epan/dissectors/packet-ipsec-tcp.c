@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* TODO:
@@ -32,24 +20,25 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 #include "packet-ndmp.h"
 
 void proto_register_tcpencap(void);
 void proto_reg_handoff_tcpencap(void);
 
-static int hf_tcpencap_unknown = -1;
-static int hf_tcpencap_zero = -1;
-static int hf_tcpencap_seq = -1;
-static int hf_tcpencap_ike_direction = -1;
-static int hf_tcpencap_esp_zero = -1;
-static int hf_tcpencap_magic = -1;
-static int hf_tcpencap_proto = -1;
-static int hf_tcpencap_magic2 = -1;
+static dissector_handle_t tcpencap_handle;
 
-static int proto_tcpencap = -1;
-static gint ett_tcpencap = -1;
-static gint ett_tcpencap_unknown = -1;
+static int hf_tcpencap_unknown;
+static int hf_tcpencap_zero;
+static int hf_tcpencap_seq;
+static int hf_tcpencap_ike_direction;
+static int hf_tcpencap_esp_zero;
+static int hf_tcpencap_magic;
+static int hf_tcpencap_proto;
+static int hf_tcpencap_magic2;
+
+static int proto_tcpencap;
+static int ett_tcpencap;
+static int ett_tcpencap_unknown;
 
 static const value_string tcpencap_ikedir_vals[] = {
 	{ 0x0000,	"Server to client" },
@@ -67,11 +56,6 @@ static const value_string tcpencap_proto_vals[] = {
 
 #define TRAILERLENGTH 16
 #define TCP_CISCO_IPSEC 10000
-/* Another case of several companies creating protocols and
-   choosing an easy-to-remember port. Playing tonight: Cisco vs NDMP.
-   Since NDMP has officially registered port 10000 with IANA, it should be the default
-*/
-static guint global_tcpencap_tcp_port = 0;
 
 static dissector_handle_t esp_handle;
 static dissector_handle_t udp_handle;
@@ -81,24 +65,24 @@ static dissector_handle_t udp_handle;
 
 
 static int
-packet_is_tcpencap(tvbuff_t *tvb, packet_info *pinfo, guint32 offset)
+packet_is_tcpencap(tvbuff_t *tvb, packet_info *pinfo, uint32_t offset)
 {
 	if (	/* Must be zero */
 		tvb_get_ntohl(tvb, offset + 0) != 0 ||
 		/* Lower 12 bits must be zero */
 		(tvb_get_ntohs(tvb, offset + 6) & 0xfff) != 0 ||
 		/* Protocol must be UDP or ESP */
-		(tvb_get_guint8(tvb, offset + 13) != 17 &&
-		 tvb_get_guint8(tvb, offset + 13) != 50)
+		(tvb_get_uint8(tvb, offset + 13) != 17 &&
+		 tvb_get_uint8(tvb, offset + 13) != 50)
 	) {
-		return FALSE;
+		return false;
 	}
 
 	if(check_if_ndmp(tvb, pinfo)){
-		return FALSE;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 /*
@@ -114,9 +98,9 @@ dissect_tcpencap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
 	proto_item *tree_item = NULL;
 	proto_item *unknown_item = NULL;
 	tvbuff_t *next_tvb;
-	guint32 reported_length = tvb_reported_length(tvb);
-	guint32 offset;
-	guint8  protocol;
+	uint32_t reported_length = tvb_reported_length(tvb);
+	uint32_t offset;
+	uint8_t protocol;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "TCPENCAP");
 	col_clear(pinfo->cinfo, COL_INFO);
@@ -153,7 +137,7 @@ dissect_tcpencap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
 	}
 
 	/* Create the tvbuffer for the next dissector */
-	next_tvb = tvb_new_subset(tvb, 0, reported_length - TRAILERLENGTH , -1);
+	next_tvb = tvb_new_subset_length_caplen(tvb, 0, reported_length - TRAILERLENGTH , -1);
 	if (protocol == TCP_ENCAP_P_UDP) {
 		call_dissector(udp_handle, next_tvb, pinfo, tree);
 	} else { /* Hopefully ESP */
@@ -163,21 +147,21 @@ dissect_tcpencap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
 	return tvb_captured_length(tvb);
 }
 
-static gboolean
+static bool
 dissect_tcpencap_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-	guint32 reported_length = tvb_reported_length(tvb);
-	guint32 captured_length = tvb_captured_length(tvb);
+	uint32_t reported_length = tvb_reported_length(tvb);
+	uint32_t captured_length = tvb_captured_length(tvb);
 
 	if (reported_length <= TRAILERLENGTH + 8 ||
 		/* Ensure we have enough bytes for packet_is_tcpencap analysis */
 		(reported_length - captured_length) > (TRAILERLENGTH - 13) ||
 		!packet_is_tcpencap(tvb, pinfo, reported_length - TRAILERLENGTH) ) {
-		return FALSE;
+		return false;
 	}
 
 	dissect_tcpencap(tvb, pinfo, tree, data);
-	return TRUE;
+	return true;
 }
 
 void
@@ -219,52 +203,33 @@ proto_register_tcpencap(void)
 
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_tcpencap,
 		&ett_tcpencap_unknown,
 	};
 
-	module_t *tcpencap_module;
+	proto_tcpencap = proto_register_protocol("TCP Encapsulation of IPsec Packets", "TCPENCAP", "tcpencap");
 
-	proto_tcpencap = proto_register_protocol(
-		"TCP Encapsulation of IPsec Packets", "TCPENCAP", "tcpencap");
 	proto_register_field_array(proto_tcpencap, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
-	tcpencap_module = prefs_register_protocol(proto_tcpencap, proto_reg_handoff_tcpencap);
-	prefs_register_uint_preference(tcpencap_module, "tcp.port", "IPSEC TCP Port",
-		"Set the port for IPSEC/ISAKMP messages (typically 10000)",
-		10, &global_tcpencap_tcp_port);
+
+	tcpencap_handle = register_dissector("tcpencap", dissect_tcpencap, proto_tcpencap);
 }
 
 void
 proto_reg_handoff_tcpencap(void)
 {
-	static dissector_handle_t tcpencap_handle;
-	static gboolean initialized = FALSE;
-	static guint tcpencap_tcp_port = 0;
+	esp_handle = find_dissector_add_dependency("esp", proto_tcpencap);
+	udp_handle = find_dissector_add_dependency("udp", proto_tcpencap);
 
-	if (!initialized) {
-		tcpencap_handle = create_dissector_handle(dissect_tcpencap, proto_tcpencap);
-		esp_handle = find_dissector_add_dependency("esp", proto_tcpencap);
-		udp_handle = find_dissector_add_dependency("udp", proto_tcpencap);
-
-		heur_dissector_add("tcp", dissect_tcpencap_heur, "TCP Encapsulation of IPsec Packets", "ipsec_tcp", proto_tcpencap, HEURISTIC_ENABLE);
-
-		initialized = TRUE;
-	}
+	heur_dissector_add("tcp", dissect_tcpencap_heur, "TCP Encapsulation of IPsec Packets", "ipsec_tcp", proto_tcpencap, HEURISTIC_ENABLE);
 
 	/* Register TCP port for dissection */
-	if(tcpencap_tcp_port != 0 && tcpencap_tcp_port != global_tcpencap_tcp_port){
-		dissector_delete_uint("tcp.port", tcpencap_tcp_port, tcpencap_handle);
-	}
-
-	if(global_tcpencap_tcp_port != 0 && tcpencap_tcp_port != global_tcpencap_tcp_port) {
-		dissector_add_uint("tcp.port", global_tcpencap_tcp_port, tcpencap_handle);
-	}
+	dissector_add_for_decode_as_with_preference("tcp.port", tcpencap_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

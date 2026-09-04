@@ -6,24 +6,14 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 #include "packet-ipmi.h"
 
@@ -31,141 +21,141 @@ void proto_register_ipmi_chassis(void);
 
 /* Local variables.
  */
-static gint ett_ipmi_chs_bo00_byte1 = -1;
-static gint ett_ipmi_chs_bo02_byte1 = -1;
-static gint ett_ipmi_chs_bo03_byte1 = -1;
-static gint ett_ipmi_chs_bo04_byte2 = -1;
-static gint ett_ipmi_chs_bo05_byte1 = -1;
-static gint ett_ipmi_chs_bo05_byte2 = -1;
-static gint ett_ipmi_chs_bo05_byte3 = -1;
-static gint ett_ipmi_chs_bo05_byte4 = -1;
-static gint ett_ipmi_chs_bo06_byte1 = -1;
+static int ett_ipmi_chs_bo00_byte1;
+static int ett_ipmi_chs_bo02_byte1;
+static int ett_ipmi_chs_bo03_byte1;
+static int ett_ipmi_chs_bo04_byte2;
+static int ett_ipmi_chs_bo05_byte1;
+static int ett_ipmi_chs_bo05_byte2;
+static int ett_ipmi_chs_bo05_byte3;
+static int ett_ipmi_chs_bo05_byte4;
+static int ett_ipmi_chs_bo06_byte1;
 
-static gint ett_ipmi_chs_00_capflags = -1;
-static gint ett_ipmi_chs_01_pwr_state = -1;
-static gint ett_ipmi_chs_01_last_event = -1;
-static gint ett_ipmi_chs_01_misc = -1;
-static gint ett_ipmi_chs_01_fpb = -1;
-static gint ett_ipmi_chs_02_byte1 = -1;
-static gint ett_ipmi_chs_04_byte2 = -1;
-static gint ett_ipmi_chs_05_flags = -1;
-static gint ett_ipmi_chs_06_byte1 = -1;
-static gint ett_ipmi_chs_06_policy_support = -1;
-static gint ett_ipmi_chs_07_byte1 = -1;
-static gint ett_ipmi_chs_08_byte1 = -1;
-static gint ett_ipmi_chs_09_rq_byte1 = -1;
-static gint ett_ipmi_chs_09_rs_byte1 = -1;
-static gint ett_ipmi_chs_09_rs_byte2 = -1;
+static int ett_ipmi_chs_00_capflags;
+static int ett_ipmi_chs_01_pwr_state;
+static int ett_ipmi_chs_01_last_event;
+static int ett_ipmi_chs_01_misc;
+static int ett_ipmi_chs_01_fpb;
+static int ett_ipmi_chs_02_byte1;
+static int ett_ipmi_chs_04_byte2;
+static int ett_ipmi_chs_05_flags;
+static int ett_ipmi_chs_06_byte1;
+static int ett_ipmi_chs_06_policy_support;
+static int ett_ipmi_chs_07_byte1;
+static int ett_ipmi_chs_08_byte1;
+static int ett_ipmi_chs_09_rq_byte1;
+static int ett_ipmi_chs_09_rs_byte1;
+static int ett_ipmi_chs_09_rs_byte2;
 
-static gint hf_ipmi_chs_bo00_sip = -1;
-static gint hf_ipmi_chs_bo01_spsel = -1;
-static gint hf_ipmi_chs_bo02_request = -1;
-static gint hf_ipmi_chs_bo02_discovered = -1;
-static gint hf_ipmi_chs_bo03_pef = -1;
-static gint hf_ipmi_chs_bo03_cctrl_timeout = -1;
-static gint hf_ipmi_chs_bo03_wd_timeout = -1;
-static gint hf_ipmi_chs_bo03_softreset = -1;
-static gint hf_ipmi_chs_bo03_powerup = -1;
-static gint hf_ipmi_chs_bo04_write_mask = -1;
-static gint hf_ipmi_chs_bo04_bootinit_ack_oem = -1;
-static gint hf_ipmi_chs_bo04_bootinit_ack_sms = -1;
-static gint hf_ipmi_chs_bo04_bootinit_ack_os = -1;
-static gint hf_ipmi_chs_bo04_bootinit_ack_osloader = -1;
-static gint hf_ipmi_chs_bo04_bootinit_ack_bios = -1;
-static gint hf_ipmi_chs_bo05_bootflags_valid = -1;
-static gint hf_ipmi_chs_bo05_permanent = -1;
-static gint hf_ipmi_chs_bo05_boottype = -1;
-static gint hf_ipmi_chs_bo05_cmos_clear = -1;
-static gint hf_ipmi_chs_bo05_lock_kbd = -1;
-static gint hf_ipmi_chs_bo05_bootdev = -1;
-static gint hf_ipmi_chs_bo05_screen_blank = -1;
-static gint hf_ipmi_chs_bo05_lockout_reset = -1;
-static gint hf_ipmi_chs_bo05_lockout_poweroff = -1;
-static gint hf_ipmi_chs_bo05_bios_verbosity = -1;
-static gint hf_ipmi_chs_bo05_progress_traps = -1;
-static gint hf_ipmi_chs_bo05_pwd_bypass = -1;
-static gint hf_ipmi_chs_bo05_lock_sleep = -1;
-static gint hf_ipmi_chs_bo05_console_redirection = -1;
-static gint hf_ipmi_chs_bo05_bios_shared_override = -1;
-static gint hf_ipmi_chs_bo05_bios_muxctl_override = -1;
-static gint hf_ipmi_chs_bo05_byte5 = -1;
-static gint hf_ipmi_chs_bo06_chan_num = -1;
-static gint hf_ipmi_chs_bo06_session_id = -1;
-static gint hf_ipmi_chs_bo06_bootinfo_timestamp = -1;
-static gint hf_ipmi_chs_bo07_block_selector = -1;
-static gint hf_ipmi_chs_bo07_block_data = -1;
+static int hf_ipmi_chs_bo00_sip;
+static int hf_ipmi_chs_bo01_spsel;
+static int hf_ipmi_chs_bo02_request;
+static int hf_ipmi_chs_bo02_discovered;
+static int hf_ipmi_chs_bo03_pef;
+static int hf_ipmi_chs_bo03_cctrl_timeout;
+static int hf_ipmi_chs_bo03_wd_timeout;
+static int hf_ipmi_chs_bo03_softreset;
+static int hf_ipmi_chs_bo03_powerup;
+static int hf_ipmi_chs_bo04_write_mask;
+static int hf_ipmi_chs_bo04_bootinit_ack_oem;
+static int hf_ipmi_chs_bo04_bootinit_ack_sms;
+static int hf_ipmi_chs_bo04_bootinit_ack_os;
+static int hf_ipmi_chs_bo04_bootinit_ack_osloader;
+static int hf_ipmi_chs_bo04_bootinit_ack_bios;
+static int hf_ipmi_chs_bo05_bootflags_valid;
+static int hf_ipmi_chs_bo05_permanent;
+static int hf_ipmi_chs_bo05_boottype;
+static int hf_ipmi_chs_bo05_cmos_clear;
+static int hf_ipmi_chs_bo05_lock_kbd;
+static int hf_ipmi_chs_bo05_bootdev;
+static int hf_ipmi_chs_bo05_screen_blank;
+static int hf_ipmi_chs_bo05_lockout_reset;
+static int hf_ipmi_chs_bo05_lockout_poweroff;
+static int hf_ipmi_chs_bo05_bios_verbosity;
+static int hf_ipmi_chs_bo05_progress_traps;
+static int hf_ipmi_chs_bo05_pwd_bypass;
+static int hf_ipmi_chs_bo05_lock_sleep;
+static int hf_ipmi_chs_bo05_console_redirection;
+static int hf_ipmi_chs_bo05_bios_shared_override;
+static int hf_ipmi_chs_bo05_bios_muxctl_override;
+static int hf_ipmi_chs_bo05_byte5;
+static int hf_ipmi_chs_bo06_chan_num;
+static int hf_ipmi_chs_bo06_session_id;
+static int hf_ipmi_chs_bo06_bootinfo_timestamp;
+static int hf_ipmi_chs_bo07_block_selector;
+static int hf_ipmi_chs_bo07_block_data;
 
-static gint hf_ipmi_chs_00_capflags_ppi = -1;
-static gint hf_ipmi_chs_00_capflags_di = -1;
-static gint hf_ipmi_chs_00_capflags_fpl = -1;
-static gint hf_ipmi_chs_00_capflags_is = -1;
-static gint hf_ipmi_chs_00_fru_dev_addr = -1;
-static gint hf_ipmi_chs_00_sdr_dev_addr = -1;
-static gint hf_ipmi_chs_00_sel_dev_addr = -1;
-static gint hf_ipmi_chs_00_sm_dev_addr = -1;
-static gint hf_ipmi_chs_00_bridge_dev_addr = -1;
+static int hf_ipmi_chs_00_capflags_ppi;
+static int hf_ipmi_chs_00_capflags_di;
+static int hf_ipmi_chs_00_capflags_fpl;
+static int hf_ipmi_chs_00_capflags_is;
+static int hf_ipmi_chs_00_fru_dev_addr;
+static int hf_ipmi_chs_00_sdr_dev_addr;
+static int hf_ipmi_chs_00_sel_dev_addr;
+static int hf_ipmi_chs_00_sm_dev_addr;
+static int hf_ipmi_chs_00_bridge_dev_addr;
 
-static gint hf_ipmi_chs_01_pwr_state_policy = -1;
-static gint hf_ipmi_chs_01_pwr_state_ctl_fault = -1;
-static gint hf_ipmi_chs_01_pwr_state_fault = -1;
-static gint hf_ipmi_chs_01_pwr_state_ilock = -1;
-static gint hf_ipmi_chs_01_pwr_state_overload = -1;
-static gint hf_ipmi_chs_01_pwr_state_powered = -1;
-static gint hf_ipmi_chs_01_last_event_via_ipmi = -1;
-static gint hf_ipmi_chs_01_last_event_down_by_fault = -1;
-static gint hf_ipmi_chs_01_last_event_interlock = -1;
-static gint hf_ipmi_chs_01_last_event_overload = -1;
-static gint hf_ipmi_chs_01_last_event_ac_failed = -1;
-static gint hf_ipmi_chs_01_misc_identsupp = -1;
-static gint hf_ipmi_chs_01_misc_identstate = -1;
-static gint hf_ipmi_chs_01_misc_fan = -1;
-static gint hf_ipmi_chs_01_misc_drive = -1;
-static gint hf_ipmi_chs_01_misc_fpl_active = -1;
-static gint hf_ipmi_chs_01_misc_intrusion = -1;
-static gint hf_ipmi_chs_01_fpb_standby_allowed = -1;
-static gint hf_ipmi_chs_01_fpb_diagintr_allowed = -1;
-static gint hf_ipmi_chs_01_fpb_reset_allowed = -1;
-static gint hf_ipmi_chs_01_fpb_poweroff_allowed = -1;
-static gint hf_ipmi_chs_01_fpb_standby_disabled = -1;
-static gint hf_ipmi_chs_01_fpb_diagintr_disabled = -1;
-static gint hf_ipmi_chs_01_fpb_reset_disabled = -1;
-static gint hf_ipmi_chs_01_fpb_poweroff_disabled = -1;
+static int hf_ipmi_chs_01_pwr_state_policy;
+static int hf_ipmi_chs_01_pwr_state_ctl_fault;
+static int hf_ipmi_chs_01_pwr_state_fault;
+static int hf_ipmi_chs_01_pwr_state_ilock;
+static int hf_ipmi_chs_01_pwr_state_overload;
+static int hf_ipmi_chs_01_pwr_state_powered;
+static int hf_ipmi_chs_01_last_event_via_ipmi;
+static int hf_ipmi_chs_01_last_event_down_by_fault;
+static int hf_ipmi_chs_01_last_event_interlock;
+static int hf_ipmi_chs_01_last_event_overload;
+static int hf_ipmi_chs_01_last_event_ac_failed;
+static int hf_ipmi_chs_01_misc_identsupp;
+static int hf_ipmi_chs_01_misc_identstate;
+static int hf_ipmi_chs_01_misc_fan;
+static int hf_ipmi_chs_01_misc_drive;
+static int hf_ipmi_chs_01_misc_fpl_active;
+static int hf_ipmi_chs_01_misc_intrusion;
+static int hf_ipmi_chs_01_fpb_standby_allowed;
+static int hf_ipmi_chs_01_fpb_diagintr_allowed;
+static int hf_ipmi_chs_01_fpb_reset_allowed;
+static int hf_ipmi_chs_01_fpb_poweroff_allowed;
+static int hf_ipmi_chs_01_fpb_standby_disabled;
+static int hf_ipmi_chs_01_fpb_diagintr_disabled;
+static int hf_ipmi_chs_01_fpb_reset_disabled;
+static int hf_ipmi_chs_01_fpb_poweroff_disabled;
 
-static gint hf_ipmi_chs_02_cctrl = -1;
+static int hf_ipmi_chs_02_cctrl;
 
-static gint hf_ipmi_chs_04_ival = -1;
-static gint hf_ipmi_chs_04_perm_on = -1;
+static int hf_ipmi_chs_04_ival;
+static int hf_ipmi_chs_04_perm_on;
 
-static gint hf_ipmi_chs_05_flags_fpl = -1;
-static gint hf_ipmi_chs_05_flags_intrusion = -1;
-static gint hf_ipmi_chs_05_fru_dev_addr = -1;
-static gint hf_ipmi_chs_05_sdr_dev_addr = -1;
-static gint hf_ipmi_chs_05_sel_dev_addr = -1;
-static gint hf_ipmi_chs_05_sm_dev_addr = -1;
-static gint hf_ipmi_chs_05_bridge_dev_addr = -1;
+static int hf_ipmi_chs_05_flags_fpl;
+static int hf_ipmi_chs_05_flags_intrusion;
+static int hf_ipmi_chs_05_fru_dev_addr;
+static int hf_ipmi_chs_05_sdr_dev_addr;
+static int hf_ipmi_chs_05_sel_dev_addr;
+static int hf_ipmi_chs_05_sm_dev_addr;
+static int hf_ipmi_chs_05_bridge_dev_addr;
 
-static gint hf_ipmi_chs_06_rq_policy = -1;
-static gint hf_ipmi_chs_06_rs_policy_support_powerup = -1;
-static gint hf_ipmi_chs_06_rs_policy_support_restore = -1;
-static gint hf_ipmi_chs_06_rs_policy_support_poweroff = -1;
+static int hf_ipmi_chs_06_rq_policy;
+static int hf_ipmi_chs_06_rs_policy_support_powerup;
+static int hf_ipmi_chs_06_rs_policy_support_restore;
+static int hf_ipmi_chs_06_rs_policy_support_poweroff;
 
-static gint hf_ipmi_chs_07_cause = -1;
-static gint hf_ipmi_chs_07_chan = -1;
+static int hf_ipmi_chs_07_cause;
+static int hf_ipmi_chs_07_chan;
 
-static gint hf_ipmi_chs_08_valid = -1;
-static gint hf_ipmi_chs_08_selector = -1;
-static gint hf_ipmi_chs_08_data = -1;
+static int hf_ipmi_chs_08_valid;
+static int hf_ipmi_chs_08_selector;
+static int hf_ipmi_chs_08_data;
 
-static gint hf_ipmi_chs_09_rq_param_select = -1;
-static gint hf_ipmi_chs_09_rq_set_select = -1;
-static gint hf_ipmi_chs_09_rq_block_select = -1;
-static gint hf_ipmi_chs_09_rs_param_version = -1;
-static gint hf_ipmi_chs_09_rs_valid = -1;
-static gint hf_ipmi_chs_09_rs_param_select = -1;
-static gint hf_ipmi_chs_09_rs_param_data = -1;
+static int hf_ipmi_chs_09_rq_param_select;
+static int hf_ipmi_chs_09_rq_set_select;
+static int hf_ipmi_chs_09_rq_block_select;
+static int hf_ipmi_chs_09_rs_param_version;
+static int hf_ipmi_chs_09_rs_valid;
+static int hf_ipmi_chs_09_rs_param_select;
+static int hf_ipmi_chs_09_rs_param_data;
 
-static gint hf_ipmi_chs_0f_minpercnt = -1;
-static gint hf_ipmi_chs_0f_counter = -1;
+static int hf_ipmi_chs_0f_minpercnt;
+static int hf_ipmi_chs_0f_counter;
 
 static const struct true_false_string tfs_00_provided = { "Provided", "Not Provided" };
 
@@ -322,33 +312,33 @@ static const struct true_false_string tfs_09_valid = {
 /* Boot options - common for Get/Set Boot Options commands
  */
 static void
-bootopt_00(tvbuff_t *tvb, proto_tree *tree)
+bootopt_00(packet_info *pinfo _U_, tvbuff_t *tvb, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_chs_bo00_sip, NULL };
+	static int * const byte1[] = { &hf_ipmi_chs_bo00_sip, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, NULL, NULL, ett_ipmi_chs_bo00_byte1, byte1,
 			ENC_LITTLE_ENDIAN, 0);
 }
 
 static void
-bootopt_01(tvbuff_t *tvb, proto_tree *tree)
+bootopt_01(packet_info *pinfo _U_, tvbuff_t *tvb, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_ipmi_chs_bo01_spsel, tvb, 0, 1, ENC_LITTLE_ENDIAN);
 }
 
 static void
-bootopt_02(tvbuff_t *tvb, proto_tree *tree)
+bootopt_02(packet_info *pinfo _U_, tvbuff_t *tvb, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_chs_bo02_request, &hf_ipmi_chs_bo02_discovered, NULL };
+	static int * const byte1[] = { &hf_ipmi_chs_bo02_request, &hf_ipmi_chs_bo02_discovered, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, "Service partition scan: ",
 			"Not discovered", ett_ipmi_chs_bo02_byte1, byte1, ENC_LITTLE_ENDIAN, 0);
 }
 
 static void
-bootopt_03(tvbuff_t *tvb, proto_tree *tree)
+bootopt_03(packet_info *pinfo _U_, tvbuff_t *tvb, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_chs_bo03_pef, &hf_ipmi_chs_bo03_cctrl_timeout,
+	static int * const byte1[] = { &hf_ipmi_chs_bo03_pef, &hf_ipmi_chs_bo03_cctrl_timeout,
 		&hf_ipmi_chs_bo03_wd_timeout, &hf_ipmi_chs_bo03_softreset, &hf_ipmi_chs_bo03_powerup, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, "BMC boot flag valid, don't clear on: ",
@@ -356,9 +346,9 @@ bootopt_03(tvbuff_t *tvb, proto_tree *tree)
 }
 
 static void
-bootopt_04(tvbuff_t *tvb, proto_tree *tree)
+bootopt_04(packet_info *pinfo _U_, tvbuff_t *tvb, proto_tree *tree)
 {
-	static const int *byte2[] = { &hf_ipmi_chs_bo04_bootinit_ack_oem, &hf_ipmi_chs_bo04_bootinit_ack_sms,
+	static int * const byte2[] = { &hf_ipmi_chs_bo04_bootinit_ack_oem, &hf_ipmi_chs_bo04_bootinit_ack_sms,
 		&hf_ipmi_chs_bo04_bootinit_ack_os, &hf_ipmi_chs_bo04_bootinit_ack_osloader,
 		&hf_ipmi_chs_bo04_bootinit_ack_bios, NULL };
 
@@ -368,16 +358,16 @@ bootopt_04(tvbuff_t *tvb, proto_tree *tree)
 }
 
 static void
-bootopt_05(tvbuff_t *tvb, proto_tree *tree)
+bootopt_05(packet_info *pinfo _U_, tvbuff_t *tvb, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_chs_bo05_bootflags_valid,
+	static int * const byte1[] = { &hf_ipmi_chs_bo05_bootflags_valid,
 		&hf_ipmi_chs_bo05_permanent, &hf_ipmi_chs_bo05_boottype, NULL };
-	static const int *byte2[] = { &hf_ipmi_chs_bo05_cmos_clear, &hf_ipmi_chs_bo05_lock_kbd,
+	static int * const byte2[] = { &hf_ipmi_chs_bo05_cmos_clear, &hf_ipmi_chs_bo05_lock_kbd,
 		&hf_ipmi_chs_bo05_bootdev, &hf_ipmi_chs_bo05_screen_blank, &hf_ipmi_chs_bo05_lockout_reset, NULL };
-	static const int *byte3[] = { &hf_ipmi_chs_bo05_lockout_poweroff, &hf_ipmi_chs_bo05_bios_verbosity,
+	static int * const byte3[] = { &hf_ipmi_chs_bo05_lockout_poweroff, &hf_ipmi_chs_bo05_bios_verbosity,
 		&hf_ipmi_chs_bo05_progress_traps, &hf_ipmi_chs_bo05_pwd_bypass, &hf_ipmi_chs_bo05_lock_sleep,
 		&hf_ipmi_chs_bo05_console_redirection, NULL };
-	static const int *byte4[] = { &hf_ipmi_chs_bo05_bios_shared_override,
+	static int * const byte4[] = { &hf_ipmi_chs_bo05_bios_shared_override,
 		&hf_ipmi_chs_bo05_bios_muxctl_override, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, NULL, NULL, ett_ipmi_chs_bo05_byte1,
@@ -392,18 +382,18 @@ bootopt_05(tvbuff_t *tvb, proto_tree *tree)
 }
 
 static void
-bootopt_06(tvbuff_t *tvb, proto_tree *tree)
+bootopt_06(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_chs_bo06_chan_num, NULL };
+	static int * const byte1[] = { &hf_ipmi_chs_bo06_chan_num, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, NULL, NULL,
 			ett_ipmi_chs_bo06_byte1, byte1, ENC_LITTLE_ENDIAN, 0);
 	proto_tree_add_item(tree, hf_ipmi_chs_bo06_session_id, tvb, 1, 4, ENC_LITTLE_ENDIAN);
-	ipmi_add_timestamp(tree, hf_ipmi_chs_bo06_bootinfo_timestamp, tvb, 5);
+	ipmi_add_timestamp(pinfo, tree, hf_ipmi_chs_bo06_bootinfo_timestamp, tvb, 5);
 }
 
 static void
-bootopt_07(tvbuff_t *tvb, proto_tree *tree)
+bootopt_07(packet_info *pinfo _U_, tvbuff_t *tvb, proto_tree *tree)
 {
 	proto_tree_add_item(tree, hf_ipmi_chs_bo07_block_selector, tvb, 0, 1, ENC_LITTLE_ENDIAN);
 	proto_tree_add_item(tree, hf_ipmi_chs_bo07_block_data, tvb, 1, -1, ENC_NA);
@@ -411,7 +401,7 @@ bootopt_07(tvbuff_t *tvb, proto_tree *tree)
 
 
 static struct {
-	void (*intrp)(tvbuff_t *tvb, proto_tree *tree);
+	void (*intrp)(packet_info *pinfo, tvbuff_t *tvb, proto_tree *tree);
 	const char *name;
 } boot_options[] = {
 	{ bootopt_00, "Set In Progress" },
@@ -430,7 +420,7 @@ static struct {
 static void
 rs00(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_chs_00_capflags_ppi, &hf_ipmi_chs_00_capflags_di,
+	static int * const byte1[] = { &hf_ipmi_chs_00_capflags_ppi, &hf_ipmi_chs_00_capflags_di,
 		&hf_ipmi_chs_00_capflags_fpl, &hf_ipmi_chs_00_capflags_is, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, "Capabilities: ", "None",
@@ -450,17 +440,17 @@ rs00(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 rs01(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_chs_01_pwr_state_policy,
+	static int * const byte1[] = { &hf_ipmi_chs_01_pwr_state_policy,
 		&hf_ipmi_chs_01_pwr_state_ctl_fault, &hf_ipmi_chs_01_pwr_state_fault,
 		&hf_ipmi_chs_01_pwr_state_ilock, &hf_ipmi_chs_01_pwr_state_overload,
 		&hf_ipmi_chs_01_pwr_state_powered, NULL };
-	static const int *byte2[] = { &hf_ipmi_chs_01_last_event_via_ipmi,
+	static int * const byte2[] = { &hf_ipmi_chs_01_last_event_via_ipmi,
 		&hf_ipmi_chs_01_last_event_down_by_fault, &hf_ipmi_chs_01_last_event_interlock,
 		&hf_ipmi_chs_01_last_event_overload, &hf_ipmi_chs_01_last_event_ac_failed, NULL };
-	static const int *byte3[] = { &hf_ipmi_chs_01_misc_identsupp, &hf_ipmi_chs_01_misc_identstate,
+	static int * const byte3[] = { &hf_ipmi_chs_01_misc_identsupp, &hf_ipmi_chs_01_misc_identstate,
 		&hf_ipmi_chs_01_misc_fan, &hf_ipmi_chs_01_misc_drive, &hf_ipmi_chs_01_misc_fpl_active,
 		&hf_ipmi_chs_01_misc_intrusion, NULL };
-	static const int *byte4[] = { &hf_ipmi_chs_01_fpb_standby_allowed,
+	static int * const byte4[] = { &hf_ipmi_chs_01_fpb_standby_allowed,
 		&hf_ipmi_chs_01_fpb_diagintr_allowed, &hf_ipmi_chs_01_fpb_reset_allowed,
 		&hf_ipmi_chs_01_fpb_poweroff_allowed, &hf_ipmi_chs_01_fpb_standby_disabled,
 		&hf_ipmi_chs_01_fpb_diagintr_disabled, &hf_ipmi_chs_01_fpb_reset_disabled,
@@ -483,7 +473,7 @@ rs01(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 rq02(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_chs_02_cctrl, NULL };
+	static int * const byte1[] = { &hf_ipmi_chs_02_cctrl, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, NULL, NULL,
 			ett_ipmi_chs_02_byte1, byte1, ENC_LITTLE_ENDIAN, 0);
@@ -494,7 +484,7 @@ rq02(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 rq04(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *byte2[] = { &hf_ipmi_chs_04_perm_on, NULL };
+	static int * const byte2[] = { &hf_ipmi_chs_04_perm_on, NULL };
 
 	if (tvb_captured_length(tvb) > 0) {
 		proto_tree_add_item(tree, hf_ipmi_chs_04_ival, tvb, 0, 1, ENC_LITTLE_ENDIAN);
@@ -511,7 +501,7 @@ rq04(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 rq05(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_chs_05_flags_fpl, &hf_ipmi_chs_05_flags_intrusion, NULL };
+	static int * const byte1[] = { &hf_ipmi_chs_05_flags_fpl, &hf_ipmi_chs_05_flags_intrusion, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, "Capabilities: ", "None",
 			ett_ipmi_chs_05_flags, byte1, ENC_LITTLE_ENDIAN, 0);
@@ -530,7 +520,7 @@ rq05(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 rq06(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_chs_06_rq_policy, NULL };
+	static int * const byte1[] = { &hf_ipmi_chs_06_rq_policy, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, NULL, NULL,
 			ett_ipmi_chs_06_byte1, byte1, ENC_LITTLE_ENDIAN, 0);
@@ -541,7 +531,7 @@ rq06(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 rs06(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_chs_06_rs_policy_support_powerup,
+	static int * const byte1[] = { &hf_ipmi_chs_06_rs_policy_support_powerup,
 		&hf_ipmi_chs_06_rs_policy_support_restore, &hf_ipmi_chs_06_rs_policy_support_poweroff, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, "Power Restore Policy support: ", "None",
@@ -553,7 +543,7 @@ rs06(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 static void
 rs07(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_chs_07_cause, NULL };
+	static int * const byte1[] = { &hf_ipmi_chs_07_cause, NULL };
 
 	proto_tree_add_bitmask_text(tree, tvb, 0, 1, NULL, NULL,
 			ett_ipmi_chs_07_byte1, byte1, ENC_LITTLE_ENDIAN, 0);
@@ -563,14 +553,14 @@ rs07(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 /* Set System Boot Options
  */
 static void
-rq08(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
+rq08(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 	proto_tree *s_tree;
 	tvbuff_t *sub;
-	guint8 pno;
+	uint8_t pno;
 	const char *desc;
 
-	pno = tvb_get_guint8(tvb, 0) & 0x7f;
+	pno = tvb_get_uint8(tvb, 0) & 0x7f;
 	if (pno < array_length(boot_options)) {
 		desc = boot_options[pno].name;
 	} else if (pno >= 96 && pno <= 127) {
@@ -591,7 +581,7 @@ rq08(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 	if (tvb_captured_length(tvb) > 1) {
 		if (pno < array_length(boot_options)) {
 			sub = tvb_new_subset_remaining(tvb, 1);
-			boot_options[pno].intrp(sub, tree);
+			boot_options[pno].intrp(pinfo, sub, tree);
 		} else {
 			proto_tree_add_none_format(tree, hf_ipmi_chs_08_data, tvb, 1,
 					-1, "Parameter data: %s", desc);
@@ -612,10 +602,10 @@ static void
 rq09(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
 	proto_tree *s_tree;
-	guint8 pno;
+	uint8_t pno;
 	const char *desc;
 
-	pno = tvb_get_guint8(tvb, 0) & 0x7f;
+	pno = tvb_get_uint8(tvb, 0) & 0x7f;
 	if (pno < array_length(boot_options)) {
 		desc = boot_options[pno].name;
 	} else if (pno >= 96 && pno <= 127) {
@@ -637,15 +627,15 @@ rq09(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 }
 
 static void
-rs09(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
+rs09(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-	static const int *byte1[] = { &hf_ipmi_chs_09_rs_param_version, NULL };
+	static int * const byte1[] = { &hf_ipmi_chs_09_rs_param_version, NULL };
 	proto_tree *s_tree;
 	tvbuff_t *sub;
-	guint8 pno;
+	uint8_t pno;
 	const char *desc;
 
-	pno = tvb_get_guint8(tvb, 1) & 0x7f;
+	pno = tvb_get_uint8(tvb, 1) & 0x7f;
 	if (pno < array_length(boot_options)) {
 		desc = boot_options[pno].name;
 	} else if (pno >= 96 && pno <= 127) {
@@ -667,7 +657,7 @@ rs09(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 
 	if (pno < array_length(boot_options)) {
 		sub = tvb_new_subset_remaining(tvb, 2);
-		boot_options[pno].intrp(sub, tree);
+		boot_options[pno].intrp(pinfo, sub, tree);
 	} else {
 		proto_tree_add_item(tree, hf_ipmi_chs_09_rs_param_data, tvb, 2, -1, ENC_NA);
 	}
@@ -687,7 +677,7 @@ rs0f(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 	proto_tree_add_item(tree, hf_ipmi_chs_0f_counter, tvb, 1, 4, ENC_LITTLE_ENDIAN);
 }
 
-static ipmi_cmd_t cmd_chassis[] = {
+static const ipmi_cmd_t cmd_chassis[] = {
 	/* Chassis commands */
 	{ 0x00, NULL, rs00, NULL, NULL, "Get Chassis Capabilities", 0 },
 	{ 0x01, NULL, rs01, NULL, NULL, "Get Chassis Status", 0 },
@@ -1017,7 +1007,7 @@ proto_register_ipmi_chassis(void)
 				"ipmi.ch0f.counter", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ipmi_chs_bo00_byte1,
 		&ett_ipmi_chs_bo02_byte1,
 		&ett_ipmi_chs_bo03_byte1,
@@ -1052,7 +1042,7 @@ proto_register_ipmi_chassis(void)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

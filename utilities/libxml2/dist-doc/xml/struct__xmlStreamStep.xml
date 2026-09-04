@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlStreamStep" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlStreamStep</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlStreamStep_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int flags</definition>
+        <argsstring></argsstring>
+        <name>flags</name>
+        <qualifiedname>_xmlStreamStep::flags</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="92" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="92" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStreamStep_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlStreamStep::name</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="93" column="19" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="93" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStreamStep_1ac5f26d02b7057f0d33a09c8fb9bed03b" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* ns</definition>
+        <argsstring></argsstring>
+        <name>ns</name>
+        <qualifiedname>_xmlStreamStep::ns</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="94" column="19" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="94" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStreamStep_1a6570c134d7bba96ba75d15b71b3ca417" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nodeType</definition>
+        <argsstring></argsstring>
+        <name>nodeType</name>
+        <qualifiedname>_xmlStreamStep::nodeType</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/pattern.c" line="95" column="9" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="95" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/pattern.c" line="91" column="1" bodyfile="/builds/GNOME/libxml2/pattern.c" bodystart="91" bodyend="96"/>
+    <listofallmembers>
+      <member refid="struct__xmlStreamStep_1ac8bf36fe0577cba66bccda3a6f7e80a4" prot="public" virt="non-virtual"><scope>_xmlStreamStep</scope><name>flags</name></member>
+      <member refid="struct__xmlStreamStep_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" virt="non-virtual"><scope>_xmlStreamStep</scope><name>name</name></member>
+      <member refid="struct__xmlStreamStep_1a6570c134d7bba96ba75d15b71b3ca417" prot="public" virt="non-virtual"><scope>_xmlStreamStep</scope><name>nodeType</name></member>
+      <member refid="struct__xmlStreamStep_1ac5f26d02b7057f0d33a09c8fb9bed03b" prot="public" virt="non-virtual"><scope>_xmlStreamStep</scope><name>ns</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

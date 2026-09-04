@@ -1,15 +1,6 @@
-#ifndef _POSIX_SOURCE
-#define _POSIX_SOURCE
-#endif
 #include <errno.h>
 #include <string.h>
 #include <strings.h>
-
-#include <netlink/genl/genl.h>
-#include <netlink/genl/family.h>
-#include <netlink/genl/ctrl.h>
-#include <netlink/msg.h>
-#include <netlink/attr.h>
 
 #include "nl80211.h"
 #include "iw.h"
@@ -17,51 +8,19 @@
 SECTION(ibss);
 
 static int join_ibss(struct nl80211_state *state,
-		     struct nl_cb *cb,
 		     struct nl_msg *msg,
 		     int argc, char **argv,
 		     enum id_input id)
 {
 	char *end;
+	struct chandef chandef;
 	unsigned char abssid[6];
 	unsigned char rates[NL80211_MAX_SUPP_RATES];
 	int n_rates = 0;
 	char *value = NULL, *sptr = NULL;
 	float rate;
 	int bintval;
-	int i;
-	unsigned long freq;
-	static const struct {
-		const char *name;
-		unsigned int width;
-		int freq1_diff;
-		int chantype; /* for older kernel */
-	} *chanmode_selected = NULL, chanmode[] = {
-		{ .name = "HT20",
-		  .width = NL80211_CHAN_WIDTH_20,
-		  .freq1_diff = 0,
-		  .chantype = NL80211_CHAN_HT20 },
-		{ .name = "HT40+",
-		  .width = NL80211_CHAN_WIDTH_40,
-		  .freq1_diff = 10,
-		  .chantype = NL80211_CHAN_HT40PLUS },
-		{ .name = "HT40-",
-		  .width = NL80211_CHAN_WIDTH_40,
-		  .freq1_diff = -10,
-		  .chantype = NL80211_CHAN_HT40MINUS },
-		{ .name = "NOHT",
-		  .width = NL80211_CHAN_WIDTH_20_NOHT,
-		  .freq1_diff = 0,
-		  .chantype = NL80211_CHAN_NO_HT },
-		{ .name = "5MHZ",
-		  .width = NL80211_CHAN_WIDTH_5,
-		  .freq1_diff = 0,
-		  .chantype = -1 },
-		{ .name = "10MHZ",
-		  .width = NL80211_CHAN_WIDTH_10,
-		  .freq1_diff = 0,
-		  .chantype = -1 },
-	};
+	int parsed, err;
 
 	if (argc < 2)
 		return 1;
@@ -71,37 +30,16 @@ static int join_ibss(struct nl80211_state *state,
 	argv++;
 	argc--;
 
-	/* freq */
-	freq = strtoul(argv[0], &end, 10);
-	if (*end != '\0')
-		return 1;
+	err = parse_freqchan(&chandef, false, argc, argv, &parsed, false);
+	if (err)
+		return err;
 
-	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_FREQ, freq);
-	argv++;
-	argc--;
+	argv += parsed;
+	argc -= parsed;
 
-	if (argc) {
-		for (i = 0; i < ARRAY_SIZE(chanmode); i++) {
-			if (strcasecmp(chanmode[i].name, argv[0]) == 0) {
-				chanmode_selected = &chanmode[i];
-				break;
-			}
-		}
-		if (chanmode_selected) {
-			NLA_PUT_U32(msg, NL80211_ATTR_CHANNEL_WIDTH,
-				    chanmode_selected->width);
-			NLA_PUT_U32(msg, NL80211_ATTR_CENTER_FREQ1,
-				    freq + chanmode_selected->freq1_diff);
-			if (chanmode_selected->chantype != -1)
-				NLA_PUT_U32(msg,
-					    NL80211_ATTR_WIPHY_CHANNEL_TYPE,
-					    chanmode_selected->chantype);
-
-			argv++;
-			argc--;
-		}
-
-	}
+	err = put_chandef(msg, &chandef);
+	if (err)
+		return err;
 
 	if (argc && strcmp(argv[0], "fixed-freq") == 0) {
 		NLA_PUT_FLAG(msg, NL80211_ATTR_FREQ_FIXED);
@@ -177,13 +115,12 @@ static int join_ibss(struct nl80211_state *state,
 	argv++;
 	argc--;
 
-	return parse_keys(msg, argv, argc);
+	return parse_keys(msg, &argv, &argc);
  nla_put_failure:
 	return -ENOSPC;
 }
 
 static int leave_ibss(struct nl80211_state *state,
-		      struct nl_cb *cb,
 		      struct nl_msg *msg,
 		      int argc, char **argv,
 		      enum id_input id)
@@ -194,7 +131,7 @@ COMMAND(ibss, leave, NULL,
 	NL80211_CMD_LEAVE_IBSS, 0, CIB_NETDEV, leave_ibss,
 	"Leave the current IBSS cell.");
 COMMAND(ibss, join,
-	"<SSID> <freq in MHz> [HT20|HT40+|HT40-|NOHT|5MHZ|10MHZ] [fixed-freq] [<fixed bssid>] [beacon-interval <TU>]"
+	"<SSID> <freq in MHz> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz] [fixed-freq] [<fixed bssid>] [beacon-interval <TU>]"
 	" [basic-rates <rate in Mbps,rate2,...>] [mcast-rate <rate in Mbps>] "
 	"[key d:0:abcde]",
 	NL80211_CMD_JOIN_IBSS, 0, CIB_NETDEV, join_ibss,

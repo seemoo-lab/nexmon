@@ -8,25 +8,14 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef _PACKET_CSN1_H_
 #define _PACKET_CSN1_H_
 
 #include <epan/expert.h>
+#include <wsutil/array.h>
 
 /* Error codes */
 #define  CSN_OK                               0
@@ -42,7 +31,7 @@
 #define  CSN_ERROR_                         -10
 
 /* CallBack return status */
-typedef gint16 CSN_CallBackStatus_t;
+typedef int16_t CSN_CallBackStatus_t;
 
 #define  CSNCBS_OK                      0
 #define  CSNCBS_NOT_OK                -10
@@ -52,22 +41,17 @@ typedef gint16 CSN_CallBackStatus_t;
 #define CSNCBS_REVISION_LIMIT_STOP   -20 /* Stop packing/unpacking - revision limit */
 #define CSNCBS_NOT_SUPPORTED_IE      -21 /* Handling of the unpacked IE is not supported by MS-software */
 
-
-
-#ifndef ElementsOf
-#define ElementsOf(array) (sizeof(array) / sizeof(array[0]))
-#endif
 typedef void(*void_fn_t)(void);
 
 /* Context holding CSN1 parameters */
 typedef struct
 {
-  gint  remaining_bits_len;  /* IN to an csn stream operation */
-  gint  bit_offset;          /* IN/OUT to an csn stream operation */
+  int   remaining_bits_len;  /* IN to an csn stream operation */
+  int   bit_offset;          /* IN/OUT to an csn stream operation */
   packet_info* pinfo;
 } csnStream_t;
 
-typedef gint16 (*StreamSerializeFcn_t)(proto_tree *tree, csnStream_t* ar, tvbuff_t *tvb, void* data, int ett_csn1);
+typedef int16_t (*StreamSerializeFcn_t)(proto_tree *tree, csnStream_t* ar, tvbuff_t *tvb, void* data, int ett_csn1);
 typedef CSN_CallBackStatus_t (*DissectorCallbackFcn_t)(proto_tree *tree, tvbuff_t *tvb, void* param1, void* param2, int bit_offset, int ett_csn1, packet_info* pinfo);
 
 
@@ -133,7 +117,7 @@ typedef enum
  *          CSN_VAR_BITMAP, CSN_LEFT_VAR_BMP, and CSN_LEFT_BMP_1 types
  *       - the offset to param1 for the CSN_CALLBACK type
  *       - ERRORCODE  used by the CSN_ERROR type
- *       - the bit-lngth of the LENGTH field in a CSN_SERIALISE type
+ *       - the bit-length of the LENGTH field in a CSN_SERIALISE type
  *
  * descr
  *       This parameter has different meaning depending on the value of the type parameter:
@@ -160,12 +144,12 @@ typedef enum
  *         - an offset to param2 in the CSN_CALLBACK  type
  *
  * may_be_null
- *         TRUE: if dissection may be attempted at an offset beyond the length of existing data bits
- *         FALSE: othewise
+ *         true: if dissection may be attempted at an offset beyond the length of existing data bits
+ *         false: othewise
  *
  * sz
  *    - is the name of the parameter within the descr where their unpacked or packed value shall be stored or fetched.
- *      This paramater is pointed out by the offset parameter in the same CSN_DESCR variable as the sz.
+ *      This parameter is pointed out by the offset parameter in the same CSN_DESCR variable as the sz.
  *    - the free text used by the CSN_TRAP_ERROR (the same as parameter "i")
  *
  * serialize
@@ -176,19 +160,19 @@ typedef enum
 
 typedef struct
 {
-  gint16      type;
-  gint16      i;
+  int16_t     type;
+  int16_t     i;
   union
   {
     const void*     ptr;
-    guint32   value;
+    uint32_t  value;
     const crumb_spec_t *crumb_spec;
   } descr;
   size_t      offset;
-  gboolean    may_be_null;
+  bool        may_be_null;
   const char* sz;
   expert_field* error;
-  guint32     value;
+  uint32_t    value;
   int*      hf_ptr;
   /* used in M_REC_ARRAY to distinguish between "field" and "field exists",
      it's not used on fields that just "exist" */
@@ -198,13 +182,13 @@ typedef struct
 
 typedef struct
 {
-  guint8     bits;
-  guint8     value;
-  gboolean   keep_bits;
+  uint8_t    bits;
+  uint8_t    value;
+  bool       keep_bits;
   CSN_DESCR descr;
 } CSN_ChoiceElement_t;
 
-void csnStreamInit(csnStream_t* ar, gint BitOffset, gint BitCount, packet_info* pinfo);
+void csnStreamInit(csnStream_t* ar, int BitOffset, int BitCount, packet_info* pinfo);
 
 /******************************************************************************
 * FUNCTION:  csnStreamDissector
@@ -222,14 +206,14 @@ void csnStreamInit(csnStream_t* ar, gint BitOffset, gint BitCount, packet_info* 
 *
 * RETURNS:  int  Number of bits left to be unpacked. Negative Error code if failed to unpack all bits
 ******************************************************************************/
-gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pDescr, tvbuff_t *tvb, void* data, int ett_csn1);
+int16_t csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pDescr, tvbuff_t *tvb, void* data, int ett_csn1);
 
 /* CSN struct macro's */
 #define  CSN_DESCR_BEGIN(_STRUCT)\
         CSN_DESCR CSNDESCR_##_STRUCT[] = {
 
 #define  CSN_DESCR_END(_STRUCT)\
-        {CSN_END, 0, {0}, 0, FALSE, "", NULL, 0, NULL, NULL, NULL} };
+        {CSN_END, 0, {0}, 0, false, "", NULL, 0, NULL, NULL, NULL} };
 
 /******************************************************************************
  * CSN_ERROR(Par1, Par2, Par3)
@@ -240,7 +224,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par3: Error code
  *****************************************************************************/
 #define CSN_ERROR(_STRUCT, _Text, _ERRCODE, _EI_ERROR)\
-        {CSN_TRAP_ERROR, _ERRCODE, {_Text}, 0, FALSE, _Text, _EI_ERROR, 0, NULL, NULL, NULL}
+        {CSN_TRAP_ERROR, _ERRCODE, {_Text}, 0, false, _Text, _EI_ERROR, 0, NULL, NULL, NULL}
 
 /******************************************************************************
  * M_BIT(Par1, Par2, Par3)
@@ -250,7 +234,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par3: pointer to the header field
  *****************************************************************************/
 #define M_BIT(_STRUCT, _MEMBER, _HF_PTR)\
-        {CSN_BIT, 0, {0}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_BIT, 0, {0}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_BIT_OR_NULL(Par1, Par2, Par3)
@@ -260,7 +244,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  * Covers the case {null | 0 | 1}
  *****************************************************************************/
 #define M_BIT_OR_NULL(_STRUCT, _MEMBER, _HF_PTR)\
-        {CSN_BIT, 0, {0}, offsetof(_STRUCT, _MEMBER), TRUE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_BIT, 0, {0}, offsetof(_STRUCT, _MEMBER), true, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 /******************************************************************************
  * M_NEXT_EXIST(Par1, Par2, Par3)
  * Indicates whether the next element or a group of elements defined in the
@@ -271,7 +255,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *            element(s) does not exist
  *****************************************************************************/
 #define M_NEXT_EXIST(_STRUCT, _MEMBER, _NoOfExisting, _HF_PTR)\
-        {CSN_NEXT_EXIST, _NoOfExisting, {0}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_NEXT_EXIST, _NoOfExisting, {0}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_NEXT_EXIST_LH(Par1, Par2, Par3)
@@ -281,7 +265,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  * pattern 0x2B is performed on the read bit before the decision is made.
  *****************************************************************************/
 #define M_NEXT_EXIST_LH(_STRUCT, _MEMBER, _NoOfExisting, _HF_PTR)\
-        {CSN_NEXT_EXIST_LH, _NoOfExisting, {0}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_NEXT_EXIST_LH, _NoOfExisting, {0}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_NEXT_EXIST_OR_NULL(Par1, Par2, Par3)
@@ -291,7 +275,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  * Covers the case {null | 0 | 1 < IE >}
  *****************************************************************************/
 #define M_NEXT_EXIST_OR_NULL(_STRUCT, _MEMBER, _NoOfExisting, _HF_PTR)\
-        {CSN_NEXT_EXIST, _NoOfExisting, {0}, offsetof(_STRUCT, _MEMBER), TRUE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_NEXT_EXIST, _NoOfExisting, {0}, offsetof(_STRUCT, _MEMBER), true, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_NEXT_EXIST_OR_NULL_LH(Par1, Par2, Par3)
@@ -301,7 +285,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  * Covers the case {null | L | H < IE >}
  *****************************************************************************/
 #define M_NEXT_EXIST_OR_NULL_LH(_STRUCT, _MEMBER, _NoOfExisting, _HF_PTR)\
-        {CSN_NEXT_EXIST_LH, _NoOfExisting, {(void*)1}, offsetof(_STRUCT, _MEMBER), TRUE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_NEXT_EXIST_LH, _NoOfExisting, {(void*)1}, offsetof(_STRUCT, _MEMBER), true, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_UINT(Par1, Par2, Par3, Par4)
@@ -312,7 +296,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par4: pointer to the header field
  *****************************************************************************/
 #define M_UINT(_STRUCT, _MEMBER, _BITS, _HF_PTR)\
-        {CSN_UINT, _BITS, {0}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_UINT, _BITS, {0}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_UINT_SPLIT(Par1, Par2, Par3, Par4)
@@ -324,7 +308,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par4: pointer to the header field
  *****************************************************************************/
 #define M_SPLIT_BITS(_STRUCT, _MEMBER, _SPEC, _BITS, _HF_PTR)\
-        {CSN_SPLIT_BITS, _BITS, {_SPEC}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_SPLIT_BITS, _BITS, {_SPEC}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_NULL_SPLIT(Par1, Par2, Par3, Par4)
@@ -335,7 +319,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par4: segment number (0 based)
  *****************************************************************************/
 #define M_BITS_CRUMB(_STRUCT, _MEMBER, _SPEC, _SEG, _HF_PTR)\
-        {CSN_SPLIT_BITS_CRUMB, _SEG, {_SPEC}, 0, FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_SPLIT_BITS_CRUMB, _SEG, {_SPEC}, 0, false, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_UINT_OR_NULL(Par1, Par2, Par3, Par4)
@@ -345,7 +329,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  * Covers the case {null | 0 | 1 < IE >}
  *****************************************************************************/
 #define M_UINT_OR_NULL(_STRUCT, _MEMBER, _BITS, _HF_PTR)\
-        {CSN_UINT, _BITS, {0}, offsetof(_STRUCT, _MEMBER), TRUE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_UINT, _BITS, {0}, offsetof(_STRUCT, _MEMBER), true, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_UINT_LH(Par1, Par2, Par3, Par4)
@@ -355,7 +339,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  * received CSN.1 message
  *****************************************************************************/
 #define M_UINT_LH(_STRUCT, _MEMBER, _BITS, _HF_PTR)\
-        {CSN_UINT_LH, _BITS, {0}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_UINT_LH, _BITS, {0}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_UINT_OFFSET(Par1, Par2, Par3, Par4)
@@ -366,7 +350,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par4: value added to the returned integer (offset)
  *****************************************************************************/
 #define M_UINT_OFFSET(_STRUCT, _MEMBER, _BITS, _OFFSET, _HF_PTR)\
-        {CSN_UINT_OFFSET, _BITS, {(void*)_OFFSET}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_UINT_OFFSET, _BITS, {(void*)_OFFSET}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_UINT_ARRAY(Par1, Par2, Par3, Par4)
@@ -377,7 +361,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par4: number of elements in the array (fixed integer value)
  *****************************************************************************/
 #define M_UINT_ARRAY(_STRUCT, _MEMBER, _BITS, _ElementCount, _HF_PTR)\
-        {CSN_UINT_ARRAY, _BITS, {(void*)_ElementCount}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_UINT_ARRAY, _BITS, {(void*)_ElementCount}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_VAR_UINT_ARRAY(Par1, Par2, Par3, Par4)
@@ -389,7 +373,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *            structure member holding the length value
  *****************************************************************************/
 #define M_VAR_UINT_ARRAY(_STRUCT, _MEMBER, _BITS, _ElementCountField, _HF_PTR)\
-        {CSN_UINT_ARRAY, _BITS, {(void*)offsetof(_STRUCT, _ElementCountField)}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 1, _HF_PTR, NULL, NULL}
+        {CSN_UINT_ARRAY, _BITS, {(void*)offsetof(_STRUCT, _ElementCountField)}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 1, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_VAR_ARRAY(Par1, Par2, Par3, Par4)
@@ -400,7 +384,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par4: offset that is added to the Par3 to get the actual size of the array
  *****************************************************************************/
 #define M_VAR_ARRAY(_STRUCT, _MEMBER, _ElementCountField, _OFFSET, _HF_PTR)\
-        {CSN_VARIABLE_ARRAY, _OFFSET, {(void*)offsetof(_STRUCT, _ElementCountField)}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_VARIABLE_ARRAY, _OFFSET, {(void*)offsetof(_STRUCT, _ElementCountField)}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_VAR_TARRAY(Par1, Par2, Par3, Par4)
@@ -411,14 +395,14 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par4: name of the structure member holding the size of the array
  *****************************************************************************/
 #define M_VAR_TARRAY(_STRUCT, _MEMBER, _MEMBER_TYPE, _ElementCountField)\
-        {CSN_VARIABLE_TARRAY, offsetof(_STRUCT, _ElementCountField), {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, sizeof(_MEMBER_TYPE), NULL, NULL, NULL}
+        {CSN_VARIABLE_TARRAY, offsetof(_STRUCT, _ElementCountField), {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, sizeof(_MEMBER_TYPE), NULL, NULL, NULL}
 
 /******************************************************************************
  * M_VAR_TARRAY_OFFSET(Par1, Par2, Par3, Par4)
  * Same as M_VAR_TARRAY with offset
  *****************************************************************************/
 #define M_VAR_TARRAY_OFFSET(_STRUCT, _MEMBER, _MEMBER_TYPE, _ElementCountField)\
-        {CSN_VARIABLE_TARRAY_OFFSET, offsetof(_STRUCT, _ElementCountField), {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, sizeof(_MEMBER_TYPE), NULL, NULL, NULL}
+        {CSN_VARIABLE_TARRAY_OFFSET, offsetof(_STRUCT, _ElementCountField), {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, sizeof(_MEMBER_TYPE), NULL, NULL, NULL}
 
 /******************************************************************************
  * M_REC_ARRAY(Par1, Par2, Par3, Par4)
@@ -437,7 +421,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *****************************************************************************/
 /* XXX - need 2 hf support */
 #define M_REC_ARRAY(_STRUCT, _MEMBER, _ElementCountField, _BITS, _HF_PTR, _HF_PTR_EXIST)\
-        {CSN_RECURSIVE_ARRAY, _BITS, {(const void*)offsetof(_STRUCT, _ElementCountField)}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, _HF_PTR_EXIST, NULL}
+        {CSN_RECURSIVE_ARRAY, _BITS, {(const void*)offsetof(_STRUCT, _ElementCountField)}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, _HF_PTR_EXIST, NULL}
 
 /******************************************************************************
  * M_VAR_TYPE_ARRAY(Par1, Par2, Par3, Par4)
@@ -448,7 +432,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par4: number of elements in the array (fixed integer value)
  *****************************************************************************/
 #define M_TYPE_ARRAY(_STRUCT, _MEMBER, _MEMBER_TYPE, _ElementCount)\
-        {CSN_TYPE_ARRAY, _ElementCount, {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, sizeof(_MEMBER_TYPE), NULL, NULL, NULL}
+        {CSN_TYPE_ARRAY, _ElementCount, {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, sizeof(_MEMBER_TYPE), NULL, NULL, NULL}
 
 /******************************************************************************
  * M_REC_TARRAY(Par1, Par2, Par3, Par4)
@@ -460,7 +444,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par4: will hold the number of element in the array after unpacking
  *****************************************************************************/
 #define M_REC_TARRAY(_STRUCT, _MEMBER, _MEMBER_TYPE, _ElementCountField, _HF_PTR)\
-        {CSN_RECURSIVE_TARRAY, offsetof(_STRUCT, _ElementCountField), {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, sizeof(_MEMBER_TYPE), _HF_PTR, NULL, NULL}
+        {CSN_RECURSIVE_TARRAY, offsetof(_STRUCT, _ElementCountField), {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, sizeof(_MEMBER_TYPE), _HF_PTR, NULL, (void_fn_t)array_length(((_STRUCT*)0)->_MEMBER)}
 
 /******************************************************************************
  * M_REC_TARRAY1(Par1, Par2, Par3, Par4)
@@ -468,7 +452,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  * <list> ::= <type> {1 <type>} ** 0 ;
  *****************************************************************************/
 #define M_REC_TARRAY_1(_STRUCT, _MEMBER, _MEMBER_TYPE, _ElementCountField, _HF_PTR)\
-        {CSN_RECURSIVE_TARRAY_1, offsetof(_STRUCT, _ElementCountField), {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, sizeof(_MEMBER_TYPE), _HF_PTR, NULL, NULL}
+        {CSN_RECURSIVE_TARRAY_1, offsetof(_STRUCT, _ElementCountField), {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, sizeof(_MEMBER_TYPE), _HF_PTR, NULL, (void_fn_t)array_length(((_STRUCT*)0)->_MEMBER)}
 
 /******************************************************************************
  * M_REC_TARRAY2(Par1, Par2, Par3, Par4)
@@ -476,7 +460,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  * <lists> ::= <type> { 0 <type> } ** 1 ;
  *****************************************************************************/
 #define M_REC_TARRAY_2(_STRUCT, _MEMBER, _MEMBER_TYPE, _ElementCountField)\
-        {CSN_RECURSIVE_TARRAY_2, offsetof(_STRUCT, _ElementCountField), {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, sizeof(_MEMBER_TYPE), NULL, NULL, NULL}
+        {CSN_RECURSIVE_TARRAY_2, offsetof(_STRUCT, _ElementCountField), {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, sizeof(_MEMBER_TYPE), NULL, NULL, (void_fn_t)array_length(((_STRUCT*)0)->_MEMBER)}
 
 /******************************************************************************
  * M_TYPE(Par1, Par2, Par3)
@@ -487,7 +471,18 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par3: type of member
  *****************************************************************************/
 #define M_TYPE(_STRUCT, _MEMBER, _MEMBER_TYPE)\
-        {CSN_TYPE, 0, {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, NULL, NULL, NULL}
+        {CSN_TYPE, 0, {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, NULL, NULL, NULL}
+
+/******************************************************************************
+ * M_TYPE_OR_NULL(Par1, Par2, Par3)
+ * Similar to the M_TYPE except that not only the request set of bits but also the
+ * end of the message may be encountered when looking for the next element in
+ * the message.
+ * Covers the case {null | 0 | 1 < IE >}
+ *****************************************************************************/
+#define M_TYPE_OR_NULL(_STRUCT, _MEMBER, _MEMBER_TYPE)\
+        {CSN_TYPE, 0, {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), true, #_MEMBER, NULL, 0, NULL, NULL, NULL}
+
 
 /******************************************************************************
  * M_TYPE_LABEL(Par1, Par2, Par3, Par4)
@@ -499,7 +494,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par4: C string for the text
  *****************************************************************************/
 #define M_TYPE_LABEL(_STRUCT, _MEMBER, _MEMBER_TYPE, _LABEL)\
-        {CSN_TYPE, 0, {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), FALSE, _LABEL, NULL, 0, NULL, NULL, NULL}
+        {CSN_TYPE, 0, {(const void*)CSNDESCR_##_MEMBER_TYPE}, offsetof(_STRUCT, _MEMBER), false, _LABEL, NULL, 0, NULL, NULL, NULL}
 
 /******************************************************************************
  * M_UNION(Par1, Par2)
@@ -512,14 +507,14 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par2: number of possible choice in the union
  *****************************************************************************/
 #define M_UNION(_STRUCT, _COUNT, _HF_PTR)\
-        {CSN_UNION, _COUNT, {0}, offsetof(_STRUCT, UnionType), FALSE, "UnionType", NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_UNION, _COUNT, {0}, offsetof(_STRUCT, UnionType), false, "UnionType", NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_UNION_LH(Par1, Par2)
  * Same as M_UNION but masked with background value 0x2B
  *****************************************************************************/
 #define M_UNION_LH(_STRUCT, _COUNT, _HF_PTR)\
-        {CSN_UNION_LH, _COUNT, {0}, offsetof(_STRUCT, UnionType), FALSE, "UnionType", NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_UNION_LH, _COUNT, {0}, offsetof(_STRUCT, UnionType), false, "UnionType", NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_CHOICE(Par1, Par2, Par3, Par4)
@@ -548,7 +543,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par4: number of possible choices in the union
  *****************************************************************************/
 #define M_CHOICE(_STRUCT, _MEMBER, _CHOICE, _ElementCount, _HF_PTR)\
-        {CSN_CHOICE, _ElementCount, {(const void*)_CHOICE}, offsetof(_STRUCT, _MEMBER), FALSE, #_CHOICE, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_CHOICE, _ElementCount, {(const void*)_CHOICE}, offsetof(_STRUCT, _MEMBER), false, #_CHOICE, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_CHOICE_IL(Par1, Par2, Par3, Par4)
@@ -556,7 +551,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  * displayed to show there was a choice
  *****************************************************************************/
 #define M_CHOICE_IL(_STRUCT, _MEMBER, _CHOICE, _ElementCount, _HF_PTR)\
-	{CSN_CHOICE, _ElementCount, {(const void*)_CHOICE}, offsetof(_STRUCT, _MEMBER), FALSE, NULL, NULL, 0, _HF_PTR, NULL, NULL}
+	{CSN_CHOICE, _ElementCount, {(const void*)_CHOICE}, offsetof(_STRUCT, _MEMBER), false, NULL, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_FIXED(Par1, Par2, Par3)
@@ -568,7 +563,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *            the message the unpacking procedure is aborted
  *****************************************************************************/
 #define M_FIXED(_STRUCT, _BITS, _BITVALUE, _HF_PTR)\
-        {CSN_FIXED, _BITS, {0}, _BITVALUE, FALSE, #_BITVALUE, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_FIXED, _BITS, {0}, _BITVALUE, false, #_BITVALUE, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_FIXED_LABEL(Par1, Par2, Par3, Par4)
@@ -580,7 +575,7 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par4: C string for the text
  *****************************************************************************/
 #define M_FIXED_LABEL(_STRUCT, _BITS, _BITVALUE, _LABEL, _HF_PTR)\
-  {CSN_FIXED, _BITS, {0}, _BITVALUE, FALSE, _LABEL, NULL, 0, _HF_PTR, NULL, NULL}
+  {CSN_FIXED, _BITS, {0}, _BITVALUE, false, _LABEL, NULL, 0, _HF_PTR, NULL, NULL}
 
 /******************************************************************************
  * M_SERIALIZE(Par1, Par2, Par3)
@@ -593,10 +588,10 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  * back control over the data stream and continues to work with the message.
  *****************************************************************************/
 #define M_SERIALIZE(_STRUCT, _MEMBER, _LENGTH_LEN, _HF_PTR, _SERIALIZEFCN)\
-        {CSN_SERIALIZE, _LENGTH_LEN, {0}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, (void_fn_t)_SERIALIZEFCN}
+        {CSN_SERIALIZE, _LENGTH_LEN, {0}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, NULL, (void_fn_t)_SERIALIZEFCN}
 
 #define M_CALLBACK(_STRUCT, _CSNCALLBACKFCN, _PARAM1, _PARAM2)\
-        {CSN_CALLBACK, offsetof(_STRUCT, _PARAM1), {0}, offsetof(_STRUCT, _PARAM2), FALSE, "CallBack_"#_CSNCALLBACKFCN, NULL, 0, NULL, NULL, (void_fn_t)_CSNCALLBACKFCN}
+        {CSN_CALLBACK, offsetof(_STRUCT, _PARAM1), {0}, offsetof(_STRUCT, _PARAM2), false, "CallBack_"#_CSNCALLBACKFCN, NULL, 0, NULL, NULL, (void_fn_t)_CSNCALLBACKFCN}
 
 /******************************************************************************
  * M_BITMAP(Par1, Par2, Par3)
@@ -607,52 +602,52 @@ gint16 csnStreamDissector(proto_tree *tree, csnStream_t* ar, const CSN_DESCR* pD
  *      Par3: length of the bitmap expressed in bits
  *****************************************************************************/
 #define M_BITMAP(_STRUCT, _MEMBER, _BITS, _HF_PTR)\
-        {CSN_BITMAP, _BITS, {0}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_BITMAP, _BITS, {0}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /* variable length, right aligned bitmap i.e. _ElementCountField = 11 => 00000111 11111111 */
 #define M_VAR_BITMAP(_STRUCT, _MEMBER, _ElementCountField, _OFFSET, _HF_PTR)\
-        {CSN_VARIABLE_BITMAP, _OFFSET, {(void*)offsetof(_STRUCT, _ElementCountField)}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_VARIABLE_BITMAP, _OFFSET, {(void*)offsetof(_STRUCT, _ElementCountField)}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /* variable length, right aligned bitmap filling the rest of message
  * - when unpacking the _ElementCountField will be set in runtime
  * - when packing _ElementCountField contains the size of bitmap
  */
 #define M_VAR_BITMAP_1(_STRUCT, _MEMBER, _ElementCountField, _OFFSET)\
-        {CSN_VARIABLE_BITMAP_1, _OFFSET, {(void*)offsetof(_STRUCT, _ElementCountField)}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, NULL, NULL, NULL}
+        {CSN_VARIABLE_BITMAP_1, _OFFSET, {(void*)offsetof(_STRUCT, _ElementCountField)}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, NULL, NULL, NULL}
 
 /* variable length, left aligned bitmap i.e. _ElementCountField = 11 => 11111111 11100000 */
 #define M_LEFT_VAR_BMP(_STRUCT, _MEMBER, _ElementCountField, _OFFSET, _HF_PTR)\
-        {CSN_LEFT_ALIGNED_VAR_BMP, _OFFSET, {(void*)offsetof(_STRUCT, _ElementCountField)}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_LEFT_ALIGNED_VAR_BMP, _OFFSET, {(void*)offsetof(_STRUCT, _ElementCountField)}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /* variable length, left aligned bitmap filling the rest of message
  *- when unpacking the _ElementCountField will be set in runtime
  * - when packing _ElementCountField contains the size of bitmap
  */
 #define M_LEFT_VAR_BMP_1(_STRUCT, _MEMBER, _ElementCountField, _OFFSET, _HF_PTR)\
-        {CSN_LEFT_ALIGNED_VAR_BMP_1, _OFFSET, {(void*)offsetof(_STRUCT, _ElementCountField)}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_LEFT_ALIGNED_VAR_BMP_1, _OFFSET, {(void*)offsetof(_STRUCT, _ElementCountField)}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, _HF_PTR, NULL, NULL}
 
 /* todo: dissect padding bits looking for unexpected extensions */
 #define M_PADDING_BITS(_STRUCT, _HF_PTR)\
-        {CSN_PADDING_BITS, 0, {0}, 0, TRUE, "Padding", NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_PADDING_BITS, 0, {0}, 0, true, "Padding", NULL, 0, _HF_PTR, NULL, NULL}
 
 #define M_NULL(_STRUCT, _MEMBER, _SKIP_BITS)\
-        {CSN_NULL, _SKIP_BITS, {0}, offsetof(_STRUCT, _MEMBER), FALSE, #_MEMBER, NULL, 0, NULL, NULL, NULL}
+        {CSN_NULL, _SKIP_BITS, {0}, offsetof(_STRUCT, _MEMBER), false, #_MEMBER, NULL, 0, NULL, NULL, NULL}
 
 #define M_THIS_EXIST(_STRUCT, _HF_PTR)\
-        {CSN_EXIST, 0, {0}, offsetof(_STRUCT, Exist), FALSE, "Exist", NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_EXIST, 0, {0}, offsetof(_STRUCT, Exist), false, "Exist", NULL, 0, _HF_PTR, NULL, NULL}
 
 #define M_THIS_EXIST_LH(_STRUCT, _HF_PTR)\
-        {CSN_EXIST_LH, 0, {0}, offsetof(_STRUCT, Exist), FALSE, "Exist", NULL, 0, _HF_PTR, NULL, NULL}
+        {CSN_EXIST_LH, 0, {0}, offsetof(_STRUCT, Exist), false, "Exist", NULL, 0, _HF_PTR, NULL, NULL}
 
-/* return value 0 if ok else discontionue the unpacking */
-typedef gint16 (*CsnCallBackFcn_t)(void* pv ,...);
+/* return value 0 if ok else discontinue the unpacking */
+typedef int16_t (*CsnCallBackFcn_t)(void* pv ,...);
 
 #define CSNDESCR(_FuncType) CSNDESCR_##_FuncType
 
 #endif /*_PACKET_CSN1_H_*/
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

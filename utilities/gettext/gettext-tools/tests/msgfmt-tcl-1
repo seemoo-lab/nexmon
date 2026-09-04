@@ -1,0 +1,13 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test output in Tcl .msg format.
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} --tcl -l pl -d . "$wabs_srcdir"/testdata/tcltest_pl.po || Exit 1
+
+: ${DIFF=diff}
+${DIFF} "$abs_srcdir"/testdata/tcltest_pl.msg pl.msg
+result=$?
+
+exit $result

@@ -3,416 +3,558 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 2001 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
-#include <stdio.h>
 #include <ftypes-int.h>
 #include <string.h>
 
-#define CMP_MATCHES cmp_matches
-
 #include <strutil.h>
+#include <wsutil/ws_assert.h>
+#include <wsutil/array.h>
+#include <wsutil/strtoi.h>
+
 
 static void
 string_fvalue_new(fvalue_t *fv)
 {
-	fv->value.string = NULL;
+	fv->value.strbuf = NULL;
+}
+
+static void
+string_fvalue_copy(fvalue_t *dst, const fvalue_t *src)
+{
+	dst->value.strbuf = wmem_strbuf_dup(NULL, src->value.strbuf);
 }
 
 static void
 string_fvalue_free(fvalue_t *fv)
 {
-	g_free(fv->value.string);
+	wmem_strbuf_destroy(fv->value.strbuf);
 }
 
 static void
-string_fvalue_set_string(fvalue_t *fv, const gchar *value)
+string_fvalue_set_strbuf(fvalue_t *fv, wmem_strbuf_t *value)
 {
 	DISSECTOR_ASSERT(value != NULL);
 
 	/* Free up the old value, if we have one */
 	string_fvalue_free(fv);
 
-	fv->value.string = (gchar *)g_strdup(value);
+	fv->value.strbuf = value;
 }
 
-static int
-string_repr_len(fvalue_t *fv, ftrepr_t rtype, int field_display _U_)
+static char *
+string_to_repr(wmem_allocator_t *scope, const fvalue_t *fv, ftrepr_t rtype, int field_display _U_)
 {
 	switch (rtype) {
-		case FTREPR_DISPLAY:
-			return (int)strlen(fv->value.string);
-
-		case FTREPR_DFILTER:
-			return escape_string_len(fv->value.string);
+	case FTREPR_DISPLAY:
+	case FTREPR_JSON:
+	case FTREPR_RAW:
+	case FTREPR_EK:
+		/* XXX: This escapes NUL with "\0", but JSON (neither RFC 8259 nor
+		 * ECMA-404) does not allow that, it must be "\u0000".
+		 */
+		return ws_escape_null(scope, fv->value.strbuf->str, fv->value.strbuf->len, false);
+	case FTREPR_DFILTER:
+		return ws_escape_string_len(scope, fv->value.strbuf->str, fv->value.strbuf->len, true);
+	default:
+		ws_assert_not_reached();
+		return NULL;
 	}
-	g_assert_not_reached();
-	return -1;
-}
-
-static void
-string_to_repr(fvalue_t *fv, ftrepr_t rtype, int field_display _U_, char *buf, unsigned int size)
-{
-	switch (rtype) {
-		case FTREPR_DISPLAY:
-			g_strlcpy(buf, fv->value.string, size);
-			return;
-
-		case FTREPR_DFILTER:
-			escape_string(buf, fv->value.string);
-			return;
-	}
-	g_assert_not_reached();
 }
 
 
-static gpointer
+static const wmem_strbuf_t *
 value_get(fvalue_t *fv)
 {
-	return fv->value.string;
+	return fv->value.strbuf;
 }
 
-static gboolean
-val_from_string(fvalue_t *fv, const char *s, gchar **err_msg _U_)
+static bool
+val_from_string(fvalue_t *fv, const char *s, size_t len, char **err_msg _U_)
 {
 	/* Free up the old value, if we have one */
 	string_fvalue_free(fv);
 
-	fv->value.string = g_strdup(s);
-	return TRUE;
+	if (len > 0)
+		fv->value.strbuf = wmem_strbuf_new_len(NULL, s, len);
+	else
+		fv->value.strbuf = wmem_strbuf_new(NULL, s);
+
+	return true;
 }
 
-static gboolean
-val_from_unparsed(fvalue_t *fv, const char *s, gboolean allow_partial_value _U_, gchar **err_msg)
+static bool
+val_from_literal(fvalue_t *fv, const char *s, bool allow_partial_value _U_, char **err_msg)
 {
-	fvalue_t *fv_bytes;
+	/* Just turn it into a string */
+	/* XXX Should probably be a syntax error instead. It's more user-friendly to ask the
+	 * user to be explicit about the meaning of an unquoted literal than them trying to figure out
+	 * why a valid filter expression is giving wrong results. */
+	return val_from_string(fv, s, 0, err_msg);
+}
+
+static bool
+val_from_charconst(fvalue_t *fv, unsigned long num, char **err_msg)
+{
+	/* XXX Should be a syntax error if literal is also a syntax error. */
 
 	/* Free up the old value, if we have one */
 	string_fvalue_free(fv);
+	fv->value.strbuf = NULL;
 
-	/* Does this look like a byte-string? */
-	fv_bytes = fvalue_from_unparsed(FT_BYTES, s, TRUE, NULL);
-	if (fv_bytes) {
-		/* Copy the bytes over to a string and terminate it
-		 * with a NUL. XXX - what if the user embeds a NUL
-		 * in the middle of the byte string? */
-		int num_bytes = fv_bytes->value.bytes->len;
-
-		fv->value.string = (gchar *)g_malloc(num_bytes + 1);
-		memcpy(fv->value.string, fv_bytes->value.bytes->data, num_bytes);
-		fv->value.string[num_bytes] = '\0';
-
-		FVALUE_FREE(fv_bytes);
-		return TRUE;
+	if (num > UINT8_MAX) {
+		if (err_msg) {
+			*err_msg = ws_strdup_printf("%lu is too large for a byte value", num);
+		}
+		return false;
 	}
 
-	/* Just turn it into a string */
-	return val_from_string(fv, s, err_msg);
+	char c = (char)num;
+	fv->value.strbuf = wmem_strbuf_new(NULL, NULL);
+	wmem_strbuf_append_c(fv->value.strbuf, c);
+
+	return true;
 }
 
-static guint
+static unsigned
+string_hash(const fvalue_t *fv)
+{
+	return g_str_hash(wmem_strbuf_get_str(fv->value.strbuf));
+}
+
+static bool
+string_is_zero(const fvalue_t *fv)
+{
+	return fv->value.strbuf == NULL || fv->value.strbuf->len == 0;
+}
+
+static unsigned
 len(fvalue_t *fv)
 {
-	return (guint)strlen(fv->value.string);
+	/* g_utf8_strlen returns long for no apparent reason*/
+	long len = g_utf8_strlen(fv->value.strbuf->str, -1);
+	if (len < 0)
+		return 0;
+	return (unsigned)len;
 }
 
 static void
-slice(fvalue_t *fv, GByteArray *bytes, guint offset, guint length)
+slice(fvalue_t *fv, wmem_strbuf_t *buf, unsigned offset, unsigned length)
 {
-	guint8* data;
+	const char *str = fv->value.strbuf->str;
 
-	data = fv->value.ustring + offset;
-
-	g_byte_array_append(bytes, data, length);
+	/* Go to the starting offset */
+	const char *p = g_utf8_offset_to_pointer(str, (long)offset);
+	const char *n;
+	/* Copy 'length' codepoints to dst. Skip the terminating NULL */
+	while (*p != '\0' && length-- > 0) {
+		n = g_utf8_next_char(p);
+		/* Append n - p bytes (one codepoint)*/
+		wmem_strbuf_append_len(buf, p, n - p);
+		p = n;
+	}
 }
 
-
-static gboolean
-cmp_eq(const fvalue_t *a, const fvalue_t *b)
+static enum ft_result
+cmp_order(const fvalue_t *a, const fvalue_t *b, int *cmp)
 {
-	return (strcmp(a->value.string, b->value.string) == 0);
+	*cmp = wmem_strbuf_strcmp(a->value.strbuf, b->value.strbuf);
+	return FT_OK;
 }
 
-static gboolean
-cmp_ne(const fvalue_t *a, const fvalue_t *b)
-{
-	return (strcmp(a->value.string, b->value.string) != 0);
-}
-
-static gboolean
-cmp_gt(const fvalue_t *a, const fvalue_t *b)
-{
-	return (strcmp(a->value.string, b->value.string) > 0);
-}
-
-static gboolean
-cmp_ge(const fvalue_t *a, const fvalue_t *b)
-{
-	return (strcmp(a->value.string, b->value.string) >= 0);
-}
-
-static gboolean
-cmp_lt(const fvalue_t *a, const fvalue_t *b)
-{
-	return (strcmp(a->value.string, b->value.string) < 0);
-}
-
-static gboolean
-cmp_le(const fvalue_t *a, const fvalue_t *b)
-{
-	return (strcmp(a->value.string, b->value.string) <= 0);
-}
-
-static gboolean
-cmp_contains(const fvalue_t *fv_a, const fvalue_t *fv_b)
+static enum ft_result
+cmp_contains(const fvalue_t *fv_a, const fvalue_t *fv_b, bool *contains)
 {
 	/* According to
 	* http://www.introl.com/introl-demo/Libraries/C/ANSI_C/string/strstr.html
 	* strstr() returns a non-NULL value if needle is an empty
 	* string. We don't that behavior for cmp_contains. */
-	if (strlen(fv_b->value.string) == 0) {
-		return FALSE;
+	if (fv_b->value.strbuf->len == 0) {
+		*contains = false;
+		return FT_OK;
 	}
 
-	if (strstr(fv_a->value.string, fv_b->value.string)) {
-		return TRUE;
+	if (wmem_strbuf_strstr(fv_a->value.strbuf, fv_b->value.strbuf)) {
+		*contains = true;
 	}
 	else {
-		return FALSE;
+		*contains = false;
 	}
+
+	return FT_OK;
 }
 
-static gboolean
-cmp_matches(const fvalue_t *fv_a, const fvalue_t *fv_b)
+static enum ft_result
+cmp_matches(const fvalue_t *fv, const ws_regex_t *regex, bool *matches)
 {
-	char *str = fv_a->value.string;
-	GRegex *regex = fv_b->value.re;
+	wmem_strbuf_t *buf = fv->value.strbuf;
 
-	/* fv_b is always a FT_PCRE, otherwise the dfilter semcheck() would have
-	 * warned us. For the same reason (and because we're using g_malloc()),
-	 * fv_b->value.re is not NULL.
+	if (regex == NULL) {
+		return FT_BADARG;
+	}
+
+	*matches = ws_regex_matches_length(regex, buf->str, buf->len);
+	return FT_OK;
+}
+
+static bool
+ax25_from_string(fvalue_t *fv, const char *s, size_t len, char **err_msg _U_)
+{
+	/* See section 3.12 "Address-Field Encoding" of the AX.25
+	 * spec and
+	 *
+	 *   http://www.itu.int/ITU-R/terrestrial/docs/fixedmobile/fxm-art19-sec3.pdf
 	 */
-	if (strcmp(fv_b->ftype->name, "FT_PCRE") != 0) {
-		return FALSE;
+
+	if (len == 0)
+		len = strlen(s);
+
+	const char *end = s + len;
+	const char *hyphen = strchr(s, '-');
+	if (hyphen == NULL) {
+		hyphen = end;
 	}
-	if (! regex) {
-		return FALSE;
+
+	if (s == hyphen || (hyphen - s) > 6) {
+		if (err_msg != NULL)
+			*err_msg = ws_strdup_printf("\"%s\" is not a valid AX.25 address, the callsign must be 1-6 alphanumeric ASCII characters.", s);
+		return false;
 	}
-	return g_regex_match_full(
-			regex,		/* Compiled PCRE */
-			str,		/* The data to check for the pattern... */
-			(int)strlen(str),	/* ... and its length */
-			0,		/* Start offset within data */
-			(GRegexMatchFlags)0,		/* GRegexMatchFlags */
-			NULL,		/* We are not interested in the match information */
-			NULL		/* We don't want error information */
-			);
+	const char *p;
+	for (p = s; p != hyphen; p++) {
+		if (!g_ascii_isalnum(*p)) {
+			if (err_msg != NULL)
+				*err_msg = ws_strdup_printf("\"%s\" is not a valid AX.25 address, the callsign must be alphanumeric ASCII characters.", s);
+			return false;
+		}
+	}
+	uint8_t ssid = 0;
+	if (hyphen != end) {
+		if (!ws_strtou8(hyphen + 1, NULL, &ssid)) {
+			if (err_msg != NULL)
+				*err_msg = ws_strdup_printf("\"%s\" is not a valid AX.25 SSID (must be a number between 0 and 15).", hyphen + 1);
+			return false;
+		}
+		if (ssid > 15) {
+			if (err_msg != NULL)
+				*err_msg = ws_strdup_printf("%u is too large to be an AX.25 SSID (must be between 0 and 15)", ssid);
+			return false;
+		}
+	}
+
+	/* OK, it looks valid. Allow the user to enter lower-case letters. */
+	char *str = g_ascii_strup(s, len);
+	bool ret = val_from_string(fv, str, len, err_msg);
+	g_free(str);
+	return ret;
+}
+
+static bool
+ax25_from_literal(fvalue_t *fv, const char *s, bool allow_partial_value _U_, char **err_msg)
+{
+	return ax25_from_string(fv, s, 0, err_msg);
 }
 
 void
 ftype_register_string(void)
 {
 
-	static ftype_t string_type = {
+	static const ftype_t string_type = {
 		FT_STRING,			/* ftype */
-		"FT_STRING",			/* name */
-		"Character string",		/* pretty_name */
 		0,				/* wire_size */
 		string_fvalue_new,		/* new_value */
+		string_fvalue_copy,		/* copy_value */
 		string_fvalue_free,		/* free_value */
-		val_from_unparsed,		/* val_from_unparsed */
+		val_from_literal,		/* val_from_literal */
 		val_from_string,		/* val_from_string */
+		val_from_charconst,		/* val_from_charconst */
+		NULL,				/* val_from_uinteger64 */
+		NULL,				/* val_from_sinteger64 */
+		NULL,				/* val_from_double */
 		string_to_repr,			/* val_to_string_repr */
-		string_repr_len,		/* len_string_repr */
 
-		NULL,				/* set_value_byte_array */
-		NULL,				/* set_value_bytes */
-		NULL,				/* set_value_guid */
-		NULL,				/* set_value_time */
-		string_fvalue_set_string,       /* set_value_string */
-		NULL,				/* set_value_protocol */
-		NULL,				/* set_value_uinteger */
-		NULL,				/* set_value_sinteger */
-		NULL,				/* set_value_uinteger64 */
-		NULL,				/* set_value_sinteger64 */
-		NULL,				/* set_value_floating */
+		NULL,				/* val_to_uinteger64 */
+		NULL,				/* val_to_sinteger64 */
+		NULL,				/* val_to_double */
 
-		value_get,			/* get_value */
-		NULL,				/* get_value_uinteger */
-		NULL,				/* get_value_sinteger */
-		NULL,				/* get_value_uinteger64 */
-		NULL,				/* get_value_sinteger64 */
-		NULL,				/* get_value_floating */
+		{ .set_value_strbuf = string_fvalue_set_strbuf },	/* union set_value */
+		{ .get_value_strbuf = value_get },	/* union get_value */
 
-		cmp_eq,
-		cmp_ne,
-		cmp_gt,
-		cmp_ge,
-		cmp_lt,
-		cmp_le,
-		NULL,				/* cmp_bitwise_and */
+		cmp_order,
 		cmp_contains,
-		CMP_MATCHES,
+		cmp_matches,
 
+		string_hash,			/* hash */
+		string_is_zero,			/* is_zero */
+		NULL,				/* is_negative */
+		NULL,				/* is_nan */
 		len,
-		slice,
+		(FvalueSlice)slice,
+		NULL,				/* bitwise_and */
+		NULL,				/* unary_minus */
+		NULL,				/* add */
+		NULL,				/* subtract */
+		NULL,				/* multiply */
+		NULL,				/* divide */
+		NULL,				/* modulo */
 	};
-	static ftype_t stringz_type = {
+	static const ftype_t stringz_type = {
 		FT_STRINGZ,			/* ftype */
-		"FT_STRINGZ",			/* name */
-		"Character string",		/* pretty name */
 		0,				/* wire_size */
 		string_fvalue_new,		/* new_value */
+		string_fvalue_copy,		/* copy_value */
 		string_fvalue_free,		/* free_value */
-		val_from_unparsed,		/* val_from_unparsed */
+		val_from_literal,		/* val_from_literal */
 		val_from_string,		/* val_from_string */
+		val_from_charconst,		/* val_from_charconst */
+		NULL,				/* val_from_uinteger64 */
+		NULL,				/* val_from_sinteger64 */
+		NULL,				/* val_from_double */
 		string_to_repr,			/* val_to_string_repr */
-		string_repr_len,		/* len_string_repr */
 
-		NULL,				/* set_value_byte_array */
-		NULL,				/* set_value_bytes */
-		NULL,				/* set_value_guid */
-		NULL,				/* set_value_time */
-		string_fvalue_set_string,       /* set_value_string */
-		NULL,				/* set_value_protocol */
-		NULL,				/* set_value_uinteger */
-		NULL,				/* set_value_sinteger */
-		NULL,				/* set_value_uinteger64 */
-		NULL,				/* set_value_sinteger64 */
-		NULL,				/* set_value_floating */
+		NULL,				/* val_to_uinteger64 */
+		NULL,				/* val_to_sinteger64 */
+		NULL,				/* val_to_double */
 
-		value_get,			/* get_value */
-		NULL,				/* get_value_uinteger */
-		NULL,				/* get_value_sinteger */
-		NULL,				/* get_value_uinteger64 */
-		NULL,				/* get_value_sinteger64 */
-		NULL,				/* get_value_floating */
+		{ .set_value_strbuf = string_fvalue_set_strbuf },	/* union set_value */
+		{ .get_value_strbuf = value_get },	/* union get_value */
 
-		cmp_eq,
-		cmp_ne,
-		cmp_gt,
-		cmp_ge,
-		cmp_lt,
-		cmp_le,
-		NULL,				/* cmp_bitwise_and */
+		cmp_order,
 		cmp_contains,			/* cmp_contains */
-		CMP_MATCHES,
+		cmp_matches,
 
+		string_hash,			/* hash */
+		string_is_zero,			/* is_zero */
+		NULL,				/* is_negative */
+		NULL,				/* is_nan */
 		len,
-		slice,
+		(FvalueSlice)slice,
+		NULL,				/* bitwise_and */
+		NULL,				/* unary_minus */
+		NULL,				/* add */
+		NULL,				/* subtract */
+		NULL,				/* multiply */
+		NULL,				/* divide */
+		NULL,				/* modulo */
 	};
-	static ftype_t uint_string_type = {
+	static const ftype_t uint_string_type = {
 		FT_UINT_STRING,		/* ftype */
-		"FT_UINT_STRING",		/* name */
-		"Character string",		/* pretty_name */
 		0,				/* wire_size */
 		string_fvalue_new,		/* new_value */
+		string_fvalue_copy,		/* copy_value */
 		string_fvalue_free,		/* free_value */
-		val_from_unparsed,		/* val_from_unparsed */
+		val_from_literal,		/* val_from_literal */
 		val_from_string,		/* val_from_string */
+		val_from_charconst,		/* val_from_charconst */
+		NULL,				/* val_from_uinteger64 */
+		NULL,				/* val_from_sinteger64 */
+		NULL,				/* val_from_double */
 		string_to_repr,			/* val_to_string_repr */
-		string_repr_len,		/* len_string_repr */
 
-		NULL,				/* set_value_byte_array */
-		NULL,				/* set_value_bytes */
-		NULL,				/* set_value_guid */
-		NULL,				/* set_value_time */
-		string_fvalue_set_string,       /* set_value_string */
-		NULL,				/* set_value_protocol */
-		NULL,				/* set_value_uinteger */
-		NULL,				/* set_value_sinteger */
-		NULL,				/* set_value_uinteger64 */
-		NULL,				/* set_value_sinteger64 */
-		NULL,				/* set_value_floating */
+		NULL,				/* val_to_uinteger64 */
+		NULL,				/* val_to_sinteger64 */
+		NULL,				/* val_to_double */
 
-		value_get,			/* get_value */
-		NULL,				/* get_value_uinteger */
-		NULL,				/* get_value_sinteger */
-		NULL,				/* get_value_uinteger64 */
-		NULL,				/* get_value_sinteger64 */
-		NULL,				/* get_value_floating */
+		{ .set_value_strbuf = string_fvalue_set_strbuf },	/* union set_value */
+		{ .get_value_strbuf = value_get },	/* union get_value */
 
-		cmp_eq,
-		cmp_ne,
-		cmp_gt,
-		cmp_ge,
-		cmp_lt,
-		cmp_le,
-		NULL,				/* cmp_bitwise_and */
+		cmp_order,
 		cmp_contains,			/* cmp_contains */
-		CMP_MATCHES,
+		cmp_matches,
 
+		string_hash,			/* hash */
+		string_is_zero,			/* is_zero */
+		NULL,				/* is_negative */
+		NULL,				/* is_nan */
 		len,
-		slice,
+		(FvalueSlice)slice,
+		NULL,				/* bitwise_and */
+		NULL,				/* unary_minus */
+		NULL,				/* add */
+		NULL,				/* subtract */
+		NULL,				/* multiply */
+		NULL,				/* divide */
+		NULL,				/* modulo */
 	};
-	static ftype_t stringzpad_type = {
+	static const ftype_t stringzpad_type = {
 		FT_STRINGZPAD,			/* ftype */
-		"FT_STRINGZPAD",		/* name */
-		"Character string",		/* pretty name */
 		0,				/* wire_size */
 		string_fvalue_new,		/* new_value */
+		string_fvalue_copy,		/* copy_value */
 		string_fvalue_free,		/* free_value */
-		val_from_unparsed,		/* val_from_unparsed */
+		val_from_literal,		/* val_from_literal */
 		val_from_string,		/* val_from_string */
+		val_from_charconst,		/* val_from_charconst */
+		NULL,				/* val_from_uinteger64 */
+		NULL,				/* val_from_sinteger64 */
+		NULL,				/* val_from_double */
 		string_to_repr,			/* val_to_string_repr */
-		string_repr_len,		/* len_string_repr */
 
-		NULL,				/* set_value_byte_array */
-		NULL,				/* set_value_bytes */
-		NULL,				/* set_value_guid */
-		NULL,				/* set_value_time */
-		string_fvalue_set_string,       /* set_value_string */
-		NULL,				/* set_value_protocol */
-		NULL,				/* set_value_uinteger */
-		NULL,				/* set_value_sinteger */
-		NULL,				/* set_value_uinteger64 */
-		NULL,				/* set_value_sinteger64 */
-		NULL,				/* set_value_floating */
+		NULL,				/* val_to_uinteger64 */
+		NULL,				/* val_to_sinteger64 */
+		NULL,				/* val_to_double */
 
-		value_get,			/* get_value */
-		NULL,				/* get_value_uinteger */
-		NULL,				/* get_value_sinteger */
-		NULL,				/* get_value_uinteger64 */
-		NULL,				/* get_value_sinteger64 */
-		NULL,				/* get_value_floating */
+		{ .set_value_strbuf = string_fvalue_set_strbuf },	/* union set_value */
+		{ .get_value_strbuf = value_get },	/* union get_value */
 
-		cmp_eq,
-		cmp_ne,
-		cmp_gt,
-		cmp_ge,
-		cmp_lt,
-		cmp_le,
-		NULL,				/* cmp_bitwise_and */
+		cmp_order,
 		cmp_contains,			/* cmp_contains */
-		CMP_MATCHES,
+		cmp_matches,
 
+		string_hash,			/* hash */
+		string_is_zero,			/* is_zero */
+		NULL,				/* is_negative */
+		NULL,				/* is_nan */
 		len,
-		slice,
+		(FvalueSlice)slice,
+		NULL,				/* bitwise_and */
+		NULL,				/* unary_minus */
+		NULL,				/* add */
+		NULL,				/* subtract */
+		NULL,				/* multiply */
+		NULL,				/* divide */
+		NULL,				/* modulo */
 	};
+	static const ftype_t stringztrunc_type = {
+		FT_STRINGZTRUNC,		/* ftype */
+		0,				/* wire_size */
+		string_fvalue_new,		/* new_value */
+		string_fvalue_copy,		/* copy_value */
+		string_fvalue_free,		/* free_value */
+		val_from_literal,		/* val_from_literal */
+		val_from_string,		/* val_from_string */
+		val_from_charconst,		/* val_from_charconst */
+		NULL,				/* val_from_uinteger64 */
+		NULL,				/* val_from_sinteger64 */
+		NULL,				/* val_from_double */
+		string_to_repr,			/* val_to_string_repr */
+
+		NULL,				/* val_to_uinteger64 */
+		NULL,				/* val_to_sinteger64 */
+		NULL,				/* val_to_double */
+
+		{ .set_value_strbuf = string_fvalue_set_strbuf },	/* union set_value */
+		{ .get_value_strbuf = value_get },	/* union get_value */
+
+		cmp_order,
+		cmp_contains,			/* cmp_contains */
+		cmp_matches,
+
+		string_hash,			/* hash */
+		string_is_zero,			/* is_zero */
+		NULL,				/* is_negative */
+		NULL,				/* is_nan */
+		len,
+		(FvalueSlice)slice,
+		NULL,				/* bitwise_and */
+		NULL,				/* unary_minus */
+		NULL,				/* add */
+		NULL,				/* subtract */
+		NULL,				/* multiply */
+		NULL,				/* divide */
+		NULL,				/* modulo */
+	};
+	static const ftype_t ax25_type = {
+		FT_AX25,			/* ftype */
+		FT_AX25_ADDR_LEN,		/* wire_size */
+		string_fvalue_new,		/* new_value */
+		string_fvalue_copy,		/* copy_value */
+		string_fvalue_free,		/* free_value */
+		ax25_from_literal,		/* val_from_literal */
+		ax25_from_string,		/* val_from_string */
+		NULL,				/* val_from_charconst */
+		NULL,				/* val_from_uinteger64 */
+		NULL,				/* val_from_sinteger64 */
+		NULL,				/* val_from_double */
+		string_to_repr,			/* val_to_string_repr */
+
+		NULL,				/* val_to_uinteger64 */
+		NULL,				/* val_to_sinteger64 */
+		NULL,				/* val_to_double */
+
+		{ .set_value_strbuf = string_fvalue_set_strbuf },	/* union set_value */
+		{ .get_value_strbuf = value_get },	/* union get_value */
+
+		cmp_order,
+		cmp_contains,
+		cmp_matches,
+
+		string_hash,			/* hash */
+		string_is_zero,			/* is_zero */
+		NULL,				/* is_negative */
+		NULL,				/* is_nan */
+		len,
+		(FvalueSlice)slice,
+		NULL,				/* bitwise_and */
+		NULL,				/* unary_minus */
+		NULL,				/* add */
+		NULL,				/* subtract */
+		NULL,				/* multiply */
+		NULL,				/* divide */
+		NULL,				/* modulo */
+	};
+
 
 	ftype_register(FT_STRING, &string_type);
 	ftype_register(FT_STRINGZ, &stringz_type);
 	ftype_register(FT_UINT_STRING, &uint_string_type);
 	ftype_register(FT_STRINGZPAD, &stringzpad_type);
+	ftype_register(FT_STRINGZTRUNC, &stringztrunc_type);
+	ftype_register(FT_AX25, &ax25_type);
+}
+
+void
+ftype_register_pseudofields_string(int proto)
+{
+	static int hf_ft_string;
+	static int hf_ft_stringz;
+	static int hf_ft_uint_string;
+	static int hf_ft_stringzpad;
+	static int hf_ft_stringztrunc;
+	static int hf_ft_ax25;
+
+	static hf_register_info hf_ftypes[] = {
+		{ &hf_ft_string,
+		    { "FT_STRING", "_ws.ftypes.string",
+			FT_STRING, BASE_NONE, NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_ft_stringz,
+		    { "FT_STRINGZ", "_ws.ftypes.stringz",
+			FT_STRINGZ, BASE_NONE, NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_ft_uint_string,
+		    { "FT_UINT_STRING", "_ws.ftypes.uint_string",
+			FT_UINT_STRING, BASE_NONE, NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_ft_stringzpad,
+		    { "FT_STRINGZPAD", "_ws.ftypes.stringzpad",
+			FT_STRINGZPAD, BASE_NONE, NULL, 0x00,
+			NULL, HFILL }
+		},
+		{ &hf_ft_stringztrunc,
+		    { "FT_STRINGZTRUNC", "_ws.ftypes.stringztrunc",
+			FT_STRINGZTRUNC, BASE_NONE, NULL, 0x00,
+			NULL, HFILL }
+		},
+                { &hf_ft_ax25,
+                    { "FT_AX25", "_ws.ftypes.ax25",
+                        FT_AX25, BASE_NONE, NULL, 0x00,
+                        NULL, HFILL }
+                },
+	};
+
+	proto_register_field_array(proto, hf_ftypes, array_length(hf_ftypes));
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -1,9 +1,9 @@
 /* Removes leading and/or trailing whitespaces
-   Copyright (C) 2006, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,9 +12,21 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Davide Angelocola <davide.angelocola@gmail.com> */
+
+/* This file uses _GL_ATTRIBUTE_MALLOC, _GL_ATTRIBUTE_RETURNS_NONNULL.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
+
+#include <stdlib.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Trim mode. */
 #define TRIM_TRAILING 0
@@ -30,4 +42,11 @@
 /* Removes leading whitespaces. */
 #define trim_leading(s) trim2(s, TRIM_LEADING)
 
-char *trim2 (const char *, int);
+char *trim2 (const char *, int)
+  _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE
+  _GL_ATTRIBUTE_RETURNS_NONNULL;
+
+
+#ifdef __cplusplus
+}
+#endif

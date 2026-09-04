@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -19,18 +21,29 @@
  */
 
 #include "config.h"
-#include "giomodule.h"
+
+#include <gio/gio.h>
+#include "giomodule-priv.h"
 
 #include <gstdio.h>
 #include <errno.h>
+#include <locale.h>
+
+#include "glib/glib-private.h"
 
 static gboolean
 is_valid_module_name (const gchar *basename)
 {
 #if !defined(G_OS_WIN32) && !defined(G_WITH_CYGWIN)
+  #if defined(__APPLE__)
+  return g_str_has_prefix (basename, "lib") &&
+         (g_str_has_suffix (basename, ".so") ||
+          g_str_has_suffix (basename, ".dylib"));
+  #else
   return
     g_str_has_prefix (basename, "lib") &&
     g_str_has_suffix (basename, ".so");
+  #endif
 #else
   return g_str_has_suffix (basename, ".dll");
 #endif
@@ -41,6 +54,7 @@ query_dir (const char *dirname)
 {
   GString *data;
   GDir *dir;
+  GList *list = NULL, *iterator = NULL;
   const char *name;
   char *cachename;
   char **(* query)  (void);
@@ -62,21 +76,39 @@ query_dir (const char *dirname)
   data = g_string_new ("");
 
   while ((name = g_dir_read_name (dir)))
+    list = g_list_prepend (list, g_strdup (name));
+
+  list = g_list_sort (list, (GCompareFunc) g_strcmp0);
+  for (iterator = list; iterator; iterator = iterator->next)
     {
       GModule *module;
       gchar     *path;
       char **extension_points;
 
+      name = iterator->data;
       if (!is_valid_module_name (name))
 	continue;
 
       path = g_build_filename (dirname, name, NULL);
-      module = g_module_open (path, G_MODULE_BIND_LAZY | G_MODULE_BIND_LOCAL);
+      module = g_module_open_full (path, G_MODULE_BIND_LAZY | G_MODULE_BIND_LOCAL, &error);
       g_free (path);
 
       if (module)
 	{
-	  g_module_symbol (module, "g_io_module_query", (gpointer) &query);
+	  gchar *modulename;
+	  gchar *symname;
+
+	  modulename = _g_io_module_extract_name (name);
+	  symname = g_strconcat ("g_io_", modulename, "_query", NULL);
+	  g_module_symbol (module, symname, (gpointer) &query);
+	  g_free (symname);
+	  g_free (modulename);
+
+	  if (!query)
+	    {
+	      /* Fallback to old name */
+	      g_module_symbol (module, "g_io_module_query", (gpointer) &query);
+	    }
 
 	  if (query)
 	    {
@@ -96,9 +128,16 @@ query_dir (const char *dirname)
 
 	  g_module_close (module);
 	}
+      else
+        {
+          g_debug ("Failed to open module %s: %s", name, error->message);
+        }
+
+      g_clear_error (&error);
     }
 
   g_dir_close (dir);
+  g_list_free_full (list, g_free);
 
   cachename = g_build_filename (dirname, "giomodule.cache", NULL);
 
@@ -115,9 +154,13 @@ query_dir (const char *dirname)
   else
     {
       if (g_unlink (cachename) != 0 && errno != ENOENT)
-        g_printerr ("Unable to unlink %s: %s\n", cachename, g_strerror (errno));
+        {
+          int errsv = errno;
+          g_printerr ("Unable to unlink %s: %s\n", cachename, g_strerror (errsv));
+        }
     }
 
+  g_free (cachename);
   g_string_free (data, TRUE);
 }
 
@@ -127,12 +170,14 @@ main (gint   argc,
 {
   int i;
 
-  if (argc == 1)
+  if (argc <= 1)
     {
       g_print ("Usage: gio-querymodules <directory1> [<directory2> ...]\n");
       g_print ("Will update giomodule.cache in the listed directories\n");
       return 1;
     }
+
+  setlocale (LC_ALL, GLIB_DEFAULT_LOCALE);
 
   /* Be defensive and ensure we're linked to GObject */
   g_type_ensure (G_TYPE_OBJECT);

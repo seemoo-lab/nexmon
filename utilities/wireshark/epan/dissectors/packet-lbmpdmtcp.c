@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -46,34 +34,34 @@ static dissector_handle_t lbmpdm_tcp_dissector_handle;
 typedef struct
 {
     address addr1;
-    guint16 port1;
+    uint16_t port1;
     address addr2;
-    guint16 port2;
-    guint64 channel;
+    uint16_t port2;
+    uint64_t channel;
 } lbmtcp_transport_t;
 
 static void lbmtcp_order_key(lbmtcp_transport_t * transport)
 {
-    gboolean swap = FALSE;
+    bool swap = false;
     int compare;
 
     /* Order the key so that addr1:port1 <= addr2:port2 */
     compare = cmp_address(&(transport->addr1), &(transport->addr2));
     if (compare > 0)
     {
-        swap = TRUE;
+        swap = true;
     }
     else if (compare == 0)
     {
         if (transport->port1 > transport->port2)
         {
-            swap = TRUE;
+            swap = true;
         }
     }
     if (swap)
     {
         address addr;
-        guint16 port;
+        uint16_t port;
 
         copy_address_shallow(&addr, &(transport->addr1));
         copy_address_shallow(&(transport->addr2), &(transport->addr1));
@@ -84,15 +72,15 @@ static void lbmtcp_order_key(lbmtcp_transport_t * transport)
     }
 }
 
-static lbmtcp_transport_t * lbmtcp_transport_add(const address * address1, guint16 port1, const address * address2, guint16 port2, guint32 frame)
+static lbmtcp_transport_t * lbmtcp_transport_add(const address * address1, uint16_t port1, const address * address2, uint16_t port2, uint32_t frame)
 {
     lbmtcp_transport_t * entry;
     conversation_t * conv = NULL;
 
-    conv = find_conversation(frame, address1, address2, PT_TCP, port1, port2, 0);
+    conv = find_conversation(frame, address1, address2, CONVERSATION_TCP, port1, port2, 0);
     if (conv == NULL)
     {
-        conv = conversation_new(frame, address1, address2, PT_TCP, port1, port2, 0);
+        conv = conversation_new(frame, address1, address2, CONVERSATION_TCP, port1, port2, 0);
     }
     entry = (lbmtcp_transport_t *) conversation_get_proto_data(conv, lbmpdm_tcp_protocol_handle);
     if (entry != NULL)
@@ -119,25 +107,25 @@ static lbmtcp_transport_t * lbmtcp_transport_add(const address * address1, guint
 #define LBMPDM_TCP_DEFAULT_PORT_HIGH 14390
 
 /* Global preferences variables (altered by the preferences dialog). */
-static guint32 global_lbmpdm_tcp_port_low   = LBMPDM_TCP_DEFAULT_PORT_LOW;
-static guint32 global_lbmpdm_tcp_port_high  = LBMPDM_TCP_DEFAULT_PORT_HIGH;
-static gboolean global_lbmpdm_tcp_use_tag   = FALSE;
+static uint32_t global_lbmpdm_tcp_port_low   = LBMPDM_TCP_DEFAULT_PORT_LOW;
+static uint32_t global_lbmpdm_tcp_port_high  = LBMPDM_TCP_DEFAULT_PORT_HIGH;
+static bool global_lbmpdm_tcp_use_tag;
 
 /* Local preferences variables (used by the dissector). */
-static guint32 lbmpdm_tcp_port_low  = LBMPDM_TCP_DEFAULT_PORT_LOW;
-static guint32 lbmpdm_tcp_port_high = LBMPDM_TCP_DEFAULT_PORT_HIGH;
-static gboolean lbmpdm_tcp_use_tag  = FALSE;
+static uint32_t lbmpdm_tcp_port_low  = LBMPDM_TCP_DEFAULT_PORT_LOW;
+static uint32_t lbmpdm_tcp_port_high = LBMPDM_TCP_DEFAULT_PORT_HIGH;
+static bool lbmpdm_tcp_use_tag;
 
 /* Tag definitions. */
 typedef struct
 {
     char * name;
-    guint32 port_low;
-    guint32 port_high;
+    uint32_t port_low;
+    uint32_t port_high;
 } lbmpdm_tcp_tag_entry_t;
 
-static lbmpdm_tcp_tag_entry_t * lbmpdm_tcp_tag_entry = NULL;
-static guint lbmpdm_tcp_tag_count  = 0;
+static lbmpdm_tcp_tag_entry_t * lbmpdm_tcp_tag_entry;
+static unsigned lbmpdm_tcp_tag_count;
 
 UAT_CSTRING_CB_DEF(lbmpdm_tcp_tag, name, lbmpdm_tcp_tag_entry_t)
 UAT_DEC_CB_DEF(lbmpdm_tcp_tag, port_low, lbmpdm_tcp_tag_entry_t)
@@ -153,14 +141,14 @@ static uat_field_t lbmpdm_tcp_tag_array[] =
 /*----------------------------------------------------------------------------*/
 /* UAT callback functions.                                                    */
 /*----------------------------------------------------------------------------*/
-static gboolean lbmpdm_tcp_tag_update_cb(void * record, char * * error_string)
+static bool lbmpdm_tcp_tag_update_cb(void * record, char * * error_string)
 {
     lbmpdm_tcp_tag_entry_t * tag = (lbmpdm_tcp_tag_entry_t *)record;
 
     if (tag->name == NULL)
     {
         *error_string = g_strdup("Tag name can't be empty");
-        return FALSE;
+        return false;
     }
     else
     {
@@ -168,10 +156,10 @@ static gboolean lbmpdm_tcp_tag_update_cb(void * record, char * * error_string)
         if (tag->name[0] == 0)
         {
             *error_string = g_strdup("Tag name can't be empty");
-            return FALSE;
+            return false;
         }
     }
-    return TRUE;
+    return true;
 }
 
 static void * lbmpdm_tcp_tag_copy_cb(void * destination, const void * source, size_t length _U_)
@@ -198,7 +186,7 @@ static void lbmpdm_tcp_tag_free_cb(void * record)
 
 static const lbmpdm_tcp_tag_entry_t * lbmpdm_tcp_tag_locate(packet_info * pinfo)
 {
-    guint idx;
+    unsigned idx;
     const lbmpdm_tcp_tag_entry_t * tag = NULL;
 
     if (!lbmpdm_tcp_use_tag)
@@ -240,13 +228,13 @@ static char * lbmpdm_tcp_tag_find(packet_info * pinfo)
 /*----------------------------------------------------------------------------*/
 
 /* Dissector tree handles */
-static int ett_lbmpdm_tcp = -1;
+static int ett_lbmpdm_tcp;
 
 /* Dissector field handles */
-static int hf_lbmpdm_tcp_tag = -1;
-static int hf_lbmpdm_tcp_channel = -1;
+static int hf_lbmpdm_tcp_tag;
+static int hf_lbmpdm_tcp_channel;
 
-static guint get_lbmpdm_tcp_pdu_length(packet_info * pinfo _U_, tvbuff_t * tvb,
+static unsigned get_lbmpdm_tcp_pdu_length(packet_info * pinfo _U_, tvbuff_t * tvb,
                                        int offset, void *data _U_)
 {
     int encoding;
@@ -266,7 +254,7 @@ static int dissect_lbmpdm_tcp_pdu(tvbuff_t * tvb, packet_info * pinfo, proto_tre
     proto_item * ti = NULL;
     lbmtcp_transport_t * transport = NULL;
     char * tag_name = NULL;
-    guint64 channel = LBM_CHANNEL_NO_CHANNEL;
+    uint64_t channel = LBM_CHANNEL_NO_CHANNEL;
 
     if (lbmpdm_tcp_use_tag)
     {
@@ -292,14 +280,14 @@ static int dissect_lbmpdm_tcp_pdu(tvbuff_t * tvb, packet_info * pinfo, proto_tre
         proto_item * item = NULL;
 
         item = proto_tree_add_string(lbmpdm_tcp_tree, hf_lbmpdm_tcp_tag, tvb, 0, 0, tag_name);
-        PROTO_ITEM_SET_GENERATED(item);
+        proto_item_set_generated(item);
     }
     if (channel != LBM_CHANNEL_NO_CHANNEL)
     {
         proto_item * item = NULL;
 
         item = proto_tree_add_uint64(lbmpdm_tcp_tree, hf_lbmpdm_tcp_channel, tvb, 0, 0, channel);
-        PROTO_ITEM_SET_GENERATED(item);
+        proto_item_set_generated(item);
     }
     return (lbmpdm_dissect_lbmpdm_payload(tvb, 0, pinfo, tree, channel));
 }
@@ -311,7 +299,7 @@ static int dissect_lbmpdm_tcp(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
 {
     char * tag_name = NULL;
 
-    col_add_str(pinfo->cinfo, COL_PROTOCOL, "LBMPDM-TCP");
+    col_set_str(pinfo->cinfo, COL_PROTOCOL, "LBMPDM-TCP");
     col_clear(pinfo->cinfo, COL_INFO);
     if (lbmpdm_tcp_use_tag)
     {
@@ -322,12 +310,12 @@ static int dissect_lbmpdm_tcp(tvbuff_t * tvb, packet_info * pinfo, proto_tree * 
         col_add_fstr(pinfo->cinfo, COL_INFO, "[Tag: %s]", tag_name);
     }
     col_set_fence(pinfo->cinfo, COL_INFO);
-    tcp_dissect_pdus(tvb, pinfo, tree, TRUE, lbmpdm_get_minimum_length(), /* Need at least the msglen */
+    tcp_dissect_pdus(tvb, pinfo, tree, true, lbmpdm_get_minimum_length(), /* Need at least the msglen */
         get_lbmpdm_tcp_pdu_length, dissect_lbmpdm_tcp_pdu, NULL);
     return tvb_captured_length(tvb);
 }
 
-static gboolean test_lbmpdm_tcp_packet(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void * user_data _U_)
+static bool test_lbmpdm_tcp_packet(tvbuff_t * tvb, packet_info * pinfo, proto_tree * tree, void * user_data _U_)
 {
     int encoding = 0;
     int packet_len = 0;
@@ -335,27 +323,27 @@ static gboolean test_lbmpdm_tcp_packet(tvbuff_t * tvb, packet_info * pinfo, prot
     /* Must be a TCP packet. */
     if (pinfo->ptype != PT_TCP)
     {
-        return (FALSE);
+        return false;
     }
     /* Destination address must be IPV4 and 4 bytes in length. */
     if ((pinfo->dst.type != AT_IPv4) || (pinfo->dst.len != 4))
     {
-        return (FALSE);
+        return false;
     }
     if (!lbmpdm_verify_payload(tvb, 0, &encoding, &packet_len))
     {
-        return (FALSE);
+        return false;
     }
     if (lbmpdm_tcp_use_tag)
     {
         if (lbmpdm_tcp_tag_find(pinfo) != NULL)
         {
             dissect_lbmpdm_tcp(tvb, pinfo, tree, user_data);
-            return (TRUE);
+            return true;
         }
         else
         {
-            return (FALSE);
+            return false;
         }
     }
 
@@ -363,11 +351,11 @@ static gboolean test_lbmpdm_tcp_packet(tvbuff_t * tvb, packet_info * pinfo, prot
     if (!(((pinfo->srcport >= lbmpdm_tcp_port_low) && (pinfo->srcport <= lbmpdm_tcp_port_high))
           || ((pinfo->destport >= lbmpdm_tcp_port_low) && (pinfo->destport <= lbmpdm_tcp_port_high))))
     {
-        return (FALSE);
+        return false;
     }
     /* One of ours. Probably. */
     dissect_lbmpdm_tcp(tvb, pinfo, tree, user_data);
-    return (TRUE);
+    return true;
 }
 
 /* Register all the bits needed with the filtering engine */
@@ -380,7 +368,7 @@ void proto_register_lbmpdm_tcp(void)
         { &hf_lbmpdm_tcp_channel,
             { "Channel ID", "lbmpdm_tcp.channel", FT_UINT64, BASE_HEX_DEC, NULL, 0x0, NULL, HFILL } },
     };
-    static gint * ett[] =
+    static int * ett[] =
     {
         &ett_lbmpdm_tcp,
     };
@@ -415,7 +403,7 @@ void proto_register_lbmpdm_tcp(void)
     tag_uat = uat_new("LBMPDM-TCP tag definitions",
         sizeof(lbmpdm_tcp_tag_entry_t),
         "lbmpdm_tcp_domains",
-        TRUE,
+        true,
         (void * *)&lbmpdm_tcp_tag_entry,
         &lbmpdm_tcp_tag_count,
         UAT_AFFECTS_DISSECTION,
@@ -424,23 +412,25 @@ void proto_register_lbmpdm_tcp(void)
         lbmpdm_tcp_tag_update_cb,
         lbmpdm_tcp_tag_free_cb,
         NULL,
+        NULL,
         lbmpdm_tcp_tag_array);
     prefs_register_uat_preference(lbmpdm_tcp_module,
         "tnw_lbmpdm_tcp_tags",
         "LBMPDM-TCP Tags",
         "A table to define LBMPDM-TCP tags",
         tag_uat);
+
+    lbmpdm_tcp_dissector_handle = register_dissector("lbmpdm_tcp", dissect_lbmpdm_tcp, lbmpdm_tcp_protocol_handle);
 }
 
 /* The registration hand-off routine */
 void proto_reg_handoff_lbmpdm_tcp(void)
 {
-    static gboolean already_registered = FALSE;
+    static bool already_registered = false;
 
     if (!already_registered)
     {
-        lbmpdm_tcp_dissector_handle = create_dissector_handle(dissect_lbmpdm_tcp, lbmpdm_tcp_protocol_handle);
-        dissector_add_for_decode_as("tcp.port", lbmpdm_tcp_dissector_handle);
+        dissector_add_for_decode_as_with_preference("tcp.port", lbmpdm_tcp_dissector_handle);
         heur_dissector_add("tcp", test_lbmpdm_tcp_packet, "LBMPDM over TCP", "lbmpdm_tcp", lbmpdm_tcp_protocol_handle, HEURISTIC_ENABLE);
     }
 
@@ -453,11 +443,11 @@ void proto_reg_handoff_lbmpdm_tcp(void)
 
     lbmpdm_tcp_use_tag = global_lbmpdm_tcp_use_tag;
 
-    already_registered = TRUE;
+    already_registered = true;
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

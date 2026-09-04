@@ -9,6 +9,6 @@ import os
 gettext.textdomain('hello-python')
 gettext.bindtextdomain('hello-python', '@localedir@')
 
-print gettext.gettext("Hello, world!")
-print gettext.gettext("This program is running as process number %(pid)d.") \
-      % { 'pid': os.getpid() }
+print(gettext.gettext("Hello, world!"))
+print(gettext.gettext("This program is running as process number %(pid)d.")
+      % { 'pid': os.getpid() })

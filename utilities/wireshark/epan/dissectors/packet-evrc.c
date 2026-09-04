@@ -12,28 +12,16 @@
  *   for Wideband Spread Spectrum Digital Systems
  *                      3GPP2 C.S0014-E v1.0      TIA-127-?
  *
- * RFC 3558  http://www.ietf.org/rfc/rfc3558.txt?number=3558
- * RFC 4788  http://www.ietf.org/rfc/rfc4788.txt?number=4788
- * RFC 5188  http://www.ietf.org/rfc/rfc5188.txt?number=5188
+ * RFC 3558  https://tools.ietf.org/html/rfc3558
+ * RFC 4788  https://tools.ietf.org/html/rfc4788
+ * RFC 5188  https://tools.ietf.org/html/rfc5188
  * draft-agupta-payload-rtp-evrc-nw2k-00
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -41,6 +29,7 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
 
 #include <wsutil/str_util.h>
 
@@ -48,6 +37,13 @@
 
 void proto_register_evrc(void);
 void proto_reg_handoff_evrc(void);
+
+static dissector_handle_t evrc_handle;
+static dissector_handle_t evrcb_handle;
+static dissector_handle_t evrcwb_handle;
+static dissector_handle_t evrcnw_handle;
+static dissector_handle_t evrcnw2k_handle;
+static dissector_handle_t evrc_legacy_handle;
 
 static const value_string evrc_frame_type_vals[] = {
     { 0,        "Blank (0 bits)" },
@@ -158,44 +154,49 @@ evrc_variant_t;
 
 
 /* Initialize the protocol and registered fields */
-static int proto_evrc = -1;
+static int proto_evrc;
+static int proto_evrcb;
+static int proto_evrcwb;
+static int proto_evrcnw;
+static int proto_evrcnw2k;
+static int proto_evrc_legacy;
 
-static int hf_evrc_reserved = -1;
-static int hf_evrc_reserved_2k = -1;
-static int hf_evrc_enc_capability_2k = -1;
-static int hf_evrc_interleave_length = -1;
-static int hf_evrc_interleave_index = -1;
-static int hf_evrc_mode_request = -1;
-static int hf_evrc_b_mode_request = -1;
-static int hf_evrc_wb_mode_request = -1;
-static int hf_evrc_nw_mode_request = -1;
-static int hf_evrc_nw2k_mode_request = -1;
-static int hf_evrc_frame_count = -1;
-static int hf_evrc_toc_frame_type_high = -1;
-static int hf_evrc_toc_frame_type_low = -1;
-static int hf_evrc_b_toc_frame_type_high = -1;
-static int hf_evrc_b_toc_frame_type_low = -1;
-static int hf_evrc_padding = -1;
-static int hf_evrc_speech_data = -1;
-static int hf_evrc_legacy_toc_fe_ind = -1;
-static int hf_evrc_legacy_toc_reduc_rate = -1;
-static int hf_evrc_legacy_toc_frame_type = -1;
+static int hf_evrc_reserved;
+static int hf_evrc_reserved_2k;
+static int hf_evrc_enc_capability_2k;
+static int hf_evrc_interleave_length;
+static int hf_evrc_interleave_index;
+static int hf_evrc_mode_request;
+static int hf_evrc_b_mode_request;
+static int hf_evrc_wb_mode_request;
+static int hf_evrc_nw_mode_request;
+static int hf_evrc_nw2k_mode_request;
+static int hf_evrc_frame_count;
+static int hf_evrc_toc_frame_type_high;
+static int hf_evrc_toc_frame_type_low;
+static int hf_evrc_b_toc_frame_type_high;
+static int hf_evrc_b_toc_frame_type_low;
+static int hf_evrc_padding;
+static int hf_evrc_speech_data;
+static int hf_evrc_legacy_toc_fe_ind;
+static int hf_evrc_legacy_toc_reduc_rate;
+static int hf_evrc_legacy_toc_frame_type;
 
 /* Initialize the subtree pointers */
-static gint ett_evrc = -1;
-static gint ett_toc = -1;
+static int ett_evrc;
+static int ett_toc;
 
-static expert_field ei_evrc_unknown_variant = EI_INIT;
+static expert_field ei_evrc_unknown_variant;
 
 /*
  * Variables to allow for proper deletion of dissector registration when
  * the user changes values
  */
-static gboolean legacy_pt_60 = FALSE;
+static bool legacy_pt_60;
 
 
-static guint8
-evrc_frame_type_to_octs(guint8 frame_type)
+static uint8_t
+evrc_frame_type_to_octs(uint8_t frame_type)
 {
     switch (frame_type)
     {
@@ -203,19 +204,19 @@ evrc_frame_type_to_octs(guint8 frame_type)
         break;
 
     case 1:     /* 1/8 rate */
-        return(2);
+        return 2;
 
     case 2:     /* 1/4 rate */
-        return(5);
+        return 5;
 
     case 3:     /* 1/2 rate */
-        return(10);
+        return 10;
 
     case 4:     /* full rate */
-        return(22);
+        return 22;
     }
 
-    return(0);
+    return 0;
 }
 
 /* GENERIC EVRC DISSECTOR FUNCTIONS */
@@ -223,12 +224,12 @@ evrc_frame_type_to_octs(guint8 frame_type)
 static void
 dissect_evrc_aux(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, evrc_variant_t evrc_variant)
 {
-    guint8                      oct;
-    guint8                      frame_count;
-    guint8                      i;
-    guint32                     offset, saved_offset;
-    gboolean                    further_entries;
-    guint32                     len;
+    uint8_t                     oct;
+    uint8_t                     frame_count;
+    uint8_t                     i;
+    uint32_t                    offset, saved_offset;
+    bool                        further_entries;
+    uint32_t                    len;
     proto_item                  *item = NULL;
     proto_tree                  *evrc_tree = NULL;
     proto_tree                  *toc_tree = NULL;
@@ -240,7 +241,7 @@ dissect_evrc_aux(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, evrc_varia
      * assumed max number of speech frames based on
      * frame count being 5 bits + 1
      */
-    guint8                      speech_data_len[0x20];
+    uint8_t                     speech_data_len[0x20];
 
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "EVRC");
@@ -267,7 +268,7 @@ dissect_evrc_aux(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, evrc_varia
         offset++;
 
         frame_count = 0;
-        further_entries = TRUE;
+        further_entries = true;
         while (further_entries && (frame_count < sizeof(speech_data_len)) &&
             ((len - offset) > 0))
         {
@@ -278,10 +279,10 @@ dissect_evrc_aux(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, evrc_varia
             proto_tree_add_item(toc_tree, hf_evrc_legacy_toc_reduc_rate, tvb, offset, 1, ENC_BIG_ENDIAN);
             proto_tree_add_item(toc_tree, hf_evrc_legacy_toc_frame_type, tvb, offset, 1, ENC_BIG_ENDIAN);
 
-            oct = tvb_get_guint8(tvb, offset);
-            further_entries = (oct & 0x80) ? TRUE : FALSE;
+            oct = tvb_get_uint8(tvb, offset);
+            further_entries = (oct & 0x80) ? true : false;
 
-            speech_data_len[frame_count] = evrc_frame_type_to_octs((guint8)(oct & 0x7f));
+            speech_data_len[frame_count] = evrc_frame_type_to_octs((uint8_t)(oct & 0x7f));
 
             frame_count++;
             offset++;
@@ -350,7 +351,7 @@ dissect_evrc_aux(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, evrc_varia
         /*
          * number of frames in PACKET is frame_count + 1
          */
-        frame_count = (tvb_get_guint8(tvb, offset) & 0x1f) + 1;
+        frame_count = (tvb_get_uint8(tvb, offset) & 0x1f) + 1;
 
         offset++;
         saved_offset = offset;
@@ -363,11 +364,11 @@ dissect_evrc_aux(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, evrc_varia
         while ((i < frame_count) &&
             ((len - offset) > 0))
         {
-            oct = tvb_get_guint8(tvb, offset);
+            oct = tvb_get_uint8(tvb, offset);
 
             proto_tree_add_item(toc_tree, hf_toc_frame_type_high, tvb, offset, 1, ENC_BIG_ENDIAN);
 
-            speech_data_len[i] = evrc_frame_type_to_octs((guint8)((oct & 0xf0) >> 4));
+            speech_data_len[i] = evrc_frame_type_to_octs((uint8_t)((oct & 0xf0) >> 4));
 
             i++;
 
@@ -376,7 +377,7 @@ dissect_evrc_aux(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, evrc_varia
                 /* even number of frames */
                 proto_tree_add_item(toc_tree, hf_toc_frame_type_low, tvb, offset, 1, ENC_BIG_ENDIAN);
 
-                speech_data_len[i] = evrc_frame_type_to_octs((guint8)(oct & 0x0f));
+                speech_data_len[i] = evrc_frame_type_to_octs((uint8_t)(oct & 0x0f));
 
                 i++;
             }
@@ -571,7 +572,7 @@ proto_register_evrc(void)
 
     /* Setup protocol subtree array */
 
-    static gint *ett[] =
+    static int *ett[] =
     {
         &ett_evrc,
         &ett_toc
@@ -582,9 +583,31 @@ proto_register_evrc(void)
     proto_evrc =
         proto_register_protocol("Enhanced Variable Rate Codec", "EVRC", "evrc");
 
+    proto_evrcb =
+        proto_register_protocol_in_name_only("Enhanced Variable Rate Codec B",
+        "EVRC-B", "evrcb", proto_evrc, FT_PROTOCOL);
+    proto_evrcwb =
+        proto_register_protocol_in_name_only("Enhanced Variable Rate Codec - Wideband",
+        "EVRC-WB", "evrcwb", proto_evrc, FT_PROTOCOL);
+    proto_evrcnw =
+        proto_register_protocol_in_name_only("Enhanced Variable Rate Codec - Narrowband-Wideband",
+        "EVRC-NW", "evrcnw", proto_evrc, FT_PROTOCOL);
+    proto_evrcnw2k =
+        proto_register_protocol_in_name_only("Enhanced Variable Rate Codec - Narrowband-Wideband plus 2kpbs",
+        "EVRC-NW2K", "evrcnw2k", proto_evrc, FT_PROTOCOL);
+    proto_evrc_legacy =
+        proto_register_protocol_in_name_only("Enhanced Variable Rate Codec (Legacy Encapsulation)",
+        "EVRC (Legacy)", "evrc_legacy", proto_evrc, FT_PROTOCOL);
     proto_register_field_array(proto_evrc, hf, array_length(hf));
 
     proto_register_subtree_array(ett, array_length(ett));
+
+    evrc_handle        = register_dissector("evrc", dissect_evrc, proto_evrc);
+    evrcb_handle       = register_dissector("evrcb", dissect_evrcb, proto_evrcb);
+    evrcwb_handle      = register_dissector("evrcwb", dissect_evrcwb, proto_evrcwb);
+    evrcnw_handle      = register_dissector("evrcnw", dissect_evrcnw, proto_evrcnw);
+    evrcnw2k_handle    = register_dissector("evrcnw2k", dissect_evrcnw2k, proto_evrcnw2k);
+    evrc_legacy_handle = register_dissector("evrc_legacy", dissect_evrc_legacy, proto_evrc_legacy);
 
     expert_evrc =
         expert_register_protocol(proto_evrc);
@@ -606,24 +629,10 @@ proto_register_evrc(void)
 void
 proto_reg_handoff_evrc(void)
 {
-    static gboolean             evrc_prefs_initialized = FALSE;
-    static dissector_handle_t   evrc_legacy_handle;
+    static bool                 evrc_prefs_initialized = false;
 
     if (!evrc_prefs_initialized)
     {
-        dissector_handle_t evrc_handle;
-        dissector_handle_t evrcb_handle;
-        dissector_handle_t evrcwb_handle;
-        dissector_handle_t evrcnw_handle;
-        dissector_handle_t evrcnw2k_handle;
-
-        evrc_handle        = create_dissector_handle(dissect_evrc, proto_evrc);
-        evrcb_handle       = create_dissector_handle(dissect_evrcb, proto_evrc);
-        evrcwb_handle      = create_dissector_handle(dissect_evrcwb, proto_evrc);
-        evrcnw_handle      = create_dissector_handle(dissect_evrcnw, proto_evrc);
-        evrcnw2k_handle    = create_dissector_handle(dissect_evrcnw2k, proto_evrc);
-        evrc_legacy_handle = create_dissector_handle(dissect_evrc_legacy, proto_evrc);
-
         /* header-full mime types */
         dissector_add_string("rtp_dyn_payload_type",  "EVRC", evrc_handle);
         dissector_add_string("rtp_dyn_payload_type",  "EVRCB", evrcb_handle);
@@ -631,7 +640,15 @@ proto_reg_handoff_evrc(void)
         dissector_add_string("rtp_dyn_payload_type",  "EVRCNW", evrcnw_handle);
         dissector_add_string("rtp_dyn_payload_type",  "EVRCNW2K", evrcnw2k_handle);
 
-        evrc_prefs_initialized = TRUE;
+        dissector_add_for_decode_as("rtp.pt", evrc_handle);
+        dissector_add_for_decode_as("rtp.pt", evrcb_handle);
+        dissector_add_for_decode_as("rtp.pt", evrcwb_handle);
+        dissector_add_for_decode_as("rtp.pt", evrcnw_handle);
+        dissector_add_for_decode_as("rtp.pt", evrcnw2k_handle);
+        /* Since the draft legacy encapsulation only appears on PT 60, not
+         * adding it to decode as */
+        /* dissector_add_for_decode_as("rtp.pt", evrc_legacy_handle); */
+        evrc_prefs_initialized = true;
     }
     else
     {
@@ -645,7 +662,7 @@ proto_reg_handoff_evrc(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

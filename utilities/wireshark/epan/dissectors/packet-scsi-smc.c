@@ -10,19 +10,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 2002 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -34,75 +22,75 @@
 
 void proto_register_scsi_smc(void);
 
-static int proto_scsi_smc                       = -1;
-int hf_scsi_smc_opcode                          = -1;
-static int hf_scsi_smc_mta                      = -1;
-static int hf_scsi_smc_sa                       = -1;
-static int hf_scsi_smc_da                       = -1;
-static int hf_scsi_smc_fda                      = -1;
-static int hf_scsi_smc_sda                      = -1;
-static int hf_scsi_smc_medium_flags             = -1;
-static int hf_scsi_smc_inv1                     = -1;
-static int hf_scsi_smc_inv2                     = -1;
-static int hf_scsi_smc_range_flags              = -1;
-static int hf_scsi_smc_fast                     = -1;
-static int hf_scsi_smc_range                    = -1;
-/* static int hf_scsi_smc_sea                   = -1; */
-static int hf_scsi_smc_num_elements             = -1;
-static int hf_scsi_smc_invert                   = -1;
-static int hf_scsi_smc_ea                       = -1;
-static int hf_scsi_smc_action_code              = -1;
+static int proto_scsi_smc;
+int hf_scsi_smc_opcode;
+static int hf_scsi_smc_mta;
+static int hf_scsi_smc_sa;
+static int hf_scsi_smc_da;
+static int hf_scsi_smc_fda;
+static int hf_scsi_smc_sda;
+static int hf_scsi_smc_medium_flags;
+static int hf_scsi_smc_inv1;
+static int hf_scsi_smc_inv2;
+static int hf_scsi_smc_range_flags;
+static int hf_scsi_smc_fast;
+static int hf_scsi_smc_range;
+/* static int hf_scsi_smc_sea; */
+static int hf_scsi_smc_num_elements;
+static int hf_scsi_smc_invert;
+static int hf_scsi_smc_ea;
+static int hf_scsi_smc_action_code;
 /* Generated from convert_proto_tree_add_text.pl */
-static int hf_scsi_smc_allocation_length = -1;
-static int hf_scsi_smc_first_element_address_reported = -1;
-static int hf_scsi_smc_voltag = -1;
-static int hf_scsi_smc_element_descriptor_length = -1;
-static int hf_scsi_smc_byte_count_of_descriptor_data_available = -1;
-static int hf_scsi_smc_pvoltag = -1;
-static int hf_scsi_smc_code_set = -1;
-static int hf_scsi_smc_starting_element_address = -1;
-static int hf_scsi_smc_curdata = -1;
-static int hf_scsi_smc_element_type_code = -1;
-static int hf_scsi_smc_element_type_code_0F = -1;
-static int hf_scsi_smc_identifier = -1;
-static int hf_scsi_smc_vendor_specific_data = -1;
-static int hf_scsi_smc_source_storage_element_address = -1;
-static int hf_scsi_smc_number_of_elements_available = -1;
-static int hf_scsi_smc_identifier_type = -1;
-static int hf_scsi_smc_number_of_elements = -1;
-static int hf_scsi_smc_identifier_length = -1;
-static int hf_scsi_smc_scsi_bus_address = -1;
-static int hf_scsi_smc_byte_count_of_report_available = -1;
-static int hf_scsi_smc_cmc = -1;
-static int hf_scsi_smc_svalid = -1;
-static int hf_scsi_smc_avoltag = -1;
-static int hf_scsi_smc_access = -1;
-static int hf_scsi_smc_additional_sense_code_qualifier = -1;
-static int hf_scsi_smc_lu_valid = -1;
-static int hf_scsi_smc_dvcid = -1;
-static int hf_scsi_smc_except = -1;
-static int hf_scsi_smc_id_valid = -1;
-static int hf_scsi_smc_not_bus = -1;
-static int hf_scsi_smc_exenab = -1;
-static int hf_scsi_smc_lun = -1;
-static int hf_scsi_smc_inenab = -1;
-static int hf_scsi_smc_full = -1;
-static int hf_scsi_smc_impexp = -1;
-static int hf_scsi_smc_primary_vol_tag_id = -1;
-static int hf_scsi_smc_primary_vol_seq_num = -1;
-static int hf_scsi_smc_alternate_vol_tag_id = -1;
-static int hf_scsi_smc_alternate_vol_seq_num = -1;
+static int hf_scsi_smc_allocation_length;
+static int hf_scsi_smc_first_element_address_reported;
+static int hf_scsi_smc_voltag;
+static int hf_scsi_smc_element_descriptor_length;
+static int hf_scsi_smc_byte_count_of_descriptor_data_available;
+static int hf_scsi_smc_pvoltag;
+static int hf_scsi_smc_code_set;
+static int hf_scsi_smc_starting_element_address;
+static int hf_scsi_smc_curdata;
+static int hf_scsi_smc_element_type_code;
+static int hf_scsi_smc_element_type_code_0F;
+static int hf_scsi_smc_identifier;
+static int hf_scsi_smc_vendor_specific_data;
+static int hf_scsi_smc_source_storage_element_address;
+static int hf_scsi_smc_number_of_elements_available;
+static int hf_scsi_smc_identifier_type;
+static int hf_scsi_smc_number_of_elements;
+static int hf_scsi_smc_identifier_length;
+static int hf_scsi_smc_scsi_bus_address;
+static int hf_scsi_smc_byte_count_of_report_available;
+static int hf_scsi_smc_cmc;
+static int hf_scsi_smc_svalid;
+static int hf_scsi_smc_avoltag;
+static int hf_scsi_smc_access;
+static int hf_scsi_smc_additional_sense_code_qualifier;
+static int hf_scsi_smc_lu_valid;
+static int hf_scsi_smc_dvcid;
+static int hf_scsi_smc_except;
+static int hf_scsi_smc_id_valid;
+static int hf_scsi_smc_not_bus;
+static int hf_scsi_smc_exenab;
+static int hf_scsi_smc_lun;
+static int hf_scsi_smc_inenab;
+static int hf_scsi_smc_full;
+static int hf_scsi_smc_impexp;
+static int hf_scsi_smc_primary_vol_tag_id;
+static int hf_scsi_smc_primary_vol_seq_num;
+static int hf_scsi_smc_alternate_vol_tag_id;
+static int hf_scsi_smc_alternate_vol_seq_num;
 
-static gint ett_scsi_exchange_medium            = -1;
-static gint ett_scsi_range                      = -1;
-static gint ett_scsi_move                       = -1;
+static int ett_scsi_exchange_medium;
+static int ett_scsi_range;
+static int ett_scsi_move;
 
 static void
 dissect_smc_exchangemedium (tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
-                    guint offset, gboolean isreq, gboolean iscdb,
-                    guint payload_len _U_, scsi_task_data_t *cdata _U_)
+                    unsigned offset, bool isreq, bool iscdb,
+                    unsigned payload_len _U_, scsi_task_data_t *cdata _U_)
 {
-    static const int *exchg_fields[] = {
+    static int * const exchg_fields[] = {
         &hf_scsi_smc_inv1,
         &hf_scsi_smc_inv2,
         NULL
@@ -125,10 +113,10 @@ dissect_smc_exchangemedium (tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 
 static void
 dissect_smc_position_to_element (tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
-                    guint offset, gboolean isreq, gboolean iscdb,
-                    guint payload_len _U_, scsi_task_data_t *cdata _U_)
+                    unsigned offset, bool isreq, bool iscdb,
+                    unsigned payload_len _U_, scsi_task_data_t *cdata _U_)
 {
-    static const int *pte_fields[] = {
+    static int * const pte_fields[] = {
         &hf_scsi_smc_invert,
         NULL
     };
@@ -148,8 +136,8 @@ dissect_smc_position_to_element (tvbuff_t *tvb, packet_info *pinfo _U_, proto_tr
 
 static void
 dissect_smc_initialize_element_status (tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
-                    guint offset, gboolean isreq, gboolean iscdb,
-                    guint payload_len _U_, scsi_task_data_t *cdata _U_)
+                    unsigned offset, bool isreq, bool iscdb,
+                    unsigned payload_len _U_, scsi_task_data_t *cdata _U_)
 {
     if (!tree)
         return;
@@ -162,10 +150,10 @@ dissect_smc_initialize_element_status (tvbuff_t *tvb, packet_info *pinfo _U_, pr
 
 static void
 dissect_smc_initialize_element_status_with_range (tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
-                    guint offset, gboolean isreq, gboolean iscdb,
-                    guint payload_len _U_, scsi_task_data_t *cdata _U_)
+                    unsigned offset, bool isreq, bool iscdb,
+                    unsigned payload_len _U_, scsi_task_data_t *cdata _U_)
 {
-    static const int *range_fields[] = {
+    static int * const range_fields[] = {
         &hf_scsi_smc_fast,
         &hf_scsi_smc_range,
         NULL
@@ -186,8 +174,8 @@ dissect_smc_initialize_element_status_with_range (tvbuff_t *tvb, packet_info *pi
 
 static void
 dissect_smc_openclose_importexport_element (tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
-                    guint offset, gboolean isreq, gboolean iscdb,
-                    guint payload_len _U_, scsi_task_data_t *cdata _U_)
+                    unsigned offset, bool isreq, bool iscdb,
+                    unsigned payload_len _U_, scsi_task_data_t *cdata _U_)
 {
     if (!tree)
         return;
@@ -201,10 +189,10 @@ dissect_smc_openclose_importexport_element (tvbuff_t *tvb, packet_info *pinfo _U
 }
 void
 dissect_smc_movemedium (tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree,
-                    guint offset, gboolean isreq, gboolean iscdb,
-                    guint payload_len _U_, scsi_task_data_t *cdata _U_)
+                    unsigned offset, bool isreq, bool iscdb,
+                    unsigned payload_len _U_, scsi_task_data_t *cdata _U_)
 {
-    static const int *move_fields[] = {
+    static int * const move_fields[] = {
         &hf_scsi_smc_invert,
         NULL
     };
@@ -254,23 +242,17 @@ static const value_string action_code_vals[] = {
 #define SVALID 0x80
 
 static void
-dissect_scsi_smc_volume_tag (tvbuff_t *tvb, packet_info *pinfo _U_,
-                              proto_tree *tree, guint offset, int hf_vol_id, int hf_vol_seq_num)
+dissect_scsi_smc_volume_tag (tvbuff_t *tvb, packet_info *pinfo,
+                              proto_tree *tree, unsigned offset, int hf_vol_id, int hf_vol_seq_num)
 {
-    char volid[32+1];
-    char *p;
-
-    tvb_memcpy (tvb, (guint8 *)volid, offset, 32);
-    p = &volid[32];
-    for (;;) {
-        *p = '\0';
-        if (p == volid)
+    uint8_t *volid;
+    int length;
+    for (length = 32; length > 0; length--) {
+        if (tvb_get_uint8(tvb, offset + length - 1) != ' ')
             break;
-        if (*(p - 1) != ' ')
-            break;
-        p--;
     }
 
+    volid = tvb_get_string_enc(pinfo->pool, tvb, offset, length, ENC_ASCII);
     proto_tree_add_string(tree, hf_vol_id, tvb, offset, 32, volid);
     proto_tree_add_item(tree, hf_vol_seq_num, tvb, offset+34, 2, ENC_BIG_ENDIAN);
 }
@@ -278,12 +260,12 @@ dissect_scsi_smc_volume_tag (tvbuff_t *tvb, packet_info *pinfo _U_,
 
 static void
 dissect_scsi_smc_element (tvbuff_t *tvb, packet_info *pinfo _U_,
-                         proto_tree *tree, guint offset,
-                         guint elem_bytecnt, guint8 elem_type,
-                         guint8 voltag_flags)
+                         proto_tree *tree, unsigned offset,
+                         unsigned elem_bytecnt, uint8_t elem_type,
+                         uint8_t voltag_flags)
 {
-    guint8 flags;
-    guint8 ident_len;
+    uint8_t flags;
+    uint8_t ident_len;
 
     proto_tree_add_item(tree, hf_scsi_smc_ea, tvb, offset, 2, ENC_BIG_ENDIAN);
     offset += 2;
@@ -291,7 +273,7 @@ dissect_scsi_smc_element (tvbuff_t *tvb, packet_info *pinfo _U_,
 
     if (elem_bytecnt < 1)
         return;
-    flags = tvb_get_guint8 (tvb, offset);
+    flags = tvb_get_uint8 (tvb, offset);
     switch (elem_type) {
 
     case MT_ELEM:
@@ -337,7 +319,7 @@ dissect_scsi_smc_element (tvbuff_t *tvb, packet_info *pinfo _U_,
     switch (elem_type) {
 
     case DT_ELEM:
-        flags = tvb_get_guint8 (tvb, offset);
+        flags = tvb_get_uint8 (tvb, offset);
         if (flags & LU_VALID) {
             proto_tree_add_item(tree, hf_scsi_smc_lun, tvb, offset, 1, ENC_BIG_ENDIAN);
         }
@@ -361,7 +343,7 @@ dissect_scsi_smc_element (tvbuff_t *tvb, packet_info *pinfo _U_,
 
     if (elem_bytecnt < 3)
         return;
-    flags = tvb_get_guint8 (tvb, offset);
+    flags = tvb_get_uint8 (tvb, offset);
     proto_tree_add_item(tree, hf_scsi_smc_svalid, tvb, offset, 1, ENC_NA);
     if (flags & SVALID) {
         proto_tree_add_item(tree, hf_scsi_smc_invert, tvb, offset, 1, ENC_NA);
@@ -410,7 +392,7 @@ dissect_scsi_smc_element (tvbuff_t *tvb, packet_info *pinfo _U_,
 
     if (elem_bytecnt < 1)
         return;
-    ident_len = tvb_get_guint8 (tvb, offset);
+    ident_len = tvb_get_uint8 (tvb, offset);
     proto_tree_add_item(tree, hf_scsi_smc_identifier_length, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
     elem_bytecnt -= 1;
@@ -430,11 +412,11 @@ dissect_scsi_smc_element (tvbuff_t *tvb, packet_info *pinfo _U_,
 
 static void
 dissect_scsi_smc_elements (tvbuff_t *tvb, packet_info *pinfo,
-                            proto_tree *tree, guint offset,
-                            guint desc_bytecnt, guint8 elem_type,
-                            guint8 voltag_flags, guint16 elem_desc_len)
+                            proto_tree *tree, unsigned offset,
+                            unsigned desc_bytecnt, uint8_t elem_type,
+                            uint8_t voltag_flags, uint16_t elem_desc_len)
 {
-    guint elem_bytecnt;
+    unsigned elem_bytecnt;
 
     while (desc_bytecnt != 0) {
         elem_bytecnt = elem_desc_len;
@@ -455,14 +437,14 @@ dissect_scsi_smc_elements (tvbuff_t *tvb, packet_info *pinfo,
 
 void
 dissect_smc_readelementstatus (tvbuff_t *tvb, packet_info *pinfo,
-                         proto_tree *tree, guint offset, gboolean isreq,
-                         gboolean iscdb,
-                         guint payload_len _U_, scsi_task_data_t *cdata _U_)
+                         proto_tree *tree, unsigned offset, bool isreq,
+                         bool iscdb,
+                         unsigned payload_len _U_, scsi_task_data_t *cdata _U_)
 {
-    guint   bytecnt, desc_bytecnt;
-    guint8  elem_type;
-    guint8  voltag_flags;
-    guint16 elem_desc_len;
+    unsigned   bytecnt, desc_bytecnt;
+    uint8_t elem_type;
+    uint8_t voltag_flags;
+    uint16_t elem_desc_len;
 
     if (!tree)
         return;
@@ -488,16 +470,14 @@ dissect_smc_readelementstatus (tvbuff_t *tvb, packet_info *pinfo,
         proto_tree_add_item(tree, hf_scsi_smc_byte_count_of_report_available, tvb, offset, 3, ENC_BIG_ENDIAN);
         offset += 3;
         while (bytecnt != 0) {
-            if (bytecnt < 1)
-                break;
-            elem_type = tvb_get_guint8 (tvb, offset);
+            elem_type = tvb_get_uint8 (tvb, offset);
             proto_tree_add_item(tree, hf_scsi_smc_element_type_code, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset += 1;
             bytecnt -= 1;
 
             if (bytecnt < 1)
                 break;
-            voltag_flags = tvb_get_guint8 (tvb, offset);
+            voltag_flags = tvb_get_uint8 (tvb, offset);
             proto_tree_add_item(tree, hf_scsi_smc_pvoltag, tvb, offset, 1, ENC_NA);
             proto_tree_add_item(tree, hf_scsi_smc_avoltag, tvb, offset, 1, ENC_NA);
             offset += 1;
@@ -579,7 +559,7 @@ static const value_string scsi_smc_vals[] = {
 };
 value_string_ext scsi_smc_vals_ext = VALUE_STRING_EXT_INIT(scsi_smc_vals);
 
-scsi_cdb_table_t scsi_smc_table[256] = {
+const scsi_cdb_table_t scsi_smc_table[256] = {
 /*SPC 0x00*/{dissect_spc_testunitready},
 /*SMC 0x01*/{NULL},
 /*SMC 0x02*/{NULL},
@@ -1131,7 +1111,7 @@ proto_register_scsi_smc(void)
 
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_scsi_exchange_medium,
         &ett_scsi_range,
         &ett_scsi_move
@@ -1147,7 +1127,7 @@ proto_register_scsi_smc(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -5,6 +5,10 @@
 # Assumes an fr_FR locale is installed.
 # Assumes the following packages are installed: gcc.
 
+# This test fails if the gettext package was configured with --disable-nls,
+# because in this case the gettext-runtime/intl/ directory does not produce
+# a <libintl.h> header file.
+
 cat <<\EOF > prog.c
 #include "config.h"
 #include <libintl.h>
@@ -42,20 +46,19 @@ EOF
 # Put the -I flags before ${CFLAGS} ${CPPFLAGS}, to make sure that libintl.h
 # is found in the build directory, regardless of -I options present in
 # ${CFLAGS} or ${CPPFLAGS}.
-${CC} -I../.. -I"$abs_top_srcdir"/gnulib-lib -I../../intl ${CFLAGS} \
-      ${CPPFLAGS} -c prog.c || Exit 1
+${CC} -I../.. -I"$abs_top_srcdir"/gnulib-lib -I../../../gettext-runtime/intl ${CFLAGS} ${CPPFLAGS} -c prog.c \
+  || Exit 1
 
 : ${CONFIG_SHELL=${SHELL-/bin/sh}}
 ${CONFIG_SHELL} "$top_builddir"/libtool --quiet --tag=CC --mode=link \
-                ${CC} ${CFLAGS} -o prog prog.${OBJEXT} \
-                ../../gnulib-lib/libgettextlib.la ${LDFLAGS} ${LTLIBINTL} \
-		|| Exit 1
+  ${CC} ${CFLAGS} -o prog prog.${OBJEXT} ../../gnulib-lib/libgettextlib.la ${LDFLAGS} ${LTLIBINTL} \
+  || Exit 1
 
 : ${XGETTEXT=xgettext}
 ${XGETTEXT} -o prog.tmp --omit-header --no-location -k_ prog.c || Exit 1
 LC_ALL=C tr -d '\r' < prog.tmp > prog.pot || Exit 1
 
-cat <<EOF > prog.ok
+cat <<\EOF > prog.ok
 #, c-format
 msgid "'Your command, please?', asked the waiter."
 msgstr ""
@@ -108,7 +111,7 @@ test -d fr || mkdir fr
 test -d fr/LC_MESSAGES || mkdir fr/LC_MESSAGES
 
 : ${MSGFMT=msgfmt}
-${MSGFMT} -o fr/LC_MESSAGES/prog.mo fr.po
+${MSGFMT} -c -o fr/LC_MESSAGES/prog.mo fr.po
 
 : ${DIFF=diff}
 cat <<\EOF > prog.ok
@@ -125,19 +128,27 @@ EOF
 : ${LOCALE_FR=fr_FR}
 : ${LOCALE_FR_UTF8=fr_FR.UTF-8}
 if test $LOCALE_FR != none; then
-  prepare_locale_ fr $LOCALE_FR
-  LANGUAGE= ./prog $LOCALE_FR 2 > prog.out
+  LANGUAGE= ./prog $LOCALE_FR 2 > prog.tmp
   case $? in
-    0) ${DIFF} prog.ok prog.out || Exit 1;;
+    0) case "$host_os" in
+         mingw* | windows*)
+           LC_ALL=C tr -d '\r' < prog.tmp > prog.out || Exit 1 ;;
+         *) cp prog.tmp prog.out || Exit 1 ;;
+       esac
+       ${DIFF} prog.ok prog.out || Exit 1;;
     77) LOCALE_FR=none;;
     *) Exit 1;;
   esac
 fi
 if test $LOCALE_FR_UTF8 != none; then
-  prepare_locale_ fr $LOCALE_FR_UTF8
-  LANGUAGE= ./prog $LOCALE_FR_UTF8 2 > prog.out
+  LANGUAGE= ./prog $LOCALE_FR_UTF8 2 > prog.tmp
   case $? in
-    0) ${DIFF} prog.oku prog.out || Exit 1;;
+    0) case "$host_os" in
+         mingw* | windows*)
+           LC_ALL=C tr -d '\r' < prog.tmp > prog.out || Exit 1 ;;
+         *) cp prog.tmp prog.out || Exit 1 ;;
+       esac
+       ${DIFF} prog.oku prog.out || Exit 1;;
     77) LOCALE_FR_UTF8=none;;
     *) Exit 1;;
   esac

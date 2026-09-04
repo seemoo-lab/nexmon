@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -38,66 +26,67 @@
 
 void proto_register_winsrepl(void);
 void proto_reg_handoff_winsrepl(void);
+static dissector_handle_t winsrepl_handle;
 
-static gboolean winsrepl_reassemble = TRUE;
+static bool winsrepl_reassemble = true;
 
-static int proto_winsrepl = -1;
+static int proto_winsrepl;
 
-static int hf_winsrepl_size = -1;
-static int hf_winsrepl_opcode = -1;
-static int hf_winsrepl_assoc_ctx = -1;
-static int hf_winsrepl_mess_type = -1;
+static int hf_winsrepl_size;
+static int hf_winsrepl_opcode;
+static int hf_winsrepl_assoc_ctx;
+static int hf_winsrepl_mess_type;
 
-static int hf_winsrepl_start_minor_version = -1;
-static int hf_winsrepl_start_major_version = -1;
+static int hf_winsrepl_start_minor_version;
+static int hf_winsrepl_start_major_version;
 
-static int hf_winsrepl_stop_reason = -1;
+static int hf_winsrepl_stop_reason;
 
-static int hf_winsrepl_replication_command = -1;
+static int hf_winsrepl_replication_command;
 
-static int hf_winsrepl_owner_address = -1;
-static int hf_winsrepl_owner_max_version = -1;
-static int hf_winsrepl_owner_min_version = -1;
-static int hf_winsrepl_owner_type = -1;
+static int hf_winsrepl_owner_address;
+static int hf_winsrepl_owner_max_version;
+static int hf_winsrepl_owner_min_version;
+static int hf_winsrepl_owner_type;
 
-static int hf_winsrepl_table_partner_count = -1;
-static int hf_winsrepl_table_initiator = -1;
+static int hf_winsrepl_table_partner_count;
+static int hf_winsrepl_table_initiator;
 
-static int hf_winsrepl_ip_owner = -1;
-static int hf_winsrepl_ip_ip = -1;
-static int hf_winsrepl_addr_list_num_ips = -1;
+static int hf_winsrepl_ip_owner;
+static int hf_winsrepl_ip_ip;
+static int hf_winsrepl_addr_list_num_ips;
 
-static int hf_winsrepl_name_len = -1;
-static int hf_winsrepl_name_flags = -1;
-static int hf_winsrepl_name_flags_rectype = -1;
-static int hf_winsrepl_name_flags_recstate = -1;
-static int hf_winsrepl_name_flags_local = -1;
-static int hf_winsrepl_name_flags_hosttype = -1;
-static int hf_winsrepl_name_flags_static = -1;
-static int hf_winsrepl_name_group_flag = -1;
-static int hf_winsrepl_name_version_id = -1;
-static int hf_winsrepl_name_unknown = -1;
+static int hf_winsrepl_name_len;
+static int hf_winsrepl_name_flags;
+static int hf_winsrepl_name_flags_rectype;
+static int hf_winsrepl_name_flags_recstate;
+static int hf_winsrepl_name_flags_local;
+static int hf_winsrepl_name_flags_hosttype;
+static int hf_winsrepl_name_flags_static;
+static int hf_winsrepl_name_group_flag;
+static int hf_winsrepl_name_version_id;
+static int hf_winsrepl_name_unknown;
 
-static int hf_winsrepl_reply_num_names = -1;
+static int hf_winsrepl_reply_num_names;
 
-static gint ett_winsrepl = -1;
+static int ett_winsrepl;
 
-static gint ett_winsrepl_start = -1;
-static gint ett_winsrepl_stop = -1;
-static gint ett_winsrepl_replication = -1;
+static int ett_winsrepl_start;
+static int ett_winsrepl_stop;
+static int ett_winsrepl_replication;
 
-static gint ett_winsrepl_owner = -1;
-static gint ett_winsrepl_table_reply = -1;
+static int ett_winsrepl_owner;
+static int ett_winsrepl_table_reply;
 
-static gint ett_winsrepl_ip = -1;
-static gint ett_winsrepl_addr_list = -1;
+static int ett_winsrepl_ip;
+static int ett_winsrepl_addr_list;
 
-static gint ett_winsrepl_name = -1;
-static gint ett_winsrepl_send_reply = -1;
+static int ett_winsrepl_name;
+static int ett_winsrepl_send_reply;
 
-static gint ett_winsrepl_flags = -1;
+static int ett_winsrepl_flags;
 
-static expert_field ei_winsrepl_name_len = EI_INIT;
+static expert_field ei_winsrepl_name_len;
 
 #define WINS_REPLICATION_PORT	( 42 )
 #define WREPL_OPCODE_BITS	( 0x7800 )
@@ -119,8 +108,6 @@ enum wrepl_mess_type {
 	WREPL_STOP_ASSOCIATION=2,
 	WREPL_REPLICATION=3
 };
-
-static unsigned int glb_winsrepl_tcp_port = WINS_REPLICATION_PORT;
 
 static const value_string replication_cmd_vals[] = {
 	{WREPL_REPL_TABLE_QUERY,	"WREPL_REPL_TABLE_QUERY"},
@@ -201,7 +188,7 @@ static int
 dissect_winsrepl_stop(tvbuff_t *winsrepl_tvb, _U_ packet_info *pinfo,
 		      int winsrepl_offset, proto_tree *winsrepl_tree)
 {
-	guint32 reason;
+	uint32_t reason;
 	proto_item *stop_item;
 	proto_tree *stop_tree;
 
@@ -229,7 +216,7 @@ dissect_winsrepl_table_query(tvbuff_t *winsrepl_tvb _U_, packet_info *pinfo _U_,
 static int
 dissect_winsrepl_wins_owner(tvbuff_t *winsrepl_tvb, _U_ packet_info *pinfo,
 			    int winsrepl_offset, proto_tree *winsrepl_tree,
-			    proto_tree *sub_tree, guint32 idx)
+			    proto_tree *sub_tree, uint32_t idx)
 {
 	proto_tree *owner_tree = NULL;
 
@@ -265,8 +252,8 @@ dissect_winsrepl_table_reply(tvbuff_t *winsrepl_tvb, packet_info *pinfo,
 			     int winsrepl_offset, proto_tree *winsrepl_tree)
 {
 	proto_tree *table_tree;
-	guint32 partner_count;
-	guint32 i;
+	uint32_t partner_count;
+	uint32_t i;
 
 	table_tree = proto_tree_add_subtree(winsrepl_tree, winsrepl_tvb, winsrepl_offset, -1,
 									ett_winsrepl_table_reply, NULL, "WREPL_REPL_TABLE_REPLY");
@@ -303,7 +290,7 @@ dissect_winsrepl_send_request(tvbuff_t *winsrepl_tvb, packet_info *pinfo,
 static int
 dissect_winsrepl_wins_ip(tvbuff_t *winsrepl_tvb, _U_ packet_info *pinfo,
 			 int winsrepl_offset, proto_tree *winsrepl_tree,
-			 guint32 *addr, proto_tree *sub_tree, guint32 idx)
+			 uint32_t *addr, proto_tree *sub_tree, uint32_t idx)
 {
 	proto_item *ip_item = NULL;
 	proto_tree *ip_tree = NULL;
@@ -323,7 +310,7 @@ dissect_winsrepl_wins_ip(tvbuff_t *winsrepl_tvb, _U_ packet_info *pinfo,
 	/* IP */
 	*addr = tvb_get_ipv4(winsrepl_tvb, winsrepl_offset);
 	proto_tree_add_ipv4(ip_tree, hf_winsrepl_ip_ip, winsrepl_tvb, winsrepl_offset, 4, *addr);
-	proto_item_append_text(ip_item, ": %s", tvb_ip_to_str(winsrepl_tvb, winsrepl_offset));
+	proto_item_append_text(ip_item, ": %s", tvb_ip_to_str(pinfo->pool, winsrepl_tvb, winsrepl_offset));
 	winsrepl_offset += 4;
 
 	return winsrepl_offset;
@@ -337,11 +324,11 @@ dissect_winsrepl_wins_address_list(tvbuff_t *winsrepl_tvb, packet_info *pinfo,
 	proto_item *addr_list_item;
 	proto_tree *addr_list_tree;
 	int old_offset = winsrepl_offset;
-	guint32 num_ips;
-	guint32 ip;
-	guint32 i;
+	uint32_t num_ips;
+	uint32_t ip;
+	uint32_t i;
 	address addr;
-	gchar* addr_str;
+	char* addr_str;
 
 	addr_list_tree = proto_tree_add_subtree(winsrepl_tree, winsrepl_tvb, winsrepl_offset, -1,
 							ett_winsrepl_addr_list, &addr_list_item, "WINS Address List");
@@ -356,7 +343,7 @@ dissect_winsrepl_wins_address_list(tvbuff_t *winsrepl_tvb, packet_info *pinfo,
 							   winsrepl_offset, addr_list_tree,
 							   &ip, addr_list_tree, i);
 		set_address(&addr, AT_IPv4, 4, &ip);
-		addr_str = address_to_str(wmem_packet_scope(), &addr);
+		addr_str = address_to_str(pinfo->pool, &addr);
 		if (i == 0) {
 			proto_item_append_text(parent_item, ": %s", addr_str);
 			proto_item_append_text(addr_list_item, ": %s", addr_str);
@@ -374,17 +361,17 @@ dissect_winsrepl_wins_address_list(tvbuff_t *winsrepl_tvb, packet_info *pinfo,
 static int
 dissect_winsrepl_wins_name(tvbuff_t *winsrepl_tvb, packet_info *pinfo,
 			   int winsrepl_offset, proto_tree *winsrepl_tree,
-			   proto_tree *sub_tree, guint32 idx)
+			   proto_tree *sub_tree, uint32_t idx)
 {
 	proto_item *name_item = NULL, *ti;
 	proto_tree *name_tree = NULL;
 	int old_offset = winsrepl_offset;
 	tvbuff_t *name_tvb = NULL;
-	guint32 name_len;
+	uint32_t name_len;
 	char  name_str[(NETBIOS_NAME_LEN - 1)*4 + 1];
 	int   name_type;
-	guint32 flags;
-	static const int * name_flags[] = {
+	uint32_t flags;
+	static int * const name_flags[] = {
 		&hf_winsrepl_name_flags_rectype,
 		&hf_winsrepl_name_flags_recstate,
 		&hf_winsrepl_name_flags_local,
@@ -456,7 +443,7 @@ dissect_winsrepl_wins_name(tvbuff_t *winsrepl_tvb, packet_info *pinfo,
 	case WREPL_NAME_TYPE_NORMAL_GROUP:
 		/* Single address */
 		proto_tree_add_item(name_tree, hf_winsrepl_ip_ip, winsrepl_tvb, winsrepl_offset, 4, ENC_BIG_ENDIAN);
-		proto_item_append_text(name_item, ": %s", tvb_ip_to_str(winsrepl_tvb, winsrepl_offset));
+		proto_item_append_text(name_item, ": %s", tvb_ip_to_str(pinfo->pool, winsrepl_tvb, winsrepl_offset));
 		winsrepl_offset += 4;
 		break;
 
@@ -483,8 +470,8 @@ dissect_winsrepl_send_reply(tvbuff_t *winsrepl_tvb, packet_info *pinfo,
 			    int winsrepl_offset, proto_tree *winsrepl_tree)
 {
 	proto_tree *rep_tree;
-	guint32 num_names;
-	guint32 i;
+	uint32_t num_names;
+	uint32_t i;
 
 	rep_tree = proto_tree_add_subtree(winsrepl_tree, winsrepl_tvb, winsrepl_offset, -1,
 								ett_winsrepl_send_reply, NULL, "WREPL_REPL_SEND_REPLY");
@@ -676,11 +663,11 @@ dissect_winsrepl_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree,
 	return tvb_captured_length(tvb);
 }
 
-static guint
+static unsigned
 get_winsrepl_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
                      int offset, void *data _U_)
 {
-	guint pdu_len;
+	unsigned pdu_len;
 
 	pdu_len=tvb_get_ntohl(tvb, offset);
 	return pdu_len+4;
@@ -838,7 +825,7 @@ proto_register_winsrepl(void)
 			"WINS Replication Num Names", HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_winsrepl,
 		&ett_winsrepl_start,
 		&ett_winsrepl_stop,
@@ -865,6 +852,7 @@ proto_register_winsrepl(void)
 	proto_register_field_array(proto_winsrepl, hf, array_length(hf));
 	expert_winsrepl = expert_register_protocol(proto_winsrepl);
 	expert_register_field_array(expert_winsrepl, ei, array_length(ei));
+	winsrepl_handle = register_dissector("winsrepl", dissect_winsrepl, proto_winsrepl);
 
 	winsrepl_module = prefs_register_protocol(proto_winsrepl, NULL);
 	prefs_register_bool_preference(winsrepl_module, "reassemble",
@@ -877,14 +865,11 @@ proto_register_winsrepl(void)
 void
 proto_reg_handoff_winsrepl(void)
 {
-	dissector_handle_t winsrepl_handle;
-
-	winsrepl_handle = create_dissector_handle(dissect_winsrepl, proto_winsrepl);
-	dissector_add_uint("tcp.port", glb_winsrepl_tcp_port, winsrepl_handle);
+	dissector_add_uint_with_preference("tcp.port", WINS_REPLICATION_PORT, winsrepl_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

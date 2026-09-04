@@ -1,0 +1,15 @@
+./test/errors10/781361.xml:3: parser error : Space required after the element name
+  %elem;
+        ^
+Entity: line 1: 
+<!ELEMENT e0000000000
+                     ^
+./test/errors10/781361.xml:3: parser error : xmlParseElementDecl: 'EMPTY', 'ANY' or '(' expected
+  %elem;
+        ^
+Entity: line 1: 
+<!ELEMENT e0000000000
+                     ^
+./test/errors10/781361.xml:4: parser error : Content error in the internal subset
+
+^

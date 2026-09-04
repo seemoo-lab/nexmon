@@ -4,54 +4,33 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
-#include <errno.h>
-
-#include <glib.h>
-
 #include "coloring_rules_dialog.h"
 #include <ui_coloring_rules_dialog.h>
 
-#include "epan/color_filters.h"
-
 #include "ui/simple_dialog.h"
-#include "ui/simple_dialog.h"
-#include "epan/dfilter/dfilter.h"
 #include "epan/prefs.h"
 
 #include <wsutil/utf8_entities.h>
 
 #include "wsutil/filesystem.h"
+#include "epan/dfilter/dfilter.h"
 
-#include "color_utils.h"
-#include "ui/ui_util.h"
-#include "display_filter_combo.h"
-#include "syntax_line_edit.h"
-#include "display_filter_edit.h"
-#include "wireshark_application.h"
+#include "main_application.h"
 
+#include "ui/qt/utils/qt_ui_utils.h"
+#include "ui/qt/widgets/copy_from_profile_button.h"
+#include "ui/qt/widgets/wireshark_file_dialog.h"
+
+#include <functional>
 #include <QColorDialog>
-#include <QDir>
-#include <QFileDialog>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QTreeWidgetItemIterator>
+#include <QUrl>
 
 /*
  * @file Coloring Rules dialog
@@ -63,72 +42,95 @@
 // - Make the filter column narrower? It's easy to run into Qt's annoying
 //   habit of horizontally scrolling QTreeWidgets here.
 
-
-enum {
-    name_col_ = 0,
-    filter_col_
-};
-
-static const QString new_rule_name_ = QObject::tr("New coloring rule");
-
 ColoringRulesDialog::ColoringRulesDialog(QWidget *parent, QString add_filter) :
     GeometryStateDialog(parent),
     ui(new Ui::ColoringRulesDialog),
-    conversation_colors_(NULL)
+    colorRuleModel_(palette().color(QPalette::Text), palette().color(QPalette::Base), this),
+    colorRuleDelegate_(this)
 {
     ui->setupUi(this);
     if (parent) loadGeometry(parent->width() * 2 / 3, parent->height() * 4 / 5);
 
-    setWindowTitle(wsApp->windowTitleString(QStringList() << tr("Coloring Rules") << get_profile_name()));
+    setWindowTitle(mainApp->windowTitleString(tr("Coloring Rules %1").arg(get_profile_name())));
 
-    ui->coloringRulesTreeWidget->setDragEnabled(true);
-    ui->coloringRulesTreeWidget->viewport()->setAcceptDrops(true);
-    ui->coloringRulesTreeWidget->setDropIndicatorShown(true);
-    ui->coloringRulesTreeWidget->setDragDropMode(QAbstractItemView::InternalMove);
+    ui->coloringRulesTreeView->setModel(&colorRuleModel_);
+    ui->coloringRulesTreeView->setItemDelegate(&colorRuleDelegate_);
 
-    color_filters_clone(this, color_filter_add_cb);
+    ui->coloringRulesTreeView->viewport()->setAcceptDrops(true);
 
-    for (int i = 0; i < ui->coloringRulesTreeWidget->columnCount(); i++) {
-        ui->coloringRulesTreeWidget->setItemDelegateForColumn(i, &coloring_rules_tree_delegate_);
-        ui->coloringRulesTreeWidget->resizeColumnToContents(i);
-    }
-    coloring_rules_tree_delegate_.setTree(ui->coloringRulesTreeWidget);
-
-    if (!add_filter.isEmpty()) {
-        addColoringRule(false, new_rule_name_, add_filter,
-                        palette().color(QPalette::Text),
-                        palette().color(QPalette::Base),
-                        true);
+    for (int i = 0; i < colorRuleModel_.columnCount(); i++) {
+        ui->coloringRulesTreeView->resizeColumnToContents(i);
     }
 
-    connect(ui->coloringRulesTreeWidget, SIGNAL(itemChanged(QTreeWidgetItem*,int)),
-            this, SLOT(updateWidgets()));
+    ui->newToolButton->setStockIcon("list-add");
+    ui->deleteToolButton->setStockIcon("list-remove");
+    ui->copyToolButton->setStockIcon("list-copy");
+    ui->clearToolButton->setStockIcon("list-clear");
 
-    import_button_ = ui->buttonBox->addButton(tr("Import" UTF8_HORIZONTAL_ELLIPSIS), QDialogButtonBox::ApplyRole);
+#ifdef Q_OS_MAC
+    ui->newToolButton->setAttribute(Qt::WA_MacSmallSize, true);
+    ui->deleteToolButton->setAttribute(Qt::WA_MacSmallSize, true);
+    ui->copyToolButton->setAttribute(Qt::WA_MacSmallSize, true);
+    ui->clearToolButton->setAttribute(Qt::WA_MacSmallSize, true);
+    ui->pathLabel->setAttribute(Qt::WA_MacSmallSize, true);
+#endif
+
+    connect(ui->coloringRulesTreeView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &ColoringRulesDialog::colorRuleSelectionChanged);
+    connect(&colorRuleDelegate_, &ColoringRulesDelegate::invalidField, this, &ColoringRulesDialog::invalidField);
+    connect(&colorRuleDelegate_, &ColoringRulesDelegate::validField, this, &ColoringRulesDialog::validField);
+    connect(ui->coloringRulesTreeView, &QTreeView::clicked, this, &ColoringRulesDialog::treeItemClicked);
+    connect(&colorRuleModel_, &ColoringRulesModel::rowsInserted, this, &ColoringRulesDialog::rowCountChanged);
+    connect(&colorRuleModel_, &ColoringRulesModel::rowsRemoved, this, &ColoringRulesDialog::rowCountChanged);
+
+    rowCountChanged();
+
+    import_button_ = ui->buttonBox->addButton(tr("Import…"), QDialogButtonBox::ApplyRole);
     import_button_->setToolTip(tr("Select a file and add its filters to the end of the list."));
-    export_button_ = ui->buttonBox->addButton(tr("Export" UTF8_HORIZONTAL_ELLIPSIS), QDialogButtonBox::ApplyRole);
+    export_button_ = ui->buttonBox->addButton(tr("Export…"), QDialogButtonBox::ApplyRole);
     export_button_->setToolTip(tr("Save filters in a file."));
 
-    updateWidgets();
+    CopyFromProfileButton * copy_button = new CopyFromProfileButton(this, COLORFILTERS_FILE_NAME, tr("Copy coloring rules from another profile."));
+    ui->buttonBox->addButton(copy_button, QDialogButtonBox::ActionRole);
+    connect(copy_button, &CopyFromProfileButton::copyProfile, this, &ColoringRulesDialog::copyFromProfile);
+
+    QString abs_path = gchar_free_to_qstring(get_persconffile_path(COLORFILTERS_FILE_NAME, true));
+    if (file_exists(abs_path.toUtf8().constData())) {
+        ui->pathLabel->setText(abs_path);
+        ui->pathLabel->setUrl(QUrl::fromLocalFile(abs_path).toString());
+        ui->pathLabel->setToolTip(tr("Open ") + COLORFILTERS_FILE_NAME);
+        ui->pathLabel->setEnabled(true);
+    }
+
+    if (!add_filter.isEmpty()) {
+        colorRuleModel_.addColor(false, add_filter, palette().color(QPalette::Text), palette().color(QPalette::Base));
+
+        //setup the buttons appropriately
+        ui->coloringRulesTreeView->setCurrentIndex(colorRuleModel_.index(0, 0));
+
+        //set edit on display filter
+        ui->coloringRulesTreeView->edit(colorRuleModel_.index(0, 1));
+    }else {
+        ui->coloringRulesTreeView->setCurrentIndex(QModelIndex());
+    }
+
+    updateHint();
 }
 
 ColoringRulesDialog::~ColoringRulesDialog()
 {
     delete ui;
-    color_filter_list_delete(&conversation_colors_);
 }
 
-void ColoringRulesDialog::addColor(_color_filter *colorf)
+void ColoringRulesDialog::copyFromProfile(QString filename)
 {
-    if (!colorf) return;
+    QString err;
 
-    if(strstr(colorf->filter_name, CONVERSATION_COLOR_PREFIX) != NULL) {
-        conversation_colors_ = g_slist_append(conversation_colors_, colorf);
-    } else {
-        addColoringRule(colorf->disabled, colorf->filter_name, colorf->filter_text,
-                        ColorUtils::fromColorT(colorf->fg_color),
-                        ColorUtils::fromColorT(colorf->bg_color),
-                        false, false);
+    if (!colorRuleModel_.importColors(filename, err)) {
+        simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s", err.toUtf8().constData());
+    }
+
+    for (int i = 0; i < colorRuleModel_.columnCount(); i++) {
+        ui->coloringRulesTreeView->resizeColumnToContents(i);
     }
 }
 
@@ -136,125 +138,197 @@ void ColoringRulesDialog::showEvent(QShowEvent *)
 {
     ui->fGPushButton->setFixedHeight(ui->copyToolButton->geometry().height());
     ui->bGPushButton->setFixedHeight(ui->copyToolButton->geometry().height());
+#ifndef Q_OS_MAC
+    ui->displayFilterPushButton->setFixedHeight(ui->copyToolButton->geometry().height());
+#endif
 }
 
-void ColoringRulesDialog::updateWidgets()
+void ColoringRulesDialog::rowCountChanged()
 {
-    QString hint = "<small><i>";
-    int num_selected = ui->coloringRulesTreeWidget->selectedItems().count();
+    ui->clearToolButton->setEnabled(colorRuleModel_.rowCount() > 0);
+}
 
-    if (num_selected == 1) {
-        QTreeWidgetItem *ti = ui->coloringRulesTreeWidget->currentItem();
-        QString color_button_ss =
-                "QPushButton {"
-                "  border: 1px solid palette(Dark);"
-                "  padding-left: %1px;"
-                "  padding-right: %1px;"
-                "  color: %2;"
-                "  background-color: %3;"
-                "}";
-        int one_em = fontMetrics().height();
-        QString fg_color = ti->foreground(0).color().name();
-        QString bg_color = ti->background(0).color().name();
-        ui->fGPushButton->setStyleSheet(color_button_ss.arg(one_em).arg(bg_color).arg(fg_color));
-        ui->bGPushButton->setStyleSheet(color_button_ss.arg(one_em).arg(fg_color).arg(bg_color));
+bool ColoringRulesDialog::isValidFilter(QString filter, QString * error)
+{
+    dfilter_t *dfp = NULL;
+    df_error_t *df_err = NULL;
+
+    if (dfilter_compile(filter.toUtf8().constData(), &dfp, &df_err)) {
+        dfilter_free(dfp);
+        return true;
     }
 
-    ui->copyToolButton->setEnabled(num_selected == 1);
-    ui->deleteToolButton->setEnabled(num_selected > 0);
-    ui->fGPushButton->setVisible(num_selected == 1);
-    ui->bGPushButton->setVisible(num_selected == 1);
+    if (df_err)
+    {
+        error->append(df_err->msg);
+        df_error_free(&df_err);
+    }
 
-    QString error_text;
-    QTreeWidgetItemIterator iter(ui->coloringRulesTreeWidget);
-    bool enable_save = true;
+    return false;
+}
 
-    while (*iter) {
-        QTreeWidgetItem *item = (*iter);
-        if (item->text(name_col_).contains("@")) {
-            error_text = tr("the \"@\" symbol will be ignored.");
-        }
-
-        // Check the rule's display filter syntax only if it's checked.
-        QString display_filter = item->text(filter_col_);
-        if (!display_filter.isEmpty() && item->checkState(name_col_) == Qt::Checked) {
-            dfilter_t *dfilter;
-            bool status;
-            gchar *err_msg;
-            status = dfilter_compile(display_filter.toUtf8().constData(), &dfilter, &err_msg);
-            dfilter_free(dfilter);
-            if (!status) {
-                if (!error_text.isEmpty()) error_text += " ";
-                error_text += err_msg;
-                g_free(err_msg);
-                enable_save = false;
+void ColoringRulesDialog::treeItemClicked(const QModelIndex &index)
+{
+    QModelIndex idx = ui->coloringRulesTreeView->model()->index(index.row(), ColoringRulesModel::colFilter);
+    QString filter = idx.data(Qt::DisplayRole).toString();
+    QString err;
+    if (! isValidFilter(filter, &err) && index.data(Qt::CheckStateRole).toInt() == Qt::Checked)
+    {
+        errors_.insert(index, err);
+        updateHint(index);
+    }
+    else
+    {
+        QList<QModelIndex> keys = errors_.keys();
+        bool update = false;
+        foreach (QModelIndex key, keys)
+        {
+            if (key.row() == index.row())
+            {
+                errors_.remove(key);
+                update = true;
             }
         }
 
-        if (!error_text.isEmpty()) {
-            error_text.prepend(QString("%1: ").arg(item->text(name_col_)));
-            break;
+        if (update)
+            updateHint(index);
+    }
+}
+
+void ColoringRulesDialog::invalidField(const QModelIndex &index, const QString& errMessage)
+{
+    errors_.insert(index, errMessage);
+    updateHint(index);
+}
+
+void ColoringRulesDialog::validField(const QModelIndex &index)
+{
+    QList<QModelIndex> keys = errors_.keys();
+    bool update = false;
+    foreach (QModelIndex key, keys)
+    {
+        if (key.row() == index.row())
+        {
+            errors_.remove(key);
+            update = true;
         }
-        ++iter;
+    }
+
+    if (update)
+        updateHint(index);
+}
+
+void ColoringRulesDialog::updateHint(QModelIndex idx)
+{
+    QString hint = "<small><i>";
+    QString error_text;
+    bool enable_save = true;
+
+    if (errors_.count() > 0) {
+        //take the list of QModelIndexes and sort them so first color rule error is displayed
+        //This isn't the most efficient algorithm, but the list shouldn't be large to matter
+        QList<QModelIndex> keys = errors_.keys();
+
+        //list is not guaranteed to be sorted, so force it
+        std::sort(keys.begin(), keys.end());
+        const QModelIndex& error_key = keys[0];
+        error_text = QStringLiteral("%1: %2")
+                            .arg(colorRuleModel_.data(colorRuleModel_.index(error_key.row(), ColoringRulesModel::colName), Qt::DisplayRole).toString())
+                            .arg(errors_[error_key]);
     }
 
     if (error_text.isEmpty()) {
         hint += tr("Double click to edit. Drag to move. Rules are processed in order until a match is found.");
     } else {
         hint += error_text;
+        if (idx.isValid())
+        {
+            QModelIndex fiIdx = ui->coloringRulesTreeView->model()->index(idx.row(), ColoringRulesModel::colName);
+            if (fiIdx.data(Qt::CheckStateRole).toInt() == Qt::Checked)
+                enable_save = false;
+        }
+        else
+            enable_save = false;
     }
+
     hint += "</i></small>";
     ui->hintLabel->setText(hint);
 
     ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(enable_save);
 }
 
-GSList *ColoringRulesDialog::createColorFilterList()
+void ColoringRulesDialog::setColorButtons(QModelIndex &index)
 {
-    GSList *cfl = NULL;
-    QTreeWidgetItemIterator iter(ui->coloringRulesTreeWidget);
+    QString color_button_ss =
+            "QPushButton {"
+            "  border: 1px solid palette(Dark);"
+            "  padding-left: %1px;"
+            "  padding-right: %1px;"
+            "  color: %2;"
+            "  background-color: %3;"
+            "}";
 
-    while (*iter) {
-        QTreeWidgetItem *item = (*iter);
-        color_t fg = ColorUtils::toColorT(item->foreground(0).color());
-        color_t bg = ColorUtils::toColorT(item->background(0).color());
-        color_filter_t *colorf = color_filter_new(item->text(name_col_).toUtf8().constData(),
-                                                  item->text(filter_col_).toUtf8().constData(),
-                                                  &bg, &fg, item->checkState(0) == Qt::Unchecked);
-        cfl = g_slist_append(cfl, colorf);
-        ++iter;
+    int one_em = fontMetrics().height();
+    QVariant fg = colorRuleModel_.data(index, Qt::ForegroundRole);
+    QVariant bg = colorRuleModel_.data(index, Qt::BackgroundRole);
+    if (fg.isNull() || bg.isNull()) {
+        //should never happen
+        ui->fGPushButton->setVisible(false);
+        ui->bGPushButton->setVisible(false);
+    } else {
+        QString fg_color = fg.toString();
+        QString bg_color = bg.toString();
+
+        ui->fGPushButton->setStyleSheet(color_button_ss.arg(one_em).arg(bg_color).arg(fg_color));
+        ui->bGPushButton->setStyleSheet(color_button_ss.arg(one_em).arg(fg_color).arg(bg_color));
     }
-    return cfl;
 }
 
-void ColoringRulesDialog::on_coloringRulesTreeWidget_itemSelectionChanged()
+void ColoringRulesDialog::colorRuleSelectionChanged(const QItemSelection&, const QItemSelection&)
 {
-    updateWidgets();
+    QModelIndexList selectedList = ui->coloringRulesTreeView->selectionModel()->selectedIndexes();
+
+    //determine the number of unique rows
+    QHash<int, QModelIndex> selectedRows;
+    foreach (const QModelIndex &index, selectedList) {
+        selectedRows.insert(index.row(), index);
+    }
+
+    qsizetype num_selected = selectedRows.count();
+    if (num_selected == 1) {
+        setColorButtons(selectedList[0]);
+    }
+
+    ui->copyToolButton->setEnabled(num_selected == 1);
+    ui->deleteToolButton->setEnabled(num_selected > 0);
+    ui->fGPushButton->setVisible(num_selected == 1);
+    ui->bGPushButton->setVisible(num_selected == 1);
+    ui->displayFilterPushButton->setVisible(num_selected == 1);
 }
 
 void ColoringRulesDialog::changeColor(bool foreground)
 {
-    if (!ui->coloringRulesTreeWidget->currentItem()) return;
+    QModelIndex current = ui->coloringRulesTreeView->currentIndex();
+    if (!current.isValid())
+        return;
 
-    QTreeWidgetItem *ti = ui->coloringRulesTreeWidget->currentItem();
-    QColorDialog color_dlg;
+    QColorDialog *color_dlg = new QColorDialog(this);
+    color_dlg->setCurrentColor(colorRuleModel_.data(current, foreground ? Qt::ForegroundRole : Qt::BackgroundRole).toString());
 
-    color_dlg.setCurrentColor(foreground ?
-                                  ti->foreground(0).color() : ti->background(0).color());
-    if (color_dlg.exec() == QDialog::Accepted) {
-        QColor cc = color_dlg.currentColor();
-        if (foreground) {
-            for (int i = 0; i < ui->coloringRulesTreeWidget->columnCount(); i++) {
-                ti->setForeground(i, cc);
-            }
-        } else {
-            for (int i = 0; i < ui->coloringRulesTreeWidget->columnCount(); i++) {
-                ti->setBackground(i, cc);
-            }
-        }
-        updateWidgets();
-    }
+    connect(color_dlg, &QColorDialog::colorSelected, std::bind(&ColoringRulesDialog::colorChanged, this, foreground, std::placeholders::_1));
+    color_dlg->setWindowModality(Qt::ApplicationModal);
+    color_dlg->setAttribute(Qt::WA_DeleteOnClose);
+    color_dlg->show();
+}
 
+void ColoringRulesDialog::colorChanged(bool foreground, const QColor &cc)
+{
+    QModelIndex current = ui->coloringRulesTreeView->currentIndex();
+    if (!current.isValid())
+        return;
+
+    colorRuleModel_.setData(current, cc, foreground ? Qt::ForegroundRole : Qt::BackgroundRole);
+    setColorButtons(current);
 }
 
 void ColoringRulesDialog::on_fGPushButton_clicked()
@@ -267,196 +341,116 @@ void ColoringRulesDialog::on_bGPushButton_clicked()
     changeColor(false);
 }
 
-void ColoringRulesDialog::addColoringRule(bool disabled, QString name, QString filter, QColor foreground, QColor background, bool start_editing, bool at_top)
+void ColoringRulesDialog::on_displayFilterPushButton_clicked()
 {
-    QTreeWidgetItem *ti = new QTreeWidgetItem();
+    QModelIndex current = ui->coloringRulesTreeView->currentIndex();
+    if (!current.isValid())
+        return;
 
-    ti->setFlags(ti->flags() | Qt::ItemIsUserCheckable | Qt::ItemIsEditable);
-    ti->setFlags(ti->flags() & ~(Qt::ItemIsDropEnabled));
-    ti->setCheckState(name_col_, disabled ? Qt::Unchecked : Qt::Checked);
-    ti->setText(name_col_, name);
-    ti->setText(filter_col_, filter);
+    QString filter = colorRuleModel_.data(colorRuleModel_.index(current.row(), ColoringRulesModel::colFilter), Qt::DisplayRole).toString();
+    emit filterAction(filter, FilterAction::ActionApply, FilterAction::ActionTypePlain);
+}
 
-    for (int i = 0; i < ui->coloringRulesTreeWidget->columnCount(); i++) {
-        ti->setForeground(i, foreground);
-        ti->setBackground(i, background);
-    }
+void ColoringRulesDialog::addRule(bool copy_from_current)
+{
+    const QModelIndex &current = ui->coloringRulesTreeView->currentIndex();
+    if (copy_from_current && !current.isValid())
+        return;
 
-    if (at_top) {
-        ui->coloringRulesTreeWidget->insertTopLevelItem(0, ti);
+    //always add rules at the top of the list
+    if (copy_from_current) {
+        colorRuleModel_.copyRow(colorRuleModel_.index(0, 0).row(), current.row());
     } else {
-        ui->coloringRulesTreeWidget->addTopLevelItem(ti);
+        if (!colorRuleModel_.insertRows(0, 1)) {
+            return;
+        }
     }
 
-    if (start_editing) {
-        ui->coloringRulesTreeWidget->setCurrentItem(ti);
-        updateWidgets();
-        ui->coloringRulesTreeWidget->editItem(ti, filter_col_);
-    }
+    //set edit on display filter
+    ui->coloringRulesTreeView->edit(colorRuleModel_.index(0, 1));
 }
 
 void ColoringRulesDialog::on_newToolButton_clicked()
 {
-    addColoringRule(false, new_rule_name_, QString(), palette().color(QPalette::Text),
-                    palette().color(QPalette::Base), true);
+    addRule();
 }
 
 void ColoringRulesDialog::on_deleteToolButton_clicked()
 {
-    QList<QTreeWidgetItem*> selected = ui->coloringRulesTreeWidget->selectedItems();
-    foreach (QTreeWidgetItem *ti, selected) {
-        delete ti;
+    QModelIndexList selectedList = ui->coloringRulesTreeView->selectionModel()->selectedIndexes();
+    qsizetype num_selected = selectedList.count() / colorRuleModel_.columnCount();
+    if (num_selected > 0) {
+        //list is not guaranteed to be sorted, so force it
+        std::sort(selectedList.begin(), selectedList.end());
+
+        //walk the list from the back because deleting a value in
+        //the middle will leave the selectedList out of sync and
+        //delete the wrong elements
+        for (int i = static_cast<int>(selectedList.count()) - 1; i >= 0; i--) {
+            QModelIndex deleteIndex = selectedList[i];
+            //selectedList includes all cells, use first column as key to remove row
+            if (deleteIndex.isValid() && (deleteIndex.column() == 0)) {
+                colorRuleModel_.removeRows(deleteIndex.row(), 1);
+            }
+        }
     }
-    updateWidgets();
 }
 
 void ColoringRulesDialog::on_copyToolButton_clicked()
 {
-    if (!ui->coloringRulesTreeWidget->currentItem()) return;
-    QTreeWidgetItem *ti = ui->coloringRulesTreeWidget->currentItem();
+    addRule(true);
+}
 
-    addColoringRule(ti->checkState(0) == Qt::Unchecked, ti->text(name_col_),
-                    ti->text(filter_col_), ti->foreground(0).color(),
-                    ti->background(0).color(), true);
+void ColoringRulesDialog::on_clearToolButton_clicked()
+{
+    colorRuleModel_.removeRows(0, colorRuleModel_.rowCount());
 }
 
 void ColoringRulesDialog::on_buttonBox_clicked(QAbstractButton *button)
 {
+    QString err;
+
     if (button == import_button_) {
-        QString file_name = QFileDialog::getOpenFileName(this, wsApp->windowTitleString(tr("Import Coloring Rules")),
-                                                         wsApp->lastOpenDir().path());
-        gchar* err_msg = NULL;
-        if (!color_filters_import(file_name.toUtf8().constData(), this, &err_msg, color_filter_add_cb)) {
-            simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s", err_msg);
-            g_free(err_msg);
+        QString file_name = WiresharkFileDialog::getOpenFileName(this, mainApp->windowTitleString(tr("Import Coloring Rules")),
+                                                         mainApp->openDialogInitialDir().path());
+        if (!file_name.isEmpty()) {
+            if (!colorRuleModel_.importColors(file_name, err)) {
+                simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s", err.toUtf8().constData());
+            }
         }
     } else if (button == export_button_) {
-        int num_items = ui->coloringRulesTreeWidget->selectedItems().count();
+        int num_items = static_cast<int>(ui->coloringRulesTreeView->selectionModel()->selectedIndexes().count()) / colorRuleModel_.columnCount();
 
         if (num_items < 1) {
-            num_items = ui->coloringRulesTreeWidget->topLevelItemCount();
+            num_items = colorRuleModel_.rowCount();
         }
 
-        if (num_items < 1) return;
+        if (num_items < 1)
+            return;
 
-        QString caption = wsApp->windowTitleString(tr("Export %1 Coloring Rules").arg(num_items));
-        QString file_name = QFileDialog::getSaveFileName(this, caption,
-                                                         wsApp->lastOpenDir().path());
+        QString caption = mainApp->windowTitleString(tr("Export %1 Coloring Rules").arg(num_items));
+        QString file_name = WiresharkFileDialog::getSaveFileName(this, caption,
+                                                         mainApp->openDialogInitialDir().path());
         if (!file_name.isEmpty()) {
-            GSList *cfl = createColorFilterList();
-            gchar* err_msg = NULL;
-            if (!color_filters_export(file_name.toUtf8().constData(), cfl, FALSE, &err_msg)) {
-                simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s", err_msg);
-                g_free(err_msg);
+            if (!colorRuleModel_.exportColors(file_name, err)) {
+                simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s", err.toUtf8().constData());
             }
-            color_filter_list_delete(&cfl);
         }
     }
 }
 
 void ColoringRulesDialog::on_buttonBox_accepted()
 {
-    GSList *cfl = createColorFilterList();
-    gchar* err_msg = NULL;
-    if (prefs.unknown_colorfilters) {
-        QMessageBox mb;
-        mb.setText(tr("Your coloring rules file contains unknown rules"));
-        mb.setInformativeText(tr("Wireshark doesn't recognize one or more of your coloring rules. "
-                                 "They have been disabled."));
-        mb.setStandardButtons(QMessageBox::Ok);
-
-        int result = mb.exec();
-        if (result != QMessageBox::Save) return;
+    QString err;
+    int ret = QDialog::Accepted;
+    if (!colorRuleModel_.writeColors(err)) {
+        simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s", err.toUtf8().constData());
+        ret = QDialog::Rejected;
     }
-    if (!color_filters_apply(conversation_colors_, cfl, &err_msg)) {
-        simple_dialog(ESD_TYPE_ERROR, ESD_BTN_OK, "%s", err_msg);
-        g_free(err_msg);
-    }
-    if (!color_filters_write(cfl, &err_msg)) {
-        QMessageBox::warning(this, tr("Unable to save coloring rules: %s"), g_strerror(errno));
-        g_free(err_msg);
-    }
-    color_filter_list_delete(&cfl);
+    done(ret);
 }
 
 void ColoringRulesDialog::on_buttonBox_helpRequested()
 {
-    wsApp->helpTopicAction(HELP_COLORING_RULES_DIALOG);
+    mainApp->helpTopicAction(HELP_COLORING_RULES_DIALOG);
 }
-
-//
-// ColoringRulesTreeDelegate
-// Delegate for editing coloring rule names and filters.
-//
-
-QWidget *ColoringRulesTreeDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &, const QModelIndex &index) const
-{
-    QWidget *w = NULL;
-
-    QTreeWidgetItem *ti = tree_->topLevelItem(index.row());
-    if (!ti) return NULL;
-
-    switch (index.column()) {
-    case name_col_:
-    {
-        SyntaxLineEdit *sle = new SyntaxLineEdit(parent);
-        connect(sle, SIGNAL(textChanged(QString)), this, SLOT(ruleNameChanged(QString)));
-        sle->setText(ti->text(name_col_));
-        w = (QWidget*) sle;
-    }
-        break;
-
-    case filter_col_:
-    {
-        DisplayFilterEdit *dfe = new DisplayFilterEdit(parent);
-        // It's possible to have an invalid filter and an enabled OK button at this point.
-        // We might want to add a local slot for checking the filter status.
-        connect(dfe, SIGNAL(textChanged(QString)), dfe, SLOT(checkDisplayFilter(QString)));
-        dfe->setText(ti->text(filter_col_));
-        w = (QWidget*) dfe;
-    }
-        break;
-    default:
-        break;
-    }
-
-    return w;
-}
-
-void ColoringRulesTreeDelegate::ruleNameChanged(const QString name)
-{
-    SyntaxLineEdit *name_edit = qobject_cast<SyntaxLineEdit*>(QObject::sender());
-    if (!name_edit) return;
-
-    if (name.isEmpty()) {
-        name_edit->setSyntaxState(SyntaxLineEdit::Empty);
-    } else if (name.contains("@")) {
-        name_edit->setSyntaxState(SyntaxLineEdit::Invalid);
-    } else {
-        name_edit->setSyntaxState(SyntaxLineEdit::Valid);
-    }
-
-}
-
-// Callback for color_filters_clone.
-void
-color_filter_add_cb(color_filter_t *colorf, gpointer user_data)
-{
-    ColoringRulesDialog *coloring_rules_dialog = static_cast<ColoringRulesDialog*>(user_data);
-
-    if (!coloring_rules_dialog) return;
-    coloring_rules_dialog->addColor(colorf);
-}
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

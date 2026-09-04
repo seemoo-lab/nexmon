@@ -1,0 +1,6 @@
+./test/valid/t8a.xml:6: parser error : Content error in the internal subset
+%defroot;%defmiddle;%deftest;
+         ^
+Entity: line 1: 
+&lt;!ELEMENT root (middle) >
+^

@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,6 +21,7 @@
 #include <epan/strutil.h>
 
 #include <wsutil/str_util.h>
+#include <wsutil/array.h>
 
 #include "packet-tcp.h"
 
@@ -47,44 +36,42 @@
 
 void proto_register_idmp(void);
 void proto_reg_handoff_idm(void);
-static void prefs_register_idmp(void); /* forward declaration for use in preferences registration */
 void register_idmp_protocol_info(const char *oid, const ros_info_t *rinfo, int proto _U_, const char *name);
 
-static gboolean           idmp_desegment       = TRUE;
-static guint              global_idmp_tcp_port = 1102; /* made up for now */
-static gboolean           idmp_reassemble      = TRUE;
-static guint              tcp_port             = 0;
-static dissector_handle_t idmp_handle          = NULL;
+static bool           idmp_desegment       = true;
+#define IDMP_TCP_PORT     1102 /* made up for now - not IANA registered */
+static bool           idmp_reassemble      = true;
+static dissector_handle_t idmp_handle;
 
-static proto_tree *top_tree         = NULL;
-static const char *protocolID       = NULL;
-static const char *saved_protocolID = NULL;
-static guint32     opcode           = -1;
+static proto_tree *top_tree;
+static const char *protocolID;
+static const char *saved_protocolID;
+static uint32_t    opcode           = -1;
 
 /* Initialize the protocol and registered fields */
-int proto_idmp = -1;
+int proto_idmp;
 
-static int hf_idmp_version = -1;
-static int hf_idmp_final = -1;
-static int hf_idmp_length = -1;
-static int hf_idmp_PDU = -1;
+static int hf_idmp_version;
+static int hf_idmp_final;
+static int hf_idmp_length;
+static int hf_idmp_PDU;
 
 static reassembly_table idmp_reassembly_table;
 
-static int hf_idmp_fragments = -1;
-static int hf_idmp_fragment = -1;
-static int hf_idmp_fragment_overlap = -1;
-static int hf_idmp_fragment_overlap_conflicts = -1;
-static int hf_idmp_fragment_multiple_tails = -1;
-static int hf_idmp_fragment_too_long_fragment = -1;
-static int hf_idmp_fragment_error = -1;
-static int hf_idmp_fragment_count = -1;
-static int hf_idmp_reassembled_in = -1;
-static int hf_idmp_reassembled_length = -1;
-static int hf_idmp_segment_data = -1;
+static int hf_idmp_fragments;
+static int hf_idmp_fragment;
+static int hf_idmp_fragment_overlap;
+static int hf_idmp_fragment_overlap_conflicts;
+static int hf_idmp_fragment_multiple_tails;
+static int hf_idmp_fragment_too_long_fragment;
+static int hf_idmp_fragment_error;
+static int hf_idmp_fragment_count;
+static int hf_idmp_reassembled_in;
+static int hf_idmp_reassembled_length;
+static int hf_idmp_segment_data;
 
-static gint ett_idmp_fragment = -1;
-static gint ett_idmp_fragments = -1;
+static int ett_idmp_fragment;
+static int ett_idmp_fragments;
 
 static const fragment_items idmp_frag_items = {
     /* Fragment subtrees */
@@ -114,14 +101,14 @@ static int call_idmp_oid_callback(tvbuff_t *tvb, int offset, packet_info *pinfo,
 {
     if(session != NULL) {
 
-        if((!saved_protocolID) && (op == (ROS_OP_BIND | ROS_OP_RESULT))) {
-            /* save for subsequent operations - should be into session data */
-            saved_protocolID = wmem_strdup(wmem_file_scope(), protocolID);
+        /* XXX saved_protocolID should be part of session data */
+        if (!saved_protocolID) {
+            saved_protocolID = "[ unknown ]";
         }
 
         /* mimic ROS! */
         session->ros_op = op;
-        offset = call_ros_oid_callback(saved_protocolID ? saved_protocolID : protocolID, tvb, offset, pinfo, tree, session);
+        offset = call_ros_oid_callback(saved_protocolID, tvb, offset, pinfo, tree, session);
     }
 
     return offset;
@@ -131,7 +118,7 @@ static int call_idmp_oid_callback(tvbuff_t *tvb, int offset, packet_info *pinfo,
 #include "packet-idmp-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_idmp = -1;
+static int ett_idmp;
 #include "packet-idmp-ett.c"
 
 #include "packet-idmp-fn.c"
@@ -140,7 +127,7 @@ void
 register_idmp_protocol_info(const char *oid, const ros_info_t *rinfo, int proto _U_, const char *name)
 {
     /* just register with ROS for now */
-    register_ros_protocol_info(oid, rinfo, proto, name, FALSE);
+    register_ros_protocol_info(oid, rinfo, proto, name, false);
 }
 
 
@@ -152,16 +139,15 @@ static int dissect_idmp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
     proto_tree                    *tree;
     asn1_ctx_t                     asn1_ctx;
     struct SESSION_DATA_STRUCTURE  session;
-    gboolean                       idmp_final;
-    guint32                        idmp_length;
+    bool                           idmp_final;
+    uint32_t                       idmp_length;
     fragment_head                 *fd_head;
     conversation_t                *conv;
-    guint32                        dst_ref = 0;
+    uint32_t                       dst_ref = 0;
 
-    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
-    conv = find_conversation (pinfo->num, &pinfo->src, &pinfo->dst,
-                              pinfo->ptype, pinfo->srcport, pinfo->destport, 0);
+    conv = find_conversation_pinfo(pinfo, 0);
     if (conv) {
         /* Found a conversation, also use index for the generated dst_ref */
         dst_ref = conv->conv_index;
@@ -179,7 +165,7 @@ static int dissect_idmp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
 
     proto_tree_add_item(tree, hf_idmp_version, tvb, offset, 1, ENC_BIG_ENDIAN); offset++;
     proto_tree_add_item(tree, hf_idmp_final, tvb, offset, 1, ENC_BIG_ENDIAN);
-    idmp_final = tvb_get_guint8(tvb, offset); offset++;
+    idmp_final = tvb_get_uint8(tvb, offset); offset++;
     proto_tree_add_item(tree, hf_idmp_length, tvb, offset, 4, ENC_BIG_ENDIAN);
     idmp_length = tvb_get_ntohl(tvb, offset); offset += 4;
 
@@ -225,16 +211,16 @@ static int dissect_idmp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tr
     /* not reassembling - just dissect */
     if(idmp_final) {
         asn1_ctx.private_data = &session;
-        dissect_idmp_IDM_PDU(FALSE, tvb, offset, &asn1_ctx, tree, hf_idmp_PDU);
+        dissect_idmp_IDM_PDU(false, tvb, offset, &asn1_ctx, tree, hf_idmp_PDU);
     }
 
     return tvb_captured_length(tvb);
 }
 
-static guint get_idmp_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
+static unsigned get_idmp_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
                               int offset, void *data _U_)
 {
-    guint32 len;
+    uint32_t len;
 
     len = tvb_get_ntohl(tvb, offset + 2);
 
@@ -247,16 +233,11 @@ static int dissect_idmp_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *paren
 	return tvb_captured_length(tvb);
 }
 
-static void idmp_reassemble_init (void)
-{
-    reassembly_table_init (&idmp_reassembly_table,
-                           &addresses_reassembly_table_functions);
-}
-
 static void idmp_reassemble_cleanup(void)
 {
-    reassembly_table_destroy(&idmp_reassembly_table);
-    saved_protocolID = NULL;
+    protocolID = NULL; // packet scoped
+    saved_protocolID = NULL; // epan scoped copy of protocolID
+    opcode = -1;
 }
 
 /*--- proto_register_idmp -------------------------------------------*/
@@ -321,7 +302,7 @@ void proto_register_idmp(void)
     };
 
     /* List of subtrees */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_idmp,
         &ett_idmp_fragment,
         &ett_idmp_fragments,
@@ -338,12 +319,14 @@ void proto_register_idmp(void)
 
     idmp_handle = register_dissector("idmp", dissect_idmp_tcp, proto_idmp);
 
-    register_init_routine (&idmp_reassemble_init);
     register_cleanup_routine (&idmp_reassemble_cleanup);
+    reassembly_table_register (&idmp_reassembly_table,
+                           &addresses_reassembly_table_functions);
+
 
     /* Register our configuration options for IDMP, particularly our port */
 
-    idmp_module = prefs_register_protocol_subtree("OSI/X.500", proto_idmp, prefs_register_idmp);
+    idmp_module = prefs_register_protocol_subtree("OSI/X.500", proto_idmp, NULL);
 
     prefs_register_bool_preference(idmp_module, "desegment_idmp_messages",
                                    "Reassemble IDMP messages spanning multiple TCP segments",
@@ -357,33 +340,10 @@ void proto_register_idmp(void)
                                    " To use this option, you must also enable"
                                    " \"Allow subdissectors to reassemble TCP streams\""
                                    " in the TCP protocol settings.", &idmp_reassemble);
-
-    prefs_register_uint_preference(idmp_module, "tcp.port", "IDMP TCP Port",
-                                   "Set the port for Internet Directly Mapped Protocol requests/responses",
-                                   10, &global_idmp_tcp_port);
-
 }
 
 
 /*--- proto_reg_handoff_idm --- */
 void proto_reg_handoff_idm(void) {
-
-}
-
-
-static void
-prefs_register_idmp(void)
-{
-
-    /* de-register the old port */
-    /* port 102 is registered by TPKT - don't undo this! */
-    if(idmp_handle)
-        dissector_delete_uint("tcp.port", tcp_port, idmp_handle);
-
-    /* Set our port number for future use */
-    tcp_port = global_idmp_tcp_port;
-
-    if((tcp_port > 0) && idmp_handle)
-        dissector_add_uint("tcp.port", global_idmp_tcp_port, idmp_handle);
-
+    dissector_add_uint_with_preference("tcp.port", IDMP_TCP_PORT, idmp_handle);
 }

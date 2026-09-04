@@ -1,0 +1,183 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test recognition of Go format strings.
+
+cat <<\EOF > f-go-1.data
+# Valid: no argument
+"abc%%"
+# Valid: one generic value argument
+"abc%v"
+# Valid: one generic value argument
+"abc%T"
+# Valid: one boolean argument
+"abc%t"
+# Valid: one character argument
+"abc%c"
+# Valid: one character argument
+"abc%U"
+# Valid: one string argument
+"abc%s"
+# Valid: one character or string argument
+"abc%q"
+# Valid: one floating-point argument
+"abc%e"
+# Valid: one floating-point argument
+"abc%E"
+# Valid: one floating-point argument
+"abc%f"
+# Valid: one floating-point argument
+"abc%F"
+# Valid: one floating-point argument
+"abc%g"
+# Valid: one floating-point argument
+"abc%G"
+# Valid: one integer argument
+"abc%O"
+# Valid: one integer or pointer argument
+"abc%d"
+# Valid: one integer or pointer argument
+"abc%o"
+# Valid: one integer or floating-point or pointer argument
+"abc%b"
+# Valid: one integer or floating-point or string or pointer argument
+"abc%x"
+# Valid: one integer or floating-point or string or pointer argument
+"abc%X"
+# Valid: one argument with flags
+"abc%#0d"
+# Valid: one argument with width
+"abc%2d"
+# Valid: one argument with precision
+"abc%.4d"
+# Valid: one argument with width and precision
+"abc%14.4d"
+# Invalid: unterminated
+"abc%"
+# Invalid: unknown format specifier
+"abc%y"
+# Invalid: flags after width
+"abc%2#d"
+# Valid: null precision
+"abc%.f"
+# Invalid: twice precision
+"abc%.4.2d"
+# Valid: three arguments
+"abc%d%x%x"
+# Valid: a numbered argument
+"abc%[1]d"
+# Invalid: argument number zero
+"abc%[0]d"
+# Valid: a numbered argument
+"abc%[1000000]d"
+# Invalid: argument number too large
+"abc%[1000001]d"
+# Invalid: unterminated argument number
+"abc%["
+# Invalid: unterminated argument number
+"abc%[1"
+# Invalid: unterminated directive
+"abc%[1]"
+# Valid: width is a numbered argument
+"abc%[1]*d"
+# Invalid: width is argument number zero
+"abc%[0]*d"
+# Valid: width is a numbered argument
+"abc%[1000000]*d"
+# Invalid: width argument number too large
+"abc%[1000001]*d"
+# Valid: precision is a numbered argument
+"abc%.[1]*d"
+# Invalid: precision is argument number zero
+"abc%.[0]*d"
+# Valid: precision is a numbered argument
+"abc%.[1000000]*d"
+# Invalid: precision argument number too large
+"abc%.[1000001]*d"
+# Invalid: unterminated precision argument number
+"abc%.["
+# Invalid: unterminated precision argument number
+"abc%.[1"
+# Invalid: unterminated directive
+"abc%.[1]"
+# Valid: width and precision are numbered arguments
+"abc%[2]*.[1]*d"
+# Valid: width and main are numbered arguments
+"abc%[2]*[1]d"
+# Valid: precision and main are numbered arguments
+"abc%.[2]*[1]d"
+# Valid: width, precision, and main are numbered arguments
+"abc%[3]*.[2]*[1]d"
+# Invalid syntax of numbered arguments
+"abc%[3].[2]*[1]d"
+# Invalid syntax of numbered arguments
+"abc%[3]*.[2][1]d"
+# Invalid syntax of numbered arguments
+"abc%[3][3]*.[2]*[1]d"
+# Invalid syntax of numbered arguments
+"abc%[3]*.[2][2]*[1]d"
+# Invalid syntax of numbered arguments / twice precision
+"abc%[3]*.[2].[2]*[1]d"
+# Invalid syntax of numbered arguments
+"abc%[3]*.[2]*[1][1]d"
+# Valid: flags before number
+"abc%#[1]d"
+# Invalid: flags after number
+"abc%[1]#d"
+# Valid: three arguments, two with same number
+"abc%[1]x,%[2]c,%[1]X"
+# Invalid: argument with conflicting types
+"abc%[1]o,%[2]c,%[1]s"
+# Valid: no conflict
+"abc%[1]x,%[2]c,%[1]s"
+# Valid: mixing of numbered and unnumbered arguments
+"abc%d%[2]x"
+# Valid: mixing of numbered and unnumbered arguments
+"abc%[5]d%x"
+# Valid: numbered argument with constant precision
+"abc%.9[1]x"
+# Invalid: argument number before precision
+"abc%[1].9x"
+# Valid: missing non-final argument
+"abc%[2]x%[3]s"
+# Valid: permutation
+"abc%[2]ddef%[1]d"
+# Valid: multiple uses of same argument
+"abc%[2]xdef%[1]qghi%[2]x"
+EOF
+
+: ${XGETTEXT=xgettext}
+n=0
+while read comment; do
+  read string
+  n=`expr $n + 1`
+  cat <<EOF > f-go-1-$n.in
+Gettext(${string});
+EOF
+  ${XGETTEXT} -L Go -o f-go-1-$n.po f-go-1-$n.in || Exit 1
+  test -f f-go-1-$n.po || Exit 1
+  fail=
+  if echo "$comment" | grep 'Valid:' > /dev/null; then
+    if grep go-format f-go-1-$n.po > /dev/null; then
+      :
+    else
+      fail=yes
+    fi
+  else
+    if grep go-format f-go-1-$n.po > /dev/null; then
+      fail=yes
+    else
+      :
+    fi
+  fi
+  if test -n "$fail"; then
+    echo "Format string recognition error:" 1>&2
+    cat f-go-1-$n.in 1>&2
+    echo "Got:" 1>&2
+    cat f-go-1-$n.po 1>&2
+    Exit 1
+  fi
+  rm -f f-go-1-$n.in f-go-1-$n.po
+done < f-go-1.data
+
+Exit 0

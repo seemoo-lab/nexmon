@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2009 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,35 +26,34 @@
 
 
 /**
- * SECTION:ginitable
- * @short_description: Failable object initialization interface
- * @include: gio/gio.h
- * @see_also: #GAsyncInitable
+ * GInitable:
  *
- * #GInitable is implemented by objects that can fail during
+ * `GInitable` is implemented by objects that can fail during
  * initialization. If an object implements this interface then
  * it must be initialized as the first thing after construction,
- * either via g_initable_init() or g_async_initable_init_async()
- * (the latter is only available if it also implements #GAsyncInitable).
+ * either via [method@Gio.Initable.init] or [method@Gio.AsyncInitable.init_async]
+ * (the latter is only available if it also implements [iface@Gio.AsyncInitable]).
  *
  * If the object is not initialized, or initialization returns with an
- * error, then all operations on the object except g_object_ref() and
- * g_object_unref() are considered to be invalid, and have undefined
- * behaviour. They will often fail with g_critical() or g_warning(), but
- * this must not be relied on.
+ * error, then all operations on the object except `g_object_ref()` and
+ * `g_object_unref()` are considered to be invalid, and have undefined
+ * behaviour. They will often fail with [func@GLib.critical] or
+ * [func@GLib.warning], but this must not be relied on.
  *
  * Users of objects implementing this are not intended to use
  * the interface method directly, instead it will be used automatically
  * in various ways. For C applications you generally just call
- * g_initable_new() directly, or indirectly via a foo_thing_new() wrapper.
- * This will call g_initable_init() under the cover, returning %NULL and
- * setting a #GError on failure (at which point the instance is
+ * [func@Gio.Initable.new] directly, or indirectly via a `foo_thing_new()` wrapper.
+ * This will call [method@Gio.Initable.init] under the cover, returning `NULL`
+ * and setting a `GError` on failure (at which point the instance is
  * unreferenced).
  *
  * For bindings in languages where the native constructor supports
- * exceptions the binding could check for objects implemention %GInitable
+ * exceptions the binding could check for objects implementing `GInitable`
  * during normal construction and automatically initialize them, throwing
  * an exception on failure.
+ *
+ * Since: 2.22
  */
 
 typedef GInitableIface GInitableInterface;
@@ -72,6 +73,9 @@ g_initable_default_init (GInitableInterface *iface)
  *
  * Initializes the object implementing the interface.
  *
+ * This method is intended for language bindings. If writing in C,
+ * g_initable_new() should typically be used instead.
+ *
  * The object must be initialized before any real use after initial
  * construction, either with this function or g_async_initable_init_async().
  *
@@ -85,13 +89,26 @@ g_initable_default_init (GInitableInterface *iface)
  * If the object is not initialized, or initialization returns with an
  * error, then all operations on the object except g_object_ref() and
  * g_object_unref() are considered to be invalid, and have undefined
- * behaviour. See the [introduction][ginitable] for more details.
+ * behaviour. See the [description][iface@Gio.Initable#description] for more details.
  *
- * Implementations of this method must be idempotent, i.e. multiple calls
- * to this function with the same argument should return the same results.
- * Only the first call initializes the object, further calls return the result
- * of the first call. This is so that it's safe to implement the singleton
- * pattern in the GObject constructor function.
+ * Callers should not assume that a class which implements #GInitable can be
+ * initialized multiple times, unless the class explicitly documents itself as
+ * supporting this. Generally, a class’ implementation of init() can assume
+ * (and assert) that it will only be called once. Previously, this documentation
+ * recommended all #GInitable implementations should be idempotent; that
+ * recommendation was relaxed in GLib 2.54.
+ *
+ * If a class explicitly supports being initialized multiple times, it is
+ * recommended that the method is idempotent: multiple calls with the same
+ * arguments should return the same results. Only the first call initializes
+ * the object; further calls return the result of the first call.
+ *
+ * One reason why a class might need to support idempotent initialization is if
+ * it is designed to be used via the singleton pattern, with a
+ * #GObjectClass.constructor that sometimes returns an existing instance.
+ * In this pattern, a caller would expect to be able to call g_initable_init()
+ * on the result of g_object_new(), regardless of whether it is in fact a new
+ * instance.
  *
  * Returns: %TRUE if successful. If an error has occurred, this function will
  *     return %FALSE and set @error appropriately if present.
@@ -118,7 +135,7 @@ g_initable_init (GInitable     *initable,
  * @cancellable: optional #GCancellable object, %NULL to ignore.
  * @error: a #GError location to store the error occurring, or %NULL to
  *    ignore.
- * @first_property_name: (allow-none): the name of the first property, or %NULL if no
+ * @first_property_name: (nullable): the name of the first property, or %NULL if no
  *     properties
  * @...:  the value if the first property, followed by and other property
  *    value pairs, and ended by %NULL.
@@ -168,7 +185,10 @@ g_initable_new (GType          object_type,
  *      #GObject, or %NULL on error
  *
  * Since: 2.22
+ * Deprecated: 2.54: Use g_object_new_with_properties() and
+ * g_initable_init() instead. See #GParameter for more information.
  */
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 gpointer
 g_initable_newv (GType          object_type,
 		 guint          n_parameters,
@@ -190,6 +210,7 @@ g_initable_newv (GType          object_type,
 
   return (gpointer)obj;
 }
+G_GNUC_END_IGNORE_DEPRECATIONS
 
 /**
  * g_initable_new_valist:

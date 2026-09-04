@@ -1,6 +1,6 @@
-#serial 1
+#serial 2
 
-AC_PREREQ(2.50)
+AC_PREREQ([2.61])
 
 # The EILSEQ errno value ought to be defined in <errno.h>, according to
 # ISO C 99 and POSIX.  But some systems (like SunOS 4) don't define it,
@@ -16,20 +16,20 @@ AC_DEFUN([AC_EILSEQ],
   AC_REQUIRE([AC_PROG_CC])dnl
 
   dnl Check for any extra headers that could define EILSEQ.
-  AC_CHECK_HEADERS(wchar.h)
+  AC_CHECK_HEADERS([wchar.h])
 
-  AC_CACHE_CHECK([for EILSEQ], ac_cv_decl_EILSEQ, [
-    AC_EGREP_CPP(yes,[
+  AC_CACHE_CHECK([for EILSEQ], [ac_cv_decl_EILSEQ], [
+    AC_EGREP_CPP([yes],[
 #include <errno.h>
 #ifdef EILSEQ
 yes
 #endif
-      ], have_eilseq=1)
+      ], [have_eilseq=1])
     if test -n "$have_eilseq"; then
       dnl EILSEQ exists in <errno.h>. Don't need to define EILSEQ ourselves.
       ac_cv_decl_EILSEQ=yes
     else
-      AC_EGREP_CPP(yes,[
+      AC_EGREP_CPP([yes],[
 #include <errno.h>
 #if HAVE_WCHAR_H
 #include <wchar.h>
@@ -37,11 +37,11 @@ yes
 #ifdef EILSEQ
 yes
 #endif
-        ], have_eilseq=1)
+        ], [have_eilseq=1])
       if test -n "$have_eilseq"; then
         dnl EILSEQ exists in some other system header.
         dnl Define it to the same value.
-        _AC_COMPUTE_INT([EILSEQ], ac_cv_decl_EILSEQ, [
+        AC_COMPUTE_INT([ac_cv_decl_EILSEQ], [EILSEQ], [
 #include <errno.h>
 #if HAVE_WCHAR_H
 #include <wchar.h>
@@ -62,6 +62,6 @@ yes
     AC_DEFINE_UNQUOTED([EILSEQ], [$ac_cv_decl_EILSEQ],
                        [Define as good substitute value for EILSEQ.])
     EILSEQ="$ac_cv_decl_EILSEQ"
-    AC_SUBST(EILSEQ)
+    AC_SUBST([EILSEQ])
   fi
 ])

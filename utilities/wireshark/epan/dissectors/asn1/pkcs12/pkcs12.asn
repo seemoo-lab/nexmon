@@ -18,23 +18,17 @@ informationFramework
 Attribute
 	FROM InformationFramework informationFramework
 
-ContentInfo, --DigestInfo-- Digest, DigestAlgorithmIdentifier
+ContentInfo, DigestInfo, Digest, DigestAlgorithmIdentifier
 	FROM PKCS-7 {iso(1) member-body(2) us(840) rsadsi(113549)
 	pkcs(1) pkcs-7(7) modules(0) pkcs-7(1)}
 
---PrivateKeyInfo, EncryptedPrivateKeyInfo
---	FROM PKCS-8 {iso(1) member-body(2) us(840) rsadsi(113549)
---	pkcs(1) pkcs-8(8) modules(1) pkcs-8(1)}
---
---pkcs-9, friendlyName, localKeyId, certTypes, crlTypes
---	FROM PKCS-9 {iso(1) member-body(2) us(840) rsadsi(113549)
---	pkcs(1) pkcs-9(9) modules(0) pkcs-9(1) };--
+PrivateKeyInfo, EncryptedPrivateKeyInfo
+	FROM PKCS-8 {iso(1) member-body(2) us(840) rsadsi(113549)
+	pkcs(1) pkcs-8(8) modules(1) pkcs-8(1)}
 
--- A PKCS#8 IMPORT from below
-AlgorithmIdentifier, ALGORITHM-IDENTIFIER
-        FROM PKCS-5 {iso(1) member-body(2) us(840) rsadsi(113549)
-        pkcs(1) pkcs-5(5) modules(16) pkcs-5(1)};
-
+pkcs-9, friendlyName, localKeyId, certTypes, crlTypes
+	FROM PKCS-9 {iso(1) member-body(2) us(840) rsadsi(113549)
+	pkcs(1) pkcs-9(9) modules(0) pkcs-9(1) };
 
 -- Object identifiers
 
@@ -65,12 +59,6 @@ MacData ::= SEQUENCE {
 	iterations	INTEGER DEFAULT 1
 -- Note: The default is for historical reasons and its use is
 -- deprecated. A higher value, like 1024 is recommended.
-}
-
--- Imported from PKCS#7
-DigestInfo ::= SEQUENCE {
-        digestAlgorithm DigestAlgorithmIdentifier,
-        digest		Digest
 }
 
 AuthenticatedSafe ::= SEQUENCE OF ContentInfo
@@ -181,95 +169,12 @@ PKCS12Attribute ::= SEQUENCE {
 --	... - - Other attributes are allowed
 --}
 
---END
+-- Wireshark note: this type is missing from the original module,
+-- but is defined in Appendix C of RFC 7292.
 
--- We import PKCS#8 here directly rather than creating another dissector
-
---PKCS-8 {iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs-8(8)
---        modules(1) pkcs-8(1)} 
-
--- $Revision: 1.5 $
-
--- This module has been checked for conformance with the ASN.1
--- standard by the OSS ASN.1 Tools
-
---DEFINITIONS IMPLICIT TAGS ::= 
-
---BEGIN
-
--- EXPORTS All --
--- All types and values defined in this module is exported for use in other
--- ASN.1 modules.
-
---IMPORTS
-
---informationFramework
---        FROM UsefulDefinitions {joint-iso-itu-t(2) ds(5) module(1)
---                                usefulDefinitions(0) 3} 
-
---Attribute
---        FROM InformationFramework informationFramework
-
---AlgorithmIdentifier, ALGORITHM-IDENTIFIER
---        FROM PKCS-5 {iso(1) member-body(2) us(840) rsadsi(113549)
---        pkcs(1) pkcs-5(5) modules(16) pkcs-5(1)};
-
--- Private-key information syntax
-
-PrivateKeyInfo ::= SEQUENCE {
-  version Version,
-  privateKeyAlgorithm AlgorithmIdentifier --{{PrivateKeyAlgorithms}}--,
-  privateKey PrivateKey,
-  attributes [0] Attributes OPTIONAL }
-
-Version ::= INTEGER {v1(0)} (v1,...)
-
-PrivateKey ::= OCTET STRING
-
-Attributes ::= SET OF Attribute
-
--- Encrypted private-key information syntax
-
-EncryptedPrivateKeyInfo ::= SEQUENCE {
-    encryptionAlgorithm AlgorithmIdentifier --{{KeyEncryptionAlgorithms}}--,
-    encryptedData EncryptedData 
+Pkcs-12PbeParams ::= SEQUENCE {
+    salt        OCTET STRING,
+    iterations  INTEGER
 }
-
-EncryptedData ::= OCTET STRING
-
---PrivateKeyAlgorithms ALGORITHM-IDENTIFIER ::= {
---    ... - - For local profiles
---}
-
---KeyEncryptionAlgorithms ALGORITHM-IDENTIFIER ::= {
---    ... - - For local profiles
---}
-
--- From RFC 2898
-PBEParameter ::= SEQUENCE {
-    salt		OCTET STRING,
-    iterationCount 	INTEGER
-}
-
-
-PBKDF2Params ::= SEQUENCE {
-    salt CHOICE {
-        specified OCTET STRING,
-	otherSource AlgorithmIdentifier --{{PBKDF2-SaltSources}}--
-	},
-    iterationCount INTEGER --(1..MAX)--,
-    keyLength INTEGER (1..MAX) OPTIONAL,
-    prf AlgorithmIdentifier --{{PBKDF2-PRFs}} DEFAULT algid-hmacWithSHA1-- OPTIONAL }
-
-PBES2Params ::= SEQUENCE {
-    keyDerivationFunc AlgorithmIdentifier --{{PBES2-KDFs}}--,
-    encryptionScheme AlgorithmIdentifier --{{PBES2-Encs}}-- }
-
-PBMAC1Params ::=  SEQUENCE {
-    keyDerivationFunc AlgorithmIdentifier --{{PBMAC1-KDFs}}--,
-    messageAuthScheme AlgorithmIdentifier --{{PBMAC1-MACs}}-- }
-
 
 END
-
-

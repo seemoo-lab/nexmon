@@ -7,25 +7,15 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
+#include <epan/sequence_analysis.h>
+#include <epan/to_str.h>
 #include <epan/tap.h>
 #include "packet-lbm.h"
 #include "packet-lbttcp.h"
@@ -47,28 +37,28 @@ typedef struct lbm_istream_substream_entry_t_stct lbm_istream_substream_entry_t;
 struct lbm_istream_substream_entry_t_stct
 {
     address src_addr;
-    guint16 src_port;
+    uint16_t src_port;
     address dst_addr;
-    guint16 dst_port;
-    guint32 lbm_stream_id;
+    uint16_t dst_port;
+    uint32_t lbm_stream_id;
     lbm_istream_entry_t * parent;
-    guint32 substream_id;
-    guint32 first_frame;
-    guint32 last_frame;
-    guint32 messages;
-    guint32 bytes;
+    uint32_t substream_id;
+    uint32_t first_frame;
+    uint32_t last_frame;
+    uint32_t messages;
+    uint32_t bytes;
 };
 
 struct lbm_istream_entry_t_stct
 {
-    guint8 ctxinst_1[LBM_CONTEXT_INSTANCE_BLOCK_SZ];
-    guint8 ctxinst_2[LBM_CONTEXT_INSTANCE_BLOCK_SZ];
-    guint64 channel;
-    guint32 next_substream_id;
-    guint32 first_frame;
-    guint32 last_frame;
-    guint32 messages;
-    guint32 bytes;
+    uint8_t ctxinst_1[LBM_CONTEXT_INSTANCE_BLOCK_SZ];
+    uint8_t ctxinst_2[LBM_CONTEXT_INSTANCE_BLOCK_SZ];
+    uint64_t channel;
+    uint32_t next_substream_id;
+    uint32_t first_frame;
+    uint32_t last_frame;
+    uint32_t messages;
+    uint32_t bytes;
     wmem_tree_t * substream_list;
 };
 
@@ -81,32 +71,32 @@ typedef struct lbm_dstream_substream_entry_t_stct lbm_dstream_substream_entry_t;
 struct lbm_dstream_substream_entry_t_stct
 {
     address src_addr;
-    guint16 src_port;
+    uint16_t src_port;
     address dst_addr;
-    guint16 dst_port;
-    guint32 lbm_stream_id;
+    uint16_t dst_port;
+    uint32_t lbm_stream_id;
     lbm_dstream_entry_t * parent;
-    guint32 substream_id;
-    guint32 first_frame;
-    guint32 last_frame;
-    guint32 messages;
-    guint32 bytes;
+    uint32_t substream_id;
+    uint32_t first_frame;
+    uint32_t last_frame;
+    uint32_t messages;
+    uint32_t bytes;
 };
 
 struct lbm_dstream_entry_t_stct
 {
-    guint32 domain_1;
+    uint32_t domain_1;
     address addr_1;
-    guint32 domain_2;
+    uint32_t domain_2;
     address addr_2;
-    guint16 port_1;
-    guint16 port_2;
-    guint64 channel;
-    guint32 next_substream_id;
-    guint32 first_frame;
-    guint32 last_frame;
-    guint32 messages;
-    guint32 bytes;
+    uint16_t port_1;
+    uint16_t port_2;
+    uint64_t channel;
+    uint32_t next_substream_id;
+    uint32_t first_frame;
+    uint32_t last_frame;
+    uint32_t messages;
+    uint32_t bytes;
     wmem_tree_t * substream_list;
 };
 
@@ -124,7 +114,7 @@ struct lbm_dstream_entry_t_stct
 #define LBM_ISTREAM_SUBSTREAM_KEY_ELEMENT_DST_PORT      3
 #define LBM_ISTREAM_SUBSTREAM_KEY_ELEMENT_LBM_STREAM_ID 4
 
-static wmem_tree_t * instance_stream_table = NULL;
+static wmem_tree_t * instance_stream_table;
 
 /* Domain stream variables */
 #define LBM_DSTREAM_STREAM_KEY_ELEMENT_COUNT    6
@@ -142,7 +132,7 @@ static wmem_tree_t * instance_stream_table = NULL;
 #define LBM_DSTREAM_SUBSTREAM_KEY_ELEMENT_DST_PORT      3
 #define LBM_DSTREAM_SUBSTREAM_KEY_ELEMENT_LBM_STREAM_ID 4
 
-static wmem_tree_t * domain_stream_table = NULL;
+static wmem_tree_t * domain_stream_table;
 
 static void lbm_stream_init(void)
 {
@@ -150,21 +140,21 @@ static void lbm_stream_init(void)
     domain_stream_table = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
 }
 
-static void lbm_istream_stream_build_key(guint32 * key_value, wmem_tree_key_t * key, const lbm_istream_entry_t * stream)
+static void lbm_istream_stream_build_key(uint32_t * key_value, wmem_tree_key_t * key, const lbm_istream_entry_t * stream)
 {
-    guint32 val;
+    uint32_t val;
 
     /* Note: ctxinst_1 and ctxinst_2 are 8-byte blocks, not guaranteed to be aligned. So we memcpy them 4 bytes
        at a time to an intermediate variable, to prevent any alignment issues with assigning to a 32-bit unsigned int
        on certain platforms.
     */
-    memcpy((void *) &val, (const void *) stream->ctxinst_1, sizeof(guint32));
+    memcpy((void *) &val, (const void *) stream->ctxinst_1, sizeof(uint32_t));
     key_value[LBM_ISTREAM_STREAM_KEY_ELEMENT_CTXINST1_HIGH] = val;
-    memcpy((void *) &val, (const void *) (stream->ctxinst_1 + sizeof(guint32)), sizeof(guint32));
+    memcpy((void *) &val, (const void *) (stream->ctxinst_1 + sizeof(uint32_t)), sizeof(uint32_t));
     key_value[LBM_ISTREAM_STREAM_KEY_ELEMENT_CTXINST1_LOW] = val;
-    memcpy((void *) &val, (const void *) stream->ctxinst_2, sizeof(guint32));
+    memcpy((void *) &val, (const void *) stream->ctxinst_2, sizeof(uint32_t));
     key_value[LBM_ISTREAM_STREAM_KEY_ELEMENT_CTXINST2_HIGH] = val;
-    memcpy((void *) &val, (const void *) (stream->ctxinst_2 + sizeof(guint32)), sizeof(guint32));
+    memcpy((void *) &val, (const void *) (stream->ctxinst_2 + sizeof(uint32_t)), sizeof(uint32_t));
     key_value[LBM_ISTREAM_STREAM_KEY_ELEMENT_CTXINST2_LOW] = val;
     key[0].length = LBM_ISTREAM_STREAM_KEY_ELEMENT_COUNT;
     key[0].key = key_value;
@@ -174,7 +164,7 @@ static void lbm_istream_stream_build_key(guint32 * key_value, wmem_tree_key_t * 
 
 static void lbm_stream_order_istream_key(lbm_istream_entry_t * stream)
 {
-    guint8 ctxinst[LBM_CONTEXT_INSTANCE_BLOCK_SZ];
+    uint8_t ctxinst[LBM_CONTEXT_INSTANCE_BLOCK_SZ];
 
     if (memcmp((void *)stream->ctxinst_1, (void *)stream->ctxinst_2, LBM_CONTEXT_INSTANCE_BLOCK_SZ) > 0)
     {
@@ -184,11 +174,11 @@ static void lbm_stream_order_istream_key(lbm_istream_entry_t * stream)
     }
 }
 
-static lbm_istream_entry_t * lbm_stream_istream_find(const guint8 * instance1, const guint8 * instance2)
+static lbm_istream_entry_t * lbm_stream_istream_find(const uint8_t * instance1, const uint8_t * instance2)
 {
     lbm_istream_entry_t key;
     lbm_istream_entry_t * entry = NULL;
-    guint32 keyval[LBM_ISTREAM_STREAM_KEY_ELEMENT_COUNT];
+    uint32_t keyval[LBM_ISTREAM_STREAM_KEY_ELEMENT_COUNT];
     wmem_tree_key_t tkey[2];
 
     memset((void *)&key, 0, sizeof(lbm_istream_entry_t));
@@ -200,10 +190,10 @@ static lbm_istream_entry_t * lbm_stream_istream_find(const guint8 * instance1, c
     return (entry);
 }
 
-static lbm_istream_entry_t * lbm_stream_istream_add(const guint8 * instance1, const guint8 * instance2)
+static lbm_istream_entry_t * lbm_stream_istream_add(const uint8_t * instance1, const uint8_t * instance2)
 {
     lbm_istream_entry_t * entry;
-    guint32 keyval[LBM_ISTREAM_STREAM_KEY_ELEMENT_COUNT];
+    uint32_t keyval[LBM_ISTREAM_STREAM_KEY_ELEMENT_COUNT];
     wmem_tree_key_t tkey[2];
 
     entry = lbm_stream_istream_find(instance1, instance2);
@@ -217,7 +207,7 @@ static lbm_istream_entry_t * lbm_stream_istream_add(const guint8 * instance1, co
     lbm_stream_order_istream_key(entry);
     entry->channel = lbm_channel_assign(LBM_CHANNEL_STREAM_TCP);
     entry->next_substream_id = 1;
-    entry->first_frame = ~((guint32)0);
+    entry->first_frame = ~((uint32_t)0);
     entry->last_frame = 0;
     entry->messages = 0;
     entry->bytes = 0;
@@ -227,21 +217,21 @@ static lbm_istream_entry_t * lbm_stream_istream_add(const guint8 * instance1, co
     return (entry);
 }
 
-static void lbm_istream_substream_build_key(guint32 * key_value, wmem_tree_key_t * key, const lbm_istream_substream_entry_t * substream)
+static void lbm_istream_substream_build_key(uint32_t * key_value, wmem_tree_key_t * key, const lbm_istream_substream_entry_t * substream)
 {
-    guint32 val;
+    uint32_t val;
 
     /* Note: for the time being we only support IPv4 addresses (currently enforced in the dissectors), so
        assume it's an IPv4 address. memcpy to an intermediate value (don't know for sure the address.data field
        has any particular alignment) to prevent any alignment issues with assigning to a 32-bit unsigned int
        on certain platforms.
     */
-    memcpy((void *) &val, (const void *) substream->src_addr.data, sizeof(guint32));
+    memcpy((void *) &val, (const void *) substream->src_addr.data, sizeof(uint32_t));
     key_value[LBM_ISTREAM_SUBSTREAM_KEY_ELEMENT_SRC_ADDR] = val;
-    key_value[LBM_ISTREAM_SUBSTREAM_KEY_ELEMENT_SRC_PORT] = (guint32) substream->src_port;
-    memcpy((void *) &val, (const void *) substream->dst_addr.data, sizeof(guint32));
+    key_value[LBM_ISTREAM_SUBSTREAM_KEY_ELEMENT_SRC_PORT] = (uint32_t) substream->src_port;
+    memcpy((void *) &val, (const void *) substream->dst_addr.data, sizeof(uint32_t));
     key_value[LBM_ISTREAM_SUBSTREAM_KEY_ELEMENT_DST_ADDR] = val;
-    key_value[LBM_ISTREAM_SUBSTREAM_KEY_ELEMENT_DST_PORT] = (guint32) substream->dst_port;
+    key_value[LBM_ISTREAM_SUBSTREAM_KEY_ELEMENT_DST_PORT] = (uint32_t) substream->dst_port;
     key_value[LBM_ISTREAM_SUBSTREAM_KEY_ELEMENT_LBM_STREAM_ID] = substream->lbm_stream_id;
     key[0].length = LBM_ISTREAM_SUBSTREAM_KEY_ELEMENT_COUNT;
     key[0].key = key_value;
@@ -249,11 +239,11 @@ static void lbm_istream_substream_build_key(guint32 * key_value, wmem_tree_key_t
     key[1].key = NULL;
 }
 
-static lbm_istream_substream_entry_t * lbm_stream_istream_substream_find(lbm_istream_entry_t * stream, const address * src_addr, guint16 src_port, const address * dst_addr, guint16 dst_port, guint32 stream_id)
+static lbm_istream_substream_entry_t * lbm_stream_istream_substream_find(lbm_istream_entry_t * stream, const address * src_addr, uint16_t src_port, const address * dst_addr, uint16_t dst_port, uint32_t stream_id)
 {
     lbm_istream_substream_entry_t key;
     lbm_istream_substream_entry_t * entry = NULL;
-    guint32 keyval[LBM_ISTREAM_SUBSTREAM_KEY_ELEMENT_COUNT];
+    uint32_t keyval[LBM_ISTREAM_SUBSTREAM_KEY_ELEMENT_COUNT];
     wmem_tree_key_t tkey[2];
 
     memset((void *)&key, 0, sizeof(lbm_istream_substream_entry_t));
@@ -267,10 +257,10 @@ static lbm_istream_substream_entry_t * lbm_stream_istream_substream_find(lbm_ist
     return (entry);
 }
 
-static lbm_istream_substream_entry_t * lbm_stream_istream_substream_add(lbm_istream_entry_t * stream, const address * src_addr, guint16 src_port, const address * dst_addr, guint16 dst_port, guint32 stream_id)
+static lbm_istream_substream_entry_t * lbm_stream_istream_substream_add(lbm_istream_entry_t * stream, const address * src_addr, uint16_t src_port, const address * dst_addr, uint16_t dst_port, uint32_t stream_id)
 {
     lbm_istream_substream_entry_t * entry;
-    guint32 keyval[LBM_ISTREAM_SUBSTREAM_KEY_ELEMENT_COUNT];
+    uint32_t keyval[LBM_ISTREAM_SUBSTREAM_KEY_ELEMENT_COUNT];
     wmem_tree_key_t tkey[2];
 
     entry = lbm_stream_istream_substream_find(stream, src_addr, src_port, dst_addr, dst_port, stream_id);
@@ -286,7 +276,7 @@ static lbm_istream_substream_entry_t * lbm_stream_istream_substream_add(lbm_istr
     entry->lbm_stream_id = stream_id;
     entry->parent = stream;
     entry->substream_id = stream->next_substream_id++;
-    entry->first_frame = ~((guint32)0);
+    entry->first_frame = ~((uint32_t)0);
     entry->last_frame = 0;
     entry->messages = 0;
     entry->bytes = 0;
@@ -295,12 +285,12 @@ static lbm_istream_substream_entry_t * lbm_stream_istream_substream_add(lbm_istr
     return (entry);
 }
 
-static void lbm_stream_istream_substream_update(lbm_istream_substream_entry_t * substream, guint16 length, guint32 frame)
+static void lbm_stream_istream_substream_update(lbm_istream_substream_entry_t * substream, uint16_t length, uint32_t frame)
 {
     substream->messages++;
     substream->parent->messages++;
-    substream->bytes += (guint32)length;
-    substream->parent->bytes += (guint32)length;
+    substream->bytes += (uint32_t)length;
+    substream->parent->bytes += (uint32_t)length;
     if (frame < substream->first_frame)
     {
         substream->first_frame = frame;
@@ -319,9 +309,9 @@ static void lbm_stream_istream_substream_update(lbm_istream_substream_entry_t * 
     }
 }
 
-static void lbm_dstream_stream_build_key(guint32 * key_value, wmem_tree_key_t * key, const lbm_dstream_entry_t * stream)
+static void lbm_dstream_stream_build_key(uint32_t * key_value, wmem_tree_key_t * key, const lbm_dstream_entry_t * stream)
 {
-    guint32 val;
+    uint32_t val;
 
     /* Note: for the time being we only support IPv4 addresses (currently enforced in the dissectors), so
        assume it's an IPv4 address. memcpy to an intermediate value (don't know for sure the address.data field
@@ -329,13 +319,13 @@ static void lbm_dstream_stream_build_key(guint32 * key_value, wmem_tree_key_t * 
        on certain platforms.
     */
     key_value[LBM_DSTREAM_STREAM_KEY_ELEMENT_DOMAIN_1] = stream->domain_1;
-    memcpy((void *) &val, (const void *) (stream->addr_1.data), sizeof(guint32));
+    memcpy((void *) &val, (const void *) (stream->addr_1.data), sizeof(uint32_t));
     key_value[LBM_DSTREAM_STREAM_KEY_ELEMENT_ADDR_1] = val;
     key_value[LBM_DSTREAM_STREAM_KEY_ELEMENT_DOMAIN_2] = stream->domain_2;
-    memcpy((void *) &val, (const void *) (stream->addr_2.data), sizeof(guint32));
+    memcpy((void *) &val, (const void *) (stream->addr_2.data), sizeof(uint32_t));
     key_value[LBM_DSTREAM_STREAM_KEY_ELEMENT_ADDR_2] = val;
-    key_value[LBM_DSTREAM_STREAM_KEY_ELEMENT_PORT_1] = (guint32) stream->port_1;
-    key_value[LBM_DSTREAM_STREAM_KEY_ELEMENT_PORT_2] = (guint32) stream->port_2;
+    key_value[LBM_DSTREAM_STREAM_KEY_ELEMENT_PORT_1] = (uint32_t) stream->port_1;
+    key_value[LBM_DSTREAM_STREAM_KEY_ELEMENT_PORT_2] = (uint32_t) stream->port_2;
     key[0].length = LBM_DSTREAM_STREAM_KEY_ELEMENT_COUNT;
     key[0].key = key_value;
     key[1].length = 0;
@@ -344,14 +334,14 @@ static void lbm_dstream_stream_build_key(guint32 * key_value, wmem_tree_key_t * 
 
 static void lbm_stream_order_dstream_key(lbm_dstream_entry_t * stream)
 {
-    gboolean swap_items = FALSE;
+    bool swap_items = false;
     address addr;
-    guint32 domain;
-    guint16 port;
+    uint32_t domain;
+    uint16_t port;
 
     if (stream->domain_1 > stream->domain_2)
     {
-        swap_items = TRUE;
+        swap_items = true;
     }
     else if (stream->domain_1 == stream->domain_2)
     {
@@ -360,13 +350,13 @@ static void lbm_stream_order_dstream_key(lbm_dstream_entry_t * stream)
         compare = cmp_address(&(stream->addr_1), &(stream->addr_2));
         if (compare > 0)
         {
-            swap_items = TRUE;
+            swap_items = true;
         }
         else if (compare == 0)
         {
             if (stream->port_1 > stream->port_2)
             {
-                swap_items = TRUE;
+                swap_items = true;
             }
         }
     }
@@ -390,7 +380,7 @@ static lbm_dstream_entry_t * lbm_stream_dstream_find(const lbm_uim_stream_destin
 {
     lbm_dstream_entry_t key;
     lbm_dstream_entry_t * entry = NULL;
-    guint32 keyval[LBM_DSTREAM_STREAM_KEY_ELEMENT_COUNT];
+    uint32_t keyval[LBM_DSTREAM_STREAM_KEY_ELEMENT_COUNT];
     wmem_tree_key_t tkey[2];
 
     key.domain_1 = endpoint_a->domain;
@@ -408,7 +398,7 @@ static lbm_dstream_entry_t * lbm_stream_dstream_find(const lbm_uim_stream_destin
 static lbm_dstream_entry_t * lbm_stream_dstream_add(const lbm_uim_stream_destination_t * endpoint_a, const lbm_uim_stream_destination_t * endpoint_b)
 {
     lbm_dstream_entry_t * entry;
-    guint32 keyval[LBM_DSTREAM_STREAM_KEY_ELEMENT_COUNT];
+    uint32_t keyval[LBM_DSTREAM_STREAM_KEY_ELEMENT_COUNT];
     wmem_tree_key_t tkey[2];
 
     entry = lbm_stream_dstream_find(endpoint_a, endpoint_b);
@@ -426,7 +416,7 @@ static lbm_dstream_entry_t * lbm_stream_dstream_add(const lbm_uim_stream_destina
     lbm_stream_order_dstream_key(entry);
     entry->channel = lbm_channel_assign(LBM_CHANNEL_STREAM_TCP);
     entry->next_substream_id = 1;
-    entry->first_frame = ~((guint32)0);
+    entry->first_frame = ~((uint32_t)0);
     entry->last_frame = 0;
     entry->messages = 0;
     entry->bytes = 0;
@@ -436,21 +426,21 @@ static lbm_dstream_entry_t * lbm_stream_dstream_add(const lbm_uim_stream_destina
     return (entry);
 }
 
-static void lbm_dstream_substream_build_key(guint32 * key_value, wmem_tree_key_t * key, const lbm_dstream_substream_entry_t * substream)
+static void lbm_dstream_substream_build_key(uint32_t * key_value, wmem_tree_key_t * key, const lbm_dstream_substream_entry_t * substream)
 {
-    guint32 val;
+    uint32_t val;
 
     /* Note: for the time being we only support IPv4 addresses (currently enforced in the dissectors), so
        assume it's an IPv4 address. memcpy to an intermediate value (don't know for sure the address.data field
        has any particular alignment) to prevent any alignment issues with assigning to a 32-bit unsigned int
        on certain platforms.
     */
-    memcpy((void *) &val, (const void *) substream->src_addr.data, sizeof(guint32));
+    memcpy((void *) &val, (const void *) substream->src_addr.data, sizeof(uint32_t));
     key_value[LBM_DSTREAM_SUBSTREAM_KEY_ELEMENT_SRC_ADDR] = val;
-    key_value[LBM_DSTREAM_SUBSTREAM_KEY_ELEMENT_SRC_PORT] = (guint32) substream->src_port;
-    memcpy((void *) &val, (const void *) substream->dst_addr.data, sizeof(guint32));
+    key_value[LBM_DSTREAM_SUBSTREAM_KEY_ELEMENT_SRC_PORT] = (uint32_t) substream->src_port;
+    memcpy((void *) &val, (const void *) substream->dst_addr.data, sizeof(uint32_t));
     key_value[LBM_DSTREAM_SUBSTREAM_KEY_ELEMENT_DST_ADDR] = val;
-    key_value[LBM_DSTREAM_SUBSTREAM_KEY_ELEMENT_DST_PORT] = (guint32) substream->dst_port;
+    key_value[LBM_DSTREAM_SUBSTREAM_KEY_ELEMENT_DST_PORT] = (uint32_t) substream->dst_port;
     key_value[LBM_DSTREAM_SUBSTREAM_KEY_ELEMENT_LBM_STREAM_ID] = substream->lbm_stream_id;
     key[0].length = LBM_DSTREAM_SUBSTREAM_KEY_ELEMENT_COUNT;
     key[0].key = key_value;
@@ -458,11 +448,11 @@ static void lbm_dstream_substream_build_key(guint32 * key_value, wmem_tree_key_t
     key[1].key = NULL;
 }
 
-static lbm_dstream_substream_entry_t * lbm_stream_dstream_substream_find(lbm_dstream_entry_t * stream, const address * src_addr, guint16 src_port, const address * dst_addr, guint16 dst_port, guint32 stream_id)
+static lbm_dstream_substream_entry_t * lbm_stream_dstream_substream_find(lbm_dstream_entry_t * stream, const address * src_addr, uint16_t src_port, const address * dst_addr, uint16_t dst_port, uint32_t stream_id)
 {
     lbm_dstream_substream_entry_t key;
     lbm_dstream_substream_entry_t * entry = NULL;
-    guint32 keyval[LBM_DSTREAM_SUBSTREAM_KEY_ELEMENT_COUNT];
+    uint32_t keyval[LBM_DSTREAM_SUBSTREAM_KEY_ELEMENT_COUNT];
     wmem_tree_key_t tkey[2];
 
     memset((void *)&key, 0, sizeof(lbm_dstream_substream_entry_t));
@@ -476,10 +466,10 @@ static lbm_dstream_substream_entry_t * lbm_stream_dstream_substream_find(lbm_dst
     return (entry);
 }
 
-static lbm_dstream_substream_entry_t * lbm_stream_dstream_substream_add(lbm_dstream_entry_t * stream, const address * src_addr, guint16 src_port, const address * dst_addr, guint16 dst_port, guint32 stream_id)
+static lbm_dstream_substream_entry_t * lbm_stream_dstream_substream_add(lbm_dstream_entry_t * stream, const address * src_addr, uint16_t src_port, const address * dst_addr, uint16_t dst_port, uint32_t stream_id)
 {
     lbm_dstream_substream_entry_t * entry;
-    guint32 keyval[LBM_DSTREAM_SUBSTREAM_KEY_ELEMENT_COUNT];
+    uint32_t keyval[LBM_DSTREAM_SUBSTREAM_KEY_ELEMENT_COUNT];
     wmem_tree_key_t tkey[2];
 
     entry = lbm_stream_dstream_substream_find(stream, src_addr, src_port, dst_addr, dst_port, stream_id);
@@ -495,7 +485,7 @@ static lbm_dstream_substream_entry_t * lbm_stream_dstream_substream_add(lbm_dstr
     entry->lbm_stream_id = stream_id;
     entry->parent = stream;
     entry->substream_id = stream->next_substream_id++;
-    entry->first_frame = ~((guint32)0);
+    entry->first_frame = ~((uint32_t)0);
     entry->last_frame = 0;
     entry->messages = 0;
     entry->bytes = 0;
@@ -504,12 +494,12 @@ static lbm_dstream_substream_entry_t * lbm_stream_dstream_substream_add(lbm_dstr
     return (entry);
 }
 
-static void lbm_stream_dstream_substream_update(lbm_dstream_substream_entry_t * substream, guint16 length, guint32 frame)
+static void lbm_stream_dstream_substream_update(lbm_dstream_substream_entry_t * substream, uint16_t length, uint32_t frame)
 {
     substream->messages++;
     substream->parent->messages++;
-    substream->bytes += (guint32)length;
-    substream->parent->bytes += (guint32)length;
+    substream->bytes += (uint32_t)length;
+    substream->parent->bytes += (uint32_t)length;
     if (frame < substream->first_frame)
     {
         substream->first_frame = frame;
@@ -551,7 +541,7 @@ typedef struct
 #define L_LBMC_HDR_T_TIDX SIZEOF(lbmc_hdr_t, tidx)
 #define O_LBMC_HDR_T_SQN OFFSETOF(lbmc_hdr_t, sqn)
 #define L_LBMC_HDR_T_SQN SIZEOF(lbmc_hdr_t, sqn)
-#define L_LBMC_HDR_T (gint) sizeof(lbmc_hdr_t)
+#define L_LBMC_HDR_T (int) sizeof(lbmc_hdr_t)
 
 /* LBMC control header */
 typedef struct
@@ -566,7 +556,7 @@ typedef struct
 #define L_LBMC_CNTL_HDR_T_NEXT_HDR SIZEOF(lbmc_cntl_hdr_t, next_hdr)
 #define O_LBMC_CNTL_HDR_T_MSGLEN OFFSETOF(lbmc_cntl_hdr_t, msglen)
 #define L_LBMC_CNTL_HDR_T_MSGLEN SIZEOF(lbmc_cntl_hdr_t, msglen)
-#define L_LBMC_CNTL_HDR_T (gint) sizeof(lbmc_cntl_hdr_t)
+#define L_LBMC_CNTL_HDR_T (int) sizeof(lbmc_cntl_hdr_t)
 
 #define LBMC_HDR_VER_TYPE_VER_MASK 0xF0
 #define LBMC_HDR_VER_TYPE_TYPE_MASK 0x0F
@@ -584,7 +574,7 @@ typedef struct
 #define L_LBMC_MINIMAL_HDR_T_NEXT_HDR SIZEOF(lbmc_minimal_hdr_t, next_hdr)
 #define O_LBMC_MINIMAL_HDR_T_MSGLEN OFFSETOF(lbmc_minimal_hdr_t, msglen)
 #define L_LBMC_MINIMAL_HDR_T_MSGLEN SIZEOF(lbmc_minimal_hdr_t, msglen)
-#define L_LBMC_MINIMAL_HDR_T (gint) sizeof(lbmc_minimal_hdr_t)
+#define L_LBMC_MINIMAL_HDR_T (int) sizeof(lbmc_minimal_hdr_t)
 
 #define LBMC_HDR_VER(x) (x >> 4)
 #define LBMC_HDR_TYPE(x) (x & 0xF)
@@ -602,7 +592,7 @@ typedef struct
 #define L_LBMC_BASIC_HDR_T_HDR_LEN SIZEOF(lbmc_basic_hdr_t, hdr_len)
 #define O_LBMC_BASIC_HDR_T_RES OFFSETOF(lbmc_basic_hdr_t, res)
 #define L_LBMC_BASIC_HDR_T_RES SIZEOF(lbmc_basic_hdr_t, res)
-#define L_LBMC_BASIC_HDR_T (gint) sizeof(lbmc_basic_hdr_t)
+#define L_LBMC_BASIC_HDR_T (int) sizeof(lbmc_basic_hdr_t)
 
 /* LBMC fragment header */
 typedef struct
@@ -626,7 +616,7 @@ typedef struct
 #define L_LBMC_FRAG_HDR_T_OFFSET SIZEOF(lbmc_frag_hdr_t, offset)
 #define O_LBMC_FRAG_HDR_T_LEN OFFSETOF(lbmc_frag_hdr_t, len)
 #define L_LBMC_FRAG_HDR_T_LEN SIZEOF(lbmc_frag_hdr_t, len)
-#define L_LBMC_FRAG_HDR_T (gint) sizeof(lbmc_frag_hdr_t)
+#define L_LBMC_FRAG_HDR_T (int) sizeof(lbmc_frag_hdr_t)
 
 /* LBMC batch header */
 typedef struct
@@ -641,7 +631,7 @@ typedef struct
 #define L_LBMC_BATCH_HDR_T_HDR_LEN SIZEOF(lbmc_batch_hdr_t, hdr_len)
 #define O_LBMC_BATCH_HDR_T_FLAGS OFFSETOF(lbmc_batch_hdr_t, flags)
 #define L_LBMC_BATCH_HDR_T_FLAGS SIZEOF(lbmc_batch_hdr_t, flags)
-#define L_LBMC_BATCH_HDR_T (gint) sizeof(lbmc_batch_hdr_t)
+#define L_LBMC_BATCH_HDR_T (int) sizeof(lbmc_batch_hdr_t)
 
 /* LBMC TCP request header */
 typedef struct
@@ -671,7 +661,7 @@ typedef struct
 #define L_LBMC_TCP_REQUEST_HDR_T_RESERVED SIZEOF(lbmc_tcp_request_hdr_t, reserved)
 #define O_LBMC_TCP_REQUEST_HDR_T_IPADDR OFFSETOF(lbmc_tcp_request_hdr_t, ipaddr)
 #define L_LBMC_TCP_REQUEST_HDR_T_IPADDR SIZEOF(lbmc_tcp_request_hdr_t, ipaddr)
-#define L_LBMC_TCP_REQUEST_HDR_T (gint) sizeof(lbmc_tcp_request_hdr_t)
+#define L_LBMC_TCP_REQUEST_HDR_T (int) sizeof(lbmc_tcp_request_hdr_t)
 
 /* LBMC topicname header (an extension to lbmc_basic_hdr_t) */
 #define O_LBMC_TOPICNAME_HDR_T_NEXT_HDR OFFSETOF(lbmc_basic_hdr_t, next_hdr)
@@ -706,7 +696,7 @@ typedef struct
 #define L_LBMC_APPHDR_CHAIN_ELEMENT_T_HDR_LEN SIZEOF(lbmc_apphdr_chain_element_t, hdr_len)
 #define O_LBMC_APPHDR_CHAIN_ELEMENT_T_RES OFFSETOF(lbmc_apphdr_chain_element_t, res)
 #define L_LBMC_APPHDR_CHAIN_ELEMENT_T_RES SIZEOF(lbmc_apphdr_chain_element_t, res)
-#define L_LBMC_APPHDR_CHAIN_ELEMENT_T_MIN (gint) sizeof(lbmc_apphdr_chain_element_t)
+#define L_LBMC_APPHDR_CHAIN_ELEMENT_T_MIN (int) sizeof(lbmc_apphdr_chain_element_t)
 
 /* LBMC appheader chain message properties element */
 typedef struct
@@ -724,7 +714,7 @@ typedef struct
 #define L_LBMC_APPHDR_CHAIN_MSGPROP_ELEMENT_T_RES SIZEOF(lbmc_apphdr_chain_msgprop_element_t, res)
 #define O_LBMC_APPHDR_CHAIN_MSGPROP_ELEMENT_T_LEN OFFSETOF(lbmc_apphdr_chain_msgprop_element_t, len)
 #define L_LBMC_APPHDR_CHAIN_MSGPROP_ELEMENT_T_LEN SIZEOF(lbmc_apphdr_chain_msgprop_element_t, len)
-#define L_LBMC_APPHDR_CHAIN_MSGPROP_ELEMENT_T (gint) sizeof(lbmc_apphdr_chain_msgprop_element_t)
+#define L_LBMC_APPHDR_CHAIN_MSGPROP_ELEMENT_T (int) sizeof(lbmc_apphdr_chain_msgprop_element_t)
 
 /* LBMC appheader chain header */
 typedef struct
@@ -742,7 +732,7 @@ typedef struct
 #define L_LBMC_APPHDR_CHAIN_HDR_T_RES SIZEOF(lbmc_apphdr_chain_hdr_t, res)
 #define O_LBMC_APPHDR_CHAIN_HDR_T_FIRST_CHAIN_HDR OFFSETOF(lbmc_apphdr_chain_hdr_t, first_chain_hdr)
 #define L_LBMC_APPHDR_CHAIN_HDR_T_FIRST_CHAIN_HDR SIZEOF(lbmc_apphdr_chain_hdr_t, first_chain_hdr)
-#define L_LBMC_APPHDR_CHAIN_HDR_T (gint) sizeof(lbmc_apphdr_chain_hdr_t)
+#define L_LBMC_APPHDR_CHAIN_HDR_T (int) sizeof(lbmc_apphdr_chain_hdr_t)
 
 /* LBMC UMQ Message ID header */
 typedef struct
@@ -763,7 +753,7 @@ typedef struct
 #define L_LBMC_UMQ_MSGID_HDR_T_MSGID_REGID SIZEOF(lbmc_umq_msgid_hdr_t, msgid_regid)
 #define O_LBMC_UMQ_MSGID_HDR_T_MSGID_STAMP OFFSETOF(lbmc_umq_msgid_hdr_t, msgid_stamp)
 #define L_LBMC_UMQ_MSGID_HDR_T_MSGID_STAMP SIZEOF(lbmc_umq_msgid_hdr_t, msgid_stamp)
-#define L_LBMC_UMQ_MSGID_HDR_T (gint) sizeof(lbmc_umq_msgid_hdr_t)
+#define L_LBMC_UMQ_MSGID_HDR_T (int) sizeof(lbmc_umq_msgid_hdr_t)
 
 /* LBMC UMQ SQD receive header */
 typedef struct
@@ -790,7 +780,7 @@ typedef struct
 #define L_LBMC_UMQ_SQD_RCV_HDR_T_RCR_IDX SIZEOF(lbmc_umq_sqd_rcv_hdr_t, rcr_idx)
 #define O_LBMC_UMQ_SQD_RCV_HDR_T_ASSIGN_ID OFFSETOF(lbmc_umq_sqd_rcv_hdr_t, assign_id)
 #define L_LBMC_UMQ_SQD_RCV_HDR_T_ASSIGN_ID SIZEOF(lbmc_umq_sqd_rcv_hdr_t, assign_id)
-#define L_LBMC_UMQ_SQD_RCV_HDR_T (gint) sizeof(lbmc_umq_sqd_rcv_hdr_t)
+#define L_LBMC_UMQ_SQD_RCV_HDR_T (int) sizeof(lbmc_umq_sqd_rcv_hdr_t)
 
 /* LBMC UMQ resubmission header */
 typedef struct
@@ -817,7 +807,7 @@ typedef struct
 #define L_LBMC_UMQ_RESUB_HDR_T_RESP_PORT SIZEOF(lbmc_umq_resub_hdr_t, resp_port)
 #define O_LBMC_UMQ_RESUB_HDR_T_APPSET_IDX OFFSETOF(lbmc_umq_resub_hdr_t, appset_idx)
 #define L_LBMC_UMQ_RESUB_HDR_T_APPSET_IDX SIZEOF(lbmc_umq_resub_hdr_t, appset_idx)
-#define L_LBMC_UMQ_RESUB_HDR_T (gint) sizeof(lbmc_umq_resub_hdr_t)
+#define L_LBMC_UMQ_RESUB_HDR_T (int) sizeof(lbmc_umq_resub_hdr_t)
 
 /* LBMC originating transport ID header */
 typedef struct
@@ -835,7 +825,7 @@ typedef struct
 #define L_LBMC_OTID_HDR_T_FLAGS SIZEOF(lbmc_otid_hdr_t, flags)
 #define O_LBMC_OTID_HDR_T_OTID OFFSETOF(lbmc_otid_hdr_t, otid)
 #define L_LBMC_OTID_HDR_T_OTID SIZEOF(lbmc_otid_hdr_t, otid)
-#define L_LBMC_OTID_HDR_T (gint) sizeof(lbmc_otid_hdr_t)
+#define L_LBMC_OTID_HDR_T (int) sizeof(lbmc_otid_hdr_t)
 
 /* LBMC context instance header(s) */
 typedef struct
@@ -853,7 +843,7 @@ typedef struct
 #define L_LBMC_CTXINST_HDR_T_FLAGS SIZEOF(lbmc_ctxinst_hdr_t, flags)
 #define O_LBMC_CTXINST_HDR_T_CTXINST OFFSETOF(lbmc_ctxinst_hdr_t, ctxinst)
 #define L_LBMC_CTXINST_HDR_T_CTXINST SIZEOF(lbmc_ctxinst_hdr_t, ctxinst)
-#define L_LBMC_CTXINST_HDR_T (gint) sizeof(lbmc_ctxinst_hdr_t)
+#define L_LBMC_CTXINST_HDR_T (int) sizeof(lbmc_ctxinst_hdr_t)
 
 /* LBMC source index header */
 typedef struct
@@ -871,7 +861,7 @@ typedef struct
 #define L_LBMC_SRCIDX_HDR_T_FLAGS SIZEOF(lbmc_srcidx_hdr_t, flags)
 #define O_LBMC_SRCIDX_HDR_T_SRCIDX OFFSETOF(lbmc_srcidx_hdr_t, srcidx)
 #define L_LBMC_SRCIDX_HDR_T_SRCIDX SIZEOF(lbmc_srcidx_hdr_t, srcidx)
-#define L_LBMC_SRCIDX_HDR_T (gint) sizeof(lbmc_srcidx_hdr_t)
+#define L_LBMC_SRCIDX_HDR_T (int) sizeof(lbmc_srcidx_hdr_t)
 
 /* LBMC UMQ ULB message header */
 typedef struct
@@ -901,7 +891,7 @@ typedef struct
 #define L_LBMC_UMQ_ULB_MSG_HDR_T_APPSET_IDX SIZEOF(lbmc_umq_ulb_msg_hdr_t, appset_idx)
 #define O_LBMC_UMQ_ULB_MSG_HDR_T_NUM_RAS OFFSETOF(lbmc_umq_ulb_msg_hdr_t, num_ras)
 #define L_LBMC_UMQ_ULB_MSG_HDR_T_NUM_RAS SIZEOF(lbmc_umq_ulb_msg_hdr_t, num_ras)
-#define L_LBMC_UMQ_ULB_MSG_HDR_T (gint) sizeof(lbmc_umq_ulb_msg_hdr_t)
+#define L_LBMC_UMQ_ULB_MSG_HDR_T (int) sizeof(lbmc_umq_ulb_msg_hdr_t)
 
 /* LBMC control source-side filtering initialization header */
 typedef struct
@@ -934,7 +924,7 @@ typedef struct
 #define L_LBMC_CNTL_SSF_INIT_HDR_T_RES SIZEOF(lbmc_cntl_ssf_init_hdr_t, res)
 #define O_LBMC_CNTL_SSF_INIT_HDR_T_SSF_IP OFFSETOF(lbmc_cntl_ssf_init_hdr_t, ssf_ip)
 #define L_LBMC_CNTL_SSF_INIT_HDR_T_SSF_IP SIZEOF(lbmc_cntl_ssf_init_hdr_t, ssf_ip)
-#define L_LBMC_CNTL_SSF_INIT_HDR_T (gint) sizeof(lbmc_cntl_ssf_init_hdr_t)
+#define L_LBMC_CNTL_SSF_INIT_HDR_T (int) sizeof(lbmc_cntl_ssf_init_hdr_t)
 
 /* LBMC control source-side filtering control request header */
 typedef struct
@@ -961,7 +951,7 @@ typedef struct
 #define L_LBMC_CNTL_SSF_CREQ_HDR_T_TOPIC_IDX SIZEOF(lbmc_cntl_ssf_creq_hdr_t, topic_idx)
 #define O_LBMC_CNTL_SSF_CREQ_HDR_T_CLIENT_IDX OFFSETOF(lbmc_cntl_ssf_creq_hdr_t, client_idx)
 #define L_LBMC_CNTL_SSF_CREQ_HDR_T_CLIENT_IDX SIZEOF(lbmc_cntl_ssf_creq_hdr_t, client_idx)
-#define L_LBMC_CNTL_SSF_CREQ_HDR_T (gint) sizeof(lbmc_cntl_ssf_creq_hdr_t)
+#define L_LBMC_CNTL_SSF_CREQ_HDR_T (int) sizeof(lbmc_cntl_ssf_creq_hdr_t)
 
 /* LBMC control UME persistent registration header */
 typedef struct
@@ -1000,7 +990,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_PREG_HDR_T_RES2 SIZEOF(lbmc_cntl_ume_preg_hdr_t, res2)
 #define O_LBMC_CNTL_UME_PREG_HDR_T_RESP_IP OFFSETOF(lbmc_cntl_ume_preg_hdr_t, resp_ip)
 #define L_LBMC_CNTL_UME_PREG_HDR_T_RESP_IP SIZEOF(lbmc_cntl_ume_preg_hdr_t, resp_ip)
-#define L_LBMC_CNTL_UME_PREG_HDR_T (gint) sizeof(lbmc_cntl_ume_preg_hdr_t)
+#define L_LBMC_CNTL_UME_PREG_HDR_T (int) sizeof(lbmc_cntl_ume_preg_hdr_t)
 
 #define LBMC_CNTL_UME_PREG_MARKER(x) (x & 0x7F)
 #define LBMC_CNTL_UME_PREG_MARKER_MASK 0x7F
@@ -1036,7 +1026,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_PREG_RESP_HDR_T_LOW_SEQNUM SIZEOF(lbmc_cntl_ume_preg_resp_hdr_t, low_seqnum)
 #define O_LBMC_CNTL_UME_PREG_RESP_HDR_T_HIGH_SEQNUM OFFSETOF(lbmc_cntl_ume_preg_resp_hdr_t, high_seqnum)
 #define L_LBMC_CNTL_UME_PREG_RESP_HDR_T_HIGH_SEQNUM SIZEOF(lbmc_cntl_ume_preg_resp_hdr_t, high_seqnum)
-#define L_LBMC_CNTL_UME_PREG_RESP_HDR_T (gint) sizeof(lbmc_cntl_ume_preg_resp_hdr_t)
+#define L_LBMC_CNTL_UME_PREG_RESP_HDR_T (int) sizeof(lbmc_cntl_ume_preg_resp_hdr_t)
 
 #define LBMC_CNTL_UME_PREG_RESP_CODE(x) (x & 0x0F)
 #define LBMC_CNTL_UME_PREG_RESP_CODE_MASK 0x0F
@@ -1069,7 +1059,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_ACK_HDR_T_RCV_REG_ID SIZEOF(lbmc_cntl_ume_ack_hdr_t, rcv_reg_id)
 #define O_LBMC_CNTL_UME_ACK_HDR_T_SEQNUM OFFSETOF(lbmc_cntl_ume_ack_hdr_t, seqnum)
 #define L_LBMC_CNTL_UME_ACK_HDR_T_SEQNUM SIZEOF(lbmc_cntl_ume_ack_hdr_t, seqnum)
-#define L_LBMC_CNTL_UME_ACK_HDR_T (gint) sizeof(lbmc_cntl_ume_ack_hdr_t)
+#define L_LBMC_CNTL_UME_ACK_HDR_T (int) sizeof(lbmc_cntl_ume_ack_hdr_t)
 
 /* LBMC control UME ranged acknowledgement header */
 typedef struct
@@ -1090,7 +1080,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_RANGED_ACK_HDR_T_FIRST_SEQNUM SIZEOF(lbmc_cntl_ume_ranged_ack_hdr_t, first_seqnum)
 #define O_LBMC_CNTL_UME_RANGED_ACK_HDR_T_LAST_SEQNUM OFFSETOF(lbmc_cntl_ume_ranged_ack_hdr_t, last_seqnum)
 #define L_LBMC_CNTL_UME_RANGED_ACK_HDR_T_LAST_SEQNUM SIZEOF(lbmc_cntl_ume_ranged_ack_hdr_t, last_seqnum)
-#define L_LBMC_CNTL_UME_RANGED_ACK_HDR_T (gint) sizeof(lbmc_cntl_ume_ranged_ack_hdr_t)
+#define L_LBMC_CNTL_UME_RANGED_ACK_HDR_T (int) sizeof(lbmc_cntl_ume_ranged_ack_hdr_t)
 
 /* LBMC control UME acknowledgement ID header */
 typedef struct
@@ -1108,9 +1098,9 @@ typedef struct
 #define L_LBMC_CNTL_UME_ACK_ID_HDR_T_FLAGS SIZEOF(lbmc_cntl_ume_ack_id_hdr_t, flags)
 #define O_LBMC_CNTL_UME_ACK_ID_HDR_T_ID OFFSETOF(lbmc_cntl_ume_ack_id_hdr_t, id)
 #define L_LBMC_CNTL_UME_ACK_ID_HDR_T_ID SIZEOF(lbmc_cntl_ume_ack_id_hdr_t, id)
-#define L_LBMC_CNTL_UME_ACK_ID_HDR_T (gint) sizeof(lbmc_cntl_ume_ack_id_hdr_t)
+#define L_LBMC_CNTL_UME_ACK_ID_HDR_T (int) sizeof(lbmc_cntl_ume_ack_id_hdr_t)
 
-/* LBMC control UME retranmission request header */
+/* LBMC control UME retransmission request header */
 typedef struct
 {
     lbm_uint8_t next_hdr;
@@ -1144,7 +1134,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_RXREQ_HDR_T_RES SIZEOF(lbmc_cntl_ume_rxreq_hdr_t, res)
 #define O_LBMC_CNTL_UME_RXREQ_HDR_T_RX_IP OFFSETOF(lbmc_cntl_ume_rxreq_hdr_t, rx_ip)
 #define L_LBMC_CNTL_UME_RXREQ_HDR_T_RX_IP SIZEOF(lbmc_cntl_ume_rxreq_hdr_t, rx_ip)
-#define L_LBMC_CNTL_UME_RXREQ_HDR_T (gint) sizeof(lbmc_cntl_ume_rxreq_hdr_t)
+#define L_LBMC_CNTL_UME_RXREQ_HDR_T (int) sizeof(lbmc_cntl_ume_rxreq_hdr_t)
 
 /* LBMC control late join initiation request */
 typedef struct
@@ -1188,7 +1178,7 @@ typedef struct
 #define L_LBMC_CNTL_LJI_REQ_HDR_T_RX_REQ_OUTSTANDING_MAX SIZEOF(lbmc_cntl_lji_req_hdr_t, rx_req_outstanding_max)
 #define O_LBMC_CNTL_LJI_REQ_HDR_T_FLAGS OFFSETOF(lbmc_cntl_lji_req_hdr_t, flags)
 #define L_LBMC_CNTL_LJI_REQ_HDR_T_FLAGS SIZEOF(lbmc_cntl_lji_req_hdr_t, flags)
-#define L_LBMC_CNTL_LJI_REQ_HDR_T (gint) sizeof(lbmc_cntl_lji_req_hdr_t)
+#define L_LBMC_CNTL_LJI_REQ_HDR_T (int) sizeof(lbmc_cntl_lji_req_hdr_t)
 
 /* LBMC control UME keepalive header */
 typedef struct
@@ -1215,7 +1205,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_KEEPALIVE_HDR_T_TOPIC_IDX SIZEOF(lbmc_cntl_ume_keepalive_hdr_t, topic_idx)
 #define O_LBMC_CNTL_UME_KEEPALIVE_HDR_T_REG_ID OFFSETOF(lbmc_cntl_ume_keepalive_hdr_t, reg_id)
 #define L_LBMC_CNTL_UME_KEEPALIVE_HDR_T_REG_ID SIZEOF(lbmc_cntl_ume_keepalive_hdr_t, reg_id)
-#define L_LBMC_CNTL_UME_KEEPALIVE_HDR_T (gint) sizeof(lbmc_cntl_ume_keepalive_hdr_t)
+#define L_LBMC_CNTL_UME_KEEPALIVE_HDR_T (int) sizeof(lbmc_cntl_ume_keepalive_hdr_t)
 
 /* LBMC control UME store ID header */
 typedef struct
@@ -1230,7 +1220,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_STOREID_HDR_T_HDR_LEN SIZEOF(lbmc_cntl_ume_storeid_hdr_t, hdr_len)
 #define O_LBMC_CNTL_UME_STOREID_HDR_T_STORE_ID OFFSETOF(lbmc_cntl_ume_storeid_hdr_t, store_id)
 #define L_LBMC_CNTL_UME_STOREID_HDR_T_STORE_ID SIZEOF(lbmc_cntl_ume_storeid_hdr_t, store_id)
-#define L_LBMC_CNTL_UME_STOREID_HDR_T (gint) sizeof(lbmc_cntl_ume_storeid_hdr_t)
+#define L_LBMC_CNTL_UME_STOREID_HDR_T (int) sizeof(lbmc_cntl_ume_storeid_hdr_t)
 
 #define LBMC_CNTL_UME_STOREID_STOREID(x) (x & 0x7FFF)
 #define LBMC_CNTL_UME_STOREID_STOREID_MASK 0x7FFF
@@ -1248,7 +1238,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_CAPABILITY_HDR_T_HDR_LEN SIZEOF(lbmc_cntl_ume_capability_hdr_t, hdr_len)
 #define O_LBMC_CNTL_UME_CAPABILITY_HDR_T_FLAGS OFFSETOF(lbmc_cntl_ume_capability_hdr_t, flags)
 #define L_LBMC_CNTL_UME_CAPABILITY_HDR_T_FLAGS SIZEOF(lbmc_cntl_ume_capability_hdr_t, flags)
-#define L_LBMC_CNTL_UME_CAPABILITY_HDR_T (gint) sizeof(lbmc_cntl_ume_capability_hdr_t)
+#define L_LBMC_CNTL_UME_CAPABILITY_HDR_T (int) sizeof(lbmc_cntl_ume_capability_hdr_t)
 
 /* LBMC control UME Proxy Source header */
 typedef struct
@@ -1263,7 +1253,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_PROXY_SRC_HDR_T_HDR_LEN SIZEOF(lbmc_cntl_ume_proxy_src_hdr_t, hdr_len)
 #define O_LBMC_CNTL_UME_PROXY_SRC_HDR_T_FLAGS OFFSETOF(lbmc_cntl_ume_proxy_src_hdr_t, flags)
 #define L_LBMC_CNTL_UME_PROXY_SRC_HDR_T_FLAGS SIZEOF(lbmc_cntl_ume_proxy_src_hdr_t, flags)
-#define L_LBMC_CNTL_UME_PROXY_SRC_HDR_T (gint) sizeof(lbmc_cntl_ume_proxy_src_hdr_t)
+#define L_LBMC_CNTL_UME_PROXY_SRC_HDR_T (int) sizeof(lbmc_cntl_ume_proxy_src_hdr_t)
 
 /* LBMC control UME Store header */
 typedef struct
@@ -1293,7 +1283,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_STORE_HDR_T_STORE_IP_ADDR SIZEOF(lbmc_cntl_ume_store_hdr_t, store_ip_addr)
 #define O_LBMC_CNTL_UME_STORE_HDR_T_SRC_REG_ID OFFSETOF(lbmc_cntl_ume_store_hdr_t, src_reg_id)
 #define L_LBMC_CNTL_UME_STORE_HDR_T_SRC_REG_ID SIZEOF(lbmc_cntl_ume_store_hdr_t, src_reg_id)
-#define L_LBMC_CNTL_UME_STORE_HDR_T (gint) sizeof(lbmc_cntl_ume_store_hdr_t)
+#define L_LBMC_CNTL_UME_STORE_HDR_T (int) sizeof(lbmc_cntl_ume_store_hdr_t)
 
 /* LBMC control UME Store Extended header */
 typedef struct
@@ -1329,7 +1319,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_STORE_EXT_HDR_T_DOMAIN_ID SIZEOF(lbmc_cntl_ume_store_ext_hdr_t, domain_id)
 #define O_LBMC_CNTL_UME_STORE_EXT_HDR_T_VERSION OFFSETOF(lbmc_cntl_ume_store_ext_hdr_t, version)
 #define L_LBMC_CNTL_UME_STORE_EXT_HDR_T_VERSION SIZEOF(lbmc_cntl_ume_store_ext_hdr_t, version)
-#define L_LBMC_CNTL_UME_STORE_EXT_HDR_T (gint) sizeof(lbmc_cntl_ume_store_ext_hdr_t)
+#define L_LBMC_CNTL_UME_STORE_EXT_HDR_T (int) sizeof(lbmc_cntl_ume_store_ext_hdr_t)
 
 /* LBMC control UME Late Join info header */
 typedef struct
@@ -1353,7 +1343,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_LJ_INFO_HDR_T_HIGH_SEQNUM SIZEOF(lbmc_cntl_ume_lj_info_hdr_t, high_seqnum)
 #define O_LBMC_CNTL_UME_LJ_INFO_HDR_T_QIDX OFFSETOF(lbmc_cntl_ume_lj_info_hdr_t, qidx)
 #define L_LBMC_CNTL_UME_LJ_INFO_HDR_T_QIDX SIZEOF(lbmc_cntl_ume_lj_info_hdr_t, qidx)
-#define L_LBMC_CNTL_UME_LJ_INFO_HDR_T (gint) sizeof(lbmc_cntl_ume_lj_info_hdr_t)
+#define L_LBMC_CNTL_UME_LJ_INFO_HDR_T (int) sizeof(lbmc_cntl_ume_lj_info_hdr_t)
 
 /* LBMC control UME Store Group header */
 typedef struct
@@ -1377,7 +1367,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_STORE_GROUP_HDR_T_GRP_SZ SIZEOF(lbmc_cntl_ume_store_group_hdr_t, grp_sz)
 #define O_LBMC_CNTL_UME_STORE_GROUP_HDR_T_RES1 OFFSETOF(lbmc_cntl_ume_store_group_hdr_t, res1)
 #define L_LBMC_CNTL_UME_STORE_GROUP_HDR_T_RES1 SIZEOF(lbmc_cntl_ume_store_group_hdr_t, res1)
-#define L_LBMC_CNTL_UME_STORE_GROUP_HDR_T (gint) sizeof(lbmc_cntl_ume_store_group_hdr_t)
+#define L_LBMC_CNTL_UME_STORE_GROUP_HDR_T (int) sizeof(lbmc_cntl_ume_store_group_hdr_t)
 
 /* LBMC control TSNI header */
 typedef struct
@@ -1392,7 +1382,7 @@ typedef struct
 #define L_LBMC_CNTL_TSNI_HDR_T_HDR_LEN SIZEOF(lbmc_cntl_tsni_hdr_t, hdr_len)
 #define O_LBMC_CNTL_TSNI_HDR_T_NUM_RECS OFFSETOF(lbmc_cntl_tsni_hdr_t, num_recs)
 #define L_LBMC_CNTL_TSNI_HDR_T_NUM_RECS SIZEOF(lbmc_cntl_tsni_hdr_t, num_recs)
-#define L_LBMC_CNTL_TSNI_HDR_T (gint) sizeof(lbmc_cntl_tsni_hdr_t)
+#define L_LBMC_CNTL_TSNI_HDR_T (int) sizeof(lbmc_cntl_tsni_hdr_t)
 
 #define LBMC_CNTL_TSNI_NUM_RECS_MASK 0x7fff
 
@@ -1405,7 +1395,7 @@ typedef struct
 #define L_LBMC_CNTL_TSNI_REC_HDR_T_TIDX SIZEOF(lbmc_cntl_tsni_rec_hdr_t, tidx)
 #define O_LBMC_CNTL_TSNI_REC_HDR_T_SQN OFFSETOF(lbmc_cntl_tsni_rec_hdr_t, sqn)
 #define L_LBMC_CNTL_TSNI_REC_HDR_T_SQN SIZEOF(lbmc_cntl_tsni_rec_hdr_t, sqn)
-#define L_LBMC_CNTL_TSNI_REC_HDR_T (gint) sizeof(lbmc_cntl_tsni_rec_hdr_t)
+#define L_LBMC_CNTL_TSNI_REC_HDR_T (int) sizeof(lbmc_cntl_tsni_rec_hdr_t)
 
 /* LBMC control UMQ registration header(s) */
 typedef struct
@@ -1423,7 +1413,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_REG_CTX_HDR_T_IP SIZEOF(lbmc_cntl_umq_reg_ctx_hdr_t, ip)
 #define O_LBMC_CNTL_UMQ_REG_CTX_HDR_T_CAPABILITIES OFFSETOF(lbmc_cntl_umq_reg_ctx_hdr_t, capabilities)
 #define L_LBMC_CNTL_UMQ_REG_CTX_HDR_T_CAPABILITIES SIZEOF(lbmc_cntl_umq_reg_ctx_hdr_t, capabilities)
-#define L_LBMC_CNTL_UMQ_REG_CTX_HDR_T (gint) sizeof(lbmc_cntl_umq_reg_ctx_hdr_t)
+#define L_LBMC_CNTL_UMQ_REG_CTX_HDR_T (int) sizeof(lbmc_cntl_umq_reg_ctx_hdr_t)
 
 typedef struct
 {
@@ -1434,7 +1424,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_REG_SRC_HDR_T_TRANSPORT_IDX SIZEOF(lbmc_cntl_umq_reg_src_hdr_t, transport_idx)
 #define O_LBMC_CNTL_UMQ_REG_SRC_HDR_T_TOPIC_IDX OFFSETOF(lbmc_cntl_umq_reg_src_hdr_t, topic_idx)
 #define L_LBMC_CNTL_UMQ_REG_SRC_HDR_T_TOPIC_IDX SIZEOF(lbmc_cntl_umq_reg_src_hdr_t, topic_idx)
-#define L_LBMC_CNTL_UMQ_REG_SRC_HDR_T (gint) sizeof(lbmc_cntl_umq_reg_src_hdr_t)
+#define L_LBMC_CNTL_UMQ_REG_SRC_HDR_T (int) sizeof(lbmc_cntl_umq_reg_src_hdr_t)
 
 typedef struct
 {
@@ -1448,7 +1438,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_REG_RCV_HDR_T_RCV_TYPE_ID SIZEOF(lbmc_cntl_umq_reg_rcv_hdr_t, rcv_type_id)
 #define O_LBMC_CNTL_UMQ_REG_RCV_HDR_T_LAST_TOPIC_RCR_TSP OFFSETOF(lbmc_cntl_umq_reg_rcv_hdr_t, last_topic_rcr_tsp)
 #define L_LBMC_CNTL_UMQ_REG_RCV_HDR_T_LAST_TOPIC_RCR_TSP SIZEOF(lbmc_cntl_umq_reg_rcv_hdr_t, last_topic_rcr_tsp)
-#define L_LBMC_CNTL_UMQ_REG_RCV_HDR_T (gint) sizeof(lbmc_cntl_umq_reg_rcv_hdr_t)
+#define L_LBMC_CNTL_UMQ_REG_RCV_HDR_T (int) sizeof(lbmc_cntl_umq_reg_rcv_hdr_t)
 
 typedef struct
 {
@@ -1459,7 +1449,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RCV_DEREG_HDR_T_RCR_IDX SIZEOF(lbmc_cntl_umq_rcv_dereg_hdr_t, rcr_idx)
 #define O_LBMC_CNTL_UMQ_RCV_DEREG_HDR_T_ASSIGN_ID OFFSETOF(lbmc_cntl_umq_rcv_dereg_hdr_t, assign_id)
 #define L_LBMC_CNTL_UMQ_RCV_DEREG_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_rcv_dereg_hdr_t, assign_id)
-#define L_LBMC_CNTL_UMQ_RCV_DEREG_HDR_T (gint) sizeof(lbmc_cntl_umq_rcv_dereg_hdr_t)
+#define L_LBMC_CNTL_UMQ_RCV_DEREG_HDR_T (int) sizeof(lbmc_cntl_umq_rcv_dereg_hdr_t)
 
 typedef struct
 {
@@ -1485,7 +1475,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_REG_ULB_RCV_HDR_T_IP SIZEOF(lbmc_cntl_umq_reg_ulb_rcv_hdr_t, ip)
 #define O_LBMC_CNTL_UMQ_REG_ULB_RCV_HDR_T_CAPABILITIES OFFSETOF(lbmc_cntl_umq_reg_ulb_rcv_hdr_t, capabilities)
 #define L_LBMC_CNTL_UMQ_REG_ULB_RCV_HDR_T_CAPABILITIES SIZEOF(lbmc_cntl_umq_reg_ulb_rcv_hdr_t, capabilities)
-#define L_LBMC_CNTL_UMQ_REG_ULB_RCV_HDR_T (gint) sizeof(lbmc_cntl_umq_reg_ulb_rcv_hdr_t)
+#define L_LBMC_CNTL_UMQ_REG_ULB_RCV_HDR_T (int) sizeof(lbmc_cntl_umq_reg_ulb_rcv_hdr_t)
 
 typedef struct
 {
@@ -1496,7 +1486,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_ULB_RCV_DEREG_HDR_T_ULB_SRC_ID SIZEOF(lbmc_cntl_umq_ulb_rcv_dereg_hdr_t, ulb_src_id)
 #define O_LBMC_CNTL_UMQ_ULB_RCV_DEREG_HDR_T_ASSIGN_ID OFFSETOF(lbmc_cntl_umq_ulb_rcv_dereg_hdr_t, assign_id)
 #define L_LBMC_CNTL_UMQ_ULB_RCV_DEREG_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_ulb_rcv_dereg_hdr_t, assign_id)
-#define L_LBMC_CNTL_UMQ_ULB_RCV_DEREG_HDR_T (gint) sizeof(lbmc_cntl_umq_ulb_rcv_dereg_hdr_t)
+#define L_LBMC_CNTL_UMQ_ULB_RCV_DEREG_HDR_T (int) sizeof(lbmc_cntl_umq_ulb_rcv_dereg_hdr_t)
 
 typedef struct
 {
@@ -1510,7 +1500,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_REG_OBSERVER_RCV_HDR_T_RCV_TYPE_ID SIZEOF(lbmc_cntl_umq_reg_observer_rcv_hdr_t, rcv_type_id)
 #define O_LBMC_CNTL_UMQ_REG_OBSERVER_RCV_HDR_T_LAST_TOPIC_RCR_TSP OFFSETOF(lbmc_cntl_umq_reg_observer_rcv_hdr_t, last_topic_rcr_tsp)
 #define L_LBMC_CNTL_UMQ_REG_OBSERVER_RCV_HDR_T_LAST_TOPIC_RCR_TSP SIZEOF(lbmc_cntl_umq_reg_observer_rcv_hdr_t, last_topic_rcr_tsp)
-#define L_LBMC_CNTL_UMQ_REG_OBSERVER_RCV_HDR_T (gint) sizeof(lbmc_cntl_umq_reg_observer_rcv_hdr_t)
+#define L_LBMC_CNTL_UMQ_REG_OBSERVER_RCV_HDR_T (int) sizeof(lbmc_cntl_umq_reg_observer_rcv_hdr_t)
 
 typedef struct
 {
@@ -1521,7 +1511,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_OBSERVER_RCV_DEREG_HDR_T_RCR_IDX SIZEOF(lbmc_cntl_umq_observer_rcv_dereg_hdr_t, rcr_idx)
 #define O_LBMC_CNTL_UMQ_OBSERVER_RCV_DEREG_HDR_T_ASSIGN_ID OFFSETOF(lbmc_cntl_umq_observer_rcv_dereg_hdr_t, assign_id)
 #define L_LBMC_CNTL_UMQ_OBSERVER_RCV_DEREG_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_observer_rcv_dereg_hdr_t, assign_id)
-#define L_LBMC_CNTL_UMQ_OBSERVER_RCV_DEREG_HDR_T (gint) sizeof(lbmc_cntl_umq_observer_rcv_dereg_hdr_t)
+#define L_LBMC_CNTL_UMQ_OBSERVER_RCV_DEREG_HDR_T (int) sizeof(lbmc_cntl_umq_observer_rcv_dereg_hdr_t)
 
 typedef struct
 {
@@ -1550,7 +1540,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_REG_HDR_T_INST_IDX SIZEOF(lbmc_cntl_umq_reg_hdr_t, inst_idx)
 #define O_LBMC_CNTL_UMQ_REG_HDR_T_REGID OFFSETOF(lbmc_cntl_umq_reg_hdr_t, regid)
 #define L_LBMC_CNTL_UMQ_REG_HDR_T_REGID SIZEOF(lbmc_cntl_umq_reg_hdr_t, regid)
-#define L_LBMC_CNTL_UMQ_REG_HDR_T (gint) sizeof(lbmc_cntl_umq_reg_hdr_t)
+#define L_LBMC_CNTL_UMQ_REG_HDR_T (int) sizeof(lbmc_cntl_umq_reg_hdr_t)
 
 /* LBMC control UMQ registration response header(s) */
 typedef struct
@@ -1559,7 +1549,7 @@ typedef struct
 } lbmc_cntl_umq_reg_resp_ctx_hdr_t;
 #define O_LBMC_CNTL_UMQ_REG_RESP_CTX_HDR_T_CAPABILITIES OFFSETOF(lbmc_cntl_umq_reg_resp_ctx_hdr_t, capabilities)
 #define L_LBMC_CNTL_UMQ_REG_RESP_CTX_HDR_T_CAPABILITIES SIZEOF(lbmc_cntl_umq_reg_resp_ctx_hdr_t, capabilities)
-#define L_LBMC_CNTL_UMQ_REG_RESP_CTX_HDR_T (gint) sizeof(lbmc_cntl_umq_reg_resp_ctx_hdr_t)
+#define L_LBMC_CNTL_UMQ_REG_RESP_CTX_HDR_T (int) sizeof(lbmc_cntl_umq_reg_resp_ctx_hdr_t)
 
 typedef struct
 {
@@ -1576,7 +1566,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_REG_RESP_CTX_EX_HDR_T_FLAGS SIZEOF(lbmc_cntl_umq_reg_resp_ctx_ex_hdr_t, flags)
 #define O_LBMC_CNTL_UMQ_REG_RESP_CTX_EX_HDR_T_STAMP OFFSETOF(lbmc_cntl_umq_reg_resp_ctx_ex_hdr_t, stamp)
 #define L_LBMC_CNTL_UMQ_REG_RESP_CTX_EX_HDR_T_STAMP SIZEOF(lbmc_cntl_umq_reg_resp_ctx_ex_hdr_t, stamp)
-#define L_LBMC_CNTL_UMQ_REG_RESP_CTX_EX_HDR_T (gint) sizeof(lbmc_cntl_umq_reg_resp_ctx_ex_hdr_t)
+#define L_LBMC_CNTL_UMQ_REG_RESP_CTX_EX_HDR_T (int) sizeof(lbmc_cntl_umq_reg_resp_ctx_ex_hdr_t)
 
 typedef struct
 {
@@ -1587,7 +1577,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_REG_RESP_ERR_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_reg_resp_err_hdr_t, reserved)
 #define O_LBMC_CNTL_UMQ_REG_RESP_ERR_HDR_T_CODE OFFSETOF(lbmc_cntl_umq_reg_resp_err_hdr_t, code)
 #define L_LBMC_CNTL_UMQ_REG_RESP_ERR_HDR_T_CODE SIZEOF(lbmc_cntl_umq_reg_resp_err_hdr_t, code)
-#define L_LBMC_CNTL_UMQ_REG_RESP_ERR_HDR_T (gint) sizeof(lbmc_cntl_umq_reg_resp_err_hdr_t)
+#define L_LBMC_CNTL_UMQ_REG_RESP_ERR_HDR_T (int) sizeof(lbmc_cntl_umq_reg_resp_err_hdr_t)
 
 typedef struct
 {
@@ -1595,7 +1585,7 @@ typedef struct
 } lbmc_cntl_umq_reg_resp_src_hdr_t;
 #define O_LBMC_CNTL_UMQ_REG_RESP_SRC_HDR_T_RCR_IDX OFFSETOF(lbmc_cntl_umq_reg_resp_src_hdr_t, rcr_idx)
 #define L_LBMC_CNTL_UMQ_REG_RESP_SRC_HDR_T_RCR_IDX SIZEOF(lbmc_cntl_umq_reg_resp_src_hdr_t, rcr_idx)
-#define L_LBMC_CNTL_UMQ_REG_RESP_SRC_HDR_T (gint) sizeof(lbmc_cntl_umq_reg_resp_src_hdr_t)
+#define L_LBMC_CNTL_UMQ_REG_RESP_SRC_HDR_T (int) sizeof(lbmc_cntl_umq_reg_resp_src_hdr_t)
 
 typedef struct
 {
@@ -1612,7 +1602,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_REG_RESP_RCV_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_reg_resp_rcv_hdr_t, appset_idx)
 #define O_LBMC_CNTL_UMQ_REG_RESP_RCV_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_reg_resp_rcv_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_REG_RESP_RCV_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_reg_resp_rcv_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_REG_RESP_RCV_HDR_T (gint) sizeof(lbmc_cntl_umq_reg_resp_rcv_hdr_t)
+#define L_LBMC_CNTL_UMQ_REG_RESP_RCV_HDR_T (int) sizeof(lbmc_cntl_umq_reg_resp_rcv_hdr_t)
 
 typedef struct
 {
@@ -1623,7 +1613,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RCV_DEREG_RESP_HDR_T_RCR_IDX SIZEOF(lbmc_cntl_umq_rcv_dereg_resp_hdr_t, rcr_idx)
 #define O_LBMC_CNTL_UMQ_RCV_DEREG_RESP_HDR_T_ASSIGN_ID OFFSETOF(lbmc_cntl_umq_rcv_dereg_resp_hdr_t, assign_id)
 #define L_LBMC_CNTL_UMQ_RCV_DEREG_RESP_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_rcv_dereg_resp_hdr_t, assign_id)
-#define L_LBMC_CNTL_UMQ_RCV_DEREG_RESP_HDR_T (gint) sizeof(lbmc_cntl_umq_rcv_dereg_resp_hdr_t)
+#define L_LBMC_CNTL_UMQ_RCV_DEREG_RESP_HDR_T (int) sizeof(lbmc_cntl_umq_rcv_dereg_resp_hdr_t)
 
 typedef struct
 {
@@ -1643,7 +1633,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_REG_RESP_ULB_RCV_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_reg_resp_ulb_rcv_hdr_t, reserved)
 #define O_LBMC_CNTL_UMQ_REG_RESP_ULB_RCV_HDR_T_CAPABILITIES OFFSETOF(lbmc_cntl_umq_reg_resp_ulb_rcv_hdr_t, capabilities)
 #define L_LBMC_CNTL_UMQ_REG_RESP_ULB_RCV_HDR_T_CAPABILITIES SIZEOF(lbmc_cntl_umq_reg_resp_ulb_rcv_hdr_t, capabilities)
-#define L_LBMC_CNTL_UMQ_REG_RESP_ULB_RCV_HDR_T (gint) sizeof(lbmc_cntl_umq_reg_resp_ulb_rcv_hdr_t)
+#define L_LBMC_CNTL_UMQ_REG_RESP_ULB_RCV_HDR_T (int) sizeof(lbmc_cntl_umq_reg_resp_ulb_rcv_hdr_t)
 
 typedef struct
 {
@@ -1654,7 +1644,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_ULB_RCV_DEREG_RESP_HDR_T_ULB_SRC_ID SIZEOF(lbmc_cntl_umq_ulb_rcv_dereg_resp_hdr_t, ulb_src_id)
 #define O_LBMC_CNTL_UMQ_ULB_RCV_DEREG_RESP_HDR_T_ASSIGN_ID OFFSETOF(lbmc_cntl_umq_ulb_rcv_dereg_resp_hdr_t, assign_id)
 #define L_LBMC_CNTL_UMQ_ULB_RCV_DEREG_RESP_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_ulb_rcv_dereg_resp_hdr_t, assign_id)
-#define L_LBMC_CNTL_UMQ_ULB_RCV_DEREG_RESP_HDR_T (gint) sizeof(lbmc_cntl_umq_ulb_rcv_dereg_resp_hdr_t)
+#define L_LBMC_CNTL_UMQ_ULB_RCV_DEREG_RESP_HDR_T (int) sizeof(lbmc_cntl_umq_ulb_rcv_dereg_resp_hdr_t)
 
 typedef struct
 {
@@ -1671,7 +1661,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_REG_RESP_OBSERVER_RCV_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_reg_resp_observer_rcv_hdr_t, appset_idx)
 #define O_LBMC_CNTL_UMQ_REG_RESP_OBSERVER_RCV_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_reg_resp_observer_rcv_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_REG_RESP_OBSERVER_RCV_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_reg_resp_observer_rcv_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_REG_RESP_OBSERVER_RCV_HDR_T (gint) sizeof(lbmc_cntl_umq_reg_resp_observer_rcv_hdr_t)
+#define L_LBMC_CNTL_UMQ_REG_RESP_OBSERVER_RCV_HDR_T (int) sizeof(lbmc_cntl_umq_reg_resp_observer_rcv_hdr_t)
 
 typedef struct
 {
@@ -1682,7 +1672,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_OBSERVER_RCV_DEREG_RESP_HDR_T_RCR_IDX SIZEOF(lbmc_cntl_umq_observer_rcv_dereg_resp_hdr_t, rcr_idx)
 #define O_LBMC_CNTL_UMQ_OBSERVER_RCV_DEREG_RESP_HDR_T_ASSIGN_ID OFFSETOF(lbmc_cntl_umq_observer_rcv_dereg_resp_hdr_t, assign_id)
 #define L_LBMC_CNTL_UMQ_OBSERVER_RCV_DEREG_RESP_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_observer_rcv_dereg_resp_hdr_t, assign_id)
-#define L_LBMC_CNTL_UMQ_OBSERVER_RCV_DEREG_RESP_HDR_T (gint) sizeof(lbmc_cntl_umq_observer_rcv_dereg_resp_hdr_t)
+#define L_LBMC_CNTL_UMQ_OBSERVER_RCV_DEREG_RESP_HDR_T (int) sizeof(lbmc_cntl_umq_observer_rcv_dereg_resp_hdr_t)
 
 typedef struct
 {
@@ -1711,7 +1701,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_REG_RESP_HDR_T_INST_IDX SIZEOF(lbmc_cntl_umq_reg_resp_hdr_t, inst_idx)
 #define O_LBMC_CNTL_UMQ_REG_RESP_HDR_T_REG_RESPID OFFSETOF(lbmc_cntl_umq_reg_resp_hdr_t, regid)
 #define L_LBMC_CNTL_UMQ_REG_RESP_HDR_T_REG_RESPID SIZEOF(lbmc_cntl_umq_reg_resp_hdr_t, regid)
-#define L_LBMC_CNTL_UMQ_REG_RESP_HDR_T (gint) sizeof(lbmc_cntl_umq_reg_resp_hdr_t)
+#define L_LBMC_CNTL_UMQ_REG_RESP_HDR_T (int) sizeof(lbmc_cntl_umq_reg_resp_hdr_t)
 
 /* LBMC control UMQ ACK header(s) */
 typedef struct
@@ -1723,7 +1713,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_ACK_MSGID_HDR_T_REGID SIZEOF(lbmc_cntl_umq_ack_msgid_hdr_t, regid)
 #define O_LBMC_CNTL_UMQ_ACK_MSGID_HDR_T_STAMP OFFSETOF(lbmc_cntl_umq_ack_msgid_hdr_t, stamp)
 #define L_LBMC_CNTL_UMQ_ACK_MSGID_HDR_T_STAMP SIZEOF(lbmc_cntl_umq_ack_msgid_hdr_t, stamp)
-#define L_LBMC_CNTL_UMQ_ACK_MSGID_HDR_T (gint) sizeof(lbmc_cntl_umq_ack_msgid_hdr_t)
+#define L_LBMC_CNTL_UMQ_ACK_MSGID_HDR_T (int) sizeof(lbmc_cntl_umq_ack_msgid_hdr_t)
 
 typedef struct
 {
@@ -1737,7 +1727,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_ACK_STABLE_HDR_T_INST_IDX SIZEOF(lbmc_cntl_umq_ack_stable_hdr_t, inst_idx)
 #define O_LBMC_CNTL_UMQ_ACK_STABLE_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_ack_stable_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_ACK_STABLE_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_ack_stable_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_ACK_STABLE_HDR_T (gint) sizeof(lbmc_cntl_umq_ack_stable_hdr_t)
+#define L_LBMC_CNTL_UMQ_ACK_STABLE_HDR_T (int) sizeof(lbmc_cntl_umq_ack_stable_hdr_t)
 
 typedef struct
 {
@@ -1754,7 +1744,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_ACK_CR_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_ack_cr_hdr_t, appset_idx)
 #define O_LBMC_CNTL_UMQ_ACK_CR_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_ack_cr_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_ACK_CR_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_ack_cr_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_ACK_CR_HDR_T (gint) sizeof(lbmc_cntl_umq_ack_cr_hdr_t)
+#define L_LBMC_CNTL_UMQ_ACK_CR_HDR_T (int) sizeof(lbmc_cntl_umq_ack_cr_hdr_t)
 
 typedef struct
 {
@@ -1771,7 +1761,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_ACK_ULB_CR_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_ack_ulb_cr_hdr_t, appset_idx)
 #define O_LBMC_CNTL_UMQ_ACK_ULB_CR_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_ack_ulb_cr_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_ACK_ULB_CR_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_ack_ulb_cr_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_ACK_ULB_CR_HDR_T (gint) sizeof(lbmc_cntl_umq_ack_ulb_cr_hdr_t)
+#define L_LBMC_CNTL_UMQ_ACK_ULB_CR_HDR_T (int) sizeof(lbmc_cntl_umq_ack_ulb_cr_hdr_t)
 
 typedef struct
 {
@@ -1788,7 +1778,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_ACK_HDR_T_MSGS SIZEOF(lbmc_cntl_umq_ack_hdr_t, msgs)
 #define O_LBMC_CNTL_UMQ_ACK_HDR_T_ACK_TYPE OFFSETOF(lbmc_cntl_umq_ack_hdr_t, ack_type)
 #define L_LBMC_CNTL_UMQ_ACK_HDR_T_ACK_TYPE SIZEOF(lbmc_cntl_umq_ack_hdr_t, ack_type)
-#define L_LBMC_CNTL_UMQ_ACK_HDR_T (gint) sizeof(lbmc_cntl_umq_ack_hdr_t)
+#define L_LBMC_CNTL_UMQ_ACK_HDR_T (int) sizeof(lbmc_cntl_umq_ack_hdr_t)
 
 /* UMQ control receiver control record header */
 typedef struct
@@ -1833,7 +1823,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RCR_HDR_T_NUM_RAS SIZEOF(lbmc_cntl_umq_rcr_hdr_t, num_ras)
 #define O_LBMC_CNTL_UMQ_RCR_HDR_T_QUEUE_VER OFFSETOF(lbmc_cntl_umq_rcr_hdr_t, queue_ver)
 #define L_LBMC_CNTL_UMQ_RCR_HDR_T_QUEUE_VER SIZEOF(lbmc_cntl_umq_rcr_hdr_t, queue_ver)
-#define L_LBMC_CNTL_UMQ_RCR_HDR_T (gint) sizeof(lbmc_cntl_umq_rcr_hdr_t)
+#define L_LBMC_CNTL_UMQ_RCR_HDR_T (int) sizeof(lbmc_cntl_umq_rcr_hdr_t)
 
 /* LBMC control UMQ keepalive header(s) */
 typedef struct
@@ -1845,7 +1835,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_KA_SRC_HDR_T_TRANSPORT_IDX SIZEOF(lbmc_cntl_umq_ka_src_hdr_t, transport_idx)
 #define O_LBMC_CNTL_UMQ_KA_SRC_HDR_T_TOPIC_IDX OFFSETOF(lbmc_cntl_umq_ka_src_hdr_t, topic_idx)
 #define L_LBMC_CNTL_UMQ_KA_SRC_HDR_T_TOPIC_IDX SIZEOF(lbmc_cntl_umq_ka_src_hdr_t, topic_idx)
-#define L_LBMC_CNTL_UMQ_KA_SRC_HDR_T (gint) sizeof(lbmc_cntl_umq_ka_src_hdr_t)
+#define L_LBMC_CNTL_UMQ_KA_SRC_HDR_T (int) sizeof(lbmc_cntl_umq_ka_src_hdr_t)
 
 typedef struct
 {
@@ -1856,7 +1846,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_KA_RCV_HDR_T_RCR_IDX SIZEOF(lbmc_cntl_umq_ka_rcv_hdr_t, rcr_idx)
 #define O_LBMC_CNTL_UMQ_KA_RCV_HDR_T_ASSIGN_ID OFFSETOF(lbmc_cntl_umq_ka_rcv_hdr_t, assign_id)
 #define L_LBMC_CNTL_UMQ_KA_RCV_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_ka_rcv_hdr_t, assign_id)
-#define L_LBMC_CNTL_UMQ_KA_RCV_HDR_T (gint) sizeof(lbmc_cntl_umq_ka_rcv_hdr_t)
+#define L_LBMC_CNTL_UMQ_KA_RCV_HDR_T (int) sizeof(lbmc_cntl_umq_ka_rcv_hdr_t)
 
 typedef struct
 {
@@ -1867,7 +1857,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_KA_ULB_RCV_HDR_T_ULB_SRC_ID SIZEOF(lbmc_cntl_umq_ka_ulb_rcv_hdr_t, ulb_src_id)
 #define O_LBMC_CNTL_UMQ_KA_ULB_RCV_HDR_T_ASSIGN_ID OFFSETOF(lbmc_cntl_umq_ka_ulb_rcv_hdr_t, assign_id)
 #define L_LBMC_CNTL_UMQ_KA_ULB_RCV_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_ka_ulb_rcv_hdr_t, assign_id)
-#define L_LBMC_CNTL_UMQ_KA_ULB_RCV_HDR_T (gint) sizeof(lbmc_cntl_umq_ka_ulb_rcv_hdr_t)
+#define L_LBMC_CNTL_UMQ_KA_ULB_RCV_HDR_T (int) sizeof(lbmc_cntl_umq_ka_ulb_rcv_hdr_t)
 
 typedef struct
 {
@@ -1884,7 +1874,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_KA_ULB_RCV_RESP_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_ka_ulb_rcv_resp_hdr_t, appset_idx)
 #define O_LBMC_CNTL_UMQ_KA_ULB_RCV_RESP_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_ka_ulb_rcv_resp_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_KA_ULB_RCV_RESP_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_ka_ulb_rcv_resp_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_KA_ULB_RCV_RESP_HDR_T (gint) sizeof(lbmc_cntl_umq_ka_ulb_rcv_resp_hdr_t)
+#define L_LBMC_CNTL_UMQ_KA_ULB_RCV_RESP_HDR_T (int) sizeof(lbmc_cntl_umq_ka_ulb_rcv_resp_hdr_t)
 
 typedef struct
 {
@@ -1913,7 +1903,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_KA_HDR_T_INST_IDX SIZEOF(lbmc_cntl_umq_ka_hdr_t, inst_idx)
 #define O_LBMC_CNTL_UMQ_KA_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_ka_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_KA_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_ka_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_KA_HDR_T (gint) sizeof(lbmc_cntl_umq_ka_hdr_t)
+#define L_LBMC_CNTL_UMQ_KA_HDR_T (int) sizeof(lbmc_cntl_umq_ka_hdr_t)
 
 /* LBMC control UMQ retransmission request header(s) */
 typedef struct
@@ -1922,7 +1912,7 @@ typedef struct
 } lbmc_cntl_umq_rxreq_regid_resp_hdr_t;
 #define O_LBMC_CNTL_UMQ_RXREQ_REGID_RESP_HDR_T_REGID OFFSETOF(lbmc_cntl_umq_rxreq_regid_resp_hdr_t, regid)
 #define L_LBMC_CNTL_UMQ_RXREQ_REGID_RESP_HDR_T_REGID SIZEOF(lbmc_cntl_umq_rxreq_regid_resp_hdr_t, regid)
-#define L_LBMC_CNTL_UMQ_RXREQ_REGID_RESP_HDR_T (gint) sizeof(lbmc_cntl_umq_rxreq_regid_resp_hdr_t)
+#define L_LBMC_CNTL_UMQ_RXREQ_REGID_RESP_HDR_T (int) sizeof(lbmc_cntl_umq_rxreq_regid_resp_hdr_t)
 
 typedef struct
 {
@@ -1936,7 +1926,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RXREQ_ADDR_RESP_HDR_T_PORT SIZEOF(lbmc_cntl_umq_rxreq_addr_resp_hdr_t, port)
 #define O_LBMC_CNTL_UMQ_RXREQ_ADDR_RESP_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_rxreq_addr_resp_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_RXREQ_ADDR_RESP_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_rxreq_addr_resp_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_RXREQ_ADDR_RESP_HDR_T (gint) sizeof(lbmc_cntl_umq_rxreq_addr_resp_hdr_t)
+#define L_LBMC_CNTL_UMQ_RXREQ_ADDR_RESP_HDR_T (int) sizeof(lbmc_cntl_umq_rxreq_addr_resp_hdr_t)
 
 typedef struct
 {
@@ -1950,7 +1940,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RXREQ_MR_HDR_T_MSGID_REGID SIZEOF(lbmc_cntl_umq_rxreq_mr_hdr_t, msgid_regid)
 #define O_LBMC_CNTL_UMQ_RXREQ_MR_HDR_T_MSGID_STAMP OFFSETOF(lbmc_cntl_umq_rxreq_mr_hdr_t, msgid_stamp)
 #define L_LBMC_CNTL_UMQ_RXREQ_MR_HDR_T_MSGID_STAMP SIZEOF(lbmc_cntl_umq_rxreq_mr_hdr_t, msgid_stamp)
-#define L_LBMC_CNTL_UMQ_RXREQ_MR_HDR_T (gint) sizeof(lbmc_cntl_umq_rxreq_mr_hdr_t)
+#define L_LBMC_CNTL_UMQ_RXREQ_MR_HDR_T (int) sizeof(lbmc_cntl_umq_rxreq_mr_hdr_t)
 
 typedef struct
 {
@@ -1973,7 +1963,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RXREQ_ULB_MR_HDR_T_MSGID_REGID SIZEOF(lbmc_cntl_umq_rxreq_ulb_mr_hdr_t, msgid_regid)
 #define O_LBMC_CNTL_UMQ_RXREQ_ULB_MR_HDR_T_MSGID_STAMP OFFSETOF(lbmc_cntl_umq_rxreq_ulb_mr_hdr_t, msgid_stamp)
 #define L_LBMC_CNTL_UMQ_RXREQ_ULB_MR_HDR_T_MSGID_STAMP SIZEOF(lbmc_cntl_umq_rxreq_ulb_mr_hdr_t, msgid_stamp)
-#define L_LBMC_CNTL_UMQ_RXREQ_ULB_MR_HDR_T (gint) sizeof(lbmc_cntl_umq_rxreq_ulb_mr_hdr_t)
+#define L_LBMC_CNTL_UMQ_RXREQ_ULB_MR_HDR_T (int) sizeof(lbmc_cntl_umq_rxreq_ulb_mr_hdr_t)
 
 typedef struct
 {
@@ -1990,7 +1980,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RXREQ_ULB_MR_ABORT_HDR_T_MSGID_REGID SIZEOF(lbmc_cntl_umq_rxreq_ulb_mr_abort_hdr_t, msgid_regid)
 #define O_LBMC_CNTL_UMQ_RXREQ_ULB_MR_ABORT_HDR_T_MSGID_STAMP OFFSETOF(lbmc_cntl_umq_rxreq_ulb_mr_abort_hdr_t, msgid_stamp)
 #define L_LBMC_CNTL_UMQ_RXREQ_ULB_MR_ABORT_HDR_T_MSGID_STAMP SIZEOF(lbmc_cntl_umq_rxreq_ulb_mr_abort_hdr_t, msgid_stamp)
-#define L_LBMC_CNTL_UMQ_RXREQ_ULB_MR_ABORT_HDR_T (gint) sizeof(lbmc_cntl_umq_rxreq_ulb_mr_abort_hdr_t)
+#define L_LBMC_CNTL_UMQ_RXREQ_ULB_MR_ABORT_HDR_T (int) sizeof(lbmc_cntl_umq_rxreq_ulb_mr_abort_hdr_t)
 
 typedef struct
 {
@@ -1998,7 +1988,7 @@ typedef struct
 } lbmc_cntl_umq_rxreq_qrcrr_hdr_t;
 #define O_LBMC_CNTL_UMQ_RXREQ_QRCRR_HDR_T_TSP OFFSETOF(lbmc_cntl_umq_rxreq_qrcrr_hdr_t, tsp)
 #define L_LBMC_CNTL_UMQ_RXREQ_QRCRR_HDR_T_TSP SIZEOF(lbmc_cntl_umq_rxreq_qrcrr_hdr_t, tsp)
-#define L_LBMC_CNTL_UMQ_RXREQ_QRCRR_HDR_T (gint) sizeof(lbmc_cntl_umq_rxreq_qrcrr_hdr_t)
+#define L_LBMC_CNTL_UMQ_RXREQ_QRCRR_HDR_T (int) sizeof(lbmc_cntl_umq_rxreq_qrcrr_hdr_t)
 
 typedef struct
 {
@@ -2009,7 +1999,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RXREQ_TRCRR_HDR_T_RCR_IDX SIZEOF(lbmc_cntl_umq_rxreq_trcrr_hdr_t, rcr_idx)
 #define O_LBMC_CNTL_UMQ_RXREQ_TRCRR_HDR_T_TSP OFFSETOF(lbmc_cntl_umq_rxreq_trcrr_hdr_t, tsp)
 #define L_LBMC_CNTL_UMQ_RXREQ_TRCRR_HDR_T_TSP SIZEOF(lbmc_cntl_umq_rxreq_trcrr_hdr_t, tsp)
-#define L_LBMC_CNTL_UMQ_RXREQ_TRCRR_HDR_T (gint) sizeof(lbmc_cntl_umq_rxreq_trcrr_hdr_t)
+#define L_LBMC_CNTL_UMQ_RXREQ_TRCRR_HDR_T (int) sizeof(lbmc_cntl_umq_rxreq_trcrr_hdr_t)
 
 typedef struct
 {
@@ -2023,7 +2013,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RXREQ_ULB_TRCRR_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_rxreq_ulb_trcrr_hdr_t, assign_id)
 #define O_LBMC_CNTL_UMQ_RXREQ_ULB_TRCRR_HDR_T_TSP OFFSETOF(lbmc_cntl_umq_rxreq_ulb_trcrr_hdr_t, tsp)
 #define L_LBMC_CNTL_UMQ_RXREQ_ULB_TRCRR_HDR_T_TSP SIZEOF(lbmc_cntl_umq_rxreq_ulb_trcrr_hdr_t, tsp)
-#define L_LBMC_CNTL_UMQ_RXREQ_ULB_TRCRR_HDR_T (gint) sizeof(lbmc_cntl_umq_rxreq_ulb_trcrr_hdr_t)
+#define L_LBMC_CNTL_UMQ_RXREQ_ULB_TRCRR_HDR_T (int) sizeof(lbmc_cntl_umq_rxreq_ulb_trcrr_hdr_t)
 
 typedef struct
 {
@@ -2037,7 +2027,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RXREQ_ULB_TRCRR_ABORT_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_rxreq_ulb_trcrr_abort_hdr_t, assign_id)
 #define O_LBMC_CNTL_UMQ_RXREQ_ULB_TRCRR_ABORT_HDR_T_TSP OFFSETOF(lbmc_cntl_umq_rxreq_ulb_trcrr_abort_hdr_t, tsp)
 #define L_LBMC_CNTL_UMQ_RXREQ_ULB_TRCRR_ABORT_HDR_T_TSP SIZEOF(lbmc_cntl_umq_rxreq_ulb_trcrr_abort_hdr_t, tsp)
-#define L_LBMC_CNTL_UMQ_RXREQ_ULB_TRCRR_ABORT_HDR_T (gint) sizeof(lbmc_cntl_umq_rxreq_ulb_trcrr_abort_hdr_t)
+#define L_LBMC_CNTL_UMQ_RXREQ_ULB_TRCRR_ABORT_HDR_T (int) sizeof(lbmc_cntl_umq_rxreq_ulb_trcrr_abort_hdr_t)
 
 typedef struct
 {
@@ -2054,7 +2044,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RXREQ_HDR_T_FLAGS SIZEOF(lbmc_cntl_umq_rxreq_hdr_t, flags)
 #define O_LBMC_CNTL_UMQ_RXREQ_HDR_T_RXREQ_TYPE OFFSETOF(lbmc_cntl_umq_rxreq_hdr_t, rxreq_type)
 #define L_LBMC_CNTL_UMQ_RXREQ_HDR_T_RXREQ_TYPE SIZEOF(lbmc_cntl_umq_rxreq_hdr_t, rxreq_type)
-#define L_LBMC_CNTL_UMQ_RXREQ_HDR_T (gint) sizeof(lbmc_cntl_umq_rxreq_hdr_t)
+#define L_LBMC_CNTL_UMQ_RXREQ_HDR_T (int) sizeof(lbmc_cntl_umq_rxreq_hdr_t)
 
 /* LBMC control UMQ queue management header */
 typedef struct
@@ -2066,7 +2056,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_QMGMT_HDR_T_NEXT_HDR SIZEOF(lbmc_cntl_umq_qmgmt_hdr_t, next_hdr)
 #define O_LBMC_CNTL_UMQ_QMGMT_HDR_T_HDR_LEN OFFSETOF(lbmc_cntl_umq_qmgmt_hdr_t, hdr_len)
 #define L_LBMC_CNTL_UMQ_QMGMT_HDR_T_HDR_LEN SIZEOF(lbmc_cntl_umq_qmgmt_hdr_t, hdr_len)
-#define L_LBMC_CNTL_UMQ_QMGMT_HDR_T (gint) sizeof(lbmc_cntl_umq_qmgmt_hdr_t)
+#define L_LBMC_CNTL_UMQ_QMGMT_HDR_T (int) sizeof(lbmc_cntl_umq_qmgmt_hdr_t)
 
 /* LBMC control UMQ resubmission request header */
 typedef struct
@@ -2099,7 +2089,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RESUB_REQ_HDR_T_RESP_PORT SIZEOF(lbmc_cntl_umq_resub_req_hdr_t, resp_port)
 #define O_LBMC_CNTL_UMQ_RESUB_REQ_HDR_T_APPSET_IDX OFFSETOF(lbmc_cntl_umq_resub_req_hdr_t, appset_idx)
 #define L_LBMC_CNTL_UMQ_RESUB_REQ_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_resub_req_hdr_t, appset_idx)
-#define L_LBMC_CNTL_UMQ_RESUB_REQ_HDR_T (gint) sizeof(lbmc_cntl_umq_resub_req_hdr_t)
+#define L_LBMC_CNTL_UMQ_RESUB_REQ_HDR_T (int) sizeof(lbmc_cntl_umq_resub_req_hdr_t)
 
 /* LBMC control UMQ resubmission response header */
 typedef struct
@@ -2132,7 +2122,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RESUB_RESP_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_resub_resp_hdr_t, reserved)
 #define O_LBMC_CNTL_UMQ_RESUB_RESP_HDR_T_APPSET_IDX OFFSETOF(lbmc_cntl_umq_resub_resp_hdr_t, appset_idx)
 #define L_LBMC_CNTL_UMQ_RESUB_RESP_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_resub_resp_hdr_t, appset_idx)
-#define L_LBMC_CNTL_UMQ_RESUB_RESP_HDR_T (gint) sizeof(lbmc_cntl_umq_resub_resp_hdr_t)
+#define L_LBMC_CNTL_UMQ_RESUB_RESP_HDR_T (int) sizeof(lbmc_cntl_umq_resub_resp_hdr_t)
 
 /* LBMC control topic interest header */
 typedef struct
@@ -2150,7 +2140,7 @@ typedef struct
 #define L_LBMC_CNTL_TOPIC_INTEREST_HDR_T_FLAGS SIZEOF(lbmc_cntl_topic_interest_hdr_t, flags)
 #define O_LBMC_CNTL_TOPIC_INTEREST_HDR_T_DOMAIN_ID OFFSETOF(lbmc_cntl_topic_interest_hdr_t, domain_id)
 #define L_LBMC_CNTL_TOPIC_INTEREST_HDR_T_DOMAIN_ID SIZEOF(lbmc_cntl_topic_interest_hdr_t, domain_id)
-#define L_LBMC_CNTL_TOPIC_INTEREST_HDR_T (gint) sizeof(lbmc_cntl_topic_interest_hdr_t)
+#define L_LBMC_CNTL_TOPIC_INTEREST_HDR_T (int) sizeof(lbmc_cntl_topic_interest_hdr_t)
 
 /* LBMC control pattern interest header */
 typedef struct
@@ -2174,7 +2164,7 @@ typedef struct
 #define L_LBMC_CNTL_PATTERN_INTEREST_HDR_T_DOMAIN_ID SIZEOF(lbmc_cntl_pattern_interest_hdr_t, domain_id)
 #define O_LBMC_CNTL_PATTERN_INTEREST_HDR_T_INDEX OFFSETOF(lbmc_cntl_pattern_interest_hdr_t, idx)
 #define L_LBMC_CNTL_PATTERN_INTEREST_HDR_T_INDEX SIZEOF(lbmc_cntl_pattern_interest_hdr_t, idx)
-#define L_LBMC_CNTL_PATTERN_INTEREST_HDR_T (gint) sizeof(lbmc_cntl_pattern_interest_hdr_t)
+#define L_LBMC_CNTL_PATTERN_INTEREST_HDR_T (int) sizeof(lbmc_cntl_pattern_interest_hdr_t)
 
 /* LBMC control advertisement header */
 typedef struct
@@ -2219,7 +2209,7 @@ typedef struct
 #define L_LBMC_CNTL_ADVERTISEMENT_HDR_T_PAT_IDX SIZEOF(lbmc_cntl_advertisement_hdr_t, pat_idx)
 #define O_LBMC_CNTL_ADVERTISEMENT_HDR_T_CTXINST OFFSETOF(lbmc_cntl_advertisement_hdr_t, ctxinst)
 #define L_LBMC_CNTL_ADVERTISEMENT_HDR_T_CTXINST SIZEOF(lbmc_cntl_advertisement_hdr_t, ctxinst)
-#define L_LBMC_CNTL_ADVERTISEMENT_HDR_T (gint) sizeof(lbmc_cntl_advertisement_hdr_t)
+#define L_LBMC_CNTL_ADVERTISEMENT_HDR_T (int) sizeof(lbmc_cntl_advertisement_hdr_t)
 
 /* LBMC control UME storename header. */
 #define O_LBMC_UME_STORENAME_HDR_T_NEXT_HDR OFFSETOF(lbmc_basic_hdr_t, next_hdr)
@@ -2267,7 +2257,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_ULB_RCR_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_ulb_rcr_hdr_t, appset_idx)
 #define O_LBMC_CNTL_UMQ_ULB_RCR_HDR_T_NUM_RAS OFFSETOF(lbmc_cntl_umq_ulb_rcr_hdr_t, num_ras)
 #define L_LBMC_CNTL_UMQ_ULB_RCR_HDR_T_NUM_RAS SIZEOF(lbmc_cntl_umq_ulb_rcr_hdr_t, num_ras)
-#define L_LBMC_CNTL_UMQ_ULB_RCR_HDR_T (gint) sizeof(lbmc_cntl_umq_ulb_rcr_hdr_t)
+#define L_LBMC_CNTL_UMQ_ULB_RCR_HDR_T (int) sizeof(lbmc_cntl_umq_ulb_rcr_hdr_t)
 
 /* LBMC control UMQ load factor header */
 typedef struct
@@ -2291,7 +2281,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_LF_HDR_T_NUM_SRCS SIZEOF(lbmc_cntl_umq_lf_hdr_t, num_srcs)
 #define O_LBMC_CNTL_UMQ_LF_HDR_T_LF OFFSETOF(lbmc_cntl_umq_lf_hdr_t, lf)
 #define L_LBMC_CNTL_UMQ_LF_HDR_T_LF SIZEOF(lbmc_cntl_umq_lf_hdr_t, lf)
-#define L_LBMC_CNTL_UMQ_LF_HDR_T (gint) sizeof(lbmc_cntl_umq_lf_hdr_t)
+#define L_LBMC_CNTL_UMQ_LF_HDR_T (int) sizeof(lbmc_cntl_umq_lf_hdr_t)
 
 /* LBMC control context information header */
 typedef struct
@@ -2324,7 +2314,7 @@ typedef struct
 #define L_LBMC_CNTL_CTXINFO_HDR_T_DOMAIN_ID SIZEOF(lbmc_cntl_ctxinfo_hdr_t, domain_id)
 #define O_LBMC_CNTL_CTXINFO_HDR_T_CTXINST OFFSETOF(lbmc_cntl_ctxinfo_hdr_t, ctxinst)
 #define L_LBMC_CNTL_CTXINFO_HDR_T_CTXINST SIZEOF(lbmc_cntl_ctxinfo_hdr_t, ctxinst)
-#define L_LBMC_CNTL_CTXINFO_HDR_T (gint) sizeof(lbmc_cntl_ctxinfo_hdr_t)
+#define L_LBMC_CNTL_CTXINFO_HDR_T (int) sizeof(lbmc_cntl_ctxinfo_hdr_t)
 
 /* LBMC control UME proxy source election header */
 typedef struct
@@ -2363,7 +2353,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_PSER_HDR_T_SOURCE_CTXINST SIZEOF(lbmc_cntl_ume_pser_hdr_t, source_ctxinst)
 #define O_LBMC_CNTL_UME_PSER_HDR_T_STORE_CTXINST OFFSETOF(lbmc_cntl_ume_pser_hdr_t, store_ctxinst)
 #define L_LBMC_CNTL_UME_PSER_HDR_T_STORE_CTXINST SIZEOF(lbmc_cntl_ume_pser_hdr_t, store_ctxinst)
-#define L_LBMC_CNTL_UME_PSER_HDR_T (gint) sizeof(lbmc_cntl_ume_pser_hdr_t)
+#define L_LBMC_CNTL_UME_PSER_HDR_T (int) sizeof(lbmc_cntl_ume_pser_hdr_t)
 
 /* LBMC domain header */
 typedef struct
@@ -2381,7 +2371,7 @@ typedef struct
 #define L_LBMC_DOMAIN_HDR_T_FLAGS SIZEOF(lbmc_domain_hdr_t, flags)
 #define O_LBMC_DOMAIN_HDR_T_DOMAIN OFFSETOF(lbmc_domain_hdr_t, domain)
 #define L_LBMC_DOMAIN_HDR_T_DOMAIN SIZEOF(lbmc_domain_hdr_t, domain)
-#define L_LBMC_DOMAIN_HDR_T (gint) sizeof(lbmc_domain_hdr_t)
+#define L_LBMC_DOMAIN_HDR_T (int) sizeof(lbmc_domain_hdr_t)
 
 /* LBMC control TNWG capabilities header */
 typedef struct
@@ -2409,7 +2399,7 @@ typedef struct
 #define L_LBMC_CNTL_TNWG_CAPABILITIES_HDR_T_CAPABILITIES3 SIZEOF(lbmc_cntl_tnwg_capabilities_hdr_t, capabilities3)
 #define O_LBMC_CNTL_TNWG_CAPABILITIES_HDR_T_CAPABILITIES4 OFFSETOF(lbmc_cntl_tnwg_capabilities_hdr_t, capabilities4)
 #define L_LBMC_CNTL_TNWG_CAPABILITIES_HDR_T_CAPABILITIES4 SIZEOF(lbmc_cntl_tnwg_capabilities_hdr_t, capabilities4)
-#define L_LBMC_CNTL_TNWG_CAPABILITIES_HDR_T (gint) sizeof(lbmc_cntl_tnwg_capabilities_hdr_t)
+#define L_LBMC_CNTL_TNWG_CAPABILITIES_HDR_T (int) sizeof(lbmc_cntl_tnwg_capabilities_hdr_t)
 
 /* LBMC pattern index header */
 typedef struct
@@ -2427,7 +2417,7 @@ typedef struct
 #define L_LBMC_PATIDX_HDR_T_FLAGS SIZEOF(lbmc_patidx_hdr_t, flags)
 #define O_LBMC_PATIDX_HDR_T_PATIDX OFFSETOF(lbmc_patidx_hdr_t, patidx)
 #define L_LBMC_PATIDX_HDR_T_PATIDX SIZEOF(lbmc_patidx_hdr_t, patidx)
-#define L_LBMC_PATIDX_HDR_T (gint) sizeof(lbmc_patidx_hdr_t)
+#define L_LBMC_PATIDX_HDR_T (int) sizeof(lbmc_patidx_hdr_t)
 
 /* LBMC control UME client lifetime header */
 typedef struct
@@ -2451,7 +2441,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_CLIENT_LIFETIME_HDR_T_LIFETIME SIZEOF(lbmc_cntl_ume_client_lifetime_hdr_t, lifetime)
 #define O_LBMC_CNTL_UME_CLIENT_LIFETIME_HDR_T_TTL OFFSETOF(lbmc_cntl_ume_client_lifetime_hdr_t, ttl)
 #define L_LBMC_CNTL_UME_CLIENT_LIFETIME_HDR_T_TTL SIZEOF(lbmc_cntl_ume_client_lifetime_hdr_t, ttl)
-#define L_LBMC_CNTL_UME_CLIENT_LIFETIME_HDR_T (gint) sizeof(lbmc_cntl_ume_client_lifetime_hdr_t)
+#define L_LBMC_CNTL_UME_CLIENT_LIFETIME_HDR_T (int) sizeof(lbmc_cntl_ume_client_lifetime_hdr_t)
 
 /* LBMC control UME session ID header */
 typedef struct
@@ -2469,7 +2459,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_SID_HDR_T_FLAGS SIZEOF(lbmc_cntl_ume_sid_hdr_t, flags)
 #define O_LBMC_CNTL_UME_SID_HDR_T_SID OFFSETOF(lbmc_cntl_ume_sid_hdr_t, sid)
 #define L_LBMC_CNTL_UME_SID_HDR_T_SID SIZEOF(lbmc_cntl_ume_sid_hdr_t, sid)
-#define L_LBMC_CNTL_UME_SID_HDR_T (gint) sizeof(lbmc_cntl_ume_sid_hdr_t)
+#define L_LBMC_CNTL_UME_SID_HDR_T (int) sizeof(lbmc_cntl_ume_sid_hdr_t)
 
 /* LBMC control UMQ index command header */
 typedef struct
@@ -2499,7 +2489,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_INST_IDX SIZEOF(lbmc_cntl_umq_idx_cmd_hdr_t, inst_idx)
 #define O_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_REGID OFFSETOF(lbmc_cntl_umq_idx_cmd_hdr_t, regid)
 #define L_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_REGID SIZEOF(lbmc_cntl_umq_idx_cmd_hdr_t, regid)
-#define L_LBMC_CNTL_UMQ_IDX_CMD_HDR_T (gint) sizeof(lbmc_cntl_umq_idx_cmd_hdr_t)
+#define L_LBMC_CNTL_UMQ_IDX_CMD_HDR_T (int) sizeof(lbmc_cntl_umq_idx_cmd_hdr_t)
 
 typedef struct
 {
@@ -2510,7 +2500,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RCV_STOP_IDX_ASSIGN_HDR_T_RCR_IDX SIZEOF(lbmc_cntl_umq_rcv_stop_idx_assign_hdr_t, rcr_idx)
 #define O_LBMC_CNTL_UMQ_RCV_STOP_IDX_ASSIGN_HDR_T_ASSIGN_ID OFFSETOF(lbmc_cntl_umq_rcv_stop_idx_assign_hdr_t, assign_id)
 #define L_LBMC_CNTL_UMQ_RCV_STOP_IDX_ASSIGN_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_rcv_stop_idx_assign_hdr_t, assign_id)
-#define L_LBMC_CNTL_UMQ_RCV_STOP_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_rcv_stop_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_RCV_STOP_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_rcv_stop_idx_assign_hdr_t)
 
 typedef struct
 {
@@ -2521,7 +2511,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RCV_START_IDX_ASSIGN_HDR_T_RCR_IDX SIZEOF(lbmc_cntl_umq_rcv_start_idx_assign_hdr_t, rcr_idx)
 #define O_LBMC_CNTL_UMQ_RCV_START_IDX_ASSIGN_HDR_T_ASSIGN_ID OFFSETOF(lbmc_cntl_umq_rcv_start_idx_assign_hdr_t, assign_id)
 #define L_LBMC_CNTL_UMQ_RCV_START_IDX_ASSIGN_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_rcv_start_idx_assign_hdr_t, assign_id)
-#define L_LBMC_CNTL_UMQ_RCV_START_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_rcv_start_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_RCV_START_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_rcv_start_idx_assign_hdr_t)
 
 typedef struct
 {
@@ -2542,7 +2532,7 @@ typedef struct
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_idx_cmd_rcv_release_idx_assign_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_idx_cmd_rcv_release_idx_assign_hdr_t, reserved)
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T_INDEX O_LBMC_CNTL_UMQ_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED + L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED
-#define L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_idx_cmd_rcv_release_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_idx_cmd_rcv_release_idx_assign_hdr_t)
 
 typedef struct
 {
@@ -2559,7 +2549,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_ULB_RCV_STOP_IDX_ASSIGN_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_ulb_rcv_stop_idx_assign_hdr_t, appset_idx)
 #define O_LBMC_CNTL_UMQ_ULB_RCV_STOP_IDX_ASSIGN_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_ulb_rcv_stop_idx_assign_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_ULB_RCV_STOP_IDX_ASSIGN_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_ulb_rcv_stop_idx_assign_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_ULB_RCV_STOP_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_ulb_rcv_stop_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_ULB_RCV_STOP_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_ulb_rcv_stop_idx_assign_hdr_t)
 
 typedef struct
 {
@@ -2576,7 +2566,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_ULB_RCV_START_IDX_ASSIGN_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_ulb_rcv_start_idx_assign_hdr_t, appset_idx)
 #define O_LBMC_CNTL_UMQ_ULB_RCV_START_IDX_ASSIGN_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_ulb_rcv_start_idx_assign_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_ULB_RCV_START_IDX_ASSIGN_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_ulb_rcv_start_idx_assign_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_ULB_RCV_START_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_ulb_rcv_start_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_ULB_RCV_START_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_ulb_rcv_start_idx_assign_hdr_t)
 
 typedef struct
 {
@@ -2600,7 +2590,7 @@ typedef struct
 #define O_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_ulb_idx_cmd_rcv_release_idx_assign_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_ulb_idx_cmd_rcv_release_idx_assign_hdr_t, reserved)
 #define O_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T_INDEX O_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED + L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED
-#define L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_ulb_idx_cmd_rcv_release_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_ulb_idx_cmd_rcv_release_idx_assign_hdr_t)
 
 typedef struct
 {
@@ -2621,7 +2611,7 @@ typedef struct
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_idx_cmd_rcv_reserve_idx_assign_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_idx_cmd_rcv_reserve_idx_assign_hdr_t, reserved)
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_INDEX O_LBMC_CNTL_UMQ_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED + L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED
-#define L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_idx_cmd_rcv_reserve_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_idx_cmd_rcv_reserve_idx_assign_hdr_t)
 
 typedef struct
 {
@@ -2645,7 +2635,7 @@ typedef struct
 #define O_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_ulb_idx_cmd_rcv_reserve_idx_assign_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_ulb_idx_cmd_rcv_reserve_idx_assign_hdr_t, reserved)
 #define O_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_INDEX O_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED + L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED
-#define L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_ulb_idx_cmd_rcv_reserve_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_ulb_idx_cmd_rcv_reserve_idx_assign_hdr_t)
 
 /* LBMC control UMQ index command response header */
 typedef struct
@@ -2675,7 +2665,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_INST_IDX SIZEOF(lbmc_cntl_umq_idx_cmd_resp_hdr_t, inst_idx)
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_REGID OFFSETOF(lbmc_cntl_umq_idx_cmd_resp_hdr_t, regid)
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_REGID SIZEOF(lbmc_cntl_umq_idx_cmd_resp_hdr_t, regid)
-#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T (gint) sizeof(lbmc_cntl_umq_idx_cmd_resp_hdr_t)
+#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T (int) sizeof(lbmc_cntl_umq_idx_cmd_resp_hdr_t)
 
 typedef struct
 {
@@ -2686,7 +2676,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ERR_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_idx_cmd_resp_err_hdr_t, reserved)
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RESP_ERR_HDR_T_CODE OFFSETOF(lbmc_cntl_umq_idx_cmd_resp_err_hdr_t, code)
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ERR_HDR_T_CODE SIZEOF(lbmc_cntl_umq_idx_cmd_resp_err_hdr_t, code)
-#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ERR_HDR_T (gint) sizeof(lbmc_cntl_umq_idx_cmd_resp_err_hdr_t)
+#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ERR_HDR_T (int) sizeof(lbmc_cntl_umq_idx_cmd_resp_err_hdr_t)
 
 typedef struct
 {
@@ -2697,7 +2687,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_STOP_IDX_ASSIGN_HDR_T_RCR_IDX SIZEOF(lbmc_cntl_umq_idx_cmd_resp_rcv_stop_idx_assign_hdr_t, rcr_idx)
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_STOP_IDX_ASSIGN_HDR_T_ASSIGN_ID OFFSETOF(lbmc_cntl_umq_idx_cmd_resp_rcv_stop_idx_assign_hdr_t, assign_id)
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_STOP_IDX_ASSIGN_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_idx_cmd_resp_rcv_stop_idx_assign_hdr_t, assign_id)
-#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_STOP_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_idx_cmd_resp_rcv_stop_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_STOP_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_idx_cmd_resp_rcv_stop_idx_assign_hdr_t)
 
 typedef struct
 {
@@ -2714,7 +2704,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_START_IDX_ASSIGN_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_idx_cmd_resp_rcv_start_idx_assign_hdr_t, appset_idx)
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_START_IDX_ASSIGN_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_idx_cmd_resp_rcv_start_idx_assign_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_START_IDX_ASSIGN_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_idx_cmd_resp_rcv_start_idx_assign_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_START_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_idx_cmd_resp_rcv_start_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_START_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_idx_cmd_resp_rcv_start_idx_assign_hdr_t)
 
 typedef struct
 {
@@ -2731,7 +2721,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RELEASE_IDX_ASSIGN_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_idx_cmd_resp_rcv_release_idx_assign_hdr_t, appset_idx)
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_idx_cmd_resp_rcv_release_idx_assign_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_idx_cmd_resp_rcv_release_idx_assign_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RELEASE_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_idx_cmd_resp_rcv_release_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RELEASE_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_idx_cmd_resp_rcv_release_idx_assign_hdr_t)
 
 typedef struct
 {
@@ -2748,7 +2738,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_STOP_IDX_ASSIGN_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_stop_idx_assign_hdr_t, appset_idx)
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_STOP_IDX_ASSIGN_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_stop_idx_assign_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_STOP_IDX_ASSIGN_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_stop_idx_assign_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_STOP_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_stop_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_STOP_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_stop_idx_assign_hdr_t)
 
 typedef struct
 {
@@ -2765,7 +2755,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_START_IDX_ASSIGN_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_start_idx_assign_hdr_t, appset_idx)
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_START_IDX_ASSIGN_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_start_idx_assign_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_START_IDX_ASSIGN_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_start_idx_assign_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_START_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_start_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_START_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_start_idx_assign_hdr_t)
 
 typedef struct
 {
@@ -2782,7 +2772,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_RELEASE_IDX_ASSIGN_HDR_T_APPSET_IDX SIZEOF(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_release_idx_assign_hdr_t, appset_idx)
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_release_idx_assign_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_release_idx_assign_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_RELEASE_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_release_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_RELEASE_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_release_idx_assign_hdr_t)
 
 typedef struct
 {
@@ -2806,7 +2796,7 @@ typedef struct
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_idx_cmd_resp_rcv_reserve_idx_assign_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_idx_cmd_resp_rcv_reserve_idx_assign_hdr_t, reserved)
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RESERVE_IDX_ASSIGN_HDR_T_INDEX O_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED + L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED
-#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RESERVE_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_idx_cmd_resp_rcv_reserve_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RESERVE_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_idx_cmd_resp_rcv_reserve_idx_assign_hdr_t)
 
 typedef struct
 {
@@ -2830,7 +2820,7 @@ typedef struct
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_reserve_idx_assign_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_reserve_idx_assign_hdr_t, reserved)
 #define O_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_RESERVE_IDX_ASSIGN_HDR_T_INDEX O_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED + L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED
-#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_RESERVE_IDX_ASSIGN_HDR_T (gint) sizeof(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_reserve_idx_assign_hdr_t)
+#define L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ULB_RCV_RESERVE_IDX_ASSIGN_HDR_T (int) sizeof(lbmc_cntl_umq_idx_cmd_resp_ulb_rcv_reserve_idx_assign_hdr_t)
 
 /* LBMC originating domain header (same as lbmc_domain_hdr_t) */
 #define O_LBMC_ODOMAIN_HDR_T_NEXT_HDR OFFSETOF(lbmc_domain_hdr_t, next_hdr)
@@ -2841,7 +2831,7 @@ typedef struct
 #define L_LBMC_ODOMAIN_HDR_T_FLAGS SIZEOF(lbmc_domain_hdr_t, flags)
 #define O_LBMC_ODOMAIN_HDR_T_ODOMAIN OFFSETOF(lbmc_domain_hdr_t, domain)
 #define L_LBMC_ODOMAIN_HDR_T_ODOMAIN SIZEOF(lbmc_domain_hdr_t, domain)
-#define L_LBMC_ODOMAIN_HDR_T (gint) sizeof(lbmc_domain_hdr_t)
+#define L_LBMC_ODOMAIN_HDR_T (int) sizeof(lbmc_domain_hdr_t)
 
 /* LBMC stream header */
 typedef struct
@@ -2865,7 +2855,7 @@ typedef struct
 #define L_LBMC_STREAM_HDR_T_SQN SIZEOF(lbmc_stream_hdr_t, sqn)
 #define O_LBMC_STREAM_HDR_T_CTXINST OFFSETOF(lbmc_stream_hdr_t, ctxinst)
 #define L_LBMC_STREAM_HDR_T_CTXINST SIZEOF(lbmc_stream_hdr_t, ctxinst)
-#define L_LBMC_STREAM_HDR_T (gint) sizeof(lbmc_stream_hdr_t)
+#define L_LBMC_STREAM_HDR_T (int) sizeof(lbmc_stream_hdr_t)
 
 /* LBMC control topic multi-domain interest header */
 typedef struct
@@ -2886,7 +2876,7 @@ typedef struct
 #define L_LBMC_CNTL_TOPIC_MD_INTEREST_HDR_T_DOMAIN_COUNT SIZEOF(lbmc_cntl_topic_md_interest_hdr_t, domain_count)
 #define O_LBMC_CNTL_TOPIC_MD_INTEREST_HDR_T_RES1 OFFSETOF(lbmc_cntl_topic_md_interest_hdr_t, res1)
 #define L_LBMC_CNTL_TOPIC_MD_INTEREST_HDR_T_RES1 SIZEOF(lbmc_cntl_topic_md_interest_hdr_t, res1)
-#define L_LBMC_CNTL_TOPIC_MD_INTEREST_HDR_T (gint) sizeof(lbmc_cntl_topic_md_interest_hdr_t)
+#define L_LBMC_CNTL_TOPIC_MD_INTEREST_HDR_T (int) sizeof(lbmc_cntl_topic_md_interest_hdr_t)
 
 /* LBMC control pattern multi-domain interest header */
 typedef struct
@@ -2913,7 +2903,7 @@ typedef struct
 #define L_LBMC_CNTL_PATTERN_MD_INTEREST_HDR_T_RES1 SIZEOF(lbmc_cntl_pattern_md_interest_hdr_t, res1)
 #define O_LBMC_CNTL_PATTERN_MD_INTEREST_HDR_T_INDEX OFFSETOF(lbmc_cntl_pattern_md_interest_hdr_t, idx)
 #define L_LBMC_CNTL_PATTERN_MD_INTEREST_HDR_T_INDEX SIZEOF(lbmc_cntl_pattern_md_interest_hdr_t, idx)
-#define L_LBMC_CNTL_PATTERN_MD_INTEREST_HDR_T (gint) sizeof(lbmc_cntl_pattern_md_interest_hdr_t)
+#define L_LBMC_CNTL_PATTERN_MD_INTEREST_HDR_T (int) sizeof(lbmc_cntl_pattern_md_interest_hdr_t)
 
 /* LBMC control TNWG keepalive header */
 typedef struct
@@ -2955,7 +2945,7 @@ typedef struct
 #define L_LBMC_CNTL_TNWG_KA_HDR_T_RESERVED_5 SIZEOF(lbmc_cntl_tnwg_ka_hdr_t, reserved_5)
 #define O_LBMC_CNTL_TNWG_KA_HDR_T_RESERVED_6 OFFSETOF(lbmc_cntl_tnwg_ka_hdr_t, reserved_6)
 #define L_LBMC_CNTL_TNWG_KA_HDR_T_RESERVED_6 SIZEOF(lbmc_cntl_tnwg_ka_hdr_t, reserved_6)
-#define L_LBMC_CNTL_TNWG_KA_HDR_T (gint) sizeof(lbmc_cntl_tnwg_ka_hdr_t)
+#define L_LBMC_CNTL_TNWG_KA_HDR_T (int) sizeof(lbmc_cntl_tnwg_ka_hdr_t)
 
 /* LBMC control UME receiver keepalive header */
 typedef struct
@@ -2979,7 +2969,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_RECEIVER_KEEPALIVE_HDR_T_SESSION_ID SIZEOF(lbmc_cntl_ume_receiver_keepalive_hdr_t, session_id)
 #define O_LBMC_CNTL_UME_RECEIVER_KEEPALIVE_HDR_T_CTXINST OFFSETOF(lbmc_cntl_ume_receiver_keepalive_hdr_t, ctxinst)
 #define L_LBMC_CNTL_UME_RECEIVER_KEEPALIVE_HDR_T_CTXINST SIZEOF(lbmc_cntl_ume_receiver_keepalive_hdr_t, ctxinst)
-#define L_LBMC_CNTL_UME_RECEIVER_KEEPALIVE_HDR_T (gint) sizeof(lbmc_cntl_ume_receiver_keepalive_hdr_t)
+#define L_LBMC_CNTL_UME_RECEIVER_KEEPALIVE_HDR_T (int) sizeof(lbmc_cntl_ume_receiver_keepalive_hdr_t)
 
 /* LBMC control UMQ command header */
 typedef struct
@@ -3009,7 +2999,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_CMD_HDR_T_INST_IDX SIZEOF(lbmc_cntl_umq_cmd_hdr_t, inst_idx)
 #define O_LBMC_CNTL_UMQ_CMD_HDR_T_REGID OFFSETOF(lbmc_cntl_umq_cmd_hdr_t, regid)
 #define L_LBMC_CNTL_UMQ_CMD_HDR_T_REGID SIZEOF(lbmc_cntl_umq_cmd_hdr_t, regid)
-#define L_LBMC_CNTL_UMQ_CMD_HDR_T (gint) sizeof(lbmc_cntl_umq_cmd_hdr_t)
+#define L_LBMC_CNTL_UMQ_CMD_HDR_T (int) sizeof(lbmc_cntl_umq_cmd_hdr_t)
 
 typedef struct
 {
@@ -3017,7 +3007,7 @@ typedef struct
 } lbmc_cntl_umq_ctx_queue_topic_list_hdr_t;
 #define O_LBMC_CNTL_UMQ_CTX_QUEUE_TOPIC_LIST_HDR_T_SERIAL_NUM OFFSETOF(lbmc_cntl_umq_ctx_queue_topic_list_hdr_t, serial_num)
 #define L_LBMC_CNTL_UMQ_CTX_QUEUE_TOPIC_LIST_HDR_T_SERIAL_NUM SIZEOF(lbmc_cntl_umq_ctx_queue_topic_list_hdr_t, serial_num)
-#define L_LBMC_CNTL_UMQ_CTX_QUEUE_TOPIC_LIST_HDR_T (gint) sizeof(lbmc_cntl_umq_ctx_queue_topic_list_hdr_t)
+#define L_LBMC_CNTL_UMQ_CTX_QUEUE_TOPIC_LIST_HDR_T (int) sizeof(lbmc_cntl_umq_ctx_queue_topic_list_hdr_t)
 
 typedef struct
 {
@@ -3037,7 +3027,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_HDR_T_NUM_MSGIDS SIZEOF(lbmc_cntl_umq_rcv_msg_retrieve_hdr_t, num_msgids)
 #define O_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_HDR_T_FLAGS OFFSETOF(lbmc_cntl_umq_rcv_msg_retrieve_hdr_t, flags)
 #define L_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_HDR_T_FLAGS SIZEOF(lbmc_cntl_umq_rcv_msg_retrieve_hdr_t, flags)
-#define L_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_HDR_T (gint) sizeof(lbmc_cntl_umq_rcv_msg_retrieve_hdr_t)
+#define L_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_HDR_T (int) sizeof(lbmc_cntl_umq_rcv_msg_retrieve_hdr_t)
 
 typedef struct
 {
@@ -3048,7 +3038,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_ENTRY_HDR_T_REGID SIZEOF(lbmc_cntl_umq_rcv_msg_retrieve_entry_hdr_t, regid)
 #define O_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_ENTRY_HDR_T_STAMP OFFSETOF(lbmc_cntl_umq_rcv_msg_retrieve_entry_hdr_t, stamp)
 #define L_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_ENTRY_HDR_T_STAMP SIZEOF(lbmc_cntl_umq_rcv_msg_retrieve_entry_hdr_t, stamp)
-#define L_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_ENTRY_HDR_T (gint) sizeof(lbmc_cntl_umq_rcv_msg_retrieve_entry_hdr_t)
+#define L_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_ENTRY_HDR_T (int) sizeof(lbmc_cntl_umq_rcv_msg_retrieve_entry_hdr_t)
 
 typedef struct
 {
@@ -3059,7 +3049,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_RCV_MSG_LIST_HDR_T_RCR_IDX SIZEOF(lbmc_cntl_umq_rcv_msg_list_hdr_t, rcr_idx)
 #define O_LBMC_CNTL_UMQ_RCV_MSG_LIST_HDR_T_ASSIGN_ID OFFSETOF(lbmc_cntl_umq_rcv_msg_list_hdr_t, assign_id)
 #define L_LBMC_CNTL_UMQ_RCV_MSG_LIST_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_rcv_msg_list_hdr_t, assign_id)
-#define L_LBMC_CNTL_UMQ_RCV_MSG_LIST_HDR_T (gint) sizeof(lbmc_cntl_umq_rcv_msg_list_hdr_t)
+#define L_LBMC_CNTL_UMQ_RCV_MSG_LIST_HDR_T (int) sizeof(lbmc_cntl_umq_rcv_msg_list_hdr_t)
 
 /* LBMC control UMQ command response header */
 typedef struct
@@ -3089,7 +3079,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_INST_IDX SIZEOF(lbmc_cntl_umq_cmd_resp_hdr_t, inst_idx)
 #define O_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_REGID OFFSETOF(lbmc_cntl_umq_cmd_resp_hdr_t, regid)
 #define L_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_REGID SIZEOF(lbmc_cntl_umq_cmd_resp_hdr_t, regid)
-#define L_LBMC_CNTL_UMQ_CMD_RESP_HDR_T (gint) sizeof(lbmc_cntl_umq_cmd_resp_hdr_t)
+#define L_LBMC_CNTL_UMQ_CMD_RESP_HDR_T (int) sizeof(lbmc_cntl_umq_cmd_resp_hdr_t)
 
 typedef struct
 {
@@ -3100,7 +3090,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T_RCR_IDX SIZEOF(lbmc_cntl_umq_cmd_resp_rcv_msg_retrieve_hdr_t, rcr_idx)
 #define O_LBMC_CNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T_ASSIGN_ID OFFSETOF(lbmc_cntl_umq_cmd_resp_rcv_msg_retrieve_hdr_t, assign_id)
 #define L_LBMC_CNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_cmd_resp_rcv_msg_retrieve_hdr_t, assign_id)
-#define L_LBMC_CNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T (gint) sizeof(lbmc_cntl_umq_cmd_resp_rcv_msg_retrieve_hdr_t)
+#define L_LBMC_CNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T (int) sizeof(lbmc_cntl_umq_cmd_resp_rcv_msg_retrieve_hdr_t)
 
 typedef struct
 {
@@ -3114,7 +3104,7 @@ typedef struct
 #define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T_FLAGS SIZEOF(lbmc_xcntl_umq_cmd_resp_rcv_msg_retrieve_hdr_t, flags)
 #define O_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T_RESERVED OFFSETOF(lbmc_xcntl_umq_cmd_resp_rcv_msg_retrieve_hdr_t, reserved)
 #define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T_RESERVED SIZEOF(lbmc_xcntl_umq_cmd_resp_rcv_msg_retrieve_hdr_t, reserved)
-#define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T (gint) sizeof(lbmc_xcntl_umq_cmd_resp_rcv_msg_retrieve_hdr_t)
+#define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T (int) sizeof(lbmc_xcntl_umq_cmd_resp_rcv_msg_retrieve_hdr_t)
 
 typedef struct
 {
@@ -3137,7 +3127,7 @@ typedef struct
 #define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_ENTRY_HDR_T_STATUS SIZEOF(lbmc_xcntl_umq_cmd_resp_rcv_msg_retrieve_entry_hdr_t, status)
 #define O_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_ENTRY_HDR_T_RESERVED OFFSETOF(lbmc_xcntl_umq_cmd_resp_rcv_msg_retrieve_entry_hdr_t, reserved)
 #define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_ENTRY_HDR_T_RESERVED SIZEOF(lbmc_xcntl_umq_cmd_resp_rcv_msg_retrieve_entry_hdr_t, reserved)
-#define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_ENTRY_HDR_T (gint) sizeof(lbmc_xcntl_umq_cmd_resp_rcv_msg_retrieve_entry_hdr_t)
+#define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_ENTRY_HDR_T (int) sizeof(lbmc_xcntl_umq_cmd_resp_rcv_msg_retrieve_entry_hdr_t)
 
 typedef struct
 {
@@ -3148,7 +3138,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_CMD_RESP_RCV_MSG_LIST_HDR_T_RCR_IDX SIZEOF(lbmc_cntl_umq_cmd_resp_rcv_msg_list_hdr_t, rcr_idx)
 #define O_LBMC_CNTL_UMQ_CMD_RESP_RCV_MSG_LIST_HDR_T_ASSIGN_ID OFFSETOF(lbmc_cntl_umq_cmd_resp_rcv_msg_list_hdr_t, assign_id)
 #define L_LBMC_CNTL_UMQ_CMD_RESP_RCV_MSG_LIST_HDR_T_ASSIGN_ID SIZEOF(lbmc_cntl_umq_cmd_resp_rcv_msg_list_hdr_t, assign_id)
-#define L_LBMC_CNTL_UMQ_CMD_RESP_RCV_MSG_LIST_HDR_T (gint) sizeof(lbmc_cntl_umq_cmd_resp_rcv_msg_list_hdr_t)
+#define L_LBMC_CNTL_UMQ_CMD_RESP_RCV_MSG_LIST_HDR_T (int) sizeof(lbmc_cntl_umq_cmd_resp_rcv_msg_list_hdr_t)
 
 typedef struct
 {
@@ -3156,7 +3146,7 @@ typedef struct
 } lbmc_xcntl_umq_cmd_resp_rcv_msg_list_hdr_t;
 #define O_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_LIST_HDR_T_NUM_MSGS OFFSETOF(lbmc_xcntl_umq_cmd_resp_rcv_msg_list_hdr_t, num_msgs)
 #define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_LIST_HDR_T_NUM_MSGS SIZEOF(lbmc_xcntl_umq_cmd_resp_rcv_msg_list_hdr_t, num_msgs)
-#define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_LIST_HDR_T (gint) sizeof(lbmc_xcntl_umq_cmd_resp_rcv_msg_list_hdr_t)
+#define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_LIST_HDR_T (int) sizeof(lbmc_xcntl_umq_cmd_resp_rcv_msg_list_hdr_t)
 
 typedef struct
 {
@@ -3167,7 +3157,7 @@ typedef struct
 #define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_LIST_MSG_ENTRY_HDR_T_REGID SIZEOF(lbmc_xcntl_umq_cmd_resp_rcv_msg_list_msg_entry_hdr_t, regid)
 #define O_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_LIST_MSG_ENTRY_HDR_T_STAMP OFFSETOF(lbmc_xcntl_umq_cmd_resp_rcv_msg_list_msg_entry_hdr_t, stamp)
 #define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_LIST_MSG_ENTRY_HDR_T_STAMP SIZEOF(lbmc_xcntl_umq_cmd_resp_rcv_msg_list_msg_entry_hdr_t, stamp)
-#define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_LIST_MSG_ENTRY_HDR_T (gint) sizeof(lbmc_xcntl_umq_cmd_resp_rcv_msg_list_msg_entry_hdr_t)
+#define L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_LIST_MSG_ENTRY_HDR_T (int) sizeof(lbmc_xcntl_umq_cmd_resp_rcv_msg_list_msg_entry_hdr_t)
 
 typedef struct
 {
@@ -3175,7 +3165,7 @@ typedef struct
 } lbmc_cntl_umq_cmd_resp_ctx_topic_list_hdr_t;
 #define O_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_HDR_T_NUM_TOPICS OFFSETOF(lbmc_cntl_umq_cmd_resp_ctx_topic_list_hdr_t, num_topics)
 #define L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_HDR_T_NUM_TOPICS SIZEOF(lbmc_cntl_umq_cmd_resp_ctx_topic_list_hdr_t, num_topics)
-#define L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_HDR_T (gint) sizeof(lbmc_cntl_umq_cmd_resp_ctx_topic_list_hdr_t)
+#define L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_HDR_T (int) sizeof(lbmc_cntl_umq_cmd_resp_ctx_topic_list_hdr_t)
 
 typedef struct
 {
@@ -3192,7 +3182,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T_APPSET_NAME_LEN SIZEOF(lbmc_cntl_umq_cmd_resp_ctx_topic_list_appset_entry_hdr_t, appset_name_len)
 #define O_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_cmd_resp_ctx_topic_list_appset_entry_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_cmd_resp_ctx_topic_list_appset_entry_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T (gint) sizeof(lbmc_cntl_umq_cmd_resp_ctx_topic_list_appset_entry_hdr_t)
+#define L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T (int) sizeof(lbmc_cntl_umq_cmd_resp_ctx_topic_list_appset_entry_hdr_t)
 
 typedef struct
 {
@@ -3209,7 +3199,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T_TOPIC_LEN SIZEOF(lbmc_cntl_umq_cmd_resp_ctx_topic_list_topic_entry_hdr_t, topic_len)
 #define O_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T_RESERVED OFFSETOF(lbmc_cntl_umq_cmd_resp_ctx_topic_list_topic_entry_hdr_t, reserved)
 #define L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_cmd_resp_ctx_topic_list_topic_entry_hdr_t, reserved)
-#define L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T (gint) sizeof(lbmc_cntl_umq_cmd_resp_ctx_topic_list_topic_entry_hdr_t)
+#define L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T (int) sizeof(lbmc_cntl_umq_cmd_resp_ctx_topic_list_topic_entry_hdr_t)
 
 typedef struct
 {
@@ -3220,7 +3210,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_CMD_RESP_ERR_HDR_T_RESERVED SIZEOF(lbmc_cntl_umq_cmd_resp_err_hdr_t, reserved)
 #define O_LBMC_CNTL_UMQ_CMD_RESP_ERR_HDR_T_CODE OFFSETOF(lbmc_cntl_umq_cmd_resp_err_hdr_t, code)
 #define L_LBMC_CNTL_UMQ_CMD_RESP_ERR_HDR_T_CODE SIZEOF(lbmc_cntl_umq_cmd_resp_err_hdr_t, code)
-#define L_LBMC_CNTL_UMQ_CMD_RESP_ERR_HDR_T (gint) sizeof(lbmc_cntl_umq_cmd_resp_err_hdr_t)
+#define L_LBMC_CNTL_UMQ_CMD_RESP_ERR_HDR_T (int) sizeof(lbmc_cntl_umq_cmd_resp_err_hdr_t)
 
 /* LBMC control source registration information request header. */
 typedef struct
@@ -3241,7 +3231,7 @@ typedef struct
 #define L_LBMC_CNTL_SRI_REQ_HDR_T_TRANSPORT_IDX SIZEOF(lbmc_cntl_sri_req_hdr_t, transport_idx)
 #define O_LBMC_CNTL_SRI_REQ_HDR_T_TOPIC_IDX OFFSETOF(lbmc_cntl_sri_req_hdr_t, topic_idx)
 #define L_LBMC_CNTL_SRI_REQ_HDR_T_TOPIC_IDX SIZEOF(lbmc_cntl_sri_req_hdr_t, topic_idx)
-#define L_LBMC_CNTL_SRI_REQ_HDR_T (gint) sizeof(lbmc_cntl_sri_req_hdr_t)
+#define L_LBMC_CNTL_SRI_REQ_HDR_T (int) sizeof(lbmc_cntl_sri_req_hdr_t)
 
 /* LBMC control UME store domain header. */
 typedef struct
@@ -3259,7 +3249,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_STORE_DOMAIN_HDR_T_FLAGS SIZEOF(lbmc_cntl_ume_store_domain_hdr_t, flags)
 #define O_LBMC_CNTL_UME_STORE_DOMAIN_HDR_T_DOMAIN OFFSETOF(lbmc_cntl_ume_store_domain_hdr_t, domain)
 #define L_LBMC_CNTL_UME_STORE_DOMAIN_HDR_T_DOMAIN SIZEOF(lbmc_cntl_ume_store_domain_hdr_t, domain)
-#define L_LBMC_CNTL_UME_STORE_DOMAIN_HDR_T (gint) sizeof(lbmc_cntl_ume_store_domain_hdr_t)
+#define L_LBMC_CNTL_UME_STORE_DOMAIN_HDR_T (int) sizeof(lbmc_cntl_ume_store_domain_hdr_t)
 
 /* LBMC control source registration information header. */
 typedef struct
@@ -3283,7 +3273,7 @@ typedef struct
 #define L_LBMC_CNTL_SRI_HDR_T_LOW_SQN SIZEOF(lbmc_cntl_sri_hdr_t, low_sqn)
 #define O_LBMC_CNTL_SRI_HDR_T_HIGH_SQN OFFSETOF(lbmc_cntl_sri_hdr_t, high_sqn)
 #define L_LBMC_CNTL_SRI_HDR_T_HIGH_SQN SIZEOF(lbmc_cntl_sri_hdr_t, high_sqn)
-#define L_LBMC_CNTL_SRI_HDR_T (gint) sizeof(lbmc_cntl_sri_hdr_t)
+#define L_LBMC_CNTL_SRI_HDR_T (int) sizeof(lbmc_cntl_sri_hdr_t)
 
 /* LBMC control route information header. */
 typedef struct
@@ -3325,7 +3315,7 @@ typedef struct
 #define L_LBMC_CNTL_ROUTE_INFO_HDR_T_RESERVED1 SIZEOF(lbmc_cntl_route_info_hdr_t, reserved1)
 #define O_LBMC_CNTL_ROUTE_INFO_HDR_T_RESERVED2 OFFSETOF(lbmc_cntl_route_info_hdr_t, reserved2)
 #define L_LBMC_CNTL_ROUTE_INFO_HDR_T_RESERVED2 SIZEOF(lbmc_cntl_route_info_hdr_t, reserved2)
-#define L_LBMC_CNTL_ROUTE_INFO_HDR_T (gint) sizeof(lbmc_cntl_route_info_hdr_t)
+#define L_LBMC_CNTL_ROUTE_INFO_HDR_T (int) sizeof(lbmc_cntl_route_info_hdr_t)
 
 /* LBMC control route information neighbor header. */
 typedef struct
@@ -3349,7 +3339,7 @@ typedef struct
 #define L_LBMC_CNTL_ROUTE_INFO_NEIGHBOR_HDR_T_INGRESS_COST SIZEOF(lbmc_cntl_route_info_neighbor_hdr_t, ingress_cost)
 #define O_LBMC_CNTL_ROUTE_INFO_NEIGHBOR_HDR_T_EGRESS_COST OFFSETOF(lbmc_cntl_route_info_neighbor_hdr_t, egress_cost)
 #define L_LBMC_CNTL_ROUTE_INFO_NEIGHBOR_HDR_T_EGRESS_COST SIZEOF(lbmc_cntl_route_info_neighbor_hdr_t, egress_cost)
-#define L_LBMC_CNTL_ROUTE_INFO_NEIGHBOR_HDR_T (gint) sizeof(lbmc_cntl_route_info_neighbor_hdr_t)
+#define L_LBMC_CNTL_ROUTE_INFO_NEIGHBOR_HDR_T (int) sizeof(lbmc_cntl_route_info_neighbor_hdr_t)
 
 /* LBMC control gateway name header. */
 #define O_LBMC_CNTL_GATEWAY_NAME_HDR_T_NEXT_HDR OFFSETOF(lbmc_basic_hdr_t, next_hdr)
@@ -3376,7 +3366,7 @@ typedef struct
 #define L_LBMC_CNTL_AUTH_GENERIC_HDR_T_FLAGS SIZEOF(lbmc_cntl_auth_generic_hdr_t, flags)
 #define O_LBMC_CNTL_AUTH_GENERIC_HDR_T_OPID OFFSETOF(lbmc_cntl_auth_generic_hdr_t, opid)
 #define L_LBMC_CNTL_AUTH_GENERIC_HDR_T_OPID SIZEOF(lbmc_cntl_auth_generic_hdr_t, opid)
-#define L_LBMC_CNTL_AUTH_GENERIC_HDR_T (gint) sizeof(lbmc_cntl_auth_generic_hdr_t)
+#define L_LBMC_CNTL_AUTH_GENERIC_HDR_T (int) sizeof(lbmc_cntl_auth_generic_hdr_t)
 
 /* LBMC control authentication request header. */
 typedef struct
@@ -3397,7 +3387,7 @@ typedef struct
 #define L_LBMC_CNTL_AUTH_REQUEST_HDR_T_OPID SIZEOF(lbmc_cntl_auth_request_hdr_t, opid)
 #define O_LBMC_CNTL_AUTH_REQUEST_HDR_T_USER_LEN OFFSETOF(lbmc_cntl_auth_request_hdr_t, user_len)
 #define L_LBMC_CNTL_AUTH_REQUEST_HDR_T_USER_LEN SIZEOF(lbmc_cntl_auth_request_hdr_t, user_len)
-#define L_LBMC_CNTL_AUTH_REQUEST_HDR_T (gint) sizeof(lbmc_cntl_auth_request_hdr_t)
+#define L_LBMC_CNTL_AUTH_REQUEST_HDR_T (int) sizeof(lbmc_cntl_auth_request_hdr_t)
 
 /* LBMC control authentication challenge header. */
 typedef struct
@@ -3427,7 +3417,7 @@ typedef struct
 #define L_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_SALT_LEN SIZEOF(lbmc_cntl_auth_challenge_hdr_t, salt_len)
 #define O_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_PUBKEY_LEN OFFSETOF(lbmc_cntl_auth_challenge_hdr_t, pubkey_len)
 #define L_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_PUBKEY_LEN SIZEOF(lbmc_cntl_auth_challenge_hdr_t, pubkey_len)
-#define L_LBMC_CNTL_AUTH_CHALLENGE_HDR_T (gint) sizeof(lbmc_cntl_auth_challenge_hdr_t)
+#define L_LBMC_CNTL_AUTH_CHALLENGE_HDR_T (int) sizeof(lbmc_cntl_auth_challenge_hdr_t)
 
 /* LBMC control authentication challenge response header. */
 typedef struct
@@ -3451,7 +3441,7 @@ typedef struct
 #define L_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_PUBKEY_LEN SIZEOF(lbmc_cntl_auth_challenge_rsp_hdr_t, pubkey_len)
 #define O_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_EVIDENCE_LEN OFFSETOF(lbmc_cntl_auth_challenge_rsp_hdr_t, evidence_len)
 #define L_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_EVIDENCE_LEN SIZEOF(lbmc_cntl_auth_challenge_rsp_hdr_t, evidence_len)
-#define L_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T (gint) sizeof(lbmc_cntl_auth_challenge_rsp_hdr_t)
+#define L_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T (int) sizeof(lbmc_cntl_auth_challenge_rsp_hdr_t)
 
 /* LBMC control authentication result header. */
 typedef struct
@@ -3472,7 +3462,7 @@ typedef struct
 #define L_LBMC_CNTL_AUTH_RESULT_HDR_T_OPID SIZEOF(lbmc_cntl_auth_result_hdr_t, opid)
 #define O_LBMC_CNTL_AUTH_RESULT_HDR_T_RESULT OFFSETOF(lbmc_cntl_auth_result_hdr_t, result)
 #define L_LBMC_CNTL_AUTH_RESULT_HDR_T_RESULT SIZEOF(lbmc_cntl_auth_result_hdr_t, result)
-#define L_LBMC_CNTL_AUTH_RESULT_HDR_T (gint) sizeof(lbmc_cntl_auth_result_hdr_t)
+#define L_LBMC_CNTL_AUTH_RESULT_HDR_T (int) sizeof(lbmc_cntl_auth_result_hdr_t)
 
 /* LBMC control HMAC header. */
 typedef struct
@@ -3493,7 +3483,7 @@ typedef struct
 #define L_LBMC_CNTL_HMAC_HDR_T_PADDING SIZEOF(lbmc_cntl_hmac_hdr_t, padding)
 #define O_LBMC_CNTL_HMAC_HDR_T_DATA OFFSETOF(lbmc_cntl_hmac_hdr_t, data)
 #define L_LBMC_CNTL_HMAC_HDR_T_DATA SIZEOF(lbmc_cntl_hmac_hdr_t, data)
-#define L_LBMC_CNTL_HMAC_HDR_T (gint) sizeof(lbmc_cntl_hmac_hdr_t)
+#define L_LBMC_CNTL_HMAC_HDR_T (int) sizeof(lbmc_cntl_hmac_hdr_t)
 
 /* LBMC control UMQ session ID header. */
 typedef struct
@@ -3514,7 +3504,7 @@ typedef struct
 #define L_LBMC_CNTL_UMQ_SID_HDR_T_KEY SIZEOF(lbmc_cntl_umq_sid_hdr_t, key)
 #define O_LBMC_CNTL_UMQ_SID_HDR_T_SID OFFSETOF(lbmc_cntl_umq_sid_hdr_t, sid)
 #define L_LBMC_CNTL_UMQ_SID_HDR_T_SID SIZEOF(lbmc_cntl_umq_sid_hdr_t, sid)
-#define L_LBMC_CNTL_UMQ_SID_HDR_T (gint) sizeof(lbmc_cntl_umq_sid_hdr_t)
+#define L_LBMC_CNTL_UMQ_SID_HDR_T (int) sizeof(lbmc_cntl_umq_sid_hdr_t)
 
 /* LBMC destination header. */
 typedef struct
@@ -3553,7 +3543,7 @@ typedef struct
 #define L_LBMC_DESTINATION_HDR_T_ORIG_PORT SIZEOF(lbmc_destination_hdr_t, orig_port)
 #define O_LBMC_DESTINATION_HDR_T_RESERVED OFFSETOF(lbmc_destination_hdr_t, reserved)
 #define L_LBMC_DESTINATION_HDR_T_RESERVED SIZEOF(lbmc_destination_hdr_t, reserved)
-#define L_LBMC_DESTINATION_HDR_T (gint) sizeof(lbmc_destination_hdr_t)
+#define L_LBMC_DESTINATION_HDR_T (int) sizeof(lbmc_destination_hdr_t)
 
 /* LBMC topic index header. */
 typedef struct
@@ -3571,7 +3561,7 @@ typedef struct
 #define L_LBMC_TOPIC_IDX_HDR_T_FLAGS SIZEOF(lbmc_topic_idx_hdr_t, flags)
 #define O_LBMC_TOPIC_IDX_HDR_T_TIDX OFFSETOF(lbmc_topic_idx_hdr_t, tidx)
 #define L_LBMC_TOPIC_IDX_HDR_T_TIDX SIZEOF(lbmc_topic_idx_hdr_t, tidx)
-#define L_LBMC_TOPIC_IDX_HDR_T (gint) sizeof(lbmc_topic_idx_hdr_t)
+#define L_LBMC_TOPIC_IDX_HDR_T (int) sizeof(lbmc_topic_idx_hdr_t)
 
 /* LBMC control topic source header. */
 typedef struct
@@ -3589,7 +3579,7 @@ typedef struct
 #define L_LBMC_CNTL_TOPIC_SOURCE_HDR_T_FLAGS SIZEOF(lbmc_cntl_topic_source_hdr_t, flags)
 #define O_LBMC_CNTL_TOPIC_SOURCE_HDR_T_DOMAIN_ID OFFSETOF(lbmc_cntl_topic_source_hdr_t, domain_id)
 #define L_LBMC_CNTL_TOPIC_SOURCE_HDR_T_DOMAIN_ID SIZEOF(lbmc_cntl_topic_source_hdr_t, domain_id)
-#define L_LBMC_CNTL_TOPIC_SOURCE_HDR_T (gint) sizeof(lbmc_cntl_topic_source_hdr_t)
+#define L_LBMC_CNTL_TOPIC_SOURCE_HDR_T (int) sizeof(lbmc_cntl_topic_source_hdr_t)
 
 /* LBMC control topic source extended functionality header. */
 typedef struct
@@ -3616,7 +3606,7 @@ typedef struct
 #define L_LBMC_CNTL_TOPIC_SOURCE_EXFUNC_HDR_T_UNUSED SIZEOF(lbmc_cntl_topic_source_exfunc_hdr_t, unused)
 #define O_LBMC_CNTL_TOPIC_SOURCE_EXFUNC_HDR_T_FUNCTIONALITY_FLAGS OFFSETOF(lbmc_cntl_topic_source_exfunc_hdr_t, functionality_flags)
 #define L_LBMC_CNTL_TOPIC_SOURCE_EXFUNC_HDR_T_FUNCTIONALITY_FLAGS SIZEOF(lbmc_cntl_topic_source_exfunc_hdr_t, functionality_flags)
-#define L_LBMC_CNTL_TOPIC_SOURCE_EXFUNC_HDR_T (gint) sizeof(lbmc_cntl_topic_source_exfunc_hdr_t)
+#define L_LBMC_CNTL_TOPIC_SOURCE_EXFUNC_HDR_T (int) sizeof(lbmc_cntl_topic_source_exfunc_hdr_t)
 
 /* LBM control UME proxy source election token header. */
 typedef struct
@@ -3637,7 +3627,7 @@ typedef struct
 #define L_LBMC_CNTL_UME_PSRC_ELECTION_TOKEN_HDR_T_STORE_INDEX SIZEOF(lbmc_cntl_ume_psrc_election_token_hdr_t, store_index)
 #define O_LBMC_CNTL_UME_PSRC_ELECTION_TOKEN_HDR_T_TOKEN OFFSETOF(lbmc_cntl_ume_psrc_election_token_hdr_t, token)
 #define L_LBMC_CNTL_UME_PSRC_ELECTION_TOKEN_HDR_T_TOKEN SIZEOF(lbmc_cntl_ume_psrc_election_token_hdr_t, token)
-#define L_LBMC_CNTL_UME_PSRC_ELECTION_TOKEN_HDR_T (gint) sizeof(lbmc_cntl_ume_psrc_election_token_hdr_t)
+#define L_LBMC_CNTL_UME_PSRC_ELECTION_TOKEN_HDR_T (int) sizeof(lbmc_cntl_ume_psrc_election_token_hdr_t)
 
 /* LBM control TCP session ID header. */
 typedef struct
@@ -3655,7 +3645,7 @@ typedef struct
 #define L_LBMC_CNTL_TCP_SID_HDR_T_FLAGS SIZEOF(lbmc_cntl_tcp_sid_hdr_t, flags)
 #define O_LBMC_CNTL_TCP_SID_HDR_T_SID OFFSETOF(lbmc_cntl_tcp_sid_hdr_t, sid)
 #define L_LBMC_CNTL_TCP_SID_HDR_T_SID SIZEOF(lbmc_cntl_tcp_sid_hdr_t, sid)
-#define L_LBMC_CNTL_TCP_SID_HDR_T (gint) sizeof(lbmc_cntl_tcp_sid_hdr_t)
+#define L_LBMC_CNTL_TCP_SID_HDR_T (int) sizeof(lbmc_cntl_tcp_sid_hdr_t)
 
 /* LBMC extended configuration option. */
 typedef struct
@@ -3667,7 +3657,7 @@ typedef struct
 #define L_LBMC_EXTOPT_CFGOPT_HDR_T_SCOPE SIZEOF(lbmc_extopt_cfgopt_hdr_t, scope)
 #define O_LBMC_EXTOPT_CFGOPT_HDR_T_PARENT OFFSETOF(lbmc_extopt_cfgopt_hdr_t, scope)
 #define L_LBMC_EXTOPT_CFGOPT_HDR_T_PARENT SIZEOF(lbmc_extopt_cfgopt_hdr_t, scope)
-#define L_LBMC_EXTOPT_CFGOPT_HDR_T (gint) sizeof(lbmc_extopt_cfgopt_hdr_t)
+#define L_LBMC_EXTOPT_CFGOPT_HDR_T (int) sizeof(lbmc_extopt_cfgopt_hdr_t)
 
 /* LBMC extended option. */
 typedef struct
@@ -3691,7 +3681,7 @@ typedef struct
 #define L_LBMC_EXTOPT_HDR_T_SUBTYPE SIZEOF(lbmc_extopt_hdr_t, subtype)
 #define O_LBMC_EXTOPT_HDR_T_FRAGMENT_OFFSET OFFSETOF(lbmc_extopt_hdr_t, fragment_offset)
 #define L_LBMC_EXTOPT_HDR_T_FRAGMENT_OFFSET SIZEOF(lbmc_extopt_hdr_t, fragment_offset)
-#define L_LBMC_EXTOPT_HDR_T (gint) sizeof(lbmc_extopt_hdr_t)
+#define L_LBMC_EXTOPT_HDR_T (int) sizeof(lbmc_extopt_hdr_t)
 
 /* LBMC message properties. */
 typedef struct
@@ -3709,7 +3699,7 @@ typedef struct
 #define L_LBM_MSG_PROPERTIES_HDR_T_HASH SIZEOF(lbm_msg_properties_hdr_t, hash)
 #define O_LBM_MSG_PROPERTIES_HDR_T_TYPE OFFSETOF(lbm_msg_properties_hdr_t, type)
 #define L_LBM_MSG_PROPERTIES_HDR_T_TYPE SIZEOF(lbm_msg_properties_hdr_t, type)
-#define L_LBM_MSG_PROPERTIES_HDR_T (gint) sizeof(lbm_msg_properties_hdr_t)
+#define L_LBM_MSG_PROPERTIES_HDR_T (int) sizeof(lbm_msg_properties_hdr_t)
 
 typedef struct
 {
@@ -3726,7 +3716,7 @@ typedef struct
 #define L_LBM_MSG_PROPERTIES_DATA_T_VERTYPE SIZEOF(lbm_msg_properties_data_t, vertype)
 #define O_LBM_MSG_PROPERTIES_DATA_T_RES OFFSETOF(lbm_msg_properties_data_t, res)
 #define L_LBM_MSG_PROPERTIES_DATA_T_RES SIZEOF(lbm_msg_properties_data_t, res)
-#define L_LBM_MSG_PROPERTIES_DATA_T (gint) sizeof(lbm_msg_properties_data_t)
+#define L_LBM_MSG_PROPERTIES_DATA_T (int) sizeof(lbm_msg_properties_data_t)
 
 /* Unhandled header. */
 #define O_LBMC_UNHANDLED_HDR_T_NEXT_HDR OFFSETOF(lbmc_basic_hdr_t, next_hdr)
@@ -3882,6 +3872,7 @@ typedef struct
 #define LBMC_UME_STOREID_MAX_STOREID 0x7FFF
 #define LBMC_UME_CAPABILITY_QC_FLAG 0x4000
 #define LBMC_UME_CAPABILITY_CLIENT_LIFETIME_FLAG 0x2000
+#define LBMC_UME_CAPABILITY_RANGED_RX_FLAG 0x1000
 #define LBMC_UME_PROXY_SRC_E_FLAG 0x4000
 #define LBMC_UME_PROXY_SRC_C_FLAG 0x2000
 #define LBMC_UME_RXREQ_T_FLAG 0x4000
@@ -4375,7 +4366,7 @@ static const value_string lbmc_umq_idx_cmd_response_error_code[] =
     { UMQUEUE_RCV_IDX_CMD_EAUTHFAIL, "Authorization failure" },
     { LBM_UMQ_ULB_RCV_IDX_CMD_EIDXNOTASSIGNED, "Index not assigned" },
     { LBM_UMQ_ULB_RCV_IDX_CMD_EIDXINELIGIBLE, "Receiver ineligible for index" },
-    { LBM_UMQ_ULB_RCV_IDX_CMD_EIDXINUSE, "Indes already assigned or unavailable" },
+    { LBM_UMQ_ULB_RCV_IDX_CMD_EIDXINUSE, "Index already assigned or unavailable" },
     { LBM_UMQ_ULB_RCV_IDX_CMD_EIDXALREADYASSIGNED, "Index already assigned to this receiver" },
     { 0x0, NULL }
 };
@@ -4558,1496 +4549,1497 @@ static const true_false_string lbmc_umq_r_flag =
 /* Preferences.                                                               */
 /*----------------------------------------------------------------------------*/
 
-static gboolean lbmc_use_heuristic_subdissectors = TRUE;
-static gboolean lbmc_reassemble_fragments = FALSE;
-static gboolean lbmc_dissect_lbmpdm = FALSE;
+static bool lbmc_use_heuristic_subdissectors = true;
+static bool lbmc_reassemble_fragments;
+static bool lbmc_dissect_lbmpdm;
 static heur_dissector_list_t lbmc_heuristic_subdissector_list;
 
 /*----------------------------------------------------------------------------*/
 /* Handles of all types.                                                      */
 /*----------------------------------------------------------------------------*/
 
-static int proto_lbmc = -1;
+static int proto_lbmc;
 static int tnw_protocol_handle = -1;
 static int lbmc_uim_tap_handle = -1;
 static int lbmc_stream_tap_handle = -1;
-static int hf_lbmc_tag = -1;
-static int hf_lbmc_topic = -1;
-static int hf_lbmc_version = -1;
-static int hf_lbmc_type = -1;
-static int hf_lbmc_next_hdr = -1;
-static int hf_lbmc_msglen = -1;
-static int hf_lbmc_tidx = -1;
-static int hf_lbmc_sqn = -1;
-static int hf_lbmc_frag = -1;
-static int hf_lbmc_frag_next_hdr = -1;
-static int hf_lbmc_frag_hdr_len = -1;
-static int hf_lbmc_frag_flags = -1;
-static int hf_lbmc_frag_flags_ignore = -1;
-static int hf_lbmc_frag_first_sqn = -1;
-static int hf_lbmc_frag_offset = -1;
-static int hf_lbmc_frag_len = -1;
-static int hf_lbmc_batch = -1;
-static int hf_lbmc_batch_next_hdr = -1;
-static int hf_lbmc_batch_hdr_len = -1;
-static int hf_lbmc_batch_flags = -1;
-static int hf_lbmc_batch_flags_ignore = -1;
-static int hf_lbmc_batch_flags_batch_start = -1;
-static int hf_lbmc_batch_flags_batch_end = -1;
-static int hf_lbmc_tcp_request = -1;
-static int hf_lbmc_tcp_request_next_hdr = -1;
-static int hf_lbmc_tcp_request_hdr_len = -1;
-static int hf_lbmc_tcp_request_flags = -1;
-static int hf_lbmc_tcp_request_flags_ignore = -1;
-static int hf_lbmc_tcp_request_transport = -1;
-static int hf_lbmc_tcp_request_qidx = -1;
-static int hf_lbmc_tcp_request_port = -1;
-static int hf_lbmc_tcp_request_reserved = -1;
-static int hf_lbmc_tcp_request_ipaddr = -1;
-static int hf_lbmc_topicname = -1;
-static int hf_lbmc_topicname_next_hdr = -1;
-static int hf_lbmc_topicname_hdr_len = -1;
-static int hf_lbmc_topicname_flags = -1;
-static int hf_lbmc_topicname_flags_ignore = -1;
-static int hf_lbmc_topicname_topicname = -1;
-static int hf_lbmc_apphdr = -1;
-static int hf_lbmc_apphdr_next_hdr = -1;
-static int hf_lbmc_apphdr_hdr_len = -1;
-static int hf_lbmc_apphdr_code = -1;
-static int hf_lbmc_apphdr_ignore = -1;
-static int hf_lbmc_apphdr_data = -1;
-static int hf_lbmc_apphdr_chain = -1;
-static int hf_lbmc_apphdr_chain_next_hdr = -1;
-static int hf_lbmc_apphdr_chain_hdr_len = -1;
-static int hf_lbmc_apphdr_chain_res = -1;
-static int hf_lbmc_apphdr_chain_first_chain_hdr = -1;
-static int hf_lbmc_apphdr_chain_element = -1;
-static int hf_lbmc_apphdr_chain_element_next_hdr = -1;
-static int hf_lbmc_apphdr_chain_element_hdr_len = -1;
-static int hf_lbmc_apphdr_chain_element_res = -1;
-static int hf_lbmc_apphdr_chain_element_data = -1;
-static int hf_lbmc_apphdr_chain_msgprop = -1;
-static int hf_lbmc_apphdr_chain_msgprop_next_hdr = -1;
-static int hf_lbmc_apphdr_chain_msgprop_hdr_len = -1;
-static int hf_lbmc_apphdr_chain_msgprop_res = -1;
-static int hf_lbmc_apphdr_chain_msgprop_len = -1;
-static int hf_lbmc_umq_msgid = -1;
-static int hf_lbmc_umq_msgid_next_hdr = -1;
-static int hf_lbmc_umq_msgid_hdr_len = -1;
-static int hf_lbmc_umq_msgid_flags = -1;
-static int hf_lbmc_umq_msgid_flags_ignore = -1;
-static int hf_lbmc_umq_msgid_msgid_regid = -1;
-static int hf_lbmc_umq_msgid_msgid_stamp = -1;
-static int hf_lbmc_umq_sqd_rcv = -1;
-static int hf_lbmc_umq_sqd_rcv_next_hdr = -1;
-static int hf_lbmc_umq_sqd_rcv_hdr_len = -1;
-static int hf_lbmc_umq_sqd_rcv_flags = -1;
-static int hf_lbmc_umq_sqd_rcv_flags_ignore = -1;
-static int hf_lbmc_umq_sqd_rcv_flags_r_flag = -1;
-static int hf_lbmc_umq_sqd_rcv_flags_s_flag = -1;
-static int hf_lbmc_umq_sqd_rcv_flags_re_flag = -1;
-static int hf_lbmc_umq_sqd_rcv_flags_eoi_flag = -1;
-static int hf_lbmc_umq_sqd_rcv_flags_boi_flag = -1;
-static int hf_lbmc_umq_sqd_rcv_queue_id = -1;
-static int hf_lbmc_umq_sqd_rcv_queue_ver = -1;
-static int hf_lbmc_umq_sqd_rcv_rcr_idx = -1;
-static int hf_lbmc_umq_sqd_rcv_assign_id = -1;
-static int hf_lbmc_umq_resub = -1;
-static int hf_lbmc_umq_resub_next_hdr = -1;
-static int hf_lbmc_umq_resub_hdr_len = -1;
-static int hf_lbmc_umq_resub_flags = -1;
-static int hf_lbmc_umq_resub_flags_ignore = -1;
-static int hf_lbmc_umq_resub_flags_q_flag = -1;
-static int hf_lbmc_umq_resub_rcr_idx = -1;
-static int hf_lbmc_umq_resub_resp_ip = -1;
-static int hf_lbmc_umq_resub_resp_port = -1;
-static int hf_lbmc_umq_resub_appset_idx = -1;
-static int hf_lbmc_otid = -1;
-static int hf_lbmc_otid_next_hdr = -1;
-static int hf_lbmc_otid_hdr_len = -1;
-static int hf_lbmc_otid_flags = -1;
-static int hf_lbmc_otid_flags_ignore = -1;
-static int hf_lbmc_otid_otid = -1;
-static int hf_lbmc_ctxinst = -1;
-static int hf_lbmc_ctxinst_next_hdr = -1;
-static int hf_lbmc_ctxinst_hdr_len = -1;
-static int hf_lbmc_ctxinst_flags = -1;
-static int hf_lbmc_ctxinst_flags_ignore = -1;
-static int hf_lbmc_ctxinst_ctxinst = -1;
-static int hf_lbmc_ctxinstd = -1;
-static int hf_lbmc_ctxinstr = -1;
-static int hf_lbmc_srcidx = -1;
-static int hf_lbmc_srcidx_next_hdr = -1;
-static int hf_lbmc_srcidx_hdr_len = -1;
-static int hf_lbmc_srcidx_flags = -1;
-static int hf_lbmc_srcidx_flags_ignore = -1;
-static int hf_lbmc_srcidx_srcidx = -1;
-static int hf_lbmc_umq_ulb_msg = -1;
-static int hf_lbmc_umq_ulb_msg_next_hdr = -1;
-static int hf_lbmc_umq_ulb_msg_hdr_len = -1;
-static int hf_lbmc_umq_ulb_msg_flags = -1;
-static int hf_lbmc_umq_ulb_msg_flags_ignore = -1;
-static int hf_lbmc_umq_ulb_msg_flags_a_flag = -1;
-static int hf_lbmc_umq_ulb_msg_flags_r_flag = -1;
-static int hf_lbmc_umq_ulb_msg_queue_id = -1;
-static int hf_lbmc_umq_ulb_msg_ulb_src_id = -1;
-static int hf_lbmc_umq_ulb_msg_assign_id = -1;
-static int hf_lbmc_umq_ulb_msg_appset_idx = -1;
-static int hf_lbmc_umq_ulb_msg_num_ras = -1;
-static int hf_lbmc_ssf_init = -1;
-static int hf_lbmc_ssf_init_next_hdr = -1;
-static int hf_lbmc_ssf_init_hdr_len = -1;
-static int hf_lbmc_ssf_init_transport = -1;
-static int hf_lbmc_ssf_init_flags = -1;
-static int hf_lbmc_ssf_init_flags_ignore = -1;
-static int hf_lbmc_ssf_init_flags_default_inclusions = -1;
-static int hf_lbmc_ssf_init_flags_default_exclusions = -1;
-static int hf_lbmc_ssf_init_transport_idx = -1;
-static int hf_lbmc_ssf_init_client_idx = -1;
-static int hf_lbmc_ssf_init_ssf_port = -1;
-static int hf_lbmc_ssf_init_res = -1;
-static int hf_lbmc_ssf_init_ssf_ip = -1;
-static int hf_lbmc_ssf_creq = -1;
-static int hf_lbmc_ssf_creq_next_hdr = -1;
-static int hf_lbmc_ssf_creq_hdr_len = -1;
-static int hf_lbmc_ssf_creq_flags = -1;
-static int hf_lbmc_ssf_creq_flags_ignore = -1;
-static int hf_lbmc_ssf_creq_mode = -1;
-static int hf_lbmc_ssf_creq_transport_idx = -1;
-static int hf_lbmc_ssf_creq_topic_idx = -1;
-static int hf_lbmc_ssf_creq_client_idx = -1;
-static int hf_lbmc_ume_preg = -1;
-static int hf_lbmc_ume_preg_next_hdr = -1;
-static int hf_lbmc_ume_preg_hdr_len = -1;
-static int hf_lbmc_ume_preg_flags = -1;
-static int hf_lbmc_ume_preg_flags_ignore = -1;
-static int hf_lbmc_ume_preg_flags_f_flag = -1;
-static int hf_lbmc_ume_preg_flags_p_flag = -1;
-static int hf_lbmc_ume_preg_flags_w_flag = -1;
-static int hf_lbmc_ume_preg_flags_d_flag = -1;
-static int hf_lbmc_ume_preg_s_flag = -1;
-static int hf_lbmc_ume_preg_marker = -1;
-static int hf_lbmc_ume_preg_reg_id = -1;
-static int hf_lbmc_ume_preg_transport_idx = -1;
-static int hf_lbmc_ume_preg_topic_idx = -1;
-static int hf_lbmc_ume_preg_src_reg_id = -1;
-static int hf_lbmc_ume_preg_resp_port = -1;
-static int hf_lbmc_ume_preg_res2 = -1;
-static int hf_lbmc_ume_preg_resp_ip = -1;
-static int hf_lbmc_ume_preg_resp = -1;
-static int hf_lbmc_ume_preg_resp_next_hdr = -1;
-static int hf_lbmc_ume_preg_resp_hdr_len = -1;
-static int hf_lbmc_ume_preg_resp_code = -1;
-static int hf_lbmc_ume_preg_resp_code_ignore = -1;
-static int hf_lbmc_ume_preg_resp_code_e_flag = -1;
-static int hf_lbmc_ume_preg_resp_code_o_flag = -1;
-static int hf_lbmc_ume_preg_resp_code_n_flag = -1;
-static int hf_lbmc_ume_preg_resp_code_w_flag = -1;
-static int hf_lbmc_ume_preg_resp_code_d_flag = -1;
-static int hf_lbmc_ume_preg_resp_code_code = -1;
-static int hf_lbmc_ume_preg_resp_s_flag = -1;
-static int hf_lbmc_ume_preg_resp_marker = -1;
-static int hf_lbmc_ume_preg_resp_reg_id = -1;
-static int hf_lbmc_ume_preg_resp_transport_idx = -1;
-static int hf_lbmc_ume_preg_resp_topic_idx = -1;
-static int hf_lbmc_ume_preg_resp_low_seqnum = -1;
-static int hf_lbmc_ume_preg_resp_high_seqnum = -1;
-static int hf_lbmc_ume_ack = -1;
-static int hf_lbmc_ume_ack_next_hdr = -1;
-static int hf_lbmc_ume_ack_hdr_len = -1;
-static int hf_lbmc_ume_ack_flags = -1;
-static int hf_lbmc_ume_ack_flags_ignore = -1;
-static int hf_lbmc_ume_ack_flags_o_flag = -1;
-static int hf_lbmc_ume_ack_flags_f_flag = -1;
-static int hf_lbmc_ume_ack_flags_u_flag = -1;
-static int hf_lbmc_ume_ack_flags_e_flag = -1;
-static int hf_lbmc_ume_ack_type = -1;
-static int hf_lbmc_ume_ack_transport_idx = -1;
-static int hf_lbmc_ume_ack_id_2 = -1;
-static int hf_lbmc_ume_ack_rcv_reg_id = -1;
-static int hf_lbmc_ume_ack_seqnum = -1;
-static int hf_lbmc_ume_rxreq = -1;
-static int hf_lbmc_ume_rxreq_next_hdr = -1;
-static int hf_lbmc_ume_rxreq_hdr_len = -1;
-static int hf_lbmc_ume_rxreq_flags = -1;
-static int hf_lbmc_ume_rxreq_flags_ignore = -1;
-static int hf_lbmc_ume_rxreq_flags_tsni_req = -1;
-static int hf_lbmc_ume_rxreq_marker = -1;
-static int hf_lbmc_ume_rxreq_request_idx = -1;
-static int hf_lbmc_ume_rxreq_transport_idx = -1;
-static int hf_lbmc_ume_rxreq_id_2 = -1;
-static int hf_lbmc_ume_rxreq_seqnum = -1;
-static int hf_lbmc_ume_rxreq_rx_port = -1;
-static int hf_lbmc_ume_rxreq_res = -1;
-static int hf_lbmc_ume_rxreq_rx_ip = -1;
-static int hf_lbmc_ume_keepalive = -1;
-static int hf_lbmc_ume_keepalive_next_hdr = -1;
-static int hf_lbmc_ume_keepalive_hdr_len = -1;
-static int hf_lbmc_ume_keepalive_flags = -1;
-static int hf_lbmc_ume_keepalive_flags_ignore = -1;
-static int hf_lbmc_ume_keepalive_flags_r_flag = -1;
-static int hf_lbmc_ume_keepalive_flags_t_flag = -1;
-static int hf_lbmc_ume_keepalive_type = -1;
-static int hf_lbmc_ume_keepalive_transport_idx = -1;
-static int hf_lbmc_ume_keepalive_topic_idx = -1;
-static int hf_lbmc_ume_keepalive_reg_id = -1;
-static int hf_lbmc_ume_storeid = -1;
-static int hf_lbmc_ume_storeid_next_hdr = -1;
-static int hf_lbmc_ume_storeid_hdr_len = -1;
-static int hf_lbmc_ume_storeid_ignore = -1;
-static int hf_lbmc_ume_storeid_store_id = -1;
-static int hf_lbmc_ume_ranged_ack = -1;
-static int hf_lbmc_ume_ranged_ack_next_hdr = -1;
-static int hf_lbmc_ume_ranged_ack_hdr_len = -1;
-static int hf_lbmc_ume_ranged_ack_flags = -1;
-static int hf_lbmc_ume_ranged_ack_flags_ignore = -1;
-static int hf_lbmc_ume_ranged_ack_first_seqnum = -1;
-static int hf_lbmc_ume_ranged_ack_last_seqnum = -1;
-static int hf_lbmc_ume_ack_id = -1;
-static int hf_lbmc_ume_ack_id_next_hdr = -1;
-static int hf_lbmc_ume_ack_id_hdr_len = -1;
-static int hf_lbmc_ume_ack_id_flags = -1;
-static int hf_lbmc_ume_ack_id_flags_ignore = -1;
-static int hf_lbmc_ume_ack_id_id = -1;
-static int hf_lbmc_ume_capability = -1;
-static int hf_lbmc_ume_capability_next_hdr = -1;
-static int hf_lbmc_ume_capability_hdr_len = -1;
-static int hf_lbmc_ume_capability_flags = -1;
-static int hf_lbmc_ume_capability_flags_ignore = -1;
-static int hf_lbmc_ume_capability_flags_qc_flag = -1;
-static int hf_lbmc_ume_capability_flags_client_lifetime_flag = -1;
-static int hf_lbmc_ume_proxy_src = -1;
-static int hf_lbmc_ume_proxy_src_next_hdr = -1;
-static int hf_lbmc_ume_proxy_src_hdr_len = -1;
-static int hf_lbmc_ume_proxy_src_flags = -1;
-static int hf_lbmc_ume_proxy_src_flags_ignore = -1;
-static int hf_lbmc_ume_proxy_src_flags_enable = -1;
-static int hf_lbmc_ume_proxy_src_flags_compatibility = -1;
-static int hf_lbmc_ume_store_group = -1;
-static int hf_lbmc_ume_store_group_next_hdr = -1;
-static int hf_lbmc_ume_store_group_hdr_len = -1;
-static int hf_lbmc_ume_store_group_flags = -1;
-static int hf_lbmc_ume_store_group_flags_ignore = -1;
-static int hf_lbmc_ume_store_group_grp_idx = -1;
-static int hf_lbmc_ume_store_group_grp_sz = -1;
-static int hf_lbmc_ume_store_group_res1 = -1;
-static int hf_lbmc_ume_store = -1;
-static int hf_lbmc_ume_store_next_hdr = -1;
-static int hf_lbmc_ume_store_hdr_len = -1;
-static int hf_lbmc_ume_store_flags = -1;
-static int hf_lbmc_ume_store_flags_ignore = -1;
-static int hf_lbmc_ume_store_grp_idx = -1;
-static int hf_lbmc_ume_store_store_tcp_port = -1;
-static int hf_lbmc_ume_store_store_idx = -1;
-static int hf_lbmc_ume_store_store_ip_addr = -1;
-static int hf_lbmc_ume_store_src_reg_id = -1;
-static int hf_lbmc_ume_lj_info = -1;
-static int hf_lbmc_ume_lj_info_next_hdr = -1;
-static int hf_lbmc_ume_lj_info_hdr_len = -1;
-static int hf_lbmc_ume_lj_info_flags = -1;
-static int hf_lbmc_ume_lj_info_flags_ignore = -1;
-static int hf_lbmc_ume_lj_info_low_seqnum = -1;
-static int hf_lbmc_ume_lj_info_high_seqnum = -1;
-static int hf_lbmc_ume_lj_info_qidx = -1;
-static int hf_lbmc_tsni = -1;
-static int hf_lbmc_tsni_next_hdr = -1;
-static int hf_lbmc_tsni_hdr_len = -1;
-static int hf_lbmc_tsni_ignore = -1;
-static int hf_lbmc_tsni_num_recs = -1;
-static int hf_lbmc_tsni_rec = -1;
-static int hf_lbmc_tsni_rec_tidx = -1;
-static int hf_lbmc_tsni_rec_sqn = -1;
-static int hf_lbmc_umq_reg = -1;
-static int hf_lbmc_umq_reg_next_hdr = -1;
-static int hf_lbmc_umq_reg_hdr_len = -1;
-static int hf_lbmc_umq_reg_flags = -1;
-static int hf_lbmc_umq_reg_flags_ignore = -1;
-static int hf_lbmc_umq_reg_flags_r_flag = -1;
-static int hf_lbmc_umq_reg_flags_t_flag = -1;
-static int hf_lbmc_umq_reg_flags_i_flag = -1;
-static int hf_lbmc_umq_reg_flags_msg_sel_flag = -1;
-static int hf_lbmc_umq_reg_reg_type = -1;
-static int hf_lbmc_umq_reg_queue_id = -1;
-static int hf_lbmc_umq_reg_cmd_id = -1;
-static int hf_lbmc_umq_reg_inst_idx = -1;
-static int hf_lbmc_umq_reg_regid = -1;
-static int hf_lbmc_umq_reg_reg_ctx = -1;
-static int hf_lbmc_umq_reg_reg_ctx_port = -1;
-static int hf_lbmc_umq_reg_reg_ctx_reserved = -1;
-static int hf_lbmc_umq_reg_reg_ctx_ip = -1;
-static int hf_lbmc_umq_reg_reg_ctx_capabilities = -1;
-static int hf_lbmc_umq_reg_reg_src = -1;
-static int hf_lbmc_umq_reg_reg_src_transport_idx = -1;
-static int hf_lbmc_umq_reg_reg_src_topic_idx = -1;
-static int hf_lbmc_umq_reg_reg_rcv = -1;
-static int hf_lbmc_umq_reg_reg_rcv_assign_id = -1;
-static int hf_lbmc_umq_reg_reg_rcv_rcv_type_id = -1;
-static int hf_lbmc_umq_reg_reg_rcv_last_topic_rcr_tsp = -1;
-static int hf_lbmc_umq_reg_rcv_dereg = -1;
-static int hf_lbmc_umq_reg_rcv_dereg_rcr_idx = -1;
-static int hf_lbmc_umq_reg_rcv_dereg_assign_id = -1;
-static int hf_lbmc_umq_reg_reg_ulb_rcv = -1;
-static int hf_lbmc_umq_reg_reg_ulb_rcv_ulb_src_id = -1;
-static int hf_lbmc_umq_reg_reg_ulb_rcv_assign_id = -1;
-static int hf_lbmc_umq_reg_reg_ulb_rcv_rcv_type_id = -1;
-static int hf_lbmc_umq_reg_reg_ulb_rcv_port = -1;
-static int hf_lbmc_umq_reg_reg_ulb_rcv_reserved = -1;
-static int hf_lbmc_umq_reg_reg_ulb_rcv_ip = -1;
-static int hf_lbmc_umq_reg_reg_ulb_rcv_capabilities = -1;
-static int hf_lbmc_umq_reg_ulb_rcv_dereg = -1;
-static int hf_lbmc_umq_reg_ulb_rcv_dereg_ulb_src_id = -1;
-static int hf_lbmc_umq_reg_ulb_rcv_dereg_assign_id = -1;
-static int hf_lbmc_umq_reg_reg_observer_rcv = -1;
-static int hf_lbmc_umq_reg_reg_observer_rcv_assign_id = -1;
-static int hf_lbmc_umq_reg_reg_observer_rcv_rcv_type_id = -1;
-static int hf_lbmc_umq_reg_reg_observer_rcv_last_topic_rcr_tsp = -1;
-static int hf_lbmc_umq_reg_observer_rcv_dereg = -1;
-static int hf_lbmc_umq_reg_observer_rcv_dereg_rcr_idx = -1;
-static int hf_lbmc_umq_reg_observer_rcv_dereg_assign_id = -1;
-static int hf_lbmc_umq_reg_resp = -1;
-static int hf_lbmc_umq_reg_resp_next_hdr = -1;
-static int hf_lbmc_umq_reg_resp_hdr_len = -1;
-static int hf_lbmc_umq_reg_resp_flags = -1;
-static int hf_lbmc_umq_reg_resp_flags_ignore = -1;
-static int hf_lbmc_umq_reg_resp_flags_r_flag = -1;
-static int hf_lbmc_umq_reg_resp_flags_l_flag = -1;
-static int hf_lbmc_umq_reg_resp_flags_src_s_flag = -1;
-static int hf_lbmc_umq_reg_resp_flags_src_d_flag = -1;
-static int hf_lbmc_umq_reg_resp_resp_type = -1;
-static int hf_lbmc_umq_reg_resp_queue_id = -1;
-static int hf_lbmc_umq_reg_resp_cmd_id = -1;
-static int hf_lbmc_umq_reg_resp_inst_idx = -1;
-static int hf_lbmc_umq_reg_resp_regid = -1;
-static int hf_lbmc_umq_reg_resp_reg_ctx = -1;
-static int hf_lbmc_umq_reg_resp_reg_ctx_capabilities = -1;
-static int hf_lbmc_umq_reg_resp_reg_ctx_ex = -1;
-static int hf_lbmc_umq_reg_resp_reg_ctx_ex_capabilities = -1;
-static int hf_lbmc_umq_reg_resp_reg_ctx_ex_reserved = -1;
-static int hf_lbmc_umq_reg_resp_reg_ctx_ex_flags = -1;
-static int hf_lbmc_umq_reg_resp_reg_ctx_ex_flags_firstmsg = -1;
-static int hf_lbmc_umq_reg_resp_reg_ctx_ex_stamp = -1;
-static int hf_lbmc_umq_reg_resp_err = -1;
-static int hf_lbmc_umq_reg_resp_err_reserved = -1;
-static int hf_lbmc_umq_reg_resp_err_code = -1;
-static int hf_lbmc_umq_reg_resp_reg_src = -1;
-static int hf_lbmc_umq_reg_resp_reg_src_rcr_idx = -1;
-static int hf_lbmc_umq_reg_resp_reg_rcv = -1;
-static int hf_lbmc_umq_reg_resp_reg_rcv_rcr_idx = -1;
-static int hf_lbmc_umq_reg_resp_reg_rcv_assign_id = -1;
-static int hf_lbmc_umq_reg_resp_reg_rcv_appset_idx = -1;
-static int hf_lbmc_umq_reg_resp_reg_rcv_reserved = -1;
-static int hf_lbmc_umq_reg_resp_rcv_dereg = -1;
-static int hf_lbmc_umq_reg_resp_rcv_dereg_rcr_idx = -1;
-static int hf_lbmc_umq_reg_resp_rcv_dereg_assign_id = -1;
-static int hf_lbmc_umq_reg_resp_reg_ulb_rcv = -1;
-static int hf_lbmc_umq_reg_resp_reg_ulb_rcv_ulb_src_id = -1;
-static int hf_lbmc_umq_reg_resp_reg_ulb_rcv_assign_id = -1;
-static int hf_lbmc_umq_reg_resp_reg_ulb_rcv_appset_idx = -1;
-static int hf_lbmc_umq_reg_resp_reg_ulb_rcv_reserved = -1;
-static int hf_lbmc_umq_reg_resp_reg_ulb_rcv_capabilities = -1;
-static int hf_lbmc_umq_reg_resp_ulb_rcv_dereg = -1;
-static int hf_lbmc_umq_reg_resp_ulb_rcv_dereg_ulb_src_id = -1;
-static int hf_lbmc_umq_reg_resp_ulb_rcv_dereg_assign_id = -1;
-static int hf_lbmc_umq_reg_resp_reg_observer_rcv = -1;
-static int hf_lbmc_umq_reg_resp_reg_observer_rcv_rcr_idx = -1;
-static int hf_lbmc_umq_reg_resp_reg_observer_rcv_assign_id = -1;
-static int hf_lbmc_umq_reg_resp_reg_observer_rcv_appset_idx = -1;
-static int hf_lbmc_umq_reg_resp_reg_observer_rcv_reserved = -1;
-static int hf_lbmc_umq_reg_resp_observer_rcv_dereg = -1;
-static int hf_lbmc_umq_reg_resp_observer_rcv_dereg_rcr_idx = -1;
-static int hf_lbmc_umq_reg_resp_observer_rcv_dereg_assign_id = -1;
-static int hf_lbmc_umq_ack = -1;
-static int hf_lbmc_umq_ack_next_hdr = -1;
-static int hf_lbmc_umq_ack_hdr_len = -1;
-static int hf_lbmc_umq_ack_msgs = -1;
-static int hf_lbmc_umq_ack_msgs_ignore = -1;
-static int hf_lbmc_umq_ack_msgs_t_flag = -1;
-static int hf_lbmc_umq_ack_msgs_d_flag = -1;
-static int hf_lbmc_umq_ack_numids = -1;
-static int hf_lbmc_umq_ack_ack_type = -1;
-static int hf_lbmc_umq_ack_msgid = -1;
-static int hf_lbmc_umq_ack_msgid_regid = -1;
-static int hf_lbmc_umq_ack_msgid_stamp = -1;
-static int hf_lbmc_umq_ack_stable = -1;
-static int hf_lbmc_umq_ack_stable_queue_id = -1;
-static int hf_lbmc_umq_ack_stable_inst_idx = -1;
-static int hf_lbmc_umq_ack_stable_reserved = -1;
-static int hf_lbmc_umq_ack_cr = -1;
-static int hf_lbmc_umq_ack_cr_rcr_idx = -1;
-static int hf_lbmc_umq_ack_cr_assign_id = -1;
-static int hf_lbmc_umq_ack_cr_appset_idx = -1;
-static int hf_lbmc_umq_ack_cr_reserved = -1;
-static int hf_lbmc_umq_ack_ulb_cr = -1;
-static int hf_lbmc_umq_ack_ulb_cr_ulb_src_id = -1;
-static int hf_lbmc_umq_ack_ulb_cr_assign_id = -1;
-static int hf_lbmc_umq_ack_ulb_cr_appset_idx = -1;
-static int hf_lbmc_umq_ack_ulb_cr_reserved = -1;
-static int hf_lbmc_umq_rcr = -1;
-static int hf_lbmc_umq_rcr_next_hdr = -1;
-static int hf_lbmc_umq_rcr_hdr_len = -1;
-static int hf_lbmc_umq_rcr_flags = -1;
-static int hf_lbmc_umq_rcr_flags_ignore = -1;
-static int hf_lbmc_umq_rcr_flags_r_flag = -1;
-static int hf_lbmc_umq_rcr_flags_d_flag = -1;
-static int hf_lbmc_umq_rcr_flags_s_flag = -1;
-static int hf_lbmc_umq_rcr_flags_eoi_flag = -1;
-static int hf_lbmc_umq_rcr_flags_boi_flag = -1;
-static int hf_lbmc_umq_rcr_queue_id = -1;
-static int hf_lbmc_umq_rcr_rcr_idx = -1;
-static int hf_lbmc_umq_rcr_msgid_regid = -1;
-static int hf_lbmc_umq_rcr_msgid_stamp = -1;
-static int hf_lbmc_umq_rcr_topic_tsp = -1;
-static int hf_lbmc_umq_rcr_q_tsp = -1;
-static int hf_lbmc_umq_rcr_assign_id = -1;
-static int hf_lbmc_umq_rcr_appset_idx = -1;
-static int hf_lbmc_umq_rcr_num_ras = -1;
-static int hf_lbmc_umq_rcr_queue_ver = -1;
-static int hf_lbmc_cntl_umq_ka = -1;
-static int hf_lbmc_cntl_umq_ka_next_hdr = -1;
-static int hf_lbmc_cntl_umq_ka_hdr_len = -1;
-static int hf_lbmc_cntl_umq_ka_flags = -1;
-static int hf_lbmc_cntl_umq_ka_flags_ignore = -1;
-static int hf_lbmc_cntl_umq_ka_flags_r_flag = -1;
-static int hf_lbmc_cntl_umq_ka_ka_type = -1;
-static int hf_lbmc_cntl_umq_ka_queue_id = -1;
-static int hf_lbmc_cntl_umq_ka_regid = -1;
-static int hf_lbmc_cntl_umq_ka_inst_idx = -1;
-static int hf_lbmc_cntl_umq_ka_reserved = -1;
-static int hf_lbmc_umq_ka_src = -1;
-static int hf_lbmc_umq_ka_src_transport_idx = -1;
-static int hf_lbmc_umq_ka_src_topic_idx = -1;
-static int hf_lbmc_umq_ka_rcv = -1;
-static int hf_lbmc_umq_ka_rcv_rcr_idx = -1;
-static int hf_lbmc_umq_ka_rcv_assign_id = -1;
-static int hf_lbmc_umq_ka_ulb_rcv = -1;
-static int hf_lbmc_umq_ka_ulb_rcv_ulb_src_id = -1;
-static int hf_lbmc_umq_ka_ulb_rcv_assign_id = -1;
-static int hf_lbmc_umq_ka_ulb_rcv_resp = -1;
-static int hf_lbmc_umq_ka_ulb_rcv_resp_ulb_src_id = -1;
-static int hf_lbmc_umq_ka_ulb_rcv_resp_assign_id = -1;
-static int hf_lbmc_umq_ka_ulb_rcv_resp_appset_idx = -1;
-static int hf_lbmc_umq_ka_ulb_rcv_resp_reserved = -1;
-static int hf_lbmc_umq_rxreq = -1;
-static int hf_lbmc_umq_rxreq_next_hdr = -1;
-static int hf_lbmc_umq_rxreq_hdr_len = -1;
-static int hf_lbmc_umq_rxreq_flags = -1;
-static int hf_lbmc_umq_rxreq_flags_ignore = -1;
-static int hf_lbmc_umq_rxreq_flags_r_flag = -1;
-static int hf_lbmc_umq_rxreq_rxreq_type = -1;
-static int hf_lbmc_umq_rxreq_regid_resp = -1;
-static int hf_lbmc_umq_rxreq_regid_resp_regid = -1;
-static int hf_lbmc_umq_rxreq_addr_resp = -1;
-static int hf_lbmc_umq_rxreq_addr_resp_ip = -1;
-static int hf_lbmc_umq_rxreq_addr_resp_port = -1;
-static int hf_lbmc_umq_rxreq_addr_resp_reserved = -1;
-static int hf_lbmc_umq_rxreq_mr = -1;
-static int hf_lbmc_umq_rxreq_mr_assign_id = -1;
-static int hf_lbmc_umq_rxreq_mr_msgid_regid = -1;
-static int hf_lbmc_umq_rxreq_mr_msgid_stamp = -1;
-static int hf_lbmc_umq_rxreq_ulb_mr = -1;
-static int hf_lbmc_umq_rxreq_ulb_mr_ulb_src_id = -1;
-static int hf_lbmc_umq_rxreq_ulb_mr_assign_id = -1;
-static int hf_lbmc_umq_rxreq_ulb_mr_appset_idx = -1;
-static int hf_lbmc_umq_rxreq_ulb_mr_reserved = -1;
-static int hf_lbmc_umq_rxreq_ulb_mr_msgid_regid = -1;
-static int hf_lbmc_umq_rxreq_ulb_mr_msgid_stamp = -1;
-static int hf_lbmc_umq_rxreq_ulb_mr_abort = -1;
-static int hf_lbmc_umq_rxreq_ulb_mr_abort_ulb_src_id = -1;
-static int hf_lbmc_umq_rxreq_ulb_mr_abort_assign_id = -1;
-static int hf_lbmc_umq_rxreq_ulb_mr_abort_msgid_regid = -1;
-static int hf_lbmc_umq_rxreq_ulb_mr_abort_msgid_stamp = -1;
-static int hf_lbmc_umq_rxreq_qrcrr = -1;
-static int hf_lbmc_umq_rxreq_qrcrr_tsp = -1;
-static int hf_lbmc_umq_rxreq_trcrr = -1;
-static int hf_lbmc_umq_rxreq_trcrr_rcr_idx = -1;
-static int hf_lbmc_umq_rxreq_trcrr_tsp = -1;
-static int hf_lbmc_umq_rxreq_ulb_trcrr = -1;
-static int hf_lbmc_umq_rxreq_ulb_trcrr_ulb_src_id = -1;
-static int hf_lbmc_umq_rxreq_ulb_trcrr_assign_id = -1;
-static int hf_lbmc_umq_rxreq_ulb_trcrr_tsp = -1;
-static int hf_lbmc_umq_rxreq_ulb_trcrr_abort = -1;
-static int hf_lbmc_umq_rxreq_ulb_trcrr_abort_ulb_src_id = -1;
-static int hf_lbmc_umq_rxreq_ulb_trcrr_abort_assign_id = -1;
-static int hf_lbmc_umq_rxreq_ulb_trcrr_abort_tsp = -1;
-static int hf_lbmc_umq_qmgmt = -1;
-static int hf_lbmc_umq_qmgmt_next_hdr = -1;
-static int hf_lbmc_umq_qmgmt_hdr_len = -1;
-static int hf_lbmc_umq_resub_req = -1;
-static int hf_lbmc_umq_resub_req_next_hdr = -1;
-static int hf_lbmc_umq_resub_req_hdr_len = -1;
-static int hf_lbmc_umq_resub_req_flags = -1;
-static int hf_lbmc_umq_resub_req_flags_ignore = -1;
-static int hf_lbmc_umq_resub_req_msgid_regid = -1;
-static int hf_lbmc_umq_resub_req_msgid_stamp = -1;
-static int hf_lbmc_umq_resub_req_rcr_idx = -1;
-static int hf_lbmc_umq_resub_req_resp_ip = -1;
-static int hf_lbmc_umq_resub_req_resp_port = -1;
-static int hf_lbmc_umq_resub_req_appset_idx = -1;
-static int hf_lbmc_umq_resub_resp = -1;
-static int hf_lbmc_umq_resub_resp_next_hdr = -1;
-static int hf_lbmc_umq_resub_resp_hdr_len = -1;
-static int hf_lbmc_umq_resub_resp_flags = -1;
-static int hf_lbmc_umq_resub_resp_flags_ignore = -1;
-static int hf_lbmc_umq_resub_resp_code = -1;
-static int hf_lbmc_umq_resub_resp_msgid_regid = -1;
-static int hf_lbmc_umq_resub_resp_msgid_stamp = -1;
-static int hf_lbmc_umq_resub_resp_rcr_idx = -1;
-static int hf_lbmc_umq_resub_resp_reserved = -1;
-static int hf_lbmc_umq_resub_resp_appset_idx = -1;
-static int hf_lbmc_topic_interest = -1;
-static int hf_lbmc_topic_interest_next_hdr = -1;
-static int hf_lbmc_topic_interest_hdr_len = -1;
-static int hf_lbmc_topic_interest_flags = -1;
-static int hf_lbmc_topic_interest_flags_ignore = -1;
-static int hf_lbmc_topic_interest_flags_cancel = -1;
-static int hf_lbmc_topic_interest_flags_refresh = -1;
-static int hf_lbmc_topic_interest_domain_id = -1;
-static int hf_lbmc_pattern_interest = -1;
-static int hf_lbmc_pattern_interest_next_hdr = -1;
-static int hf_lbmc_pattern_interest_hdr_len = -1;
-static int hf_lbmc_pattern_interest_flags = -1;
-static int hf_lbmc_pattern_interest_flags_ignore = -1;
-static int hf_lbmc_pattern_interest_flags_cancel = -1;
-static int hf_lbmc_pattern_interest_flags_refresh = -1;
-static int hf_lbmc_pattern_interest_type = -1;
-static int hf_lbmc_pattern_interest_domain_id = -1;
-static int hf_lbmc_pattern_interest_index = -1;
-static int hf_lbmc_advertisement = -1;
-static int hf_lbmc_advertisement_next_hdr = -1;
-static int hf_lbmc_advertisement_hdr_len = -1;
-static int hf_lbmc_advertisement_flags = -1;
-static int hf_lbmc_advertisement_flags_ignore = -1;
-static int hf_lbmc_advertisement_flags_eos = -1;
-static int hf_lbmc_advertisement_flags_pattern = -1;
-static int hf_lbmc_advertisement_flags_change = -1;
-static int hf_lbmc_advertisement_flags_ctxinst = -1;
-static int hf_lbmc_advertisement_hop_count = -1;
-static int hf_lbmc_advertisement_ad_flags = -1;
-static int hf_lbmc_advertisement_ad_flags_lj = -1;
-static int hf_lbmc_advertisement_ad_flags_ume = -1;
-static int hf_lbmc_advertisement_ad_flags_acktosrc = -1;
-static int hf_lbmc_advertisement_ad_flags_queue = -1;
-static int hf_lbmc_advertisement_ad_flags_ulb = -1;
-static int hf_lbmc_advertisement_cost = -1;
-static int hf_lbmc_advertisement_transport_idx = -1;
-static int hf_lbmc_advertisement_topic_idx = -1;
-static int hf_lbmc_advertisement_low_seqno = -1;
-static int hf_lbmc_advertisement_high_seqno = -1;
-static int hf_lbmc_advertisement_domain_id = -1;
-static int hf_lbmc_advertisement_pat_idx = -1;
-static int hf_lbmc_advertisement_ctxinst = -1;
-static int hf_lbmc_ume_storename = -1;
-static int hf_lbmc_ume_storename_next_hdr = -1;
-static int hf_lbmc_ume_storename_hdr_len = -1;
-static int hf_lbmc_ume_storename_flags = -1;
-static int hf_lbmc_ume_storename_flags_ignore = -1;
-static int hf_lbmc_ume_storename_store = -1;
-static int hf_lbmc_umq_ulb_rcr = -1;
-static int hf_lbmc_umq_ulb_rcr_next_hdr = -1;
-static int hf_lbmc_umq_ulb_rcr_hdr_len = -1;
-static int hf_lbmc_umq_ulb_rcr_flags = -1;
-static int hf_lbmc_umq_ulb_rcr_flags_ignore = -1;
-static int hf_lbmc_umq_ulb_rcr_flags_r_flag = -1;
-static int hf_lbmc_umq_ulb_rcr_flags_d_flag = -1;
-static int hf_lbmc_umq_ulb_rcr_flags_eoi_flag = -1;
-static int hf_lbmc_umq_ulb_rcr_flags_boi_flag = -1;
-static int hf_lbmc_umq_ulb_rcr_queue_id = -1;
-static int hf_lbmc_umq_ulb_rcr_ulb_src_id = -1;
-static int hf_lbmc_umq_ulb_rcr_msgid_regid = -1;
-static int hf_lbmc_umq_ulb_rcr_msgid_stamp = -1;
-static int hf_lbmc_umq_ulb_rcr_topic_tsp = -1;
-static int hf_lbmc_umq_ulb_rcr_assign_id = -1;
-static int hf_lbmc_umq_ulb_rcr_appset_idx = -1;
-static int hf_lbmc_umq_ulb_rcr_num_ras = -1;
-static int hf_lbmc_umq_lf = -1;
-static int hf_lbmc_umq_lf_next_hdr = -1;
-static int hf_lbmc_umq_lf_hdr_len = -1;
-static int hf_lbmc_umq_lf_flags = -1;
-static int hf_lbmc_umq_lf_flags_ignore = -1;
-static int hf_lbmc_umq_lf_type = -1;
-static int hf_lbmc_umq_lf_num_srcs = -1;
-static int hf_lbmc_umq_lf_lf = -1;
-static int hf_lbmc_ctxinfo = -1;
-static int hf_lbmc_ctxinfo_next_hdr = -1;
-static int hf_lbmc_ctxinfo_hdr_len = -1;
-static int hf_lbmc_ctxinfo_flags = -1;
-static int hf_lbmc_ctxinfo_flags_ignore = -1;
-static int hf_lbmc_ctxinfo_flags_query = -1;
-static int hf_lbmc_ctxinfo_flags_addr = -1;
-static int hf_lbmc_ctxinfo_flags_ctxinst = -1;
-static int hf_lbmc_ctxinfo_flags_name = -1;
-static int hf_lbmc_ctxinfo_flags_tnwgsrc = -1;
-static int hf_lbmc_ctxinfo_flags_tnwgrcv = -1;
-static int hf_lbmc_ctxinfo_flags_proxy = -1;
-static int hf_lbmc_ctxinfo_reserved = -1;
-static int hf_lbmc_ctxinfo_hop_count = -1;
-static int hf_lbmc_ctxinfo_port = -1;
-static int hf_lbmc_ctxinfo_addr = -1;
-static int hf_lbmc_ctxinfo_domain_id = -1;
-static int hf_lbmc_ctxinfo_ctxinst = -1;
-static int hf_lbmc_ctxinfo_name = -1;
-static int hf_lbmc_ume_pser = -1;
-static int hf_lbmc_ume_pser_next_hdr = -1;
-static int hf_lbmc_ume_pser_hdr_len = -1;
-static int hf_lbmc_ume_pser_flags = -1;
-static int hf_lbmc_ume_pser_flags_ignore = -1;
-static int hf_lbmc_ume_pser_flags_source_ctxinst = -1;
-static int hf_lbmc_ume_pser_flags_store_ctxinst = -1;
-static int hf_lbmc_ume_pser_flags_reelect = -1;
-static int hf_lbmc_ume_pser_source_ip = -1;
-static int hf_lbmc_ume_pser_store_ip = -1;
-static int hf_lbmc_ume_pser_transport_idx = -1;
-static int hf_lbmc_ume_pser_topic_idx = -1;
-static int hf_lbmc_ume_pser_source_port = -1;
-static int hf_lbmc_ume_pser_store_port = -1;
-static int hf_lbmc_ume_pser_source_ctxinst = -1;
-static int hf_lbmc_ume_pser_store_ctxinst = -1;
-static int hf_lbmc_domain = -1;
-static int hf_lbmc_domain_next_hdr = -1;
-static int hf_lbmc_domain_hdr_len = -1;
-static int hf_lbmc_domain_flags = -1;
-static int hf_lbmc_domain_flags_ignore = -1;
-static int hf_lbmc_domain_flags_active = -1;
-static int hf_lbmc_domain_domain = -1;
-static int hf_lbmc_tnwg_capabilities = -1;
-static int hf_lbmc_tnwg_capabilities_next_hdr = -1;
-static int hf_lbmc_tnwg_capabilities_hdr_len = -1;
-static int hf_lbmc_tnwg_capabilities_flags = -1;
-static int hf_lbmc_tnwg_capabilities_flags_ignore = -1;
-static int hf_lbmc_tnwg_capabilities_flags_version = -1;
-static int hf_lbmc_tnwg_capabilities_capabilities1 = -1;
-static int hf_lbmc_tnwg_capabilities_capabilities1_ume = -1;
-static int hf_lbmc_tnwg_capabilities_capabilities1_umq = -1;
-static int hf_lbmc_tnwg_capabilities_capabilities2 = -1;
-static int hf_lbmc_tnwg_capabilities_capabilities3 = -1;
-static int hf_lbmc_tnwg_capabilities_capabilities3_pcre = -1;
-static int hf_lbmc_tnwg_capabilities_capabilities3_regex = -1;
-static int hf_lbmc_tnwg_capabilities_capabilities4 = -1;
-static int hf_lbmc_patidx = -1;
-static int hf_lbmc_patidx_next_hdr = -1;
-static int hf_lbmc_patidx_hdr_len = -1;
-static int hf_lbmc_patidx_flags = -1;
-static int hf_lbmc_patidx_flags_ignore = -1;
-static int hf_lbmc_patidx_patidx = -1;
-static int hf_lbmc_ume_client_lifetime = -1;
-static int hf_lbmc_ume_client_lifetime_next_hdr = -1;
-static int hf_lbmc_ume_client_lifetime_hdr_len = -1;
-static int hf_lbmc_ume_client_lifetime_flags = -1;
-static int hf_lbmc_ume_client_lifetime_flags_ignore = -1;
-static int hf_lbmc_ume_client_lifetime_activity_tmo = -1;
-static int hf_lbmc_ume_client_lifetime_lifetime = -1;
-static int hf_lbmc_ume_client_lifetime_ttl = -1;
-static int hf_lbmc_ume_sid = -1;
-static int hf_lbmc_ume_sid_next_hdr = -1;
-static int hf_lbmc_ume_sid_hdr_len = -1;
-static int hf_lbmc_ume_sid_flags = -1;
-static int hf_lbmc_ume_sid_flags_ignore = -1;
-static int hf_lbmc_ume_sid_sid = -1;
-static int hf_lbmc_umq_idx_cmd = -1;
-static int hf_lbmc_umq_idx_cmd_next_hdr = -1;
-static int hf_lbmc_umq_idx_cmd_hdr_len = -1;
-static int hf_lbmc_umq_idx_cmd_flags = -1;
-static int hf_lbmc_umq_idx_cmd_flags_ignore = -1;
-static int hf_lbmc_umq_idx_cmd_cmd_type = -1;
-static int hf_lbmc_umq_idx_cmd_queue_id = -1;
-static int hf_lbmc_umq_idx_cmd_cmd_id = -1;
-static int hf_lbmc_umq_idx_cmd_inst_idx = -1;
-static int hf_lbmc_umq_idx_cmd_regid = -1;
-static int hf_lbmc_umq_idx_cmd_stop_assign = -1;
-static int hf_lbmc_umq_idx_cmd_stop_assign_rcr_idx = -1;
-static int hf_lbmc_umq_idx_cmd_stop_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_start_assign = -1;
-static int hf_lbmc_umq_idx_cmd_start_assign_rcr_idx = -1;
-static int hf_lbmc_umq_idx_cmd_start_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_release_assign = -1;
-static int hf_lbmc_umq_idx_cmd_release_assign_rcr_idx = -1;
-static int hf_lbmc_umq_idx_cmd_release_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_release_assign_flags = -1;
-static int hf_lbmc_umq_idx_cmd_release_assign_flags_numeric = -1;
-static int hf_lbmc_umq_idx_cmd_release_assign_index_len = -1;
-static int hf_lbmc_umq_idx_cmd_release_assign_reserved = -1;
-static int hf_lbmc_umq_idx_cmd_release_assign_numeric_index = -1;
-static int hf_lbmc_umq_idx_cmd_release_assign_string_index = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_stop_assign = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_stop_assign_src_id = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_stop_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_stop_assign_appset_idx = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_stop_assign_reserved = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_start_assign = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_start_assign_src_id = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_start_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_start_assign_appset_idx = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_start_assign_reserved = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_release_assign = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_release_assign_src_id = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_release_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_release_assign_flags = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_release_assign_flags_numeric = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_release_assign_appset_idx = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_release_assign_index_len = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_release_assign_reserved = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_release_assign_numeric_index = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_release_assign_string_index = -1;
-static int hf_lbmc_umq_idx_cmd_reserve_assign = -1;
-static int hf_lbmc_umq_idx_cmd_reserve_assign_rcr_idx = -1;
-static int hf_lbmc_umq_idx_cmd_reserve_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_reserve_assign_flags = -1;
-static int hf_lbmc_umq_idx_cmd_reserve_assign_flags_numeric = -1;
-static int hf_lbmc_umq_idx_cmd_reserve_assign_index_len = -1;
-static int hf_lbmc_umq_idx_cmd_reserve_assign_reserved = -1;
-static int hf_lbmc_umq_idx_cmd_reserve_assign_numeric_index = -1;
-static int hf_lbmc_umq_idx_cmd_reserve_assign_string_index = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_src_id = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_flags = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_flags_numeric = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_appset_idx = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_index_len = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_reserved = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_numeric_index = -1;
-static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_string_index = -1;
-static int hf_lbmc_umq_idx_cmd_resp = -1;
-static int hf_lbmc_umq_idx_cmd_resp_next_hdr = -1;
-static int hf_lbmc_umq_idx_cmd_resp_hdr_len = -1;
-static int hf_lbmc_umq_idx_cmd_resp_flags = -1;
-static int hf_lbmc_umq_idx_cmd_resp_flags_ignore = -1;
-static int hf_lbmc_umq_idx_cmd_resp_flags_ulb = -1;
-static int hf_lbmc_umq_idx_cmd_resp_resp_type = -1;
-static int hf_lbmc_umq_idx_cmd_resp_queue_id = -1;
-static int hf_lbmc_umq_idx_cmd_resp_cmd_id = -1;
-static int hf_lbmc_umq_idx_cmd_resp_inst_idx = -1;
-static int hf_lbmc_umq_idx_cmd_resp_regid = -1;
-static int hf_lbmc_umq_idx_cmd_resp_err = -1;
-static int hf_lbmc_umq_idx_cmd_resp_err_reserved = -1;
-static int hf_lbmc_umq_idx_cmd_resp_err_code = -1;
-static int hf_lbmc_umq_idx_cmd_resp_err_error_string = -1;
-static int hf_lbmc_umq_idx_cmd_resp_stop_assign = -1;
-static int hf_lbmc_umq_idx_cmd_resp_stop_assign_rcr_idx = -1;
-static int hf_lbmc_umq_idx_cmd_resp_stop_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_resp_start_assign = -1;
-static int hf_lbmc_umq_idx_cmd_resp_start_assign_rcr_idx = -1;
-static int hf_lbmc_umq_idx_cmd_resp_start_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_resp_start_assign_appset_idx = -1;
-static int hf_lbmc_umq_idx_cmd_resp_start_assign_reserved = -1;
-static int hf_lbmc_umq_idx_cmd_resp_release_assign = -1;
-static int hf_lbmc_umq_idx_cmd_resp_release_assign_rcr_idx = -1;
-static int hf_lbmc_umq_idx_cmd_resp_release_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_resp_release_assign_appset_idx = -1;
-static int hf_lbmc_umq_idx_cmd_resp_release_assign_reserved = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_stop_assign = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_stop_assign_src_id = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_stop_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_stop_assign_appset_idx = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_stop_assign_reserved = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_start_assign = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_start_assign_src_id = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_start_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_start_assign_appset_idx = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_start_assign_reserved = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_release_assign = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_release_assign_src_id = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_release_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_release_assign_appset_idx = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_release_assign_reserved = -1;
-static int hf_lbmc_umq_idx_cmd_resp_reserve_assign = -1;
-static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_rcr_idx = -1;
-static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_flags = -1;
-static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_flags_numeric = -1;
-static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_appset_idx = -1;
-static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_index_len = -1;
-static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_reserved = -1;
-static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_numeric_index = -1;
-static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_string_index = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_src_id = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_assign_id = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_flags = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_flags_numeric = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_appset_idx = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_index_len = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_reserved = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_numeric_index = -1;
-static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_string_index = -1;
-static int hf_lbmc_odomain = -1;
-static int hf_lbmc_odomain_next_hdr = -1;
-static int hf_lbmc_odomain_hdr_len = -1;
-static int hf_lbmc_odomain_flags = -1;
-static int hf_lbmc_odomain_flags_ignore = -1;
-static int hf_lbmc_odomain_domain = -1;
-static int hf_lbmc_stream = -1;
-static int hf_lbmc_stream_next_hdr = -1;
-static int hf_lbmc_stream_hdr_len = -1;
-static int hf_lbmc_stream_flags = -1;
-static int hf_lbmc_stream_flags_ignore = -1;
-static int hf_lbmc_stream_stream_id = -1;
-static int hf_lbmc_stream_sqn = -1;
-static int hf_lbmc_stream_ctxinst = -1;
-static int hf_lbmc_topic_md_interest = -1;
-static int hf_lbmc_topic_md_interest_next_hdr = -1;
-static int hf_lbmc_topic_md_interest_hdr_len = -1;
-static int hf_lbmc_topic_md_interest_flags = -1;
-static int hf_lbmc_topic_md_interest_flags_ignore = -1;
-static int hf_lbmc_topic_md_interest_flags_cancel = -1;
-static int hf_lbmc_topic_md_interest_flags_refresh = -1;
-static int hf_lbmc_topic_md_interest_domain_count = -1;
-static int hf_lbmc_topic_md_interest_res1 = -1;
-static int hf_lbmc_topic_md_interest_domain_id = -1;
-static int hf_lbmc_pattern_md_interest = -1;
-static int hf_lbmc_pattern_md_interest_next_hdr = -1;
-static int hf_lbmc_pattern_md_interest_hdr_len = -1;
-static int hf_lbmc_pattern_md_interest_flags = -1;
-static int hf_lbmc_pattern_md_interest_flags_ignore = -1;
-static int hf_lbmc_pattern_md_interest_flags_cancel = -1;
-static int hf_lbmc_pattern_md_interest_flags_refresh = -1;
-static int hf_lbmc_pattern_md_interest_type = -1;
-static int hf_lbmc_pattern_md_interest_domain_count = -1;
-static int hf_lbmc_pattern_md_interest_res1 = -1;
-static int hf_lbmc_pattern_md_interest_index = -1;
-static int hf_lbmc_pattern_md_interest_domain_id = -1;
-static int hf_lbmc_lji_req = -1;
-static int hf_lbmc_lji_req_next_hdr = -1;
-static int hf_lbmc_lji_req_hdr_len = -1;
-static int hf_lbmc_lji_req_flags = -1;
-static int hf_lbmc_lji_req_flags_ignore = -1;
-static int hf_lbmc_lji_req_flags_l_flag = -1;
-static int hf_lbmc_lji_req_flags_m_flag = -1;
-static int hf_lbmc_lji_req_flags_o_flag = -1;
-static int hf_lbmc_lji_req_request_idx = -1;
-static int hf_lbmc_lji_req_transport_idx = -1;
-static int hf_lbmc_lji_req_topic_idx = -1;
-static int hf_lbmc_lji_req_req_ip = -1;
-static int hf_lbmc_lji_req_req_port = -1;
-static int hf_lbmc_lji_req_res = -1;
-static int hf_lbmc_lji_req_tx_low_sqn = -1;
-static int hf_lbmc_lji_req_rx_req_max = -1;
-static int hf_lbmc_lji_req_rx_req_outstanding_max = -1;
-static int hf_lbmc_tnwg_ka = -1;
-static int hf_lbmc_tnwg_ka_next_hdr = -1;
-static int hf_lbmc_tnwg_ka_hdr_len = -1;
-static int hf_lbmc_tnwg_ka_flags = -1;
-static int hf_lbmc_tnwg_ka_flags_ignore = -1;
-static int hf_lbmc_tnwg_ka_flags_q_flag = -1;
-static int hf_lbmc_tnwg_ka_flags_r_flag = -1;
-static int hf_lbmc_tnwg_ka_index = -1;
-static int hf_lbmc_tnwg_ka_ts_seconds = -1;
-static int hf_lbmc_tnwg_ka_ts_microseconds = -1;
-static int hf_lbmc_tnwg_ka_reserved_1 = -1;
-static int hf_lbmc_tnwg_ka_reserved_2 = -1;
-static int hf_lbmc_tnwg_ka_reserved_3 = -1;
-static int hf_lbmc_tnwg_ka_reserved_4 = -1;
-static int hf_lbmc_tnwg_ka_reserved_5 = -1;
-static int hf_lbmc_tnwg_ka_reserved_6 = -1;
-static int hf_lbmc_ume_receiver_keepalive = -1;
-static int hf_lbmc_ume_receiver_keepalive_next_hdr = -1;
-static int hf_lbmc_ume_receiver_keepalive_hdr_len = -1;
-static int hf_lbmc_ume_receiver_keepalive_flags = -1;
-static int hf_lbmc_ume_receiver_keepalive_flags_ignore = -1;
-static int hf_lbmc_ume_receiver_keepalive_rcv_regid = -1;
-static int hf_lbmc_ume_receiver_keepalive_session_id = -1;
-static int hf_lbmc_ume_receiver_keepalive_ctxinst = -1;
-static int hf_lbmc_umq_cmd = -1;
-static int hf_lbmc_umq_cmd_next_hdr = -1;
-static int hf_lbmc_umq_cmd_hdr_len = -1;
-static int hf_lbmc_umq_cmd_flags = -1;
-static int hf_lbmc_umq_cmd_flags_ignore = -1;
-static int hf_lbmc_umq_cmd_cmd_type = -1;
-static int hf_lbmc_umq_cmd_queue_id = -1;
-static int hf_lbmc_umq_cmd_cmd_id = -1;
-static int hf_lbmc_umq_cmd_inst_idx = -1;
-static int hf_lbmc_umq_cmd_regid = -1;
-static int hf_lbmc_umq_cmd_topic_list = -1;
-static int hf_lbmc_umq_cmd_topic_list_serial_num = -1;
-static int hf_lbmc_umq_cmd_msg_retrieve = -1;
-static int hf_lbmc_umq_cmd_msg_retrieve_rcr_idx = -1;
-static int hf_lbmc_umq_cmd_msg_retrieve_assign_id = -1;
-static int hf_lbmc_umq_cmd_msg_retrieve_info_only = -1;
-static int hf_lbmc_umq_cmd_msg_retrieve_num_msgids = -1;
-static int hf_lbmc_umq_cmd_msg_retrieve_flags = -1;
-static int hf_lbmc_umq_cmd_msg_retrieve_entry = -1;
-static int hf_lbmc_umq_cmd_msg_retrieve_entry_regid = -1;
-static int hf_lbmc_umq_cmd_msg_retrieve_entry_stamp = -1;
-static int hf_lbmc_umq_cmd_msg_list = -1;
-static int hf_lbmc_umq_cmd_msg_list_rcr_idx = -1;
-static int hf_lbmc_umq_cmd_msg_list_assign_id = -1;
-static int hf_lbmc_umq_cmd_resp = -1;
-static int hf_lbmc_umq_cmd_resp_next_hdr = -1;
-static int hf_lbmc_umq_cmd_resp_hdr_len = -1;
-static int hf_lbmc_umq_cmd_resp_flags = -1;
-static int hf_lbmc_umq_cmd_resp_flags_ignore = -1;
-static int hf_lbmc_umq_cmd_resp_resp_type = -1;
-static int hf_lbmc_umq_cmd_resp_queue_id = -1;
-static int hf_lbmc_umq_cmd_resp_cmd_id = -1;
-static int hf_lbmc_umq_cmd_resp_inst_idx = -1;
-static int hf_lbmc_umq_cmd_resp_regid = -1;
-static int hf_lbmc_umq_cmd_resp_msg_retrieve = -1;
-static int hf_lbmc_umq_cmd_resp_msg_retrieve_rcr_idx = -1;
-static int hf_lbmc_umq_cmd_resp_msg_retrieve_assign_id = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_retrieve = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_num_msgs = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_flags = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_reserved = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry_regid = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry_stamp = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry_assign_id = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry_num_ras = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry_status = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry_reserved = -1;
-static int hf_lbmc_umq_cmd_resp_msg_list = -1;
-static int hf_lbmc_umq_cmd_resp_msg_list_rcr_idx = -1;
-static int hf_lbmc_umq_cmd_resp_msg_list_assign_id = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_list = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_list_num_msgs = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_list_entry = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_list_entry_regid = -1;
-static int hf_lbmc_umq_cmd_resp_xmsg_list_entry_stamp = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list_num_topics = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_rcr_idx = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_num_appsets = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_topic_len = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_reserved = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_topic = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_num_receiver_type_ids = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_appset_idx = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_appset_name_len = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_reserved = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_name = -1;
-static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_receiver_type_id = -1;
-static int hf_lbmc_umq_cmd_resp_err = -1;
-static int hf_lbmc_umq_cmd_resp_err_reserved = -1;
-static int hf_lbmc_umq_cmd_resp_err_code = -1;
-static int hf_lbmc_umq_cmd_resp_err_errmsg = -1;
-static int hf_lbmc_sri_req = -1;
-static int hf_lbmc_sri_req_next_hdr = -1;
-static int hf_lbmc_sri_req_hdr_len = -1;
-static int hf_lbmc_sri_req_flags = -1;
-static int hf_lbmc_sri_req_flags_ignore = -1;
-static int hf_lbmc_sri_req_transport_idx = -1;
-static int hf_lbmc_sri_req_topic_idx = -1;
-static int hf_lbmc_ume_store_domain = -1;
-static int hf_lbmc_ume_store_domain_next_hdr = -1;
-static int hf_lbmc_ume_store_domain_hdr_len = -1;
-static int hf_lbmc_ume_store_domain_flags = -1;
-static int hf_lbmc_ume_store_domain_flags_ignore = -1;
-static int hf_lbmc_ume_store_domain_domain = -1;
-static int hf_lbmc_sri = -1;
-static int hf_lbmc_sri_next_hdr = -1;
-static int hf_lbmc_sri_hdr_len = -1;
-static int hf_lbmc_sri_flags = -1;
-static int hf_lbmc_sri_flags_ignore = -1;
-static int hf_lbmc_sri_flags_acktosrc = -1;
-static int hf_lbmc_sri_flags_initial_sqn_known = -1;
-static int hf_lbmc_sri_version = -1;
-static int hf_lbmc_sri_low_sqn = -1;
-static int hf_lbmc_sri_high_sqn = -1;
-static int hf_lbmc_route_info = -1;
-static int hf_lbmc_route_info_next_hdr = -1;
-static int hf_lbmc_route_info_hdr_len = -1;
-static int hf_lbmc_route_info_flags = -1;
-static int hf_lbmc_route_info_flags_ignore = -1;
-static int hf_lbmc_route_info_gateway_version = -1;
-static int hf_lbmc_route_info_configuration_signature = -1;
-static int hf_lbmc_route_info_node_id = -1;
-static int hf_lbmc_route_info_topology = -1;
-static int hf_lbmc_route_info_vers = -1;
-static int hf_lbmc_route_info_sqn = -1;
-static int hf_lbmc_route_info_ttl = -1;
-static int hf_lbmc_route_info_reserved1 = -1;
-static int hf_lbmc_route_info_reserved2 = -1;
-static int hf_lbmc_route_info_neighbor = -1;
-static int hf_lbmc_route_info_neighbor_next_hdr = -1;
-static int hf_lbmc_route_info_neighbor_hdr_len = -1;
-static int hf_lbmc_route_info_neighbor_flags = -1;
-static int hf_lbmc_route_info_neighbor_flags_ignore = -1;
-static int hf_lbmc_route_info_neighbor_node_id = -1;
-static int hf_lbmc_route_info_neighbor_ingress_cost = -1;
-static int hf_lbmc_route_info_neighbor_egress_cost = -1;
-static int hf_lbmc_gateway_name = -1;
-static int hf_lbmc_gateway_name_next_hdr = -1;
-static int hf_lbmc_gateway_name_hdr_len = -1;
-static int hf_lbmc_gateway_name_flags = -1;
-static int hf_lbmc_gateway_name_flags_ignore = -1;
-static int hf_lbmc_gateway_name_gateway_name = -1;
-static int hf_lbmc_auth_request = -1;
-static int hf_lbmc_auth_request_next_hdr = -1;
-static int hf_lbmc_auth_request_hdr_len = -1;
-static int hf_lbmc_auth_request_flags = -1;
-static int hf_lbmc_auth_request_flags_ignore = -1;
-static int hf_lbmc_auth_request_opid = -1;
-static int hf_lbmc_auth_request_user_len = -1;
-static int hf_lbmc_auth_request_user_name = -1;
-static int hf_lbmc_auth_challenge = -1;
-static int hf_lbmc_auth_challenge_next_hdr = -1;
-static int hf_lbmc_auth_challenge_hdr_len = -1;
-static int hf_lbmc_auth_challenge_flags = -1;
-static int hf_lbmc_auth_challenge_flags_ignore = -1;
-static int hf_lbmc_auth_challenge_opid = -1;
-static int hf_lbmc_auth_challenge_mod_len = -1;
-static int hf_lbmc_auth_challenge_gen_len = -1;
-static int hf_lbmc_auth_challenge_salt_len = -1;
-static int hf_lbmc_auth_challenge_pubkey_len = -1;
-static int hf_lbmc_auth_challenge_mod = -1;
-static int hf_lbmc_auth_challenge_gen = -1;
-static int hf_lbmc_auth_challenge_salt = -1;
-static int hf_lbmc_auth_challenge_pubkey = -1;
-static int hf_lbmc_auth_challenge_rsp = -1;
-static int hf_lbmc_auth_challenge_rsp_next_hdr = -1;
-static int hf_lbmc_auth_challenge_rsp_hdr_len = -1;
-static int hf_lbmc_auth_challenge_rsp_flags = -1;
-static int hf_lbmc_auth_challenge_rsp_flags_ignore = -1;
-static int hf_lbmc_auth_challenge_rsp_opid = -1;
-static int hf_lbmc_auth_challenge_rsp_pubkey_len = -1;
-static int hf_lbmc_auth_challenge_rsp_evidence_len = -1;
-static int hf_lbmc_auth_challenge_rsp_pubkey = -1;
-static int hf_lbmc_auth_challenge_rsp_evidence = -1;
-static int hf_lbmc_auth_result = -1;
-static int hf_lbmc_auth_result_next_hdr = -1;
-static int hf_lbmc_auth_result_hdr_len = -1;
-static int hf_lbmc_auth_result_flags = -1;
-static int hf_lbmc_auth_result_flags_ignore = -1;
-static int hf_lbmc_auth_result_opid = -1;
-static int hf_lbmc_auth_result_result = -1;
-static int hf_lbmc_auth_unknown = -1;
-static int hf_lbmc_auth_unknown_next_hdr = -1;
-static int hf_lbmc_auth_unknown_hdr_len = -1;
-static int hf_lbmc_auth_unknown_flags = -1;
-static int hf_lbmc_auth_unknown_opid = -1;
-static int hf_lbmc_auth_unknown_data = -1;
-static int hf_lbmc_hmac = -1;
-static int hf_lbmc_hmac_next_hdr = -1;
-static int hf_lbmc_hmac_hdr_len = -1;
-static int hf_lbmc_hmac_flags = -1;
-static int hf_lbmc_hmac_flags_ignore = -1;
-static int hf_lbmc_hmac_padding = -1;
-static int hf_lbmc_hmac_data = -1;
-static int hf_lbmc_umq_sid = -1;
-static int hf_lbmc_umq_sid_next_hdr = -1;
-static int hf_lbmc_umq_sid_hdr_len = -1;
-static int hf_lbmc_umq_sid_flags = -1;
-static int hf_lbmc_umq_sid_flags_ignore = -1;
-static int hf_lbmc_umq_sid_key = -1;
-static int hf_lbmc_umq_sid_sid = -1;
-static int hf_lbmc_destination = -1;
-static int hf_lbmc_destination_next_hdr = -1;
-static int hf_lbmc_destination_hdr_len = -1;
-static int hf_lbmc_destination_flags = -1;
-static int hf_lbmc_destination_flags_ignore = -1;
-static int hf_lbmc_destination_domain_id = -1;
-static int hf_lbmc_destination_ipaddr = -1;
-static int hf_lbmc_destination_port = -1;
-static int hf_lbmc_destination_hops_taken = -1;
-static int hf_lbmc_destination_orig_domain_id = -1;
-static int hf_lbmc_destination_orig_ipaddr = -1;
-static int hf_lbmc_destination_orig_port = -1;
-static int hf_lbmc_destination_reserved = -1;
-static int hf_lbmc_topic_idx = -1;
-static int hf_lbmc_topic_idx_next_hdr = -1;
-static int hf_lbmc_topic_idx_hdr_len = -1;
-static int hf_lbmc_topic_idx_flags = -1;
-static int hf_lbmc_topic_idx_flags_ignore = -1;
-static int hf_lbmc_topic_idx_tidx = -1;
-static int hf_lbmc_topic_source = -1;
-static int hf_lbmc_topic_source_next_hdr = -1;
-static int hf_lbmc_topic_source_hdr_len = -1;
-static int hf_lbmc_topic_source_flags = -1;
-static int hf_lbmc_topic_source_flags_ignore = -1;
-static int hf_lbmc_topic_source_flags_eos = -1;
-static int hf_lbmc_topic_source_domain_id = -1;
-static int hf_lbmc_topic_source_exfunc = -1;
-static int hf_lbmc_topic_source_exfunc_next_hdr = -1;
-static int hf_lbmc_topic_source_exfunc_hdr_len = -1;
-static int hf_lbmc_topic_source_exfunc_flags = -1;
-static int hf_lbmc_topic_source_exfunc_flags_ignore = -1;
-static int hf_lbmc_topic_source_exfunc_src_ip = -1;
-static int hf_lbmc_topic_source_exfunc_src_port = -1;
-static int hf_lbmc_topic_source_exfunc_unused = -1;
-static int hf_lbmc_topic_source_exfunc_functionality_flags = -1;
-static int hf_lbmc_topic_source_exfunc_functionality_flags_ulb = -1;
-static int hf_lbmc_topic_source_exfunc_functionality_flags_umq = -1;
-static int hf_lbmc_topic_source_exfunc_functionality_flags_ume = -1;
-static int hf_lbmc_topic_source_exfunc_functionality_flags_lj = -1;
-static int hf_lbmc_ume_store_ext = -1;
-static int hf_lbmc_ume_store_ext_next_hdr = -1;
-static int hf_lbmc_ume_store_ext_hdr_len = -1;
-static int hf_lbmc_ume_store_ext_flags = -1;
-static int hf_lbmc_ume_store_ext_flags_ignore = -1;
-static int hf_lbmc_ume_store_ext_grp_idx = -1;
-static int hf_lbmc_ume_store_ext_store_tcp_port = -1;
-static int hf_lbmc_ume_store_ext_store_idx = -1;
-static int hf_lbmc_ume_store_ext_store_ip_addr = -1;
-static int hf_lbmc_ume_store_ext_src_reg_id = -1;
-static int hf_lbmc_ume_store_ext_domain_id = -1;
-static int hf_lbmc_ume_store_ext_version = -1;
-static int hf_lbmc_ume_psrc_election_token = -1;
-static int hf_lbmc_ume_psrc_election_token_next_hdr = -1;
-static int hf_lbmc_ume_psrc_election_token_hdr_len = -1;
-static int hf_lbmc_ume_psrc_election_token_flags = -1;
-static int hf_lbmc_ume_psrc_election_token_flags_ignore = -1;
-static int hf_lbmc_ume_psrc_election_token_store_index = -1;
-static int hf_lbmc_ume_psrc_election_token_token = -1;
-static int hf_lbmc_tcp_sid = -1;
-static int hf_lbmc_tcp_sid_next_hdr = -1;
-static int hf_lbmc_tcp_sid_hdr_len = -1;
-static int hf_lbmc_tcp_sid_flags = -1;
-static int hf_lbmc_tcp_sid_flags_ignore = -1;
-static int hf_lbmc_tcp_sid_sid = -1;
-static int hf_lbmc_extopt = -1;
-static int hf_lbmc_extopt_next_hdr = -1;
-static int hf_lbmc_extopt_hdr_len = -1;
-static int hf_lbmc_extopt_flags = -1;
-static int hf_lbmc_extopt_flags_ignore = -1;
-static int hf_lbmc_extopt_flags_ignore_subtype = -1;
-static int hf_lbmc_extopt_flags_more_fragments = -1;
-static int hf_lbmc_extopt_id = -1;
-static int hf_lbmc_extopt_subtype = -1;
-static int hf_lbmc_extopt_fragment_offset = -1;
-static int hf_lbmc_extopt_data = -1;
-static int hf_lbmc_extopt_cfgopt = -1;
-static int hf_lbmc_extopt_cfgopt_scope = -1;
-static int hf_lbmc_extopt_cfgopt_parent = -1;
-static int hf_lbmc_extopt_cfgopt_name = -1;
-static int hf_lbmc_extopt_cfgopt_value = -1;
-static int hf_lbmc_extopt_msgsel = -1;
-static int hf_lbmc_extopt_reassembled_data = -1;
-static int hf_lbmc_extopt_reassembled_data_subtype = -1;
-static int hf_lbmc_extopt_reassembled_data_len = -1;
-static int hf_lbmc_extopt_reassembled_data_data = -1;
-static int hf_lbmc_extopt_reassembled_data_msgsel = -1;
-static int hf_lbm_msg_properties = -1;
-static int hf_lbm_msg_properties_data = -1;
-static int hf_lbm_msg_properties_data_magic = -1;
-static int hf_lbm_msg_properties_data_num_fields = -1;
-static int hf_lbm_msg_properties_data_version = -1;
-static int hf_lbm_msg_properties_data_type = -1;
-static int hf_lbm_msg_properties_data_res = -1;
-static int hf_lbm_msg_properties_hdr = -1;
-static int hf_lbm_msg_properties_hdr_key_offset = -1;
-static int hf_lbm_msg_properties_hdr_value_offset = -1;
-static int hf_lbm_msg_properties_hdr_hash = -1;
-static int hf_lbm_msg_properties_hdr_type = -1;
-static int hf_lbm_msg_properties_hdr_key = -1;
-static int hf_lbm_msg_properties_hdr_boolean_value = -1;
-static int hf_lbm_msg_properties_hdr_byte_value = -1;
-static int hf_lbm_msg_properties_hdr_short_value = -1;
-static int hf_lbm_msg_properties_hdr_int_value = -1;
-static int hf_lbm_msg_properties_hdr_float_value = -1;
-static int hf_lbm_msg_properties_hdr_long_value = -1;
-static int hf_lbm_msg_properties_hdr_double_value = -1;
-static int hf_lbm_msg_properties_hdr_string_value = -1;
-static int hf_lbm_msg_properties_hdr_unknown_value = -1;
-static int hf_lbmc_unhandled = -1;
-static int hf_lbmc_unhandled_next_hdr = -1;
-static int hf_lbmc_unhandled_hdr_len = -1;
-static int hf_lbmc_unhandled_data = -1;
-static int hf_lbm_stream = -1;
-static int hf_lbm_stream_stream_id = -1;
-static int hf_lbm_stream_substream_id = -1;
-static int hf_lbmc_reassembly = -1;
-static int hf_lbmc_reassembly_fragment = -1;
-static int hf_reassembly_frame = -1;
+static int hf_lbmc_tag;
+static int hf_lbmc_topic;
+static int hf_lbmc_version;
+static int hf_lbmc_type;
+static int hf_lbmc_next_hdr;
+static int hf_lbmc_msglen;
+static int hf_lbmc_tidx;
+static int hf_lbmc_sqn;
+static int hf_lbmc_frag;
+static int hf_lbmc_frag_next_hdr;
+static int hf_lbmc_frag_hdr_len;
+static int hf_lbmc_frag_flags;
+static int hf_lbmc_frag_flags_ignore;
+static int hf_lbmc_frag_first_sqn;
+static int hf_lbmc_frag_offset;
+static int hf_lbmc_frag_len;
+static int hf_lbmc_batch;
+static int hf_lbmc_batch_next_hdr;
+static int hf_lbmc_batch_hdr_len;
+static int hf_lbmc_batch_flags;
+static int hf_lbmc_batch_flags_ignore;
+static int hf_lbmc_batch_flags_batch_start;
+static int hf_lbmc_batch_flags_batch_end;
+static int hf_lbmc_tcp_request;
+static int hf_lbmc_tcp_request_next_hdr;
+static int hf_lbmc_tcp_request_hdr_len;
+static int hf_lbmc_tcp_request_flags;
+static int hf_lbmc_tcp_request_flags_ignore;
+static int hf_lbmc_tcp_request_transport;
+static int hf_lbmc_tcp_request_qidx;
+static int hf_lbmc_tcp_request_port;
+static int hf_lbmc_tcp_request_reserved;
+static int hf_lbmc_tcp_request_ipaddr;
+static int hf_lbmc_topicname;
+static int hf_lbmc_topicname_next_hdr;
+static int hf_lbmc_topicname_hdr_len;
+static int hf_lbmc_topicname_flags;
+static int hf_lbmc_topicname_flags_ignore;
+static int hf_lbmc_topicname_topicname;
+static int hf_lbmc_apphdr;
+static int hf_lbmc_apphdr_next_hdr;
+static int hf_lbmc_apphdr_hdr_len;
+static int hf_lbmc_apphdr_code;
+static int hf_lbmc_apphdr_ignore;
+static int hf_lbmc_apphdr_data;
+static int hf_lbmc_apphdr_chain;
+static int hf_lbmc_apphdr_chain_next_hdr;
+static int hf_lbmc_apphdr_chain_hdr_len;
+static int hf_lbmc_apphdr_chain_res;
+static int hf_lbmc_apphdr_chain_first_chain_hdr;
+static int hf_lbmc_apphdr_chain_element;
+static int hf_lbmc_apphdr_chain_element_next_hdr;
+static int hf_lbmc_apphdr_chain_element_hdr_len;
+static int hf_lbmc_apphdr_chain_element_res;
+static int hf_lbmc_apphdr_chain_element_data;
+static int hf_lbmc_apphdr_chain_msgprop;
+static int hf_lbmc_apphdr_chain_msgprop_next_hdr;
+static int hf_lbmc_apphdr_chain_msgprop_hdr_len;
+static int hf_lbmc_apphdr_chain_msgprop_res;
+static int hf_lbmc_apphdr_chain_msgprop_len;
+static int hf_lbmc_umq_msgid;
+static int hf_lbmc_umq_msgid_next_hdr;
+static int hf_lbmc_umq_msgid_hdr_len;
+static int hf_lbmc_umq_msgid_flags;
+static int hf_lbmc_umq_msgid_flags_ignore;
+static int hf_lbmc_umq_msgid_msgid_regid;
+static int hf_lbmc_umq_msgid_msgid_stamp;
+static int hf_lbmc_umq_sqd_rcv;
+static int hf_lbmc_umq_sqd_rcv_next_hdr;
+static int hf_lbmc_umq_sqd_rcv_hdr_len;
+static int hf_lbmc_umq_sqd_rcv_flags;
+static int hf_lbmc_umq_sqd_rcv_flags_ignore;
+static int hf_lbmc_umq_sqd_rcv_flags_r_flag;
+static int hf_lbmc_umq_sqd_rcv_flags_s_flag;
+static int hf_lbmc_umq_sqd_rcv_flags_re_flag;
+static int hf_lbmc_umq_sqd_rcv_flags_eoi_flag;
+static int hf_lbmc_umq_sqd_rcv_flags_boi_flag;
+static int hf_lbmc_umq_sqd_rcv_queue_id;
+static int hf_lbmc_umq_sqd_rcv_queue_ver;
+static int hf_lbmc_umq_sqd_rcv_rcr_idx;
+static int hf_lbmc_umq_sqd_rcv_assign_id;
+static int hf_lbmc_umq_resub;
+static int hf_lbmc_umq_resub_next_hdr;
+static int hf_lbmc_umq_resub_hdr_len;
+static int hf_lbmc_umq_resub_flags;
+static int hf_lbmc_umq_resub_flags_ignore;
+static int hf_lbmc_umq_resub_flags_q_flag;
+static int hf_lbmc_umq_resub_rcr_idx;
+static int hf_lbmc_umq_resub_resp_ip;
+static int hf_lbmc_umq_resub_resp_port;
+static int hf_lbmc_umq_resub_appset_idx;
+static int hf_lbmc_otid;
+static int hf_lbmc_otid_next_hdr;
+static int hf_lbmc_otid_hdr_len;
+static int hf_lbmc_otid_flags;
+static int hf_lbmc_otid_flags_ignore;
+static int hf_lbmc_otid_otid;
+static int hf_lbmc_ctxinst;
+static int hf_lbmc_ctxinst_next_hdr;
+static int hf_lbmc_ctxinst_hdr_len;
+static int hf_lbmc_ctxinst_flags;
+static int hf_lbmc_ctxinst_flags_ignore;
+static int hf_lbmc_ctxinst_ctxinst;
+static int hf_lbmc_ctxinstd;
+static int hf_lbmc_ctxinstr;
+static int hf_lbmc_srcidx;
+static int hf_lbmc_srcidx_next_hdr;
+static int hf_lbmc_srcidx_hdr_len;
+static int hf_lbmc_srcidx_flags;
+static int hf_lbmc_srcidx_flags_ignore;
+static int hf_lbmc_srcidx_srcidx;
+static int hf_lbmc_umq_ulb_msg;
+static int hf_lbmc_umq_ulb_msg_next_hdr;
+static int hf_lbmc_umq_ulb_msg_hdr_len;
+static int hf_lbmc_umq_ulb_msg_flags;
+static int hf_lbmc_umq_ulb_msg_flags_ignore;
+static int hf_lbmc_umq_ulb_msg_flags_a_flag;
+static int hf_lbmc_umq_ulb_msg_flags_r_flag;
+static int hf_lbmc_umq_ulb_msg_queue_id;
+static int hf_lbmc_umq_ulb_msg_ulb_src_id;
+static int hf_lbmc_umq_ulb_msg_assign_id;
+static int hf_lbmc_umq_ulb_msg_appset_idx;
+static int hf_lbmc_umq_ulb_msg_num_ras;
+static int hf_lbmc_ssf_init;
+static int hf_lbmc_ssf_init_next_hdr;
+static int hf_lbmc_ssf_init_hdr_len;
+static int hf_lbmc_ssf_init_transport;
+static int hf_lbmc_ssf_init_flags;
+static int hf_lbmc_ssf_init_flags_ignore;
+static int hf_lbmc_ssf_init_flags_default_inclusions;
+static int hf_lbmc_ssf_init_flags_default_exclusions;
+static int hf_lbmc_ssf_init_transport_idx;
+static int hf_lbmc_ssf_init_client_idx;
+static int hf_lbmc_ssf_init_ssf_port;
+static int hf_lbmc_ssf_init_res;
+static int hf_lbmc_ssf_init_ssf_ip;
+static int hf_lbmc_ssf_creq;
+static int hf_lbmc_ssf_creq_next_hdr;
+static int hf_lbmc_ssf_creq_hdr_len;
+static int hf_lbmc_ssf_creq_flags;
+static int hf_lbmc_ssf_creq_flags_ignore;
+static int hf_lbmc_ssf_creq_mode;
+static int hf_lbmc_ssf_creq_transport_idx;
+static int hf_lbmc_ssf_creq_topic_idx;
+static int hf_lbmc_ssf_creq_client_idx;
+static int hf_lbmc_ume_preg;
+static int hf_lbmc_ume_preg_next_hdr;
+static int hf_lbmc_ume_preg_hdr_len;
+static int hf_lbmc_ume_preg_flags;
+static int hf_lbmc_ume_preg_flags_ignore;
+static int hf_lbmc_ume_preg_flags_f_flag;
+static int hf_lbmc_ume_preg_flags_p_flag;
+static int hf_lbmc_ume_preg_flags_w_flag;
+static int hf_lbmc_ume_preg_flags_d_flag;
+static int hf_lbmc_ume_preg_s_flag;
+static int hf_lbmc_ume_preg_marker;
+static int hf_lbmc_ume_preg_reg_id;
+static int hf_lbmc_ume_preg_transport_idx;
+static int hf_lbmc_ume_preg_topic_idx;
+static int hf_lbmc_ume_preg_src_reg_id;
+static int hf_lbmc_ume_preg_resp_port;
+static int hf_lbmc_ume_preg_res2;
+static int hf_lbmc_ume_preg_resp_ip;
+static int hf_lbmc_ume_preg_resp;
+static int hf_lbmc_ume_preg_resp_next_hdr;
+static int hf_lbmc_ume_preg_resp_hdr_len;
+static int hf_lbmc_ume_preg_resp_code;
+static int hf_lbmc_ume_preg_resp_code_ignore;
+static int hf_lbmc_ume_preg_resp_code_e_flag;
+static int hf_lbmc_ume_preg_resp_code_o_flag;
+static int hf_lbmc_ume_preg_resp_code_n_flag;
+static int hf_lbmc_ume_preg_resp_code_w_flag;
+static int hf_lbmc_ume_preg_resp_code_d_flag;
+static int hf_lbmc_ume_preg_resp_code_code;
+static int hf_lbmc_ume_preg_resp_s_flag;
+static int hf_lbmc_ume_preg_resp_marker;
+static int hf_lbmc_ume_preg_resp_reg_id;
+static int hf_lbmc_ume_preg_resp_transport_idx;
+static int hf_lbmc_ume_preg_resp_topic_idx;
+static int hf_lbmc_ume_preg_resp_low_seqnum;
+static int hf_lbmc_ume_preg_resp_high_seqnum;
+static int hf_lbmc_ume_ack;
+static int hf_lbmc_ume_ack_next_hdr;
+static int hf_lbmc_ume_ack_hdr_len;
+static int hf_lbmc_ume_ack_flags;
+static int hf_lbmc_ume_ack_flags_ignore;
+static int hf_lbmc_ume_ack_flags_o_flag;
+static int hf_lbmc_ume_ack_flags_f_flag;
+static int hf_lbmc_ume_ack_flags_u_flag;
+static int hf_lbmc_ume_ack_flags_e_flag;
+static int hf_lbmc_ume_ack_type;
+static int hf_lbmc_ume_ack_transport_idx;
+static int hf_lbmc_ume_ack_id_2;
+static int hf_lbmc_ume_ack_rcv_reg_id;
+static int hf_lbmc_ume_ack_seqnum;
+static int hf_lbmc_ume_rxreq;
+static int hf_lbmc_ume_rxreq_next_hdr;
+static int hf_lbmc_ume_rxreq_hdr_len;
+static int hf_lbmc_ume_rxreq_flags;
+static int hf_lbmc_ume_rxreq_flags_ignore;
+static int hf_lbmc_ume_rxreq_flags_tsni_req;
+static int hf_lbmc_ume_rxreq_marker;
+static int hf_lbmc_ume_rxreq_request_idx;
+static int hf_lbmc_ume_rxreq_transport_idx;
+static int hf_lbmc_ume_rxreq_id_2;
+static int hf_lbmc_ume_rxreq_seqnum;
+static int hf_lbmc_ume_rxreq_rx_port;
+static int hf_lbmc_ume_rxreq_res;
+static int hf_lbmc_ume_rxreq_rx_ip;
+static int hf_lbmc_ume_keepalive;
+static int hf_lbmc_ume_keepalive_next_hdr;
+static int hf_lbmc_ume_keepalive_hdr_len;
+static int hf_lbmc_ume_keepalive_flags;
+static int hf_lbmc_ume_keepalive_flags_ignore;
+static int hf_lbmc_ume_keepalive_flags_r_flag;
+static int hf_lbmc_ume_keepalive_flags_t_flag;
+static int hf_lbmc_ume_keepalive_type;
+static int hf_lbmc_ume_keepalive_transport_idx;
+static int hf_lbmc_ume_keepalive_topic_idx;
+static int hf_lbmc_ume_keepalive_reg_id;
+static int hf_lbmc_ume_storeid;
+static int hf_lbmc_ume_storeid_next_hdr;
+static int hf_lbmc_ume_storeid_hdr_len;
+static int hf_lbmc_ume_storeid_ignore;
+static int hf_lbmc_ume_storeid_store_id;
+static int hf_lbmc_ume_ranged_ack;
+static int hf_lbmc_ume_ranged_ack_next_hdr;
+static int hf_lbmc_ume_ranged_ack_hdr_len;
+static int hf_lbmc_ume_ranged_ack_flags;
+static int hf_lbmc_ume_ranged_ack_flags_ignore;
+static int hf_lbmc_ume_ranged_ack_first_seqnum;
+static int hf_lbmc_ume_ranged_ack_last_seqnum;
+static int hf_lbmc_ume_ack_id;
+static int hf_lbmc_ume_ack_id_next_hdr;
+static int hf_lbmc_ume_ack_id_hdr_len;
+static int hf_lbmc_ume_ack_id_flags;
+static int hf_lbmc_ume_ack_id_flags_ignore;
+static int hf_lbmc_ume_ack_id_id;
+static int hf_lbmc_ume_capability;
+static int hf_lbmc_ume_capability_next_hdr;
+static int hf_lbmc_ume_capability_hdr_len;
+static int hf_lbmc_ume_capability_flags;
+static int hf_lbmc_ume_capability_flags_ignore;
+static int hf_lbmc_ume_capability_flags_client_lifetime_flag;
+static int hf_lbmc_ume_capability_flags_qc_flag;
+static int hf_lbmc_ume_capability_flags_ranged_rx_flag;
+static int hf_lbmc_ume_proxy_src;
+static int hf_lbmc_ume_proxy_src_next_hdr;
+static int hf_lbmc_ume_proxy_src_hdr_len;
+static int hf_lbmc_ume_proxy_src_flags;
+static int hf_lbmc_ume_proxy_src_flags_ignore;
+static int hf_lbmc_ume_proxy_src_flags_enable;
+static int hf_lbmc_ume_proxy_src_flags_compatibility;
+static int hf_lbmc_ume_store_group;
+static int hf_lbmc_ume_store_group_next_hdr;
+static int hf_lbmc_ume_store_group_hdr_len;
+static int hf_lbmc_ume_store_group_flags;
+static int hf_lbmc_ume_store_group_flags_ignore;
+static int hf_lbmc_ume_store_group_grp_idx;
+static int hf_lbmc_ume_store_group_grp_sz;
+static int hf_lbmc_ume_store_group_res1;
+static int hf_lbmc_ume_store;
+static int hf_lbmc_ume_store_next_hdr;
+static int hf_lbmc_ume_store_hdr_len;
+static int hf_lbmc_ume_store_flags;
+static int hf_lbmc_ume_store_flags_ignore;
+static int hf_lbmc_ume_store_grp_idx;
+static int hf_lbmc_ume_store_store_tcp_port;
+static int hf_lbmc_ume_store_store_idx;
+static int hf_lbmc_ume_store_store_ip_addr;
+static int hf_lbmc_ume_store_src_reg_id;
+static int hf_lbmc_ume_lj_info;
+static int hf_lbmc_ume_lj_info_next_hdr;
+static int hf_lbmc_ume_lj_info_hdr_len;
+static int hf_lbmc_ume_lj_info_flags;
+static int hf_lbmc_ume_lj_info_flags_ignore;
+static int hf_lbmc_ume_lj_info_low_seqnum;
+static int hf_lbmc_ume_lj_info_high_seqnum;
+static int hf_lbmc_ume_lj_info_qidx;
+static int hf_lbmc_tsni;
+static int hf_lbmc_tsni_next_hdr;
+static int hf_lbmc_tsni_hdr_len;
+static int hf_lbmc_tsni_ignore;
+static int hf_lbmc_tsni_num_recs;
+static int hf_lbmc_tsni_rec;
+static int hf_lbmc_tsni_rec_tidx;
+static int hf_lbmc_tsni_rec_sqn;
+static int hf_lbmc_umq_reg;
+static int hf_lbmc_umq_reg_next_hdr;
+static int hf_lbmc_umq_reg_hdr_len;
+static int hf_lbmc_umq_reg_flags;
+static int hf_lbmc_umq_reg_flags_ignore;
+static int hf_lbmc_umq_reg_flags_r_flag;
+static int hf_lbmc_umq_reg_flags_t_flag;
+static int hf_lbmc_umq_reg_flags_i_flag;
+static int hf_lbmc_umq_reg_flags_msg_sel_flag;
+static int hf_lbmc_umq_reg_reg_type;
+static int hf_lbmc_umq_reg_queue_id;
+static int hf_lbmc_umq_reg_cmd_id;
+static int hf_lbmc_umq_reg_inst_idx;
+static int hf_lbmc_umq_reg_regid;
+static int hf_lbmc_umq_reg_reg_ctx;
+static int hf_lbmc_umq_reg_reg_ctx_port;
+static int hf_lbmc_umq_reg_reg_ctx_reserved;
+static int hf_lbmc_umq_reg_reg_ctx_ip;
+static int hf_lbmc_umq_reg_reg_ctx_capabilities;
+static int hf_lbmc_umq_reg_reg_src;
+static int hf_lbmc_umq_reg_reg_src_transport_idx;
+static int hf_lbmc_umq_reg_reg_src_topic_idx;
+static int hf_lbmc_umq_reg_reg_rcv;
+static int hf_lbmc_umq_reg_reg_rcv_assign_id;
+static int hf_lbmc_umq_reg_reg_rcv_rcv_type_id;
+static int hf_lbmc_umq_reg_reg_rcv_last_topic_rcr_tsp;
+static int hf_lbmc_umq_reg_rcv_dereg;
+static int hf_lbmc_umq_reg_rcv_dereg_rcr_idx;
+static int hf_lbmc_umq_reg_rcv_dereg_assign_id;
+static int hf_lbmc_umq_reg_reg_ulb_rcv;
+static int hf_lbmc_umq_reg_reg_ulb_rcv_ulb_src_id;
+static int hf_lbmc_umq_reg_reg_ulb_rcv_assign_id;
+static int hf_lbmc_umq_reg_reg_ulb_rcv_rcv_type_id;
+static int hf_lbmc_umq_reg_reg_ulb_rcv_port;
+static int hf_lbmc_umq_reg_reg_ulb_rcv_reserved;
+static int hf_lbmc_umq_reg_reg_ulb_rcv_ip;
+static int hf_lbmc_umq_reg_reg_ulb_rcv_capabilities;
+static int hf_lbmc_umq_reg_ulb_rcv_dereg;
+static int hf_lbmc_umq_reg_ulb_rcv_dereg_ulb_src_id;
+static int hf_lbmc_umq_reg_ulb_rcv_dereg_assign_id;
+static int hf_lbmc_umq_reg_reg_observer_rcv;
+static int hf_lbmc_umq_reg_reg_observer_rcv_assign_id;
+static int hf_lbmc_umq_reg_reg_observer_rcv_rcv_type_id;
+static int hf_lbmc_umq_reg_reg_observer_rcv_last_topic_rcr_tsp;
+static int hf_lbmc_umq_reg_observer_rcv_dereg;
+static int hf_lbmc_umq_reg_observer_rcv_dereg_rcr_idx;
+static int hf_lbmc_umq_reg_observer_rcv_dereg_assign_id;
+static int hf_lbmc_umq_reg_resp;
+static int hf_lbmc_umq_reg_resp_next_hdr;
+static int hf_lbmc_umq_reg_resp_hdr_len;
+static int hf_lbmc_umq_reg_resp_flags;
+static int hf_lbmc_umq_reg_resp_flags_ignore;
+static int hf_lbmc_umq_reg_resp_flags_r_flag;
+static int hf_lbmc_umq_reg_resp_flags_l_flag;
+static int hf_lbmc_umq_reg_resp_flags_src_s_flag;
+static int hf_lbmc_umq_reg_resp_flags_src_d_flag;
+static int hf_lbmc_umq_reg_resp_resp_type;
+static int hf_lbmc_umq_reg_resp_queue_id;
+static int hf_lbmc_umq_reg_resp_cmd_id;
+static int hf_lbmc_umq_reg_resp_inst_idx;
+static int hf_lbmc_umq_reg_resp_regid;
+static int hf_lbmc_umq_reg_resp_reg_ctx;
+static int hf_lbmc_umq_reg_resp_reg_ctx_capabilities;
+static int hf_lbmc_umq_reg_resp_reg_ctx_ex;
+static int hf_lbmc_umq_reg_resp_reg_ctx_ex_capabilities;
+static int hf_lbmc_umq_reg_resp_reg_ctx_ex_reserved;
+static int hf_lbmc_umq_reg_resp_reg_ctx_ex_flags;
+static int hf_lbmc_umq_reg_resp_reg_ctx_ex_flags_firstmsg;
+static int hf_lbmc_umq_reg_resp_reg_ctx_ex_stamp;
+static int hf_lbmc_umq_reg_resp_err;
+static int hf_lbmc_umq_reg_resp_err_reserved;
+static int hf_lbmc_umq_reg_resp_err_code;
+static int hf_lbmc_umq_reg_resp_reg_src;
+static int hf_lbmc_umq_reg_resp_reg_src_rcr_idx;
+static int hf_lbmc_umq_reg_resp_reg_rcv;
+static int hf_lbmc_umq_reg_resp_reg_rcv_rcr_idx;
+static int hf_lbmc_umq_reg_resp_reg_rcv_assign_id;
+static int hf_lbmc_umq_reg_resp_reg_rcv_appset_idx;
+static int hf_lbmc_umq_reg_resp_reg_rcv_reserved;
+static int hf_lbmc_umq_reg_resp_rcv_dereg;
+static int hf_lbmc_umq_reg_resp_rcv_dereg_rcr_idx;
+static int hf_lbmc_umq_reg_resp_rcv_dereg_assign_id;
+static int hf_lbmc_umq_reg_resp_reg_ulb_rcv;
+static int hf_lbmc_umq_reg_resp_reg_ulb_rcv_ulb_src_id;
+static int hf_lbmc_umq_reg_resp_reg_ulb_rcv_assign_id;
+static int hf_lbmc_umq_reg_resp_reg_ulb_rcv_appset_idx;
+static int hf_lbmc_umq_reg_resp_reg_ulb_rcv_reserved;
+static int hf_lbmc_umq_reg_resp_reg_ulb_rcv_capabilities;
+static int hf_lbmc_umq_reg_resp_ulb_rcv_dereg;
+static int hf_lbmc_umq_reg_resp_ulb_rcv_dereg_ulb_src_id;
+static int hf_lbmc_umq_reg_resp_ulb_rcv_dereg_assign_id;
+static int hf_lbmc_umq_reg_resp_reg_observer_rcv;
+static int hf_lbmc_umq_reg_resp_reg_observer_rcv_rcr_idx;
+static int hf_lbmc_umq_reg_resp_reg_observer_rcv_assign_id;
+static int hf_lbmc_umq_reg_resp_reg_observer_rcv_appset_idx;
+static int hf_lbmc_umq_reg_resp_reg_observer_rcv_reserved;
+static int hf_lbmc_umq_reg_resp_observer_rcv_dereg;
+static int hf_lbmc_umq_reg_resp_observer_rcv_dereg_rcr_idx;
+static int hf_lbmc_umq_reg_resp_observer_rcv_dereg_assign_id;
+static int hf_lbmc_umq_ack;
+static int hf_lbmc_umq_ack_next_hdr;
+static int hf_lbmc_umq_ack_hdr_len;
+static int hf_lbmc_umq_ack_msgs;
+static int hf_lbmc_umq_ack_msgs_ignore;
+static int hf_lbmc_umq_ack_msgs_t_flag;
+static int hf_lbmc_umq_ack_msgs_d_flag;
+static int hf_lbmc_umq_ack_numids;
+static int hf_lbmc_umq_ack_ack_type;
+static int hf_lbmc_umq_ack_msgid;
+static int hf_lbmc_umq_ack_msgid_regid;
+static int hf_lbmc_umq_ack_msgid_stamp;
+static int hf_lbmc_umq_ack_stable;
+static int hf_lbmc_umq_ack_stable_queue_id;
+static int hf_lbmc_umq_ack_stable_inst_idx;
+static int hf_lbmc_umq_ack_stable_reserved;
+static int hf_lbmc_umq_ack_cr;
+static int hf_lbmc_umq_ack_cr_rcr_idx;
+static int hf_lbmc_umq_ack_cr_assign_id;
+static int hf_lbmc_umq_ack_cr_appset_idx;
+static int hf_lbmc_umq_ack_cr_reserved;
+static int hf_lbmc_umq_ack_ulb_cr;
+static int hf_lbmc_umq_ack_ulb_cr_ulb_src_id;
+static int hf_lbmc_umq_ack_ulb_cr_assign_id;
+static int hf_lbmc_umq_ack_ulb_cr_appset_idx;
+static int hf_lbmc_umq_ack_ulb_cr_reserved;
+static int hf_lbmc_umq_rcr;
+static int hf_lbmc_umq_rcr_next_hdr;
+static int hf_lbmc_umq_rcr_hdr_len;
+static int hf_lbmc_umq_rcr_flags;
+static int hf_lbmc_umq_rcr_flags_ignore;
+static int hf_lbmc_umq_rcr_flags_r_flag;
+static int hf_lbmc_umq_rcr_flags_d_flag;
+static int hf_lbmc_umq_rcr_flags_s_flag;
+static int hf_lbmc_umq_rcr_flags_eoi_flag;
+static int hf_lbmc_umq_rcr_flags_boi_flag;
+static int hf_lbmc_umq_rcr_queue_id;
+static int hf_lbmc_umq_rcr_rcr_idx;
+static int hf_lbmc_umq_rcr_msgid_regid;
+static int hf_lbmc_umq_rcr_msgid_stamp;
+static int hf_lbmc_umq_rcr_topic_tsp;
+static int hf_lbmc_umq_rcr_q_tsp;
+static int hf_lbmc_umq_rcr_assign_id;
+static int hf_lbmc_umq_rcr_appset_idx;
+static int hf_lbmc_umq_rcr_num_ras;
+static int hf_lbmc_umq_rcr_queue_ver;
+static int hf_lbmc_cntl_umq_ka;
+static int hf_lbmc_cntl_umq_ka_next_hdr;
+static int hf_lbmc_cntl_umq_ka_hdr_len;
+static int hf_lbmc_cntl_umq_ka_flags;
+static int hf_lbmc_cntl_umq_ka_flags_ignore;
+static int hf_lbmc_cntl_umq_ka_flags_r_flag;
+static int hf_lbmc_cntl_umq_ka_ka_type;
+static int hf_lbmc_cntl_umq_ka_queue_id;
+static int hf_lbmc_cntl_umq_ka_regid;
+static int hf_lbmc_cntl_umq_ka_inst_idx;
+static int hf_lbmc_cntl_umq_ka_reserved;
+static int hf_lbmc_umq_ka_src;
+static int hf_lbmc_umq_ka_src_transport_idx;
+static int hf_lbmc_umq_ka_src_topic_idx;
+static int hf_lbmc_umq_ka_rcv;
+static int hf_lbmc_umq_ka_rcv_rcr_idx;
+static int hf_lbmc_umq_ka_rcv_assign_id;
+static int hf_lbmc_umq_ka_ulb_rcv;
+static int hf_lbmc_umq_ka_ulb_rcv_ulb_src_id;
+static int hf_lbmc_umq_ka_ulb_rcv_assign_id;
+static int hf_lbmc_umq_ka_ulb_rcv_resp;
+static int hf_lbmc_umq_ka_ulb_rcv_resp_ulb_src_id;
+static int hf_lbmc_umq_ka_ulb_rcv_resp_assign_id;
+static int hf_lbmc_umq_ka_ulb_rcv_resp_appset_idx;
+static int hf_lbmc_umq_ka_ulb_rcv_resp_reserved;
+static int hf_lbmc_umq_rxreq;
+static int hf_lbmc_umq_rxreq_next_hdr;
+static int hf_lbmc_umq_rxreq_hdr_len;
+static int hf_lbmc_umq_rxreq_flags;
+static int hf_lbmc_umq_rxreq_flags_ignore;
+static int hf_lbmc_umq_rxreq_flags_r_flag;
+static int hf_lbmc_umq_rxreq_rxreq_type;
+static int hf_lbmc_umq_rxreq_regid_resp;
+static int hf_lbmc_umq_rxreq_regid_resp_regid;
+static int hf_lbmc_umq_rxreq_addr_resp;
+static int hf_lbmc_umq_rxreq_addr_resp_ip;
+static int hf_lbmc_umq_rxreq_addr_resp_port;
+static int hf_lbmc_umq_rxreq_addr_resp_reserved;
+static int hf_lbmc_umq_rxreq_mr;
+static int hf_lbmc_umq_rxreq_mr_assign_id;
+static int hf_lbmc_umq_rxreq_mr_msgid_regid;
+static int hf_lbmc_umq_rxreq_mr_msgid_stamp;
+static int hf_lbmc_umq_rxreq_ulb_mr;
+static int hf_lbmc_umq_rxreq_ulb_mr_ulb_src_id;
+static int hf_lbmc_umq_rxreq_ulb_mr_assign_id;
+static int hf_lbmc_umq_rxreq_ulb_mr_appset_idx;
+static int hf_lbmc_umq_rxreq_ulb_mr_reserved;
+static int hf_lbmc_umq_rxreq_ulb_mr_msgid_regid;
+static int hf_lbmc_umq_rxreq_ulb_mr_msgid_stamp;
+static int hf_lbmc_umq_rxreq_ulb_mr_abort;
+static int hf_lbmc_umq_rxreq_ulb_mr_abort_ulb_src_id;
+static int hf_lbmc_umq_rxreq_ulb_mr_abort_assign_id;
+static int hf_lbmc_umq_rxreq_ulb_mr_abort_msgid_regid;
+static int hf_lbmc_umq_rxreq_ulb_mr_abort_msgid_stamp;
+static int hf_lbmc_umq_rxreq_qrcrr;
+static int hf_lbmc_umq_rxreq_qrcrr_tsp;
+static int hf_lbmc_umq_rxreq_trcrr;
+static int hf_lbmc_umq_rxreq_trcrr_rcr_idx;
+static int hf_lbmc_umq_rxreq_trcrr_tsp;
+static int hf_lbmc_umq_rxreq_ulb_trcrr;
+static int hf_lbmc_umq_rxreq_ulb_trcrr_ulb_src_id;
+static int hf_lbmc_umq_rxreq_ulb_trcrr_assign_id;
+static int hf_lbmc_umq_rxreq_ulb_trcrr_tsp;
+static int hf_lbmc_umq_rxreq_ulb_trcrr_abort;
+static int hf_lbmc_umq_rxreq_ulb_trcrr_abort_ulb_src_id;
+static int hf_lbmc_umq_rxreq_ulb_trcrr_abort_assign_id;
+static int hf_lbmc_umq_rxreq_ulb_trcrr_abort_tsp;
+static int hf_lbmc_umq_qmgmt;
+static int hf_lbmc_umq_qmgmt_next_hdr;
+static int hf_lbmc_umq_qmgmt_hdr_len;
+static int hf_lbmc_umq_resub_req;
+static int hf_lbmc_umq_resub_req_next_hdr;
+static int hf_lbmc_umq_resub_req_hdr_len;
+static int hf_lbmc_umq_resub_req_flags;
+static int hf_lbmc_umq_resub_req_flags_ignore;
+static int hf_lbmc_umq_resub_req_msgid_regid;
+static int hf_lbmc_umq_resub_req_msgid_stamp;
+static int hf_lbmc_umq_resub_req_rcr_idx;
+static int hf_lbmc_umq_resub_req_resp_ip;
+static int hf_lbmc_umq_resub_req_resp_port;
+static int hf_lbmc_umq_resub_req_appset_idx;
+static int hf_lbmc_umq_resub_resp;
+static int hf_lbmc_umq_resub_resp_next_hdr;
+static int hf_lbmc_umq_resub_resp_hdr_len;
+static int hf_lbmc_umq_resub_resp_flags;
+static int hf_lbmc_umq_resub_resp_flags_ignore;
+static int hf_lbmc_umq_resub_resp_code;
+static int hf_lbmc_umq_resub_resp_msgid_regid;
+static int hf_lbmc_umq_resub_resp_msgid_stamp;
+static int hf_lbmc_umq_resub_resp_rcr_idx;
+static int hf_lbmc_umq_resub_resp_reserved;
+static int hf_lbmc_umq_resub_resp_appset_idx;
+static int hf_lbmc_topic_interest;
+static int hf_lbmc_topic_interest_next_hdr;
+static int hf_lbmc_topic_interest_hdr_len;
+static int hf_lbmc_topic_interest_flags;
+static int hf_lbmc_topic_interest_flags_ignore;
+static int hf_lbmc_topic_interest_flags_cancel;
+static int hf_lbmc_topic_interest_flags_refresh;
+static int hf_lbmc_topic_interest_domain_id;
+static int hf_lbmc_pattern_interest;
+static int hf_lbmc_pattern_interest_next_hdr;
+static int hf_lbmc_pattern_interest_hdr_len;
+static int hf_lbmc_pattern_interest_flags;
+static int hf_lbmc_pattern_interest_flags_ignore;
+static int hf_lbmc_pattern_interest_flags_cancel;
+static int hf_lbmc_pattern_interest_flags_refresh;
+static int hf_lbmc_pattern_interest_type;
+static int hf_lbmc_pattern_interest_domain_id;
+static int hf_lbmc_pattern_interest_index;
+static int hf_lbmc_advertisement;
+static int hf_lbmc_advertisement_next_hdr;
+static int hf_lbmc_advertisement_hdr_len;
+static int hf_lbmc_advertisement_flags;
+static int hf_lbmc_advertisement_flags_ignore;
+static int hf_lbmc_advertisement_flags_eos;
+static int hf_lbmc_advertisement_flags_pattern;
+static int hf_lbmc_advertisement_flags_change;
+static int hf_lbmc_advertisement_flags_ctxinst;
+static int hf_lbmc_advertisement_hop_count;
+static int hf_lbmc_advertisement_ad_flags;
+static int hf_lbmc_advertisement_ad_flags_lj;
+static int hf_lbmc_advertisement_ad_flags_ume;
+static int hf_lbmc_advertisement_ad_flags_acktosrc;
+static int hf_lbmc_advertisement_ad_flags_queue;
+static int hf_lbmc_advertisement_ad_flags_ulb;
+static int hf_lbmc_advertisement_cost;
+static int hf_lbmc_advertisement_transport_idx;
+static int hf_lbmc_advertisement_topic_idx;
+static int hf_lbmc_advertisement_low_seqno;
+static int hf_lbmc_advertisement_high_seqno;
+static int hf_lbmc_advertisement_domain_id;
+static int hf_lbmc_advertisement_pat_idx;
+static int hf_lbmc_advertisement_ctxinst;
+static int hf_lbmc_ume_storename;
+static int hf_lbmc_ume_storename_next_hdr;
+static int hf_lbmc_ume_storename_hdr_len;
+static int hf_lbmc_ume_storename_flags;
+static int hf_lbmc_ume_storename_flags_ignore;
+static int hf_lbmc_ume_storename_store;
+static int hf_lbmc_umq_ulb_rcr;
+static int hf_lbmc_umq_ulb_rcr_next_hdr;
+static int hf_lbmc_umq_ulb_rcr_hdr_len;
+static int hf_lbmc_umq_ulb_rcr_flags;
+static int hf_lbmc_umq_ulb_rcr_flags_ignore;
+static int hf_lbmc_umq_ulb_rcr_flags_r_flag;
+static int hf_lbmc_umq_ulb_rcr_flags_d_flag;
+static int hf_lbmc_umq_ulb_rcr_flags_eoi_flag;
+static int hf_lbmc_umq_ulb_rcr_flags_boi_flag;
+static int hf_lbmc_umq_ulb_rcr_queue_id;
+static int hf_lbmc_umq_ulb_rcr_ulb_src_id;
+static int hf_lbmc_umq_ulb_rcr_msgid_regid;
+static int hf_lbmc_umq_ulb_rcr_msgid_stamp;
+static int hf_lbmc_umq_ulb_rcr_topic_tsp;
+static int hf_lbmc_umq_ulb_rcr_assign_id;
+static int hf_lbmc_umq_ulb_rcr_appset_idx;
+static int hf_lbmc_umq_ulb_rcr_num_ras;
+static int hf_lbmc_umq_lf;
+static int hf_lbmc_umq_lf_next_hdr;
+static int hf_lbmc_umq_lf_hdr_len;
+static int hf_lbmc_umq_lf_flags;
+static int hf_lbmc_umq_lf_flags_ignore;
+static int hf_lbmc_umq_lf_type;
+static int hf_lbmc_umq_lf_num_srcs;
+static int hf_lbmc_umq_lf_lf;
+static int hf_lbmc_ctxinfo;
+static int hf_lbmc_ctxinfo_next_hdr;
+static int hf_lbmc_ctxinfo_hdr_len;
+static int hf_lbmc_ctxinfo_flags;
+static int hf_lbmc_ctxinfo_flags_ignore;
+static int hf_lbmc_ctxinfo_flags_query;
+static int hf_lbmc_ctxinfo_flags_addr;
+static int hf_lbmc_ctxinfo_flags_ctxinst;
+static int hf_lbmc_ctxinfo_flags_name;
+static int hf_lbmc_ctxinfo_flags_tnwgsrc;
+static int hf_lbmc_ctxinfo_flags_tnwgrcv;
+static int hf_lbmc_ctxinfo_flags_proxy;
+static int hf_lbmc_ctxinfo_reserved;
+static int hf_lbmc_ctxinfo_hop_count;
+static int hf_lbmc_ctxinfo_port;
+static int hf_lbmc_ctxinfo_addr;
+static int hf_lbmc_ctxinfo_domain_id;
+static int hf_lbmc_ctxinfo_ctxinst;
+static int hf_lbmc_ctxinfo_name;
+static int hf_lbmc_ume_pser;
+static int hf_lbmc_ume_pser_next_hdr;
+static int hf_lbmc_ume_pser_hdr_len;
+static int hf_lbmc_ume_pser_flags;
+static int hf_lbmc_ume_pser_flags_ignore;
+static int hf_lbmc_ume_pser_flags_source_ctxinst;
+static int hf_lbmc_ume_pser_flags_store_ctxinst;
+static int hf_lbmc_ume_pser_flags_reelect;
+static int hf_lbmc_ume_pser_source_ip;
+static int hf_lbmc_ume_pser_store_ip;
+static int hf_lbmc_ume_pser_transport_idx;
+static int hf_lbmc_ume_pser_topic_idx;
+static int hf_lbmc_ume_pser_source_port;
+static int hf_lbmc_ume_pser_store_port;
+static int hf_lbmc_ume_pser_source_ctxinst;
+static int hf_lbmc_ume_pser_store_ctxinst;
+static int hf_lbmc_domain;
+static int hf_lbmc_domain_next_hdr;
+static int hf_lbmc_domain_hdr_len;
+static int hf_lbmc_domain_flags;
+static int hf_lbmc_domain_flags_ignore;
+static int hf_lbmc_domain_flags_active;
+static int hf_lbmc_domain_domain;
+static int hf_lbmc_tnwg_capabilities;
+static int hf_lbmc_tnwg_capabilities_next_hdr;
+static int hf_lbmc_tnwg_capabilities_hdr_len;
+static int hf_lbmc_tnwg_capabilities_flags;
+static int hf_lbmc_tnwg_capabilities_flags_ignore;
+static int hf_lbmc_tnwg_capabilities_flags_version;
+static int hf_lbmc_tnwg_capabilities_capabilities1;
+static int hf_lbmc_tnwg_capabilities_capabilities1_ume;
+static int hf_lbmc_tnwg_capabilities_capabilities1_umq;
+static int hf_lbmc_tnwg_capabilities_capabilities2;
+static int hf_lbmc_tnwg_capabilities_capabilities3;
+static int hf_lbmc_tnwg_capabilities_capabilities3_pcre;
+static int hf_lbmc_tnwg_capabilities_capabilities3_regex;
+static int hf_lbmc_tnwg_capabilities_capabilities4;
+static int hf_lbmc_patidx;
+static int hf_lbmc_patidx_next_hdr;
+static int hf_lbmc_patidx_hdr_len;
+static int hf_lbmc_patidx_flags;
+static int hf_lbmc_patidx_flags_ignore;
+static int hf_lbmc_patidx_patidx;
+static int hf_lbmc_ume_client_lifetime;
+static int hf_lbmc_ume_client_lifetime_next_hdr;
+static int hf_lbmc_ume_client_lifetime_hdr_len;
+static int hf_lbmc_ume_client_lifetime_flags;
+static int hf_lbmc_ume_client_lifetime_flags_ignore;
+static int hf_lbmc_ume_client_lifetime_activity_tmo;
+static int hf_lbmc_ume_client_lifetime_lifetime;
+static int hf_lbmc_ume_client_lifetime_ttl;
+static int hf_lbmc_ume_sid;
+static int hf_lbmc_ume_sid_next_hdr;
+static int hf_lbmc_ume_sid_hdr_len;
+static int hf_lbmc_ume_sid_flags;
+static int hf_lbmc_ume_sid_flags_ignore;
+static int hf_lbmc_ume_sid_sid;
+static int hf_lbmc_umq_idx_cmd;
+static int hf_lbmc_umq_idx_cmd_next_hdr;
+static int hf_lbmc_umq_idx_cmd_hdr_len;
+static int hf_lbmc_umq_idx_cmd_flags;
+static int hf_lbmc_umq_idx_cmd_flags_ignore;
+static int hf_lbmc_umq_idx_cmd_cmd_type;
+static int hf_lbmc_umq_idx_cmd_queue_id;
+static int hf_lbmc_umq_idx_cmd_cmd_id;
+static int hf_lbmc_umq_idx_cmd_inst_idx;
+static int hf_lbmc_umq_idx_cmd_regid;
+static int hf_lbmc_umq_idx_cmd_stop_assign;
+static int hf_lbmc_umq_idx_cmd_stop_assign_rcr_idx;
+static int hf_lbmc_umq_idx_cmd_stop_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_start_assign;
+static int hf_lbmc_umq_idx_cmd_start_assign_rcr_idx;
+static int hf_lbmc_umq_idx_cmd_start_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_release_assign;
+static int hf_lbmc_umq_idx_cmd_release_assign_rcr_idx;
+static int hf_lbmc_umq_idx_cmd_release_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_release_assign_flags;
+static int hf_lbmc_umq_idx_cmd_release_assign_flags_numeric;
+static int hf_lbmc_umq_idx_cmd_release_assign_index_len;
+static int hf_lbmc_umq_idx_cmd_release_assign_reserved;
+static int hf_lbmc_umq_idx_cmd_release_assign_numeric_index;
+static int hf_lbmc_umq_idx_cmd_release_assign_string_index;
+static int hf_lbmc_umq_idx_cmd_ulb_stop_assign;
+static int hf_lbmc_umq_idx_cmd_ulb_stop_assign_src_id;
+static int hf_lbmc_umq_idx_cmd_ulb_stop_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_ulb_stop_assign_appset_idx;
+static int hf_lbmc_umq_idx_cmd_ulb_stop_assign_reserved;
+static int hf_lbmc_umq_idx_cmd_ulb_start_assign;
+static int hf_lbmc_umq_idx_cmd_ulb_start_assign_src_id;
+static int hf_lbmc_umq_idx_cmd_ulb_start_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_ulb_start_assign_appset_idx;
+static int hf_lbmc_umq_idx_cmd_ulb_start_assign_reserved;
+static int hf_lbmc_umq_idx_cmd_ulb_release_assign;
+static int hf_lbmc_umq_idx_cmd_ulb_release_assign_src_id;
+static int hf_lbmc_umq_idx_cmd_ulb_release_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_ulb_release_assign_flags;
+static int hf_lbmc_umq_idx_cmd_ulb_release_assign_flags_numeric;
+static int hf_lbmc_umq_idx_cmd_ulb_release_assign_appset_idx;
+static int hf_lbmc_umq_idx_cmd_ulb_release_assign_index_len;
+static int hf_lbmc_umq_idx_cmd_ulb_release_assign_reserved;
+static int hf_lbmc_umq_idx_cmd_ulb_release_assign_numeric_index;
+static int hf_lbmc_umq_idx_cmd_ulb_release_assign_string_index;
+static int hf_lbmc_umq_idx_cmd_reserve_assign;
+static int hf_lbmc_umq_idx_cmd_reserve_assign_rcr_idx;
+static int hf_lbmc_umq_idx_cmd_reserve_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_reserve_assign_flags;
+static int hf_lbmc_umq_idx_cmd_reserve_assign_flags_numeric;
+static int hf_lbmc_umq_idx_cmd_reserve_assign_index_len;
+static int hf_lbmc_umq_idx_cmd_reserve_assign_reserved;
+static int hf_lbmc_umq_idx_cmd_reserve_assign_numeric_index;
+static int hf_lbmc_umq_idx_cmd_reserve_assign_string_index;
+static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign;
+static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_src_id;
+static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_flags;
+static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_flags_numeric;
+static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_appset_idx;
+static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_index_len;
+static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_reserved;
+static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_numeric_index;
+static int hf_lbmc_umq_idx_cmd_ulb_reserve_assign_string_index;
+static int hf_lbmc_umq_idx_cmd_resp;
+static int hf_lbmc_umq_idx_cmd_resp_next_hdr;
+static int hf_lbmc_umq_idx_cmd_resp_hdr_len;
+static int hf_lbmc_umq_idx_cmd_resp_flags;
+static int hf_lbmc_umq_idx_cmd_resp_flags_ignore;
+static int hf_lbmc_umq_idx_cmd_resp_flags_ulb;
+static int hf_lbmc_umq_idx_cmd_resp_resp_type;
+static int hf_lbmc_umq_idx_cmd_resp_queue_id;
+static int hf_lbmc_umq_idx_cmd_resp_cmd_id;
+static int hf_lbmc_umq_idx_cmd_resp_inst_idx;
+static int hf_lbmc_umq_idx_cmd_resp_regid;
+static int hf_lbmc_umq_idx_cmd_resp_err;
+static int hf_lbmc_umq_idx_cmd_resp_err_reserved;
+static int hf_lbmc_umq_idx_cmd_resp_err_code;
+static int hf_lbmc_umq_idx_cmd_resp_err_error_string;
+static int hf_lbmc_umq_idx_cmd_resp_stop_assign;
+static int hf_lbmc_umq_idx_cmd_resp_stop_assign_rcr_idx;
+static int hf_lbmc_umq_idx_cmd_resp_stop_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_resp_start_assign;
+static int hf_lbmc_umq_idx_cmd_resp_start_assign_rcr_idx;
+static int hf_lbmc_umq_idx_cmd_resp_start_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_resp_start_assign_appset_idx;
+static int hf_lbmc_umq_idx_cmd_resp_start_assign_reserved;
+static int hf_lbmc_umq_idx_cmd_resp_release_assign;
+static int hf_lbmc_umq_idx_cmd_resp_release_assign_rcr_idx;
+static int hf_lbmc_umq_idx_cmd_resp_release_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_resp_release_assign_appset_idx;
+static int hf_lbmc_umq_idx_cmd_resp_release_assign_reserved;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_stop_assign;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_stop_assign_src_id;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_stop_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_stop_assign_appset_idx;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_stop_assign_reserved;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_start_assign;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_start_assign_src_id;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_start_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_start_assign_appset_idx;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_start_assign_reserved;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_release_assign;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_release_assign_src_id;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_release_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_release_assign_appset_idx;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_release_assign_reserved;
+static int hf_lbmc_umq_idx_cmd_resp_reserve_assign;
+static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_rcr_idx;
+static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_flags;
+static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_flags_numeric;
+static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_appset_idx;
+static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_index_len;
+static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_reserved;
+static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_numeric_index;
+static int hf_lbmc_umq_idx_cmd_resp_reserve_assign_string_index;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_src_id;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_assign_id;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_flags;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_flags_numeric;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_appset_idx;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_index_len;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_reserved;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_numeric_index;
+static int hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_string_index;
+static int hf_lbmc_odomain;
+static int hf_lbmc_odomain_next_hdr;
+static int hf_lbmc_odomain_hdr_len;
+static int hf_lbmc_odomain_flags;
+static int hf_lbmc_odomain_flags_ignore;
+static int hf_lbmc_odomain_domain;
+static int hf_lbmc_stream;
+static int hf_lbmc_stream_next_hdr;
+static int hf_lbmc_stream_hdr_len;
+static int hf_lbmc_stream_flags;
+static int hf_lbmc_stream_flags_ignore;
+static int hf_lbmc_stream_stream_id;
+static int hf_lbmc_stream_sqn;
+static int hf_lbmc_stream_ctxinst;
+static int hf_lbmc_topic_md_interest;
+static int hf_lbmc_topic_md_interest_next_hdr;
+static int hf_lbmc_topic_md_interest_hdr_len;
+static int hf_lbmc_topic_md_interest_flags;
+static int hf_lbmc_topic_md_interest_flags_ignore;
+static int hf_lbmc_topic_md_interest_flags_cancel;
+static int hf_lbmc_topic_md_interest_flags_refresh;
+static int hf_lbmc_topic_md_interest_domain_count;
+static int hf_lbmc_topic_md_interest_res1;
+static int hf_lbmc_topic_md_interest_domain_id;
+static int hf_lbmc_pattern_md_interest;
+static int hf_lbmc_pattern_md_interest_next_hdr;
+static int hf_lbmc_pattern_md_interest_hdr_len;
+static int hf_lbmc_pattern_md_interest_flags;
+static int hf_lbmc_pattern_md_interest_flags_ignore;
+static int hf_lbmc_pattern_md_interest_flags_cancel;
+static int hf_lbmc_pattern_md_interest_flags_refresh;
+static int hf_lbmc_pattern_md_interest_type;
+static int hf_lbmc_pattern_md_interest_domain_count;
+static int hf_lbmc_pattern_md_interest_res1;
+static int hf_lbmc_pattern_md_interest_index;
+static int hf_lbmc_pattern_md_interest_domain_id;
+static int hf_lbmc_lji_req;
+static int hf_lbmc_lji_req_next_hdr;
+static int hf_lbmc_lji_req_hdr_len;
+static int hf_lbmc_lji_req_flags;
+static int hf_lbmc_lji_req_flags_ignore;
+static int hf_lbmc_lji_req_flags_l_flag;
+static int hf_lbmc_lji_req_flags_m_flag;
+static int hf_lbmc_lji_req_flags_o_flag;
+static int hf_lbmc_lji_req_request_idx;
+static int hf_lbmc_lji_req_transport_idx;
+static int hf_lbmc_lji_req_topic_idx;
+static int hf_lbmc_lji_req_req_ip;
+static int hf_lbmc_lji_req_req_port;
+static int hf_lbmc_lji_req_res;
+static int hf_lbmc_lji_req_tx_low_sqn;
+static int hf_lbmc_lji_req_rx_req_max;
+static int hf_lbmc_lji_req_rx_req_outstanding_max;
+static int hf_lbmc_tnwg_ka;
+static int hf_lbmc_tnwg_ka_next_hdr;
+static int hf_lbmc_tnwg_ka_hdr_len;
+static int hf_lbmc_tnwg_ka_flags;
+static int hf_lbmc_tnwg_ka_flags_ignore;
+static int hf_lbmc_tnwg_ka_flags_q_flag;
+static int hf_lbmc_tnwg_ka_flags_r_flag;
+static int hf_lbmc_tnwg_ka_index;
+static int hf_lbmc_tnwg_ka_ts_seconds;
+static int hf_lbmc_tnwg_ka_ts_microseconds;
+static int hf_lbmc_tnwg_ka_reserved_1;
+static int hf_lbmc_tnwg_ka_reserved_2;
+static int hf_lbmc_tnwg_ka_reserved_3;
+static int hf_lbmc_tnwg_ka_reserved_4;
+static int hf_lbmc_tnwg_ka_reserved_5;
+static int hf_lbmc_tnwg_ka_reserved_6;
+static int hf_lbmc_ume_receiver_keepalive;
+static int hf_lbmc_ume_receiver_keepalive_next_hdr;
+static int hf_lbmc_ume_receiver_keepalive_hdr_len;
+static int hf_lbmc_ume_receiver_keepalive_flags;
+static int hf_lbmc_ume_receiver_keepalive_flags_ignore;
+static int hf_lbmc_ume_receiver_keepalive_rcv_regid;
+static int hf_lbmc_ume_receiver_keepalive_session_id;
+static int hf_lbmc_ume_receiver_keepalive_ctxinst;
+static int hf_lbmc_umq_cmd;
+static int hf_lbmc_umq_cmd_next_hdr;
+static int hf_lbmc_umq_cmd_hdr_len;
+static int hf_lbmc_umq_cmd_flags;
+static int hf_lbmc_umq_cmd_flags_ignore;
+static int hf_lbmc_umq_cmd_cmd_type;
+static int hf_lbmc_umq_cmd_queue_id;
+static int hf_lbmc_umq_cmd_cmd_id;
+static int hf_lbmc_umq_cmd_inst_idx;
+static int hf_lbmc_umq_cmd_regid;
+static int hf_lbmc_umq_cmd_topic_list;
+static int hf_lbmc_umq_cmd_topic_list_serial_num;
+static int hf_lbmc_umq_cmd_msg_retrieve;
+static int hf_lbmc_umq_cmd_msg_retrieve_rcr_idx;
+static int hf_lbmc_umq_cmd_msg_retrieve_assign_id;
+static int hf_lbmc_umq_cmd_msg_retrieve_info_only;
+static int hf_lbmc_umq_cmd_msg_retrieve_num_msgids;
+static int hf_lbmc_umq_cmd_msg_retrieve_flags;
+static int hf_lbmc_umq_cmd_msg_retrieve_entry;
+static int hf_lbmc_umq_cmd_msg_retrieve_entry_regid;
+static int hf_lbmc_umq_cmd_msg_retrieve_entry_stamp;
+static int hf_lbmc_umq_cmd_msg_list;
+static int hf_lbmc_umq_cmd_msg_list_rcr_idx;
+static int hf_lbmc_umq_cmd_msg_list_assign_id;
+static int hf_lbmc_umq_cmd_resp;
+static int hf_lbmc_umq_cmd_resp_next_hdr;
+static int hf_lbmc_umq_cmd_resp_hdr_len;
+static int hf_lbmc_umq_cmd_resp_flags;
+static int hf_lbmc_umq_cmd_resp_flags_ignore;
+static int hf_lbmc_umq_cmd_resp_resp_type;
+static int hf_lbmc_umq_cmd_resp_queue_id;
+static int hf_lbmc_umq_cmd_resp_cmd_id;
+static int hf_lbmc_umq_cmd_resp_inst_idx;
+static int hf_lbmc_umq_cmd_resp_regid;
+static int hf_lbmc_umq_cmd_resp_msg_retrieve;
+static int hf_lbmc_umq_cmd_resp_msg_retrieve_rcr_idx;
+static int hf_lbmc_umq_cmd_resp_msg_retrieve_assign_id;
+static int hf_lbmc_umq_cmd_resp_xmsg_retrieve;
+static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_num_msgs;
+static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_flags;
+static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_reserved;
+static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry;
+static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry_regid;
+static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry_stamp;
+static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry_assign_id;
+static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry_num_ras;
+static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry_status;
+static int hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry_reserved;
+static int hf_lbmc_umq_cmd_resp_msg_list;
+static int hf_lbmc_umq_cmd_resp_msg_list_rcr_idx;
+static int hf_lbmc_umq_cmd_resp_msg_list_assign_id;
+static int hf_lbmc_umq_cmd_resp_xmsg_list;
+static int hf_lbmc_umq_cmd_resp_xmsg_list_num_msgs;
+static int hf_lbmc_umq_cmd_resp_xmsg_list_entry;
+static int hf_lbmc_umq_cmd_resp_xmsg_list_entry_regid;
+static int hf_lbmc_umq_cmd_resp_xmsg_list_entry_stamp;
+static int hf_lbmc_umq_cmd_resp_topic_list;
+static int hf_lbmc_umq_cmd_resp_topic_list_num_topics;
+static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry;
+static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_rcr_idx;
+static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_num_appsets;
+static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_topic_len;
+static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_reserved;
+static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_topic;
+static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry;
+static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_num_receiver_type_ids;
+static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_appset_idx;
+static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_appset_name_len;
+static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_reserved;
+static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_name;
+static int hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_receiver_type_id;
+static int hf_lbmc_umq_cmd_resp_err;
+static int hf_lbmc_umq_cmd_resp_err_reserved;
+static int hf_lbmc_umq_cmd_resp_err_code;
+static int hf_lbmc_umq_cmd_resp_err_errmsg;
+static int hf_lbmc_sri_req;
+static int hf_lbmc_sri_req_next_hdr;
+static int hf_lbmc_sri_req_hdr_len;
+static int hf_lbmc_sri_req_flags;
+static int hf_lbmc_sri_req_flags_ignore;
+static int hf_lbmc_sri_req_transport_idx;
+static int hf_lbmc_sri_req_topic_idx;
+static int hf_lbmc_ume_store_domain;
+static int hf_lbmc_ume_store_domain_next_hdr;
+static int hf_lbmc_ume_store_domain_hdr_len;
+static int hf_lbmc_ume_store_domain_flags;
+static int hf_lbmc_ume_store_domain_flags_ignore;
+static int hf_lbmc_ume_store_domain_domain;
+static int hf_lbmc_sri;
+static int hf_lbmc_sri_next_hdr;
+static int hf_lbmc_sri_hdr_len;
+static int hf_lbmc_sri_flags;
+static int hf_lbmc_sri_flags_ignore;
+static int hf_lbmc_sri_flags_acktosrc;
+static int hf_lbmc_sri_flags_initial_sqn_known;
+static int hf_lbmc_sri_version;
+static int hf_lbmc_sri_low_sqn;
+static int hf_lbmc_sri_high_sqn;
+static int hf_lbmc_route_info;
+static int hf_lbmc_route_info_next_hdr;
+static int hf_lbmc_route_info_hdr_len;
+static int hf_lbmc_route_info_flags;
+static int hf_lbmc_route_info_flags_ignore;
+static int hf_lbmc_route_info_gateway_version;
+static int hf_lbmc_route_info_configuration_signature;
+static int hf_lbmc_route_info_node_id;
+static int hf_lbmc_route_info_topology;
+static int hf_lbmc_route_info_vers;
+static int hf_lbmc_route_info_sqn;
+static int hf_lbmc_route_info_ttl;
+static int hf_lbmc_route_info_reserved1;
+static int hf_lbmc_route_info_reserved2;
+static int hf_lbmc_route_info_neighbor;
+static int hf_lbmc_route_info_neighbor_next_hdr;
+static int hf_lbmc_route_info_neighbor_hdr_len;
+static int hf_lbmc_route_info_neighbor_flags;
+static int hf_lbmc_route_info_neighbor_flags_ignore;
+static int hf_lbmc_route_info_neighbor_node_id;
+static int hf_lbmc_route_info_neighbor_ingress_cost;
+static int hf_lbmc_route_info_neighbor_egress_cost;
+static int hf_lbmc_gateway_name;
+static int hf_lbmc_gateway_name_next_hdr;
+static int hf_lbmc_gateway_name_hdr_len;
+static int hf_lbmc_gateway_name_flags;
+static int hf_lbmc_gateway_name_flags_ignore;
+static int hf_lbmc_gateway_name_gateway_name;
+static int hf_lbmc_auth_request;
+static int hf_lbmc_auth_request_next_hdr;
+static int hf_lbmc_auth_request_hdr_len;
+static int hf_lbmc_auth_request_flags;
+static int hf_lbmc_auth_request_flags_ignore;
+static int hf_lbmc_auth_request_opid;
+static int hf_lbmc_auth_request_user_len;
+static int hf_lbmc_auth_request_user_name;
+static int hf_lbmc_auth_challenge;
+static int hf_lbmc_auth_challenge_next_hdr;
+static int hf_lbmc_auth_challenge_hdr_len;
+static int hf_lbmc_auth_challenge_flags;
+static int hf_lbmc_auth_challenge_flags_ignore;
+static int hf_lbmc_auth_challenge_opid;
+static int hf_lbmc_auth_challenge_mod_len;
+static int hf_lbmc_auth_challenge_gen_len;
+static int hf_lbmc_auth_challenge_salt_len;
+static int hf_lbmc_auth_challenge_pubkey_len;
+static int hf_lbmc_auth_challenge_mod;
+static int hf_lbmc_auth_challenge_gen;
+static int hf_lbmc_auth_challenge_salt;
+static int hf_lbmc_auth_challenge_pubkey;
+static int hf_lbmc_auth_challenge_rsp;
+static int hf_lbmc_auth_challenge_rsp_next_hdr;
+static int hf_lbmc_auth_challenge_rsp_hdr_len;
+static int hf_lbmc_auth_challenge_rsp_flags;
+static int hf_lbmc_auth_challenge_rsp_flags_ignore;
+static int hf_lbmc_auth_challenge_rsp_opid;
+static int hf_lbmc_auth_challenge_rsp_pubkey_len;
+static int hf_lbmc_auth_challenge_rsp_evidence_len;
+static int hf_lbmc_auth_challenge_rsp_pubkey;
+static int hf_lbmc_auth_challenge_rsp_evidence;
+static int hf_lbmc_auth_result;
+static int hf_lbmc_auth_result_next_hdr;
+static int hf_lbmc_auth_result_hdr_len;
+static int hf_lbmc_auth_result_flags;
+static int hf_lbmc_auth_result_flags_ignore;
+static int hf_lbmc_auth_result_opid;
+static int hf_lbmc_auth_result_result;
+static int hf_lbmc_auth_unknown;
+static int hf_lbmc_auth_unknown_next_hdr;
+static int hf_lbmc_auth_unknown_hdr_len;
+static int hf_lbmc_auth_unknown_flags;
+static int hf_lbmc_auth_unknown_opid;
+static int hf_lbmc_auth_unknown_data;
+static int hf_lbmc_hmac;
+static int hf_lbmc_hmac_next_hdr;
+static int hf_lbmc_hmac_hdr_len;
+static int hf_lbmc_hmac_flags;
+static int hf_lbmc_hmac_flags_ignore;
+static int hf_lbmc_hmac_padding;
+static int hf_lbmc_hmac_data;
+static int hf_lbmc_umq_sid;
+static int hf_lbmc_umq_sid_next_hdr;
+static int hf_lbmc_umq_sid_hdr_len;
+static int hf_lbmc_umq_sid_flags;
+static int hf_lbmc_umq_sid_flags_ignore;
+static int hf_lbmc_umq_sid_key;
+static int hf_lbmc_umq_sid_sid;
+static int hf_lbmc_destination;
+static int hf_lbmc_destination_next_hdr;
+static int hf_lbmc_destination_hdr_len;
+static int hf_lbmc_destination_flags;
+static int hf_lbmc_destination_flags_ignore;
+static int hf_lbmc_destination_domain_id;
+static int hf_lbmc_destination_ipaddr;
+static int hf_lbmc_destination_port;
+static int hf_lbmc_destination_hops_taken;
+static int hf_lbmc_destination_orig_domain_id;
+static int hf_lbmc_destination_orig_ipaddr;
+static int hf_lbmc_destination_orig_port;
+static int hf_lbmc_destination_reserved;
+static int hf_lbmc_topic_idx;
+static int hf_lbmc_topic_idx_next_hdr;
+static int hf_lbmc_topic_idx_hdr_len;
+static int hf_lbmc_topic_idx_flags;
+static int hf_lbmc_topic_idx_flags_ignore;
+static int hf_lbmc_topic_idx_tidx;
+static int hf_lbmc_topic_source;
+static int hf_lbmc_topic_source_next_hdr;
+static int hf_lbmc_topic_source_hdr_len;
+static int hf_lbmc_topic_source_flags;
+static int hf_lbmc_topic_source_flags_ignore;
+static int hf_lbmc_topic_source_flags_eos;
+static int hf_lbmc_topic_source_domain_id;
+static int hf_lbmc_topic_source_exfunc;
+static int hf_lbmc_topic_source_exfunc_next_hdr;
+static int hf_lbmc_topic_source_exfunc_hdr_len;
+static int hf_lbmc_topic_source_exfunc_flags;
+static int hf_lbmc_topic_source_exfunc_flags_ignore;
+static int hf_lbmc_topic_source_exfunc_src_ip;
+static int hf_lbmc_topic_source_exfunc_src_port;
+static int hf_lbmc_topic_source_exfunc_unused;
+static int hf_lbmc_topic_source_exfunc_functionality_flags;
+static int hf_lbmc_topic_source_exfunc_functionality_flags_ulb;
+static int hf_lbmc_topic_source_exfunc_functionality_flags_umq;
+static int hf_lbmc_topic_source_exfunc_functionality_flags_ume;
+static int hf_lbmc_topic_source_exfunc_functionality_flags_lj;
+static int hf_lbmc_ume_store_ext;
+static int hf_lbmc_ume_store_ext_next_hdr;
+static int hf_lbmc_ume_store_ext_hdr_len;
+static int hf_lbmc_ume_store_ext_flags;
+static int hf_lbmc_ume_store_ext_flags_ignore;
+static int hf_lbmc_ume_store_ext_grp_idx;
+static int hf_lbmc_ume_store_ext_store_tcp_port;
+static int hf_lbmc_ume_store_ext_store_idx;
+static int hf_lbmc_ume_store_ext_store_ip_addr;
+static int hf_lbmc_ume_store_ext_src_reg_id;
+static int hf_lbmc_ume_store_ext_domain_id;
+static int hf_lbmc_ume_store_ext_version;
+static int hf_lbmc_ume_psrc_election_token;
+static int hf_lbmc_ume_psrc_election_token_next_hdr;
+static int hf_lbmc_ume_psrc_election_token_hdr_len;
+static int hf_lbmc_ume_psrc_election_token_flags;
+static int hf_lbmc_ume_psrc_election_token_flags_ignore;
+static int hf_lbmc_ume_psrc_election_token_store_index;
+static int hf_lbmc_ume_psrc_election_token_token;
+static int hf_lbmc_tcp_sid;
+static int hf_lbmc_tcp_sid_next_hdr;
+static int hf_lbmc_tcp_sid_hdr_len;
+static int hf_lbmc_tcp_sid_flags;
+static int hf_lbmc_tcp_sid_flags_ignore;
+static int hf_lbmc_tcp_sid_sid;
+static int hf_lbmc_extopt;
+static int hf_lbmc_extopt_next_hdr;
+static int hf_lbmc_extopt_hdr_len;
+static int hf_lbmc_extopt_flags;
+static int hf_lbmc_extopt_flags_ignore;
+static int hf_lbmc_extopt_flags_ignore_subtype;
+static int hf_lbmc_extopt_flags_more_fragments;
+static int hf_lbmc_extopt_id;
+static int hf_lbmc_extopt_subtype;
+static int hf_lbmc_extopt_fragment_offset;
+static int hf_lbmc_extopt_data;
+static int hf_lbmc_extopt_cfgopt;
+static int hf_lbmc_extopt_cfgopt_scope;
+static int hf_lbmc_extopt_cfgopt_parent;
+static int hf_lbmc_extopt_cfgopt_name;
+static int hf_lbmc_extopt_cfgopt_value;
+static int hf_lbmc_extopt_msgsel;
+static int hf_lbmc_extopt_reassembled_data;
+static int hf_lbmc_extopt_reassembled_data_subtype;
+static int hf_lbmc_extopt_reassembled_data_len;
+static int hf_lbmc_extopt_reassembled_data_data;
+static int hf_lbmc_extopt_reassembled_data_msgsel;
+static int hf_lbm_msg_properties;
+static int hf_lbm_msg_properties_data;
+static int hf_lbm_msg_properties_data_magic;
+static int hf_lbm_msg_properties_data_num_fields;
+static int hf_lbm_msg_properties_data_version;
+static int hf_lbm_msg_properties_data_type;
+static int hf_lbm_msg_properties_data_res;
+static int hf_lbm_msg_properties_hdr;
+static int hf_lbm_msg_properties_hdr_key_offset;
+static int hf_lbm_msg_properties_hdr_value_offset;
+static int hf_lbm_msg_properties_hdr_hash;
+static int hf_lbm_msg_properties_hdr_type;
+static int hf_lbm_msg_properties_hdr_key;
+static int hf_lbm_msg_properties_hdr_boolean_value;
+static int hf_lbm_msg_properties_hdr_byte_value;
+static int hf_lbm_msg_properties_hdr_short_value;
+static int hf_lbm_msg_properties_hdr_int_value;
+static int hf_lbm_msg_properties_hdr_float_value;
+static int hf_lbm_msg_properties_hdr_long_value;
+static int hf_lbm_msg_properties_hdr_double_value;
+static int hf_lbm_msg_properties_hdr_string_value;
+static int hf_lbm_msg_properties_hdr_unknown_value;
+static int hf_lbmc_unhandled;
+static int hf_lbmc_unhandled_next_hdr;
+static int hf_lbmc_unhandled_hdr_len;
+static int hf_lbmc_unhandled_data;
+static int hf_lbm_stream;
+static int hf_lbm_stream_stream_id;
+static int hf_lbm_stream_substream_id;
+static int hf_lbmc_reassembly;
+static int hf_lbmc_reassembly_fragment;
+static int hf_reassembly_frame;
 
 /* Protocol trees */
-static gint ett_lbmc = -1;
-static gint ett_lbmc_frag = -1;
-static gint ett_lbmc_frag_flags = -1;
-static gint ett_lbmc_batch = -1;
-static gint ett_lbmc_batch_flags = -1;
-static gint ett_lbmc_tcp_request = -1;
-static gint ett_lbmc_tcp_request_flags = -1;
-static gint ett_lbmc_topicname = -1;
-static gint ett_lbmc_topicname_flags = -1;
-static gint ett_lbmc_apphdr = -1;
-static gint ett_lbmc_apphdr_chain = -1;
-static gint ett_lbmc_apphdr_chain_element = -1;
-static gint ett_lbmc_apphdr_chain_msgprop = -1;
-static gint ett_lbmc_umq_msgid = -1;
-static gint ett_lbmc_umq_msgid_flags = -1;
-static gint ett_lbmc_umq_sqd_rcv = -1;
-static gint ett_lbmc_umq_sqd_rcv_flags = -1;
-static gint ett_lbmc_umq_resub = -1;
-static gint ett_lbmc_umq_resub_flags = -1;
-static gint ett_lbmc_otid = -1;
-static gint ett_lbmc_otid_flags = -1;
-static gint ett_lbmc_ctxinst = -1;
-static gint ett_lbmc_ctxinst_flags = -1;
-static gint ett_lbmc_ctxinstd = -1;
-static gint ett_lbmc_ctxinstr = -1;
-static gint ett_lbmc_srcidx = -1;
-static gint ett_lbmc_srcidx_flags = -1;
-static gint ett_lbmc_umq_ulb_msg = -1;
-static gint ett_lbmc_umq_ulb_msg_flags = -1;
-static gint ett_lbmc_ssf_init = -1;
-static gint ett_lbmc_ssf_init_flags = -1;
-static gint ett_lbmc_ssf_creq = -1;
-static gint ett_lbmc_ssf_creq_flags = -1;
-static gint ett_lbmc_ume_preg = -1;
-static gint ett_lbmc_ume_preg_flags = -1;
-static gint ett_lbmc_ume_preg_resp = -1;
-static gint ett_lbmc_ume_preg_resp_code = -1;
-static gint ett_lbmc_ume_preg_resp_marker = -1;
-static gint ett_lbmc_ume_ack = -1;
-static gint ett_lbmc_ume_ack_flags = -1;
-static gint ett_lbmc_ume_rxreq = -1;
-static gint ett_lbmc_ume_rxreq_flags = -1;
-static gint ett_lbmc_ume_keepalive = -1;
-static gint ett_lbmc_ume_keepalive_flags = -1;
-static gint ett_lbmc_ume_storeid = -1;
-static gint ett_lbmc_ume_ranged_ack = -1;
-static gint ett_lbmc_ume_ranged_ack_flags = -1;
-static gint ett_lbmc_ume_ack_id = -1;
-static gint ett_lbmc_ume_ack_id_flags = -1;
-static gint ett_lbmc_ume_capability = -1;
-static gint ett_lbmc_ume_capability_flags = -1;
-static gint ett_lbmc_ume_proxy_src = -1;
-static gint ett_lbmc_ume_proxy_src_flags = -1;
-static gint ett_lbmc_ume_store_group = -1;
-static gint ett_lbmc_ume_store_group_flags = -1;
-static gint ett_lbmc_ume_store = -1;
-static gint ett_lbmc_ume_store_flags = -1;
-static gint ett_lbmc_ume_lj_info = -1;
-static gint ett_lbmc_ume_lj_info_flags = -1;
-static gint ett_lbmc_tsni = -1;
-static gint ett_lbmc_tsni_rec = -1;
-static gint ett_lbmc_umq_reg = -1;
-static gint ett_lbmc_umq_reg_flags = -1;
-static gint ett_lbmc_umq_reg_reg_ctx = -1;
-static gint ett_lbmc_umq_reg_reg_src = -1;
-static gint ett_lbmc_umq_reg_reg_rcv = -1;
-static gint ett_lbmc_umq_reg_rcv_dereg = -1;
-static gint ett_lbmc_umq_reg_reg_ulb_rcv = -1;
-static gint ett_lbmc_umq_reg_ulb_rcv_dereg = -1;
-static gint ett_lbmc_umq_reg_reg_observer_rcv = -1;
-static gint ett_lbmc_umq_reg_observer_rcv_dereg = -1;
-static gint ett_lbmc_umq_reg_resp = -1;
-static gint ett_lbmc_umq_reg_resp_flags = -1;
-static gint ett_lbmc_umq_reg_resp_reg_ctx = -1;
-static gint ett_lbmc_umq_reg_resp_reg_ctx_ex = -1;
-static gint ett_lbmc_umq_reg_resp_reg_ctx_ex_flags = -1;
-static gint ett_lbmc_umq_reg_resp_err = -1;
-static gint ett_lbmc_umq_reg_resp_reg_src = -1;
-static gint ett_lbmc_umq_reg_resp_reg_rcv = -1;
-static gint ett_lbmc_umq_reg_resp_rcv_dereg = -1;
-static gint ett_lbmc_umq_reg_resp_reg_ulb_rcv = -1;
-static gint ett_lbmc_umq_reg_resp_ulb_rcv_dereg = -1;
-static gint ett_lbmc_umq_reg_resp_reg_observer_rcv = -1;
-static gint ett_lbmc_umq_reg_resp_observer_rcv_dereg = -1;
-static gint ett_lbmc_umq_ack = -1;
-static gint ett_lbmc_umq_ack_msgs = -1;
-static gint ett_lbmc_umq_ack_msgid = -1;
-static gint ett_lbmc_umq_ack_stable = -1;
-static gint ett_lbmc_umq_ack_cr = -1;
-static gint ett_lbmc_umq_ack_ulb_cr = -1;
-static gint ett_lbmc_umq_rcr = -1;
-static gint ett_lbmc_umq_rcr_flags = -1;
-static gint ett_lbmc_umq_ka = -1;
-static gint ett_lbmc_umq_ka_flags = -1;
-static gint ett_lbmc_umq_ka_src = -1;
-static gint ett_lbmc_umq_ka_rcv = -1;
-static gint ett_lbmc_umq_ka_ulb_rcv = -1;
-static gint ett_lbmc_umq_ka_ulb_rcv_resp = -1;
-static gint ett_lbmc_umq_rxreq = -1;
-static gint ett_lbmc_umq_rxreq_flags = -1;
-static gint ett_lbmc_umq_rxreq_regid_resp = -1;
-static gint ett_lbmc_umq_rxreq_addr_resp = -1;
-static gint ett_lbmc_umq_rxreq_mr = -1;
-static gint ett_lbmc_umq_rxreq_ulb_mr = -1;
-static gint ett_lbmc_umq_rxreq_ulb_mr_abort = -1;
-static gint ett_lbmc_umq_rxreq_qrcrr = -1;
-static gint ett_lbmc_umq_rxreq_trcrr = -1;
-static gint ett_lbmc_umq_rxreq_ulb_trcrr = -1;
-static gint ett_lbmc_umq_rxreq_ulb_trcrr_abort = -1;
-static gint ett_lbmc_umq_qmgmt = -1;
-static gint ett_lbmc_umq_resub_req = -1;
-static gint ett_lbmc_umq_resub_req_flags = -1;
-static gint ett_lbmc_umq_resub_resp = -1;
-static gint ett_lbmc_umq_resub_resp_flags = -1;
-static gint ett_lbmc_topic_interest = -1;
-static gint ett_lbmc_topic_interest_flags = -1;
-static gint ett_lbmc_pattern_interest = -1;
-static gint ett_lbmc_pattern_interest_flags = -1;
-static gint ett_lbmc_advertisement = -1;
-static gint ett_lbmc_advertisement_flags = -1;
-static gint ett_lbmc_advertisement_ad_flags = -1;
-static gint ett_lbmc_ume_storename = -1;
-static gint ett_lbmc_ume_storename_flags = -1;
-static gint ett_lbmc_umq_ulb_rcr = -1;
-static gint ett_lbmc_umq_ulb_rcr_flags = -1;
-static gint ett_lbmc_umq_lf = -1;
-static gint ett_lbmc_umq_lf_flags = -1;
-static gint ett_lbmc_ctxinfo = -1;
-static gint ett_lbmc_ctxinfo_flags = -1;
-static gint ett_lbmc_ume_pser = -1;
-static gint ett_lbmc_ume_pser_flags = -1;
-static gint ett_lbmc_domain = -1;
-static gint ett_lbmc_domain_flags = -1;
-static gint ett_lbmc_tnwg_capabilities = -1;
-static gint ett_lbmc_tnwg_capabilities_flags = -1;
-static gint ett_lbmc_tnwg_capabilities_capabilities1 = -1;
-static gint ett_lbmc_tnwg_capabilities_capabilities3 = -1;
-static gint ett_lbmc_patidx = -1;
-static gint ett_lbmc_patidx_flags = -1;
-static gint ett_lbmc_ume_client_lifetime = -1;
-static gint ett_lbmc_ume_client_lifetime_flags = -1;
-static gint ett_lbmc_ume_sid = -1;
-static gint ett_lbmc_ume_sid_flags = -1;
-static gint ett_lbmc_umq_idx_cmd = -1;
-static gint ett_lbmc_umq_idx_cmd_flags = -1;
-static gint ett_lbmc_umq_idx_cmd_stop_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_start_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_release_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_release_assign_flags = -1;
-static gint ett_lbmc_umq_idx_cmd_ulb_stop_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_ulb_start_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_ulb_release_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_ulb_release_assign_flags = -1;
-static gint ett_lbmc_umq_idx_cmd_reserve_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_reserve_assign_flags = -1;
-static gint ett_lbmc_umq_idx_cmd_ulb_reserve_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_ulb_reserve_assign_flags = -1;
-static gint ett_lbmc_umq_idx_cmd_resp = -1;
-static gint ett_lbmc_umq_idx_cmd_resp_flags = -1;
-static gint ett_lbmc_umq_idx_cmd_resp_err = -1;
-static gint ett_lbmc_umq_idx_cmd_resp_stop_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_resp_start_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_resp_release_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_resp_ulb_stop_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_resp_ulb_start_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_resp_ulb_release_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_resp_reserve_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_resp_reserve_assign_flags = -1;
-static gint ett_lbmc_umq_idx_cmd_resp_ulb_reserve_assign = -1;
-static gint ett_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_flags = -1;
-static gint ett_lbmc_odomain = -1;
-static gint ett_lbmc_odomain_flags = -1;
-static gint ett_lbmc_stream = -1;
-static gint ett_lbmc_stream_flags = -1;
-static gint ett_lbmc_topic_md_interest = -1;
-static gint ett_lbmc_topic_md_interest_flags = -1;
-static gint ett_lbmc_pattern_md_interest = -1;
-static gint ett_lbmc_pattern_md_interest_flags = -1;
-static gint ett_lbmc_lji_req = -1;
-static gint ett_lbmc_lji_req_flags = -1;
-static gint ett_lbmc_tnwg_ka = -1;
-static gint ett_lbmc_tnwg_ka_flags = -1;
-static gint ett_lbmc_ume_receiver_keepalive = -1;
-static gint ett_lbmc_ume_receiver_keepalive_flags = -1;
-static gint ett_lbmc_umq_cmd = -1;
-static gint ett_lbmc_umq_cmd_flags = -1;
-static gint ett_lbmc_umq_cmd_topic_list = -1;
-static gint ett_lbmc_umq_cmd_msg_retrieve = -1;
-static gint ett_lbmc_umq_cmd_msg_retrieve_entry = -1;
-static gint ett_lbmc_umq_cmd_msg_list = -1;
-static gint ett_lbmc_umq_cmd_resp = -1;
-static gint ett_lbmc_umq_cmd_resp_flags = -1;
-static gint ett_lbmc_umq_cmd_resp_msg_retrieve = -1;
-static gint ett_lbmc_umq_cmd_resp_xmsg_retrieve = -1;
-static gint ett_lbmc_umq_cmd_resp_xmsg_retrieve_entry = -1;
-static gint ett_lbmc_umq_cmd_resp_msg_list = -1;
-static gint ett_lbmc_umq_cmd_resp_xmsg_list = -1;
-static gint ett_lbmc_umq_cmd_resp_xmsg_list_entry = -1;
-static gint ett_lbmc_umq_cmd_resp_topic_list = -1;
-static gint ett_lbmc_umq_cmd_resp_topic_list_topic_entry = -1;
-static gint ett_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry = -1;
-static gint ett_lbmc_umq_cmd_resp_err = -1;
-static gint ett_lbmc_sri_req = -1;
-static gint ett_lbmc_sri_req_flags = -1;
-static gint ett_lbmc_ume_store_domain = -1;
-static gint ett_lbmc_ume_store_domain_flags = -1;
-static gint ett_lbmc_sri = -1;
-static gint ett_lbmc_sri_flags = -1;
-static gint ett_lbmc_route_info = -1;
-static gint ett_lbmc_route_info_flags = -1;
-static gint ett_lbmc_route_info_neighbor = -1;
-static gint ett_lbmc_route_info_neighbor_flags = -1;
-static gint ett_lbmc_gateway_name = -1;
-static gint ett_lbmc_gateway_name_flags = -1;
-static gint ett_lbmc_auth_request = -1;
-static gint ett_lbmc_auth_request_flags = -1;
-static gint ett_lbmc_auth_challenge = -1;
-static gint ett_lbmc_auth_challenge_flags = -1;
-static gint ett_lbmc_auth_challenge_rsp = -1;
-static gint ett_lbmc_auth_challenge_rsp_flags = -1;
-static gint ett_lbmc_auth_result = -1;
-static gint ett_lbmc_auth_result_flags = -1;
-static gint ett_lbmc_auth_unknown = -1;
-static gint ett_lbmc_hmac = -1;
-static gint ett_lbmc_hmac_flags = -1;
-static gint ett_lbmc_umq_sid = -1;
-static gint ett_lbmc_umq_sid_flags = -1;
-static gint ett_lbmc_destination = -1;
-static gint ett_lbmc_destination_flags = -1;
-static gint ett_lbmc_topic_idx = -1;
-static gint ett_lbmc_topic_idx_flags = -1;
-static gint ett_lbmc_topic_source = -1;
-static gint ett_lbmc_topic_source_flags = -1;
-static gint ett_lbmc_topic_source_exfunc = -1;
-static gint ett_lbmc_topic_source_exfunc_flags = -1;
-static gint ett_lbmc_topic_source_exfunc_functionality_flags = -1;
-static gint ett_lbmc_ume_store_ext = -1;
-static gint ett_lbmc_ume_store_ext_flags = -1;
-static gint ett_lbmc_ume_psrc_election_token = -1;
-static gint ett_lbmc_ume_psrc_election_token_flags = -1;
-static gint ett_lbmc_tcp_sid = -1;
-static gint ett_lbmc_tcp_sid_flags = -1;
-static gint ett_lbmc_extopt = -1;
-static gint ett_lbmc_extopt_flags = -1;
-static gint ett_lbmc_extopt_cfgopt = -1;
-static gint ett_lbmc_extopt_reassembled_data = -1;
-static gint ett_lbmc_extopt_reassembled_data_cfgopt = -1;
-static gint ett_lbm_msg_properties = -1;
-static gint ett_lbm_msg_properties_data = -1;
-static gint ett_lbm_msg_properties_hdr = -1;
-static gint ett_lbmc_unhandled_hdr = -1;
-static gint ett_lbm_stream = -1;
-static gint ett_lbmc_reassembly = -1;
-static gint ett_unknown = -1;
-static gint ett_msg_data = -1;
-static gint ett_msgprop_data = -1;
+static int ett_lbmc;
+static int ett_lbmc_frag;
+static int ett_lbmc_frag_flags;
+static int ett_lbmc_batch;
+static int ett_lbmc_batch_flags;
+static int ett_lbmc_tcp_request;
+static int ett_lbmc_tcp_request_flags;
+static int ett_lbmc_topicname;
+static int ett_lbmc_topicname_flags;
+static int ett_lbmc_apphdr;
+static int ett_lbmc_apphdr_chain;
+static int ett_lbmc_apphdr_chain_element;
+static int ett_lbmc_apphdr_chain_msgprop;
+static int ett_lbmc_umq_msgid;
+static int ett_lbmc_umq_msgid_flags;
+static int ett_lbmc_umq_sqd_rcv;
+static int ett_lbmc_umq_sqd_rcv_flags;
+static int ett_lbmc_umq_resub;
+static int ett_lbmc_umq_resub_flags;
+static int ett_lbmc_otid;
+static int ett_lbmc_otid_flags;
+static int ett_lbmc_ctxinst;
+static int ett_lbmc_ctxinst_flags;
+static int ett_lbmc_ctxinstd;
+static int ett_lbmc_ctxinstr;
+static int ett_lbmc_srcidx;
+static int ett_lbmc_srcidx_flags;
+static int ett_lbmc_umq_ulb_msg;
+static int ett_lbmc_umq_ulb_msg_flags;
+static int ett_lbmc_ssf_init;
+static int ett_lbmc_ssf_init_flags;
+static int ett_lbmc_ssf_creq;
+static int ett_lbmc_ssf_creq_flags;
+static int ett_lbmc_ume_preg;
+static int ett_lbmc_ume_preg_flags;
+static int ett_lbmc_ume_preg_resp;
+static int ett_lbmc_ume_preg_resp_code;
+static int ett_lbmc_ume_preg_resp_marker;
+static int ett_lbmc_ume_ack;
+static int ett_lbmc_ume_ack_flags;
+static int ett_lbmc_ume_rxreq;
+static int ett_lbmc_ume_rxreq_flags;
+static int ett_lbmc_ume_keepalive;
+static int ett_lbmc_ume_keepalive_flags;
+static int ett_lbmc_ume_storeid;
+static int ett_lbmc_ume_ranged_ack;
+static int ett_lbmc_ume_ranged_ack_flags;
+static int ett_lbmc_ume_ack_id;
+static int ett_lbmc_ume_ack_id_flags;
+static int ett_lbmc_ume_capability;
+static int ett_lbmc_ume_capability_flags;
+static int ett_lbmc_ume_proxy_src;
+static int ett_lbmc_ume_proxy_src_flags;
+static int ett_lbmc_ume_store_group;
+static int ett_lbmc_ume_store_group_flags;
+static int ett_lbmc_ume_store;
+static int ett_lbmc_ume_store_flags;
+static int ett_lbmc_ume_lj_info;
+static int ett_lbmc_ume_lj_info_flags;
+static int ett_lbmc_tsni;
+static int ett_lbmc_tsni_rec;
+static int ett_lbmc_umq_reg;
+static int ett_lbmc_umq_reg_flags;
+static int ett_lbmc_umq_reg_reg_ctx;
+static int ett_lbmc_umq_reg_reg_src;
+static int ett_lbmc_umq_reg_reg_rcv;
+static int ett_lbmc_umq_reg_rcv_dereg;
+static int ett_lbmc_umq_reg_reg_ulb_rcv;
+static int ett_lbmc_umq_reg_ulb_rcv_dereg;
+static int ett_lbmc_umq_reg_reg_observer_rcv;
+static int ett_lbmc_umq_reg_observer_rcv_dereg;
+static int ett_lbmc_umq_reg_resp;
+static int ett_lbmc_umq_reg_resp_flags;
+static int ett_lbmc_umq_reg_resp_reg_ctx;
+static int ett_lbmc_umq_reg_resp_reg_ctx_ex;
+static int ett_lbmc_umq_reg_resp_reg_ctx_ex_flags;
+static int ett_lbmc_umq_reg_resp_err;
+static int ett_lbmc_umq_reg_resp_reg_src;
+static int ett_lbmc_umq_reg_resp_reg_rcv;
+static int ett_lbmc_umq_reg_resp_rcv_dereg;
+static int ett_lbmc_umq_reg_resp_reg_ulb_rcv;
+static int ett_lbmc_umq_reg_resp_ulb_rcv_dereg;
+static int ett_lbmc_umq_reg_resp_reg_observer_rcv;
+static int ett_lbmc_umq_reg_resp_observer_rcv_dereg;
+static int ett_lbmc_umq_ack;
+static int ett_lbmc_umq_ack_msgs;
+static int ett_lbmc_umq_ack_msgid;
+static int ett_lbmc_umq_ack_stable;
+static int ett_lbmc_umq_ack_cr;
+static int ett_lbmc_umq_ack_ulb_cr;
+static int ett_lbmc_umq_rcr;
+static int ett_lbmc_umq_rcr_flags;
+static int ett_lbmc_umq_ka;
+static int ett_lbmc_umq_ka_flags;
+static int ett_lbmc_umq_ka_src;
+static int ett_lbmc_umq_ka_rcv;
+static int ett_lbmc_umq_ka_ulb_rcv;
+static int ett_lbmc_umq_ka_ulb_rcv_resp;
+static int ett_lbmc_umq_rxreq;
+static int ett_lbmc_umq_rxreq_flags;
+static int ett_lbmc_umq_rxreq_regid_resp;
+static int ett_lbmc_umq_rxreq_addr_resp;
+static int ett_lbmc_umq_rxreq_mr;
+static int ett_lbmc_umq_rxreq_ulb_mr;
+static int ett_lbmc_umq_rxreq_ulb_mr_abort;
+static int ett_lbmc_umq_rxreq_qrcrr;
+static int ett_lbmc_umq_rxreq_trcrr;
+static int ett_lbmc_umq_rxreq_ulb_trcrr;
+static int ett_lbmc_umq_rxreq_ulb_trcrr_abort;
+static int ett_lbmc_umq_qmgmt;
+static int ett_lbmc_umq_resub_req;
+static int ett_lbmc_umq_resub_req_flags;
+static int ett_lbmc_umq_resub_resp;
+static int ett_lbmc_umq_resub_resp_flags;
+static int ett_lbmc_topic_interest;
+static int ett_lbmc_topic_interest_flags;
+static int ett_lbmc_pattern_interest;
+static int ett_lbmc_pattern_interest_flags;
+static int ett_lbmc_advertisement;
+static int ett_lbmc_advertisement_flags;
+static int ett_lbmc_advertisement_ad_flags;
+static int ett_lbmc_ume_storename;
+static int ett_lbmc_ume_storename_flags;
+static int ett_lbmc_umq_ulb_rcr;
+static int ett_lbmc_umq_ulb_rcr_flags;
+static int ett_lbmc_umq_lf;
+static int ett_lbmc_umq_lf_flags;
+static int ett_lbmc_ctxinfo;
+static int ett_lbmc_ctxinfo_flags;
+static int ett_lbmc_ume_pser;
+static int ett_lbmc_ume_pser_flags;
+static int ett_lbmc_domain;
+static int ett_lbmc_domain_flags;
+static int ett_lbmc_tnwg_capabilities;
+static int ett_lbmc_tnwg_capabilities_flags;
+static int ett_lbmc_tnwg_capabilities_capabilities1;
+static int ett_lbmc_tnwg_capabilities_capabilities3;
+static int ett_lbmc_patidx;
+static int ett_lbmc_patidx_flags;
+static int ett_lbmc_ume_client_lifetime;
+static int ett_lbmc_ume_client_lifetime_flags;
+static int ett_lbmc_ume_sid;
+static int ett_lbmc_ume_sid_flags;
+static int ett_lbmc_umq_idx_cmd;
+static int ett_lbmc_umq_idx_cmd_flags;
+static int ett_lbmc_umq_idx_cmd_stop_assign;
+static int ett_lbmc_umq_idx_cmd_start_assign;
+static int ett_lbmc_umq_idx_cmd_release_assign;
+static int ett_lbmc_umq_idx_cmd_release_assign_flags;
+static int ett_lbmc_umq_idx_cmd_ulb_stop_assign;
+static int ett_lbmc_umq_idx_cmd_ulb_start_assign;
+static int ett_lbmc_umq_idx_cmd_ulb_release_assign;
+static int ett_lbmc_umq_idx_cmd_ulb_release_assign_flags;
+static int ett_lbmc_umq_idx_cmd_reserve_assign;
+static int ett_lbmc_umq_idx_cmd_reserve_assign_flags;
+static int ett_lbmc_umq_idx_cmd_ulb_reserve_assign;
+static int ett_lbmc_umq_idx_cmd_ulb_reserve_assign_flags;
+static int ett_lbmc_umq_idx_cmd_resp;
+static int ett_lbmc_umq_idx_cmd_resp_flags;
+static int ett_lbmc_umq_idx_cmd_resp_err;
+static int ett_lbmc_umq_idx_cmd_resp_stop_assign;
+static int ett_lbmc_umq_idx_cmd_resp_start_assign;
+static int ett_lbmc_umq_idx_cmd_resp_release_assign;
+static int ett_lbmc_umq_idx_cmd_resp_ulb_stop_assign;
+static int ett_lbmc_umq_idx_cmd_resp_ulb_start_assign;
+static int ett_lbmc_umq_idx_cmd_resp_ulb_release_assign;
+static int ett_lbmc_umq_idx_cmd_resp_reserve_assign;
+static int ett_lbmc_umq_idx_cmd_resp_reserve_assign_flags;
+static int ett_lbmc_umq_idx_cmd_resp_ulb_reserve_assign;
+static int ett_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_flags;
+static int ett_lbmc_odomain;
+static int ett_lbmc_odomain_flags;
+static int ett_lbmc_stream;
+static int ett_lbmc_stream_flags;
+static int ett_lbmc_topic_md_interest;
+static int ett_lbmc_topic_md_interest_flags;
+static int ett_lbmc_pattern_md_interest;
+static int ett_lbmc_pattern_md_interest_flags;
+static int ett_lbmc_lji_req;
+static int ett_lbmc_lji_req_flags;
+static int ett_lbmc_tnwg_ka;
+static int ett_lbmc_tnwg_ka_flags;
+static int ett_lbmc_ume_receiver_keepalive;
+static int ett_lbmc_ume_receiver_keepalive_flags;
+static int ett_lbmc_umq_cmd;
+static int ett_lbmc_umq_cmd_flags;
+static int ett_lbmc_umq_cmd_topic_list;
+static int ett_lbmc_umq_cmd_msg_retrieve;
+static int ett_lbmc_umq_cmd_msg_retrieve_entry;
+static int ett_lbmc_umq_cmd_msg_list;
+static int ett_lbmc_umq_cmd_resp;
+static int ett_lbmc_umq_cmd_resp_flags;
+static int ett_lbmc_umq_cmd_resp_msg_retrieve;
+static int ett_lbmc_umq_cmd_resp_xmsg_retrieve;
+static int ett_lbmc_umq_cmd_resp_xmsg_retrieve_entry;
+static int ett_lbmc_umq_cmd_resp_msg_list;
+static int ett_lbmc_umq_cmd_resp_xmsg_list;
+static int ett_lbmc_umq_cmd_resp_xmsg_list_entry;
+static int ett_lbmc_umq_cmd_resp_topic_list;
+static int ett_lbmc_umq_cmd_resp_topic_list_topic_entry;
+static int ett_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry;
+static int ett_lbmc_umq_cmd_resp_err;
+static int ett_lbmc_sri_req;
+static int ett_lbmc_sri_req_flags;
+static int ett_lbmc_ume_store_domain;
+static int ett_lbmc_ume_store_domain_flags;
+static int ett_lbmc_sri;
+static int ett_lbmc_sri_flags;
+static int ett_lbmc_route_info;
+static int ett_lbmc_route_info_flags;
+static int ett_lbmc_route_info_neighbor;
+static int ett_lbmc_route_info_neighbor_flags;
+static int ett_lbmc_gateway_name;
+static int ett_lbmc_gateway_name_flags;
+static int ett_lbmc_auth_request;
+static int ett_lbmc_auth_request_flags;
+static int ett_lbmc_auth_challenge;
+static int ett_lbmc_auth_challenge_flags;
+static int ett_lbmc_auth_challenge_rsp;
+static int ett_lbmc_auth_challenge_rsp_flags;
+static int ett_lbmc_auth_result;
+static int ett_lbmc_auth_result_flags;
+static int ett_lbmc_auth_unknown;
+static int ett_lbmc_hmac;
+static int ett_lbmc_hmac_flags;
+static int ett_lbmc_umq_sid;
+static int ett_lbmc_umq_sid_flags;
+static int ett_lbmc_destination;
+static int ett_lbmc_destination_flags;
+static int ett_lbmc_topic_idx;
+static int ett_lbmc_topic_idx_flags;
+static int ett_lbmc_topic_source;
+static int ett_lbmc_topic_source_flags;
+static int ett_lbmc_topic_source_exfunc;
+static int ett_lbmc_topic_source_exfunc_flags;
+static int ett_lbmc_topic_source_exfunc_functionality_flags;
+static int ett_lbmc_ume_store_ext;
+static int ett_lbmc_ume_store_ext_flags;
+static int ett_lbmc_ume_psrc_election_token;
+static int ett_lbmc_ume_psrc_election_token_flags;
+static int ett_lbmc_tcp_sid;
+static int ett_lbmc_tcp_sid_flags;
+static int ett_lbmc_extopt;
+static int ett_lbmc_extopt_flags;
+static int ett_lbmc_extopt_cfgopt;
+static int ett_lbmc_extopt_reassembled_data;
+static int ett_lbmc_extopt_reassembled_data_cfgopt;
+static int ett_lbm_msg_properties;
+static int ett_lbm_msg_properties_data;
+static int ett_lbm_msg_properties_hdr;
+static int ett_lbmc_unhandled_hdr;
+static int ett_lbm_stream;
+static int ett_lbmc_reassembly;
+static int ett_unknown;
+static int ett_msg_data;
+static int ett_msgprop_data;
 
 /* Expert info handles */
-static expert_field ei_lbmc_analysis_length_incorrect = EI_INIT;
-static expert_field ei_lbmc_analysis_zero_length = EI_INIT;
-static expert_field ei_lbmc_analysis_tsni = EI_INIT;
-static expert_field ei_lbmc_analysis_invalid_value = EI_INIT;
-static expert_field ei_lbmc_analysis_no_reassembly = EI_INIT;
-/* static expert_field ei_lbmc_analysis_invalid_offset = EI_INIT; */
-static expert_field ei_lbmc_analysis_missing_reassembly_frame = EI_INIT;
-static expert_field ei_lbmc_analysis_invalid_fragment = EI_INIT;
-static expert_field ei_lbmc_extopt_fragment_offset = EI_INIT;
+static expert_field ei_lbmc_analysis_length_incorrect;
+static expert_field ei_lbmc_analysis_zero_length;
+static expert_field ei_lbmc_analysis_tsni;
+static expert_field ei_lbmc_analysis_invalid_value;
+static expert_field ei_lbmc_analysis_no_reassembly;
+/* static expert_field ei_lbmc_analysis_invalid_offset; */
+static expert_field ei_lbmc_analysis_missing_reassembly_frame;
+static expert_field ei_lbmc_analysis_invalid_fragment;
+static expert_field ei_lbmc_extopt_fragment_offset;
 
 /* Extended option reassembly structures. */
 #define LBMC_EXTOPT_REASSEMBLED_DATA_MAX_LEN 65536
 typedef struct
 {
-    gboolean reassembly_in_progress;
-    guint16 subtype;
+    bool reassembly_in_progress;
+    uint16_t subtype;
     int len;
-    gchar data[LBMC_EXTOPT_REASSEMBLED_DATA_MAX_LEN];
+    char data[LBMC_EXTOPT_REASSEMBLED_DATA_MAX_LEN];
 } lbmc_extopt_reassembled_data_t;
 
 /* Stream structures. */
 typedef struct
 {
-    gboolean set;
-    guint32 stream_id;
-    guint32 sqn;
-    gchar ctxinst[LBM_CONTEXT_INSTANCE_BLOCK_SZ];
+    bool set;
+    uint32_t stream_id;
+    uint32_t sqn;
+    char ctxinst[LBM_CONTEXT_INSTANCE_BLOCK_SZ];
 } lbmc_stream_info_t;
 
 typedef struct
 {
-    gboolean set;
-    gchar ctxinst[LBM_CONTEXT_INSTANCE_BLOCK_SZ];
+    bool set;
+    char ctxinst[LBM_CONTEXT_INSTANCE_BLOCK_SZ];
 } lbmc_ctxinst_info_t;
 
 typedef struct
 {
-    gboolean set;
+    bool set;
     lbm_uim_stream_destination_t endpoint_a;
     lbm_uim_stream_destination_t endpoint_b;
 } lbmc_destination_info_t;
@@ -6055,9 +6047,150 @@ typedef struct
 /* TCP session ID structures. */
 typedef struct
 {
-    gboolean set;
-    guint32 session_id;
+    bool set;
+    uint32_t session_id;
 } lbmc_tcp_sid_info_t;
+
+/*----------------------------------------------------------------------------*/
+/* UIM Flow tap handler                                                       */
+/*----------------------------------------------------------------------------*/
+typedef struct
+{
+    uint64_t channel;
+    uint32_t sqn;
+    lbm_uim_stream_endpoint_t endpoint_a;
+    lbm_uim_stream_endpoint_t endpoint_b;
+    const char * description;
+} lbm_uim_stream_info_t;
+
+static tap_packet_status
+lbm_uim_seq_analysis_packet(void *ptr, packet_info *pinfo, epan_dissect_t *edt _U_, const void *uim_info, tap_flags_t flags _U_)
+{
+    seq_analysis_info_t *sainfo = (seq_analysis_info_t *) ptr;
+    const lbm_uim_stream_info_t* stream_info = (const lbm_uim_stream_info_t *)uim_info;
+    lbm_uim_stream_endpoint_t epa;
+    lbm_uim_stream_endpoint_t epb;
+    char * ctxinst1;
+    char * ctxinst2;
+    bool swap_endpoints = false;
+    seq_analysis_item_t* sai;
+    char time_str[COL_MAX_LEN];
+    int rc;
+
+    if (stream_info->endpoint_a.type != stream_info->endpoint_b.type)
+    {
+        return TAP_PACKET_DONT_REDRAW;
+    }
+    if (stream_info->endpoint_a.type == lbm_uim_instance_stream)
+    {
+        rc = memcmp((const void *)stream_info->endpoint_a.stream_info.ctxinst.ctxinst,
+                    (const void *)stream_info->endpoint_b.stream_info.ctxinst.ctxinst,
+                    LBM_CONTEXT_INSTANCE_BLOCK_SZ);
+        if (rc <= 0)
+        {
+            swap_endpoints = false;
+        }
+        else
+        {
+            swap_endpoints = true;
+        }
+    }
+    else
+    {
+        if (stream_info->endpoint_a.stream_info.dest.domain < stream_info->endpoint_b.stream_info.dest.domain)
+        {
+            swap_endpoints = false;
+        }
+        else if (stream_info->endpoint_a.stream_info.dest.domain > stream_info->endpoint_b.stream_info.dest.domain)
+        {
+            swap_endpoints = true;
+        }
+        else
+        {
+            int compare;
+
+            compare = cmp_address(&(stream_info->endpoint_a.stream_info.dest.addr), &(stream_info->endpoint_b.stream_info.dest.addr));
+            if (compare < 0)
+            {
+                swap_endpoints = false;
+            }
+            else if (compare > 0)
+            {
+                swap_endpoints = true;
+            }
+            else
+            {
+                if (stream_info->endpoint_a.stream_info.dest.port <= stream_info->endpoint_b.stream_info.dest.port)
+                {
+                    swap_endpoints = false;
+                }
+                else
+                {
+                    swap_endpoints = true;
+                }
+            }
+        }
+    }
+    if (swap_endpoints == false)
+    {
+        epa = stream_info->endpoint_a;
+        epb = stream_info->endpoint_b;
+    }
+    else
+    {
+        epb = stream_info->endpoint_a;
+        epa = stream_info->endpoint_b;
+    }
+
+    sai = g_new0(seq_analysis_item_t, 1);
+    copy_address(&(sai->src_addr), &(pinfo->src));
+    copy_address(&(sai->dst_addr), &(pinfo->dst));
+    sai->frame_number = pinfo->num;
+    sai->port_src = pinfo->srcport;
+    sai->port_dst = pinfo->destport;
+
+    if (stream_info->description == NULL)
+    {
+        sai->frame_label = ws_strdup_printf("(%" PRIu32 ")", stream_info->sqn);
+    }
+    else
+    {
+        sai->frame_label = ws_strdup_printf("%s (%" PRIu32 ")", stream_info->description, stream_info->sqn);
+    }
+    if (epa.type == lbm_uim_instance_stream)
+    {
+        ctxinst1 = bytes_to_str(pinfo->pool, epa.stream_info.ctxinst.ctxinst, sizeof(epa.stream_info.ctxinst.ctxinst));
+        ctxinst2 = bytes_to_str(pinfo->pool, epb.stream_info.ctxinst.ctxinst, sizeof(epb.stream_info.ctxinst.ctxinst));
+        sai->comment = ws_strdup_printf("%s <-> %s [%" PRIu64 "]",
+            ctxinst1,
+            ctxinst2,
+            stream_info->channel);
+    }
+    else
+    {
+        sai->comment = ws_strdup_printf("%" PRIu32 ":%s:%" PRIu16 " <-> %" PRIu32 ":%s:%" PRIu16 " [%" PRIu64 "]",
+            epa.stream_info.dest.domain,
+            address_to_str(pinfo->pool, &(epa.stream_info.dest.addr)),
+            epa.stream_info.dest.port,
+            epb.stream_info.dest.domain,
+            address_to_str(pinfo->pool, &(epb.stream_info.dest.addr)),
+            epb.stream_info.dest.port,
+            stream_info->channel);
+    }
+
+    /* Fill in the timestamps */
+    set_fd_time(pinfo->epan, pinfo->fd, time_str);
+    sai->time_str = g_strdup(time_str);
+
+    sai->conv_num = (uint16_t)LBM_CHANNEL_ID(stream_info->channel);
+    sai->display = true;
+    sai->line_style = 1;
+
+    g_queue_push_tail(sainfo->items, sai);
+
+    return TAP_PACKET_REDRAW;
+}
+
 
 /*----------------------------------------------------------------------------*/
 /* Message reassembly.                                                        */
@@ -6069,14 +6202,14 @@ typedef struct
 #define LBMC_MESSAGE_KEY_ELEMENT_PORT         3
 #define LBMC_MESSAGE_KEY_ELEMENT_FIRST_SQN    4
 
-static wmem_tree_t * lbmc_message_table = NULL;
+static wmem_tree_t * lbmc_message_table;
 
 typedef struct
 {
     int fragment_found;
-    guint32 first_sqn;
-    guint32 offset;
-    guint32 len;
+    uint32_t first_sqn;
+    uint32_t offset;
+    uint32_t len;
 } lbmc_fragment_info_t;
 
 struct lbmc_fragment_entry_t_stct;
@@ -6085,40 +6218,40 @@ struct lbmc_fragment_entry_t_stct
 {
     lbmc_fragment_entry_t * prev;
     lbmc_fragment_entry_t * next;
-    guint32 fragment_start;
-    guint32 fragment_len;
-    guint32 frame;
+    uint32_t fragment_start;
+    uint32_t fragment_len;
+    uint32_t frame;
     int frame_offset;
-    gchar * data;
+    char * data;
 };
 
 typedef struct
 {
-    guint64 channel;
+    uint64_t channel;
     address addr;
-    guint16 port;
-    guint32 first_sqn;
-    guint32 fragment_count;
-    guint32 total_len;
-    guint32 accumulated_len;
-    guint32 msgprop_len;
-    gboolean data_is_umq_cmd_resp;
+    uint16_t port;
+    uint32_t first_sqn;
+    uint32_t fragment_count;
+    uint32_t total_len;
+    uint32_t accumulated_len;
+    uint32_t msgprop_len;
+    bool data_is_umq_cmd_resp;
     lbmc_fragment_entry_t * entry;
-    guint32 reassembled_frame;
+    uint32_t reassembled_frame;
     tvbuff_t * reassembled_data;
     tvbuff_t * data;
     tvbuff_t * msgprop;
 } lbmc_message_entry_t;
 
-static void lbmc_message_build_key(guint32 * key_value, wmem_tree_key_t * key, const lbmc_message_entry_t * message)
+static void lbmc_message_build_key(uint32_t * key_value, wmem_tree_key_t * key, const lbmc_message_entry_t * message)
 {
-    guint32 val;
+    uint32_t val;
 
-    key_value[LBMC_MESSAGE_KEY_ELEMENT_CHANNEL_HIGH] = (guint32) ((message->channel >> 32) & 0xffffffff);
-    key_value[LBMC_MESSAGE_KEY_ELEMENT_CHANNEL_LOW] = (guint32) (message->channel & 0xffffffff);
-    memcpy((void *) &val, (const void *) message->addr.data, sizeof(guint32));
+    key_value[LBMC_MESSAGE_KEY_ELEMENT_CHANNEL_HIGH] = (uint32_t) ((message->channel >> 32) & 0xffffffff);
+    key_value[LBMC_MESSAGE_KEY_ELEMENT_CHANNEL_LOW] = (uint32_t) (message->channel & 0xffffffff);
+    memcpy((void *) &val, (const void *) message->addr.data, sizeof(uint32_t));
     key_value[LBMC_MESSAGE_KEY_ELEMENT_ADDR] = val;
-    key_value[LBMC_MESSAGE_KEY_ELEMENT_PORT] = (guint32) message->port;
+    key_value[LBMC_MESSAGE_KEY_ELEMENT_PORT] = (uint32_t) message->port;
     key_value[LBMC_MESSAGE_KEY_ELEMENT_FIRST_SQN] = message->first_sqn;
     key[0].length = LBMC_MESSAGE_KEY_ELEMENT_COUNT;
     key[0].key = key_value;
@@ -6126,11 +6259,11 @@ static void lbmc_message_build_key(guint32 * key_value, wmem_tree_key_t * key, c
     key[1].key = NULL;
 }
 
-static lbmc_message_entry_t * lbmc_message_find(guint64 channel, const address * dest_address, guint16 port, lbmc_fragment_info_t * info)
+static lbmc_message_entry_t * lbmc_message_find(uint64_t channel, const address * dest_address, uint16_t port, lbmc_fragment_info_t * info)
 {
     lbmc_message_entry_t key;
     lbmc_message_entry_t * entry = NULL;
-    guint32 keyval[LBMC_MESSAGE_KEY_ELEMENT_COUNT];
+    uint32_t keyval[LBMC_MESSAGE_KEY_ELEMENT_COUNT];
     wmem_tree_key_t tkey[2];
 
     memset((void *)&key, 0, sizeof(lbmc_message_entry_t));
@@ -6143,10 +6276,10 @@ static lbmc_message_entry_t * lbmc_message_find(guint64 channel, const address *
     return (entry);
 }
 
-static lbmc_message_entry_t * lbmc_message_create(guint64 channel, const address * dest_address, guint16 port, lbmc_fragment_info_t * info, guint32 msgprop_length)
+static lbmc_message_entry_t * lbmc_message_create(uint64_t channel, const address * dest_address, uint16_t port, lbmc_fragment_info_t * info, uint32_t msgprop_length)
 {
     lbmc_message_entry_t * entry = NULL;
-    guint32 keyval[LBMC_MESSAGE_KEY_ELEMENT_COUNT];
+    uint32_t keyval[LBMC_MESSAGE_KEY_ELEMENT_COUNT];
     wmem_tree_key_t tkey[2];
 
     entry = lbmc_message_find(channel, dest_address, port, info);
@@ -6163,7 +6296,7 @@ static lbmc_message_entry_t * lbmc_message_create(guint64 channel, const address
     entry->total_len = info->len;
     entry->accumulated_len = 0;
     entry->msgprop_len = msgprop_length;
-    entry->data_is_umq_cmd_resp = FALSE;
+    entry->data_is_umq_cmd_resp = false;
     entry->entry = NULL;
     entry->reassembled_frame = 0;
     entry->reassembled_data = NULL;
@@ -6174,7 +6307,7 @@ static lbmc_message_entry_t * lbmc_message_create(guint64 channel, const address
     return (entry);
 }
 
-static void lbmc_message_add_fragment(lbmc_message_entry_t * message, tvbuff_t * tvb, int data_offset, lbmc_fragment_info_t * info, guint32 frame)
+static void lbmc_message_add_fragment(lbmc_message_entry_t * message, tvbuff_t * tvb, int data_offset, lbmc_fragment_info_t * info, uint32_t frame)
 {
     lbmc_fragment_entry_t * frag = NULL;
     lbmc_fragment_entry_t * cur = NULL;
@@ -6242,7 +6375,7 @@ static void lbmc_message_add_fragment(lbmc_message_entry_t * message, tvbuff_t *
     }
     frag->fragment_start = info->offset;
     frag->fragment_len = tvb_reported_length_remaining(tvb, data_offset);
-    frag->data = (gchar *) tvb_memdup(wmem_file_scope(), tvb, data_offset, frag->fragment_len);
+    frag->data = (char *) tvb_memdup(wmem_file_scope(), tvb, data_offset, frag->fragment_len);
     frag->frame = frame;
     frag->frame_offset = data_offset;
     message->accumulated_len += frag->fragment_len;
@@ -6254,7 +6387,7 @@ static void lbmc_message_add_fragment(lbmc_message_entry_t * message, tvbuff_t *
 /*----------------------------------------------------------------------------*/
 static void lbmc_init_extopt_reassembled_data(lbmc_extopt_reassembled_data_t * reassembly)
 {
-    reassembly->reassembly_in_progress = FALSE;
+    reassembly->reassembly_in_progress = false;
     reassembly->subtype = 0;
     reassembly->len = 0;
     memset((void *)&(reassembly->data), 0, sizeof(reassembly->data));
@@ -6267,7 +6400,7 @@ static int dissect_nhdr_frag(tvbuff_t * tvb, int offset, packet_info * pinfo _U_
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_frag_flags_ignore,
         NULL
@@ -6295,7 +6428,7 @@ static int dissect_nhdr_batch(tvbuff_t * tvb, int offset, packet_info * pinfo _U
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_batch_flags_ignore,
         &hf_lbmc_batch_flags_batch_start,
@@ -6315,7 +6448,7 @@ static int dissect_nhdr_request(tvbuff_t * tvb, int offset, packet_info * pinfo 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_tcp_request_flags_ignore,
         NULL
@@ -6338,8 +6471,8 @@ static int dissect_nhdr_topicname(tvbuff_t * tvb, int offset, packet_info * pinf
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    static int * const flags[] =
     {
         &hf_lbmc_topicname_flags_ignore,
         NULL
@@ -6348,8 +6481,8 @@ static int dissect_nhdr_topicname(tvbuff_t * tvb, int offset, packet_info * pinf
     int namelen = 0;
     proto_item * hdrlen_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_TOPICNAME_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_topicname, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_TOPICNAME_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_topicname, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_topicname);
     proto_tree_add_item(subtree, hf_lbmc_topicname_next_hdr, tvb, offset + O_LBMC_TOPICNAME_HDR_T_NEXT_HDR, L_LBMC_TOPICNAME_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     hdrlen_item = proto_tree_add_item(subtree, hf_lbmc_topicname_hdr_len, tvb, offset + O_LBMC_TOPICNAME_HDR_T_HDR_LEN, L_LBMC_TOPICNAME_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -6373,13 +6506,13 @@ static int dissect_nhdr_apphdr(tvbuff_t * tvb, int offset, packet_info * pinfo _
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
+    uint8_t hdrlen = 0;
     int len_dissected = 0;
     int datalen = 0;
     proto_item * hdrlen_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_APPHDR_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_apphdr, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_APPHDR_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_apphdr, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_apphdr);
     proto_tree_add_item(subtree, hf_lbmc_apphdr_next_hdr, tvb, offset + O_LBMC_APPHDR_HDR_T_NEXT_HDR, L_LBMC_APPHDR_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     hdrlen_item = proto_tree_add_item(subtree, hf_lbmc_apphdr_hdr_len, tvb, offset + O_LBMC_APPHDR_HDR_T_HDR_LEN, L_LBMC_APPHDR_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -6400,17 +6533,17 @@ static int dissect_nhdr_apphdr(tvbuff_t * tvb, int offset, packet_info * pinfo _
     return (len_dissected);
 }
 
-static int dissect_nhdr_apphdr_chain_element(tvbuff_t * tvb, int offset, packet_info * pinfo _U_, proto_tree * tree, guint8 element)
+static int dissect_nhdr_apphdr_chain_element(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, uint8_t element)
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
+    uint8_t hdrlen = 0;
     proto_item * hdrlen_item;
     int datalen = 0;
     int len_dissected = 0;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_APPHDR_CHAIN_ELEMENT_T_HDR_LEN);
-    subtree_item = proto_tree_add_none_format(tree, hf_lbmc_apphdr_chain_element, tvb, offset, (gint)hdrlen, "%s element", val_to_str(element, lbmc_apphdr_chain_type, "Unknown (0x%02x)"));
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_APPHDR_CHAIN_ELEMENT_T_HDR_LEN);
+    subtree_item = proto_tree_add_none_format(tree, hf_lbmc_apphdr_chain_element, tvb, offset, (int)hdrlen, "%s element", val_to_str(pinfo->pool, element, lbmc_apphdr_chain_type, "Unknown (0x%02x)"));
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_apphdr_chain_element);
     proto_tree_add_item(subtree, hf_lbmc_apphdr_chain_element_next_hdr, tvb, offset + O_LBMC_APPHDR_CHAIN_ELEMENT_T_NEXT_HDR, L_LBMC_APPHDR_CHAIN_ELEMENT_T_NEXT_HDR, ENC_BIG_ENDIAN);
     hdrlen_item = proto_tree_add_item(subtree, hf_lbmc_apphdr_chain_element_hdr_len, tvb, offset + O_LBMC_APPHDR_CHAIN_ELEMENT_T_HDR_LEN, L_LBMC_APPHDR_CHAIN_ELEMENT_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -6435,17 +6568,17 @@ static int dissect_nhdr_apphdr_chain_element(tvbuff_t * tvb, int offset, packet_
     return (len_dissected);
 }
 
-static int dissect_nhdr_apphdr_chain_msgprop_element(tvbuff_t * tvb, int offset, packet_info * pinfo _U_, proto_tree * tree, guint8 element, guint32 * msg_prop_len)
+static int dissect_nhdr_apphdr_chain_msgprop_element(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, uint8_t element, uint32_t * msg_prop_len)
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    guint32 datalen;
+    uint8_t hdrlen = 0;
+    uint32_t datalen;
     int len_dissected = 0;
     proto_item * hdrlen_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_APPHDR_CHAIN_MSGPROP_ELEMENT_T_HDR_LEN);
-    subtree_item = proto_tree_add_none_format(tree, hf_lbmc_apphdr_chain_msgprop, tvb, offset, (gint)hdrlen, "%s element", val_to_str(element, lbmc_apphdr_chain_type, "Unknown (0x%02x)"));
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_APPHDR_CHAIN_MSGPROP_ELEMENT_T_HDR_LEN);
+    subtree_item = proto_tree_add_none_format(tree, hf_lbmc_apphdr_chain_msgprop, tvb, offset, (int)hdrlen, "%s element", val_to_str(pinfo->pool, element, lbmc_apphdr_chain_type, "Unknown (0x%02x)"));
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_apphdr_chain_msgprop);
     proto_tree_add_item(subtree, hf_lbmc_apphdr_chain_msgprop_next_hdr, tvb, offset + O_LBMC_APPHDR_CHAIN_MSGPROP_ELEMENT_T_NEXT_HDR, L_LBMC_APPHDR_CHAIN_MSGPROP_ELEMENT_T_NEXT_HDR, ENC_BIG_ENDIAN);
     hdrlen_item = proto_tree_add_item(subtree, hf_lbmc_apphdr_chain_msgprop_hdr_len, tvb, offset + O_LBMC_APPHDR_CHAIN_MSGPROP_ELEMENT_T_HDR_LEN, L_LBMC_APPHDR_CHAIN_MSGPROP_ELEMENT_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -6466,20 +6599,20 @@ static int dissect_nhdr_apphdr_chain_msgprop_element(tvbuff_t * tvb, int offset,
     return (len_dissected);
 }
 
-static int dissect_nhdr_apphdr_chain(tvbuff_t * tvb, int offset, packet_info * pinfo _U_, proto_tree * tree, guint32 * msg_prop_len)
+static int dissect_nhdr_apphdr_chain(tvbuff_t * tvb, int offset, packet_info * pinfo _U_, proto_tree * tree, uint32_t * msg_prop_len)
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    guint8 datalen = 0;
+    uint8_t hdrlen = 0;
+    uint8_t datalen = 0;
     int elem_offset = 0;
     int elem_len = 0;
-    guint8 elem = 0;
+    uint8_t elem = 0;
     int len_dissected = 0;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_APPHDR_CHAIN_HDR_T_HDR_LEN);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_APPHDR_CHAIN_HDR_T_HDR_LEN);
     datalen = hdrlen - L_LBMC_APPHDR_CHAIN_HDR_T;
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_apphdr_chain, tvb, offset, (gint)hdrlen, ENC_NA);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_apphdr_chain, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_apphdr_chain);
     proto_tree_add_item(subtree, hf_lbmc_apphdr_chain_next_hdr, tvb, offset + O_LBMC_APPHDR_CHAIN_HDR_T_NEXT_HDR, L_LBMC_APPHDR_CHAIN_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_apphdr_chain_hdr_len, tvb, offset + O_LBMC_APPHDR_CHAIN_HDR_T_HDR_LEN, L_LBMC_APPHDR_CHAIN_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -6487,7 +6620,7 @@ static int dissect_nhdr_apphdr_chain(tvbuff_t * tvb, int offset, packet_info * p
     proto_tree_add_item(subtree, hf_lbmc_apphdr_chain_first_chain_hdr, tvb, offset + O_LBMC_APPHDR_CHAIN_HDR_T_FIRST_CHAIN_HDR, L_LBMC_APPHDR_CHAIN_HDR_T_FIRST_CHAIN_HDR, ENC_BIG_ENDIAN);
     len_dissected = L_LBMC_APPHDR_CHAIN_HDR_T;
     elem_offset = offset + L_LBMC_APPHDR_CHAIN_HDR_T;
-    elem = tvb_get_guint8(tvb, offset + O_LBMC_APPHDR_CHAIN_HDR_T_FIRST_CHAIN_HDR);
+    elem = tvb_get_uint8(tvb, offset + O_LBMC_APPHDR_CHAIN_HDR_T_FIRST_CHAIN_HDR);
     while (datalen > 0)
     {
         switch (elem)
@@ -6508,7 +6641,7 @@ static int dissect_nhdr_apphdr_chain(tvbuff_t * tvb, int offset, packet_info * p
         len_dissected += elem_len;
         if (datalen >= L_LBMC_APPHDR_CHAIN_ELEMENT_T_MIN)
         {
-            elem = tvb_get_guint8(tvb, elem_offset + O_LBMC_APPHDR_CHAIN_ELEMENT_T_NEXT_HDR);
+            elem = tvb_get_uint8(tvb, elem_offset + O_LBMC_APPHDR_CHAIN_ELEMENT_T_NEXT_HDR);
         }
     }
     proto_item_set_len(subtree_item, len_dissected);
@@ -6519,7 +6652,7 @@ static int dissect_nhdr_umq_msgid(tvbuff_t * tvb, int offset, packet_info * pinf
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_umq_msgid_flags_ignore,
         NULL
@@ -6535,11 +6668,11 @@ static int dissect_nhdr_umq_msgid(tvbuff_t * tvb, int offset, packet_info * pinf
     return (L_LBMC_UMQ_MSGID_HDR_T);
 }
 
-static int dissect_nhdr_umq_sqd_rcv(tvbuff_t * tvb, int offset, packet_info * pinfo _U_, proto_tree * tree, gboolean * data_is_response)
+static int dissect_nhdr_umq_sqd_rcv(tvbuff_t * tvb, int offset, packet_info * pinfo _U_, proto_tree * tree, bool * data_is_response)
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_umq_sqd_rcv_flags_ignore,
         &hf_lbmc_umq_sqd_rcv_flags_r_flag,
@@ -6561,16 +6694,16 @@ static int dissect_nhdr_umq_sqd_rcv(tvbuff_t * tvb, int offset, packet_info * pi
     proto_tree_add_item(subtree, hf_lbmc_umq_sqd_rcv_assign_id, tvb, offset + O_LBMC_UMQ_SQD_RCV_HDR_T_ASSIGN_ID, L_LBMC_UMQ_SQD_RCV_HDR_T_ASSIGN_ID, ENC_BIG_ENDIAN);
     if (data_is_response != NULL)
     {
-        guint32 rcr_index;
+        uint32_t rcr_index;
 
         rcr_index = tvb_get_ntohl(tvb, offset + O_LBMC_UMQ_SQD_RCV_HDR_T_RCR_IDX);
         if (rcr_index == 0)
         {
-            *data_is_response = TRUE;
+            *data_is_response = true;
         }
         else
         {
-            *data_is_response = FALSE;
+            *data_is_response = false;
         }
     }
     return (L_LBMC_UMQ_SQD_RCV_HDR_T);
@@ -6580,7 +6713,7 @@ static int dissect_nhdr_umq_resub(tvbuff_t * tvb, int offset, packet_info * pinf
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_umq_resub_flags_ignore,
         &hf_lbmc_umq_resub_flags_q_flag,
@@ -6603,7 +6736,7 @@ static int dissect_nhdr_otid(tvbuff_t * tvb, int offset, packet_info * pinfo _U_
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_otid_flags_ignore,
         NULL
@@ -6620,7 +6753,7 @@ static int dissect_nhdr_otid(tvbuff_t * tvb, int offset, packet_info * pinfo _U_
 
 static void dissect_ctxinst(tvbuff_t * tvb, int offset, proto_tree * tree, lbmc_ctxinst_info_t * info)
 {
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ctxinst_flags_ignore,
         NULL
@@ -6632,7 +6765,7 @@ static void dissect_ctxinst(tvbuff_t * tvb, int offset, proto_tree * tree, lbmc_
     proto_tree_add_item(tree, hf_lbmc_ctxinst_ctxinst, tvb, offset + O_LBMC_CTXINST_HDR_T_CTXINST, L_LBMC_CTXINST_HDR_T_CTXINST, ENC_NA);
     if (info != NULL)
     {
-        info->set = TRUE;
+        info->set = true;
         tvb_memcpy(tvb, (void *)&(info->ctxinst), offset + O_LBMC_CTXINST_HDR_T_CTXINST, L_LBMC_CTXINST_HDR_T_CTXINST);
     }
 }
@@ -6674,7 +6807,7 @@ static int dissect_nhdr_srcidx(tvbuff_t * tvb, int offset, packet_info * pinfo _
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_srcidx_flags_ignore,
         NULL
@@ -6693,7 +6826,7 @@ static int dissect_nhdr_umq_ulb_msg(tvbuff_t * tvb, int offset, packet_info * pi
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_umq_ulb_msg_flags_ignore,
         &hf_lbmc_umq_ulb_msg_flags_a_flag,
@@ -6718,7 +6851,7 @@ static int dissect_nhdr_ssf_init(tvbuff_t * tvb, int offset, packet_info * pinfo
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ssf_init_flags_ignore,
         &hf_lbmc_ssf_init_flags_default_exclusions,
@@ -6744,7 +6877,7 @@ static int dissect_nhdr_ssf_creq(tvbuff_t * tvb, int offset, packet_info * pinfo
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ssf_creq_flags_ignore,
         NULL
@@ -6766,7 +6899,7 @@ static int dissect_nhdr_ume_preg(tvbuff_t * tvb, int offset, packet_info * pinfo
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_preg_flags_ignore,
         &hf_lbmc_ume_preg_flags_f_flag,
@@ -6797,8 +6930,8 @@ static int dissect_nhdr_ume_preg_resp(tvbuff_t * tvb, int offset, packet_info * 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 code = 0;
-    static const int * codes[] =
+    uint8_t code = 0;
+    static int * const codes[] =
     {
         &hf_lbmc_ume_preg_resp_code_ignore,
         &hf_lbmc_ume_preg_resp_code_o_flag,
@@ -6808,7 +6941,7 @@ static int dissect_nhdr_ume_preg_resp(tvbuff_t * tvb, int offset, packet_info * 
         &hf_lbmc_ume_preg_resp_code_d_flag,
         NULL
     };
-    static const int * codes_e[] =
+    static int * const codes_e[] =
     {
         &hf_lbmc_ume_preg_resp_code_ignore,
         &hf_lbmc_ume_preg_resp_code_o_flag,
@@ -6821,7 +6954,7 @@ static int dissect_nhdr_ume_preg_resp(tvbuff_t * tvb, int offset, packet_info * 
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_ume_preg_resp);
     proto_tree_add_item(subtree, hf_lbmc_ume_preg_resp_next_hdr, tvb, offset + O_LBMC_CNTL_UME_PREG_RESP_HDR_T_NEXT_HDR, L_LBMC_CNTL_UME_PREG_RESP_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_ume_preg_resp_hdr_len, tvb, offset + O_LBMC_CNTL_UME_PREG_RESP_HDR_T_HDR_LEN, L_LBMC_CNTL_UME_PREG_RESP_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
-    code = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UME_PREG_RESP_HDR_T_CODE);
+    code = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UME_PREG_RESP_HDR_T_CODE);
     if ((code & LBMC_UME_PREG_RESP_E_FLAG) == 0)
     {
         proto_tree_add_bitmask(subtree, tvb, offset + O_LBMC_CNTL_UME_PREG_RESP_HDR_T_CODE, hf_lbmc_ume_preg_resp_code, ett_lbmc_ume_preg_resp_code, codes, ENC_BIG_ENDIAN);
@@ -6844,7 +6977,7 @@ static int dissect_nhdr_ume_ack(tvbuff_t * tvb, int offset, packet_info * pinfo 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_ack_flags_ignore,
         &hf_lbmc_ume_ack_flags_o_flag,
@@ -6871,7 +7004,7 @@ static int dissect_nhdr_ume_rxreq(tvbuff_t * tvb, int offset, packet_info * pinf
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_rxreq_flags_ignore,
         &hf_lbmc_ume_rxreq_flags_tsni_req,
@@ -6898,7 +7031,7 @@ static int dissect_nhdr_ume_keepalive(tvbuff_t * tvb, int offset, packet_info * 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_keepalive_flags_ignore,
         &hf_lbmc_ume_keepalive_flags_r_flag,
@@ -6936,7 +7069,7 @@ static int dissect_nhdr_ume_ranged_ack(tvbuff_t * tvb, int offset, packet_info *
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_ranged_ack_flags_ignore,
         NULL
@@ -6956,7 +7089,7 @@ static int dissect_nhdr_ume_ack_id(tvbuff_t * tvb, int offset, packet_info * pin
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_ack_id_flags_ignore,
         NULL
@@ -6975,11 +7108,12 @@ static int dissect_nhdr_ume_capability(tvbuff_t * tvb, int offset, packet_info *
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_capability_flags_ignore,
         &hf_lbmc_ume_capability_flags_qc_flag,
         &hf_lbmc_ume_capability_flags_client_lifetime_flag,
+        &hf_lbmc_ume_capability_flags_ranged_rx_flag,
         NULL
     };
 
@@ -6995,7 +7129,7 @@ static int dissect_nhdr_ume_proxy_src(tvbuff_t * tvb, int offset, packet_info * 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_proxy_src_flags_ignore,
         &hf_lbmc_ume_proxy_src_flags_enable,
@@ -7015,7 +7149,7 @@ static int dissect_nhdr_ume_store_group(tvbuff_t * tvb, int offset, packet_info 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_store_group_flags_ignore,
         NULL
@@ -7036,7 +7170,7 @@ static int dissect_nhdr_ume_store(tvbuff_t * tvb, int offset, packet_info * pinf
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_store_flags_ignore,
         NULL
@@ -7059,7 +7193,7 @@ static int dissect_nhdr_ume_lj_info(tvbuff_t * tvb, int offset, packet_info * pi
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_lj_info_flags_ignore,
         NULL
@@ -7081,7 +7215,7 @@ static int dissect_nhdr_tsni_rec(tvbuff_t * tvb, int offset, packet_info * pinfo
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
     proto_item * sqn_item = NULL;
-    guint32 sqn = 0;
+    uint32_t sqn = 0;
 
     subtree_item = proto_tree_add_item(tree, hf_lbmc_tsni_rec, tvb, offset, L_LBMC_CNTL_TSNI_REC_HDR_T, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_tsni_rec);
@@ -7096,13 +7230,13 @@ static int dissect_nhdr_tsni(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    guint8 hdrlen_remaining;
+    uint8_t hdrlen = 0;
+    uint8_t hdrlen_remaining;
     int rec_offset = 0;
     int len_dissected = 0;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_TSNI_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_tsni, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_TSNI_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_tsni, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_tsni);
     proto_tree_add_item(subtree, hf_lbmc_tsni_next_hdr, tvb, offset + O_LBMC_CNTL_TSNI_HDR_T_NEXT_HDR, L_LBMC_CNTL_TSNI_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_tsni_hdr_len, tvb, offset + O_LBMC_CNTL_TSNI_HDR_T_HDR_LEN, L_LBMC_CNTL_TSNI_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -7233,12 +7367,12 @@ static int dissect_nhdr_umq_reg(tvbuff_t * tvb, int offset, packet_info * pinfo,
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    guint8 reg_type = 0;
+    uint8_t hdrlen = 0;
+    uint8_t reg_type = 0;
     int len_dissected = 0;
     int len = 0;
     proto_item * reg_type_item = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_umq_reg_flags_ignore,
         &hf_lbmc_umq_reg_flags_r_flag,
@@ -7248,8 +7382,8 @@ static int dissect_nhdr_umq_reg(tvbuff_t * tvb, int offset, packet_info * pinfo,
         NULL
     };
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_REG_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_reg, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_REG_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_reg, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_umq_reg);
     proto_tree_add_item(subtree, hf_lbmc_umq_reg_next_hdr, tvb, offset + O_LBMC_CNTL_UMQ_REG_HDR_T_NEXT_HDR, L_LBMC_CNTL_UMQ_REG_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_reg_hdr_len, tvb, offset + O_LBMC_CNTL_UMQ_REG_HDR_T_HDR_LEN, L_LBMC_CNTL_UMQ_REG_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -7261,7 +7395,7 @@ static int dissect_nhdr_umq_reg(tvbuff_t * tvb, int offset, packet_info * pinfo,
     proto_tree_add_item(subtree, hf_lbmc_umq_reg_regid, tvb, offset + O_LBMC_CNTL_UMQ_REG_HDR_T_REGID, L_LBMC_CNTL_UMQ_REG_HDR_T_REGID, ENC_BIG_ENDIAN);
 
     len_dissected = L_LBMC_CNTL_UMQ_REG_HDR_T;
-    reg_type = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_REG_HDR_T_REG_TYPE);
+    reg_type = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_REG_HDR_T_REG_TYPE);
     switch (reg_type)
     {
         case LBMC_UMQ_REG_CTX_TYPE:
@@ -7313,7 +7447,7 @@ static int dissect_nhdr_umq_reg_resp_ctx_ex(tvbuff_t * tvb, int offset, packet_i
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_umq_reg_resp_reg_ctx_ex_flags_firstmsg,
         NULL
@@ -7434,23 +7568,23 @@ static int dissect_nhdr_umq_reg_resp(tvbuff_t * tvb, int offset, packet_info * p
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    guint8 resp_type = 0;
+    uint8_t hdrlen = 0;
+    uint8_t resp_type = 0;
     int len_dissected = 0;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_umq_reg_resp_flags_ignore,
         &hf_lbmc_umq_reg_resp_flags_r_flag,
         NULL
     };
-    static const int * flags_err[] =
+    static int * const flags_err[] =
     {
         &hf_lbmc_umq_reg_resp_flags_ignore,
         &hf_lbmc_umq_reg_resp_flags_r_flag,
         &hf_lbmc_umq_reg_resp_flags_l_flag,
         NULL
     };
-    static const int * flags_src[] =
+    static int * const flags_src[] =
     {
         &hf_lbmc_umq_reg_resp_flags_ignore,
         &hf_lbmc_umq_reg_resp_flags_r_flag,
@@ -7462,9 +7596,9 @@ static int dissect_nhdr_umq_reg_resp(tvbuff_t * tvb, int offset, packet_info * p
     int len = 0;
     proto_item * resp_type_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_REG_RESP_HDR_T_HDR_LEN);
-    resp_type = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_REG_RESP_HDR_T_REG_RESP_TYPE);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_reg_resp, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_REG_RESP_HDR_T_HDR_LEN);
+    resp_type = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_REG_RESP_HDR_T_REG_RESP_TYPE);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_reg_resp, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_umq_reg_resp);
     proto_tree_add_item(subtree, hf_lbmc_umq_reg_resp_next_hdr, tvb, offset + O_LBMC_CNTL_UMQ_REG_RESP_HDR_T_NEXT_HDR, L_LBMC_CNTL_UMQ_REG_RESP_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_reg_resp_hdr_len, tvb, offset + O_LBMC_CNTL_UMQ_REG_RESP_HDR_T_HDR_LEN, L_LBMC_CNTL_UMQ_REG_RESP_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -7593,13 +7727,13 @@ static int dissect_nhdr_umq_ack(tvbuff_t * tvb, int offset, packet_info * pinfo,
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    guint8 ack_type = 0;
-    guint8 num_ids = 0;
-    guint8 idx;
+    uint8_t hdrlen = 0;
+    uint8_t ack_type = 0;
+    uint8_t num_ids = 0;
+    uint8_t idx;
     int len_dissected = 0;
-    guint8 msg_count;
-    static const int * msgs[] =
+    uint8_t msg_count;
+    static int * const msgs[] =
     {
         &hf_lbmc_umq_ack_msgs_ignore,
         &hf_lbmc_umq_ack_msgs_t_flag,
@@ -7610,12 +7744,12 @@ static int dissect_nhdr_umq_ack(tvbuff_t * tvb, int offset, packet_info * pinfo,
     int packet_len = 0;
     proto_item * ack_type_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_ACK_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_ack, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_ACK_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_ack, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_umq_ack);
     proto_tree_add_item(subtree, hf_lbmc_umq_ack_next_hdr, tvb, offset + O_LBMC_CNTL_UMQ_ACK_HDR_T_NEXT_HDR, L_LBMC_CNTL_UMQ_ACK_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_ack_hdr_len, tvb, offset + O_LBMC_CNTL_UMQ_ACK_HDR_T_HDR_LEN, L_LBMC_CNTL_UMQ_ACK_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
-    msg_count = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_ACK_HDR_T_MSGS);
+    msg_count = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_ACK_HDR_T_MSGS);
     proto_tree_add_bitmask(subtree, tvb, offset + O_LBMC_CNTL_UMQ_ACK_HDR_T_MSGS, hf_lbmc_umq_ack_msgs, ett_lbmc_umq_ack_msgs, msgs, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_ack_numids, tvb, offset + O_LBMC_CNTL_UMQ_ACK_HDR_T_MSGS, L_LBMC_CNTL_UMQ_ACK_HDR_T_MSGS, ENC_BIG_ENDIAN);
     ack_type_item = proto_tree_add_item(subtree, hf_lbmc_umq_ack_ack_type, tvb, offset + O_LBMC_CNTL_UMQ_ACK_HDR_T_ACK_TYPE, L_LBMC_CNTL_UMQ_ACK_HDR_T_ACK_TYPE, ENC_BIG_ENDIAN);
@@ -7627,7 +7761,7 @@ static int dissect_nhdr_umq_ack(tvbuff_t * tvb, int offset, packet_info * pinfo,
         len = dissect_nhdr_umq_ack_msgid(tvb, offset + len_dissected, pinfo, subtree);
         len_dissected += len;
     }
-    ack_type = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_ACK_HDR_T_ACK_TYPE);
+    ack_type = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_ACK_HDR_T_ACK_TYPE);
     switch (ack_type)
     {
         case LBMC_UMQ_ACK_STABLE_TYPE:
@@ -7653,7 +7787,7 @@ static int dissect_nhdr_umq_rcr(tvbuff_t * tvb, int offset, packet_info * pinfo 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_umq_rcr_flags_ignore,
         &hf_lbmc_umq_rcr_flags_r_flag,
@@ -7736,20 +7870,20 @@ static int dissect_nhdr_umq_ka(tvbuff_t * tvb, int offset, packet_info * pinfo, 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    guint8 type;
+    uint8_t hdrlen = 0;
+    uint8_t type;
     int len_dissected = 0;
     int len;
     proto_item * ka_type_item = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_cntl_umq_ka_flags_ignore,
         &hf_lbmc_cntl_umq_ka_flags_r_flag,
         NULL
     };
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_KA_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_cntl_umq_ka, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_KA_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_cntl_umq_ka, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_umq_ka);
     proto_tree_add_item(subtree, hf_lbmc_cntl_umq_ka_next_hdr, tvb, offset + O_LBMC_CNTL_UMQ_KA_HDR_T_NEXT_HDR, L_LBMC_CNTL_UMQ_KA_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_cntl_umq_ka_hdr_len, tvb, offset + O_LBMC_CNTL_UMQ_KA_HDR_T_HDR_LEN, L_LBMC_CNTL_UMQ_KA_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -7760,7 +7894,7 @@ static int dissect_nhdr_umq_ka(tvbuff_t * tvb, int offset, packet_info * pinfo, 
     proto_tree_add_item(subtree, hf_lbmc_cntl_umq_ka_inst_idx, tvb, offset + O_LBMC_CNTL_UMQ_KA_HDR_T_INST_IDX, L_LBMC_CNTL_UMQ_KA_HDR_T_INST_IDX, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_cntl_umq_ka_reserved, tvb, offset + O_LBMC_CNTL_UMQ_KA_HDR_T_RESERVED, L_LBMC_CNTL_UMQ_KA_HDR_T_RESERVED, ENC_BIG_ENDIAN);
     len_dissected = L_LBMC_CNTL_UMQ_KA_HDR_T;
-    type = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_KA_HDR_T_KA_TYPE);
+    type = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_KA_HDR_T_KA_TYPE);
     switch (type)
     {
         case LBMC_UMQ_KA_SRC_TYPE:
@@ -7911,10 +8045,10 @@ static int dissect_nhdr_umq_rxreq(tvbuff_t * tvb, int offset, packet_info * pinf
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    guint8 type;
-    guint8 flags_val;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    uint8_t type;
+    uint8_t flags_val;
+    static int * const flags[] =
     {
         &hf_lbmc_umq_rxreq_flags_ignore,
         &hf_lbmc_umq_rxreq_flags_r_flag,
@@ -7924,15 +8058,15 @@ static int dissect_nhdr_umq_rxreq(tvbuff_t * tvb, int offset, packet_info * pinf
     int len = 0;
     proto_item * rxreq_type_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_RXREQ_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_rxreq, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_RXREQ_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_rxreq, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_umq_rxreq);
     proto_tree_add_item(subtree, hf_lbmc_umq_rxreq_next_hdr, tvb, offset + O_LBMC_CNTL_UMQ_RXREQ_HDR_T_NEXT_HDR, L_LBMC_CNTL_UMQ_RXREQ_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_rxreq_hdr_len, tvb, offset + O_LBMC_CNTL_UMQ_RXREQ_HDR_T_HDR_LEN, L_LBMC_CNTL_UMQ_RXREQ_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
     proto_tree_add_bitmask(subtree, tvb, offset + O_LBMC_CNTL_UMQ_RXREQ_HDR_T_FLAGS, hf_lbmc_umq_rxreq_flags, ett_lbmc_umq_rxreq_flags, flags, ENC_BIG_ENDIAN);
     rxreq_type_item = proto_tree_add_item(subtree, hf_lbmc_umq_rxreq_rxreq_type, tvb, offset + O_LBMC_CNTL_UMQ_RXREQ_HDR_T_RXREQ_TYPE, L_LBMC_CNTL_UMQ_RXREQ_HDR_T_RXREQ_TYPE, ENC_BIG_ENDIAN);
     len_dissected = L_LBMC_CNTL_UMQ_RXREQ_HDR_T;
-    flags_val = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_RXREQ_HDR_T_FLAGS);
+    flags_val = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_RXREQ_HDR_T_FLAGS);
     if ((flags_val & LBMC_UMQ_RXREQ_R_FLAG) != 0)
     {
         len = dissect_nhdr_umq_rxreq_regid_resp(tvb, offset + len_dissected, pinfo, subtree);
@@ -7942,7 +8076,7 @@ static int dissect_nhdr_umq_rxreq(tvbuff_t * tvb, int offset, packet_info * pinf
         len = dissect_nhdr_umq_rxreq_addr_resp(tvb, offset + len_dissected, pinfo, subtree);
     }
     len_dissected += len;
-    type = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_RXREQ_HDR_T_RXREQ_TYPE);
+    type = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_RXREQ_HDR_T_RXREQ_TYPE);
     switch (type)
     {
         case LBMC_UMQ_RXREQ_MR_TYPE:
@@ -7980,11 +8114,11 @@ static int dissect_nhdr_umq_qmgmt(tvbuff_t * tvb, int offset, packet_info * pinf
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
+    uint8_t hdrlen = 0;
     int len_dissected = 0;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_QMGMT_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_qmgmt, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_QMGMT_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_qmgmt, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_umq_qmgmt);
     proto_tree_add_item(subtree, hf_lbmc_umq_qmgmt_next_hdr, tvb, offset + O_LBMC_CNTL_UMQ_QMGMT_HDR_T_NEXT_HDR, L_LBMC_CNTL_UMQ_QMGMT_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_qmgmt_hdr_len, tvb, offset + O_LBMC_CNTL_UMQ_QMGMT_HDR_T_HDR_LEN, L_LBMC_CNTL_UMQ_QMGMT_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -7997,7 +8131,7 @@ static int dissect_nhdr_umq_resub_req(tvbuff_t * tvb, int offset, packet_info * 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_umq_resub_req_flags_ignore,
         NULL
@@ -8021,7 +8155,7 @@ static int dissect_nhdr_umq_resub_resp(tvbuff_t * tvb, int offset, packet_info *
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_umq_resub_resp_flags_ignore,
         NULL
@@ -8045,7 +8179,7 @@ static int dissect_nhdr_topic_interest(tvbuff_t * tvb, int offset, packet_info *
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_topic_interest_flags_ignore,
         &hf_lbmc_topic_interest_flags_cancel,
@@ -8066,7 +8200,7 @@ static int dissect_nhdr_pattern_interest(tvbuff_t * tvb, int offset, packet_info
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_pattern_interest_flags_ignore,
         &hf_lbmc_pattern_interest_flags_cancel,
@@ -8089,7 +8223,7 @@ static int dissect_nhdr_advertisement(tvbuff_t * tvb, int offset, packet_info * 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_advertisement_flags_ignore,
         &hf_lbmc_advertisement_flags_eos,
@@ -8098,7 +8232,7 @@ static int dissect_nhdr_advertisement(tvbuff_t * tvb, int offset, packet_info * 
         &hf_lbmc_advertisement_flags_ctxinst,
         NULL
     };
-    static const int * ad_flags[] =
+    static int * const ad_flags[] =
     {
         &hf_lbmc_advertisement_ad_flags_lj,
         &hf_lbmc_advertisement_ad_flags_ume,
@@ -8130,8 +8264,8 @@ static int dissect_nhdr_storename(tvbuff_t * tvb, int offset, packet_info * pinf
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    static int * const flags[] =
     {
         &hf_lbmc_ume_storename_flags_ignore,
         NULL
@@ -8140,8 +8274,8 @@ static int dissect_nhdr_storename(tvbuff_t * tvb, int offset, packet_info * pinf
     int namelen = 0;
     proto_item * hdrlen_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_UME_STORENAME_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_ume_storename, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_UME_STORENAME_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_ume_storename, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_ume_storename);
     proto_tree_add_item(subtree, hf_lbmc_ume_storename_next_hdr, tvb, offset + O_LBMC_UME_STORENAME_HDR_T_NEXT_HDR, L_LBMC_UME_STORENAME_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     hdrlen_item = proto_tree_add_item(subtree, hf_lbmc_ume_storename_hdr_len, tvb, offset + O_LBMC_UME_STORENAME_HDR_T_HDR_LEN, L_LBMC_UME_STORENAME_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -8165,7 +8299,7 @@ static int dissect_nhdr_umq_ulb_rcr(tvbuff_t * tvb, int offset, packet_info * pi
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_umq_ulb_rcr_flags_ignore,
         &hf_lbmc_umq_ulb_rcr_flags_r_flag,
@@ -8195,7 +8329,7 @@ static int dissect_nhdr_umq_lf(tvbuff_t * tvb, int offset, packet_info * pinfo _
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_umq_lf_flags_ignore,
         NULL
@@ -8216,9 +8350,9 @@ static int dissect_nhdr_ctxinfo(tvbuff_t * tvb, int offset, packet_info * pinfo 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    guint16 flags_val = 0;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    uint16_t flags_val = 0;
+    static int * const flags[] =
     {
         &hf_lbmc_ctxinfo_flags_ignore,
         &hf_lbmc_ctxinfo_flags_query,
@@ -8233,8 +8367,8 @@ static int dissect_nhdr_ctxinfo(tvbuff_t * tvb, int offset, packet_info * pinfo 
     int len_dissected = 0;
     proto_item * hdrlen_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_CTXINFO_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_ctxinfo, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_CTXINFO_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_ctxinfo, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_ctxinfo);
     proto_tree_add_item(subtree, hf_lbmc_ctxinfo_next_hdr, tvb, offset + O_LBMC_CNTL_CTXINFO_HDR_T_NEXT_HDR, L_LBMC_CNTL_CTXINFO_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     hdrlen_item = proto_tree_add_item(subtree, hf_lbmc_ctxinfo_hdr_len, tvb, offset + O_LBMC_CNTL_CTXINFO_HDR_T_HDR_LEN, L_LBMC_CNTL_CTXINFO_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -8252,7 +8386,7 @@ static int dissect_nhdr_ctxinfo(tvbuff_t * tvb, int offset, packet_info * pinfo 
         int namelen = (int) hdrlen - len_dissected;
         if (namelen > 0)
         {
-            proto_tree_add_item(subtree, hf_lbmc_ctxinfo_name, tvb, offset + L_LBMC_CNTL_CTXINFO_HDR_T, hdrlen - L_LBMC_CNTL_CTXINFO_HDR_T, ENC_ASCII | ENC_NA);
+            proto_tree_add_item(subtree, hf_lbmc_ctxinfo_name, tvb, offset + L_LBMC_CNTL_CTXINFO_HDR_T, hdrlen - L_LBMC_CNTL_CTXINFO_HDR_T, ENC_ASCII);
             len_dissected += namelen;
         }
         else
@@ -8268,7 +8402,7 @@ static int dissect_nhdr_ume_pser(tvbuff_t * tvb, int offset, packet_info * pinfo
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_pser_flags_ignore,
         &hf_lbmc_ume_pser_flags_source_ctxinst,
@@ -8297,7 +8431,7 @@ static int dissect_nhdr_domain(tvbuff_t * tvb, int offset, packet_info * pinfo _
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_domain_flags_ignore,
         &hf_lbmc_domain_flags_active,
@@ -8317,19 +8451,19 @@ static int dissect_nhdr_tnwg_capabilities(tvbuff_t * tvb, int offset, packet_inf
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_tnwg_capabilities_flags_ignore,
         &hf_lbmc_tnwg_capabilities_flags_version,
         NULL
     };
-    static const int * cap1[] =
+    static int * const cap1[] =
     {
         &hf_lbmc_tnwg_capabilities_capabilities1_ume,
         &hf_lbmc_tnwg_capabilities_capabilities1_umq,
         NULL
     };
-    static const int * cap3[] =
+    static int * const cap3[] =
     {
         &hf_lbmc_tnwg_capabilities_capabilities3_pcre,
         &hf_lbmc_tnwg_capabilities_capabilities3_regex,
@@ -8352,7 +8486,7 @@ static int dissect_nhdr_patidx(tvbuff_t * tvb, int offset, packet_info * pinfo _
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_patidx_flags_ignore,
         NULL
@@ -8371,7 +8505,7 @@ static int dissect_nhdr_ume_client_lifetime(tvbuff_t * tvb, int offset, packet_i
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_client_lifetime_flags_ignore,
         NULL
@@ -8392,7 +8526,7 @@ static int dissect_nhdr_ume_sid(tvbuff_t * tvb, int offset, packet_info * pinfo 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_sid_flags_ignore,
         NULL
@@ -8411,47 +8545,47 @@ static int dissect_nhdr_umq_idx_cmd(tvbuff_t * tvb, int offset, packet_info * pi
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    static int * const flags[] =
     {
         &hf_lbmc_umq_idx_cmd_flags_ignore,
         NULL
     };
-    guint8 cmd_type = 0;
+    uint8_t cmd_type = 0;
     proto_item * opt_subtree_item = NULL;
     proto_tree * opt_subtree = NULL;
-    guint32 opt_flags = 0;
-    static const int * release_assign_flags[] =
+    uint32_t opt_flags = 0;
+    static int * const release_assign_flags[] =
     {
         &hf_lbmc_umq_idx_cmd_release_assign_flags_numeric,
         NULL
     };
-    static const int * ulb_release_assign_flags[] =
+    static int * const ulb_release_assign_flags[] =
     {
         &hf_lbmc_umq_idx_cmd_ulb_release_assign_flags_numeric,
         NULL
     };
-    static const int * reserve_assign_flags[] =
+    static int * const reserve_assign_flags[] =
     {
         &hf_lbmc_umq_idx_cmd_reserve_assign_flags_numeric,
         NULL
     };
-    static const int * ulb_reserve_assign_flags[] =
+    static int * const ulb_reserve_assign_flags[] =
     {
         &hf_lbmc_umq_idx_cmd_ulb_reserve_assign_flags_numeric,
         NULL
     };
-    guint8 index_len = 0;
+    uint8_t index_len = 0;
     int len_dissected = 0;
     proto_item * cmd_type_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_idx_cmd, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_idx_cmd, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_umq_idx_cmd);
     proto_tree_add_item(subtree, hf_lbmc_umq_idx_cmd_next_hdr, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_NEXT_HDR, L_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_idx_cmd_hdr_len, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_HDR_LEN, L_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
     proto_tree_add_bitmask(subtree, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_FLAGS, hf_lbmc_umq_idx_cmd_flags, ett_lbmc_umq_idx_cmd_flags, flags, ENC_BIG_ENDIAN);
-    cmd_type = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_CMD_TYPE);
+    cmd_type = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_CMD_TYPE);
     cmd_type_item = proto_tree_add_item(subtree, hf_lbmc_umq_idx_cmd_cmd_type, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_CMD_TYPE, L_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_CMD_TYPE, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_idx_cmd_queue_id, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_QUEUE_ID, L_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_QUEUE_ID, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_idx_cmd_cmd_id, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_CMD_ID, L_LBMC_CNTL_UMQ_IDX_CMD_HDR_T_CMD_ID, ENC_BIG_ENDIAN);
@@ -8505,11 +8639,11 @@ static int dissect_nhdr_umq_idx_cmd(tvbuff_t * tvb, int offset, packet_info * pi
             proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_release_assign_reserved, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED, L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED, ENC_NA);
             if ((opt_flags & LBM_UMQ_INDEX_FLAG_NUMERIC) != 0)
             {
-                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_release_assign_numeric_index, tvb, offset + L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T, (gint)index_len, ENC_BIG_ENDIAN);
+                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_release_assign_numeric_index, tvb, offset + L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T, (int)index_len, ENC_BIG_ENDIAN);
             }
             else
             {
-                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_release_assign_string_index, tvb, offset + L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T, (gint)index_len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_release_assign_string_index, tvb, offset + L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T, (int)index_len, ENC_ASCII);
             }
             len_dissected += L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T + index_len;
             break;
@@ -8526,11 +8660,11 @@ static int dissect_nhdr_umq_idx_cmd(tvbuff_t * tvb, int offset, packet_info * pi
             proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_ulb_release_assign_reserved, tvb, offset + O_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED, L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T_RESERVED, ENC_NA);
             if ((opt_flags & LBM_UMQ_INDEX_FLAG_NUMERIC) != 0)
             {
-                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_ulb_release_assign_numeric_index, tvb, offset + L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T, (gint)index_len, ENC_BIG_ENDIAN);
+                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_ulb_release_assign_numeric_index, tvb, offset + L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T, (int)index_len, ENC_BIG_ENDIAN);
             }
             else
             {
-                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_ulb_release_assign_string_index, tvb, offset + L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T, (gint)index_len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_ulb_release_assign_string_index, tvb, offset + L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T, (int)index_len, ENC_ASCII);
             }
             len_dissected += L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RELEASE_IDX_ASSIGN_HDR_T + index_len;
             break;
@@ -8546,11 +8680,11 @@ static int dissect_nhdr_umq_idx_cmd(tvbuff_t * tvb, int offset, packet_info * pi
             proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_reserve_assign_reserved, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED, L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED, ENC_NA);
             if ((opt_flags & LBM_UMQ_INDEX_FLAG_NUMERIC) != 0)
             {
-                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_reserve_assign_numeric_index, tvb, offset + L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T, (gint)index_len, ENC_BIG_ENDIAN);
+                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_reserve_assign_numeric_index, tvb, offset + L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T, (int)index_len, ENC_BIG_ENDIAN);
             }
             else
             {
-                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_reserve_assign_string_index, tvb, offset + L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T, (gint)index_len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_reserve_assign_string_index, tvb, offset + L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T, (int)index_len, ENC_ASCII);
             }
             len_dissected += L_LBMC_CNTL_UMQ_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T + index_len;
             break;
@@ -8567,11 +8701,11 @@ static int dissect_nhdr_umq_idx_cmd(tvbuff_t * tvb, int offset, packet_info * pi
             proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_ulb_reserve_assign_reserved, tvb, offset + O_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED, L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED, ENC_NA);
             if ((opt_flags & LBM_UMQ_INDEX_FLAG_NUMERIC) != 0)
             {
-                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_ulb_reserve_assign_numeric_index, tvb, offset + L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T, (gint)index_len, ENC_BIG_ENDIAN);
+                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_ulb_reserve_assign_numeric_index, tvb, offset + L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T, (int)index_len, ENC_BIG_ENDIAN);
             }
             else
             {
-                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_ulb_reserve_assign_string_index, tvb, offset + L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T, (gint)index_len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_ulb_reserve_assign_string_index, tvb, offset + L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T, (int)index_len, ENC_ASCII);
             }
             len_dissected += L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T + index_len;
             break;
@@ -8587,39 +8721,39 @@ static int dissect_nhdr_umq_idx_cmd_resp(tvbuff_t * tvb, int offset, packet_info
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    static int * const flags[] =
     {
         &hf_lbmc_umq_idx_cmd_resp_flags_ignore,
         &hf_lbmc_umq_idx_cmd_resp_flags_ulb,
         NULL
     };
-    static const int * reserve_assign_flags[] =
+    static int * const reserve_assign_flags[] =
     {
         &hf_lbmc_umq_idx_cmd_resp_reserve_assign_flags_numeric,
         NULL
     };
-    static const int * ulb_reserve_assign_flags[] =
+    static int * const ulb_reserve_assign_flags[] =
     {
         &hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_flags_numeric,
         NULL
     };
-    guint8 resp_type = 0;
+    uint8_t resp_type = 0;
     proto_item * opt_subtree_item = NULL;
     proto_tree * opt_subtree = NULL;
     int string_len = 0;
     int len_dissected = 0;
-    guint32 opt_flags = 0;
-    guint8 index_len = 0;
+    uint32_t opt_flags = 0;
+    uint8_t index_len = 0;
     proto_item * resp_type_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_idx_cmd_resp, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_idx_cmd_resp, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_umq_idx_cmd_resp);
     proto_tree_add_item(subtree, hf_lbmc_umq_idx_cmd_resp_next_hdr, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_NEXT_HDR, L_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_idx_cmd_resp_hdr_len, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_HDR_LEN, L_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
     proto_tree_add_bitmask(subtree, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_FLAGS, hf_lbmc_umq_idx_cmd_resp_flags, ett_lbmc_umq_idx_cmd_resp_flags, flags, ENC_BIG_ENDIAN);
-    resp_type = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_RESP_TYPE);
+    resp_type = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_RESP_TYPE);
     resp_type_item = proto_tree_add_item(subtree, hf_lbmc_umq_idx_cmd_resp_resp_type, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_RESP_TYPE, L_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_RESP_TYPE, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_idx_cmd_resp_queue_id, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_QUEUE_ID, L_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_QUEUE_ID, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_idx_cmd_resp_cmd_id, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_CMD_ID, L_LBMC_CNTL_UMQ_IDX_CMD_RESP_HDR_T_CMD_ID, ENC_BIG_ENDIAN);
@@ -8635,7 +8769,7 @@ static int dissect_nhdr_umq_idx_cmd_resp(tvbuff_t * tvb, int offset, packet_info
             opt_subtree = proto_item_add_subtree(opt_subtree_item, ett_lbmc_umq_idx_cmd_resp_err);
             proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_resp_err_reserved, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RESP_ERR_HDR_T_RESERVED, L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ERR_HDR_T_RESERVED, ENC_BIG_ENDIAN);
             proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_resp_err_code, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RESP_ERR_HDR_T_CODE, L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ERR_HDR_T_CODE, ENC_BIG_ENDIAN);
-            proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_resp_err_error_string, tvb, offset + L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ERR_HDR_T, string_len, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_resp_err_error_string, tvb, offset + L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ERR_HDR_T, string_len, ENC_ASCII);
             len_dissected += (L_LBMC_CNTL_UMQ_IDX_CMD_RESP_ERR_HDR_T + string_len);
             break;
         case LBMC_UMQ_IDX_CMD_RESP_RCV_STOP_IDX_ASSIGN_TYPE:
@@ -8703,11 +8837,11 @@ static int dissect_nhdr_umq_idx_cmd_resp(tvbuff_t * tvb, int offset, packet_info
             proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_resp_reserve_assign_reserved, tvb, offset + O_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED, L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED, ENC_NA);
             if ((opt_flags & LBM_UMQ_INDEX_FLAG_NUMERIC) != 0)
             {
-                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_resp_reserve_assign_numeric_index, tvb, offset + L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RESERVE_IDX_ASSIGN_HDR_T, (gint)index_len, ENC_BIG_ENDIAN);
+                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_resp_reserve_assign_numeric_index, tvb, offset + L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RESERVE_IDX_ASSIGN_HDR_T, (int)index_len, ENC_BIG_ENDIAN);
             }
             else
             {
-                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_resp_reserve_assign_string_index, tvb, offset + L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RESERVE_IDX_ASSIGN_HDR_T, (gint)index_len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_resp_reserve_assign_string_index, tvb, offset + L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RESERVE_IDX_ASSIGN_HDR_T, (int)index_len, ENC_ASCII);
             }
             len_dissected += (L_LBMC_CNTL_UMQ_IDX_CMD_RESP_RCV_RESERVE_IDX_ASSIGN_HDR_T + index_len);
             break;
@@ -8724,11 +8858,11 @@ static int dissect_nhdr_umq_idx_cmd_resp(tvbuff_t * tvb, int offset, packet_info
             proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_reserved, tvb, offset + O_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED, L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_RESERVED, ENC_NA);
             if ((opt_flags & LBM_UMQ_INDEX_FLAG_NUMERIC) != 0)
             {
-                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_numeric_index, tvb, offset + L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T, (gint)index_len, ENC_BIG_ENDIAN);
+                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_numeric_index, tvb, offset + L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T, (int)index_len, ENC_BIG_ENDIAN);
             }
             else
             {
-                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_string_index, tvb, offset + L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T, (gint)index_len, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(opt_subtree, hf_lbmc_umq_idx_cmd_resp_ulb_reserve_assign_string_index, tvb, offset + L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T, (int)index_len, ENC_ASCII);
             }
             len_dissected += (L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T + index_len);
             break;
@@ -8744,7 +8878,7 @@ static int dissect_nhdr_odomain(tvbuff_t * tvb, int offset, packet_info * pinfo 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_odomain_flags_ignore,
         NULL
@@ -8763,7 +8897,7 @@ static int dissect_nhdr_stream(tvbuff_t * tvb, int offset, packet_info * pinfo _
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_stream_flags_ignore,
         NULL
@@ -8779,7 +8913,7 @@ static int dissect_nhdr_stream(tvbuff_t * tvb, int offset, packet_info * pinfo _
     proto_tree_add_item(subtree, hf_lbmc_stream_ctxinst, tvb, offset + O_LBMC_STREAM_HDR_T_CTXINST, L_LBMC_STREAM_HDR_T_CTXINST, ENC_NA);
     if (info != NULL)
     {
-        info->set = TRUE;
+        info->set = true;
         info->stream_id = tvb_get_ntohl(tvb, offset + O_LBMC_STREAM_HDR_T_STREAM_ID);
         info->sqn = tvb_get_ntohl(tvb, offset + O_LBMC_STREAM_HDR_T_SQN);
         tvb_memcpy(tvb, (void *)&(info->ctxinst), offset + O_LBMC_STREAM_HDR_T_CTXINST, L_LBMC_STREAM_HDR_T_CTXINST);
@@ -8791,20 +8925,20 @@ static int dissect_nhdr_topic_md_interest(tvbuff_t * tvb, int offset, packet_inf
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    static int * const flags[] =
     {
         &hf_lbmc_topic_md_interest_flags_ignore,
         &hf_lbmc_topic_md_interest_flags_cancel,
         &hf_lbmc_topic_md_interest_flags_refresh,
         NULL
     };
-    guint16 dom_count = 0;
+    uint16_t dom_count = 0;
     int idx = 0;
     int len_dissected = 0;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_TOPIC_MD_INTEREST_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_topic_md_interest, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_TOPIC_MD_INTEREST_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_topic_md_interest, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_topic_md_interest);
     proto_tree_add_item(subtree, hf_lbmc_topic_md_interest_next_hdr, tvb, offset + O_LBMC_CNTL_TOPIC_MD_INTEREST_HDR_T_NEXT_HDR, L_LBMC_CNTL_TOPIC_MD_INTEREST_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_topic_md_interest_hdr_len, tvb, offset + O_LBMC_CNTL_TOPIC_MD_INTEREST_HDR_T_HDR_LEN, L_LBMC_CNTL_TOPIC_MD_INTEREST_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -8816,7 +8950,7 @@ static int dissect_nhdr_topic_md_interest(tvbuff_t * tvb, int offset, packet_inf
     offset += L_LBMC_CNTL_TOPIC_MD_INTEREST_HDR_T;
     for (idx = 0; idx < dom_count; ++idx)
     {
-        proto_tree_add_item(subtree, hf_lbmc_topic_md_interest_domain_id, tvb, offset, (gint)sizeof(lbm_uint32_t), ENC_BIG_ENDIAN);
+        proto_tree_add_item(subtree, hf_lbmc_topic_md_interest_domain_id, tvb, offset, (int)sizeof(lbm_uint32_t), ENC_BIG_ENDIAN);
         offset += (int)sizeof(lbm_uint32_t);
         len_dissected += (int)sizeof(lbm_uint32_t);
     }
@@ -8828,20 +8962,20 @@ static int dissect_nhdr_pattern_md_interest(tvbuff_t * tvb, int offset, packet_i
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    static int * const flags[] =
     {
         &hf_lbmc_pattern_md_interest_flags_ignore,
         &hf_lbmc_pattern_md_interest_flags_cancel,
         &hf_lbmc_pattern_md_interest_flags_refresh,
         NULL
     };
-    guint16 dom_count = 0;
+    uint16_t dom_count = 0;
     int idx = 0;
     int len_dissected = 0;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_PATTERN_MD_INTEREST_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_pattern_md_interest, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_PATTERN_MD_INTEREST_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_pattern_md_interest, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_pattern_md_interest);
     proto_tree_add_item(subtree, hf_lbmc_pattern_md_interest_next_hdr, tvb, offset + O_LBMC_CNTL_PATTERN_MD_INTEREST_HDR_T_NEXT_HDR, L_LBMC_CNTL_PATTERN_MD_INTEREST_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_pattern_md_interest_hdr_len, tvb, offset + O_LBMC_CNTL_PATTERN_MD_INTEREST_HDR_T_HDR_LEN, L_LBMC_CNTL_PATTERN_MD_INTEREST_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -8855,7 +8989,7 @@ static int dissect_nhdr_pattern_md_interest(tvbuff_t * tvb, int offset, packet_i
     offset += L_LBMC_CNTL_PATTERN_MD_INTEREST_HDR_T;
     for (idx = 0; idx < dom_count; ++idx)
     {
-        proto_tree_add_item(subtree, hf_lbmc_pattern_md_interest_domain_id, tvb, offset, (gint)sizeof(lbm_uint32_t), ENC_BIG_ENDIAN);
+        proto_tree_add_item(subtree, hf_lbmc_pattern_md_interest_domain_id, tvb, offset, (int)sizeof(lbm_uint32_t), ENC_BIG_ENDIAN);
         offset += (int)sizeof(lbm_uint32_t);
         len_dissected += (int)sizeof(lbm_uint32_t);
     }
@@ -8867,7 +9001,7 @@ static int dissect_nhdr_lji_req(tvbuff_t * tvb, int offset, packet_info * pinfo 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_lji_req_flags_ignore,
         &hf_lbmc_lji_req_flags_l_flag,
@@ -8897,7 +9031,7 @@ static int dissect_nhdr_tnwg_ka(tvbuff_t * tvb, int offset, packet_info * pinfo 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_tnwg_ka_flags_ignore,
         &hf_lbmc_tnwg_ka_flags_q_flag,
@@ -8926,7 +9060,7 @@ static int dissect_nhdr_ume_receiver_keepalive(tvbuff_t * tvb, int offset, packe
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_receiver_keepalive_flags_ignore,
         NULL
@@ -8972,8 +9106,8 @@ static int dissect_nhdr_umq_rcv_msg_retrieve(tvbuff_t * tvb, int offset, packet_
     proto_tree * subtree = NULL;
     int len = 0;
     int dissected_len = 0;
-    guint8 num_msgids;
-    guint8 idx;
+    uint8_t num_msgids;
+    uint8_t idx;
 
     subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_cmd_msg_retrieve, tvb, offset, L_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_HDR_T, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_umq_cmd_msg_retrieve);
@@ -8984,7 +9118,7 @@ static int dissect_nhdr_umq_rcv_msg_retrieve(tvbuff_t * tvb, int offset, packet_
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_msg_retrieve_flags, tvb, offset + O_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_HDR_T_FLAGS, L_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_HDR_T_FLAGS, ENC_BIG_ENDIAN);
 
     dissected_len = L_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_HDR_T;
-    num_msgids = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_HDR_T_NUM_MSGIDS);
+    num_msgids = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_RCV_MSG_RETRIEVE_HDR_T_NUM_MSGIDS);
     for (idx = 0; idx < num_msgids; ++idx)
     {
         len = dissect_nhdr_umq_rcv_msg_retrieve_entry(tvb, offset + dissected_len, pinfo, subtree);
@@ -9010,18 +9144,18 @@ static int dissect_nhdr_umq_cmd(tvbuff_t * tvb, int offset, packet_info * pinfo,
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    static int * const flags[] =
     {
         &hf_lbmc_umq_cmd_flags_ignore,
         NULL
     };
     int len_dissected = 0;
-    guint8 cmd_type = 0;
+    uint8_t cmd_type = 0;
     proto_item * cmd_type_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_CMD_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_cmd, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_CMD_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_cmd, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_umq_cmd);
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_next_hdr, tvb, offset + O_LBMC_CNTL_UMQ_CMD_HDR_T_NEXT_HDR, L_LBMC_CNTL_UMQ_CMD_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_hdr_len, tvb, offset + O_LBMC_CNTL_UMQ_CMD_HDR_T_HDR_LEN, L_LBMC_CNTL_UMQ_CMD_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -9032,7 +9166,7 @@ static int dissect_nhdr_umq_cmd(tvbuff_t * tvb, int offset, packet_info * pinfo,
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_inst_idx, tvb, offset + O_LBMC_CNTL_UMQ_CMD_HDR_T_INST_IDX, L_LBMC_CNTL_UMQ_CMD_HDR_T_INST_IDX, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_regid, tvb, offset + O_LBMC_CNTL_UMQ_CMD_HDR_T_REGID, L_LBMC_CNTL_UMQ_CMD_HDR_T_REGID, ENC_BIG_ENDIAN);
     len_dissected = L_LBMC_CNTL_UMQ_CMD_HDR_T;
-    cmd_type = tvb_get_guint8(tvb, O_LBMC_CNTL_UMQ_CMD_HDR_T_CMD_TYPE);
+    cmd_type = tvb_get_uint8(tvb, O_LBMC_CNTL_UMQ_CMD_HDR_T_CMD_TYPE);
     switch (cmd_type)
     {
         case LBMC_UMQ_CMD_TYPE_TOPIC_LIST:
@@ -9082,7 +9216,7 @@ static int dissect_nhdr_umq_cmd_resp_rcv_xmsg_retrieve(tvbuff_t * tvb, int offse
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_xmsg_retrieve_reserved, tvb, offset + O_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T_RESERVED, L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T_RESERVED, ENC_BIG_ENDIAN);
     len_dissected = L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T;
     entry_offset = offset + len_dissected;
-    num_msgs = (int)tvb_get_guint8(tvb, offset + O_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T_NUM_MSGS);
+    num_msgs = (int)tvb_get_uint8(tvb, offset + O_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_HDR_T_NUM_MSGS);
     for (idx = 0; idx < num_msgs; ++idx)
     {
         entry_item = proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_xmsg_retrieve_entry, tvb, entry_offset, L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_RETRIEVE_ENTRY_HDR_T, ENC_NA);
@@ -9117,11 +9251,11 @@ static int dissect_nhdr_umq_cmd_resp_rcv_xmsg_list(tvbuff_t * tvb, int offset, p
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
     int len_dissected = 0;
-    guint64 num_msgs = 0;
+    uint64_t num_msgs = 0;
     int entry_offset = 0;
     proto_item * entry_item = NULL;
     proto_tree * entry_tree = NULL;
-    guint64 idx;
+    uint64_t idx;
 
     subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_cmd_resp_xmsg_list, tvb, offset, L_LBMC_XCNTL_UMQ_CMD_RESP_RCV_MSG_LIST_HDR_T, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_umq_cmd_resp_xmsg_list);
@@ -9147,9 +9281,9 @@ static int dissect_nhdr_umq_cmd_resp_ctx_topic_list_appset_entry(tvbuff_t * tvb,
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
     int len_dissected = 0;
-    guint8 appset_name_len;
-    guint16 num_receiver_type_ids;
-    guint16 idx;
+    uint8_t appset_name_len;
+    uint16_t num_receiver_type_ids;
+    uint16_t idx;
     int receiver_type_id_offset;
 
     subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry, tvb, offset, L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T, ENC_NA);
@@ -9159,9 +9293,9 @@ static int dissect_nhdr_umq_cmd_resp_ctx_topic_list_appset_entry(tvbuff_t * tvb,
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_appset_name_len, tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T_APPSET_NAME_LEN, L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T_APPSET_NAME_LEN, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_reserved, tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T_RESERVED, L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T_RESERVED, ENC_NA);
     len_dissected = L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T;
-    appset_name_len = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T_APPSET_NAME_LEN);
+    appset_name_len = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T_APPSET_NAME_LEN);
     len_dissected += (int)appset_name_len;
-    proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_name, tvb, offset + L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T, (int)appset_name_len, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_topic_list_topic_entry_appset_entry_name, tvb, offset + L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T, (int)appset_name_len, ENC_ASCII);
     num_receiver_type_ids = tvb_get_ntohs(tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_APPSET_ENTRY_HDR_T_NUM_RECEIVER_TYPE_IDS);
     if (num_receiver_type_ids > 0)
     {
@@ -9182,9 +9316,9 @@ static int dissect_nhdr_umq_cmd_resp_ctx_topic_list_topic_entry(tvbuff_t * tvb, 
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
     int len_dissected = 0;
-    guint8 topic_len;
-    guint16 num_appsets;
-    guint16 idx;
+    uint8_t topic_len;
+    uint16_t num_appsets;
+    uint16_t idx;
     int appset_offset;
     int len;
 
@@ -9195,9 +9329,9 @@ static int dissect_nhdr_umq_cmd_resp_ctx_topic_list_topic_entry(tvbuff_t * tvb, 
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_topic_list_topic_entry_topic_len, tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T_TOPIC_LEN, L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T_TOPIC_LEN, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_topic_list_topic_entry_reserved, tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T_RESERVED, L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T_RESERVED, ENC_BIG_ENDIAN);
     len_dissected = L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T;
-    topic_len = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T_TOPIC_LEN);
+    topic_len = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T_TOPIC_LEN);
     len_dissected += (int)topic_len;
-    proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_topic_list_topic_entry_topic, tvb, offset + L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T, (int)topic_len, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_topic_list_topic_entry_topic, tvb, offset + L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T, (int)topic_len, ENC_ASCII);
     num_appsets = tvb_get_ntohs(tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_TOPIC_ENTRY_HDR_T_NUM_APPSETS);
     if (num_appsets > 0)
     {
@@ -9219,8 +9353,8 @@ static int dissect_nhdr_umq_cmd_resp_ctx_topic_list(tvbuff_t * tvb, int offset, 
     proto_tree * subtree = NULL;
     int len_dissected = 0;
     int len;
-    guint32 num_topics;
-    guint32 idx;
+    uint32_t num_topics;
+    uint32_t idx;
 
     subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_cmd_resp_topic_list, tvb, offset, L_LBMC_CNTL_UMQ_CMD_RESP_CTX_TOPIC_LIST_HDR_T, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_umq_cmd_resp_topic_list);
@@ -9249,29 +9383,29 @@ static int dissect_nhdr_umq_cmd_resp_err(tvbuff_t * tvb, int offset, packet_info
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_err_code, tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_ERR_HDR_T_CODE, L_LBMC_CNTL_UMQ_CMD_RESP_ERR_HDR_T_CODE, ENC_BIG_ENDIAN);
     len_dissected = L_LBMC_CNTL_UMQ_CMD_RESP_ERR_HDR_T;
     errmsg_len = tvb_reported_length_remaining(tvb, offset + L_LBMC_CNTL_UMQ_CMD_RESP_ERR_HDR_T);
-    proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_err_errmsg, tvb, offset + L_LBMC_CNTL_UMQ_CMD_RESP_ERR_HDR_T, errmsg_len, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_err_errmsg, tvb, offset + L_LBMC_CNTL_UMQ_CMD_RESP_ERR_HDR_T, errmsg_len, ENC_ASCII);
     len_dissected += errmsg_len;
     proto_item_set_len(subtree_item, len_dissected);
     return (len_dissected);
 }
 
-static int dissect_nhdr_umq_cmd_resp(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, gboolean data_msg)
+static int dissect_nhdr_umq_cmd_resp(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, bool data_msg)
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    static int * const flags[] =
     {
         &hf_lbmc_umq_cmd_resp_flags_ignore,
         NULL
     };
     int len_dissected = 0;
     int len;
-    guint8 resp_type;
+    uint8_t resp_type;
     proto_item * resp_type_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_cmd_resp, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_umq_cmd_resp, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_umq_cmd_resp);
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_next_hdr, tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_NEXT_HDR, L_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_hdr_len, tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_HDR_LEN, L_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -9282,7 +9416,7 @@ static int dissect_nhdr_umq_cmd_resp(tvbuff_t * tvb, int offset, packet_info * p
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_inst_idx, tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_INST_IDX, L_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_INST_IDX, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_umq_cmd_resp_regid, tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_REGID, L_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_REGID, ENC_BIG_ENDIAN);
     len_dissected = L_LBMC_CNTL_UMQ_CMD_RESP_HDR_T;
-    resp_type = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_RESP_TYPE);
+    resp_type = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_UMQ_CMD_RESP_HDR_T_RESP_TYPE);
     if (tvb_reported_length_remaining(tvb, offset + L_LBMC_CNTL_UMQ_CMD_RESP_HDR_T) > 0)
     {
         switch (resp_type)
@@ -9332,7 +9466,7 @@ static int dissect_nhdr_sri_req(tvbuff_t * tvb, int offset, packet_info * pinfo 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_sri_req_flags_ignore,
         NULL
@@ -9352,7 +9486,7 @@ static int dissect_nhdr_ume_store_domain(tvbuff_t * tvb, int offset, packet_info
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_store_domain_flags_ignore,
         NULL
@@ -9371,7 +9505,7 @@ static int dissect_nhdr_sri(tvbuff_t * tvb, int offset, packet_info * pinfo _U_,
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_sri_flags_ignore,
         &hf_lbmc_sri_flags_acktosrc,
@@ -9394,7 +9528,7 @@ static int dissect_nhdr_route_info(tvbuff_t * tvb, int offset, packet_info * pin
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_route_info_flags_ignore,
         NULL
@@ -9421,7 +9555,7 @@ static int dissect_nhdr_route_info_neighbor(tvbuff_t * tvb, int offset, packet_i
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_route_info_neighbor_flags_ignore,
         NULL
@@ -9442,8 +9576,8 @@ static int dissect_nhdr_gateway_name(tvbuff_t * tvb, int offset, packet_info * p
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    static int * const flags[] =
     {
         &hf_lbmc_gateway_name_flags_ignore,
         NULL
@@ -9452,8 +9586,8 @@ static int dissect_nhdr_gateway_name(tvbuff_t * tvb, int offset, packet_info * p
     int namelen = 0;
     proto_item * hdrlen_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_GATEWAY_NAME_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_gateway_name, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_GATEWAY_NAME_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_gateway_name, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_gateway_name);
     proto_tree_add_item(subtree, hf_lbmc_gateway_name_next_hdr, tvb, offset + O_LBMC_CNTL_GATEWAY_NAME_HDR_T_NEXT_HDR, L_LBMC_CNTL_GATEWAY_NAME_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     hdrlen_item = proto_tree_add_item(subtree, hf_lbmc_gateway_name_hdr_len, tvb, offset + O_LBMC_CNTL_GATEWAY_NAME_HDR_T_HDR_LEN, L_LBMC_CNTL_GATEWAY_NAME_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -9477,18 +9611,18 @@ static int dissect_nhdr_auth_request(tvbuff_t * tvb, int offset, packet_info * p
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    static int * const flags[] =
     {
         &hf_lbmc_auth_request_flags_ignore,
         NULL
     };
     int len_dissected = 0;
-    guint8 user_len;
+    uint8_t user_len;
     int data_offset;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_AUTH_REQUEST_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_auth_request, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_AUTH_REQUEST_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_auth_request, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_auth_request);
     proto_tree_add_item(subtree, hf_lbmc_auth_request_next_hdr, tvb, offset + O_LBMC_CNTL_AUTH_REQUEST_HDR_T_NEXT_HDR, L_LBMC_CNTL_AUTH_REQUEST_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_auth_request_hdr_len, tvb, offset + O_LBMC_CNTL_AUTH_REQUEST_HDR_T_HDR_LEN, L_LBMC_CNTL_AUTH_REQUEST_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -9497,10 +9631,10 @@ static int dissect_nhdr_auth_request(tvbuff_t * tvb, int offset, packet_info * p
     proto_tree_add_item(subtree, hf_lbmc_auth_request_user_len, tvb, offset + O_LBMC_CNTL_AUTH_REQUEST_HDR_T_USER_LEN, L_LBMC_CNTL_AUTH_REQUEST_HDR_T_USER_LEN, ENC_BIG_ENDIAN);
     len_dissected = L_LBMC_CNTL_AUTH_REQUEST_HDR_T;
     data_offset = offset + len_dissected;
-    user_len = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_AUTH_REQUEST_HDR_T_USER_LEN);
+    user_len = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_AUTH_REQUEST_HDR_T_USER_LEN);
     if (user_len > 0)
     {
-        proto_tree_add_item(subtree, hf_lbmc_auth_request_user_name, tvb, data_offset, (int)user_len, ENC_ASCII|ENC_NA);
+        proto_tree_add_item(subtree, hf_lbmc_auth_request_user_name, tvb, data_offset, (int)user_len, ENC_ASCII);
         len_dissected += (int)user_len;
     }
     proto_item_set_len(subtree_item, len_dissected);
@@ -9511,21 +9645,21 @@ static int dissect_nhdr_auth_challenge(tvbuff_t * tvb, int offset, packet_info *
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    static int * const flags[] =
     {
         &hf_lbmc_auth_challenge_flags_ignore,
         NULL
     };
     int len_dissected = 0;
-    guint8 mod_len;
-    guint8 gen_len;
-    guint8 salt_len;
-    guint8 pubkey_len;
+    uint8_t mod_len;
+    uint8_t gen_len;
+    uint8_t salt_len;
+    uint8_t pubkey_len;
     int data_offset;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_auth_challenge, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_auth_challenge, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_auth_challenge);
     proto_tree_add_item(subtree, hf_lbmc_auth_challenge_next_hdr, tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_NEXT_HDR, L_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_auth_challenge_hdr_len, tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_HDR_LEN, L_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -9537,28 +9671,28 @@ static int dissect_nhdr_auth_challenge(tvbuff_t * tvb, int offset, packet_info *
     proto_tree_add_item(subtree, hf_lbmc_auth_challenge_pubkey_len, tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_PUBKEY_LEN, L_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_PUBKEY_LEN, ENC_BIG_ENDIAN);
     len_dissected = L_LBMC_CNTL_AUTH_CHALLENGE_HDR_T;
     data_offset = offset + len_dissected;
-    mod_len = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_MOD_LEN);
+    mod_len = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_MOD_LEN);
     if (mod_len > 0)
     {
         proto_tree_add_item(subtree, hf_lbmc_auth_challenge_mod, tvb, data_offset, (int)mod_len, ENC_NA);
         len_dissected += (int)mod_len;
         data_offset += (int)mod_len;
     }
-    gen_len = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_GEN_LEN);
+    gen_len = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_GEN_LEN);
     if (gen_len > 0)
     {
         proto_tree_add_item(subtree, hf_lbmc_auth_challenge_gen, tvb, data_offset, (int)gen_len, ENC_NA);
         len_dissected += (int)gen_len;
         data_offset += (int)gen_len;
     }
-    salt_len = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_SALT_LEN);
+    salt_len = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_SALT_LEN);
     if (salt_len > 0)
     {
         proto_tree_add_item(subtree, hf_lbmc_auth_challenge_salt, tvb, data_offset, (int)salt_len, ENC_NA);
         len_dissected += (int)salt_len;
         data_offset += (int)salt_len;
     }
-    pubkey_len = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_PUBKEY_LEN);
+    pubkey_len = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_HDR_T_PUBKEY_LEN);
     if (pubkey_len > 0)
     {
         proto_tree_add_item(subtree, hf_lbmc_auth_challenge_pubkey, tvb, data_offset, (int)pubkey_len, ENC_NA);
@@ -9572,19 +9706,19 @@ static int dissect_nhdr_auth_challenge_rsp(tvbuff_t * tvb, int offset, packet_in
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    static int * const flags[] =
     {
         &hf_lbmc_auth_challenge_rsp_flags_ignore,
         NULL
     };
     int len_dissected = 0;
-    guint8 pubkey_len;
-    guint8 evidence_len;
+    uint8_t pubkey_len;
+    uint8_t evidence_len;
     int data_offset;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_auth_challenge_rsp, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_auth_challenge_rsp, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_auth_challenge_rsp);
     proto_tree_add_item(subtree, hf_lbmc_auth_challenge_rsp_next_hdr, tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_NEXT_HDR, L_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_auth_challenge_rsp_hdr_len, tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_HDR_LEN, L_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -9594,14 +9728,14 @@ static int dissect_nhdr_auth_challenge_rsp(tvbuff_t * tvb, int offset, packet_in
     proto_tree_add_item(subtree, hf_lbmc_auth_challenge_rsp_evidence_len, tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_EVIDENCE_LEN, L_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_EVIDENCE_LEN, ENC_BIG_ENDIAN);
     len_dissected = L_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T;
     data_offset = offset + len_dissected;
-    pubkey_len = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_PUBKEY_LEN);
+    pubkey_len = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_PUBKEY_LEN);
     if (pubkey_len > 0)
     {
         proto_tree_add_item(subtree, hf_lbmc_auth_challenge_rsp_pubkey, tvb, data_offset, (int)pubkey_len, ENC_NA);
         len_dissected += (int)pubkey_len;
         data_offset += (int)pubkey_len;
     }
-    evidence_len = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_EVIDENCE_LEN);
+    evidence_len = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_AUTH_CHALLENGE_RSP_HDR_T_EVIDENCE_LEN);
     if (evidence_len > 0)
     {
         proto_tree_add_item(subtree, hf_lbmc_auth_challenge_rsp_evidence, tvb, data_offset, (int)evidence_len, ENC_NA);
@@ -9615,7 +9749,7 @@ static int dissect_nhdr_auth_result(tvbuff_t * tvb, int offset, packet_info * pi
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_auth_result_flags_ignore,
         NULL
@@ -9635,21 +9769,21 @@ static int dissect_nhdr_auth_unknown(tvbuff_t * tvb, int offset, packet_info * p
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
+    uint8_t hdrlen = 0;
     proto_item * opid_item = NULL;
-    guint8 opid;
+    uint8_t opid;
     int len_dissected = 0;
     int datalen = 0;
     proto_item * hdrlen_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_AUTH_GENERIC_HDR_T_HDR_LEN);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_AUTH_GENERIC_HDR_T_HDR_LEN);
     subtree_item = proto_tree_add_item(tree, hf_lbmc_auth_unknown, tvb, offset, (int) hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_auth_unknown);
     proto_tree_add_item(subtree, hf_lbmc_auth_unknown_next_hdr, tvb, offset + O_LBMC_CNTL_AUTH_GENERIC_HDR_T_NEXT_HDR, L_LBMC_CNTL_AUTH_GENERIC_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     hdrlen_item = proto_tree_add_item(subtree, hf_lbmc_auth_unknown_hdr_len, tvb, offset + O_LBMC_CNTL_AUTH_GENERIC_HDR_T_HDR_LEN, L_LBMC_CNTL_AUTH_GENERIC_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_auth_unknown_flags, tvb, offset + O_LBMC_CNTL_AUTH_GENERIC_HDR_T_FLAGS, L_LBMC_CNTL_AUTH_GENERIC_HDR_T_FLAGS, ENC_BIG_ENDIAN);
     opid_item = proto_tree_add_item(subtree, hf_lbmc_auth_unknown_opid, tvb, offset + O_LBMC_CNTL_AUTH_GENERIC_HDR_T_OPID, L_LBMC_CNTL_AUTH_GENERIC_HDR_T_OPID, ENC_BIG_ENDIAN);
-    opid = tvb_get_guint8(tvb, offset + O_LBMC_CNTL_AUTH_GENERIC_HDR_T_OPID);
+    opid = tvb_get_uint8(tvb, offset + O_LBMC_CNTL_AUTH_GENERIC_HDR_T_OPID);
     expert_add_info_format(pinfo, opid_item, &ei_lbmc_analysis_invalid_value, "Invalid LBMC AUTH OPID 0x%02x", opid);
     len_dissected = L_LBMC_CNTL_AUTH_GENERIC_HDR_T;
     datalen = (int) hdrlen - len_dissected;
@@ -9670,7 +9804,7 @@ static int dissect_nhdr_hmac(tvbuff_t * tvb, int offset, packet_info * pinfo _U_
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_hmac_flags_ignore,
         NULL
@@ -9690,7 +9824,7 @@ static int dissect_nhdr_umq_sid(tvbuff_t * tvb, int offset, packet_info * pinfo 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_umq_sid_flags_ignore,
         NULL
@@ -9710,7 +9844,7 @@ static int dissect_nhdr_destination(tvbuff_t * tvb, int offset, packet_info * pi
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_destination_flags_ignore,
         NULL
@@ -9731,7 +9865,7 @@ static int dissect_nhdr_destination(tvbuff_t * tvb, int offset, packet_info * pi
     proto_tree_add_item(subtree, hf_lbmc_destination_reserved, tvb, offset + O_LBMC_DESTINATION_HDR_T_RESERVED, L_LBMC_DESTINATION_HDR_T_RESERVED, ENC_BIG_ENDIAN);
     if (info != NULL)
     {
-        info->set = TRUE;
+        info->set = true;
         info->endpoint_a.domain = tvb_get_ntohl(tvb, offset + O_LBMC_DESTINATION_HDR_T_DOMAIN_ID);
         set_address_tvb(&(info->endpoint_a.addr), AT_IPv4, L_LBMC_DESTINATION_HDR_T_IPADDR, tvb, offset + O_LBMC_DESTINATION_HDR_T_IPADDR);
         info->endpoint_a.port = tvb_get_ntohs(tvb, offset + O_LBMC_DESTINATION_HDR_T_PORT);
@@ -9746,7 +9880,7 @@ static int dissect_nhdr_topic_idx(tvbuff_t * tvb, int offset, packet_info * pinf
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_topic_idx_flags_ignore,
         NULL
@@ -9765,7 +9899,7 @@ static int dissect_nhdr_topic_source(tvbuff_t * tvb, int offset, packet_info * p
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_topic_source_flags_ignore,
         &hf_lbmc_topic_source_flags_eos,
@@ -9785,12 +9919,12 @@ static int dissect_nhdr_topic_source_exfunc(tvbuff_t * tvb, int offset, packet_i
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_topic_source_exfunc_flags_ignore,
         NULL
     };
-    static const int * functionality_flags[] =
+    static int * const functionality_flags[] =
     {
         &hf_lbmc_topic_source_exfunc_functionality_flags_lj,
         &hf_lbmc_topic_source_exfunc_functionality_flags_ume,
@@ -9815,7 +9949,7 @@ static int dissect_nhdr_ume_store_ext(tvbuff_t * tvb, int offset, packet_info * 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_store_ext_flags_ignore,
         NULL
@@ -9840,7 +9974,7 @@ static int dissect_nhdr_ume_psrc_election_token(tvbuff_t * tvb, int offset, pack
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_ume_psrc_election_token_flags_ignore,
         NULL
@@ -9860,7 +9994,7 @@ static int dissect_nhdr_tcp_sid(tvbuff_t * tvb, int offset, packet_info * pinfo 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    static const int * flags[] =
+    static int * const flags[] =
     {
         &hf_lbmc_tcp_sid_flags_ignore,
         NULL
@@ -9874,7 +10008,7 @@ static int dissect_nhdr_tcp_sid(tvbuff_t * tvb, int offset, packet_info * pinfo 
     proto_tree_add_item(subtree, hf_lbmc_tcp_sid_sid, tvb, offset + O_LBMC_CNTL_TCP_SID_HDR_T_SID, L_LBMC_CNTL_TCP_SID_HDR_T_SID, ENC_BIG_ENDIAN);
     if (info != NULL)
     {
-        info->set = TRUE;
+        info->set = true;
         info->session_id = tvb_get_ntohl(tvb, offset + O_LBMC_CNTL_TCP_SID_HDR_T_SID);
     }
     return (L_LBMC_CNTL_TCP_SID_HDR_T);
@@ -9909,8 +10043,8 @@ static int dissect_nhdr_extopt_cfgopt(tvbuff_t * tvb, int offset, packet_info * 
         subtree = proto_item_add_subtree(subtree_item, ett_lbmc_extopt_cfgopt);
         proto_tree_add_item(subtree, hf_lbmc_extopt_cfgopt_scope, tvb, curr_offset + O_LBMC_EXTOPT_CFGOPT_HDR_T_SCOPE, L_LBMC_EXTOPT_CFGOPT_HDR_T_SCOPE, ENC_BIG_ENDIAN);
         proto_tree_add_item(subtree, hf_lbmc_extopt_cfgopt_parent, tvb, curr_offset + O_LBMC_EXTOPT_CFGOPT_HDR_T_PARENT, L_LBMC_EXTOPT_CFGOPT_HDR_T_PARENT, ENC_BIG_ENDIAN);
-        proto_tree_add_item(subtree, hf_lbmc_extopt_cfgopt_name, tvb, name_offset, name_len, ENC_ASCII|ENC_NA);
-        proto_tree_add_item(subtree, hf_lbmc_extopt_cfgopt_value, tvb, value_offset, value_len, ENC_ASCII|ENC_NA);
+        proto_tree_add_item(subtree, hf_lbmc_extopt_cfgopt_name, tvb, name_offset, name_len, ENC_ASCII);
+        proto_tree_add_item(subtree, hf_lbmc_extopt_cfgopt_value, tvb, value_offset, value_len, ENC_ASCII);
         curr_offset += optlen;
         len_dissected += optlen;
     }
@@ -9921,8 +10055,8 @@ static int dissect_nhdr_extopt(tvbuff_t * tvb, int offset, packet_info * pinfo, 
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
-    static const int * flags[] =
+    uint8_t hdrlen = 0;
+    static int * const flags[] =
     {
         &hf_lbmc_extopt_flags_ignore,
         &hf_lbmc_extopt_flags_ignore_subtype,
@@ -9931,18 +10065,18 @@ static int dissect_nhdr_extopt(tvbuff_t * tvb, int offset, packet_info * pinfo, 
     };
     proto_item * ritem = NULL;
     proto_tree * rtree = NULL, *fragment_item;
-    guint8 flags_val = 0;
+    uint8_t flags_val = 0;
     int len_dissected = 0;
     int data_len = 0;
-    guint16 subtype;
-    guint16 fragment_offset;
+    uint16_t subtype;
+    uint16_t fragment_offset;
     int data_offset;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_EXTOPT_HDR_T_HDR_LEN);
-    flags_val = tvb_get_guint8(tvb, offset + O_LBMC_EXTOPT_HDR_T_FLAGS);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_EXTOPT_HDR_T_HDR_LEN);
+    flags_val = tvb_get_uint8(tvb, offset + O_LBMC_EXTOPT_HDR_T_FLAGS);
     subtype = tvb_get_ntohs(tvb, offset + O_LBMC_EXTOPT_HDR_T_SUBTYPE);
     fragment_offset = tvb_get_ntohs(tvb, offset + O_LBMC_EXTOPT_HDR_T_FRAGMENT_OFFSET);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_extopt, tvb, offset, (gint)hdrlen, ENC_NA);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_extopt, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_extopt);
     proto_tree_add_item(subtree, hf_lbmc_extopt_next_hdr, tvb, offset + O_LBMC_EXTOPT_HDR_T_NEXT_HDR, L_LBMC_EXTOPT_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
     proto_tree_add_item(subtree, hf_lbmc_extopt_hdr_len, tvb, offset + O_LBMC_EXTOPT_HDR_T_HDR_LEN, L_LBMC_EXTOPT_HDR_T_HDR_LEN, ENC_BIG_ENDIAN);
@@ -9960,14 +10094,14 @@ static int dissect_nhdr_extopt(tvbuff_t * tvb, int offset, packet_info * pinfo, 
         if (reassembly->reassembly_in_progress)
         {
             tvbuff_t * reassembly_tvb;
-            gchar * buf;
+            char * buf;
             proto_item * pi = NULL;
 
             if ((reassembly->len + fragment_offset + data_len) < LBMC_EXTOPT_REASSEMBLED_DATA_MAX_LEN)
             {
                 tvb_memcpy(tvb, reassembly->data + fragment_offset, data_offset, data_len);
                 reassembly->len += data_len;
-                buf = (gchar *) wmem_memdup(pinfo->pool, reassembly->data, reassembly->len);
+                buf = (char *) wmem_memdup(pinfo->pool, reassembly->data, reassembly->len);
                 reassembly_tvb = tvb_new_real_data(buf, reassembly->len, reassembly->len);
                 add_new_data_source(pinfo, reassembly_tvb, "Reassembled EXTOPT fragment data");
             }
@@ -9980,13 +10114,13 @@ static int dissect_nhdr_extopt(tvbuff_t * tvb, int offset, packet_info * pinfo, 
             ritem = proto_tree_add_item(tree, hf_lbmc_extopt_reassembled_data, reassembly_tvb, 0, reassembly->len, ENC_NA);
             rtree = proto_item_add_subtree(ritem, ett_lbmc_extopt_reassembled_data);
             pi = proto_tree_add_uint(rtree, hf_lbmc_extopt_reassembled_data_subtype, reassembly_tvb, 0, 0, reassembly->subtype);
-            PROTO_ITEM_SET_GENERATED(pi);
-            pi = proto_tree_add_uint(rtree, hf_lbmc_extopt_reassembled_data_len, reassembly_tvb, 0, 0, (guint32)reassembly->len);
-            PROTO_ITEM_SET_GENERATED(pi);
+            proto_item_set_generated(pi);
+            pi = proto_tree_add_uint(rtree, hf_lbmc_extopt_reassembled_data_len, reassembly_tvb, 0, 0, (uint32_t)reassembly->len);
+            proto_item_set_generated(pi);
             switch (reassembly->subtype)
             {
                 case LBMC_EXT_NHDR_MSGSEL:
-                    proto_tree_add_item(rtree, hf_lbmc_extopt_reassembled_data_msgsel, reassembly_tvb, 0, reassembly->len, ENC_ASCII|ENC_NA);
+                    proto_tree_add_item(rtree, hf_lbmc_extopt_reassembled_data_msgsel, reassembly_tvb, 0, reassembly->len, ENC_ASCII);
                     break;
                 case LBMC_EXT_NHDR_CFGOPT:
                     len_dissected += dissect_nhdr_extopt_cfgopt(reassembly_tvb, 0, pinfo, rtree);
@@ -10002,7 +10136,7 @@ static int dissect_nhdr_extopt(tvbuff_t * tvb, int offset, packet_info * pinfo, 
             switch (subtype)
             {
                 case LBMC_EXT_NHDR_MSGSEL:
-                    proto_tree_add_item(subtree, hf_lbmc_extopt_msgsel, tvb, data_offset, data_len, ENC_ASCII|ENC_NA);
+                    proto_tree_add_item(subtree, hf_lbmc_extopt_msgsel, tvb, data_offset, data_len, ENC_ASCII);
                     break;
                 case LBMC_EXT_NHDR_CFGOPT:
                     len_dissected += dissect_nhdr_extopt_cfgopt(tvb, data_offset, pinfo, subtree);
@@ -10032,12 +10166,12 @@ static int dissect_nhdr_extopt(tvbuff_t * tvb, int offset, packet_info * pinfo, 
         }
         else
         {
-            reassembly->reassembly_in_progress = TRUE;
+            reassembly->reassembly_in_progress = true;
             reassembly->subtype = subtype;
             reassembly->len = 0;
             if (fragment_offset != 0)
             {
-                expert_add_info_format(pinfo, NULL, &ei_lbmc_analysis_no_reassembly, "LBMC EXTOPT: reassembly not in progress but fragment_offset not zero (%" G_GUINT16_FORMAT ")", fragment_offset);
+                expert_add_info_format(pinfo, NULL, &ei_lbmc_analysis_no_reassembly, "LBMC EXTOPT: reassembly not in progress but fragment_offset not zero (%" PRIu16 ")", fragment_offset);
             }
             else
             {
@@ -10059,17 +10193,17 @@ static int dissect_nhdr_extopt(tvbuff_t * tvb, int offset, packet_info * pinfo, 
     return (len_dissected);
 }
 
-static int dissect_nhdr_unhandled(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, guint8 next_hdr)
+static int dissect_nhdr_unhandled(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, uint8_t next_hdr)
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 hdrlen = 0;
+    uint8_t hdrlen = 0;
     int len_dissected = 0;
     int datalen = 0;
     proto_item * hdrlen_item = NULL;
 
-    hdrlen = tvb_get_guint8(tvb, offset + O_LBMC_BASIC_HDR_T_HDR_LEN);
-    subtree_item = proto_tree_add_item(tree, hf_lbmc_unhandled, tvb, offset, (gint)hdrlen, ENC_NA);
+    hdrlen = tvb_get_uint8(tvb, offset + O_LBMC_BASIC_HDR_T_HDR_LEN);
+    subtree_item = proto_tree_add_item(tree, hf_lbmc_unhandled, tvb, offset, (int)hdrlen, ENC_NA);
     subtree = proto_item_add_subtree(subtree_item, ett_lbmc_unhandled_hdr);
     expert_add_info_format(pinfo, subtree_item, &ei_lbmc_analysis_invalid_value, "Invalid LBMC header type 0x%02x", next_hdr);
     proto_tree_add_item(subtree, hf_lbmc_unhandled_next_hdr, tvb, offset + O_LBMC_UNHANDLED_HDR_T_NEXT_HDR, L_LBMC_UNHANDLED_HDR_T_NEXT_HDR, ENC_BIG_ENDIAN);
@@ -10097,10 +10231,10 @@ static int dissect_msg_properties(tvbuff_t * tvb, int offset, packet_info * pinf
     proto_tree * data_tree = NULL;
     proto_item * field_item = NULL;
     proto_tree * field_tree = NULL;
-    guint32 magic;
-    guint16 num_fields;
-    guint16 idx;
-    guint encoding;
+    uint32_t magic;
+    uint16_t num_fields;
+    uint16_t idx;
+    unsigned encoding;
     int field_offset;
     int data_length;
     proto_item * magic_item = NULL;
@@ -10145,9 +10279,9 @@ static int dissect_msg_properties(tvbuff_t * tvb, int offset, packet_info * pinf
     field_offset = offset + L_LBM_MSG_PROPERTIES_DATA_T;
     for (idx = 0; idx < num_fields; ++idx)
     {
-        guint32 key_offset;
-        guint32 value_offset;
-        guint32 type;
+        uint32_t key_offset;
+        uint32_t value_offset;
+        uint32_t type;
         int actual_key_offset;
         int actual_value_offset;
         int key_len;
@@ -10239,7 +10373,7 @@ static int dissect_msg_properties(tvbuff_t * tvb, int offset, packet_info * pinf
 /*----------------------------------------------------------------------------*/
 /* Miscellaneous functions.                                                   */
 /*----------------------------------------------------------------------------*/
-static const gchar * lbmc_determine_msg_type(const guint8 * header_array)
+static const char * lbmc_determine_msg_type(const uint8_t * header_array)
 {
     if (header_array[LBMC_NHDR_SSF_INIT] != 0)
     {
@@ -10432,7 +10566,7 @@ static const gchar * lbmc_determine_msg_type(const guint8 * header_array)
     return (NULL);
 }
 
-static const gchar * lbmc_determine_data_msg_type(gboolean retransmission, const guint8 * header_array)
+static const char * lbmc_determine_data_msg_type(bool retransmission, const uint8_t * header_array)
 {
     if (retransmission)
     {
@@ -10458,12 +10592,12 @@ static const gchar * lbmc_determine_data_msg_type(gboolean retransmission, const
     }
 }
 
-static lbm_uim_stream_info_t * lbmc_dup_stream_info(const lbm_uim_stream_info_t * info)
+static lbm_uim_stream_info_t * lbmc_dup_stream_info(wmem_allocator_t *scope, const lbm_uim_stream_info_t * info)
 {
     /* Returns a packet-scoped copy. */
     lbm_uim_stream_info_t * ptr = NULL;
 
-    ptr = wmem_new(wmem_packet_scope(), lbm_uim_stream_info_t);
+    ptr = wmem_new(scope, lbm_uim_stream_info_t);
     ptr->channel = info->channel;
     ptr->sqn = info->sqn;
     ptr->endpoint_a.type = info->endpoint_a.type;
@@ -10484,28 +10618,28 @@ static lbm_uim_stream_info_t * lbmc_dup_stream_info(const lbm_uim_stream_info_t 
     {
         ptr->endpoint_b.stream_info.dest = info->endpoint_b.stream_info.dest;
     }
-    ptr->description = wmem_strdup(wmem_packet_scope(), info->description);
+    ptr->description = wmem_strdup(scope, info->description);
     return (ptr);
 }
 
-gboolean lbmc_test_lbmc_header(tvbuff_t * tvb, int offset)
+bool lbmc_test_lbmc_header(tvbuff_t * tvb, int offset)
 {
-    guint8 type;
-    guint8 version;
-    guint8 ver_type;
-    guint8 next_header;
-    guint16 msglen;
+    uint8_t type;
+    uint8_t version;
+    uint8_t ver_type;
+    uint8_t next_header;
+    uint16_t msglen;
 
     if (tvb_reported_length_remaining(tvb, offset) < (O_LBMC_HDR_T_MSGLEN + L_LBMC_HDR_T_MSGLEN))
     {
-        return (FALSE);
+        return false;
     }
-    ver_type = tvb_get_guint8(tvb, offset + O_LBMC_HDR_T_VER_TYPE);
+    ver_type = tvb_get_uint8(tvb, offset + O_LBMC_HDR_T_VER_TYPE);
     version = LBMC_HDR_VER(ver_type);
     type = LBMC_HDR_TYPE(ver_type);
     if (version != LBMC_VERSION)
     {
-        return (FALSE);
+        return false;
     }
     switch (type)
     {
@@ -10516,9 +10650,9 @@ gboolean lbmc_test_lbmc_header(tvbuff_t * tvb, int offset)
         case LBMC_TYPE_RETRANS:
             break;
         default:
-            return (FALSE);
+            return false;
     }
-    next_header = tvb_get_guint8(tvb, offset + O_LBMC_HDR_T_NEXT_HDR);
+    next_header = tvb_get_uint8(tvb, offset + O_LBMC_HDR_T_NEXT_HDR);
     switch (next_header)
     {
         case LBMC_NHDR_DATA:
@@ -10607,37 +10741,37 @@ gboolean lbmc_test_lbmc_header(tvbuff_t * tvb, int offset)
         case LBMC_NHDR_EXTOPT:
             break;
         default:
-            return (FALSE);
+            return false;
     }
     msglen = tvb_get_ntohs(tvb, offset + O_LBMC_HDR_T_MSGLEN);
     if (msglen == 0)
     {
-        return (FALSE);
+        return false;
     }
-    return (TRUE);
+    return true;
 }
 
-int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, const char * tag_name, guint64 channel)
+int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, proto_tree * tree, const char * tag_name, uint64_t channel)
 {
     proto_item * subtree_item = NULL;
     proto_tree * subtree = NULL;
-    guint8 type;
-    guint8 ver_type;
-    guint8 next_hdr;
-    guint16 msglen = 0;
+    uint8_t type;
+    uint8_t ver_type;
+    uint8_t next_hdr;
+    uint16_t msglen = 0;
     int pkt_offset = 0;
     lbmc_basic_hdr_t bhdr;
     tvbuff_t * lbmc_tvb = NULL;
     int tvb_lbmc_offset = offset;
     const char * topic_name = NULL;
-    guint32 topic_index = 0;
+    uint32_t topic_index = 0;
     int len_dissected = 0;
     int lbmc_hdr_len;
-    guint32 msgprop_len = 0;
+    uint32_t msgprop_len = 0;
     lbmc_fragment_info_t frag_info;
-    lbmc_extopt_reassembled_data_t reassembly;
-    gboolean data_is_umq_cmd_resp;
-    gboolean packet_is_data;
+    lbmc_extopt_reassembled_data_t *reassembly;
+    bool data_is_umq_cmd_resp;
+    bool packet_is_data;
     lbmc_stream_info_t stream_info;
     lbmc_ctxinst_info_t ctxinstd_info;
     lbmc_ctxinst_info_t ctxinstr_info;
@@ -10647,23 +10781,23 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
     lbm_dstream_entry_t * dom_stream;
     lbm_dstream_substream_entry_t * dom_substream;
     proto_item * last_initial_item = NULL;
-    guint8 found_header[256];
+    uint8_t found_header[256];
     lbm_uim_stream_info_t uim_stream_info;
     lbm_uim_stream_info_t * puim_stream_info = NULL;
     lbmc_tcp_sid_info_t tcp_sid_info;
-    gboolean has_source_index;
+    bool has_source_index;
     address tcp_addr;
-    guint16 tcp_port = 0;
-    guint64 actual_channel = channel;
-    gboolean tcp_address_valid = FALSE;
+    uint16_t tcp_port = 0;
+    uint64_t actual_channel = channel;
+    bool tcp_address_valid = false;
 
     while (tvb_reported_length_remaining(tvb, tvb_lbmc_offset) >= L_LBMC_MINIMAL_HDR_T)
     {
         proto_item * type_item = NULL;
-        const gchar * msg_type = NULL;
+        const char * msg_type = NULL;
 
         /* Get the version and type. */
-        ver_type = tvb_get_guint8(tvb, tvb_lbmc_offset + O_LBMC_HDR_T_VER_TYPE);
+        ver_type = tvb_get_uint8(tvb, tvb_lbmc_offset + O_LBMC_HDR_T_VER_TYPE);
         type = LBMC_HDR_TYPE(ver_type);
         /* Get the message length. */
         msglen = tvb_get_ntohs(tvb, tvb_lbmc_offset + O_LBMC_MINIMAL_HDR_T_MSGLEN);
@@ -10673,7 +10807,7 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
             return (len_dissected);
         }
         /* Create a new tvb for just this LBMC message. */
-        lbmc_tvb = tvb_new_subset_length(tvb, tvb_lbmc_offset, (gint)msglen);
+        lbmc_tvb = tvb_new_subset_length(tvb, tvb_lbmc_offset, (int)msglen);
         if ((type == LBMC_TYPE_MESSAGE) || (type == LBMC_TYPE_RETRANS) || (type == LBMC_TYPE_PRORX))
         {
             topic_index = tvb_get_ntohl(lbmc_tvb, O_LBMC_HDR_T_TIDX);
@@ -10716,14 +10850,14 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
             proto_item * pi = NULL;
 
             pi = proto_tree_add_string(subtree, hf_lbmc_tag, tvb, 0, 0, tag_name);
-            PROTO_ITEM_SET_GENERATED(pi);
+            proto_item_set_generated(pi);
         }
         if (topic_name != NULL)
         {
             proto_item * pi = NULL;
 
             pi = proto_tree_add_string(subtree, hf_lbmc_topic, tvb, 0, 0, topic_name);
-            PROTO_ITEM_SET_GENERATED(pi);
+            proto_item_set_generated(pi);
         }
         proto_tree_add_item(subtree, hf_lbmc_version, lbmc_tvb, O_LBMC_HDR_T_VER_TYPE, L_LBMC_HDR_T_VER_TYPE, ENC_BIG_ENDIAN);
         type_item = proto_tree_add_item(subtree, hf_lbmc_type, lbmc_tvb, O_LBMC_HDR_T_VER_TYPE, L_LBMC_HDR_T_VER_TYPE, ENC_BIG_ENDIAN);
@@ -10734,12 +10868,12 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
         {
             case LBMC_TYPE_EOT:
             case LBMC_TYPE_CONTROL:
-                packet_is_data = FALSE;
+                packet_is_data = false;
                 break;
             case LBMC_TYPE_MESSAGE:
             case LBMC_TYPE_RETRANS:
             case LBMC_TYPE_PRORX:
-                packet_is_data = TRUE;
+                packet_is_data = true;
                 break;
             default:
                 expert_add_info_format(pinfo, type_item, &ei_lbmc_analysis_invalid_value, "Invalid LBMC type 0x%02x", type);
@@ -10748,7 +10882,7 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                 continue;
                 break;
         }
-        next_hdr = tvb_get_guint8(lbmc_tvb, O_LBMC_HDR_T_NEXT_HDR);
+        next_hdr = tvb_get_uint8(lbmc_tvb, O_LBMC_HDR_T_NEXT_HDR);
         pkt_offset = lbmc_hdr_len;
         if ((type == LBMC_TYPE_MESSAGE) || (type == LBMC_TYPE_RETRANS) || (type == LBMC_TYPE_PRORX))
         {
@@ -10760,36 +10894,37 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
         frag_info.offset = 0;
         frag_info.len = 0;
         msgprop_len = 0;
-        lbmc_init_extopt_reassembled_data(&reassembly);
-        data_is_umq_cmd_resp = FALSE;
-        stream_info.set = FALSE;
-        ctxinstd_info.set = FALSE;
-        ctxinstr_info.set = FALSE;
-        destination_info.set = FALSE;
+        reassembly = wmem_new(pinfo->pool, lbmc_extopt_reassembled_data_t);
+        lbmc_init_extopt_reassembled_data(reassembly);
+        data_is_umq_cmd_resp = false;
+        stream_info.set = false;
+        ctxinstd_info.set = false;
+        ctxinstr_info.set = false;
+        destination_info.set = false;
         inst_stream = NULL;
         inst_substream = NULL;
         dom_stream = NULL;
         dom_substream = NULL;
         memset((void *)found_header, 0, sizeof(found_header));
         puim_stream_info = NULL;
-        tcp_sid_info.set = FALSE;
-        tcp_sid_info.session_id = G_MAXUINT32;
-        has_source_index = FALSE;
+        tcp_sid_info.set = false;
+        tcp_sid_info.session_id = UINT32_MAX;
+        has_source_index = false;
 
         while ((tvb_reported_length_remaining(lbmc_tvb, pkt_offset) >= L_LBMC_BASIC_HDR_T) && (next_hdr != LBMC_NHDR_DATA) && (next_hdr != LBMC_NHDR_NONE))
         {
             tvbuff_t * hdr_tvb = NULL;
             int dissected_hdr_len;
-            guint8 opid;
+            uint8_t opid;
 
-            bhdr.next_hdr = tvb_get_guint8(lbmc_tvb, pkt_offset + O_LBMC_BASIC_HDR_T_NEXT_HDR);
-            bhdr.hdr_len = tvb_get_guint8(lbmc_tvb, pkt_offset + O_LBMC_BASIC_HDR_T_HDR_LEN);
+            bhdr.next_hdr = tvb_get_uint8(lbmc_tvb, pkt_offset + O_LBMC_BASIC_HDR_T_NEXT_HDR);
+            bhdr.hdr_len = tvb_get_uint8(lbmc_tvb, pkt_offset + O_LBMC_BASIC_HDR_T_HDR_LEN);
             if (bhdr.hdr_len == 0)
             {
                 expert_add_info_format(pinfo, NULL, &ei_lbmc_analysis_zero_length, "LBMC header length is zero");
                 return (len_dissected);
             }
-            hdr_tvb = tvb_new_subset_length(lbmc_tvb, pkt_offset, (gint)bhdr.hdr_len);
+            hdr_tvb = tvb_new_subset_length(lbmc_tvb, pkt_offset, (int)bhdr.hdr_len);
             found_header[next_hdr] = 1;
             switch (next_hdr)
             {
@@ -10835,7 +10970,7 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                     break;
                 case LBMC_NHDR_SRCIDX:
                     dissected_hdr_len = dissect_nhdr_srcidx(hdr_tvb, 0, pinfo, subtree);
-                    has_source_index = TRUE;
+                    has_source_index = true;
                     break;
                 case LBMC_NHDR_UMQ_ULB_MSG:
                     dissected_hdr_len = dissect_nhdr_umq_ulb_msg(hdr_tvb, 0, pinfo, subtree);
@@ -11012,7 +11147,7 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                     dissected_hdr_len = dissect_nhdr_gateway_name(hdr_tvb, 0, pinfo, subtree);
                     break;
                 case LBMC_NHDR_AUTHENTICATION:
-                    opid = tvb_get_guint8(hdr_tvb, O_LBMC_CNTL_AUTH_GENERIC_HDR_T_OPID);
+                    opid = tvb_get_uint8(hdr_tvb, O_LBMC_CNTL_AUTH_GENERIC_HDR_T_OPID);
                     switch (opid)
                     {
                         case AUTH_OP_REQ:
@@ -11060,7 +11195,7 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                     dissected_hdr_len = dissect_nhdr_tcp_sid(hdr_tvb, 0, pinfo, subtree, &tcp_sid_info);
                     break;
                 case LBMC_NHDR_EXTOPT:
-                    dissected_hdr_len = dissect_nhdr_extopt(hdr_tvb, 0, pinfo, subtree, &reassembly);
+                    dissected_hdr_len = dissect_nhdr_extopt(hdr_tvb, 0, pinfo, subtree, reassembly);
                     break;
                     /* Headers that are not implemented. */
                 case LBMC_NHDR_NONE:
@@ -11073,23 +11208,23 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
             pkt_offset += bhdr.hdr_len;
         }
         /* If transport is TCP and we got a TCP SID header, process it. */
-        tcp_address_valid = TRUE;
+        tcp_address_valid = true;
         if (lbm_channel_is_unknown_transport_source_lbttcp(channel))
         {
             copy_address_shallow(&tcp_addr, &(pinfo->src));
-            tcp_port = (guint16)pinfo->srcport;
+            tcp_port = (uint16_t)pinfo->srcport;
         }
         else if (lbm_channel_is_unknown_transport_client_lbttcp(channel))
         {
             copy_address_shallow(&tcp_addr, &(pinfo->dst));
-            tcp_port = (guint16)pinfo->destport;
+            tcp_port = (uint16_t)pinfo->destport;
         }
         else
         {
-            tcp_address_valid = FALSE;
+            tcp_address_valid = false;
         }
         /* Note: it *is* possible for a TCP SID to appear in an LBTTCP non-transport (UIM) message. */
-        if ((pinfo->fd->flags.visited == 0) && (tcp_sid_info.set) && lbm_channel_is_unknown_transport_lbttcp(channel) && tcp_address_valid)
+        if ((pinfo->fd->visited == 0) && (tcp_sid_info.set) && lbm_channel_is_unknown_transport_lbttcp(channel) && tcp_address_valid)
         {
             lbttcp_transport_sid_add(&tcp_addr, tcp_port, pinfo->num, tcp_sid_info.session_id);
         }
@@ -11105,7 +11240,7 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
             }
             else
             {
-                guint32 tcp_session_id = 0;
+                uint32_t tcp_session_id = 0;
 
                 if (lbttcp_transport_sid_find(&tcp_addr, tcp_port, pinfo->num, &tcp_session_id))
                 {
@@ -11158,15 +11293,15 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
 
                         lbm_stream_istream_substream_update(inst_substream, msglen, pinfo->num);
                         stream_item = proto_tree_add_item(subtree, hf_lbm_stream, tvb, 0, 0, ENC_NA);
-                        PROTO_ITEM_SET_GENERATED(stream_item);
+                        proto_item_set_generated(stream_item);
                         stream_tree = proto_item_add_subtree(stream_item, ett_lbm_stream);
                         pi = proto_tree_add_uint64(stream_tree, hf_lbm_stream_stream_id, tvb, 0, 0, inst_stream->channel);
-                        PROTO_ITEM_SET_GENERATED(pi);
+                        proto_item_set_generated(pi);
                         pi = proto_tree_add_uint(stream_tree, hf_lbm_stream_substream_id, tvb, 0, 0, inst_substream->substream_id);
-                        PROTO_ITEM_SET_GENERATED(pi);
+                        proto_item_set_generated(pi);
                         proto_tree_move_item(subtree, last_initial_item, stream_item);
 
-                        stream_tap_info = wmem_new0(wmem_packet_scope(), lbm_uim_stream_tap_info_t);
+                        stream_tap_info = wmem_new0(pinfo->pool, lbm_uim_stream_tap_info_t);
                         stream_tap_info->channel = inst_stream->channel;
                         stream_tap_info->substream_id = inst_substream->substream_id;
                         stream_tap_info->bytes = msglen;
@@ -11208,15 +11343,15 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
 
                         lbm_stream_dstream_substream_update(dom_substream, msglen, pinfo->num);
                         stream_item = proto_tree_add_item(subtree, hf_lbm_stream, tvb, 0, 0, ENC_NA);
-                        PROTO_ITEM_SET_GENERATED(stream_item);
+                        proto_item_set_generated(stream_item);
                         stream_tree = proto_item_add_subtree(stream_item, ett_lbm_stream);
                         pi = proto_tree_add_uint64(stream_tree, hf_lbm_stream_stream_id, tvb, 0, 0, dom_stream->channel);
-                        PROTO_ITEM_SET_GENERATED(pi);
+                        proto_item_set_generated(pi);
                         pi = proto_tree_add_uint(stream_tree, hf_lbm_stream_substream_id, tvb, 0, 0, dom_substream->substream_id);
-                        PROTO_ITEM_SET_GENERATED(pi);
+                        proto_item_set_generated(pi);
                         proto_tree_move_item(subtree, last_initial_item, stream_item);
 
-                        stream_tap_info = wmem_new0(wmem_packet_scope(), lbm_uim_stream_tap_info_t);
+                        stream_tap_info = wmem_new0(pinfo->pool, lbm_uim_stream_tap_info_t);
                         stream_tap_info->channel = dom_stream->channel;
                         stream_tap_info->substream_id = dom_substream->substream_id;
                         stream_tap_info->bytes = msglen;
@@ -11242,20 +11377,20 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
             int msgprop_offset = 0;
             tvbuff_t * data_tvb = NULL;
             tvbuff_t * msgprop_tvb = NULL;
-            gboolean msg_complete = TRUE;
-            gboolean msg_reassembled = FALSE;
-            gboolean can_call_subdissector = FALSE;
+            bool msg_complete = true;
+            bool msg_reassembled = false;
+            bool can_call_subdissector = false;
             lbmc_message_entry_t * msg = NULL;
-            gboolean dissector_found = FALSE;
+            bool dissector_found = false;
             heur_dtbl_entry_t *hdtbl_entry;
-            gboolean retransmission = FALSE;
+            bool retransmission = false;
 
             /* Note on heuristic subdissectors:
-               If the preference "lbmc.use_heuristic_subdissectors" is TRUE, and a heuristic subdissector is
+               If the preference "lbmc.use_heuristic_subdissectors" is true, and a heuristic subdissector is
                registered for "lbm_msg_payload", we can call the heuristic subdissector under one of the
                following conditions:
                - The message is unfragmented
-               - The message is fragmented, AND the preference "lbmc.reassemble_fragments" is TRUE, AND
+               - The message is fragmented, AND the preference "lbmc.reassemble_fragments" is true, AND
                  the entire message has been reassembled.
                This applies to the lbmpdm subdissector as well.
              */
@@ -11276,9 +11411,9 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                     data_tvb = tvb_new_subset_remaining(lbmc_tvb, pkt_offset);
                     msgprop_tvb = NULL;
                 }
-                msg_complete = TRUE;
-                msg_reassembled = FALSE;
-                can_call_subdissector = TRUE;
+                msg_complete = true;
+                msg_reassembled = false;
+                can_call_subdissector = true;
             }
             else
             {
@@ -11289,14 +11424,14 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                     actual_data_len = tvb_reported_length_remaining(lbmc_tvb, pkt_offset);
                     data_tvb = tvb_new_subset_length(lbmc_tvb, pkt_offset, actual_data_len);
                     msgprop_tvb = NULL;
-                    msg_complete = TRUE;
+                    msg_complete = true;
                 }
                 else
                 {
                     /* Fragment info is present and we should reassemble */
-                    guint32 port;
+                    uint32_t port;
 
-                    port = (guint32)pinfo->destport;
+                    port = (uint32_t)pinfo->destport;
                     msg = lbmc_message_find(actual_channel, &(pinfo->dst), port, &frag_info);
                     if (msg == NULL)
                     {
@@ -11306,11 +11441,11 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                     {
                         /* Check fragment against message */
                         int frag_len = tvb_reported_length_remaining(lbmc_tvb, pkt_offset);
-                        if ((frag_info.offset + (guint32) frag_len) > msg->total_len)
+                        if ((frag_info.offset + (uint32_t) frag_len) > msg->total_len)
                         {
                             /* Indicate a malformed packet */
                             expert_add_info_format(pinfo, NULL, &ei_lbmc_analysis_invalid_fragment,
-                                "Invalid fragment for message (msglen=%" G_GUINT32_FORMAT ", frag offset=%" G_GUINT32_FORMAT ", frag len=%d",
+                                "Invalid fragment for message (msglen=%" PRIu32 ", frag offset=%" PRIu32 ", frag len=%d",
                                 msg->total_len, frag_info.offset, frag_len);
                         }
                         else
@@ -11318,7 +11453,7 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                             (void)lbmc_message_add_fragment(msg, lbmc_tvb, pkt_offset, &frag_info, pinfo->num);
                             if (data_is_umq_cmd_resp)
                             {
-                                msg->data_is_umq_cmd_resp = TRUE;
+                                msg->data_is_umq_cmd_resp = true;
                             }
                             if (msg->total_len == msg->accumulated_len)
                             {
@@ -11329,12 +11464,12 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                                 }
                                 data_tvb = tvb_new_subset_remaining(lbmc_tvb, pkt_offset);
                                 msgprop_tvb = NULL;
-                                msg_reassembled = TRUE;
-                                msg_complete = TRUE;
+                                msg_reassembled = true;
+                                msg_complete = true;
                                 if (msg->reassembled_frame == pinfo->num)
                                 {
                                     /* We can only call a subdissector if this is the frame in which the message is reassembled */
-                                    can_call_subdissector = TRUE;
+                                    can_call_subdissector = true;
                                 }
                             }
                             else
@@ -11342,8 +11477,8 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                                 /* This is not the last fragment of the message. */
                                 data_tvb = tvb_new_subset_remaining(lbmc_tvb, pkt_offset);
                                 msgprop_tvb = NULL;
-                                msg_reassembled = TRUE;
-                                msg_complete = FALSE;
+                                msg_reassembled = true;
+                                msg_complete = false;
                             }
                         }
                     }
@@ -11362,12 +11497,12 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                     proto_tree * frag_tree = NULL;
                     proto_item * frag_item = NULL;
                     proto_item * pi = NULL;
-                    gboolean first_item = TRUE;
+                    bool first_item = true;
                     lbmc_fragment_entry_t * cur = NULL;
-                    gchar * buf = NULL;
+                    char * buf = NULL;
 
                     /* Create a new real data tvb of the reassembled data. */
-                    buf = (gchar *)wmem_alloc(pinfo->pool, (size_t)msg->total_len);
+                    buf = (char *)wmem_alloc(pinfo->pool, (size_t)msg->total_len);
                     cur = msg->entry;
                     while (cur != NULL)
                     {
@@ -11375,7 +11510,7 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                         cur = cur->next;
                     }
                     msg->reassembled_data = tvb_new_real_data(buf, msg->total_len, msg->total_len);
-                    msg_complete = TRUE;
+                    msg_complete = true;
                     /* Create separate data and msgprop tvbs */
                     msg->data = tvb_new_subset_length(msg->reassembled_data, 0, msg->total_len - msg->msgprop_len);
                     if (msg->msgprop_len > 0)
@@ -11403,12 +11538,12 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                         data_tvb,
                         0,
                         tvb_reported_length_remaining(data_tvb, 0),
-                        "%" G_GUINT32_FORMAT " Reassembled Fragments (%" G_GUINT32_FORMAT " bytes):",
+                        "%" PRIu32 " Reassembled Fragments (%" PRIu32 " bytes):",
                         msg->fragment_count,
                         msg->total_len);
                     frag_tree = proto_item_add_subtree(frag_item, ett_lbmc_reassembly);
                     cur = msg->entry;
-                    first_item = TRUE;
+                    first_item = true;
                     while (cur != NULL)
                     {
                         pi = proto_tree_add_uint_format_value(frag_tree,
@@ -11417,24 +11552,24 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                             cur->fragment_start,
                             cur->fragment_len,
                             cur->frame,
-                            "Frame: %" G_GUINT32_FORMAT ", payload: %" G_GUINT32_FORMAT "-%" G_GUINT32_FORMAT " (%" G_GUINT32_FORMAT " bytes)",
+                            "Frame: %" PRIu32 ", payload: %" PRIu32 "-%" PRIu32 " (%" PRIu32 " bytes)",
                             cur->frame,
                             cur->fragment_start,
                             (cur->fragment_start + cur->fragment_len) - 1,
                             cur->fragment_len);
-                        PROTO_ITEM_SET_GENERATED(pi);
+                        proto_item_set_generated(pi);
                         if (first_item)
                         {
-                            proto_item_append_text(frag_item, " #%" G_GUINT32_FORMAT "(%" G_GUINT32_FORMAT ")", cur->frame, cur->fragment_len);
+                            proto_item_append_text(frag_item, " #%" PRIu32 "(%" PRIu32 ")", cur->frame, cur->fragment_len);
                         }
                         else
                         {
-                            proto_item_append_text(frag_item, ", #%" G_GUINT32_FORMAT "(%" G_GUINT32_FORMAT ")", cur->frame, cur->fragment_len);
+                            proto_item_append_text(frag_item, ", #%" PRIu32 "(%" PRIu32 ")", cur->frame, cur->fragment_len);
                         }
-                        first_item = FALSE;
+                        first_item = false;
                         cur = cur->next;
                     }
-                    PROTO_ITEM_SET_GENERATED(frag_item);
+                    proto_item_set_generated(frag_item);
                 }
                 else
                 {
@@ -11447,21 +11582,21 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                     else
                     {
                         pi = proto_tree_add_uint(subtree, hf_reassembly_frame, data_tvb, 0, tvb_reported_length_remaining(data_tvb, 0), msg->reassembled_frame);
-                        PROTO_ITEM_SET_GENERATED(pi);
+                        proto_item_set_generated(pi);
                     }
                 }
             }
 
             if (data_is_umq_cmd_resp && msg_complete)
             {
-                (void)dissect_nhdr_umq_cmd_resp(data_tvb, 0, pinfo, subtree, TRUE);
+                (void)dissect_nhdr_umq_cmd_resp(data_tvb, 0, pinfo, subtree, true);
                 col_append_sep_str(pinfo->cinfo, COL_INFO, " ", "UMQ-CMD-RESP");
             }
             else
             {
                 if ((!lbm_channel_is_transport(channel)) && (!has_source_index))
                 {
-                    retransmission = TRUE;
+                    retransmission = true;
                 }
                 msg_type = lbmc_determine_data_msg_type(retransmission, found_header);
                 col_append_sep_str(pinfo->cinfo, COL_INFO, " ", msg_type);
@@ -11478,7 +11613,7 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
                             int encoding;
                             int pdmlen;
 
-                            dissector_found = lbmpdm_verify_payload(data_tvb, 0, &encoding, &pdmlen);
+                            dissector_found = (bool)lbmpdm_verify_payload(data_tvb, 0, &encoding, &pdmlen);
                         }
                         if (dissector_found)
                         {
@@ -11507,7 +11642,7 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
 
                     puim_stream_info->description = msg_type;
                     /* The dup is needed since there may be multiple stream infos per packet. */
-                    msg_info = lbmc_dup_stream_info(puim_stream_info);
+                    msg_info = lbmc_dup_stream_info(pinfo->pool, puim_stream_info);
                     tap_queue_packet(lbmc_uim_tap_handle, pinfo, (void *)msg_info);
                 }
             }
@@ -11526,7 +11661,7 @@ int lbmc_dissect_lbmc_packet(tvbuff_t * tvb, int offset, packet_info * pinfo, pr
 
                     puim_stream_info->description = msg_type;
                     /* The dup is needed since there may be multiple stream infos per packet. */
-                    msg_info = lbmc_dup_stream_info(puim_stream_info);
+                    msg_info = lbmc_dup_stream_info(pinfo->pool, puim_stream_info);
                     tap_queue_packet(lbmc_uim_tap_handle, pinfo, (void *)msg_info);
                 }
             }
@@ -11541,7 +11676,7 @@ int lbmc_get_minimum_length(void)
     return (O_LBMC_HDR_T_MSGLEN + L_LBMC_HDR_T_MSGLEN);
 }
 
-guint16 lbmc_get_message_length(tvbuff_t * tvb, int offset)
+uint16_t lbmc_get_message_length(tvbuff_t * tvb, int offset)
 {
     return (tvb_get_ntohs(tvb, offset + O_LBMC_HDR_T_MSGLEN));
 }
@@ -11612,7 +11747,7 @@ void proto_register_lbmc(void)
         { &hf_lbmc_tcp_request_qidx,
             { "Request Index", "lbmc.tcp_request.qidx", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_tcp_request_port,
-            { "Port", "lbmc.tcp_request.port", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+            { "Port", "lbmc.tcp_request.port", FT_UINT16, BASE_PT_TCP, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_tcp_request_reserved,
             { "Reserved", "lbmc.tcp_request.reserved", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_tcp_request_ipaddr,
@@ -12041,6 +12176,8 @@ void proto_register_lbmc(void)
             { "Quorum/Consensus Capabilities", "lbmc.ume_capability.flags.qc_flag", FT_BOOLEAN, L_LBMC_CNTL_UME_CAPABILITY_HDR_T_FLAGS * 8, TFS(&tfs_set_notset), LBMC_UME_CAPABILITY_QC_FLAG, "Set if quorum/consensus supported", HFILL } },
         { &hf_lbmc_ume_capability_flags_client_lifetime_flag,
             { "Client Lifetime Capabilities", "lbmc.ume_capability.flags.client_lifetime_flag", FT_BOOLEAN, L_LBMC_CNTL_UME_CAPABILITY_HDR_T_FLAGS * 8, TFS(&tfs_set_notset), LBMC_UME_CAPABILITY_CLIENT_LIFETIME_FLAG, "Set if client lifetime enabled", HFILL } },
+        { &hf_lbmc_ume_capability_flags_ranged_rx_flag,
+            { "Ranged RX Capability", "lbmc.ume_capability.flags.ranged_rx_flag", FT_BOOLEAN, L_LBMC_CNTL_UME_CAPABILITY_HDR_T_FLAGS * 8, TFS(&tfs_set_notset), LBMC_UME_CAPABILITY_RANGED_RX_FLAG, "Set if Ranged RX is supported", HFILL } },
         { &hf_lbmc_ume_proxy_src,
             { "UME Proxy Source", "lbmc.ume_proxy_src", FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_ume_proxy_src_next_hdr,
@@ -12084,7 +12221,7 @@ void proto_register_lbmc(void)
         { &hf_lbmc_ume_store_grp_idx,
             { "Group Index", "lbmc.ume_store.grp_idx", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_ume_store_store_tcp_port,
-            { "Store TCP Port", "lbmc.ume_store.store_tcp_port", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL } },
+            { "Store TCP Port", "lbmc.ume_store.store_tcp_port", FT_UINT16, BASE_PT_TCP, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_ume_store_store_idx,
             { "Store Index", "lbmc.ume_store.store_idx", FT_UINT16, BASE_HEX, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_ume_store_store_ip_addr,
@@ -12400,7 +12537,7 @@ void proto_register_lbmc(void)
         { &hf_lbmc_umq_rcr_msgid_regid,
             { "Message ID Registration ID", "lbmc.umq_rcr.msgid_regid", FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_umq_rcr_msgid_stamp,
-            { "Message ID Stamp", "lbmc.umq_rcr.msgid_regid", FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+            { "Message ID Stamp", "lbmc.umq_rcr.msgid_stamp", FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_umq_rcr_topic_tsp,
             { "Topic TSP", "lbmc.umq_rcr.topic_tsp", FT_UINT32, BASE_HEX_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_umq_rcr_q_tsp,
@@ -12718,7 +12855,7 @@ void proto_register_lbmc(void)
         { &hf_lbmc_umq_ulb_rcr_msgid_regid,
             { "Message ID Registration ID", "lbmc.umq_ulb_rcr.msgid_regid", FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_umq_ulb_rcr_msgid_stamp,
-            { "Message ID Stamp", "lbmc.umq_ulb_rcr.msgid_regid", FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL } },
+            { "Message ID Stamp", "lbmc.umq_ulb_rcr.msgid_stamp", FT_UINT64, BASE_HEX, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_umq_ulb_rcr_topic_tsp,
             { "Topic TSP", "lbmc.umq_ulb_rcr.topic_tsp", FT_UINT32, BASE_HEX_DEC, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_umq_ulb_rcr_assign_id,
@@ -13014,7 +13151,7 @@ void proto_register_lbmc(void)
         { &hf_lbmc_umq_idx_cmd_ulb_reserve_assign_flags_numeric,
             { "Numeric", "lbmc.umq_idx_cmd.ulb_reserve_assign.flags.numeric", FT_BOOLEAN, L_LBMC_CNTL_UMQ_ULB_IDX_CMD_RCV_RESERVE_IDX_ASSIGN_HDR_T_FLAGS * 8, TFS(&tfs_set_notset), LBM_UMQ_INDEX_FLAG_NUMERIC, "Set if index is numeric", HFILL } },
         { &hf_lbmc_umq_idx_cmd_ulb_reserve_assign_appset_idx,
-            { "Application Set Index", "lbmc.umq_idx_cmd.ulb_reserve_assign.index_len", FT_UINT16, BASE_DEC_HEX, NULL, 0x0, NULL, HFILL } },
+            { "Application Set Index", "lbmc.umq_idx_cmd.ulb_reserve_assign.appset_idx", FT_UINT16, BASE_DEC_HEX, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_umq_idx_cmd_ulb_reserve_assign_index_len,
             { "Index Length", "lbmc.umq_idx_cmd.ulb_reserve_assign.index_len", FT_UINT8, BASE_DEC_HEX, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_umq_idx_cmd_ulb_reserve_assign_reserved,
@@ -13830,11 +13967,11 @@ void proto_register_lbmc(void)
         { &hf_lbmc_extopt_cfgopt_parent,
             { "Parent", "lbmc.extopt.cfgopt.parent", FT_UINT64, BASE_DEC_HEX, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_extopt_cfgopt_name,
-            { "Name", "lbmc.extopt.cfgopt.name", FT_STRING, FT_NONE, NULL, 0x0, NULL, HFILL } },
+            { "Name", "lbmc.extopt.cfgopt.name", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_extopt_cfgopt_value,
-            { "Value", "lbmc.extopt.cfgopt.value", FT_STRING, FT_NONE, NULL, 0x0, NULL, HFILL } },
+            { "Value", "lbmc.extopt.cfgopt.value", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_extopt_msgsel,
-            { "Message Selector", "lbmc.extopt.msgsel", FT_STRING, FT_NONE, NULL, 0x0, NULL, HFILL } },
+            { "Message Selector", "lbmc.extopt.msgsel", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_extopt_reassembled_data,
             { "EXTOPT Reassembled Data", "lbmc.extopt.reassembled_data", FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_extopt_reassembled_data_subtype,
@@ -13844,7 +13981,7 @@ void proto_register_lbmc(void)
         { &hf_lbmc_extopt_reassembled_data_data,
             { "Data", "lbmc.extopt.reassembled_data.data", FT_BYTES, FT_NONE, NULL, 0x0, NULL, HFILL } },
         { &hf_lbmc_extopt_reassembled_data_msgsel,
-            { "Message Selector", "lbmc.extopt.reassembled_data.msgsel", FT_STRING, FT_NONE, NULL, 0x0, NULL, HFILL } },
+            { "Message Selector", "lbmc.extopt.reassembled_data.msgsel", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL } },
         { &hf_lbm_msg_properties,
             { "Message Properties", "lbmc.lbm_msg_properties", FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL } },
         { &hf_lbm_msg_properties_data,
@@ -13911,7 +14048,7 @@ void proto_register_lbmc(void)
             { "Reassembled message in frame", "lbmc.reassembly_frame", FT_FRAMENUM, BASE_NONE, NULL, 0x0, "Frame in which reassembled message appears", HFILL } },
     };
 
-    static gint * ett[] =
+    static int * ett[] =
     {
         &ett_lbmc,
         &ett_lbmc_frag,
@@ -14196,7 +14333,7 @@ void proto_register_lbmc(void)
     expert_lbmc = expert_register_protocol(proto_lbmc);
     expert_register_field_array(expert_lbmc, ei, array_length(ei));
 
-    lbmc_heuristic_subdissector_list = register_heur_dissector_list("lbm_msg_payload", proto_lbmc);
+    lbmc_heuristic_subdissector_list = register_heur_dissector_list_with_description("lbm_msg_payload", "LBMC UMQ command response data", proto_lbmc);
 
     prefs_register_protocol(tnw_protocol_handle, NULL);
     lbmc_module = prefs_register_protocol_subtree("29West", proto_lbmc, proto_reg_handoff_lbmc);
@@ -14217,17 +14354,20 @@ void proto_register_lbmc(void)
         &lbmc_dissect_lbmpdm);
     lbm_stream_init();
     lbmc_message_table = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
+
+    register_seq_analysis("lbm_uim", "UIM Flows", proto_lbmc, "lbm_uim", TL_REQUIRES_COLUMNS, lbm_uim_seq_analysis_packet);
+
+    lbmc_uim_tap_handle = register_tap("lbm_uim");
+    lbmc_stream_tap_handle = register_tap("lbm_stream");
 }
 
 /* The registration hand-off routine */
 void proto_reg_handoff_lbmc(void)
 {
-    lbmc_uim_tap_handle = register_tap("lbm_uim");
-    lbmc_stream_tap_handle = register_tap("lbm_stream");
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

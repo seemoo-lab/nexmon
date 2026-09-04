@@ -31,7 +31,7 @@ msgstr ""
 "schwarz"
 EOF
 
-cat <<EOF > mm-u-1.pot
+cat <<\EOF > mm-u-1.pot
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.

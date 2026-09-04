@@ -1,32 +1,22 @@
 /* packet-lppe.c
  * Routines for LPP Extensions (LLPe) packet dissection
- * Copyright 2012-2014, Pascal Quantin <pascal.quantin@gmail.com>
+ * Copyright 2012-2021, Pascal Quantin <pascal@wireshark.org>
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Ref Open Mobile Alliance OMA-TS-LPPe V1_1-20140108-C
+ * Ref Open Mobile Alliance OMA-TS-LPPe-V1_0-20200630-D
+ * https://gitlab.com/wireshark/wireshark/uploads/e1059f6dc0fc9e3b875b37a9732df39a/OMA-TS-LPPe-V1_0-20200630-D.doc
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/asn1.h>
+#include <wsutil/array.h>
 
 #include "packet-per.h"
 #include "packet-lpp.h"
@@ -44,12 +34,15 @@ void proto_register_lppe(void);
 void proto_reg_handoff_lppe(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_lppe = -1;
+static int proto_lppe;
+
+static dissector_handle_t xml_handle;
 
 #include "packet-lppe-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_lppe = -1;
+static int ett_lppe;
+static int ett_lppe_civicLocation;
 #include "packet-lppe-ett.c"
 
 /* Include constants */
@@ -69,8 +62,9 @@ void proto_register_lppe(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
 	  &ett_lppe,
+      &ett_lppe_civicLocation,
 #include "packet-lppe-ettarr.c"
   };
 
@@ -91,7 +85,7 @@ void proto_register_lppe(void) {
 void
 proto_reg_handoff_lppe(void)
 {
-
+  xml_handle = find_dissector_add_dependency("xml", proto_lppe);
 }
 
 

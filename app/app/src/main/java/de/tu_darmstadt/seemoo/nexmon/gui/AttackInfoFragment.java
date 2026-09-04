@@ -150,7 +150,10 @@ public class AttackInfoFragment extends Fragment {
     public void onResume() {
         super.onResume();
         IntentFilter intentFilter = new IntentFilter("de.tu_darmstadt.seemoo.nexmon.ATTACK_GET");
-        MyApplication.getAppContext().registerReceiver(attackUpdateReceiver, intentFilter);
+        // Gate with the app signature-level permission so only this app can
+        // deliver to the receiver (see MyApplication.PERMISSION_INTERNAL_BROADCAST).
+        MyApplication.getAppContext().registerReceiver(attackUpdateReceiver, intentFilter,
+                MyApplication.PERMISSION_INTERNAL_BROADCAST, null);
 
         Intent intent = new Intent("de.tu_darmstadt.seemoo.nexmon.ATTACK_INFO_UPDATE");
         intent.putExtra(Attack.ATTACK_ID, attack.getGuid());

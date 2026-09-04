@@ -9,7 +9,7 @@
 NegotiationToken
 
 #.FN_BODY NegotiationToken/negTokenInit
-  gboolean is_response = actx->pinfo->ptype == PT_TCP &&
+  bool is_response = actx->pinfo->ptype == PT_TCP &&
                          actx->pinfo->srcport < 1024;
 
   /*
@@ -51,7 +51,7 @@ NegotiationToken
   if (!saw_mechanism) {
     if (value)
       next_level_value = value;
-    saw_mechanism = TRUE;
+    saw_mechanism = true;
   }
 
 #.FN_BODY InnerContextToken
@@ -101,7 +101,7 @@ NegotiationToken
 
   conversation_t *conversation;
 
-  saw_mechanism = FALSE;
+  saw_mechanism = false;
 
 %(DEFAULT_BODY)s
 
@@ -135,7 +135,7 @@ NegotiationToken
 
   conversation_t *conversation;
 
-  saw_mechanism = FALSE;
+  saw_mechanism = false;
 
 %(DEFAULT_BODY)s
 
@@ -176,4 +176,73 @@ NegotiationToken
     }
   }
 
+
+#.FN_BODY NegTokenTarg/mechListMIC VAL_PTR = &mechListMIC_tvb
+
+  tvbuff_t *mechListMIC_tvb;
+
+
+%(DEFAULT_BODY)s
+
+
+  /*
+   * Now, we should be able to dispatch, if we've gotten a tvbuff for
+   * the token and we have information on how to dissect its contents.
+   * However, we should make sure that there is something in the
+   * response token ...
+   */
+  if (mechListMIC_tvb && (tvb_reported_length(mechListMIC_tvb) > 0) ){
+    gssapi_oid_value *value=next_level_value;
+
+    if(value){
+      call_dissector(value->handle, mechListMIC_tvb, actx->pinfo, tree);
+    }
+  }
+
+
+#.FN_BODY IAKERB-HEADER/target-realm
+
+  int8_t ber_class;
+  bool pc;
+  int32_t tag;
+
+  /*
+   * MIT Kerberos sends an IAKERB-HEADER like this:
+   *
+   * <30 2B A1 29 04 27 53 32 2D 57 32 30 31 32 2D 4C 34 2E 53 31 2D 57 32 30>
+   * 0  43: SEQUENCE {
+   * <A1 29 04 27 53 32 2D 57 32 30 31 32 2D 4C 34 2E 53 31 2D 57 32 30 31 32>
+   * 2  41:   [1] {
+   * <04 27 53 32 2D 57 32 30 31 32 2D 4C 34 2E 53 31 2D 57 32 30 31 32 2D 4C>
+   * 4  39:     OCTET STRING 'S2-W2012-L4.S1-W2012-L4.W2012R2-L4.BASE'
+   *    :     }
+   *    :   }
+   */
+
+  get_ber_identifier(tvb, offset, &ber_class, &pc, &tag);
+  if (ber_class == BER_CLASS_UNI && pc == false && tag == BER_UNI_TAG_OCTETSTRING) {
+     proto_tree_add_text_internal(tree, tvb, offset, 1,
+                                  "target-realm encoded as OCTET STRING: MIT Kerberos?");
+     offset = dissect_ber_restricted_string(implicit_tag, BER_UNI_TAG_OCTETSTRING,
+                                            actx, tree, tvb, offset, hf_index,
+                                            NULL);
+  } else {
+     offset = dissect_ber_restricted_string(implicit_tag, BER_UNI_TAG_UTF8String,
+                                            actx, tree, tvb, offset, hf_index,
+                                            NULL);
+  }
+
 #.END
+
+#
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
+#
+# Local variables:
+# c-basic-offset: 2
+# tab-width: 8
+# indent-tabs-mode: nil
+# End:
+#
+# vi: set shiftwidth=2 tabstop=8 expandtab:
+# :indentSize=2:tabSize=8:noTabs=true:
+#

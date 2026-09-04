@@ -1,36 +1,25 @@
-/* exceptions.h
+/** @file
+ *
  * Wireshark's exceptions.
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __EXCEPTIONS_H__
 #define __EXCEPTIONS_H__
 
 #include "except.h"
+#include <wsutil/ws_assert.h>
 
 /* Wireshark has only one exception group, to make these macros simple */
 #define XCEPT_GROUP_WIRESHARK 1
 
 /**
-    Index is out of range.
-    An attempt was made to read past the end of a buffer.
+    Index is beyond the captured length of the tvbuff.
     This generally means that the capture was done with a "slice"
     length or "snapshot" length less than the maximum packet size,
     and a link-layer packet was cut short by that, so not all of the
@@ -39,28 +28,41 @@
 #define BoundsError		1
 
 /**
-    Index is beyond reported length (not cap_len)
-    An attempt was made to read past the logical end of a buffer. This
-    differs from a BoundsError in that the parent protocol established a
-    limit past which this dissector should not process in the buffer and that
-    limit was exceeded.
+    Index is beyond the contained length of the tvbuff.
+    This generally means that the tvbuff was constructed as
+    a subset of a parent tvbuff, based on a length specified
+    by data in the packet, but the length in question runs
+    past the reported length of the data in the parent tvbuff.
+    That means that the packet is invalid, as the data indicating
+    the length says the length exceeds what's contained in the
+    packet.  It is therefore currently reported as a "Malformed
+    packet".
+**/
+#define ContainedBoundsError	2
+
+/**
+    Index is beyond the reported length of the tvbuff.
     This generally means that the packet is invalid, i.e. whatever
     code constructed the packet and put it on the wire didn't put enough
     data into it.  It is therefore currently reported as a "Malformed
     packet".
 **/
-#define ReportedBoundsError	2
+#define ReportedBoundsError	3
 
 /**
-    Index is beyond fragment length but not reported length.
-    This means that the packet wasn't reassembled.
+    Index is beyond the contained length, and possibly the reported length,
+    of the tvbuff, but we believe it is an unreassembled fragment, either
+    because the "this is an unreassembled fragment" flag or pinfo->fragmented
+    is set.  This means that the packet wasn't reassembled, but could possibly
+    be correctly dissected if reassembly preferences were changed.  It is
+    therefore not reported as a "Malformed packet".
 **/
-#define FragmentBoundsError	3
+#define FragmentBoundsError	4
 
 /**
     During dfilter parsing
 **/
-#define TypeError		4
+#define TypeError		5
 
 /**
     A bug was detected in a dissector.
@@ -71,7 +73,7 @@
 
     Instead, use the DISSECTOR_ASSERT(), etc. macros in epan/proto.h.
 **/
-#define DissectorError		5
+#define DissectorError		6
 
 /**
     Index is out of range.
@@ -82,13 +84,13 @@
     to get the "size" of lun list back after which the initiator will
     reissue the command with an allocation_length that is big enough.
 **/
-#define ScsiBoundsError		6
+#define ScsiBoundsError		7
 
 /**
     Running out of memory.
     A dissector tried to allocate memory but that failed.
 **/
-#define OutOfMemoryError	7
+#define OutOfMemoryError	8
 
 /**
     The reassembly state machine was passed a bad fragment offset,
@@ -97,7 +99,7 @@
     contains a bad fragment offset, the dissector shouldn't have to figure
     that out by itself since that's what the reassembly machine is for.
 **/
-#define ReassemblyError         8
+#define ReassemblyError         9
 
 /*
  * Catch errors that, if you're calling a subdissector and catching
@@ -123,14 +125,14 @@
  * separately.
  */
 #define CATCH_NONFATAL_ERRORS \
-	CATCH3(ReportedBoundsError, ScsiBoundsError, ReassemblyError)
+	CATCH4(ReportedBoundsError, ContainedBoundsError, ScsiBoundsError, ReassemblyError)
 
 /*
  * Catch all bounds-checking errors.
  */
 #define CATCH_BOUNDS_ERRORS \
-	CATCH4(BoundsError, FragmentBoundsError, ReportedBoundsError, \
-	       ScsiBoundsError)
+	CATCH5(BoundsError, FragmentBoundsError, ReportedBoundsError, \
+	       ContainedBoundsError, ScsiBoundsError)
 
 /*
  * Catch all bounds-checking errors, and catch dissector bugs.
@@ -138,8 +140,9 @@
  * go all the way to the top level and get reported immediately.
  */
 #define CATCH_BOUNDS_AND_DISSECTOR_ERRORS \
-	CATCH6(BoundsError, FragmentBoundsError, ReportedBoundsError, \
-	       ScsiBoundsError, DissectorError, ReassemblyError)
+	CATCH7(BoundsError, FragmentBoundsError, ContainedBoundsError, \
+	       ReportedBoundsError, ScsiBoundsError, DissectorError, \
+	       ReassemblyError)
 
 /* Usage:
  *
@@ -168,6 +171,10 @@
  * }
  *
  * CATCH6(exception1, exception2, exception3, exception4, exception5, exception6) {
+ * 	code;
+ * }
+ *
+ * CATCH7(exception1, exception2, exception3, exception4, exception5, exception6, exception7) {
  * 	code;
  * }
  *
@@ -200,29 +207,29 @@
  * This is really something like:
  *
  * {
- * 	caught = FALSE:
+ * 	caught = false:
  * 	x = setjmp();
  * 	if (x == 0) {
  * 		<TRY code>
  * 	}
  * 	if (!caught && x == 1) {
- * 		caught = TRUE;
+ * 		caught = true;
  * 		<CATCH(1) code>
  * 	}
  * 	if (!caught && x == 2) {
- * 		caught = TRUE;
+ * 		caught = true;
  * 		<CATCH(2) code>
  * 	}
  * 	if (!caught && (x == 3 || x == 4)) {
- * 		caught = TRUE;
+ * 		caught = true;
  * 		<CATCH2(3,4) code>
  * 	}
  * 	if (!caught && (x == 5 || x == 6 || x == 7)) {
- * 		caught = TRUE;
+ * 		caught = true;
  * 		<CATCH3(5,6,7) code>
  * 	}
  * 	if (!caught && x != 0) {
- *		caught = TRUE;
+ *		caught = true;
  * 		<CATCH_ALL code>
  * 	}
  * 	<FINALLY code>
@@ -278,8 +285,8 @@
 		{ XCEPT_GROUP_WIRESHARK, XCEPT_CODE_ANY } }; \
 	except_try_push(catch_spec, 1, &exc); \
 	                                               \
-    	if(except_state & EXCEPT_CAUGHT)               \
-            except_state |= EXCEPT_RETHROWN;           \
+	if(except_state & EXCEPT_CAUGHT)               \
+	    except_state |= EXCEPT_RETHROWN;           \
 	except_state &= ~EXCEPT_CAUGHT;                \
 	                                               \
 	if (except_state == 0 && exc == 0)             \
@@ -347,6 +354,18 @@
 	    (except_state|=EXCEPT_CAUGHT)) \
 		/* user's code goes here */
 
+#define CATCH7(t,u,v,w,x,y,z) \
+	if (except_state == 0 && exc != 0 && \
+	    (exc->except_id.except_code == (t) || \
+	     exc->except_id.except_code == (u) || \
+	     exc->except_id.except_code == (v) || \
+	     exc->except_id.except_code == (w) || \
+	     exc->except_id.except_code == (x) || \
+	     exc->except_id.except_code == (y) || \
+	     exc->except_id.except_code == (z)) && \
+	    (except_state|=EXCEPT_CAUGHT)) \
+		/* user's code goes here */
+
 #define CATCH_ALL \
 	if (except_state == 0 && exc != 0 && \
 	    (except_state|=EXCEPT_CAUGHT)) \
@@ -376,15 +395,19 @@
 #define THROW_FORMATTED(x, ...) \
 	except_throwf(XCEPT_GROUP_WIRESHARK, (x), __VA_ARGS__)
 
+/* Like THROW_FORMATTED, but takes a va_list as an argument */
+#define VTHROW_FORMATTED(x, format, args) \
+	except_vthrowf(XCEPT_GROUP_WIRESHARK, (x), format, args)
+
 #define GET_MESSAGE			except_message(exc)
 
 #define RETHROW                                     \
-    {                                               \
-        /* check we're in a catch block */          \
-        g_assert(except_state == EXCEPT_CAUGHT);    \
+{                                                   \
+	/* check we're in a catch block */          \
+	ws_assert(except_state == EXCEPT_CAUGHT);    \
 	/* we can't use except_rethrow here, as that pops a catch block \
 	 * off the stack, and we don't want to do that, because we want to \
-	 * excecute the FINALLY {} block first.     \
+	 * execute the FINALLY {} block first.     \
 	 * except_throw doesn't provide an interface to rethrow an existing \
 	 * exception; however, longjmping back to except_try_push() has the \
 	 * desired effect.			    \
@@ -394,8 +417,8 @@
 	 * about with except_state in here would indicate that THROW is \
 	 * doing the wrong thing.                   \
 	 */					    \
-        longjmp(except_ch.except_jmp,1);            \
-    }
+	longjmp(except_ch.except_jmp,1);            \
+}
 
 #define EXCEPT_CODE			except_code(exc)
 
@@ -474,3 +497,16 @@
 
 
 #endif /* __EXCEPTIONS_H__ */
+
+/*
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
+ *
+ * Local variables:
+ * c-basic-offset: 8
+ * tab-width: 8
+ * indent-tabs-mode: t
+ * End:
+ *
+ * vi: set shiftwidth=8 tabstop=8 noexpandtab:
+ * :indentSize=8:tabSize=8:noTabs=false:
+ */

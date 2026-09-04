@@ -1,0 +1,12 @@
+test/valid/dtds/cond_sect2.dtd:15: parser error : Parameter entity must match extSubsetDecl
+    %ent;
+         ^
+Entity: line 1: 
+]]>
+^
+test/valid/dtds/cond_sect2.dtd:15: parser error : Content error in the external subset
+    %ent;
+         ^
+Entity: line 1: 
+]]>
+^

@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,40 +18,40 @@ void proto_register_clique_rm(void);
 void proto_reg_handoff_clique_rm(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_clique_rm = -1;
+static int proto_clique_rm;
 
-static int hf_clique_rm_version = -1;
-static int hf_clique_rm_type = -1;
-static int hf_clique_rm_sender = -1;
-static int hf_clique_rm_packet_id = -1;
-static int hf_clique_rm_depends = -1;
-static int hf_clique_rm_depend_sender = -1;
-static int hf_clique_rm_depend_packet_id = -1;
-static int hf_clique_rm_failures = -1;
-static int hf_clique_rm_failures_senders = -1;
-static int hf_clique_rm_attempt_join = -1;
-static int hf_clique_rm_attempt_join_senders = -1;
-static int hf_clique_rm_join_failures = -1;
-static int hf_clique_rm_join_failures_senders = -1;
-static int hf_clique_rm_data_flags = -1;
-static int hf_clique_rm_data_size = -1;
-static int hf_clique_rm_data_stream_id = -1;
-static int hf_clique_rm_data_data = -1;
-static int hf_clique_rm_whois_request_id = -1;
-static int hf_clique_rm_whois_reply_name = -1;
-static int hf_clique_rm_whois_reply_name_length = -1;
-static int hf_clique_rm_repair_request_sender_id = -1;
-static int hf_clique_rm_repair_request_packet_id = -1;
+static int hf_clique_rm_version;
+static int hf_clique_rm_type;
+static int hf_clique_rm_sender;
+static int hf_clique_rm_packet_id;
+static int hf_clique_rm_depends;
+static int hf_clique_rm_depend_sender;
+static int hf_clique_rm_depend_packet_id;
+static int hf_clique_rm_failures;
+static int hf_clique_rm_failures_senders;
+static int hf_clique_rm_attempt_join;
+static int hf_clique_rm_attempt_join_senders;
+static int hf_clique_rm_join_failures;
+static int hf_clique_rm_join_failures_senders;
+static int hf_clique_rm_data_flags;
+static int hf_clique_rm_data_size;
+static int hf_clique_rm_data_stream_id;
+static int hf_clique_rm_data_data;
+static int hf_clique_rm_whois_request_id;
+static int hf_clique_rm_whois_reply_name;
+static int hf_clique_rm_whois_reply_name_length;
+static int hf_clique_rm_repair_request_sender_id;
+static int hf_clique_rm_repair_request_packet_id;
 
 /* Initialize the subtree pointers */
-static gint ett_clique_rm = -1;
-static gint ett_clique_rm_data = -1;
-static gint ett_clique_rm_depends = -1;
-static gint ett_clique_rm_depends_item = -1;
-static gint ett_clique_rm_failures = -1;
-static gint ett_clique_rm_join_failures = -1;
-static gint ett_clique_rm_attempt_join = -1;
-static gint ett_clique_rm_join = -1;
+static int ett_clique_rm;
+static int ett_clique_rm_data;
+static int ett_clique_rm_depends;
+static int ett_clique_rm_depends_item;
+static int ett_clique_rm_failures;
+static int ett_clique_rm_join_failures;
+static int ett_clique_rm_attempt_join;
+static int ett_clique_rm_join;
 
 /* Packet types */
 typedef enum {
@@ -111,16 +99,16 @@ static const value_string packet_type_vals[] = {
 };
 
 static void
-dissect_sender_array(proto_tree *clique_rm_tree, int hf_header, gint ett_header,
+dissect_sender_array(proto_tree *clique_rm_tree, int hf_header, int ett_header,
     int hf_header_sender, tvbuff_t *tvb, int offset)
 {
-  guint       i, count;
+  unsigned    i, count;
   int         len;
   proto_item *ti;
   proto_tree *tree;
 
 
-  count = tvb_get_guint8(tvb, offset);
+  count = tvb_get_uint8(tvb, offset);
   len   = 1 + 4 * count;
   ti    = proto_tree_add_item(clique_rm_tree, hf_header, tvb, offset, 1, ENC_BIG_ENDIAN);
   proto_item_set_len(ti, len);
@@ -157,10 +145,10 @@ dissect_depends(proto_tree *clique_rm_tree, tvbuff_t *tvb, int offset)
 {
   proto_item *ti;
   proto_tree *tree, *depend_tree;
-  guint       ii, count;
+  unsigned    ii, count;
   int         len;
 
-  count = tvb_get_guint8(tvb, offset);
+  count = tvb_get_uint8(tvb, offset);
   len   = 1 + count * 8;
 
   ti = proto_tree_add_item(clique_rm_tree,
@@ -186,7 +174,7 @@ dissect_depends(proto_tree *clique_rm_tree, tvbuff_t *tvb, int offset)
 
 /* Code to actually dissect the packets */
 static void
-dissect_reliable_packet(proto_tree *clique_rm_tree, guint8 type, tvbuff_t *tvb, int offset)
+dissect_reliable_packet(proto_tree *clique_rm_tree, uint8_t type, tvbuff_t *tvb, int offset)
 {
   if (!clique_rm_tree)
     return; /* no col_..() or expert...() calls in following */
@@ -224,9 +212,9 @@ dissect_reliable_packet(proto_tree *clique_rm_tree, guint8 type, tvbuff_t *tvb, 
 }
 
 static void
-dissect_unreliable_packet(proto_tree *clique_rm_tree, guint8 type, tvbuff_t *tvb, int offset)
+dissect_unreliable_packet(proto_tree *clique_rm_tree, uint8_t type, tvbuff_t *tvb, int offset)
 {
-  guint len;
+  unsigned len;
 
   if (!clique_rm_tree)
     return; /* no col_..() or expert...() calls in following */
@@ -238,12 +226,12 @@ dissect_unreliable_packet(proto_tree *clique_rm_tree, guint8 type, tvbuff_t *tvb
           hf_clique_rm_whois_request_id, tvb, offset, 4, ENC_BIG_ENDIAN);
         break;
       case PACKET_TYPE_WHOIS_REPLY:
-        len = tvb_get_guint8(tvb, offset);
+        len = tvb_get_uint8(tvb, offset);
         proto_tree_add_item(clique_rm_tree,
           hf_clique_rm_whois_reply_name_length, tvb, offset, 1, ENC_BIG_ENDIAN);
         offset += 1;
         proto_tree_add_item(clique_rm_tree,
-          hf_clique_rm_whois_reply_name, tvb, offset, len, ENC_ASCII|ENC_NA);
+          hf_clique_rm_whois_reply_name, tvb, offset, len, ENC_ASCII);
         break;
       case PACKET_TYPE_REPAIR_REQUEST:
         proto_tree_add_item(clique_rm_tree,
@@ -262,36 +250,36 @@ dissect_unreliable_packet(proto_tree *clique_rm_tree, guint8 type, tvbuff_t *tvb
 }
 
 
-static gboolean
-dissect_clique_rm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool
+dissect_clique_rm_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
   proto_item *ti;
   proto_tree *clique_rm_tree;
-  guint8      version;
-  guint8      type;
+  uint8_t     version;
+  uint8_t     type;
   int         offset = 0;
-  guint64     qword;
+  uint64_t    qword;
 
   if (tvb_captured_length(tvb) < 12)
-    return FALSE;
+    return false;
 
   qword = tvb_get_ntoh48(tvb,0);
   /* ASCII str for 'Clique' = 0x436c69717565 */
-  if(qword != G_GUINT64_CONSTANT (0x436c69717565))
-    return FALSE;
+  if(qword != UINT64_C (0x436c69717565))
+    return false;
   offset += 6;
 
-  version = tvb_get_guint8(tvb, offset);
+  version = tvb_get_uint8(tvb, offset);
   if (version != 1)
-    return FALSE;
+    return false;
   offset++;
 
-  type = tvb_get_guint8(tvb, offset);
+  type = tvb_get_uint8(tvb, offset);
   offset++;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "Clique-rm");
-  col_add_fstr(pinfo->cinfo, COL_INFO, "%s",
-               val_to_str(type, packet_type_vals, "Unknown (0x%02x)"));
+  col_add_str(pinfo->cinfo, COL_INFO,
+               val_to_str(pinfo->pool, type, packet_type_vals, "Unknown (0x%02x)"));
 
   /* rewind back to just behind the prefix */
   offset = 6;
@@ -323,7 +311,7 @@ dissect_clique_rm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     dissect_unreliable_packet(clique_rm_tree, type, tvb, offset);
   }
 
-  return TRUE;
+  return true;
 }
 
 
@@ -450,7 +438,7 @@ proto_register_clique_rm(void)
   };
 
 /* Setup protocol subtree array */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_clique_rm,
     &ett_clique_rm_depends,
     &ett_clique_rm_depends_item,
@@ -462,8 +450,7 @@ proto_register_clique_rm(void)
   };
 
 /* Register the protocol name and description */
-  proto_clique_rm = proto_register_protocol(
-    "Clique Reliable Multicast Protocol", "Clique-rm", "clique-rm");
+  proto_clique_rm = proto_register_protocol("Clique Reliable Multicast Protocol", "Clique-rm", "clique-rm");
 
 /* Required function calls to register the header fields and subtrees used */
   proto_register_field_array(proto_clique_rm, hf, array_length(hf));
@@ -474,11 +461,11 @@ proto_register_clique_rm(void)
 void
 proto_reg_handoff_clique_rm(void)
 {
-  heur_dissector_add("udp", dissect_clique_rm, "Clique RM over UDP", "clique_rm_udp", proto_clique_rm, HEURISTIC_ENABLE);
+  heur_dissector_add("udp", dissect_clique_rm_heur, "Clique RM over UDP", "clique_rm_udp", proto_clique_rm, HEURISTIC_ENABLE);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

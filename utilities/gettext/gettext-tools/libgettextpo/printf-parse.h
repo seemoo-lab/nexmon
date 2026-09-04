@@ -1,19 +1,19 @@
 /* Parse printf format string.
-   Copyright (C) 1999, 2002-2003, 2005, 2007, 2010-2016 Free Software
+   Copyright (C) 1999, 2002-2003, 2005, 2007, 2010-2026 Free Software
    Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License along
-   with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef _PRINTF_PARSE_H
 #define _PRINTF_PARSE_H
@@ -61,7 +61,7 @@ typedef struct
   const char* precision_start;
   const char* precision_end;
   size_t precision_arg_index;
-  char conversion; /* d i o u x X f F e E g G a A c s p n U % but not C S */
+  char conversion; /* d i b B o u x X f F e E g G a A c s p n U % but not C S */
   size_t arg_index;
 }
 char_directive;
@@ -91,7 +91,7 @@ typedef struct
   const uint8_t* precision_start;
   const uint8_t* precision_end;
   size_t precision_arg_index;
-  uint8_t conversion; /* d i o u x X f F e E g G a A c s p n U % but not C S */
+  uint8_t conversion; /* d i b B o u x X f F e E g G a A c s p n U % but not C S */
   size_t arg_index;
 }
 u8_directive;
@@ -119,7 +119,7 @@ typedef struct
   const uint16_t* precision_start;
   const uint16_t* precision_end;
   size_t precision_arg_index;
-  uint16_t conversion; /* d i o u x X f F e E g G a A c s p n U % but not C S */
+  uint16_t conversion; /* d i b B o u x X f F e E g G a A c s p n U % but not C S */
   size_t arg_index;
 }
 u16_directive;
@@ -147,7 +147,7 @@ typedef struct
   const uint32_t* precision_start;
   const uint32_t* precision_end;
   size_t precision_arg_index;
-  uint32_t conversion; /* d i o u x X f F e E g G a A c s p n U % but not C S */
+  uint32_t conversion; /* d i b B o u x X f F e E g G a A c s p n U % but not C S */
   size_t arg_index;
 }
 u32_directive;

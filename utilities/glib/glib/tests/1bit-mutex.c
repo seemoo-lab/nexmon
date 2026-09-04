@@ -2,10 +2,12 @@
  * Copyright © 2008 Ryan Lortie
  * Copyright © 2010 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * See the included COPYING file for more information.
  */
@@ -39,15 +41,22 @@
      defining our own version of the g_bit_*lock symbols
    */
   #undef g_pointer_bit_lock
+  #undef g_pointer_bit_lock_and_get
   #undef g_pointer_bit_trylock
   #undef g_pointer_bit_unlock
+  #undef g_pointer_bit_unlock_and_set
 
-  #define g_bit_lock            _emufutex_g_bit_lock
-  #define g_bit_trylock         _emufutex_g_bit_trylock
-  #define g_bit_unlock          _emufutex_g_bit_unlock
-  #define g_pointer_bit_lock    _emufutex_g_pointer_bit_lock
-  #define g_pointer_bit_trylock _emufutex_g_pointer_bit_trylock
-  #define g_pointer_bit_unlock  _emufutex_g_pointer_bit_unlock
+  #define g_bit_lock                    _emufutex_g_bit_lock
+  #define g_bit_lock_and_get            _emufutex_g_bit_lock_and_get
+  #define g_bit_trylock                 _emufutex_g_bit_trylock
+  #define g_bit_unlock                  _emufutex_g_bit_unlock
+  #define g_bit_unlock_and_set          _emufutex_g_bit_unlock_and_set
+  #define g_pointer_bit_lock            _emufutex_g_pointer_bit_lock
+  #define g_pointer_bit_lock_and_get    _emufutex_g_pointer_bit_lock_and_get
+  #define g_pointer_bit_trylock         _emufutex_g_pointer_bit_trylock
+  #define g_pointer_bit_unlock          _emufutex_g_pointer_bit_unlock
+  #define g_pointer_bit_lock_mask_ptr   _emufutex_g_pointer_bit_lock_mask_ptr
+  #define g_pointer_bit_unlock_and_set  _emufutex_g_pointer_bit_unlock_and_set
 
   #define G_BIT_LOCK_FORCE_FUTEX_EMULATION
 
@@ -129,7 +138,7 @@ testcase (gconstpointer data)
   #define SUFFIX "-emufutex"
 
   /* ensure that we are using the emulated futex by checking
-   * (at compile-time) for the existance of 'g_futex_address_list'
+   * (at compile-time) for the existence of 'g_futex_address_list'
    */
   g_assert (g_futex_address_list == NULL);
 #else

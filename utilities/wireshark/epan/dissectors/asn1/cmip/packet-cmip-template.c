@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,7 +15,8 @@
 #include <epan/expert.h>
 #include <epan/oids.h>
 #include <epan/asn1.h>
-
+#include <epan/proto_data.h>
+#include <wsutil/array.h>
 #include "packet-ber.h"
 #include "packet-acse.h"
 #include "packet-x509if.h"
@@ -45,26 +34,23 @@ void proto_reg_handoff_cmip(void);
 #include "packet-pres.h"
 
 /* Initialize the protocol and registered fields */
-static int proto_cmip = -1;
-static int hf_cmip_actionType_OID = -1;
-static int hf_cmip_eventType_OID = -1;
-static int hf_cmip_attributeId_OID = -1;
-static int hf_cmip_errorId_OID = -1;
-static int hf_DiscriminatorConstruct = -1;
-static int hf_Destination = -1;
-static int hf_NameBinding = -1;
-static int hf_ObjectClass = -1;
+static int proto_cmip;
+static int hf_cmip_actionType_OID;
+static int hf_cmip_eventType_OID;
+static int hf_cmip_attributeId_OID;
+static int hf_cmip_errorId_OID;
+
 #include "packet-cmip-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_cmip = -1;
+static int ett_cmip;
 #include "packet-cmip-ett.c"
 
-static expert_field ei_wrong_spdu_type = EI_INIT;
+static expert_field ei_wrong_spdu_type;
 
-static guint32 opcode;
+static uint32_t opcode;
 
-static dissector_handle_t cmip_handle = NULL;
+static dissector_handle_t cmip_handle;
 
 /* Dissector table */
 static dissector_table_t attribute_id_dissector_table;
@@ -93,7 +79,7 @@ dissect_cmip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 	proto_item *item;
 	proto_tree *tree;
 	asn1_ctx_t asn1_ctx;
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
 	/* Reject the packet if data is NULL */
 	if (data == NULL)
@@ -119,13 +105,13 @@ dissect_cmip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 		case SES_DISCONNECT:
 		case SES_FINISH:
 		case SES_REFUSE:
-			dissect_cmip_CMIPUserInfo(FALSE,tvb,0,&asn1_ctx,tree,-1);
+			dissect_cmip_CMIPUserInfo(false,tvb,0,&asn1_ctx,tree,-1);
 			break;
 		case SES_ABORT:
-			dissect_cmip_CMIPAbortInfo(FALSE,tvb,0,&asn1_ctx,tree,-1);
+			dissect_cmip_CMIPAbortInfo(false,tvb,0,&asn1_ctx,tree,-1);
 			break;
 		case SES_DATA_TRANSFER:
-			dissect_cmip_ROS(FALSE,tvb,0,&asn1_ctx,tree,-1);
+			dissect_cmip_ROS(false,tvb,0,&asn1_ctx,tree,-1);
 			break;
 		default:
 			;
@@ -155,28 +141,12 @@ void proto_register_cmip(void) {
       { "errorId", "cmip.errorId_OID",
         FT_STRING, BASE_NONE, NULL, 0,
         NULL, HFILL }},
-   { &hf_DiscriminatorConstruct,
-      { "DiscriminatorConstruct", "cmip.DiscriminatorConstruct",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
-    { &hf_Destination,
-      { "Destination", "cmip.Destination",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        NULL, HFILL }},
-    { &hf_NameBinding,
-      { "NameBinding", "cmip.NameBinding",
-        FT_STRING, BASE_NONE, NULL, 0,
-        NULL, HFILL }},
-    { &hf_ObjectClass,
-      { "ObjectClass", "cmip.ObjectClass",
-        FT_UINT32, BASE_DEC, VALS(cmip_ObjectClass_vals), 0,
-        NULL, HFILL }},
 
 #include "packet-cmip-hfarr.c"
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_cmip,
 #include "packet-cmip-ettarr.c"
   };
@@ -198,7 +168,6 @@ void proto_register_cmip(void) {
   expert_register_field_array(expert_cmip, ei, array_length(ei));
 
 #include "packet-cmip-dis-tab.c"
-    oid_add_from_string("discriminatorId(1)","2.9.3.2.7.1");
 
   attribute_id_dissector_table = register_dissector_table("cmip.attribute_id", "CMIP Attribute Id", proto_cmip, FT_UINT32, BASE_DEC);
 
@@ -210,22 +179,21 @@ void proto_reg_handoff_cmip(void) {
 	register_ber_oid_dissector_handle("2.9.0.0.2", cmip_handle, proto_cmip, "cmip");
 	register_ber_oid_dissector_handle("2.9.1.1.4", cmip_handle, proto_cmip, "joint-iso-itu-t(2) ms(9) cmip(1) cmip-pci(1) abstractSyntax(4)");
 
-	oid_add_from_string("2.9.3.2.3.1","managedObjectClass(3) alarmRecord(1)");
-	oid_add_from_string("2.9.3.2.3.2","managedObjectClass(3) attributeValueChangeRecord(2)");
-	oid_add_from_string("2.9.3.2.3.3","managedObjectClass(3) discriminator(3)");
-	oid_add_from_string("2.9.3.2.3.4","managedObjectClass(3) eventForwardingDiscriminator(4)");
-	oid_add_from_string("2.9.3.2.3.5","managedObjectClass(3) eventLogRecord(5)");
-	oid_add_from_string("2.9.3.2.3.6","managedObjectClass(3) log(6)");
-	oid_add_from_string("2.9.3.2.3.7","managedObjectClass(3) logRecord(7)");
-	oid_add_from_string("2.9.3.2.3.8","managedObjectClass(3) objectCreationRecord(8)");
-	oid_add_from_string("2.9.3.2.3.9","managedObjectClass(3) objectDeletionRecord(9)");
-	oid_add_from_string("2.9.3.2.3.10","managedObjectClass(3) relationshipChangeRecord(10)");
-	oid_add_from_string("2.9.3.2.3.11","managedObjectClass(3) securityAlarmReportRecord(11)");
-	oid_add_from_string("2.9.3.2.3.12","managedObjectClass(3) stateChangeRecord(12)");
-	oid_add_from_string("2.9.3.2.3.13","managedObjectClass(3) system(13)");
-	oid_add_from_string("2.9.3.2.3.14","managedObjectClass(3) top(14)");
-	oid_add_from_string("2.9.3.2.4.14","administrativeStatePackage(14)");
-	oid_add_from_string("2.9.1.1.4","joint-iso-itu-t(2) ms(9) cmip(1) cmip-pci(1) abstractSyntax(4)");
+	oid_add_from_string("managedObjectClass(3) alarmRecord(1)", "2.9.3.2.3.1");
+	oid_add_from_string("managedObjectClass(3) attributeValueChangeRecord(2)", "2.9.3.2.3.2");
+	oid_add_from_string("managedObjectClass(3) discriminator(3)", "2.9.3.2.3.3");
+	oid_add_from_string("managedObjectClass(3) eventForwardingDiscriminator(4)", "2.9.3.2.3.4");
+	oid_add_from_string("managedObjectClass(3) eventLogRecord(5)", "2.9.3.2.3.5");
+	oid_add_from_string("managedObjectClass(3) log(6)", "2.9.3.2.3.6");
+	oid_add_from_string("managedObjectClass(3) logRecord(7)", "2.9.3.2.3.7");
+	oid_add_from_string("managedObjectClass(3) objectCreationRecord(8)", "2.9.3.2.3.8");
+	oid_add_from_string("managedObjectClass(3) objectDeletionRecord(9)", "2.9.3.2.3.9");
+	oid_add_from_string("managedObjectClass(3) relationshipChangeRecord(10)", "2.9.3.2.3.10");
+	oid_add_from_string("managedObjectClass(3) securityAlarmReportRecord(11)", "2.9.3.2.3.11");
+	oid_add_from_string("managedObjectClass(3) stateChangeRecord(12)", "2.9.3.2.3.12");
+	oid_add_from_string("managedObjectClass(3) system(13)", "2.9.3.2.3.13");
+	oid_add_from_string("managedObjectClass(3) top(14)", "2.9.3.2.3.14");
+	oid_add_from_string("administrativeStatePackage(14)", "2.9.3.2.4.14");
 
 /*#include "packet-cmip-dis-tab.c" */
 }

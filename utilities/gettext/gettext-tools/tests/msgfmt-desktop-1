@@ -10,6 +10,8 @@ Name =Foo
 Comment[foo]=Already translated comment
 Comment= \sThis is a \nmultiline comment; for testing
 Keywords=Keyword1;Keyword2;Key\;word3;
+Categories=
+NoDisplay=true
 EOF
 
 cat <<\EOF > fr.po
@@ -61,7 +63,11 @@ Comment[fr]=French \ncomment
 Comment=\sThis is a \nmultiline comment; for testing
 Keywords[fr]=one;two;thr\;ee;
 Keywords=Keyword1;Keyword2;Key\;word3;
+Categories=
+NoDisplay=true
 EOF
+
+: ${MSGFMT=msgfmt}
 
 # Sanity checks for contradicting options.
 
@@ -69,14 +75,15 @@ ${MSGFMT} --desktop --template=mf.desktop -l fr fr.po \
           >/dev/null 2>/dev/null \
   && Exit 1
 
-${MSGFMG} --desktop --template=mf.desktop fr.po -o mf.desktop.out \
+${MSGFMT} --desktop --template=mf.desktop fr.po -o mf.desktop.out \
           >/dev/null 2>/dev/null \
   && Exit 1
 
 # Proceed to the .desktop file generation.
 
-${MSGFMT} --desktop --template=mf.desktop -l fr fr.po -o mf.desktop.out \
+${MSGFMT} --desktop --template=mf.desktop -l fr fr.po -o mf.desktop.tmp \
   || Exit 1
+LC_ALL=C tr -d '\r' < mf.desktop.tmp > mf.desktop.out || Exit 1
 
 : ${DIFF=diff}
 ${DIFF} mf.desktop.ok mf.desktop.out

@@ -10,9 +10,6 @@ ALIGNED
 #.PDU
 HNBAP-PDU
 
-##.MAKE_DEFINES
-#ProcedureCode
-
 #.MAKE_ENUM
 ProtocolIE-ID
 ProcedureCode
@@ -34,6 +31,7 @@ ProtocolIE-Field/id protocol_ie_field_id
 PrivateIE-Field/id private_ie_field_id
 GeographicalLocation/geographicalCoordinates geographical_location_geographical_coordinates
 HNB-Location-Information/geographicalCoordinates hnb_location_information_geographical_coordinates
+MacroCoverageInformation/cellIdentity macroCellID
 
 #.OMIT_ASSIGNMENT
 Presence
@@ -48,7 +46,8 @@ AccessResult
 #.FN_PARS ProtocolIE-ID  VAL_PTR = &ProtocolIE_ID
 #.FN_FTR ProtocolIE-ID
   if (tree) {
-    proto_item_append_text(proto_item_get_parent_nth(actx->created_item, 2), ": %s", val_to_str(ProtocolIE_ID, VALS(hnbap_ProtocolIE_ID_vals), "unknown (%d)"));
+    proto_item_append_text(proto_item_get_parent_nth(actx->created_item, 2), ": %s",
+                           val_to_str(actx->pinfo->pool, ProtocolIE_ID, VALS(hnbap_ProtocolIE_ID_vals), "unknown (%d)"));
   }
 #.END
 
@@ -58,7 +57,7 @@ AccessResult
 
 #.FN_PARS  ProcedureCode  VAL_PTR = &ProcedureCode
 #.FN_FTR ProcedureCode
-  if (strcmp(val_to_str(ProcedureCode, hnbap_ProcedureCode_vals, "Unknown"), "Unknown") == 0) {
+  if (strcmp(val_to_str_const(ProcedureCode, hnbap_ProcedureCode_vals, "Unknown"), "Unknown") == 0) {
     col_set_str(actx->pinfo->cinfo, COL_INFO,
                       "Unknown Message");
   } /* Known Procedures should be included below and broken out as ELEMENTARY names to avoid confusion */
@@ -153,6 +152,71 @@ AccessResult
 
 #.END
 
+#.FN_BODY IMSI VAL_PTR = &parameter_tvb
+  tvbuff_t *parameter_tvb;
+%(DEFAULT_BODY)s
+  if (parameter_tvb) {
+    proto_tree *subtree = proto_item_add_subtree(actx->created_item, ett_hnbap_imsi);
+    dissect_e212_imsi(parameter_tvb, actx->pinfo, subtree, 0, tvb_reported_length(parameter_tvb), false);
+  }
+
+#.FN_BODY PLMNidentity VAL_PTR = &parameter_tvb
+  tvbuff_t *parameter_tvb;
+  struct hnbap_private_data *hnbap_data = hnbap_get_private_data(actx->pinfo);
+  e212_number_type_t number_type = hnbap_data->number_type;
+  hnbap_data->number_type = E212_NONE;
+%(DEFAULT_BODY)s
+  if (parameter_tvb) {
+    dissect_e212_mcc_mnc(parameter_tvb, actx->pinfo, tree, 0, number_type, false);
+  }
+#.END
+
+#.FN_BODY CGI
+  struct hnbap_private_data *hnbap_data = hnbap_get_private_data(actx->pinfo);
+  hnbap_data->number_type = E212_CGI;
+%(DEFAULT_BODY)s
+
+#.FN_BODY LAI
+  struct hnbap_private_data *hnbap_data = hnbap_get_private_data(actx->pinfo);
+  /* The RAI is defined in the ASN.1 as the LAI plus the RAC; don't override
+   * the MNC/MCC field types in that case.
+   */
+  if (hnbap_data->number_type != E212_RAI) {
+    hnbap_data->number_type = E212_LAI;
+  }
+%(DEFAULT_BODY)s
+
+#.TYPE_ATTR
+LAC TYPE = FT_UINT16 DISPLAY = BASE_DEC_HEX
+#.FN_BODY LAC VAL_PTR = &parameter_tvb HF_INDEX = -1
+  tvbuff_t *parameter_tvb = NULL;
+%(DEFAULT_BODY)s
+  if (parameter_tvb) {
+    actx->created_item = proto_tree_add_item(tree, hf_index, parameter_tvb, 0, 2, ENC_BIG_ENDIAN);
+  }
+
+#.FN_BODY RAI
+  struct hnbap_private_data *hnbap_data = hnbap_get_private_data(actx->pinfo);
+  hnbap_data->number_type = E212_RAI;
+%(DEFAULT_BODY)s
+
+#.TYPE_ATTR
+RAC TYPE = FT_UINT8 DISPLAY = BASE_DEC_HEX
+#.FN_BODY RAC VAL_PTR = &parameter_tvb HF_INDEX = -1
+  tvbuff_t *parameter_tvb = NULL;
+%(DEFAULT_BODY)s
+  if (parameter_tvb) {
+    actx->created_item = proto_tree_add_item(tree, hf_index, parameter_tvb, 0, 1, ENC_BIG_ENDIAN);
+  }
+
+#.TYPE_ATTR
+SAC TYPE = FT_UINT16 DISPLAY = BASE_DEC_HEX
+#.FN_BODY SAC VAL_PTR = &parameter_tvb HF_INDEX = -1
+  tvbuff_t *parameter_tvb = NULL;
+%(DEFAULT_BODY)s
+  if (parameter_tvb) {
+    actx->created_item = proto_tree_add_item(tree, hf_index, parameter_tvb, 0, 2, ENC_BIG_ENDIAN);
+  }
 
 #.ASSIGN_VALUE_TO_TYPE  # HNBAP ASN.1 does not have constants assigned to types
 # ProcedureCode

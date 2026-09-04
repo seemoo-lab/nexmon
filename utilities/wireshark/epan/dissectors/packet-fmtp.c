@@ -11,19 +11,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -34,12 +22,12 @@
 void proto_register_fmtp(void);
 void proto_reg_handoff_fmtp(void);
 
-static int proto_fmtp = -1;
-static int hf_fmtp_pdu_version = -1;
-static int hf_fmtp_pdu_reserved = -1;
-static int hf_fmtp_pdu_type = -1;
-static int hf_fmtp_pdu_length = -1;
-static gint ett_fmtp = -1;
+static int proto_fmtp;
+static int hf_fmtp_pdu_version;
+static int hf_fmtp_pdu_reserved;
+static int hf_fmtp_pdu_type;
+static int hf_fmtp_pdu_length;
+static int ett_fmtp;
 
 /* #define TCP_PORT_FMTP       8500 */
 #define FMTP_HEADER_LEN     5
@@ -71,13 +59,13 @@ static const value_string system_message_names[] = {
 static int
 dissect_fmtp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    guint8      packet_type;
-    guint16     packet_len;
+    uint8_t     packet_type;
+    uint16_t    packet_len;
     tvbuff_t   *next_tvb;
     proto_item *ti = NULL;
     proto_tree *fmtp_tree = NULL;
 
-    packet_type = tvb_get_guint8(tvb, 4);
+    packet_type = tvb_get_uint8(tvb, 4);
     packet_len  = tvb_get_ntohs(tvb, 2);
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "FMTP");
@@ -87,29 +75,29 @@ dissect_fmtp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 
     ti = proto_tree_add_item(tree, proto_fmtp, tvb, 0, -1, ENC_NA);
     proto_item_append_text(ti, ", %s",
-        val_to_str(packet_type, packet_type_names, "Unknown (0x%02x)"));
+        val_to_str(pinfo->pool, packet_type, packet_type_names, "Unknown (0x%02x)"));
 
     switch (packet_type) {
 
         case FMTP_TYP_IDENTIFICATION:
             proto_item_append_text(ti, " (%s)",
-                tvb_get_string_enc(wmem_packet_scope(), tvb, FMTP_HEADER_LEN, packet_len-FMTP_HEADER_LEN, ENC_ASCII));
+                tvb_get_string_enc(pinfo->pool, tvb, FMTP_HEADER_LEN, packet_len-FMTP_HEADER_LEN, ENC_ASCII));
             col_add_fstr(pinfo->cinfo, COL_INFO, "%s (%s)",
-                val_to_str(packet_type, packet_type_names, "Unknown (0x%02x)"),
-                tvb_get_string_enc(wmem_packet_scope(), tvb, FMTP_HEADER_LEN, packet_len-FMTP_HEADER_LEN, ENC_ASCII));
+                val_to_str(pinfo->pool, packet_type, packet_type_names, "Unknown (0x%02x)"),
+                tvb_get_string_enc(pinfo->pool, tvb, FMTP_HEADER_LEN, packet_len-FMTP_HEADER_LEN, ENC_ASCII));
             break;
 
         case FMTP_TYP_SYSTEM:
             proto_item_append_text(ti, " (%s)",
-                tvb_get_string_enc(wmem_packet_scope(), tvb, FMTP_HEADER_LEN, packet_len-FMTP_HEADER_LEN, ENC_ASCII));
+                tvb_get_string_enc(pinfo->pool, tvb, FMTP_HEADER_LEN, packet_len-FMTP_HEADER_LEN, ENC_ASCII));
             col_add_fstr(pinfo->cinfo, COL_INFO, "%s (%s)",
-                val_to_str(packet_type, packet_type_names, "Unknown (0x%02x)"),
-                val_to_str(tvb_get_ntohs(tvb, FMTP_HEADER_LEN), system_message_names, "Unknown (0x%02x)"));
+                val_to_str(pinfo->pool, packet_type, packet_type_names, "Unknown (0x%02x)"),
+                val_to_str(pinfo->pool, tvb_get_ntohs(tvb, FMTP_HEADER_LEN), system_message_names, "Unknown (0x%02x)"));
             break;
 
         default:
-            col_add_fstr(pinfo->cinfo, COL_INFO, "%s",
-                val_to_str(packet_type, packet_type_names, "Unknown (0x%02x)"));
+            col_add_str(pinfo->cinfo, COL_INFO,
+                val_to_str(pinfo->pool, packet_type, packet_type_names, "Unknown (0x%02x)"));
             break;
     }
     if (tree) { /* we are being asked for details */
@@ -126,36 +114,36 @@ dissect_fmtp_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
     return tvb_captured_length(tvb);
 }
 
-static guint
+static unsigned
 get_fmtp_message_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
-    return (guint)tvb_get_ntohs(tvb, offset+2);
+    return (unsigned)tvb_get_ntohs(tvb, offset+2);
 }
 
-static gboolean
+static bool
 dissect_fmtp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    guint16 length;
+    uint16_t length;
 
     if (tvb_captured_length(tvb) < 5)
-        return FALSE;
+        return false;
     /*
      * Check that packet looks like FMTP before going further
      */
     /* VERSION must currently be 0x02 */
-    if (tvb_get_guint8(tvb, 0) != 0x02) return (FALSE);
+    if (tvb_get_uint8(tvb, 0) != 0x02) return false;
     /* RESERVED must currently be 0x00 */
-    if (tvb_get_guint8(tvb, 1) != 0x00) return (FALSE);
+    if (tvb_get_uint8(tvb, 1) != 0x00) return false;
     length = tvb_get_ntohs(tvb, 2);
     /* LENGTH must currently not exceed 5 (header) + 10240 (data) */
-    if ((length > FMTP_MAX_LEN) || (length < FMTP_HEADER_LEN)) return (FALSE);
+    if ((length > FMTP_MAX_LEN) || (length < FMTP_HEADER_LEN)) return false;
     /* TYP must currently be in range 0x01-0x04 */
-    if ((tvb_get_guint8(tvb, 4) < 0x01) || (tvb_get_guint8(tvb, 4) > 0x04))
-        return (FALSE);
+    if ((tvb_get_uint8(tvb, 4) < 0x01) || (tvb_get_uint8(tvb, 4) > 0x04))
+        return false;
 
-    tcp_dissect_pdus(tvb, pinfo, tree, TRUE, FMTP_HEADER_LEN,
+    tcp_dissect_pdus(tvb, pinfo, tree, true, FMTP_HEADER_LEN,
                      get_fmtp_message_len, dissect_fmtp_message, data);
-    return (TRUE);
+    return true;
 }
 
 void
@@ -189,14 +177,11 @@ proto_register_fmtp(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_fmtp
     };
 
-    proto_fmtp = proto_register_protocol(
-        "Flight Message Transfer Protocol (FMTP)",
-        "FMTP",
-        "fmtp");
+    proto_fmtp = proto_register_protocol("Flight Message Transfer Protocol (FMTP)", "FMTP", "fmtp");
 
     proto_register_field_array(proto_fmtp, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
@@ -210,7 +195,7 @@ proto_reg_handoff_fmtp(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

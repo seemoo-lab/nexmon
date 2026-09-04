@@ -1,0 +1,47 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test heuristic recognition of Emacs Lisp format strings like "100% complete".
+
+cat <<\EOF > f-el-3.el
+(_ "Test 1a is 100% complete")
+(format (_ "Test 1b is 100% complete") 120)
+(_ "Test 2a from 0% complete to 100% complete")
+(format (_ "Test 2b from 0% complete to 100% complete") 120 121)
+(_ "Test 3a of %s is 100% complete")
+(format (_ "Test 3b of %s is 100% complete") "foo" 120)
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d f-el-3.tmp f-el-3.el || Exit 1
+LC_ALL=C tr -d '\r' < f-el-3.tmp.po > f-el-3.po || Exit 1
+
+cat <<\EOF > f-el-3.ok
+msgid "Test 1a is 100% complete"
+msgstr ""
+
+#, elisp-format
+msgid "Test 1b is 100% complete"
+msgstr ""
+
+msgid "Test 2a from 0% complete to 100% complete"
+msgstr ""
+
+#, elisp-format
+msgid "Test 2b from 0% complete to 100% complete"
+msgstr ""
+
+#, elisp-format
+msgid "Test 3a of %s is 100% complete"
+msgstr ""
+
+#, elisp-format
+msgid "Test 3b of %s is 100% complete"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} f-el-3.ok f-el-3.po
+result=$?
+
+exit $result

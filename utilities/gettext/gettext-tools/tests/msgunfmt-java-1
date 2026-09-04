@@ -3,9 +3,6 @@
 
 # Test of --java option.
 
-# Note: This test fails when using gcj from GCC 3.1 and GCC 3.2, due to a bug
-# (libgcj/6576). It is fixed in GCC 3.3.
-
 # Test whether we can compile and execute Java programs.
 test "${JAVA_CHOICE}" != no || {
   echo "Skipping test: configured with --disable-java"
@@ -58,7 +55,7 @@ ${MSGFMT} -j -d mu-java-1 -r prog -l fr mu-java-1/fr.po || Exit 1
 
 : ${MSGUNFMT=msgunfmt}
 CLASSPATH=mu-java-1${CLASSPATH:+:$CLASSPATH} \
-GETTEXTJEXEDIR=../../src GETTEXTJAR=../../src/gettext.jar \
+GETTEXTJAR=../../src/gettext.jar \
 ${MSGUNFMT} --java -d mu-java-1 -r prog -l fr -o mu-java-1/prog.out || Exit 1
 
 : ${MSGCAT=msgcat}

@@ -9,7 +9,7 @@
 #include "nl80211.h"
 #include "iw.h"
 
-static int iw_cqm_rssi(struct nl80211_state *state, struct nl_cb *cb,
+static int iw_cqm_rssi(struct nl80211_state *state,
 		       struct nl_msg *msg, int argc, char **argv,
 		       enum id_input id)
 {
@@ -34,6 +34,8 @@ static int iw_cqm_rssi(struct nl80211_state *state, struct nl_cb *cb,
 
 	/* connection quality monitor attributes */
 	cqm = nlmsg_alloc();
+	if (!cqm)
+		return -ENOMEM;
 
 	NLA_PUT_U32(cqm, NL80211_ATTR_CQM_RSSI_THOLD, thold);
 	NLA_PUT_U32(cqm, NL80211_ATTR_CQM_RSSI_HYST, hyst);

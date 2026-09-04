@@ -1,9 +1,9 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test Tcl support: --add-comments option.
+# Test Tcl support: --add-comments option, strings with embedded expressions.
 
-cat <<EOF > xg-t-2.tcl
+cat <<\EOF > xg-t-2.tcl
 # This comment will not be extracted.
 puts [_ "help"]
 #  TRANSLATORS: This is an extracted comment.
@@ -13,6 +13,10 @@ puts [_ "Hey Jude"]
 # TRANSLATORS:
 #    Nickname of the Beatles
 puts [_ "The Fabulous Four"]
+# Strings with embedded expressions, a.k.a. variable substitution.
+puts [_ "embedded_1_$foo_bar"]
+puts [_ "embedded_2_$myArray([$myFunction [_ "embedded_2_sub1"]])_bar_$myArray($myIndices([$myFunction [_ "embedded_2_sub2"]]))_baz"];
+puts [_ "embedded_3"]
 EOF
 
 : ${XGETTEXT=xgettext}
@@ -20,7 +24,7 @@ ${XGETTEXT} --omit-header --no-location --add-comments=TRANSLATORS: -k_ \
   -d xg-t-2.tmp xg-t-2.tcl || Exit 1
 LC_ALL=C tr -d '\r' < xg-t-2.tmp.po > xg-t-2.po || Exit 1
 
-cat <<EOF > xg-t-2.ok
+cat <<\EOF > xg-t-2.ok
 msgid "help"
 msgstr ""
 
@@ -34,6 +38,15 @@ msgstr ""
 #. TRANSLATORS:
 #. Nickname of the Beatles
 msgid "The Fabulous Four"
+msgstr ""
+
+msgid "embedded_2_sub1"
+msgstr ""
+
+msgid "embedded_2_sub2"
+msgstr ""
+
+msgid "embedded_3"
 msgstr ""
 EOF
 

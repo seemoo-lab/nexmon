@@ -1,0 +1,596 @@
+diff --git a/lib/src/alloc.h b/lib/src/alloc.h
+index a0eadb7a..8a055f87 100644
+--- a/lib/src/alloc.h
++++ b/lib/src/alloc.h
+@@ -9,7 +9,7 @@ extern "C" {
+ #include <stdio.h>
+ #include <stdlib.h>
+ 
+-#if defined(TREE_SITTER_HIDDEN_SYMBOLS) || defined(_WIN32)
++#if defined(TREE_SITTER_HIDDEN_SYMBOLS) || defined(_WIN32) || !(defined __GNUC__ || defined __clang__)
+ #define TS_PUBLIC
+ #else
+ #define TS_PUBLIC __attribute__((visibility("default")))
+diff --git a/lib/src/atomic.h b/lib/src/atomic.h
+index e680b60e..3640806f 100644
+--- a/lib/src/atomic.h
++++ b/lib/src/atomic.h
+@@ -5,7 +5,7 @@
+ #include <stdint.h>
+ #include <stdlib.h>
+ 
+-#ifdef __TINYC__
++#if 1 /* avoid portability pitfalls, cf. gnulib/m4/atomic-cas.m4 */
+ 
+ static inline size_t atomic_load(const volatile size_t *p) {
+   return *p;
+diff --git a/lib/src/get_changed_ranges.c b/lib/src/get_changed_ranges.c
+index bcf8da94..d9e9ae66 100644
+--- a/lib/src/get_changed_ranges.c
++++ b/lib/src/get_changed_ranges.c
+@@ -160,7 +160,7 @@ static bool iterator_tree_is_visible(const Iterator *self) {
+     Subtree parent = *self->cursor.stack.contents[self->cursor.stack.size - 2].subtree;
+     return ts_language_alias_at(
+       self->language,
+-      parent.ptr->production_id,
++      parent.ptr->u.non_terminal.production_id,
+       entry.structural_child_index
+     ) != 0;
+   }
+@@ -187,7 +187,7 @@ static void iterator_get_visible_state(
+       const Subtree *parent = self->cursor.stack.contents[i - 1].subtree;
+       *alias_symbol = ts_language_alias_at(
+         self->language,
+-        parent->ptr->production_id,
++        parent->ptr->u.non_terminal.production_id,
+         entry.structural_child_index
+       );
+     }
+diff --git a/lib/src/node.c b/lib/src/node.c
+index 2768efbb..de07e694 100644
+--- a/lib/src/node.c
++++ b/lib/src/node.c
+@@ -60,7 +60,7 @@ static inline NodeChildIterator ts_node_iterate_children(const TSNode *node) {
+   }
+   const TSSymbol *alias_sequence = ts_language_alias_sequence(
+     node->tree->language,
+-    subtree.ptr->production_id
++    subtree.ptr->u.non_terminal.production_id
+   );
+   return (NodeChildIterator) {
+     .tree = node->tree,
+@@ -141,9 +141,9 @@ static inline uint32_t ts_node__relevant_child_count(
+   Subtree tree = ts_node__subtree(self);
+   if (ts_subtree_child_count(tree) > 0) {
+     if (include_anonymous) {
+-      return tree.ptr->visible_child_count;
++      return tree.ptr->u.non_terminal.visible_child_count;
+     } else {
+-      return tree.ptr->named_child_count;
++      return tree.ptr->u.non_terminal.named_child_count;
+     }
+   } else {
+     return 0;
+@@ -610,7 +610,7 @@ recur:
+   const TSFieldMapEntry *field_map, *field_map_end;
+   ts_language_field_map(
+     self.tree->language,
+-    ts_node__subtree(self).ptr->production_id,
++    ts_node__subtree(self).ptr->u.non_terminal.production_id,
+     &field_map,
+     &field_map_end
+   );
+@@ -679,7 +679,7 @@ static inline const char *ts_node__field_name_from_language(TSNode self, uint32_
+     const TSFieldMapEntry *field_map, *field_map_end;
+     ts_language_field_map(
+       self.tree->language,
+-      ts_node__subtree(self).ptr->production_id,
++      ts_node__subtree(self).ptr->u.non_terminal.production_id,
+       &field_map,
+       &field_map_end
+     );
+@@ -749,7 +749,7 @@ TSNode ts_node_child_by_field_name(
+ uint32_t ts_node_child_count(TSNode self) {
+   Subtree tree = ts_node__subtree(self);
+   if (ts_subtree_child_count(tree) > 0) {
+-    return tree.ptr->visible_child_count;
++    return tree.ptr->u.non_terminal.visible_child_count;
+   } else {
+     return 0;
+   }
+@@ -758,7 +758,7 @@ uint32_t ts_node_child_count(TSNode self) {
+ uint32_t ts_node_named_child_count(TSNode self) {
+   Subtree tree = ts_node__subtree(self);
+   if (ts_subtree_child_count(tree) > 0) {
+-    return tree.ptr->named_child_count;
++    return tree.ptr->u.non_terminal.named_child_count;
+   } else {
+     return 0;
+   }
+diff --git a/lib/src/parser.c b/lib/src/parser.c
+index 2927d820..80719328 100644
+--- a/lib/src/parser.c
++++ b/lib/src/parser.c
+@@ -417,8 +417,8 @@ static void ts_parser__external_scanner_deserialize(
+   const char *data = NULL;
+   uint32_t length = 0;
+   if (external_token.ptr) {
+-    data = ts_external_scanner_state_data(&external_token.ptr->external_scanner_state);
+-    length = external_token.ptr->external_scanner_state.length;
++    data = ts_external_scanner_state_data(&external_token.ptr->u.external_scanner_state);
++    length = external_token.ptr->u.external_scanner_state.length;
+   }
+ 
+   if (ts_language_is_wasm(self->language)) {
+@@ -678,7 +678,7 @@ static Subtree ts_parser__lex(
+     if (found_external_token) {
+       MutableSubtree mut_result = ts_subtree_to_mut_unsafe(result);
+       ts_external_scanner_state_init(
+-        &mut_result.ptr->external_scanner_state,
++        &mut_result.ptr->u.external_scanner_state,
+         self->lexer.debug_buffer,
+         external_scanner_state_len
+       );
+@@ -1012,7 +1012,7 @@ static StackVersion ts_parser__reduce(
+     } else {
+       parent.ptr->parse_state = state;
+     }
+-    parent.ptr->dynamic_precedence += dynamic_precedence;
++    parent.ptr->u.non_terminal.dynamic_precedence += dynamic_precedence;
+ 
+     // Push the parent node onto the stack, along with any extra tokens that
+     // were previously on top of the stack.
+@@ -1062,7 +1062,7 @@ static void ts_parser__accept(
+         root = ts_subtree_from_mut(ts_subtree_new_node(
+           ts_subtree_symbol(tree),
+           &trees,
+-          tree.ptr->production_id,
++          tree.ptr->u.non_terminal.production_id,
+           self->language
+         ));
+         ts_subtree_release(&self->tree_pool, tree);
+diff --git a/lib/src/stack.c b/lib/src/stack.c
+index 98d8c561..e5c05521 100644
+--- a/lib/src/stack.c
++++ b/lib/src/stack.c
+@@ -14,8 +14,10 @@
+ 
+ #if defined _WIN32 && !defined __GNUC__
+ #define forceinline __forceinline
+-#else
++#elif defined __GNUC__ || defined __clang__
+ #define forceinline static inline __attribute__((always_inline))
++#else
++#define forceinline static inline
+ #endif
+ 
+ typedef struct StackNode StackNode;
+@@ -798,7 +800,7 @@ bool ts_stack_print_dot_graph(Stack *self, const TSLanguage *language, FILE *f)
+     }
+ 
+     if (head->last_external_token.ptr) {
+-      const ExternalScannerState *state = &head->last_external_token.ptr->external_scanner_state;
++      const ExternalScannerState *state = &head->last_external_token.ptr->u.external_scanner_state;
+       const char *data = ts_external_scanner_state_data(state);
+       fprintf(f, "\nexternal_scanner_state:");
+       for (uint32_t j = 0; j < state->length; j++) fprintf(f, " %2X", data[j]);
+diff --git a/lib/src/subtree.c b/lib/src/subtree.c
+index 2ab8f475..9d400536 100644
+--- a/lib/src/subtree.c
++++ b/lib/src/subtree.c
+@@ -26,34 +26,34 @@ typedef struct {
+ 
+ void ts_external_scanner_state_init(ExternalScannerState *self, const char *data, unsigned length) {
+   self->length = length;
+-  if (length > sizeof(self->short_data)) {
+-    self->long_data = ts_malloc(length);
+-    memcpy(self->long_data, data, length);
++  if (length > sizeof(self->u.short_data)) {
++    self->u.long_data = ts_malloc(length);
++    memcpy(self->u.long_data, data, length);
+   } else {
+-    memcpy(self->short_data, data, length);
++    memcpy(self->u.short_data, data, length);
+   }
+ }
+ 
+ ExternalScannerState ts_external_scanner_state_copy(const ExternalScannerState *self) {
+   ExternalScannerState result = *self;
+-  if (self->length > sizeof(self->short_data)) {
+-    result.long_data = ts_malloc(self->length);
+-    memcpy(result.long_data, self->long_data, self->length);
++  if (self->length > sizeof(self->u.short_data)) {
++    result.u.long_data = ts_malloc(self->length);
++    memcpy(result.u.long_data, self->u.long_data, self->length);
+   }
+   return result;
+ }
+ 
+ void ts_external_scanner_state_delete(ExternalScannerState *self) {
+-  if (self->length > sizeof(self->short_data)) {
+-    ts_free(self->long_data);
++  if (self->length > sizeof(self->u.short_data)) {
++    ts_free(self->u.long_data);
+   }
+ }
+ 
+ const char *ts_external_scanner_state_data(const ExternalScannerState *self) {
+-  if (self->length > sizeof(self->short_data)) {
+-    return self->long_data;
++  if (self->length > sizeof(self->u.short_data)) {
++    return self->u.long_data;
+   } else {
+-    return self->short_data;
++    return self->u.short_data;
+   }
+ }
+ 
+@@ -216,7 +216,11 @@ Subtree ts_subtree_new_leaf(
+       .depends_on_column = depends_on_column,
+       .is_missing = false,
+       .is_keyword = is_keyword,
+-      {{.first_leaf = {.symbol = 0, .parse_state = 0}}}
++      .u = {
++        .non_terminal = {
++          .first_leaf = {.symbol = 0, .parse_state = 0}
++        }
++      }
+     };
+     return (Subtree) {.ptr = data};
+   }
+@@ -251,7 +255,7 @@ Subtree ts_subtree_new_error(
+   SubtreeHeapData *data = (SubtreeHeapData *)result.ptr;
+   data->fragile_left = true;
+   data->fragile_right = true;
+-  data->lookahead_char = lookahead_char;
++  data->u.lookahead_char = lookahead_char;
+   return result;
+ }
+ 
+@@ -267,8 +271,8 @@ MutableSubtree ts_subtree_clone(Subtree self) {
+       ts_subtree_retain(new_children[i]);
+     }
+   } else if (self.ptr->has_external_tokens) {
+-    result->external_scanner_state = ts_external_scanner_state_copy(
+-      &self.ptr->external_scanner_state
++    result->u.external_scanner_state = ts_external_scanner_state_copy(
++      &self.ptr->u.external_scanner_state
+     );
+   }
+   result->ref_count = 1;
+@@ -344,7 +348,7 @@ void ts_subtree_balance(Subtree self, SubtreePool *pool, const TSLanguage *langu
+   while (pool->tree_stack.size > 0) {
+     MutableSubtree tree = array_pop(&pool->tree_stack);
+ 
+-    if (tree.ptr->repeat_depth > 0) {
++    if (tree.ptr->u.non_terminal.repeat_depth > 0) {
+       Subtree child1 = ts_subtree_children(tree)[0];
+       Subtree child2 = ts_subtree_children(tree)[tree.ptr->child_count - 1];
+       long repeat_delta = (long)ts_subtree_repeat_depth(child1) - (long)ts_subtree_repeat_depth(child2);
+@@ -373,18 +377,18 @@ void ts_subtree_summarize_children(
+ ) {
+   assert(!self.data.is_inline);
+ 
+-  self.ptr->named_child_count = 0;
+-  self.ptr->visible_child_count = 0;
++  self.ptr->u.non_terminal.named_child_count = 0;
++  self.ptr->u.non_terminal.visible_child_count = 0;
+   self.ptr->error_cost = 0;
+-  self.ptr->repeat_depth = 0;
+-  self.ptr->visible_descendant_count = 0;
++  self.ptr->u.non_terminal.repeat_depth = 0;
++  self.ptr->u.non_terminal.visible_descendant_count = 0;
+   self.ptr->has_external_tokens = false;
+   self.ptr->depends_on_column = false;
+   self.ptr->has_external_scanner_state_change = false;
+-  self.ptr->dynamic_precedence = 0;
++  self.ptr->u.non_terminal.dynamic_precedence = 0;
+ 
+   uint32_t structural_index = 0;
+-  const TSSymbol *alias_sequence = ts_language_alias_sequence(language, self.ptr->production_id);
++  const TSSymbol *alias_sequence = ts_language_alias_sequence(language, self.ptr->u.non_terminal.production_id);
+   uint32_t lookahead_end_byte = 0;
+ 
+   const Subtree *children = ts_subtree_children(self);
+@@ -430,27 +434,27 @@ void ts_subtree_summarize_children(
+         if (ts_subtree_visible(child)) {
+           self.ptr->error_cost += ERROR_COST_PER_SKIPPED_TREE;
+         } else if (grandchild_count > 0) {
+-          self.ptr->error_cost += ERROR_COST_PER_SKIPPED_TREE * child.ptr->visible_child_count;
++          self.ptr->error_cost += ERROR_COST_PER_SKIPPED_TREE * child.ptr->u.non_terminal.visible_child_count;
+         }
+       }
+     }
+ 
+-    self.ptr->dynamic_precedence += ts_subtree_dynamic_precedence(child);
+-    self.ptr->visible_descendant_count += ts_subtree_visible_descendant_count(child);
++    self.ptr->u.non_terminal.dynamic_precedence += ts_subtree_dynamic_precedence(child);
++    self.ptr->u.non_terminal.visible_descendant_count += ts_subtree_visible_descendant_count(child);
+ 
+     if (alias_sequence && alias_sequence[structural_index] != 0 && !ts_subtree_extra(child)) {
+-      self.ptr->visible_descendant_count++;
+-      self.ptr->visible_child_count++;
++      self.ptr->u.non_terminal.visible_descendant_count++;
++      self.ptr->u.non_terminal.visible_child_count++;
+       if (ts_language_symbol_metadata(language, alias_sequence[structural_index]).named) {
+-        self.ptr->named_child_count++;
++        self.ptr->u.non_terminal.named_child_count++;
+       }
+     } else if (ts_subtree_visible(child)) {
+-      self.ptr->visible_descendant_count++;
+-      self.ptr->visible_child_count++;
+-      if (ts_subtree_named(child)) self.ptr->named_child_count++;
++      self.ptr->u.non_terminal.visible_descendant_count++;
++      self.ptr->u.non_terminal.visible_child_count++;
++      if (ts_subtree_named(child)) self.ptr->u.non_terminal.named_child_count++;
+     } else if (grandchild_count > 0) {
+-      self.ptr->visible_child_count += child.ptr->visible_child_count;
+-      self.ptr->named_child_count += child.ptr->named_child_count;
++      self.ptr->u.non_terminal.visible_child_count += child.ptr->u.non_terminal.visible_child_count;
++      self.ptr->u.non_terminal.named_child_count += child.ptr->u.non_terminal.named_child_count;
+     }
+ 
+     if (ts_subtree_has_external_tokens(child)) self.ptr->has_external_tokens = true;
+@@ -479,8 +483,8 @@ void ts_subtree_summarize_children(
+     Subtree first_child = children[0];
+     Subtree last_child = children[self.ptr->child_count - 1];
+ 
+-    self.ptr->first_leaf.symbol = ts_subtree_leaf_symbol(first_child);
+-    self.ptr->first_leaf.parse_state = ts_subtree_leaf_parse_state(first_child);
++    self.ptr->u.non_terminal.first_leaf.symbol = ts_subtree_leaf_symbol(first_child);
++    self.ptr->u.non_terminal.first_leaf.parse_state = ts_subtree_leaf_parse_state(first_child);
+ 
+     if (ts_subtree_fragile_left(first_child)) self.ptr->fragile_left = true;
+     if (ts_subtree_fragile_right(last_child)) self.ptr->fragile_right = true;
+@@ -492,9 +496,9 @@ void ts_subtree_summarize_children(
+       ts_subtree_symbol(first_child) == self.ptr->symbol
+     ) {
+       if (ts_subtree_repeat_depth(first_child) > ts_subtree_repeat_depth(last_child)) {
+-        self.ptr->repeat_depth = ts_subtree_repeat_depth(first_child) + 1;
++        self.ptr->u.non_terminal.repeat_depth = ts_subtree_repeat_depth(first_child) + 1;
+       } else {
+-        self.ptr->repeat_depth = ts_subtree_repeat_depth(last_child) + 1;
++        self.ptr->u.non_terminal.repeat_depth = ts_subtree_repeat_depth(last_child) + 1;
+       }
+     }
+   }
+@@ -531,11 +535,13 @@ MutableSubtree ts_subtree_new_node(
+     .fragile_left = fragile,
+     .fragile_right = fragile,
+     .is_keyword = false,
+-    {{
+-      .visible_descendant_count = 0,
+-      .production_id = production_id,
+-      .first_leaf = {.symbol = 0, .parse_state = 0},
+-    }}
++    .u = {
++      .non_terminal = {
++        .visible_descendant_count = 0,
++        .production_id = production_id,
++        .first_leaf = {.symbol = 0, .parse_state = 0},
++      }
++    }
+   };
+   MutableSubtree result = {.ptr = data};
+   ts_subtree_summarize_children(result, language);
+@@ -612,7 +618,7 @@ void ts_subtree_release(SubtreePool *pool, Subtree self) {
+       ts_free(children);
+     } else {
+       if (tree.ptr->has_external_tokens) {
+-        ts_external_scanner_state_delete(&tree.ptr->external_scanner_state);
++        ts_external_scanner_state_delete(&tree.ptr->u.external_scanner_state);
+       }
+       ts_subtree_pool_free(pool, tree.ptr);
+     }
+@@ -879,7 +885,7 @@ static size_t ts_subtree__write_to_string(
+ 
+     if (ts_subtree_is_error(self) && ts_subtree_child_count(self) == 0 && self.ptr->size.bytes > 0) {
+       cursor += snprintf(*writer, limit, "(UNEXPECTED ");
+-      cursor += ts_subtree__write_char_to_string(*writer, limit, self.ptr->lookahead_char);
++      cursor += ts_subtree__write_char_to_string(*writer, limit, self.ptr->u.lookahead_char);
+     } else {
+       TSSymbol symbol = alias_symbol ? alias_symbol : ts_subtree_symbol(self);
+       const char *symbol_name = ts_language_symbol_name(language, symbol);
+@@ -907,11 +913,11 @@ static size_t ts_subtree__write_to_string(
+   }
+ 
+   if (ts_subtree_child_count(self)) {
+-    const TSSymbol *alias_sequence = ts_language_alias_sequence(language, self.ptr->production_id);
++    const TSSymbol *alias_sequence = ts_language_alias_sequence(language, self.ptr->u.non_terminal.production_id);
+     const TSFieldMapEntry *field_map, *field_map_end;
+     ts_language_field_map(
+       language,
+-      self.ptr->production_id,
++      self.ptr->u.non_terminal.production_id,
+       &field_map,
+       &field_map_end
+     );
+@@ -1010,8 +1016,8 @@ void ts_subtree__print_dot_graph(const Subtree *self, uint32_t start_offset,
+     ts_subtree_lookahead_bytes(*self)
+   );
+ 
+-  if (ts_subtree_is_error(*self) && ts_subtree_child_count(*self) == 0 && self->ptr->lookahead_char != 0) {
+-    fprintf(f, "\ncharacter: '%c'", self->ptr->lookahead_char);
++  if (ts_subtree_is_error(*self) && ts_subtree_child_count(*self) == 0 && self->ptr->u.lookahead_char != 0) {
++    fprintf(f, "\ncharacter: '%c'", self->ptr->u.lookahead_char);
+   }
+ 
+   fprintf(f, "\"]\n");
+@@ -1041,14 +1047,14 @@ void ts_subtree_print_dot_graph(Subtree self, const TSLanguage *language, FILE *
+ }
+ 
+ const ExternalScannerState *ts_subtree_external_scanner_state(Subtree self) {
+-  static const ExternalScannerState empty_state = {{.short_data = {0}}, .length = 0};
++  static const ExternalScannerState empty_state = {.u = {.short_data = {0}}, .length = 0};
+   if (
+     self.ptr &&
+     !self.data.is_inline &&
+     self.ptr->has_external_tokens &&
+     self.ptr->child_count == 0
+   ) {
+-    return &self.ptr->external_scanner_state;
++    return &self.ptr->u.external_scanner_state;
+   } else {
+     return &empty_state;
+   }
+diff --git a/lib/src/subtree.h b/lib/src/subtree.h
+index f140ecdb..dde8729c 100644
+--- a/lib/src/subtree.h
++++ b/lib/src/subtree.h
+@@ -32,7 +32,7 @@ typedef struct {
+   union {
+     char *long_data;
+     char short_data[24];
+-  };
++  } u;
+   uint32_t length;
+ } ExternalScannerState;
+ 
+@@ -143,14 +143,14 @@ typedef struct {
+         TSSymbol symbol;
+         TSStateId parse_state;
+       } first_leaf;
+-    };
++    } non_terminal;
+ 
+     // External terminal subtrees (`child_count == 0 && has_external_tokens`)
+     ExternalScannerState external_scanner_state;
+ 
+     // Error terminal subtrees (`child_count == 0 && symbol == ts_builtin_sym_error`)
+     int32_t lookahead_char;
+-  };
++  } u;
+ } SubtreeHeapData;
+ 
+ // The fundamental building block of a syntax tree.
+@@ -248,13 +248,13 @@ static inline void ts_subtree_set_extra(MutableSubtree *self, bool is_extra) {
+ static inline TSSymbol ts_subtree_leaf_symbol(Subtree self) {
+   if (self.data.is_inline) return self.data.symbol;
+   if (self.ptr->child_count == 0) return self.ptr->symbol;
+-  return self.ptr->first_leaf.symbol;
++  return self.ptr->u.non_terminal.first_leaf.symbol;
+ }
+ 
+ static inline TSStateId ts_subtree_leaf_parse_state(Subtree self) {
+   if (self.data.is_inline) return self.data.parse_state;
+   if (self.ptr->child_count == 0) return self.ptr->parse_state;
+-  return self.ptr->first_leaf.parse_state;
++  return self.ptr->u.non_terminal.first_leaf.parse_state;
+ }
+ 
+ static inline Length ts_subtree_padding(Subtree self) {
+@@ -288,7 +288,7 @@ static inline uint32_t ts_subtree_child_count(Subtree self) {
+ }
+ 
+ static inline uint32_t ts_subtree_repeat_depth(Subtree self) {
+-  return self.data.is_inline ? 0 : self.ptr->repeat_depth;
++  return self.data.is_inline ? 0 : self.ptr->u.non_terminal.repeat_depth;
+ }
+ 
+ static inline uint32_t ts_subtree_is_repetition(Subtree self) {
+@@ -300,12 +300,12 @@ static inline uint32_t ts_subtree_is_repetition(Subtree self) {
+ static inline uint32_t ts_subtree_visible_descendant_count(Subtree self) {
+   return (self.data.is_inline || self.ptr->child_count == 0)
+     ? 0
+-    : self.ptr->visible_descendant_count;
++    : self.ptr->u.non_terminal.visible_descendant_count;
+ }
+ 
+ static inline uint32_t ts_subtree_visible_child_count(Subtree self) {
+   if (ts_subtree_child_count(self) > 0) {
+-    return self.ptr->visible_child_count;
++    return self.ptr->u.non_terminal.visible_child_count;
+   } else {
+     return 0;
+   }
+@@ -320,12 +320,12 @@ static inline uint32_t ts_subtree_error_cost(Subtree self) {
+ }
+ 
+ static inline int32_t ts_subtree_dynamic_precedence(Subtree self) {
+-  return (self.data.is_inline || self.ptr->child_count == 0) ? 0 : self.ptr->dynamic_precedence;
++  return (self.data.is_inline || self.ptr->child_count == 0) ? 0 : self.ptr->u.non_terminal.dynamic_precedence;
+ }
+ 
+ static inline uint16_t ts_subtree_production_id(Subtree self) {
+   if (ts_subtree_child_count(self) > 0) {
+-    return self.ptr->production_id;
++    return self.ptr->u.non_terminal.production_id;
+   } else {
+     return 0;
+   }
+diff --git a/lib/src/tree_cursor.c b/lib/src/tree_cursor.c
+index 24416663..b68770c0 100644
+--- a/lib/src/tree_cursor.c
++++ b/lib/src/tree_cursor.c
+@@ -24,7 +24,7 @@ static inline bool ts_tree_cursor_is_entry_visible(const TreeCursor *self, uint3
+     TreeCursorEntry *parent_entry = &self->stack.contents[index - 1];
+     return ts_language_alias_at(
+       self->tree->language,
+-      parent_entry->subtree->ptr->production_id,
++      parent_entry->subtree->ptr->u.non_terminal.production_id,
+       entry->structural_child_index
+     );
+   } else {
+@@ -39,7 +39,7 @@ static inline CursorChildIterator ts_tree_cursor_iterate_children(const TreeCurs
+   }
+   const TSSymbol *alias_sequence = ts_language_alias_sequence(
+     self->tree->language,
+-    last_entry->subtree->ptr->production_id
++    last_entry->subtree->ptr->u.non_terminal.production_id
+   );
+ 
+   uint32_t descendant_index = last_entry->descendant_index;
+@@ -481,7 +481,7 @@ TSNode ts_tree_cursor_current_node(const TSTreeCursor *_self) {
+     TreeCursorEntry *parent_entry = &self->stack.contents[self->stack.size - 2];
+     alias_symbol = ts_language_alias_at(
+       self->tree->language,
+-      parent_entry->subtree->ptr->production_id,
++      parent_entry->subtree->ptr->u.non_terminal.production_id,
+       last_entry->structural_child_index
+     );
+   }
+@@ -520,7 +520,7 @@ void ts_tree_cursor_current_status(
+ 
+     const TSSymbol *alias_sequence = ts_language_alias_sequence(
+       self->tree->language,
+-      parent_entry->subtree->ptr->production_id
++      parent_entry->subtree->ptr->u.non_terminal.production_id
+     );
+ 
+     #define subtree_symbol(subtree, structural_child_index) \
+@@ -570,7 +570,7 @@ void ts_tree_cursor_current_status(
+         } else if (ts_subtree_visible_child_count(sibling) > 0) {
+           *has_later_siblings = true;
+           if (*has_later_named_siblings) break;
+-          if (sibling.ptr->named_child_count > 0) {
++          if (sibling.ptr->u.non_terminal.named_child_count > 0) {
+             *has_later_named_siblings = true;
+             break;
+           }
+@@ -585,7 +585,7 @@ void ts_tree_cursor_current_status(
+       const TSFieldMapEntry *field_map, *field_map_end;
+       ts_language_field_map(
+         self->tree->language,
+-        parent_entry->subtree->ptr->production_id,
++        parent_entry->subtree->ptr->u.non_terminal.production_id,
+         &field_map, &field_map_end
+       );
+ 
+@@ -636,7 +636,7 @@ TSNode ts_tree_cursor_parent_node(const TSTreeCursor *_self) {
+       TreeCursorEntry *parent_entry = &self->stack.contents[i - 1];
+       alias_symbol = ts_language_alias_at(
+         self->tree->language,
+-        parent_entry->subtree->ptr->production_id,
++        parent_entry->subtree->ptr->u.non_terminal.production_id,
+         entry->structural_child_index
+       );
+       is_visible = (alias_symbol != 0) || ts_subtree_visible(*entry->subtree);
+@@ -672,7 +672,7 @@ TSFieldId ts_tree_cursor_current_field_id(const TSTreeCursor *_self) {
+     const TSFieldMapEntry *field_map, *field_map_end;
+     ts_language_field_map(
+       self->tree->language,
+-      parent_entry->subtree->ptr->production_id,
++      parent_entry->subtree->ptr->u.non_terminal.production_id,
+       &field_map, &field_map_end
+     );
+     for (const TSFieldMapEntry *map = field_map; map < field_map_end; map++) {

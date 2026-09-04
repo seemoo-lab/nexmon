@@ -1,8 +1,8 @@
-# Copyright (C) 2002-2016 Free Software Foundation, Inc.
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
 # This file is distributed in the hope that it will be useful,
@@ -11,7 +11,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this file.  If not, see <http://www.gnu.org/licenses/>.
+# along with this file.  If not, see <https://www.gnu.org/licenses/>.
 #
 # As a special exception to the GNU General Public License,
 # this file may be distributed as part of a program that
@@ -27,44 +27,123 @@
 
 
 # Specification in the form of a command-line invocation:
-#   gnulib-tool --import --local-dir=gnulib-local --lib=libgnu --source-base=libgettextpo --m4-base=libgettextpo/gnulib-m4 --doc-base=doc --tests-base=tests --aux-dir=../build-aux --makefile-name=Makefile.gnulib --no-conditional-dependencies --libtool --macro-prefix=gtpo basename c-ctype c-strcase c-strstr close error error-progname file-ostream filename fopen fstrcmp fwriteerror gcd getline gettext-h hash iconv libunistring-optional markup minmax open ostream progname relocatable-lib sigpipe stdbool stdio stdlib stpcpy stpncpy strchrnul strerror unictype/ctype-space unilbrk/ulc-width-linebreaks unistr/u16-mbtouc unistr/u8-mbtouc unistr/u8-mbtoucr unistr/u8-uctomb uniwidth/width unlocked-io vasprintf xalloc xconcat-filename xerror xmalloca xstriconv xvasprintf
+# gnulib-tool --import \
+#  --local-dir=gnulib-local \
+#  --lib=libgnu \
+#  --source-base=libgettextpo \
+#  --m4-base=libgettextpo/gnulib-m4 \
+#  --doc-base=doc \
+#  --tests-base=tests \
+#  --aux-dir=../build-aux \
+#  --makefile-name=Makefile.gnulib \
+#  --no-conditional-dependencies \
+#  --libtool \
+#  --macro-prefix=gtpo \
+#  --avoid=progname \
+#  attribute \
+#  basename-lgpl \
+#  bool \
+#  c-ctype \
+#  c-strcase \
+#  c-strstr \
+#  close \
+#  error \
+#  fdopen \
+#  filename \
+#  fopen \
+#  free-posix \
+#  fstrcmp \
+#  fwriteerror \
+#  gcd \
+#  getline \
+#  gettext-h \
+#  iconv \
+#  libtextstyle-dummy \
+#  libunistring-optional \
+#  markup \
+#  mem-hash-map \
+#  minmax \
+#  mixin/printf-posix \
+#  once \
+#  open \
+#  realloc-posix \
+#  relocatable-lib \
+#  sigpipe \
+#  stdio-h \
+#  stdlib-h \
+#  stpcpy \
+#  stpncpy \
+#  str_startswith \
+#  strchrnul \
+#  strerror \
+#  strerror_r-posix \
+#  string-desc \
+#  strnlen \
+#  unictype/ctype-space \
+#  unictype/property-white-space \
+#  unictype/property-xid-continue \
+#  unictype/property-xid-start \
+#  unilbrk/ulc-width-linebreaks \
+#  unistr/u16-mbtouc \
+#  unistr/u8-mbtouc \
+#  unistr/u8-mbtoucr \
+#  unistr/u8-uctomb \
+#  uniwidth/width \
+#  unlocked-io \
+#  vasprintf \
+#  xalloc \
+#  xconcat-filename \
+#  xmalloca \
+#  xstrerror \
+#  xstriconv \
+#  xvasprintf
 
 # Specification in the form of a few gnulib-tool.m4 macro invocations:
 gl_LOCAL_DIR([../gnulib-local])
 gl_MODULES([
-  basename
+  attribute
+  basename-lgpl
+  bool
   c-ctype
   c-strcase
   c-strstr
   close
   error
-  error-progname
-  file-ostream
+  fdopen
   filename
   fopen
+  free-posix
   fstrcmp
   fwriteerror
   gcd
   getline
   gettext-h
-  hash
   iconv
+  libtextstyle-dummy
   libunistring-optional
   markup
+  mem-hash-map
   minmax
+  mixin/printf-posix
+  once
   open
-  ostream
-  progname
+  realloc-posix
   relocatable-lib
   sigpipe
-  stdbool
-  stdio
-  stdlib
+  stdio-h
+  stdlib-h
   stpcpy
   stpncpy
+  str_startswith
   strchrnul
   strerror
+  strerror_r-posix
+  string-desc
+  strnlen
   unictype/ctype-space
+  unictype/property-white-space
+  unictype/property-xid-continue
+  unictype/property-xid-start
   unilbrk/ulc-width-linebreaks
   unistr/u16-mbtouc
   unistr/u8-mbtouc
@@ -75,12 +154,12 @@ gl_MODULES([
   vasprintf
   xalloc
   xconcat-filename
-  xerror
   xmalloca
+  xstrerror
   xstriconv
   xvasprintf
 ])
-gl_AVOID([])
+gl_AVOID([progname])
 gl_SOURCE_BASE([libgettextpo])
 gl_M4_BASE([libgettextpo/gnulib-m4])
 gl_PO_BASE([])

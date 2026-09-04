@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2004, 2006-2007, 2010 Free Software Foundation, Inc.
+/* Copyright (C) 1999-2004, 2006-2007, 2010, 2012, 2016, 2018 Free Software Foundation, Inc.
    This file is part of the GNU LIBICONV Tools.
 
    This program is free software: you can redistribute it and/or modify
@@ -12,8 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software Foundation,
-   Inc., along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program; if not, see <https://www.gnu.org/licenses/>.  */
 
 /*
  * Generates a CJK character set table from a .TXT table as found on
@@ -76,23 +75,22 @@ typedef struct {
 static void output_title (const char *charsetname)
 {
   printf("/*\n");
-  printf(" * Copyright (C) 1999-2010 Free Software Foundation, Inc.\n");
+  printf(" * Copyright (C) 1999-2016 Free Software Foundation, Inc.\n");
   printf(" * This file is part of the GNU LIBICONV Library.\n");
   printf(" *\n");
   printf(" * The GNU LIBICONV Library is free software; you can redistribute it\n");
-  printf(" * and/or modify it under the terms of the GNU Library General Public\n");
+  printf(" * and/or modify it under the terms of the GNU Lesser General Public\n");
   printf(" * License as published by the Free Software Foundation; either version 2\n");
   printf(" * of the License, or (at your option) any later version.\n");
   printf(" *\n");
   printf(" * The GNU LIBICONV Library is distributed in the hope that it will be\n");
   printf(" * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of\n");
   printf(" * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n");
-  printf(" * Library General Public License for more details.\n");
+  printf(" * Lesser General Public License for more details.\n");
   printf(" *\n");
-  printf(" * You should have received a copy of the GNU Library General Public\n");
+  printf(" * You should have received a copy of the GNU Lesser General Public\n");
   printf(" * License along with the GNU LIBICONV Library; see the file COPYING.LIB.\n");
-  printf(" * If not, write to the Free Software Foundation, Inc., 51 Franklin Street,\n");
-  printf(" * Fifth Floor, Boston, MA 02110-1301, USA.\n");
+  printf(" * If not, see <https://www.gnu.org/licenses/>.\n");
   printf(" */\n");
   printf("\n");
   printf("/*\n");
@@ -340,7 +338,7 @@ static void output_charset2uni (const char* name, Encoding* enc)
   }
 
   printf("static int\n");
-  printf("%s_mbtowc (conv_t conv, ucs4_t *pwc, const unsigned char *s, int n)\n", name);
+  printf("%s_mbtowc (conv_t conv, ucs4_t *pwc, const unsigned char *s, size_t n)\n", name);
   printf("{\n");
   printf("  unsigned char c1 = s[0];\n");
   printf("  if (");
@@ -451,7 +449,7 @@ static void output_charset2uni_noholes_monotonic (const char* name, Encoding* en
   printf("\n");
 
   printf("static int\n");
-  printf("%s_mbtowc (conv_t conv, ucs4_t *pwc, const unsigned char *s, int n)\n", name);
+  printf("%s_mbtowc (conv_t conv, ucs4_t *pwc, const unsigned char *s, size_t n)\n", name);
   printf("{\n");
   printf("  unsigned char c1 = s[0];\n");
   printf("  if (");
@@ -616,7 +614,7 @@ static void output_uni2charset_dense (const char* name, Encoding* enc)
     if (p >= 0)
       printf("\n");
   }
-  printf("static int\n%s_wctomb (conv_t conv, unsigned char *r, ucs4_t wc, int n)\n", name);
+  printf("static int\n%s_wctomb (conv_t conv, unsigned char *r, ucs4_t wc, size_t n)\n", name);
   printf("{\n");
   printf("  if (n >= 2) {\n");
   printf("    unsigned short c = 0;\n");
@@ -800,7 +798,7 @@ static void output_uni2charset_sparse (const char* name, Encoding* enc, bool mon
   printf("\n");
 
   printf("static int\n");
-  printf("%s_wctomb (conv_t conv, unsigned char *r, ucs4_t wc, int n)\n", name);
+  printf("%s_wctomb (conv_t conv, unsigned char *r, ucs4_t wc, size_t n)\n", name);
   printf("{\n");
   printf("  if (n >= 2) {\n");
   printf("    const Summary16 *summary = NULL;\n");
@@ -822,9 +820,9 @@ static void output_uni2charset_sparse (const char* name, Encoding* enc, bool mon
   printf("      if (used & ((unsigned short) 1 << i)) {\n");
   if (monotonic || !is_large)
     printf("        unsigned short c;\n");
-  printf("        /* Keep in `used' only the bits 0..i-1. */\n");
+  printf("        /* Keep in 'used' only the bits 0..i-1. */\n");
   printf("        used &= ((unsigned short) 1 << i) - 1;\n");
-  printf("        /* Add `summary->indx' and the number of bits set in `used'. */\n");
+  printf("        /* Add 'summary->indx' and the number of bits set in 'used'. */\n");
   printf("        used = (used & 0x5555) + ((used & 0xaaaa) >> 1);\n");
   printf("        used = (used & 0x3333) + ((used & 0xcccc) >> 2);\n");
   printf("        used = (used & 0x0f0f) + ((used & 0xf0f0) >> 4);\n");
@@ -1555,7 +1553,7 @@ static void do_gb18030uni (const char* name)
   printf("\n");
 
   printf("static int\n");
-  printf("%s_mbtowc (conv_t conv, ucs4_t *pwc, const unsigned char *s, int n)\n", name);
+  printf("%s_mbtowc (conv_t conv, ucs4_t *pwc, const unsigned char *s, size_t n)\n", name);
   printf("{\n");
   printf("  unsigned char c1 = s[0];\n");
   printf("  if (c1 >= 0x81 && c1 <= 0x84) {\n");
@@ -1609,7 +1607,7 @@ static void do_gb18030uni (const char* name)
   printf("\n");
 
   printf("static int\n");
-  printf("%s_wctomb (conv_t conv, unsigned char *r, ucs4_t wc, int n)\n", name);
+  printf("%s_wctomb (conv_t conv, unsigned char *r, ucs4_t wc, size_t n)\n", name);
   printf("{\n");
   printf("  if (n >= 4) {\n");
   printf("    unsigned int i = wc;\n");
@@ -2070,9 +2068,9 @@ static void do_jisx0213 (const char* name)
   printf("      unsigned short used = summary->used;\n");
   printf("      unsigned int i = ucs & 0x0f;\n");
   printf("      if (used & ((unsigned short) 1 << i)) {\n");
-  printf("        /* Keep in `used' only the bits 0..i-1. */\n");
+  printf("        /* Keep in 'used' only the bits 0..i-1. */\n");
   printf("        used &= ((unsigned short) 1 << i) - 1;\n");
-  printf("        /* Add `summary->indx' and the number of bits set in `used'. */\n");
+  printf("        /* Add 'summary->indx' and the number of bits set in 'used'. */\n");
   printf("        used = (used & 0x5555) + ((used & 0xaaaa) >> 1);\n");
   printf("        used = (used & 0x3333) + ((used & 0xcccc) >> 2);\n");
   printf("        used = (used & 0x0f0f) + ((used & 0xf0f0) >> 4);\n");

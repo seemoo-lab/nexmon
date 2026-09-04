@@ -1,3 +1,36 @@
+/* libxml2 - Library for parsing XML documents
+ * Copyright (C) 2006-2019 Free Software Foundation, Inc.
+ *
+ * This file is not part of the GNU gettext program, but is used with
+ * GNU gettext.
+ *
+ * The original copyright notice is as follows:
+ */
+
+/*
+ * Copyright (C) 1998-2012 Daniel Veillard.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is fur-
+ * nished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+ * NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * daniel@veillard.com
+ */
+
 /*
  * nanohttp.c: minimalist HTTP GET implementation to fetch external subsets.
  *             focuses on size, streamability, reentrancy and portability
@@ -5,13 +38,8 @@
  * This is clearly not a general purpose HTTP implementation
  * If you look for one, check:
  *         http://www.w3.org/Library/
- *
- * See Copyright for the status of this software.
- *
- * daniel@veillard.com
  */
 
-#define NEED_SOCKETS
 #define IN_LIBXML
 #include "libxml.h"
 
@@ -64,7 +92,7 @@
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
 #endif
-#ifdef HAVE_ZLIB_H
+#ifdef LIBXML_ZLIB_ENABLED
 #include <zlib.h>
 #endif
 
@@ -74,14 +102,8 @@
 #define XML_SOCKLEN_T unsigned int
 #endif
 
-#if defined(__MINGW32__) || defined(_WIN32_WCE)
-#ifndef _WINSOCKAPI_
-#define _WINSOCKAPI_
-#endif
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #include <wsockcompat.h>
-#include <winsock2.h>
-#undef XML_SOCKLEN_T
-#define XML_SOCKLEN_T unsigned int
 #endif
 
 #include <libxml/globals.h>
@@ -152,7 +174,7 @@ typedef struct xmlNanoHTTPCtxt {
     char *authHeader;	/* contents of {WWW,Proxy}-Authenticate header */
     char *encoding;	/* encoding extracted from the contentType */
     char *mimeType;	/* Mime-Type extracted from the contentType */
-#ifdef HAVE_ZLIB_H
+#ifdef LIBXML_ZLIB_ENABLED
     z_stream *strm;	/* Zlib stream object */
     int usesGzip;	/* "Content-Encoding: gzip" was detected */
 #endif
@@ -182,7 +204,21 @@ xmlHTTPErrMemory(const char *extra)
  */
 static int socket_errno(void) {
 #ifdef _WINSOCKAPI_
-    return(WSAGetLastError());
+    int err = WSAGetLastError();
+    switch(err) {
+        case WSAECONNRESET:
+            return(ECONNRESET);
+        case WSAEINPROGRESS:
+            return(EINPROGRESS);
+        case WSAEINTR:
+            return(EINTR);
+        case WSAESHUTDOWN:
+            return(ESHUTDOWN);
+        case WSAEWOULDBLOCK:
+            return(EWOULDBLOCK);
+        default:
+            return(err);
+    }
 #else
     return(errno);
 #endif
@@ -427,7 +463,7 @@ xmlNanoHTTPFreeCtxt(xmlNanoHTTPCtxtPtr ctxt) {
     if (ctxt->mimeType != NULL) xmlFree(ctxt->mimeType);
     if (ctxt->location != NULL) xmlFree(ctxt->location);
     if (ctxt->authHeader != NULL) xmlFree(ctxt->authHeader);
-#ifdef HAVE_ZLIB_H
+#ifdef LIBXML_ZLIB_ENABLED
     if (ctxt->strm != NULL) {
 	inflateEnd(ctxt->strm);
 	xmlFree(ctxt->strm);
@@ -629,7 +665,7 @@ xmlNanoHTTPRecv(xmlNanoHTTPCtxtPtr ctxt)
 
         if ((select(ctxt->fd + 1, &rfd, NULL, NULL, &tv) < 1)
 #if defined(EINTR)
-            && (errno != EINTR)
+            && (socket_errno() != EINTR)
 #endif
             )
             return (0);
@@ -810,7 +846,7 @@ xmlNanoHTTPScanAnswer(xmlNanoHTTPCtxtPtr ctxt, const char *line) {
 	if (ctxt->authHeader != NULL)
 	    xmlFree(ctxt->authHeader);
 	ctxt->authHeader = xmlMemStrdup(cur);
-#ifdef HAVE_ZLIB_H
+#ifdef LIBXML_ZLIB_ENABLED
     } else if ( !xmlStrncasecmp( BAD_CAST line, BAD_CAST"Content-Encoding:", 17) ) {
 	cur += 17;
 	while ((*cur == ' ') || (*cur == '\t')) cur++;
@@ -1038,16 +1074,13 @@ xmlNanoHTTPConnectAttempt(struct sockaddr *addr)
 static SOCKET
 xmlNanoHTTPConnectHost(const char *host, int port)
 {
-    struct hostent *h;
     struct sockaddr *addr = NULL;
-    struct in_addr ia;
     struct sockaddr_in sockin;
 
 #ifdef SUPPORT_IP6
     struct in6_addr ia6;
     struct sockaddr_in6 sockin6;
 #endif
-    int i;
     SOCKET s;
 
     memset (&sockin, 0, sizeof(sockin));
@@ -1084,7 +1117,7 @@ xmlNanoHTTPConnectHost(const char *host, int port)
 
 	for (res = result; res; res = res->ai_next) {
 	    if (res->ai_family == AF_INET) {
-		if (res->ai_addrlen > sizeof(sockin)) {
+		if ((size_t)res->ai_addrlen > sizeof(sockin)) {
 		    __xmlIOErr(XML_FROM_HTTP, 0, "address size mismatch\n");
 		    freeaddrinfo (result);
 		    return INVALID_SOCKET;
@@ -1094,7 +1127,7 @@ xmlNanoHTTPConnectHost(const char *host, int port)
 		addr = (struct sockaddr *)&sockin;
 #ifdef SUPPORT_IP6
 	    } else if (have_ipv6 () && (res->ai_family == AF_INET6)) {
-		if (res->ai_addrlen > sizeof(sockin6)) {
+		if ((size_t)res->ai_addrlen > sizeof(sockin6)) {
 		    __xmlIOErr(XML_FROM_HTTP, 0, "address size mismatch\n");
 		    freeaddrinfo (result);
 		    return INVALID_SOCKET;
@@ -1122,6 +1155,10 @@ xmlNanoHTTPConnectHost(const char *host, int port)
 #endif
 #if !defined(HAVE_GETADDRINFO) || !defined(_WIN32)
     {
+        struct hostent *h;
+        struct in_addr ia;
+        int i;
+
 	h = gethostbyname (GETHOSTBYNAME_ARG_CAST host);
 	if (h == NULL) {
 
@@ -1130,7 +1167,7 @@ xmlNanoHTTPConnectHost(const char *host, int port)
  * extraction code. it work on Linux, if it work on your platform
  * and one want to enable it, send me the defined(foobar) needed
  */
-#if defined(HAVE_NETDB_H) && defined(HOST_NOT_FOUND) && defined(linux)
+#if defined(HAVE_NETDB_H) && defined(HOST_NOT_FOUND) && defined(__linux__)
 	    const char *h_err_txt = "";
 
 	    switch (h_errno) {
@@ -1265,7 +1302,7 @@ xmlNanoHTTPOpenRedir(const char *URL, char **contentType, char **redir) {
 int
 xmlNanoHTTPRead(void *ctx, void *dest, int len) {
     xmlNanoHTTPCtxtPtr ctxt = (xmlNanoHTTPCtxtPtr) ctx;
-#ifdef HAVE_ZLIB_H
+#ifdef LIBXML_ZLIB_ENABLED
     int bytes_read = 0;
     int orig_avail_in;
     int z_ret;
@@ -1275,7 +1312,7 @@ xmlNanoHTTPRead(void *ctx, void *dest, int len) {
     if (dest == NULL) return(-1);
     if (len <= 0) return(0);
 
-#ifdef HAVE_ZLIB_H
+#ifdef LIBXML_ZLIB_ENABLED
     if (ctxt->usesGzip == 1) {
         if (ctxt->strm == NULL) return(0);
 
@@ -1416,16 +1453,16 @@ retry:
 	/* 1 for '?' */
 	blen += strlen(ctxt->query) + 1;
     blen += strlen(method) + strlen(ctxt->path) + 24;
-#ifdef HAVE_ZLIB_H
+#ifdef LIBXML_ZLIB_ENABLED
     /* reserve for possible 'Accept-Encoding: gzip' string */
     blen += 23;
 #endif
     if (ctxt->port != 80) {
 	/* reserve space for ':xxxxx', incl. potential proxy */
 	if (proxy)
-	    blen += 12;
+	    blen += 17;
 	else
-	    blen += 6;
+	    blen += 11;
     }
     bp = (char*)xmlMallocAtomic(blen);
     if ( bp == NULL ) {
@@ -1460,7 +1497,7 @@ retry:
 		    ctxt->hostname, ctxt->port);
     }
 
-#ifdef HAVE_ZLIB_H
+#ifdef LIBXML_ZLIB_ENABLED
     p += snprintf(p, blen - (p - bp), "Accept-Encoding: gzip\r\n");
 #endif
 
@@ -1534,7 +1571,8 @@ retry:
 	xmlGenericError(xmlGenericErrorContext,
 		"\nRedirect to: %s\n", ctxt->location);
 #endif
-	while ( xmlNanoHTTPRecv(ctxt) > 0 ) ;
+	while ( xmlNanoHTTPRecv(ctxt) > 0 )
+            ;
         if (nbRedirects < XML_NANO_HTTP_MAX_REDIR) {
 	    nbRedirects++;
 	    if (redirURL != NULL)

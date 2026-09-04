@@ -32,6 +32,7 @@ CALLMODE
 #D-CONNECT-ACK
 #D-DISCONNECT
 #D-INFO
+#D-TX-INTERRUPT
 #D-RELEASE
 #D-SETUP
 #D-STATUS
@@ -69,6 +70,30 @@ MAC-ACCESS
 BSCH
 BNCH
 MAC-DATA
+
+#.FIELD_RENAME
+MAC-FRAG/tm-sdu tm-sdu-bit-str
+MAC-FRAG120/tm-sdu tm-sdu-bit-str
+MAC-END-UPLINK/tm-sdu tm-sdu-bit-str
+MAC-END-UP114/tm-sdu tm-sdu-bit-str
+MAC-END-HU/tm-sdu tm-sdu-bit-str
+MAC-END-DOWNLINK/tm-sdu tm-sdu-bit-str
+MAC-END-DOWN111/tm-sdu tm-sdu-bit-str
+GROUP-IDENTITY-DOWNLINK/address-type/gssi gssi-oct-str
+D-LOCATION-UPDATE-ACCEPT/optional-elements/type2-parameters/ssi ssi_choice
+D-LOCATION-UPDATE-ACCEPT/optional-elements/type2-parameters/ssi/ssi  ssi-oct-str
+D-LOCATION-UPDATE-ACCEPT/optional-elements/type2-parameters/address-extension address-extension_choice
+D-LOCATION-UPDATE-ACCEPT/optional-elements/type2-parameters/subscriber-class subscriber-class_choice
+U-LOCATION-UPDATE-DEMAND/optional-elements/type2-parameters/ssi ssi_choice
+U-LOCATION-UPDATE-DEMAND/optional-elements/type2-parameters/ssi/ssi  ssi-oct-str
+U-LOCATION-UPDATE-DEMAND/optional-elements/type2-parameters/address-extension address-extension_choice
+U-LOCATION-UPDATE-DEMAND/cipher-control cipher-control-choice
+U-LOCATION-UPDATE-DEMAND/optional-elements/type2-parameters/type3/type3-elements/group-report-response group-report-response-choice
+D-SETUP/hook-method-selection hook-method-selection-integer
+GROUP-IDENTITY-DOWNLINK/address-type/gssi-extension/gssi gssi-oct-str
+GROUP-IDENTITY-UPLINK/address-type/gssi gssi-oct-str
+GROUP-IDENTITY-UPLINK/address-type/gssi-extension/gssi gssi-oct-str
+AddressMacResource/ssi ssi-need
 
 
 #.FN_BODY U-RELEASE
@@ -119,6 +144,11 @@ MAC-DATA
 #.FN_BODY D-INFO
 %(DEFAULT_BODY)s
 	col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "D-INFO");
+#.END
+
+#.FN_BODY D-TX-INTERRUPT
+%(DEFAULT_BODY)s
+	col_append_sep_str(actx->pinfo->cinfo, COL_INFO, NULL, "D-TX-INTERRUPT");
 #.END
 
 #.FN_BODY D-DISCONNECT

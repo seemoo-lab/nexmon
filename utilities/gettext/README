@@ -15,15 +15,16 @@ package to internationalize the messages given by shell scripts.
 
 The homepage of this package is at
 
-           http://www.gnu.org/software/gettext/
+           https://www.gnu.org/software/gettext/
 
 The primary FTP site for its distribution is
 
-           ftp://ftp.gnu.org/pub/gnu/gettext/
+           https://ftp.gnu.org/pub/gnu/gettext/
 
 
-Send comments and bug reports to
-                bug-gnu-gettext@gnu.org
+Report bugs
+  - in the bug tracker at <https://savannah.gnu.org/projects/gettext>
+  - or by email to <bug-gettext@gnu.org>.
 
 
 The configure script provides a non-standard option.  It is also
@@ -56,9 +57,9 @@ Consult the manual for more information on language names.
 
 Other files you might look into:
 
-ABOUT-NLS    - current state of the GNU internationalization effort
 COPYING      - copying conditions
 DEPENDENCIES - list of prerequisite packages, to be installed before this one
 INSTALL      - general compilation and installation rules
 NEWS         - major changes in the current version
 THANKS       - list of contributors
+JOIN-GNU     - invitation to join the GNU project

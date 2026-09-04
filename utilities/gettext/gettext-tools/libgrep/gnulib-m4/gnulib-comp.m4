@@ -1,9 +1,9 @@
 # DO NOT EDIT! GENERATED AUTOMATICALLY!
-# Copyright (C) 2002-2016 Free Software Foundation, Inc.
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
 # This file is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this file.  If not, see <http://www.gnu.org/licenses/>.
+# along with this file.  If not, see <https://www.gnu.org/licenses/>.
 #
 # As a special exception to the GNU General Public License,
 # this file may be distributed as part of a program that
@@ -41,21 +41,29 @@ AC_DEFUN([grgl_EARLY],
   # Pre-early section.
   AC_REQUIRE([gl_PROG_AR_RANLIB])
 
-  AC_REQUIRE([AM_PROG_CC_C_O])
-  # Code from module btowc:
-  # Code from module havelib:
-  # Code from module langinfo:
-  # Code from module localeconv:
-  # Code from module lock:
+  # Code from module bool:
+  # Code from module gen-header:
+  # Code from module glibc-internal/dynarray:
+  # Code from module kwset:
+  # Code from module langinfo-h:
   # Code from module mbrlen:
-  # Code from module mbtowc:
+  # Code from module memchr2:
   # Code from module nl_langinfo:
+  # Code from module nullptr:
   # Code from module regex:
+  # Code from module snippet/_Noreturn:
+  # Code from module snippet/arg-nonnull:
   # Code from module snippet/c++defs:
   # Code from module snippet/warn-on-use:
-  # Code from module threadlib:
-  gl_THREADLIB_EARLY
+  # Code from module stddef-h:
+  # Code from module stdint-h:
+  # Code from module stdlib-h:
+  # Code from module stringeq:
+  # Code from module strncpy:
+  # Code from module unistd-h:
+  # Code from module wchar-h:
   # Code from module wcrtomb:
+  # Code from module wctype-h:
 ])
 
 # This macro should be invoked from gettext-tools/configure.ac, in the section
@@ -72,53 +80,77 @@ AC_DEFUN([grgl_INIT],
   m4_pushdef([AC_LIBSOURCES], m4_defn([grgl_LIBSOURCES]))
   m4_pushdef([grgl_LIBSOURCES_LIST], [])
   m4_pushdef([grgl_LIBSOURCES_DIR], [])
+  m4_pushdef([GL_MACRO_PREFIX], [grgl])
+  m4_pushdef([GL_MODULE_INDICATOR_PREFIX], [GL_GRGL])
   gl_COMMON
-  gl_source_base='libgrep'
+  gl_source_base='libgrep/gnulib-lib'
+  gl_source_base_prefix=
   m4_pushdef([gl_MODULE_INDICATOR_CONDITION], [IN_GETTEXT_TOOLS_LIBGREP])
-  gl_FUNC_BTOWC
-  if test $HAVE_BTOWC = 0 || test $REPLACE_BTOWC = 1; then
-    AC_LIBOBJ([btowc])
-    gl_PREREQ_BTOWC
-  fi
-  gl_WCHAR_MODULE_INDICATOR([btowc])
+  gl_C_BOOL
+  AC_PROG_MKDIR_P
+  AC_REQUIRE([AC_C_INLINE])
   gl_LANGINFO_H
-  gl_FUNC_LOCALECONV
-  if test $REPLACE_LOCALECONV = 1; then
-    AC_LIBOBJ([localeconv])
-    gl_PREREQ_LOCALECONV
-  fi
-  gl_LOCALE_MODULE_INDICATOR([localeconv])
-  gl_LOCK
-  gl_MODULE_INDICATOR([lock])
+  gl_LANGINFO_H_REQUIRE_DEFAULTS
+  AC_PROG_MKDIR_P
   gl_FUNC_MBRLEN
-  if test $HAVE_MBRLEN = 0 || test $REPLACE_MBRLEN = 1; then
-    AC_LIBOBJ([mbrlen])
+  gl_CONDITIONAL([GL_COND_OBJ_MBRLEN],
+                 [test $HAVE_MBRLEN = 0 || test $REPLACE_MBRLEN = 1])
+  AM_COND_IF([GL_COND_OBJ_MBRLEN], [
     gl_PREREQ_MBRLEN
-  fi
+  ])
   gl_WCHAR_MODULE_INDICATOR([mbrlen])
-  gl_FUNC_MBTOWC
-  if test $REPLACE_MBTOWC = 1; then
-    AC_LIBOBJ([mbtowc])
-    gl_PREREQ_MBTOWC
-  fi
-  gl_STDLIB_MODULE_INDICATOR([mbtowc])
   gl_FUNC_NL_LANGINFO
-  if test $HAVE_NL_LANGINFO = 0 || test $REPLACE_NL_LANGINFO = 1; then
-    AC_LIBOBJ([nl_langinfo])
+  gl_CONDITIONAL([GL_COND_OBJ_NL_LANGINFO],
+                 [test $HAVE_NL_LANGINFO = 0 || test $REPLACE_NL_LANGINFO = 1])
+  gl_CONDITIONAL([GL_COND_OBJ_NL_LANGINFO_LOCK],
+                 [test $REPLACE_NL_LANGINFO = 1 && test $NL_LANGINFO_MTSAFE = 0])
+  if test $REPLACE_NL_LANGINFO = 1 && test $NL_LANGINFO_MTSAFE = 0; then
+    gl_PREREQ_NL_LANGINFO_LOCK
   fi
   gl_LANGINFO_MODULE_INDICATOR([nl_langinfo])
+  gl_NULLPTR
   gl_REGEX
-  if test $ac_use_included_regex = yes; then
-    AC_LIBOBJ([regex])
+  gl_CONDITIONAL([GL_COND_OBJ_REGEX], [test $ac_use_included_regex = yes])
+  AM_COND_IF([GL_COND_OBJ_REGEX], [
     gl_PREREQ_REGEX
-  fi
-  gl_THREADLIB
+  ])
+  gl_STDDEF_H
+  gl_STDDEF_H_REQUIRE_DEFAULTS
+  gl_CONDITIONAL_HEADER([stddef.h])
+  AC_PROG_MKDIR_P
+  gl_STDINT_H
+  gl_CONDITIONAL_HEADER([stdint.h])
+  dnl Because of gl_REPLACE_LIMITS_H:
+  gl_CONDITIONAL_HEADER([limits.h])
+  AC_PROG_MKDIR_P
+  gl_STDLIB_H
+  gl_STDLIB_H_REQUIRE_DEFAULTS
+  AC_PROG_MKDIR_P
+  gl_FUNC_STREQ
+  gl_FUNC_MEMEQ
+  gl_STRING_MODULE_INDICATOR([stringeq])
+  gl_FUNC_STRNCPY
+  gl_CONDITIONAL([GL_COND_OBJ_STRNCPY], [test $REPLACE_STRNCPY = 1])
+  AM_COND_IF([GL_COND_OBJ_STRNCPY], [
+    gl_PREREQ_STRNCPY
+  ])
+  gl_STRING_MODULE_INDICATOR([strncpy])
+  gl_UNISTD_H
+  gl_UNISTD_H_REQUIRE_DEFAULTS
+  AC_PROG_MKDIR_P
+  gl_WCHAR_H
+  gl_WCHAR_H_REQUIRE_DEFAULTS
+  AC_PROG_MKDIR_P
   gl_FUNC_WCRTOMB
-  if test $HAVE_WCRTOMB = 0 || test $REPLACE_WCRTOMB = 1; then
-    AC_LIBOBJ([wcrtomb])
+  gl_CONDITIONAL([GL_COND_OBJ_WCRTOMB],
+                 [test $HAVE_WCRTOMB = 0 || test $REPLACE_WCRTOMB = 1])
+  AM_COND_IF([GL_COND_OBJ_WCRTOMB], [
     gl_PREREQ_WCRTOMB
-  fi
+  ])
   gl_WCHAR_MODULE_INDICATOR([wcrtomb])
+  gl_WCTYPE_H
+  gl_WCTYPE_H_REQUIRE_DEFAULTS
+  AC_PROG_MKDIR_P
   m4_popdef([gl_MODULE_INDICATOR_CONDITION])
   # End of code from modules
   m4_ifval(grgl_LIBSOURCES_LIST, [
@@ -132,6 +164,8 @@ AC_DEFUN([grgl_INIT],
       m4_if(m4_sysval, [0], [],
         [AC_FATAL([expected source file, required through AC_LIBSOURCES, not found])])
   ])
+  m4_popdef([GL_MODULE_INDICATOR_PREFIX])
+  m4_popdef([GL_MACRO_PREFIX])
   m4_popdef([grgl_LIBSOURCES_DIR])
   m4_popdef([grgl_LIBSOURCES_LIST])
   m4_popdef([AC_LIBSOURCES])
@@ -140,16 +174,36 @@ AC_DEFUN([grgl_INIT],
   AC_CONFIG_COMMANDS_PRE([
     grgl_libobjs=
     grgl_ltlibobjs=
+    grgl_libobjdeps=
+    grgl_libgnu_libobjs=
+    grgl_libgnu_ltlibobjs=
+    grgl_libgnu_libobjdeps=
     if test -n "$grgl_LIBOBJS"; then
       # Remove the extension.
+changequote(,)dnl
       sed_drop_objext='s/\.o$//;s/\.obj$//'
+      sed_dirname1='s,//*,/,g'
+      sed_dirname2='s,\(.\)/$,\1,'
+      sed_dirname3='s,[^/]*$,,'
+      sed_basename1='s,.*/,,'
+changequote([, ])dnl
       for i in `for i in $grgl_LIBOBJS; do echo "$i"; done | sed -e "$sed_drop_objext" | sort | uniq`; do
         grgl_libobjs="$grgl_libobjs $i.$ac_objext"
         grgl_ltlibobjs="$grgl_ltlibobjs $i.lo"
+        i_dir=`echo "$i" | sed -e "$sed_dirname1" -e "$sed_dirname2" -e "$sed_dirname3"`
+        i_base=`echo "$i" | sed -e "$sed_basename1"`
+        grgl_libgnu_libobjs="$grgl_libgnu_libobjs $i_dir""libgnu_a-$i_base.$ac_objext"
+        grgl_libgnu_ltlibobjs="$grgl_libgnu_ltlibobjs $i_dir""libgnu_la-$i_base.lo"
+        grgl_libobjdeps="$grgl_libobjdeps $i_dir\$(DEPDIR)/$i_base.Po"
+        grgl_libgnu_libobjdeps="$grgl_libgnu_libobjdeps $i_dir\$(DEPDIR)/libgnu_a-$i_base.Po"
       done
     fi
     AC_SUBST([grgl_LIBOBJS], [$grgl_libobjs])
     AC_SUBST([grgl_LTLIBOBJS], [$grgl_ltlibobjs])
+    AC_SUBST([grgl_LIBOBJDEPS], [$grgl_libobjdeps])
+    AC_SUBST([grgl_libgnu_LIBOBJS], [$grgl_libgnu_libobjs])
+    AC_SUBST([grgl_libgnu_LTLIBOBJS], [$grgl_libgnu_ltlibobjs])
+    AC_SUBST([grgl_libgnu_LIBOBJDEPS], [$grgl_libgnu_libobjdeps])
   ])
   gltests_libdeps=
   gltests_ltlibdeps=
@@ -158,8 +212,11 @@ AC_DEFUN([grgl_INIT],
   m4_pushdef([AC_LIBSOURCES], m4_defn([grgltests_LIBSOURCES]))
   m4_pushdef([grgltests_LIBSOURCES_LIST], [])
   m4_pushdef([grgltests_LIBSOURCES_DIR], [])
+  m4_pushdef([GL_MACRO_PREFIX], [grgltests])
+  m4_pushdef([GL_MODULE_INDICATOR_PREFIX], [GL_GRGL])
   gl_COMMON
   gl_source_base='tests'
+  gl_source_base_prefix=
 changequote(,)dnl
   grgltests_WITNESS=IN_`echo "${PACKAGE-$PACKAGE_TARNAME}" | LC_ALL=C tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ | LC_ALL=C sed -e 's/[^A-Z0-9_]/_/g'`_GNULIB_TESTS
 changequote([, ])dnl
@@ -178,6 +235,8 @@ changequote([, ])dnl
       m4_if(m4_sysval, [0], [],
         [AC_FATAL([expected source file, required through AC_LIBSOURCES, not found])])
   ])
+  m4_popdef([GL_MODULE_INDICATOR_PREFIX])
+  m4_popdef([GL_MACRO_PREFIX])
   m4_popdef([grgltests_LIBSOURCES_DIR])
   m4_popdef([grgltests_LIBSOURCES_LIST])
   m4_popdef([AC_LIBSOURCES])
@@ -186,21 +245,42 @@ changequote([, ])dnl
   AC_CONFIG_COMMANDS_PRE([
     grgltests_libobjs=
     grgltests_ltlibobjs=
+    grgltests_libobjdeps=
+    grgltests_libgnu_libobjs=
+    grgltests_libgnu_ltlibobjs=
+    grgltests_libgnu_libobjdeps=
     if test -n "$grgltests_LIBOBJS"; then
       # Remove the extension.
+changequote(,)dnl
       sed_drop_objext='s/\.o$//;s/\.obj$//'
+      sed_dirname1='s,//*,/,g'
+      sed_dirname2='s,\(.\)/$,\1,'
+      sed_dirname3='s,[^/]*$,,'
+      sed_basename1='s,.*/,,'
+changequote([, ])dnl
       for i in `for i in $grgltests_LIBOBJS; do echo "$i"; done | sed -e "$sed_drop_objext" | sort | uniq`; do
         grgltests_libobjs="$grgltests_libobjs $i.$ac_objext"
         grgltests_ltlibobjs="$grgltests_ltlibobjs $i.lo"
+        i_dir=`echo "$i" | sed -e "$sed_dirname1" -e "$sed_dirname2" -e "$sed_dirname3"`
+        i_base=`echo "$i" | sed -e "$sed_basename1"`
+        grgltests_libgnu_libobjs="$grgltests_libgnu_libobjs $i_dir""libgnu_a-$i_base.$ac_objext"
+        grgltests_libgnu_ltlibobjs="$grgltests_libgnu_ltlibobjs $i_dir""libgnu_la-$i_base.lo"
+        grgltests_libobjdeps="$grgltests_libobjdeps $i_dir\$(DEPDIR)/$i_base.Po"
+        grgltests_libgnu_libobjdeps="$grgltests_libgnu_libobjdeps $i_dir\$(DEPDIR)/libgnu_a-$i_base.Po"
       done
     fi
     AC_SUBST([grgltests_LIBOBJS], [$grgltests_libobjs])
     AC_SUBST([grgltests_LTLIBOBJS], [$grgltests_ltlibobjs])
+    AC_SUBST([grgltests_LIBOBJDEPS], [$grgltests_libobjdeps])
+    AC_SUBST([grgltests_libgnu_LIBOBJS], [$grgltests_libgnu_libobjs])
+    AC_SUBST([grgltests_libgnu_LTLIBOBJS], [$grgltests_libgnu_ltlibobjs])
+    AC_SUBST([grgltests_libgnu_LIBOBJDEPS], [$grgltests_libgnu_libobjdeps])
   ])
-  LIBGREP_LIBDEPS="$gl_libdeps"
-  AC_SUBST([LIBGREP_LIBDEPS])
-  LIBGREP_LTLIBDEPS="$gl_ltlibdeps"
-  AC_SUBST([LIBGREP_LTLIBDEPS])
+  AC_REQUIRE([gl_CC_GNULIB_WARNINGS])
+  LIBGNU_LIBDEPS="$gl_libdeps"
+  AC_SUBST([LIBGNU_LIBDEPS])
+  LIBGNU_LTLIBDEPS="$gl_ltlibdeps"
+  AC_SUBST([LIBGNU_LTLIBDEPS])
 ])
 
 # Like AC_LIBOBJ, except that the module name goes
@@ -224,7 +304,7 @@ AC_DEFUN([grgl_REPLACE_FUNCS], [
 AC_DEFUN([grgl_LIBSOURCES], [
   m4_foreach([_gl_NAME], [$1], [
     m4_if(_gl_NAME, [alloca.c], [], [
-      m4_define([grgl_LIBSOURCES_DIR], [libgrep])
+      m4_define([grgl_LIBSOURCES_DIR], [libgrep/gnulib-lib])
       m4_append([grgl_LIBSOURCES_LIST], _gl_NAME, [ ])
     ])
   ])
@@ -260,18 +340,25 @@ AC_DEFUN([grgltests_LIBSOURCES], [
 # This macro records the list of files which have been installed by
 # gnulib-tool and may be removed by future gnulib-tool invocations.
 AC_DEFUN([grgl_FILE_LIST], [
-  build-aux/config.rpath
-  build-aux/snippet/c++defs.h
-  build-aux/snippet/warn-on-use.h
-  lib/btowc.c
-  lib/glthread/lock.c
-  lib/glthread/lock.h
-  lib/glthread/threadlib.c
+  lib/_Noreturn.h
+  lib/arg-nonnull.h
+  lib/c++defs.h
+  lib/dynarray.h
+  lib/kwset.c
+  lib/kwset.h
   lib/langinfo.in.h
-  lib/localeconv.c
+  lib/malloc/dynarray-skeleton.c
+  lib/malloc/dynarray.h
+  lib/malloc/dynarray_at_failure.c
+  lib/malloc/dynarray_emplace_enlarge.c
+  lib/malloc/dynarray_finalize.c
+  lib/malloc/dynarray_resize.c
+  lib/malloc/dynarray_resize_clear.c
   lib/mbrlen.c
-  lib/mbtowc-impl.h
-  lib/mbtowc.c
+  lib/memchr2.c
+  lib/memchr2.h
+  lib/memchr2.valgrind
+  lib/nl_langinfo-lock.c
   lib/nl_langinfo.c
   lib/regcomp.c
   lib/regex.c
@@ -279,28 +366,50 @@ AC_DEFUN([grgl_FILE_LIST], [
   lib/regex_internal.c
   lib/regex_internal.h
   lib/regexec.c
+  lib/stddef.in.h
+  lib/stdint.in.h
+  lib/stdlib.c
+  lib/stdlib.in.h
+  lib/string.c
+  lib/strncpy.c
+  lib/unistd.c
+  lib/unistd.in.h
+  lib/warn-on-use.h
+  lib/wchar.in.h
   lib/wcrtomb.c
+  lib/wctype-h.c
+  lib/wctype.in.h
+  lib/windows-initguard.h
   m4/00gnulib.m4
-  m4/btowc.m4
+  m4/c-bool.m4
   m4/codeset.m4
-  m4/eealloc.m4
   m4/gnulib-common.m4
   m4/langinfo_h.m4
-  m4/lib-ld.m4
-  m4/lib-link.m4
-  m4/lib-prefix.m4
+  m4/locale-en.m4
   m4/locale-fr.m4
   m4/locale-ja.m4
   m4/locale-zh.m4
-  m4/localeconv.m4
-  m4/lock.m4
   m4/mbrlen.m4
   m4/mbrtowc.m4
   m4/mbstate_t.m4
-  m4/mbtowc.m4
+  m4/mmap-anon.m4
   m4/nl_langinfo.m4
+  m4/nullptr.m4
+  m4/off_t.m4
+  m4/pid_t.m4
   m4/regex.m4
+  m4/stddef_h.m4
+  m4/stdint.m4
+  m4/stdlib_h.m4
+  m4/stringeq.m4
+  m4/strncpy.m4
   m4/threadlib.m4
+  m4/unistd_h.m4
+  m4/visibility.m4
   m4/warn-on-use.m4
+  m4/wchar_h.m4
   m4/wcrtomb.m4
+  m4/wctype_h.m4
+  m4/wint_t.m4
+  m4/zzgnulib.m4
 ])

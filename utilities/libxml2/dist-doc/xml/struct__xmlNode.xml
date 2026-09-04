@@ -1,0 +1,435 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlNode" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlNode</compoundname>
+    <includes local="no">tree.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlNode_1a1cb76d737bf6f5b53e6c970073cba051" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* _private</definition>
+        <argsstring></argsstring>
+        <name>_private</name>
+        <qualifiedname>_xmlNode::_private</qualifiedname>
+        <briefdescription>
+<para>Application data. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Often used by language bindings. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="697" column="20" bodyfile="tree.h" bodystart="697" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1ac5b2f541d66059a7c8de2599ba543e70" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1a6d83aa11b89106b2ec14162b1474c8fc" kindref="member">xmlElementType</ref></type>
+        <definition>xmlElementType type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlNode::type</qualifiedname>
+        <briefdescription>
+<para>Type enum, an <ref refid="tree_8h_1a6d83aa11b89106b2ec14162b1474c8fc" kindref="member">xmlElementType</ref> value. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="699" column="22" bodyfile="tree.h" bodystart="699" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlNode::name</qualifiedname>
+        <briefdescription>
+<para>Name of the node. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><itemizedlist>
+<listitem><para>Local name of elements or attributes. As a corner case, this can also contain Names which are invalid QNames in non-namespace-wellformed documents.</para>
+</listitem><listitem><para>Name of entity references</para>
+</listitem><listitem><para>Target of processing instructions</para>
+</listitem><listitem><para>Fixed string for text and comments</para>
+</listitem><listitem><para>Unused otherwise </para>
+</listitem></itemizedlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="711" column="21" bodyfile="tree.h" bodystart="711" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1aff6ebaaa61a2b60c033a82790133fb5e" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlNode" kindref="compound">_xmlNode</ref> *</type>
+        <definition>struct _xmlNode* children</definition>
+        <argsstring></argsstring>
+        <name>children</name>
+        <qualifiedname>_xmlNode::children</qualifiedname>
+        <briefdescription>
+<para>First child. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Entity declaration of entity references. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="713" column="19" bodyfile="tree.h" bodystart="713" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1a557b64ca596f6376407afcd1b0c959a7" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlNode" kindref="compound">_xmlNode</ref> *</type>
+        <definition>struct _xmlNode* last</definition>
+        <argsstring></argsstring>
+        <name>last</name>
+        <qualifiedname>_xmlNode::last</qualifiedname>
+        <briefdescription>
+<para>Last child. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="715" column="19" bodyfile="tree.h" bodystart="715" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1a6e3b197c773ec09059c77c324278ea78" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlNode" kindref="compound">_xmlNode</ref> *</type>
+        <definition>struct _xmlNode* parent</definition>
+        <argsstring></argsstring>
+        <name>parent</name>
+        <qualifiedname>_xmlNode::parent</qualifiedname>
+        <briefdescription>
+<para>Parent node. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>NULL for documents or unlinked root nodes. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="717" column="19" bodyfile="tree.h" bodystart="717" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1aec42d72625408c533e1ee43b0f668988" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlNode" kindref="compound">_xmlNode</ref> *</type>
+        <definition>struct _xmlNode* next</definition>
+        <argsstring></argsstring>
+        <name>next</name>
+        <qualifiedname>_xmlNode::next</qualifiedname>
+        <briefdescription>
+<para>Next sibling. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="719" column="19" bodyfile="tree.h" bodystart="719" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1a6b50e54b959fb7df6b6af04da9f8da49" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlNode" kindref="compound">_xmlNode</ref> *</type>
+        <definition>struct _xmlNode* prev</definition>
+        <argsstring></argsstring>
+        <name>prev</name>
+        <qualifiedname>_xmlNode::prev</qualifiedname>
+        <briefdescription>
+<para>Previous sibling. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="721" column="19" bodyfile="tree.h" bodystart="721" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1aeeffa6cba73333db3d9b2aa59f366304" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlDoc" kindref="compound">_xmlDoc</ref> *</type>
+        <definition>struct _xmlDoc* doc</definition>
+        <argsstring></argsstring>
+        <name>doc</name>
+        <qualifiedname>_xmlNode::doc</qualifiedname>
+        <briefdescription>
+<para>Associated document. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Used to access DTDs, entities, ID tables, dictionary or other document properties. All children of a node share the same document. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="729" column="18" bodyfile="tree.h" bodystart="729" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1a833dce784181d57f113905b18dd49819" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1a79683a004465ef75a960604fada53ab3" kindref="member">xmlNs</ref> *</type>
+        <definition>xmlNs* ns</definition>
+        <argsstring></argsstring>
+        <name>ns</name>
+        <qualifiedname>_xmlNode::ns</qualifiedname>
+        <briefdescription>
+<para>Namespace of element if any. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="734" column="21" bodyfile="tree.h" bodystart="734" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1a26031fb504d7c8616a5b161b0fbc8c62" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* content</definition>
+        <argsstring></argsstring>
+        <name>content</name>
+        <qualifiedname>_xmlNode::content</qualifiedname>
+        <briefdescription>
+<para>Content of text, comment, PI nodes. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Sort index for elements after calling <ref refid="xpath_8h_1aa262897a01da91fea81a3e12d959b607" kindref="member">xmlXPathOrderDocElems</ref>. Content of internal entities for entity references. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="741" column="21" bodyfile="tree.h" bodystart="741" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1ae8903ead3971609d70b633096150bcae" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlAttr" kindref="compound">_xmlAttr</ref> *</type>
+        <definition>struct _xmlAttr* properties</definition>
+        <argsstring></argsstring>
+        <name>properties</name>
+        <qualifiedname>_xmlNode::properties</qualifiedname>
+        <briefdescription>
+<para>First attribute of element. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Also used to store small strings with XML_PARSE_COMPACT. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="747" column="19" bodyfile="tree.h" bodystart="747" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1a771180d448971610ae3c04068f382446" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1a79683a004465ef75a960604fada53ab3" kindref="member">xmlNs</ref> *</type>
+        <definition>xmlNs* nsDef</definition>
+        <argsstring></argsstring>
+        <name>nsDef</name>
+        <qualifiedname>_xmlNode::nsDef</qualifiedname>
+        <briefdescription>
+<para>First namespace definition of element. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="749" column="21" bodyfile="tree.h" bodystart="749" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1a913d0a6316a4230e96f6207138733de0" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* psvi</definition>
+        <argsstring></argsstring>
+        <name>psvi</name>
+        <qualifiedname>_xmlNode::psvi</qualifiedname>
+        <briefdescription>
+<para>For type/PSVI information. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="751" column="21" bodyfile="tree.h" bodystart="751" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1a12da61ba70beb7fda26fb3c1703b7b12" prot="public" static="no" mutable="no">
+        <type>unsigned short</type>
+        <definition>unsigned short line</definition>
+        <argsstring></argsstring>
+        <name>line</name>
+        <qualifiedname>_xmlNode::line</qualifiedname>
+        <briefdescription>
+<para>Line number. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="753" column="22" bodyfile="tree.h" bodystart="753" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlNode_1a8a26dccda5fcb814d7a17cf674b1dfb8" prot="public" static="no" mutable="no">
+        <type>unsigned short</type>
+        <definition>unsigned short extra</definition>
+        <argsstring></argsstring>
+        <name>extra</name>
+        <qualifiedname>_xmlNode::extra</qualifiedname>
+        <briefdescription>
+<para>Extra data for XPath/XSLT. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="755" column="22" bodyfile="tree.h" bodystart="755" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>Generic node type in an XML or HTML tree. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>This is used for</para>
+<para><itemizedlist>
+<listitem><para>XML_ELEMENT_NODE</para>
+</listitem><listitem><para>XML_TEXT_NODE</para>
+</listitem><listitem><para>XML_CDATA_SECTION_NODE</para>
+</listitem><listitem><para>XML_ENTITY_REF_NODE</para>
+</listitem><listitem><para>XML_PI_NODE</para>
+</listitem><listitem><para>XML_COMMENT_NODE</para>
+</listitem><listitem><para>XML_DOCUMENT_FRAG_NODE</para>
+</listitem><listitem><para>XML_XINCLUDE_START_NODE</para>
+</listitem><listitem><para>XML_XINCLUDE_END_NODE</para>
+</listitem></itemizedlist>
+</para>
+<para>Other node types have a different struct layout than <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref>, see <ref refid="tree_8h_1a6d83aa11b89106b2ec14162b1474c8fc" kindref="member">xmlElementType</ref>. Except for XML_NAMESPACE_DECL all nodes share the following members at the same offset:</para>
+<para><itemizedlist>
+<listitem><para><computeroutput><ref refid="struct__xmlNode_1a1cb76d737bf6f5b53e6c970073cba051" kindref="member">_private</ref></computeroutput></para>
+</listitem><listitem><para><computeroutput><ref refid="struct__xmlNode_1ac5b2f541d66059a7c8de2599ba543e70" kindref="member">type</ref></computeroutput> (also for XML_NAMESPACE_DECL)</para>
+</listitem><listitem><para><computeroutput><ref refid="struct__xmlNode_1a9d09be92db244aa2ecd5921f41f43ded" kindref="member">name</ref></computeroutput></para>
+</listitem><listitem><para><computeroutput><ref refid="struct__xmlNode_1aff6ebaaa61a2b60c033a82790133fb5e" kindref="member">children</ref></computeroutput></para>
+</listitem><listitem><para><computeroutput><ref refid="struct__xmlNode_1a557b64ca596f6376407afcd1b0c959a7" kindref="member">last</ref></computeroutput></para>
+</listitem><listitem><para><computeroutput><ref refid="struct__xmlNode_1a6e3b197c773ec09059c77c324278ea78" kindref="member">parent</ref></computeroutput></para>
+</listitem><listitem><para><computeroutput><ref refid="struct__xmlNode_1aec42d72625408c533e1ee43b0f668988" kindref="member">next</ref></computeroutput></para>
+</listitem><listitem><para><computeroutput><ref refid="struct__xmlNode_1a6b50e54b959fb7df6b6af04da9f8da49" kindref="member">prev</ref></computeroutput></para>
+</listitem><listitem><para><computeroutput><ref refid="struct__xmlNode_1aeeffa6cba73333db3d9b2aa59f366304" kindref="member">doc</ref></computeroutput></para>
+</listitem></itemizedlist>
+</para>
+<para><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> and <ref refid="tree_8h_1a94c0908950e8e798cf7eb5ed524da0af" kindref="member">xmlAttr</ref> also share the <computeroutput><ref refid="struct__xmlNode_1a833dce784181d57f113905b18dd49819" kindref="member">ns</ref></computeroutput> member. </para>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="7">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="1" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlDict</label>
+        <childnode refid="6" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlDictStrings</label>
+        <childnode refid="6" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="1" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="1" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="1" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="tree.h" line="695" column="1" bodyfile="tree.h" bodystart="695" bodyend="756"/>
+    <listofallmembers>
+      <member refid="struct__xmlNode_1a1cb76d737bf6f5b53e6c970073cba051" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>_private</name></member>
+      <member refid="struct__xmlNode_1aff6ebaaa61a2b60c033a82790133fb5e" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>children</name></member>
+      <member refid="struct__xmlNode_1a26031fb504d7c8616a5b161b0fbc8c62" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>content</name></member>
+      <member refid="struct__xmlNode_1aeeffa6cba73333db3d9b2aa59f366304" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>doc</name></member>
+      <member refid="struct__xmlNode_1a8a26dccda5fcb814d7a17cf674b1dfb8" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>extra</name></member>
+      <member refid="struct__xmlNode_1a557b64ca596f6376407afcd1b0c959a7" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>last</name></member>
+      <member refid="struct__xmlNode_1a12da61ba70beb7fda26fb3c1703b7b12" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>line</name></member>
+      <member refid="struct__xmlNode_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>name</name></member>
+      <member refid="struct__xmlNode_1aec42d72625408c533e1ee43b0f668988" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>next</name></member>
+      <member refid="struct__xmlNode_1a833dce784181d57f113905b18dd49819" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>ns</name></member>
+      <member refid="struct__xmlNode_1a771180d448971610ae3c04068f382446" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>nsDef</name></member>
+      <member refid="struct__xmlNode_1a6e3b197c773ec09059c77c324278ea78" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>parent</name></member>
+      <member refid="struct__xmlNode_1a6b50e54b959fb7df6b6af04da9f8da49" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>prev</name></member>
+      <member refid="struct__xmlNode_1ae8903ead3971609d70b633096150bcae" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>properties</name></member>
+      <member refid="struct__xmlNode_1a913d0a6316a4230e96f6207138733de0" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>psvi</name></member>
+      <member refid="struct__xmlNode_1ac5b2f541d66059a7c8de2599ba543e70" prot="public" virt="non-virtual"><scope>_xmlNode</scope><name>type</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_NTLMSSP_H__
@@ -33,6 +21,16 @@
 
 #define NTLMSSP_KEY_LEN 16
 
+#define NTLMSSP_MAX_ORIG_LEN 256
+
+typedef struct _md4_pass {
+  uint8_t md4[NTLMSSP_KEY_LEN];
+  char key_origin[NTLMSSP_MAX_ORIG_LEN+1];
+} md4_pass;
+
+uint32_t
+get_md4pass_list(wmem_allocator_t *pool, md4_pass** p_pass_list);
+
 /* Dissect a ntlmv2 response */
 
 int
@@ -40,11 +38,30 @@ dissect_ntlmv2_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *ntlmssp_t
 
 /* the ntlmssp data passed to tap listeners */
 typedef struct _ntlmssp_header_t {
-	guint32		type;
-	const char 	*domain_name;
-	const char 	*acct_name;
-	const char 	*host_name;
-	guint8		session_key[NTLMSSP_KEY_LEN];
+	uint32_t		type;
+	const uint8_t	*domain_name;
+	const uint8_t	*acct_name;
+	const uint8_t	*host_name;
+	uint8_t		session_key[NTLMSSP_KEY_LEN];
 } ntlmssp_header_t;
+
+#define NTLMSSP_BLOB_MAX_SIZE 10240
+typedef struct _ntlmssp_blob {
+  uint16_t length;
+  uint8_t* contents;
+} ntlmssp_blob;
+
+void
+ntlmssp_create_session_key(packet_info *pinfo,
+                           proto_tree *tree,
+                           ntlmssp_header_t *ntlmssph,
+                           int flags,
+                           const uint8_t *server_challenge,
+                           const uint8_t *encryptedsessionkey,
+                           const ntlmssp_blob *ntlm_response,
+                           const ntlmssp_blob *lm_response);
+
+int
+dissect_ntlmssp_NTLM_REMOTE_SUPPLEMENTAL_CREDENTIAL(tvbuff_t *tvb, int offset, proto_tree *tree);
 
 #endif

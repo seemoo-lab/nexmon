@@ -1,22 +1,10 @@
-/* uat_dialog.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef UAT_DIALOG_H
@@ -24,14 +12,13 @@
 
 #include <config.h>
 
-#include <glib.h>
-
-#include "syntax_line_edit.h"
 #include "geometry_state_dialog.h"
+#include <ui/qt/models/uat_model.h>
+#include <ui/qt/models/uat_delegate.h>
 
 class QComboBox;
 class QPushButton;
-class QTreeWidgetItem;
+class QItemSelection;
 
 struct epan_uat;
 
@@ -49,43 +36,36 @@ public:
 
     void setUat(struct epan_uat *uat = NULL);
 
-protected:
-    void keyPressEvent(QKeyEvent *evt);
-
 private slots:
-    void on_uatTreeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
-    void on_uatTreeWidget_itemActivated(QTreeWidgetItem *item, int column);
-    void on_uatTreeWidget_itemSelectionChanged();
-    void lineEditPrefDestroyed();
-    void enumPrefDestroyed();
-    void enumPrefCurrentIndexChanged(int index);
-    void stringPrefTextChanged(const QString & text);
-    void stringPrefEditingFinished();
+    void copyFromProfile(QString filename);
+    void modelDataChanged(const QModelIndex &topLeft);
+    void modelRowsRemoved();
+    void modelRowsReset();
+    void uatTreeViewSelectionChanged(const QItemSelection &selected, const QItemSelection &deselected);
+    void on_uatTreeView_currentItemChanged(const QModelIndex &current, const QModelIndex &previous);
+    void acceptChanges();
+    void rejectChanges();
     void on_newToolButton_clicked();
     void on_deleteToolButton_clicked();
     void on_copyToolButton_clicked();
-    void on_buttonBox_accepted();
-    void on_buttonBox_rejected();
+    void on_moveUpToolButton_clicked();
+    void on_moveDownToolButton_clicked();
+    void on_clearToolButton_clicked();
     void on_buttonBox_helpRequested();
 
 private:
     Ui::UatDialog *ui;
+    UatModel *uat_model_;
+    UatDelegate *uat_delegate_;
     QPushButton *ok_button_;
     QPushButton *help_button_;
     struct epan_uat *uat_;
-    int cur_column_;
-    SyntaxLineEdit *cur_line_edit_;
-    QString saved_string_pref_;
-    QComboBox *cur_combo_box_;
-    int saved_combo_idx_;
 
-    QString fieldString(guint row, guint column);
-    void updateItem(QTreeWidgetItem &item);
-    void updateItems();
-    void activateLastItem();
+    void checkForErrorHint(const QModelIndex &current, const QModelIndex &previous);
+    bool trySetErrorHintFromField(const QModelIndex &index);
     void applyChanges();
     void addRecord(bool copy_from_current = false);
-    const QByteArray unhexbytes(const QString input, QString &err);
+    void resizeColumns();
 };
 
 #endif // UAT_DIALOG_H

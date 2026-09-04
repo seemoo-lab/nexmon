@@ -1,0 +1,47 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test heuristic recognition of C format strings like "100% complete".
+
+cat <<\EOF > f-c-6.c
+gettext("Test 1a is 100% complete");
+printf(gettext("Test 1b is 100% complete"), 120);
+gettext("Test 2a from 0% complete to 100% complete");
+printf(gettext("Test 2b from 0% complete to 100% complete"), 120, 121);
+gettext("Test 3a of %s is 100% complete");
+printf(gettext("Test 3b of %s is 100% complete"), "foo", 120);
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d f-c-6.tmp f-c-6.c || Exit 1
+LC_ALL=C tr -d '\r' < f-c-6.tmp.po > f-c-6.po || Exit 1
+
+cat <<\EOF > f-c-6.ok
+msgid "Test 1a is 100% complete"
+msgstr ""
+
+#, c-format
+msgid "Test 1b is 100% complete"
+msgstr ""
+
+msgid "Test 2a from 0% complete to 100% complete"
+msgstr ""
+
+#, c-format
+msgid "Test 2b from 0% complete to 100% complete"
+msgstr ""
+
+#, c-format
+msgid "Test 3a of %s is 100% complete"
+msgstr ""
+
+#, c-format
+msgid "Test 3b of %s is 100% complete"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} f-c-6.ok f-c-6.po
+result=$?
+
+exit $result

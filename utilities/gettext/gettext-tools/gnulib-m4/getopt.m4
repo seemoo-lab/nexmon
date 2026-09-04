@@ -1,8 +1,10 @@
-# getopt.m4 serial 44
-dnl Copyright (C) 2002-2006, 2008-2016 Free Software Foundation, Inc.
+# getopt.m4
+# serial 52
+dnl Copyright (C) 2002-2006, 2008-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 # Request a POSIX compliant getopt function.
 AC_DEFUN([gl_FUNC_GETOPT_POSIX],
@@ -21,6 +23,8 @@ AC_DEFUN([gl_FUNC_GETOPT_POSIX],
       REPLACE_GETOPT=1
     fi
   ])
+  GL_GENERATE_GETOPT_H=false
+  GL_GENERATE_GETOPT_CDEFS_H=false
   if test $REPLACE_GETOPT = 1; then
     dnl Arrange for getopt.h to be created.
     gl_GETOPT_SUBSTITUTE_HEADER
@@ -32,9 +36,16 @@ AC_DEFUN([gl_FUNC_GETOPT_POSIX],
 # getopt_long_only.
 AC_DEFUN([gl_FUNC_GETOPT_GNU],
 [
+  dnl Set the variable gl_getopt_required, so that all invocations of
+  dnl gl_GETOPT_CHECK_HEADERS in the scope of the current configure file
+  dnl will check for getopt with GNU extensions.
+  dnl This means that if one gnulib-tool invocation requests getopt-posix
+  dnl and another gnulib-tool invocation requests getopt-gnu, it is as if
+  dnl both had requested getopt-gnu.
   m4_divert_text([INIT_PREPARE], [gl_getopt_required=GNU])
 
-  AC_REQUIRE([gl_FUNC_GETOPT_POSIX])
+  dnl No need to invoke gl_FUNC_GETOPT_POSIX here; this is automatically
+  dnl done through the module dependency getopt-gnu -> getopt-posix.
 ])
 
 # Determine whether to replace the entire getopt facility.
@@ -67,7 +78,7 @@ AC_DEFUN([gl_GETOPT_CHECK_HEADERS],
   fi
 
   dnl POSIX 2008 does not specify leading '+' behavior, but see
-  dnl http://austingroupbugs.net/view.php?id=191 for a recommendation on
+  dnl https://austingroupbugs.net/view.php?id=191 for a recommendation on
   dnl the next version of POSIX.  For now, we only guarantee leading '+'
   dnl behavior with getopt-gnu.
   if test -z "$gl_replace_getopt"; then
@@ -77,8 +88,8 @@ AC_DEFUN([gl_GETOPT_CHECK_HEADERS],
         dnl Merging these three different test programs into a single one
         dnl would require a reset mechanism. On BSD systems, it can be done
         dnl through 'optreset'; on some others (glibc), it can be done by
-        dnl setting 'optind' to 0; on others again (HP-UX, IRIX, OSF/1,
-        dnl Solaris 9, musl libc), there is no such mechanism.
+        dnl setting 'optind' to 0; on others again (HP-UX, Solaris 9,
+        dnl musl libc), there is no such mechanism.
         if test $cross_compiling = no; then
           dnl Sanity check. Succeeds everywhere (except on MSVC,
           dnl which lacks <unistd.h> and getopt() entirely).
@@ -188,8 +199,8 @@ main ()
           fi
         else
           case "$host_os" in
-            darwin* | aix* | mingw*) gl_cv_func_getopt_posix="guessing no";;
-            *)                       gl_cv_func_getopt_posix="guessing yes";;
+            darwin* | aix* | mingw* | windows*) gl_cv_func_getopt_posix="guessing no";;
+            *)                                  gl_cv_func_getopt_posix="guessing yes";;
           esac
         fi
       ])
@@ -227,8 +238,7 @@ dnl is ambiguous with environment values that contain newlines.
              nocrash_init();
 
              /* This code succeeds on glibc 2.8, OpenBSD 4.0, Cygwin, mingw,
-                and fails on Mac OS X 10.5, AIX 5.2, HP-UX 11, IRIX 6.5,
-                OSF/1 5.1, Solaris 10.  */
+                and fails on Mac OS X 10.5, AIX 5.2, HP-UX 11, Solaris 10.  */
              {
                static char conftest[] = "conftest";
                static char plus[] = "-+";
@@ -239,7 +249,7 @@ dnl is ambiguous with environment values that contain newlines.
              }
              /* This code succeeds on glibc 2.8, mingw,
                 and fails on Mac OS X 10.5, OpenBSD 4.0, AIX 5.2, HP-UX 11,
-                IRIX 6.5, OSF/1 5.1, Solaris 10, Cygwin 1.5.x.  */
+                Solaris 10, Cygwin 1.5.x.  */
              {
                static char program[] = "program";
                static char p[] = "-p";
@@ -295,8 +305,10 @@ dnl is ambiguous with environment values that contain newlines.
            ]])],
         [gl_cv_func_getopt_gnu=yes],
         [gl_cv_func_getopt_gnu=no],
-        [dnl Cross compiling. Assume the worst, even on glibc platforms.
-         gl_cv_func_getopt_gnu="guessing no"
+        [dnl Cross compiling.
+         dnl Assume the worst, even on glibc platforms.
+         dnl But obey --enable-cross-guesses.
+         gl_cv_func_getopt_gnu="$gl_cross_guess_normal"
         ])
        case $gl_had_POSIXLY_CORRECT in
          exported) ;;
@@ -354,15 +366,10 @@ dnl is ambiguous with environment values that contain newlines.
 
 AC_DEFUN([gl_GETOPT_SUBSTITUTE_HEADER],
 [
-  GETOPT_H=getopt.h
+  gl_CHECK_HEADER_SYS_CDEFS_H
   AC_DEFINE([__GETOPT_PREFIX], [[rpl_]],
     [Define to rpl_ if the getopt replacement functions and variables
      should be used.])
-  AC_SUBST([GETOPT_H])
-])
-
-# Prerequisites of lib/getopt*.
-AC_DEFUN([gl_PREREQ_GETOPT],
-[
-  AC_CHECK_DECLS_ONCE([getenv])
+  GL_GENERATE_GETOPT_H=true
+  GL_GENERATE_GETOPT_CDEFS_H=true
 ])

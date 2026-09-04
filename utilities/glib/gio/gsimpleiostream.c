@@ -1,10 +1,12 @@
 /*
  * Copyright © 2014 NICE s.r.l.
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,27 +28,18 @@
 #include "gtask.h"
 
 /**
- * SECTION:gsimpleiostream
- * @short_description: A wrapper around an input and an output stream.
- * @include: gio/gio.h
- * @see_also: #GIOStream
- *
- * GSimpleIOStream creates a #GIOStream from an arbitrary #GInputStream and
- * #GOutputStream. This allows any pair of input and output streams to be used
- * with #GIOStream methods.
- *
- * This is useful when you obtained a #GInputStream and a #GOutputStream
- * by other means, for instance creating them with platform specific methods as
- * g_unix_input_stream_new() or g_win32_input_stream_new(), and you want
- * to take advantage of the methods provided by #GIOStream.
- *
- * Since: 2.44
- */
-
-/**
  * GSimpleIOStream:
  *
- * A wrapper around a #GInputStream and a #GOutputStream.
+ * `GSimpleIOStream` creates a [class@Gio.IOStream] from an arbitrary
+ * [class@Gio.InputStream] and [class@Gio.OutputStream]. This allows any pair of
+ * input and output streams to be used with [class@Gio.IOStream] methods.
+ *
+ * This is useful when you obtained a [class@Gio.InputStream] and a
+ * [class@Gio.OutputStream] by other means, for instance creating them with
+ * platform specific methods as
+ * [`g_unix_input_stream_new()`](../gio-unix/ctor.UnixInputStream.new.html)
+ * (from `gio-unix-2.0.pc` / `GioUnix-2.0`), and you want to
+ * take advantage of the methods provided by [class@Gio.IOStream].
  *
  * Since: 2.44
  */
@@ -168,12 +161,12 @@ g_simple_io_stream_class_init (GSimpleIOStreamClass *class)
   /**
    * GSimpleIOStream:input-stream:
    *
+   * The [class@Gio.InputStream] to read from.
+   *
    * Since: 2.44
    */
   g_object_class_install_property (gobject_class, PROP_INPUT_STREAM,
-                                   g_param_spec_object ("input-stream",
-                                                        P_("Input stream"),
-                                                        P_("The GInputStream to read from"),
+                                   g_param_spec_object ("input-stream", NULL, NULL,
                                                         G_TYPE_INPUT_STREAM,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_STATIC_STRINGS |
@@ -182,12 +175,12 @@ g_simple_io_stream_class_init (GSimpleIOStreamClass *class)
   /**
    * GSimpleIOStream:output-stream:
    *
+   * The [class@Gio.OutputStream] to write to.
+   *
    * Since: 2.44
    */
   g_object_class_install_property (gobject_class, PROP_OUTPUT_STREAM,
-                                   g_param_spec_object ("output-stream",
-                                                        P_("Output stream"),
-                                                        P_("The GOutputStream to write to"),
+                                   g_param_spec_object ("output-stream", NULL, NULL,
                                                         G_TYPE_OUTPUT_STREAM,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_STATIC_STRINGS |

@@ -1,0 +1,467 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="xlink_8c" kind="file" language="C++">
+    <compoundname>xlink.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">string.h</includes>
+    <includes local="no">ctype.h</includes>
+    <includes local="no">stdlib.h</includes>
+    <includes refid="xmlmemory_8h" local="no">libxml/xmlmemory.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includes refid="xlink_8h" local="no">libxml/xlink.h</includes>
+    <incdepgraph>
+      <node id="26">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+      </node>
+      <node id="27">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+      </node>
+      <node id="28">
+        <label>libxml/xlink.h</label>
+        <link refid="xlink_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/xlink.c</label>
+        <link refid="xlink_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>ctype.h</label>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="9">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="11">
+        <label>limits.h</label>
+      </node>
+      <node id="13">
+        <label>stdarg.h</label>
+      </node>
+      <node id="17">
+        <label>stddef.h</label>
+      </node>
+      <node id="7">
+        <label>stdio.h</label>
+      </node>
+      <node id="5">
+        <label>stdlib.h</label>
+      </node>
+      <node id="3">
+        <label>string.h</label>
+      </node>
+    </incdepgraph>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="xlink_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xlink.c" line="11" column="9" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="11" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xlink_8c_1a4f7775379f6171e7efceecfede5ec116" prot="public" static="no">
+        <name>XLINK_NAMESPACE</name>
+        <initializer>(<ref refid="xmlstring_8h_1ad0a78338bf196a676079310a7b9c7599" kindref="member">BAD_CAST</ref> &quot;http://www.w3.org/1999/xlink/namespace/&quot;)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xlink.c" line="24" column="9" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="24" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xlink_8c_1a1b815d401ab0311f96a91047c71389bb" prot="public" static="no">
+        <name>XHTML_NAMESPACE</name>
+        <initializer>(<ref refid="xmlstring_8h_1ad0a78338bf196a676079310a7b9c7599" kindref="member">BAD_CAST</ref> &quot;http://www.w3.org/1999/xhtml/&quot;)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xlink.c" line="25" column="9" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="25" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="var">
+      <memberdef kind="variable" id="xlink_8c_1a793e4d40cdb28478dadba617392afae2" prot="public" static="yes" mutable="no">
+        <type>xlinkHandlerPtr</type>
+        <definition>xlinkHandlerPtr xlinkDefaultHandler</definition>
+        <argsstring></argsstring>
+        <name>xlinkDefaultHandler</name>
+        <initializer>= NULL</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xlink.c" line="33" column="24" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="33" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="xlink_8c_1aa42ddfb23c1a4ba9ca263f3533ad33b8" prot="public" static="yes" mutable="no">
+        <type><ref refid="xlink_8h_1a194352c8d21984eee0cf2028263f7278" kindref="member">xlinkNodeDetectFunc</ref></type>
+        <definition>xlinkNodeDetectFunc xlinkDefaultDetect</definition>
+        <argsstring></argsstring>
+        <name>xlinkDefaultDetect</name>
+        <initializer>= NULL</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xlink.c" line="34" column="27" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="34" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="xlink_8c_1a57b489319e3fccb2ee99df55becd2196" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xlinkHandler *</type>
+        <definition>xlinkHandler * xlinkGetDefaultHandler</definition>
+        <argsstring>(void)</argsstring>
+        <name>xlinkGetDefaultHandler</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Get the default xlink handler. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000354"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><simplesect kind="return"><para>the current xlinkHandler value. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xlink.c" line="44" column="1" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="44" bodyend="46"/>
+      </memberdef>
+      <memberdef kind="function" id="xlink_8c_1aaea55802a5a635e3cdb6e06c104a6ac3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xlinkSetDefaultHandler</definition>
+        <argsstring>(xlinkHandler *handler)</argsstring>
+        <name>xlinkSetDefaultHandler</name>
+        <param>
+          <type>xlinkHandler *</type>
+          <declname>handler</declname>
+        </param>
+        <briefdescription>
+<para>Set the default xlink handlers. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000355"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>handler</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the new value for the xlink handler block </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xlink.c" line="57" column="1" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="57" bodyend="59"/>
+      </memberdef>
+      <memberdef kind="function" id="xlink_8c_1a8c61a5c2fe05b1edf19e96f9d63127f4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xlink_8h_1a194352c8d21984eee0cf2028263f7278" kindref="member">xlinkNodeDetectFunc</ref></type>
+        <definition>xlinkNodeDetectFunc xlinkGetDefaultDetect</definition>
+        <argsstring>(void)</argsstring>
+        <name>xlinkGetDefaultDetect</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Get the default xlink detection routine. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000356"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><simplesect kind="return"><para>the current function or NULL; </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xlink.c" line="69" column="1" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="69" bodyend="71"/>
+      </memberdef>
+      <memberdef kind="function" id="xlink_8c_1a951f8c4cb78b6e1d1808669fbc59ce2e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xlinkSetDefaultDetect</definition>
+        <argsstring>(xlinkNodeDetectFunc func)</argsstring>
+        <name>xlinkSetDefaultDetect</name>
+        <param>
+          <type><ref refid="xlink_8h_1a194352c8d21984eee0cf2028263f7278" kindref="member">xlinkNodeDetectFunc</ref></type>
+          <declname>func</declname>
+        </param>
+        <briefdescription>
+<para>Set the default xlink detection routine. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000357"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>func</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the new detection routine. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xlink.c" line="81" column="1" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="81" bodyend="83"/>
+      </memberdef>
+      <memberdef kind="function" id="xlink_8c_1a192c579bae8a37c3dec9d2535904ff85" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>xlinkType</type>
+        <definition>xlinkType xlinkIsLink</definition>
+        <argsstring>(xmlDoc *doc, xmlNode *node)</argsstring>
+        <name>xlinkIsLink</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>node</declname>
+        </param>
+        <briefdescription>
+<para>Check whether the given node carries the attributes needed to be a link element (or is one of the linking elements issued from the (X)HTML DtDs). </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This routine don&apos;t try to do full checking of the link validity but tries to detect and return the appropriate link type.</para>
+<para><xrefsect id="deprecated_1_deprecated000358"><xreftitle>Deprecated</xreftitle><xrefdescription><para>The XLink code was never finished.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document containing the node </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the node pointer itself </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the xlinkType of the node (XLINK_TYPE_NONE if there is no link detected. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xlink.c" line="107" column="1" bodyfile="/builds/GNOME/libxml2/xlink.c" bodystart="107" bodyend="164"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xlink.c"/>
+  </compounddef>
+</doxygen>

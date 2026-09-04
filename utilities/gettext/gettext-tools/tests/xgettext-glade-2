@@ -4,7 +4,7 @@
 # Test of Glade support, in particular ISO-8859-1 to UTF-8 conversion
 # and ASCII entities (&lt; &gt; &quot;).
 
-cat <<EOF > xg-gl-2-empty.glade
+cat <<\EOF > xg-gl-2-empty.glade
 <?xml version="1.0"?>
 <GTK-Interface/>
 EOF
@@ -56,9 +56,7 @@ EOF
 
 : ${XGETTEXT=xgettext}
 ${XGETTEXT} --add-comments -o xg-gl-2.tmp xg-gl-2-simple.glade  || Exit 1
-# Don't simplify this to "grep ... < xg-gl-2.tmp", otherwise OpenBSD 4.0 grep
-# only outputs "Binary file (standard input) matches".
-cat xg-gl-2.tmp | grep -v 'POT-Creation-Date' > xg-gl-2.pot
+func_filter_POT_Creation_Date xg-gl-2.tmp xg-gl-2.pot
 
 cat <<\EOF > xg-gl-2.ok
 # SOME DESCRIPTIVE TITLE.

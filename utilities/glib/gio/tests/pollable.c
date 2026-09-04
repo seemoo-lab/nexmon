@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,21 +18,31 @@
  * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "config.h"
+
 #include <gio/gio.h>
 #include <glib/gstdio.h>
 
 #ifdef G_OS_UNIX
 #include <fcntl.h>
+#ifdef HAVE_OPENPTY
+#include <pty.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 #include <gio/gunixinputstream.h>
 #include <gio/gunixoutputstream.h>
 #endif
 
-GMainLoop *loop;
-GPollableInputStream *in;
-GOutputStream *out;
+/* openpty() is non-standard and might not be available on all kernels
+ * and libc implementations, but glibc on Linux definitely has it */
+#if defined(__linux__) && defined(__GNUC__) && !defined(HAVE_OPENPTY)
+#error Should have been able to find openpty on GNU/Linux
+#endif
 
 static gboolean
-poll_source_callback (GPollableInputStream *in,
+poll_source_callback (GPollableInputStream *input,
 		      gpointer              user_data)
 {
   GError *error = NULL;
@@ -38,55 +50,69 @@ poll_source_callback (GPollableInputStream *in,
   gssize nread;
   gboolean *success = user_data;
 
-  nread = g_pollable_input_stream_read_nonblocking (in, buf, 2, NULL, &error);
+  g_assert_true (g_pollable_input_stream_is_readable (G_POLLABLE_INPUT_STREAM (input)));
+
+  nread = g_pollable_input_stream_read_nonblocking (input, buf, 2, NULL, &error);
   g_assert_no_error (error);
   g_assert_cmpint (nread, ==, 2);
   g_assert_cmpstr (buf, ==, "x");
+  g_assert_false (g_pollable_input_stream_is_readable (G_POLLABLE_INPUT_STREAM (input)));
 
   *success = TRUE;
   return G_SOURCE_REMOVE;
 }
 
 static gboolean
-check_source_readability_callback (gpointer user_data)
+check_source_not_readable_callback (gpointer user_data)
 {
-  gboolean expected = GPOINTER_TO_INT (user_data);
-  gboolean readable;
+  GPollableInputStream *in = G_POLLABLE_INPUT_STREAM (user_data);
 
-  readable = g_pollable_input_stream_is_readable (in);
-  g_assert_cmpint (readable, ==, expected);
+  g_assert_false (g_pollable_input_stream_is_readable (in));
+
   return G_SOURCE_REMOVE;
 }
+
+typedef struct
+{
+  GPollableInputStream *in;  /* (unowned) */
+  GOutputStream *out;  /* (unowned) */
+} Streams;
 
 static gboolean
 write_callback (gpointer user_data)
 {
-  char *buf = "x";
+  Streams *streams = user_data;
+  const char *buf = "x";
   gssize nwrote;
   GError *error = NULL;
 
-  nwrote = g_output_stream_write (out, buf, 2, NULL, &error);
+  g_assert_true (g_pollable_output_stream_is_writable (G_POLLABLE_OUTPUT_STREAM (streams->out)));
+
+  nwrote = g_output_stream_write (streams->out, buf, 2, NULL, &error);
   g_assert_no_error (error);
   g_assert_cmpint (nwrote, ==, 2);
-/* Give the pipe a few ticks to propagate the write for sockets. On my
- * iMac i7, 40 works, 30 doesn't. */
-  g_usleep (80L);
+  g_assert_true (g_pollable_output_stream_is_writable (G_POLLABLE_OUTPUT_STREAM (streams->out)));
 
-  check_source_readability_callback (GINT_TO_POINTER (TRUE));
+  /* Wait for the pipe to propagate the write for sockets. */
+  while (!g_pollable_input_stream_is_readable (streams->in));
+  g_assert_true (g_pollable_input_stream_is_readable (streams->in));
 
   return G_SOURCE_REMOVE;
 }
 
 static gboolean
-check_source_and_quit_callback (gpointer user_data)
+quit_callback (gpointer user_data)
 {
-  check_source_readability_callback (user_data);
+  GMainLoop *loop = user_data;
+
   g_main_loop_quit (loop);
+
   return G_SOURCE_REMOVE;
 }
 
 static void
-test_streams (void)
+test_streams (GPollableInputStream *in,
+              GOutputStream        *out)
 {
   gboolean readable;
   GError *error = NULL;
@@ -94,12 +120,14 @@ test_streams (void)
   gssize nread;
   GSource *poll_source;
   gboolean success = FALSE;
+  Streams streams;
+  GMainLoop *loop = NULL;
 
-  g_assert (g_pollable_input_stream_can_poll (in));
-  g_assert (g_pollable_output_stream_can_poll (G_POLLABLE_OUTPUT_STREAM (out)));
+  g_assert_true (g_pollable_input_stream_can_poll (in));
+  g_assert_true (g_pollable_output_stream_can_poll (G_POLLABLE_OUTPUT_STREAM (out)));
 
   readable = g_pollable_input_stream_is_readable (in);
-  g_assert (!readable);
+  g_assert_false (readable);
 
   nread = g_pollable_input_stream_read_nonblocking (in, buf, 1, NULL, &error);
   g_assert_cmpint (nread, ==, -1);
@@ -127,11 +155,15 @@ test_streams (void)
   g_source_attach (poll_source, NULL);
   g_source_unref (poll_source);
 
-  g_idle_add_full (2, check_source_readability_callback, GINT_TO_POINTER (FALSE), NULL);
-  g_idle_add_full (3, write_callback, NULL, NULL);
-  g_idle_add_full (4, check_source_and_quit_callback, GINT_TO_POINTER (FALSE), NULL);
-
+  streams.in = in;
+  streams.out = out;
   loop = g_main_loop_new (NULL, FALSE);
+
+  g_idle_add_full (2, check_source_not_readable_callback, in, NULL);
+  g_idle_add_full (3, write_callback, &streams, NULL);
+  g_idle_add_full (4, check_source_not_readable_callback, in, NULL);
+  g_idle_add_full (5, quit_callback, loop, NULL);
+
   g_main_loop_run (loop);
   g_main_loop_unref (loop);
 
@@ -139,10 +171,46 @@ test_streams (void)
 }
 
 #ifdef G_OS_UNIX
+
+#define g_assert_not_pollable(fd) \
+  G_STMT_START {                                                        \
+    GPollableInputStream *in = NULL;                                    \
+    GOutputStream *out = NULL;                                          \
+                                                                        \
+    in = G_POLLABLE_INPUT_STREAM (g_unix_input_stream_new (fd, FALSE)); \
+    out = g_unix_output_stream_new (fd, FALSE);                         \
+                                                                        \
+    g_assert_false (g_pollable_input_stream_can_poll (in));             \
+    g_assert_false (g_pollable_output_stream_can_poll (                 \
+        G_POLLABLE_OUTPUT_STREAM (out)));                               \
+                                                                        \
+    g_clear_object (&in);                                               \
+    g_clear_object (&out);                                              \
+  } G_STMT_END
+
+#define g_assert_pollable(fd) \
+  G_STMT_START {                                                        \
+    GPollableInputStream *in = NULL;                                    \
+    GOutputStream *out = NULL;                                          \
+                                                                        \
+    in = G_POLLABLE_INPUT_STREAM (g_unix_input_stream_new (fd, FALSE)); \
+    out = g_unix_output_stream_new (fd, FALSE);                         \
+                                                                        \
+    g_assert_true (g_pollable_input_stream_can_poll (in));              \
+    g_assert_true (g_pollable_output_stream_can_poll (G_POLLABLE_OUTPUT_STREAM (out))); \
+                                                                        \
+    g_clear_object (&in);                                               \
+    g_clear_object (&out);                                              \
+  } G_STMT_END
+
 static void
-test_pollable_unix (void)
+test_pollable_unix_pipe (void)
 {
-  int pipefds[2], status, fd;
+  int pipefds[2], status;
+  GPollableInputStream *in = NULL;
+  GOutputStream *out = NULL;
+
+  g_test_summary ("Test that pipes are considered pollable, just like sockets");
 
   status = pipe (pipefds);
   g_assert_cmpint (status, ==, 0);
@@ -150,23 +218,93 @@ test_pollable_unix (void)
   in = G_POLLABLE_INPUT_STREAM (g_unix_input_stream_new (pipefds[0], TRUE));
   out = g_unix_output_stream_new (pipefds[1], TRUE);
 
-  test_streams ();
+  test_streams (in, out);
+
+  g_object_unref (in);
+  g_object_unref (out);
+}
+
+static void
+test_pollable_unix_pty (void)
+{
+#ifdef HAVE_OPENPTY
+  GPollableInputStream *in = NULL;
+  GOutputStream *out = NULL;
+  int a, b, status;
+#endif
+
+  g_test_summary ("Test that PTYs are considered pollable");
+
+#ifdef HAVE_OPENPTY
+  status = openpty (&a, &b, NULL, NULL, NULL);
+
+  if (status == -1)
+    {
+      g_test_skip ("Unable to open PTY");
+      return;
+    }
+
+  in = G_POLLABLE_INPUT_STREAM (g_unix_input_stream_new (a, TRUE));
+  out = g_unix_output_stream_new (b, TRUE);
+
+  test_streams (in, out);
 
   g_object_unref (in);
   g_object_unref (out);
 
-  /* Non-pipe/socket unix streams are not pollable */
-  fd = g_open ("/dev/null", O_RDWR, 0);
-  g_assert_cmpint (fd, !=, -1);
-  in = G_POLLABLE_INPUT_STREAM (g_unix_input_stream_new (fd, FALSE));
-  out = g_unix_output_stream_new (fd, FALSE);
+  close (a);
+  close (b);
+#else
+  g_test_skip ("openpty not found");
+#endif
+}
 
-  g_assert (!g_pollable_input_stream_can_poll (in));
-  g_assert (!g_pollable_output_stream_can_poll (G_POLLABLE_OUTPUT_STREAM (out)));
+static void
+test_pollable_unix_file (void)
+{
+  int fd;
 
-  g_object_unref (in);
-  g_object_unref (out);
+  g_test_summary ("Test that regular files are not considered pollable");
+
+  fd = g_open ("/etc/hosts", O_RDONLY, 0);
+  if (fd == -1)
+    {
+      g_test_skip ("Unable to open /etc/hosts");
+      return;
+    }
+
+  g_assert_not_pollable (fd);
+
   close (fd);
+}
+
+static void
+test_pollable_unix_nulldev (void)
+{
+  g_test_summary ("Test that /dev/null is not considered pollable, but only if "
+                  "on a system where we are able to tell it apart from devices "
+                  "that actually implement poll");
+
+#if defined (HAVE_EPOLL_CREATE1) || defined (HAVE_KQUEUE)
+  int fd = g_open ("/dev/null", O_RDWR, 0);
+  g_assert_cmpint (fd, !=, -1);
+
+#if defined(__FreeBSD__)
+  int freebsd_version = getosreldate ();
+  g_assert_cmpint (freebsd_version, !=, -1);
+  /* /dev/null is actually pollable on FreeBSD 14.4+ with both poll(2) and kevent(2) */
+  if (freebsd_version >= 1404000)
+    g_assert_pollable (fd);
+  else
+    g_assert_not_pollable (fd);
+#else
+  g_assert_not_pollable (fd);
+#endif
+
+  close (fd);
+#else
+  g_test_skip ("Cannot detect /dev/null as non-pollable on this system");
+#endif
 }
 
 static void
@@ -176,6 +314,8 @@ test_pollable_converter (void)
   GError *error = NULL;
   GInputStream *ibase;
   int pipefds[2], status;
+  GPollableInputStream *in = NULL;
+  GOutputStream *out = NULL;
 
   status = pipe (pipefds);
   g_assert_cmpint (status, ==, 0);
@@ -190,7 +330,7 @@ test_pollable_converter (void)
 
   out = g_unix_output_stream_new (pipefds[1], TRUE);
 
-  test_streams ();
+  test_streams (in, out);
 
   g_object_unref (in);
   g_object_unref (out);
@@ -233,6 +373,8 @@ test_pollable_socket (void)
   GSocketClient *client;
   GError *error = NULL;
   GSocketConnection *client_conn = NULL, *server_conn = NULL;
+  GPollableInputStream *in = NULL;
+  GOutputStream *out = NULL;
 
   iaddr = g_inet_address_new_loopback (G_SOCKET_FAMILY_IPV4);
   saddr = g_inet_socket_address_new (iaddr, 0);
@@ -262,7 +404,7 @@ test_pollable_socket (void)
   in = G_POLLABLE_INPUT_STREAM (g_io_stream_get_input_stream (G_IO_STREAM (client_conn)));
   out = g_io_stream_get_output_stream (G_IO_STREAM (server_conn));
 
-  test_streams ();
+  test_streams (in, out);
 
   g_object_unref (client_conn);
   g_object_unref (server_conn);
@@ -278,11 +420,13 @@ main (int   argc,
   g_test_init (&argc, &argv, NULL);
 
 #ifdef G_OS_UNIX
-  g_test_add_func ("/pollable/unix", test_pollable_unix);
+  g_test_add_func ("/pollable/unix/pipe", test_pollable_unix_pipe);
+  g_test_add_func ("/pollable/unix/pty", test_pollable_unix_pty);
+  g_test_add_func ("/pollable/unix/file", test_pollable_unix_file);
+  g_test_add_func ("/pollable/unix/nulldev", test_pollable_unix_nulldev);
   g_test_add_func ("/pollable/converter", test_pollable_converter);
 #endif
   g_test_add_func ("/pollable/socket", test_pollable_socket);
 
   return g_test_run();
 }
-

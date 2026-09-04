@@ -31,7 +31,7 @@ RTSE-apdus
           if(session != NULL)
                 session->ros_op = (ROS_OP_BIND | ROS_OP_ERROR);
 
-                offset = call_rtse_oid_callback(oid, tvb, offset, actx->pinfo, top_tree ? top_tree : tree, session);
+          offset = call_rtse_oid_callback(oid, tvb, offset, actx->pinfo, top_tree ? top_tree : tree, session);
         }
 
 #.FN_BODY RTABapdu/userdataAB
@@ -42,9 +42,9 @@ RTSE-apdus
 
   if(session != NULL)
         session->ros_op = (ROS_OP_BIND | ROS_OP_ARGUMENT);
-  open_request=TRUE;
+  open_request=true;
   %(DEFAULT_BODY)s
-  open_request=FALSE;
+  open_request=false;
 
 #.FN_BODY RTOACapdu
   struct SESSION_DATA_STRUCTURE* session = (struct SESSION_DATA_STRUCTURE*)actx->private_data;
@@ -86,7 +86,7 @@ RTSE-apdus
         tvbuff_t *next_tvb = NULL;
     struct SESSION_DATA_STRUCTURE* session = (struct SESSION_DATA_STRUCTURE*)actx->private_data;
 
-        offset = dissect_ber_octet_string(FALSE, actx, tree, tvb, offset, hf_index, &next_tvb);
+        offset = dissect_ber_octet_string(false, actx, tree, tvb, offset, hf_index, &next_tvb);
 
         if(next_tvb) {
 
@@ -96,13 +96,13 @@ RTSE-apdus
                 if(session)
                         session->ros_op = (ROS_OP_INVOKE | ROS_OP_ARGUMENT);
 
-                offset = dissect_ber_external_type(FALSE, tree, next_tvb, 0, actx,  -1, call_rtse_external_type_callback);
+                offset = dissect_ber_external_type(false, tree, next_tvb, 0, actx,  -1, call_rtse_external_type_callback);
         }
 
 
 #.FN_BODY RTORQapdu/applicationProtocol
 
-  offset = dissect_ber_integer(TRUE, actx, tree, tvb, offset, hf_index, &app_proto);
+  offset = dissect_ber_integer(true, actx, tree, tvb, offset, hf_index, &app_proto);
 
 #.FN_BODY SessionConnectionIdentifier
   if(open_request){
@@ -116,15 +116,19 @@ RTSE-apdus
   tvbuff_t *string = NULL;
   %(DEFAULT_BODY)s
   if(open_request && string)
-    col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", tvb_format_text(string, 0, tvb_reported_length(string)));
+    col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", tvb_get_string_enc(actx->pinfo->pool, string, 0,
+                                                                            tvb_reported_length(string), ENC_T61));
+
+#.TYPE_ATTR
+CallingSSuserReference/t61String DISPLAY = BASE_NONE
 
 #.FN_PARS CommonReference
   VAL_PTR=&string
 #.FN_BODY CommonReference
-  tvbuff_t *string = NULL;
+  char *string = NULL;
   %(DEFAULT_BODY)s
   if(open_request && string)
-    col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", tvb_format_text(string, 0, tvb_reported_length(string)));
+    col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", string);
 
 #.END
 
@@ -132,7 +136,7 @@ RTSE-apdus
   tvbuff_t *string = NULL;
   %(DEFAULT_BODY)s
   if(open_request && string)
-    col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", tvb_format_text(string, 0, tvb_reported_length(string)));
+    col_append_fstr(actx->pinfo->cinfo, COL_INFO, " %%s", tvb_format_text(actx->pinfo->pool, string, 0, tvb_reported_length(string)));
 
 #.FN_BODY RTTPapdu  VAL_PTR=&priority
   int priority = -1;
@@ -158,7 +162,7 @@ RTSE-apdus
   %(DEFAULT_BODY)s
 
   if(reason != -1)
-   col_append_fstr(actx->pinfo->cinfo, COL_INFO, " (%%s)", val_to_str(reason, rtse_RefuseReason_vals, "reason(%%d)"));
+   col_append_fstr(actx->pinfo->cinfo, COL_INFO, " (%%s)", val_to_str(actx->pinfo->pool, reason, rtse_RefuseReason_vals, "reason(%%d)"));
 
 #.FN_BODY RTABapdu
   col_append_str(actx->pinfo->cinfo, COL_INFO, "Abort");
@@ -174,6 +178,9 @@ RTSE-apdus
   %(DEFAULT_BODY)s
 
   if(reason != -1)
-   col_append_fstr(actx->pinfo->cinfo, COL_INFO, " (%%s)", val_to_str(reason, rtse_AbortReason_vals, "reason(%%d)"));
+   col_append_fstr(actx->pinfo->cinfo, COL_INFO, " (%%s)", val_to_str(actx->pinfo->pool, reason, rtse_AbortReason_vals, "reason(%%d)"));
+
+#.TYPE_ATTR
+AdditionalReferenceInformation DISPLAY = BASE_NONE
 
 #.END

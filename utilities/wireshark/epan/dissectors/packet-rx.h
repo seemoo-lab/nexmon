@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PACKET_RX_H
@@ -27,13 +15,13 @@
  * Private data passed from the RX dissector to the AFS dissector.
  */
 struct rxinfo {
-	guint8	type;
-	guint8	flags;
-	guint16	serviceid;
-	guint32	epoch;
-	guint32	cid;
-	guint32	callnumber;
-	guint32	seq;
+	uint8_t	type;
+	uint8_t	flags;
+	uint16_t	serviceid;
+	uint32_t	epoch;
+	uint32_t	cid;
+	uint32_t	callnumber;
+	uint32_t	seq;
 };
 
 /*
@@ -67,6 +55,7 @@ struct rxinfo {
 #define RX_ACK_TYPE_NACK 0
 #define RX_ACK_TYPE_ACK 1
 
+/* ACK reasons */
 #define RX_ACK_REQUESTED 1
 #define RX_ACK_DUPLICATE 2
 #define RX_ACK_OUT_OF_SEQUENCE 3

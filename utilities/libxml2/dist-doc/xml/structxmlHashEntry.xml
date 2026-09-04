@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="structxmlHashEntry" kind="struct" language="C++" prot="public">
+    <compoundname>xmlHashEntry</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structxmlHashEntry_1a7a4504151b1762e954b6b76f123e0685" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned hashValue</definition>
+        <argsstring></argsstring>
+        <name>hashValue</name>
+        <qualifiedname>xmlHashEntry::hashValue</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="37" column="14" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="37" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlHashEntry_1a11e4aed3dd80997e7e670e8371c4bc05" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* key</definition>
+        <argsstring></argsstring>
+        <name>key</name>
+        <qualifiedname>xmlHashEntry::key</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="39" column="13" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="39" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlHashEntry_1a87982c1e946e44d1b1260077fadcdbc2" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* key2</definition>
+        <argsstring></argsstring>
+        <name>key2</name>
+        <qualifiedname>xmlHashEntry::key2</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="40" column="13" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="40" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlHashEntry_1a28ebaec424ed74be73b084e29a0f5eb2" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* key3</definition>
+        <argsstring></argsstring>
+        <name>key3</name>
+        <qualifiedname>xmlHashEntry::key3</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="41" column="13" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="41" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlHashEntry_1a9eff55064941fb604452abb0050ea99d" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* payload</definition>
+        <argsstring></argsstring>
+        <name>payload</name>
+        <qualifiedname>xmlHashEntry::payload</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/hash.c" line="42" column="10" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="42" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/hash.c" line="36" column="1" bodyfile="/builds/GNOME/libxml2/hash.c" bodystart="36" bodyend="43"/>
+    <listofallmembers>
+      <member refid="structxmlHashEntry_1a7a4504151b1762e954b6b76f123e0685" prot="public" virt="non-virtual"><scope>xmlHashEntry</scope><name>hashValue</name></member>
+      <member refid="structxmlHashEntry_1a11e4aed3dd80997e7e670e8371c4bc05" prot="public" virt="non-virtual"><scope>xmlHashEntry</scope><name>key</name></member>
+      <member refid="structxmlHashEntry_1a87982c1e946e44d1b1260077fadcdbc2" prot="public" virt="non-virtual"><scope>xmlHashEntry</scope><name>key2</name></member>
+      <member refid="structxmlHashEntry_1a28ebaec424ed74be73b084e29a0f5eb2" prot="public" virt="non-virtual"><scope>xmlHashEntry</scope><name>key3</name></member>
+      <member refid="structxmlHashEntry_1a9eff55064941fb604452abb0050ea99d" prot="public" virt="non-virtual"><scope>xmlHashEntry</scope><name>payload</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

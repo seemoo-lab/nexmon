@@ -1,0 +1,466 @@
+Overview of Iperf 2 design
+By Robert McMahon
+January 2021
+Code at rev 2.1.0
+
+This document helps to describe the iperf 2 design. It's quite complicated. It's
+hoped this overview will help someone to understand the code. As with any open
+source software, the authoritative information comes from reading the source code
+itself.
+
+Iperf 2 is designed to be a multi-threaded program. It's written using a hybrid
+of C and C++ code. It evolved from 1.7 to 2.0.5 where development stalled in 2010.
+A new group from Broadcom with a WiFi focus took over the code base in 2014
+and we are now up to 2.0.14. The only link between these groups has been
+the code itself.
+
+Iperf 3 is a rewrite using a simpler design and simpler code base. Iperf 3
+isn't compatible with iperf 2. The primary differences are that iperf 2
+is multi-threaded, supports multicast, and has end/end latency features.
+Iperf 3 has SCTP support and support for JSON output. This document
+doesn't discuss iperf 3 beyond this.
+
+Threading overview
+------------------
+One major goal with iperf is to stress network i/o and find those bottlenecks
+which limit network performance. The idea behind the threading is for very
+lean traffic threads that are decoupled from user i/o. This threading separation
+allows for that. User i/o and performance calculations are done by a dedicated
+thread, i.e. the reporter thread.
+
+The multiple threads consist of a listener thread, a reporter thread, and one
+or more traffic threads. The traffic threads are either a server or a client, or
+a server in the role of a client, or a client in the role of as server per the
+--reverse option. The traffic threads scale with the -P option. There is only
+one listener and reporter thread regardless of -P.
+
+Listener (src/Listener.cpp include/Listener.hpp):
+-------------------------------------------------
+The listener thread runs on the server side. When a user issues a -s for server,
+it actually starts the listener thread and not a server thread. The listener
+thread will spawn a server thread per connection to a client.  The goals of
+the listener thread are:
+
+o) open the listen socket with is set with -p or defaults to 5001
+o) issue the socket listen() command
+o) optionally bind the listen socket to a multicast, unicast using the -B
+o) optionally bind the listen socket to a device or interface
+o) hang an accept() for TCP
+o) simulate an accept() for UDP
+o) Upon a new connection install the peer's (client's) IP address into an active
+   table which returns a sum report
+o) Instantiate a server thread and set it up settings
+o) Apply client initiated settings to the server thread
+o) Instantiate a server object
+o) Read test exchange header and instantiate a reversed client thread if needed
+o) Spawn a server thread which will receive traffic from a client
+
+Reporter (src/Reporter.c include/Reporter.h):
+---------------------------------------------
+There is one reporter thread. The goal of the reporter thread is to decouple user
+i/o from traffic as well as perform CPU related logic. This structure allows the
+tool to measure traffic performance unrelated to user i/o and traffic accounting.
+The reporter thread outputs the following types of reports
+
+o) settings report
+o) connection report
+o) data reports (intervals, sums and final)
+o) server relay reports (server report send back to the client for display)
+
+The reporter thread and traffic threads communicate with one another using a
+circular buffer or packet ring.  The reporter thread also has job queue where
+threads can post reports to be displayed to the user.
+
+o) Perform traffic accounting for individual traffic threads
+o) Perform traffic sum accounting
+o) Output all reports - Settings, connections, and data
+
+Traffic (Clients and Servers):
+------------------------------
+The traffic threads perform the reads and writes on a socket. These post the
+results, e.g. byte counts, of those reads and writes with timestamps to the
+reporter thread. These threads are decoupled this way to try to keep the tool as
+a network i/o - i.e. the primary focus of traffic threads are network i/o which
+are the performance being reported.
+
+There are two types of traffic threads being a client and a server.  There can
+be multiple or parallel traffic threads using the -P option. There is one
+packet ring for every traffic thread. The traffic threads post their results
+into this ring which the reporter will process. The traffic threads are the
+producer and the reporter thread is the consumer. This ring is designed to
+minimize mutex and shared memory contention.
+
+The goals of the traffic threads, starting with the client
+
+o) perform socket writes
+o) shape the traffic if the --isochronous option is set
+o) rate limit the traffic per per the -b setting
+o) post into its packet ring for the reporter
+
+The server will
+
+o) perform socket reads
+o) rate limit the reads if -b is set
+o) post results into its packet ring
+
+Settings (src/Settings.cpp include/Settings.hpp):
+-------------------------------------------------
+The settings structure contains the user requested settings and there is one
+settings object per thread. The settings are read and parsed from the initial
+command line (using a version of gnu getopt) Each thread gets a settings object
+which is mostly ready prior to spawning the thread.
+
+Test Header Exchange
+--------------------
+Some of the test settings require the client and server to exchange test
+information at the start. For TCP, this first bytes provide this information.
+UDP, being stateless and lossy, has test information in every packet. This way
+each packet can be the first packet from the server's perspective.
+
+This settings information is found in Settings_GenerateClientHdr which
+is sent by the client to the listener. The code in Settings_GenerateClientSettings
+instantiates a reversed role client on the listener if needed.
+
+The header fields are messy because of the evolution from 1.7 which didn't have
+a header to later versions which do. The first byte has the bits which indicate
+the header types. Since 1.7 initialize the first by to decimal 3 or 0x03 as a byte,
+this gives 6 upper bits (0x04 to 0x80) that can be used to indicate header type. These are
+shown in include/payloads.h
+
+The -C or --compatibility option indicates older header or no header.
+
+More on test exchange:
+
+Let's clear a few things up. Only UDP can set packet sizes and -l sets that size
+by setting the UDP payload size. The final packet size as seen by packet capture tools
+will be then determined by the L2 layer. For ethernet and ipv4, a 1470 byte UDP payload
+translates to a 1514 byte packet on the wire.
+
+TCP is a byte protocol and the application has no control over packet sizes. The write
+size is controlled by -l. So the first window and hence first packet can always be
+variable irrelevant of the -l write size. It's driven by the network stack which
+handles the byte stream and not by iperf. Things like TCP MSS, no delay, can
+affect this as well.
+
+The first send can be found in Client::SendFirstPayload. The test exchange payload is
+found in Settings_GenerateClientHdr. The amount of information passed on the first TCP write
+is driven by the test settings. It's not random but is variable. Iperf 2.1.n has a lot
+more test options, per things like --reverse --isochronous, so the write size will
+have more possibilities in later versions. But, recalling that TCP is a serial byte protocol,
+there is no guarantee to the packet size. Again, that's not directly controlled by an
+application write size.
+
+This can be seen by the reading of the first payload by TCP by the Listener thread which
+spawns traffic thread. The entire test exchange must be read before starting up traffic
+threads so the the right things can and will happen. The way that the full payload read
+occurs is through the use of recvn (which is a special recv found in src/sockets.c
+that makes sure all n bytes are read before proceeding.
+
+bool Listener::apply_client_settings_tcp (thread_Settings *server) {
+    bool rc;
+    int n = recvn(server->mSock, mBuf, sizeof(uint32_t), MSG_PEEK);
+
+Finally, the test settings are a combination of three things. First and second, the settings
+read from each command line options, per the server and per the client, and thirdly from
+the passed "shared information" The shared information isn't necessarily the same as the
+settings, rather it's shared information which will influence a traffic thread's settings.
+
+Reporter Jobq
+-------------
+The reporter thread receives work to do via its jobq. Threads enqueue work
+items. These work items take the form of a report. The reporter will dequeue the
+reports and take appropriate actions per the report type
+
+Timestamps
+----------
+The accuracy of timestamps is critical to a networking performance tool.
+Also, knowing exactly when a timestamp is taken is helpful. This section
+describes the multiple timestamps used by iperf 2.
+
+There are two higher level clocks being the clock on the client and the clock
+on the server. The iperf 2.0.13 versions of iperf only used timestamps from
+the same clock which simplified things but also give incomplete information.
+The complete information requires a common shared clock. During iperf 2.0.13+
+development an oven controlled GPS disciplined oscillator was made available
+to the devices under test. Precision Time Protocol (PTP) was used to
+distribute that reference or the PTP grand master.
+
+The timestamps taken by iperf are
+
+o) write timestamp - taken just prior to the system write call
+o) kernel receive timestamp - taken by the kernel when a driver hands a packet
+   to in on receive
+o) read timestamp - taken when a read or groups of reads have completed
+
+Other timestamps include the accept timestamp and post connect timestamps.
+
+The --trip-times options allows the user to indicate that the client and
+server clocks are synchronized. Synchronizing the real-time
+clocks on both the client and the server opens up the latency features.
+Latency is equally important to throughput with respect to characterizing
+a network's performance.
+
+Most timestamps try to use clock_gettime vs the older gettimeofday for performance
+reasons. This is also a real-time clock and is monotonic.
+
+The resolution of timestamps are typically in microseconds.
+
+A delay time is used to manage the -b offered load requested.
+
+The isochronous traffic doesn't use timestamps to schedule the transmissions
+but rather uses clock_nanosleep. This is preferred.
+
+Reports
+-------
+A thread communicates to the user through reports. The reporter thread handles
+multiple report types which include
+
+o Settings report
+o Connection report
+o Data report
+o Server relay report
+
+Each report has a common settings filed which are deep copies from the thread
+settings object. Each report having its own copy allows the design to decouple
+and encapsulate reporting from thread themselves, e.g. a thread can terminate
+and memory can be freed prior to the reporter outputting the report.
+
+Data Report and packet rings
+----------------------------
+The data report warrants its own section do to its complexity.  The core of the
+data report is a packet ring and statistics per that traffic thread. The packet
+ring allows the traffic thread to communicate read or write statistics and
+timestamps to the reporter thread using shared memory and very limited
+syscalls or mutexes. The packet ring has producer and consumer pointer
+that can be updated in an atomic manner on multi-core systems. The ring
+elements pointers are to reportstructs.
+
+Data reports remain on the reporter's jobq for the life of the traffic stream.
+
+Packet rings (src/packetring.c include/packetring.h)
+----------------------------------------------------
+A packet ring is a circular buffer between a traffic thread and reporter thread.
+The NUM_REPORT_STRUCTS sizes this shared memory. A traffic thread is a producer
+and the reporter thread is the consumer.
+
+There is one packet ring per each traffic thread. The one reporter thread
+services all the traffic threads' rings. A traffic thread posts packet or
+read or write information to its packet ring. This is the necessary and
+sufficient information such that the reporter thread can perform the traffic
+accounting as well as display interval or final reports base upon timestamps
+held within the ring's elements.
+
+Summing (src/active_hosts.cpp include/active_hosts.hpp)
+---------------------------------------
+Packet or read or write summing is done on a per client (host ip) basis. All
+traffic from a specific client will be summed, as an example. Full duplex packet
+will also be summed. The active client list is kept in a simple linked list. A new
+client will trigger a new sum report.
+
+The active hosts also contains port information.  This is needed to simulate
+a UDP accept.
+
+Interval summing has the following:
+
+o) Interval slots (start & stop)
+o) Multiple packet rings for an interval slot, not known ahead of samples
+o) A slot edge up counter to determine the number of pr's in a slot
+o) A slot edge down counter to determing when to output the interval report
+o) Packet rings that have enqueued one or more samples for a slight, including null samples, must be a minimum of two pwer slot
+o) A separate final counter that can come in at any slot for a traffic thread
+
+Function vectors (src/Reports.c src/Reporter.c src/ReportOutputs.c)
+-------------------------------------------------------------------
+The implementation of the reporter uses function vectors to handle the various
+types of traffic reporting. It's done this way so to minimize inline tests and
+optimize read/write or network i/o performance. The function pointers are
+initialized at thread and report creation time.  The function pointers consist
+of:
+
+*packet_handler() - this is used to account for tcp or udp write or read called
+for every read or write
+
+*transfer_protocol_handler() - used to ready the data before its output handler
+is invoked. It's called prior to the packet processing as a dequeued packet
+with a timestamp crossing a sample boundary is the event to trigger the output
+report. It calls sum and output handlers.
+
+*transfer_protocol_sum_handler() - used to ready the summation data before it's
+output handler is called, called by transfer_protocol handler
+
+*output_handler() - used to format output and print the output, called by
+transfer_protocol handlers, null handlers are supported for silent or no
+output, e.g. --sum-only
+
+*transfer_interval_handler() - used to select between time based or
+write/frame/burst reporting, supports special type of sampling
+
+These vectors are initialized after the thread settings object and
+as part of report instantiation.  That code is in src/Reports.c
+
+Startup (src/main.cpp src/Launch.cpp)
+-------------------------------------
+Thread creation:
+
+There are three primary aspects of startup. The code is in main.cpp, Launch.cpp
+and Listener.cpp. The primary purpose of this code is to determine settings and
+instantiate thread objects with those settings.  The thread objects are then
+started by the running operating system thread create calls per thread_start()
+found in compat/Thread.c  Thee main function there is thread_run_wrapper which
+spawns a thread type.
+
+The run main.cpp is to read user settings, instantiate a settings thread object,
+and, for a client, initiate their threads, while for a server, initiate the
+listener thread. On the server side, the listener thread will instantiate server
+and client threads.
+
+Thread interactions:
+-------------------
+
+There are a fair amount of non obvious thread interactions. To be filled out
+
+Mutexes and Condition variables
+
+
+
+Client startups (see launch.cpp)
+--------------------------------
+
+There are 5 types of client start ups. To be filled out
+
+Server startups
+---------------
+There are 3 types of server start ups. To be filled out
+
+
+A day in the life of a UDP packet (or a write to read)
+------------------------------------------------------
+Write the packet microsecond timestamp and sequence number into the payload. To be filled out
+
+Traffic profiles and rate limiting.  The box mueller can be found in src/pdfs.c
+-------------------------------------------------------------------------------
+To be filled out
+
+Debug support using configure --enable-thread-debug
+---------------------------------------------------
+To be filled out
+
+
+File system structure
+=====================
+
+Directories
+-----------
+src/  -- contains most of the C and C++ source code
+compat/ -- contains code used to help with portability
+include/ -- contains most of the header files
+m4/ -- contains special automake files
+doc/ -- contains documentation
+man/ -- contains the main page file
+/ = contains configure, autoconf and automake files
+flows/ -- contains python 3 code that can be used on top of iperf
+
+Src files (see src/Makefile.am)
+-------------------------------
+iperf_SOURCES = \
+		Client.cpp -- Client write routines, runs in a traffic thread
+		Extractor.c -- Support routine to pull payload data from a file
+			       if requested
+	        isochronous.cpp -- Isochronous timing ticks and counters
+		Launch.cpp  -- Code that runs when a new thread starts, figures
+			       out what type of thread
+		active_hosts.cpp -- Table that keeps active client hosts which
+				    are summed together
+		Listener.cpp -- server side code that does the listen(), accepts
+				new sockets, and spawns threads
+		Locale.c -- Code that has output formatting
+		PerfSocket.cpp -- Code that sets system socket settings
+		Reporter.c -- Code that runs the report thread which performs
+			      calculations and call output handlers
+		Reports.c -- Code that initialize reports that will be output by
+			     the reporter thread
+		ReportOutputs.c -- Code that formats report output
+		Server.cpp -- Server read routines, runs in a traffic thread
+		Settings.cpp -- Code the reads the command line and instantiates
+				the initial thread object with settings
+		SocketAddr.c -- Code that compares ip/port addresses stored in
+				system sockaddr structs
+		gnu_getopt.c -- Gnu get opt to read command line and options
+		gnu_getopt_long.c -- Gnu get opt support for long options
+	        histogram.c -- histogram objects including instantiation,
+			       insertion, printing, and deletion
+		main.cpp -- the main startup routine
+		service.c -- support file for Windows service
+		sockets.c -- code that helps with socket reads and writes where
+			     needed
+		stdio.c -- formatting code for bytes per human readable units
+		packet_ring.c -- code that instantiates the shared memory ring
+				 used between a traffic thread and the reporter
+				 thread
+		tcp_window_size.c -- code that sets the tcp window size
+		pdfs.c -- code that supports log normal distribution per a box
+			  mueller
+iperf_LDADD = $(LIBCOMPAT_LDADDS)
+
+
+Special test files per ./configure --enable-checkprograms
+---------------------------------------------------------
+o checkdelay -- used to test delay routines
+o checkisoch -- used to verify that isoch frames per seconds works
+o checkpdfs -- used to check that bytes give a log normal distributions per box
+	       mueller
+o igmp_querier - a very simple IGMP querier that only support IGMP v2
+
+
+NOTES:
+
+TCP_NOTSENT_LOWAT
+
+Idea of this patch is to add optional limitation of number of
+unsent bytes in TCP sockets, to reduce usage of kernel memory.
+
+TCP receiver might announce a big window, and TCP sender autotuning
+might allow a large amount of bytes in write queue, but this has little
+performance impact if a large part of this buffering is wasted :
+
+Write queue needs to be large only to deal with large BDP, not
+necessarily to cope with scheduling delays (incoming ACKS make room
+for the application to queue more bytes)
+
+For most workloads, using a value of 128 KB or less is OK to give
+applications enough time to react to POLLOUT events in time
+(or being awaken in a blocking sendmsg())
+
+This patch adds two ways to set the limit :
+1) Per socket option TCP_NOTSENT_LOWAT
+
+2) A sysctl (/proc/sys/net/ipv4/tcp_notsent_lowat) for sockets
+not using TCP_NOTSENT_LOWAT socket option (or setting a zero value)
+Default value being UINT_MAX (0xFFFFFFFF), meaning this has no effect.
+
+This changes poll()/select()/epoll() to report POLLOUT
+only if number of unsent bytes is below tp->nosent_lowat
+
+Note this might increase number of sendmsg() calls when using non
+blocking sockets, and increase number of context switches for
+blocking sockets.
+.....
+
+But really TCP write queue is logically split into 2 different logical
+parts :
+
+[1] Already sent data, waiting for ACK. This one can be arbitrary big,
+depending on network conditions.
+
+[2] Not sent data.
+
+1) Part is hard to size, because it depends on losses, which cannot be
+predicted.
+
+2) Part is easy to size, if we have some reasonable ways to schedule
+the application to provide additional data (write()/send()) when empty.
+
+SO_SNDBUF sizes the overall TCP write queue ([1] + [2])
+
+While NOTSENT_LOWAT is able to restrict (2) only, avoiding filling write
+queue when/if no drops are actually seen.

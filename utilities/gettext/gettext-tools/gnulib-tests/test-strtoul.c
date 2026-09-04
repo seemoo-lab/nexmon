@@ -1,9 +1,9 @@
 /*
- * Copyright (C) 2011-2016 Free Software Foundation, Inc.
+ * Copyright (C) 2011-2026 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -176,5 +176,129 @@ main (void)
     ASSERT (errno == 0);
   }
 
-  return 0;
+  /* Hexadecimal integer syntax.  */
+  {
+    const char input[] = "0x2A";
+    char *ptr;
+    unsigned long result;
+    errno = 0;
+    result = strtoul (input, &ptr, 10);
+    ASSERT (result == 0UL);
+    ASSERT (ptr == input + 1);
+    ASSERT (errno == 0);
+  }
+  {
+    const char input[] = "0x2A";
+    char *ptr;
+    unsigned long result;
+    errno = 0;
+    result = strtoul (input, &ptr, 16);
+    ASSERT (result == 42UL);
+    ASSERT (ptr == input + 4);
+    ASSERT (errno == 0);
+  }
+  {
+    const char input[] = "0x2A";
+    char *ptr;
+    unsigned long result;
+    errno = 0;
+    result = strtoul (input, &ptr, 0);
+    ASSERT (result == 42UL);
+    ASSERT (ptr == input + 4);
+    ASSERT (errno == 0);
+  }
+  {
+    const char input[] = "0x";
+    char *ptr;
+    unsigned long result;
+    errno = 0;
+    result = strtoul (input, &ptr, 10);
+    ASSERT (result == 0UL);
+    ASSERT (ptr == input + 1);
+    ASSERT (errno == 0);
+  }
+  {
+    const char input[] = "0x";
+    char *ptr;
+    unsigned long result;
+    errno = 0;
+    result = strtoul (input, &ptr, 16);
+    ASSERT (result == 0UL);
+    ASSERT (ptr == input + 1);
+    ASSERT (errno == 0);
+  }
+  {
+    const char input[] = "0x";
+    char *ptr;
+    unsigned long result;
+    errno = 0;
+    result = strtoul (input, &ptr, 0);
+    ASSERT (result == 0UL);
+    ASSERT (ptr == input + 1);
+    ASSERT (errno == 0);
+  }
+
+  /* Binary integer syntax.  */
+  {
+    const char input[] = "0b111010";
+    char *ptr;
+    unsigned long result;
+    errno = 0;
+    result = strtoul (input, &ptr, 10);
+    ASSERT (result == 0UL);
+    ASSERT (ptr == input + 1);
+    ASSERT (errno == 0);
+  }
+  {
+    const char input[] = "0b111010";
+    char *ptr;
+    unsigned long result;
+    errno = 0;
+    result = strtoul (input, &ptr, 2);
+    ASSERT (result == 58UL);
+    ASSERT (ptr == input + 8);
+    ASSERT (errno == 0);
+  }
+  {
+    const char input[] = "0b111010";
+    char *ptr;
+    unsigned long result;
+    errno = 0;
+    result = strtoul (input, &ptr, 0);
+    ASSERT (result == 58UL);
+    ASSERT (ptr == input + 8);
+    ASSERT (errno == 0);
+  }
+  {
+    const char input[] = "0b";
+    char *ptr;
+    unsigned long result;
+    errno = 0;
+    result = strtoul (input, &ptr, 10);
+    ASSERT (result == 0UL);
+    ASSERT (ptr == input + 1);
+    ASSERT (errno == 0);
+  }
+  {
+    const char input[] = "0b";
+    char *ptr;
+    unsigned long result;
+    errno = 0;
+    result = strtoul (input, &ptr, 2);
+    ASSERT (result == 0UL);
+    ASSERT (ptr == input + 1);
+    ASSERT (errno == 0);
+  }
+  {
+    const char input[] = "0b";
+    char *ptr;
+    unsigned long result;
+    errno = 0;
+    result = strtoul (input, &ptr, 0);
+    ASSERT (result == 0UL);
+    ASSERT (ptr == input + 1);
+    ASSERT (errno == 0);
+  }
+
+  return test_exit_status;
 }

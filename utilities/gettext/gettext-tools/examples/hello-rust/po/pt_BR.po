@@ -1,0 +1,31 @@
+# Brazilian Portuguese translations for gettext-example
+# Traduções em português brasileiro para gettext-example
+# Copyright (C) 2025 Yoyodyne, Inc. (msgids)
+# Copyright (C) 2025 Free Software Foundation, Inc.
+# This file is distributed under the same license as the gettext package.
+# Rafael Fontenelle <rafaelff@gnome.org>, 2013-2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: hello-rust 0.26-pre1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2025-07-07 23:17-0300\n"
+"Last-Translator: Rafael Fontenelle <rafaelff@gnome.org>\n"
+"Language-Team: Brazilian Portuguese <ldpbr-"
+"translation@lists.sourceforge.net>\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Gtranslator 48.0\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+
+#: src/main.rs.in:30
+msgid "Hello, world!"
+msgstr "Olá, mundo!"
+
+#: src/main.rs.in:31
+#, rust-format
+msgid "This program is running as process number {}."
+msgstr "Este programa está sendo executado com número de processo {}."

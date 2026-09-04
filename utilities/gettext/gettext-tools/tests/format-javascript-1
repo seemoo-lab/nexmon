@@ -38,6 +38,8 @@ cat <<\EOF > f-js-1.data
 "abc%y"
 # Invalid: flags after width
 "abc%1Ig"
+# Invalid: null precision
+"abc%.f"
 # Invalid: twice precision
 "abc%.4.2f"
 # Valid: three arguments

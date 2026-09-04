@@ -3,7 +3,7 @@
 
 # Test YCP support: --add-comments option.
 
-cat <<EOF > xg-y-2.ycp
+cat <<\EOF > xg-y-2.ycp
 // This comment will not be extracted.
 print (_("help"));
 //  TRANSLATORS: This is an extracted comment.
@@ -23,7 +23,7 @@ ${XGETTEXT} --omit-header --no-location --add-comments=TRANSLATORS: \
   -d xg-y-2.tmp xg-y-2.ycp || Exit 1
 LC_ALL=C tr -d '\r' < xg-y-2.tmp.po > xg-y-2.po || Exit 1
 
-cat <<EOF > xg-y-2.ok
+cat <<\EOF > xg-y-2.ok
 msgid "help"
 msgstr ""
 

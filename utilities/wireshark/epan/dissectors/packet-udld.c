@@ -5,32 +5,19 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/expert.h>
-
-
+#include <epan/cisco_pid.h>
 
 /*
  * See
  *
- *  http://www.ietf.org/internet-drafts/draft-foschiano-udld-02.txt
+ *  https://tools.ietf.org/rfc/rfc5171
  *
  * for some information on UDLD.
  */
@@ -42,25 +29,27 @@
 void proto_register_udld(void);
 void proto_reg_handoff_udld(void);
 
-static int proto_udld = -1;
-static int hf_udld_version = -1;
-static int hf_udld_opcode = -1;
-static int hf_udld_flags = -1;
-static int hf_udld_flags_rt = -1;
-static int hf_udld_flags_rsy = -1;
-static int hf_udld_checksum = -1;
-static int hf_udld_tlvtype = -1;
-static int hf_udld_tlvlength = -1;
-static int hf_udld_device_id = -1;
-static int hf_udld_sent_through_interface = -1;
-static int hf_udld_data = -1;
+static dissector_handle_t udld_handle;
+
+static int proto_udld;
+static int hf_udld_version;
+static int hf_udld_opcode;
+static int hf_udld_flags;
+static int hf_udld_flags_rt;
+static int hf_udld_flags_rsy;
+static int hf_udld_checksum;
+static int hf_udld_tlvtype;
+static int hf_udld_tlvlength;
+static int hf_udld_device_id;
+static int hf_udld_sent_through_interface;
+static int hf_udld_data;
 
 
-static expert_field ei_udld_tlvlength = EI_INIT;
+static expert_field ei_udld_tlvlength;
 
-static gint ett_udld = -1;
-static gint ett_udld_flags = -1;
-static gint ett_udld_tlv = -1;
+static int ett_udld;
+static int ett_udld_flags;
+static int ett_udld_tlv;
 
 #define TYPE_DEVICE_ID        0x0001
 #define TYPE_PORT_ID          0x0002
@@ -101,8 +90,8 @@ dissect_udld(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     proto_item *ti;
     proto_tree *udld_tree = NULL;
     int         offset    = 0;
-    guint16     type;
-    guint16     length;
+    uint16_t    type;
+    uint16_t    length;
     proto_tree *tlv_tree;
     int         real_length;
 
@@ -110,25 +99,25 @@ dissect_udld(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     col_clear(pinfo->cinfo, COL_INFO);
 
     if (tree) {
-    proto_item *flags_ti;
-    proto_tree *flags_tree;
+        proto_item *flags_ti;
+        proto_tree *flags_tree;
 
-    ti = proto_tree_add_item(tree, proto_udld, tvb, offset, -1, ENC_NA);
-    udld_tree = proto_item_add_subtree(ti, ett_udld);
+        ti = proto_tree_add_item(tree, proto_udld, tvb, offset, -1, ENC_NA);
+        udld_tree = proto_item_add_subtree(ti, ett_udld);
 
-    /* UDLD header */
-    proto_tree_add_item(udld_tree, hf_udld_version, tvb, offset, 1, ENC_BIG_ENDIAN);
-    proto_tree_add_item(udld_tree, hf_udld_opcode, tvb, offset, 1, ENC_BIG_ENDIAN);
-    offset += 1;
-    flags_ti = proto_tree_add_item(udld_tree, hf_udld_flags, tvb, offset, 1, ENC_BIG_ENDIAN);
-    flags_tree = proto_item_add_subtree(flags_ti, ett_udld_flags);
-    proto_tree_add_item(flags_tree, hf_udld_flags_rt, tvb, offset, 1, ENC_BIG_ENDIAN);
-    proto_tree_add_item(flags_tree, hf_udld_flags_rsy, tvb, offset, 1, ENC_BIG_ENDIAN);
-    offset += 1;
-    proto_tree_add_checksum(udld_tree, tvb, offset, hf_udld_checksum, -1, NULL, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
-    offset += 2;
+        /* UDLD header */
+        proto_tree_add_item(udld_tree, hf_udld_version, tvb, offset, 1, ENC_BIG_ENDIAN);
+        proto_tree_add_item(udld_tree, hf_udld_opcode, tvb, offset, 1, ENC_BIG_ENDIAN);
+        offset += 1;
+        flags_ti = proto_tree_add_item(udld_tree, hf_udld_flags, tvb, offset, 1, ENC_BIG_ENDIAN);
+        flags_tree = proto_item_add_subtree(flags_ti, ett_udld_flags);
+        proto_tree_add_item(flags_tree, hf_udld_flags_rt, tvb, offset, 1, ENC_BIG_ENDIAN);
+        proto_tree_add_item(flags_tree, hf_udld_flags_rsy, tvb, offset, 1, ENC_BIG_ENDIAN);
+        offset += 1;
+        proto_tree_add_checksum(udld_tree, tvb, offset, hf_udld_checksum, -1, NULL, pinfo, 0, ENC_BIG_ENDIAN, PROTO_CHECKSUM_NO_FLAGS);
+        offset += 2;
     } else {
-    offset += 4; /* The version/opcode/flags/checksum fields from above */
+        offset += 4; /* The version/opcode/flags/checksum fields from above */
     }
 
     while (tvb_reported_length_remaining(tvb, offset) != 0) {
@@ -153,26 +142,26 @@ dissect_udld(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
         col_append_fstr(pinfo->cinfo, COL_INFO,
                     "Device ID: %s  ",
-                    tvb_format_stringzpad(tvb, offset + 4,
+                    tvb_format_stringzpad(pinfo->pool, tvb, offset + 4,
                               length - 4));
 
         if (tree) {
             tlv_tree = proto_tree_add_subtree_format(udld_tree, tvb, offset,
                 length, ett_udld_tlv, NULL, "Device ID: %s",
-                tvb_format_stringzpad(tvb, offset + 4, length - 4));
+                tvb_format_stringzpad(pinfo->pool, tvb, offset + 4, length - 4));
             proto_tree_add_uint(tlv_tree, hf_udld_tlvtype, tvb,
                 offset + TLV_TYPE, 2, type);
             proto_tree_add_uint(tlv_tree, hf_udld_tlvlength, tvb,
                 offset + TLV_LENGTH, 2, length);
             proto_tree_add_item(tlv_tree, hf_udld_device_id, tvb, offset + 4,
-                length - 4, ENC_ASCII|ENC_NA);
+                length - 4, ENC_ASCII);
         }
         offset += length;
         break;
 
         case TYPE_PORT_ID:
         real_length = length;
-        if (tvb_get_guint8(tvb, offset + real_length) != 0x00) {
+        if (tvb_get_uint8(tvb, offset + real_length) != 0x00) {
             /* The length in the TLV doesn't appear to be the
                length of the TLV, as the byte just past it
                isn't the first byte of a 2-byte big-endian
@@ -184,18 +173,18 @@ dissect_udld(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 
         col_append_fstr(pinfo->cinfo, COL_INFO,
                     "Port ID: %s  ",
-                    tvb_format_stringzpad(tvb, offset + 4, length - 4));
+                    tvb_format_stringzpad(pinfo->pool, tvb, offset + 4, length - 4));
 
         if (tree) {
             tlv_tree = proto_tree_add_subtree_format(udld_tree, tvb, offset,
                 real_length, ett_udld_tlv, NULL, "Port ID: %s",
-                tvb_format_text(tvb, offset + 4, real_length - 4));
+                tvb_format_text(pinfo->pool, tvb, offset + 4, real_length - 4));
             proto_tree_add_uint(tlv_tree, hf_udld_tlvtype, tvb,
                 offset + TLV_TYPE, 2, type);
             proto_tree_add_uint(tlv_tree, hf_udld_tlvlength, tvb,
                 offset + TLV_LENGTH, 2, length);
             proto_tree_add_item(tlv_tree, hf_udld_sent_through_interface, tvb, offset + 4,
-                real_length - 4, ENC_ASCII|ENC_NA);
+                real_length - 4, ENC_ASCII);
         }
         offset += real_length;
         break;
@@ -208,7 +197,7 @@ dissect_udld(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
         default:
         tlv_tree = proto_tree_add_subtree_format(udld_tree, tvb, offset,
             length, ett_udld_tlv, NULL, "Type: %s, length: %u",
-            val_to_str(type, type_vals, "Unknown (0x%04x)"),
+            val_to_str(pinfo->pool, type, type_vals, "Unknown (0x%04x)"),
             length);
         proto_tree_add_uint(tlv_tree, hf_udld_tlvtype, tvb,
             offset + TLV_TYPE, 2, type);
@@ -245,11 +234,11 @@ proto_register_udld(void)
             NULL, HFILL }},
 
         { &hf_udld_flags_rt,
-          { "Recommended timeout",        "udld.flags.rt", FT_UINT8, BASE_HEX, NULL, 0x80,
+          { "Recommended timeout",        "udld.flags.rt", FT_UINT8, BASE_HEX, NULL, 0x01,
             NULL, HFILL }},
 
         { &hf_udld_flags_rsy,
-          { "ReSynch",        "udld.flags.rsy", FT_UINT8, BASE_HEX, NULL, 0x40,
+          { "ReSynch",        "udld.flags.rsy", FT_UINT8, BASE_HEX, NULL, 0x02,
             NULL, HFILL }},
 
         { &hf_udld_checksum,
@@ -277,7 +266,7 @@ proto_register_udld(void)
             NULL, HFILL }},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_udld,
         &ett_udld_flags,
         &ett_udld_tlv
@@ -295,20 +284,18 @@ proto_register_udld(void)
     proto_register_subtree_array(ett, array_length(ett));
     expert_udld = expert_register_protocol(proto_udld);
     expert_register_field_array(expert_udld, ei, array_length(ei));
+    udld_handle = register_dissector("udld", dissect_udld, proto_udld);
 }
 
 void
 proto_reg_handoff_udld(void)
 {
-    dissector_handle_t udld_handle;
-
-    udld_handle = create_dissector_handle(dissect_udld, proto_udld);
-    dissector_add_uint("llc.cisco_pid", 0x0111, udld_handle);
+    dissector_add_uint("llc.cisco_pid", CISCO_PID_UDLD, udld_handle);
     dissector_add_uint("chdlc.protocol", 0x0111, udld_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

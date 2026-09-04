@@ -1,4 +1,6 @@
+#ifndef GLIB_DISABLE_DEPRECATION_WARNINGS
 #define GLIB_DISABLE_DEPRECATION_WARNINGS
+#endif
 
 #include <glib-object.h>
 
@@ -279,7 +281,7 @@ test_boxed_regex (void)
   g_value_init (&value, G_TYPE_REGEX);
   g_assert (G_VALUE_HOLDS_BOXED (&value));
 
-  v = g_regex_new ("a+b+", 0, 0, NULL);
+  v = g_regex_new ("a+b+", G_REGEX_DEFAULT, G_REGEX_MATCH_DEFAULT, NULL);
   g_value_take_boxed (&value, v);
 
   v2 = g_value_get_boxed (&value);
@@ -303,7 +305,7 @@ test_boxed_matchinfo (void)
   g_value_init (&value, G_TYPE_MATCH_INFO);
   g_assert (G_VALUE_HOLDS_BOXED (&value));
 
-  r = g_regex_new ("ab", 0, 0, NULL);
+  r = g_regex_new ("ab", G_REGEX_DEFAULT, G_REGEX_MATCH_DEFAULT, NULL);
   ret = g_regex_match (r, "blabla abab bla", 0, &info);
   g_assert (ret);
   g_value_take_boxed (&value, info);
@@ -558,7 +560,7 @@ test_boxed_markup (void)
   g_value_init (&value, G_TYPE_MARKUP_PARSE_CONTEXT);
   g_assert (G_VALUE_HOLDS_BOXED (&value));
 
-  c = g_markup_parse_context_new (&parser, 0, NULL, NULL);
+  c = g_markup_parse_context_new (&parser, G_MARKUP_DEFAULT_FLAGS, NULL, NULL);
   g_value_take_boxed (&value, c);
 
   c2 = g_value_get_boxed (&value);
@@ -615,6 +617,79 @@ test_boxed_checksum (void)
   g_value_unset (&value);
 }
 
+static gint
+treecmp (gconstpointer a, gconstpointer b)
+{
+  return (a < b) ? -1 : (a > b);
+}
+
+static void
+test_boxed_tree (void)
+{
+  GTree *t, *t2;
+  GValue value = G_VALUE_INIT;
+
+  g_value_init (&value, G_TYPE_TREE);
+  g_assert_true (G_VALUE_HOLDS_BOXED (&value));
+
+  t = g_tree_new (treecmp);
+  g_value_take_boxed (&value, t);
+
+  t2 = g_value_get_boxed (&value);
+  g_assert_true (t == t2);
+
+  t2 = g_value_dup_boxed (&value);
+  g_assert_true (t == t2); /* trees use ref/unref for copy/free */
+  g_tree_unref (t2);
+
+  g_value_unset (&value);
+}
+
+static void
+test_boxed_pattern_spec (void)
+{
+  GPatternSpec *ps, *ps2;
+  GValue value = G_VALUE_INIT;
+
+  g_value_init (&value, G_TYPE_PATTERN_SPEC);
+  g_assert_true (G_VALUE_HOLDS_BOXED (&value));
+
+  ps = g_pattern_spec_new ("*abc*?cde");
+  g_value_take_boxed (&value, ps);
+
+  ps2 = g_value_get_boxed (&value);
+  g_assert_true (ps == ps2);
+
+  ps2 = g_value_dup_boxed (&value);
+  g_assert_true (ps != ps2);
+  g_assert_true (g_pattern_spec_equal (ps, ps2));
+  g_pattern_spec_free (ps2);
+
+  g_value_unset (&value);
+}
+
+static void
+test_boxed_rand (void)
+{
+  GRand *r, *r2;
+  GValue value = G_VALUE_INIT;
+
+  g_value_init (&value, G_TYPE_RAND);
+  g_assert_true (G_VALUE_HOLDS_BOXED (&value));
+
+  r = g_rand_new ();
+  g_value_take_boxed (&value, r);
+
+  r2 = g_value_get_boxed (&value);
+  g_assert_true (r == r2);
+
+  r2 = g_value_dup_boxed (&value);
+  g_assert_true (r != r2);
+  g_rand_free (r2);
+
+  g_value_unset (&value);
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -644,6 +719,9 @@ main (int argc, char *argv[])
   g_test_add_func ("/boxed/markup", test_boxed_markup);
   g_test_add_func ("/boxed/thread", test_boxed_thread);
   g_test_add_func ("/boxed/checksum", test_boxed_checksum);
+  g_test_add_func ("/boxed/tree", test_boxed_tree);
+  g_test_add_func ("/boxed/patternspec", test_boxed_pattern_spec);
+  g_test_add_func ("/boxed/rand", test_boxed_rand);
 
   return g_test_run ();
 }

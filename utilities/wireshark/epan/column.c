@@ -5,26 +5,14 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -34,81 +22,70 @@
 #include <epan/prefs.h>
 #include <epan/dfilter/dfilter.h>
 #include <epan/column.h>
+#include <epan/column-info.h>
 #include <epan/packet.h>
+#include <wsutil/ws_assert.h>
+
+static int proto_cols;
+static hf_register_info *hf_cols;
+static unsigned int hf_cols_cleanup;
 
 /* Given a format number (as defined in column-utils.h), returns its equivalent
    string */
-const gchar *
-col_format_to_string(const gint fmt) {
-  static const gchar *const slist[NUM_COL_FMTS] = {
-    "%q",                                       /* 0) COL_8021Q_VLAN_ID */
-    "%Yt",                                      /* 1) COL_ABS_YMD_TIME */
-    "%YDOYt",                                   /* 2) COL_ABS_YDOY_TIME */
-    "%At",                                      /* 3) COL_ABS_TIME */
-    "%V",                                       /* 4) COL_VSAN - !! DEPRECATED !!*/
-    "%B",                                       /* 5) COL_CUMULATIVE_BYTES */
-    "%Cus",                                     /* 6) COL_CUSTOM */
-    "%y",                                       /* 7) COL_DCE_CALL */
-    "%Tt",                                      /* 8) COL_DELTA_TIME */
-    "%Gt",                                      /* 9) COL_DELTA_TIME_DIS */
-    "%rd",                                      /* 10) COL_RES_DST */
-    "%ud",                                      /* 11) COL_UNRES_DST */
-    "%rD",                                      /* 12) COL_RES_DST_PORT */
-    "%uD",                                      /* 13) COL_UNRES_DST_PORT */
-    "%d",                                       /* 14) COL_DEF_DST */
-    "%D",                                       /* 15) COL_DEF_DST_PORT */
-    "%a",                                       /* 16) COL_EXPERT */
-    "%I",                                       /* 17) COL_IF_DIR */
-    "%F",                                       /* 18) COL_FREQ_CHAN */
-    "%hd",                                      /* 19) COL_DEF_DL_DST */
-    "%hs",                                      /* 20) COL_DEF_DL_SRC */
-    "%rhd",                                     /* 21) COL_RES_DL_DST */
-    "%uhd",                                     /* 22) COL_UNRES_DL_DST */
-    "%rhs",                                     /* 23) COL_RES_DL_SRC*/
-    "%uhs",                                     /* 24) COL_UNRES_DL_SRC */
-    "%e",                                       /* 25) COL_RSSI */
-    "%x",                                       /* 26) COL_TX_RATE */
-    "%f",                                       /* 27) COL_DSCP_VALUE */
-    "%i",                                       /* 28) COL_INFO */
-    "%rnd",                                     /* 29) COL_RES_NET_DST */
-    "%und",                                     /* 30) COL_UNRES_NET_DST */
-    "%rns",                                     /* 31) COL_RES_NET_SRC */
-    "%uns",                                     /* 32) COL_UNRES_NET_SRC */
-    "%nd",                                      /* 33) COL_DEF_NET_DST */
-    "%ns",                                      /* 34) COL_DEF_NET_SRC */
-    "%m",                                       /* 35) COL_NUMBER */
-    "%L",                                       /* 36) COL_PACKET_LENGTH */
-    "%p",                                       /* 37) COL_PROTOCOL */
-    "%Rt",                                      /* 38) COL_REL_TIME */
-    "%s",                                       /* 39) COL_DEF_SRC */
-    "%S",                                       /* 40) COL_DEF_SRC_PORT */
-    "%rs",                                      /* 41) COL_RES_SRC */
-    "%us",                                      /* 42) COL_UNRES_SRC */
-    "%rS",                                      /* 43) COL_RES_SRC_PORT */
-    "%uS",                                      /* 44) COL_UNRES_SRC_PORT */
-    "%E",                                       /* 45) COL_TEI */
-    "%Yut",                                     /* 46) COL_UTC_YMD_TIME */
-    "%YDOYut",                                  /* 47) COL_UTC_YDOY_TIME */
-    "%Aut",                                     /* 48) COL_UTC_TIME */
-    "%t"                                        /* 49) COL_CLS_TIME */
+const char *
+col_format_to_string(const int fmt) {
+  static const char *const slist[NUM_COL_FMTS] = {
+    "%Yt",                                      /* 0) COL_ABS_YMD_TIME */
+    "%YDOYt",                                   /* 1) COL_ABS_YDOY_TIME */
+    "%At",                                      /* 2) COL_ABS_TIME */
+    "%B",                                       /* 3) COL_CUMULATIVE_BYTES */
+    "%Cus",                                     /* 4) COL_CUSTOM */
+    "%Tt",                                      /* 5) COL_DELTA_TIME */
+    "%Gt",                                      /* 6) COL_DELTA_TIME_DIS */
+    "%rd",                                      /* 7) COL_RES_DST */
+    "%ud",                                      /* 8) COL_UNRES_DST */
+    "%rD",                                      /* 9) COL_RES_DST_PORT */
+    "%uD",                                      /* 10) COL_UNRES_DST_PORT */
+    "%d",                                       /* 11) COL_DEF_DST */
+    "%D",                                       /* 12) COL_DEF_DST_PORT */
+    "%a",                                       /* 13) COL_EXPERT */
+    "%I",                                       /* 14) COL_IF_DIR */
+    "%F",                                       /* 15) COL_FREQ_CHAN */
+    "%hd",                                      /* 16) COL_DEF_DL_DST */
+    "%hs",                                      /* 17) COL_DEF_DL_SRC */
+    "%rhd",                                     /* 18) COL_RES_DL_DST */
+    "%uhd",                                     /* 19) COL_UNRES_DL_DST */
+    "%rhs",                                     /* 20) COL_RES_DL_SRC*/
+    "%uhs",                                     /* 21) COL_UNRES_DL_SRC */
+    "%e",                                       /* 22) COL_RSSI */
+    "%x",                                       /* 23) COL_TX_RATE */
+    "%f",                                       /* 24) COL_DSCP_VALUE */
+    "%i",                                       /* 25) COL_INFO */
+    "%rnd",                                     /* 26) COL_RES_NET_DST */
+    "%und",                                     /* 27) COL_UNRES_NET_DST */
+    "%rns",                                     /* 28) COL_RES_NET_SRC */
+    "%uns",                                     /* 29) COL_UNRES_NET_SRC */
+    "%nd",                                      /* 30) COL_DEF_NET_DST */
+    "%ns",                                      /* 31) COL_DEF_NET_SRC */
+    "%m",                                       /* 32) COL_NUMBER */
+    "%md",                                      /* 33) COL_NUMBER_DIS */
+    "%L",                                       /* 34) COL_PACKET_LENGTH */
+    "%p",                                       /* 35) COL_PROTOCOL */
+    "%Rt",                                      /* 36) COL_REL_TIME */
+    "%s",                                       /* 37) COL_DEF_SRC */
+    "%S",                                       /* 38) COL_DEF_SRC_PORT */
+    "%rs",                                      /* 39) COL_RES_SRC */
+    "%us",                                      /* 40) COL_UNRES_SRC */
+    "%rS",                                      /* 41) COL_RES_SRC_PORT */
+    "%uS",                                      /* 42) COL_UNRES_SRC_PORT */
+    "%Yut",                                     /* 43) COL_UTC_YMD_TIME */
+    "%YDOYut",                                  /* 44) COL_UTC_YDOY_TIME */
+    "%Aut",                                     /* 45) COL_UTC_TIME */
+    "%t",                                       /* 46) COL_CLS_TIME */
   };
 
- /* The following formats have been used in deprecated columns.  Noted here
-  * so they aren't reused
-  *
-  *  "%U",                                             COL_COS_VALUE
-  *  "%c",                                             COL_CIRCUIT_ID
-  *  "%l",                                             COL_BSSGP_TLLI
-  *  "%H",                                             COL_HPUX_SUBSYS
-  *  "%P",                                             COL_HPUX_DEVID
-  *  "%C",                                             COL_FR_DLCI
-  *  "%rct",                                           COL_REL_CONV_TIME
-  *  "%dct",                                           COL_DELTA_CONV_TIME
-  *  "%XO",                                            COL_OXID
-  *  "%XR",                                            COL_RXID
-  *  "%Xd",                                            COL_SRCIDX
-  *  "%Xs",                                            COL_DSTIDX
-  *  "%z",                                             COL_DCE_CTX
+ /* Note the formats in migrated_columns[] below have been used in deprecated
+  * columns, and avoid reusing them.
   */
   if (fmt < 0 || fmt >= NUM_COL_FMTS)
     return NULL;
@@ -118,75 +95,326 @@ col_format_to_string(const gint fmt) {
 
 /* Given a format number (as defined in column-utils.h), returns its
   description */
-const gchar *
-col_format_desc(const gint fmt) {
-  static const gchar *const dlist[NUM_COL_FMTS] = {
-    "802.1Q VLAN id",                           /* 0) COL_8021Q_VLAN_ID */
-    "Absolute date, as YYYY-MM-DD, and time",   /* 1) COL_ABS_YMD_TIME */
-    "Absolute date, as YYYY/DOY, and time",     /* 2) COL_ABS_YDOY_TIME */
-    "Absolute time",                            /* 3) COL_ABS_TIME */
-    "Cisco VSAN",                               /* 4) COL_VSAN */
-    "Cumulative Bytes" ,                        /* 5) COL_CUMULATIVE_BYTES */
-    "Custom",                                   /* 6) COL_CUSTOM */
-    "DCE/RPC call (cn_call_id / dg_seqnum)",    /* 7) COL_DCE_CALL */
-    "Delta time",                               /* 8) COL_DELTA_TIME */
-    "Delta time displayed",                     /* 9) COL_DELTA_TIME_DIS */
-    "Dest addr (resolved)",                     /* 10) COL_RES_DST */
-    "Dest addr (unresolved)",                   /* 11) COL_UNRES_DST */
-    "Dest port (resolved)",                     /* 12) COL_RES_DST_PORT */
-    "Dest port (unresolved)",                   /* 13) COL_UNRES_DST_PORT */
-    "Destination address",                      /* 14) COL_DEF_DST */
-    "Destination port",                         /* 15) COL_DEF_DST_PORT */
-    "Expert Info Severity",                     /* 16) COL_EXPERT */
-    "FW-1 monitor if/direction",                /* 17) COL_IF_DIR */
-    "Frequency/Channel",                        /* 18) COL_FREQ_CHAN */
-    "Hardware dest addr",                       /* 19) COL_DEF_DL_DST */
-    "Hardware src addr",                        /* 20) COL_DEF_DL_SRC */
-    "Hw dest addr (resolved)",                  /* 21) COL_RES_DL_DST */
-    "Hw dest addr (unresolved)",                /* 22) COL_UNRES_DL_DST */
-    "Hw src addr (resolved)",                   /* 23) COL_RES_DL_SRC*/
-    "Hw src addr (unresolved)",                 /* 24) COL_UNRES_DL_SRC */
-    "IEEE 802.11 RSSI",                         /* 25) COL_RSSI */
-    "IEEE 802.11 TX rate",                      /* 26) COL_TX_RATE */
-    "IP DSCP Value",                            /* 27) COL_DSCP_VALUE */
-    "Information",                              /* 28) COL_INFO */
-    "Net dest addr (resolved)",                 /* 29) COL_RES_NET_DST */
-    "Net dest addr (unresolved)",               /* 30) COL_UNRES_NET_DST */
-    "Net src addr (resolved)",                  /* 31) COL_RES_NET_SRC */
-    "Net src addr (unresolved)",                /* 32) COL_UNRES_NET_SRC */
-    "Network dest addr",                        /* 33) COL_DEF_NET_DST */
-    "Network src addr",                         /* 34) COL_DEF_NET_SRC */
-    "Number",                                   /* 35) COL_NUMBER */
-    "Packet length (bytes)" ,                   /* 36) COL_PACKET_LENGTH */
-    "Protocol",                                 /* 37) COL_PROTOCOL */
-    "Relative time",                            /* 38) COL_REL_TIME */
-    "Source address",                           /* 39) COL_DEF_SRC */
-    "Source port",                              /* 40) COL_DEF_SRC_PORT */
-    "Src addr (resolved)",                      /* 41) COL_RES_SRC */
-    "Src addr (unresolved)",                    /* 42) COL_UNRES_SRC */
-    "Src port (resolved)",                      /* 43) COL_RES_SRC_PORT */
-    "Src port (unresolved)",                    /* 44) COL_UNRES_SRC_PORT */
-    "TEI",                                      /* 45) COL_TEI */
-    "UTC date, as YYYY-MM-DD, and time",        /* 46) COL_UTC_YMD_TIME */
-    "UTC date, as YYYY/DOY, and time",          /* 47) COL_UTC_YDOY_TIME */
-    "UTC time",                                 /* 48) COL_UTC_TIME */
-    "Time (format as specified)"                /* 49) COL_CLS_TIME */
+const char *
+col_format_desc(const int fmt_num) {
+
+  /* This should be sorted alphabetically, e.g. `sort -t, -k2` */
+  /*
+   * This is currently used in the preferences UI, so out-of-numeric-order
+   * performance shouldn't be an issue.
+   */
+  static const value_string dlist_vals[] = {
+
+    { COL_ABS_YMD_TIME, "Absolute date, as YYYY-MM-DD, and time" },
+    { COL_ABS_YDOY_TIME, "Absolute date, as YYYY/DOY, and time" },
+    { COL_ABS_TIME, "Absolute time" },
+    { COL_CUMULATIVE_BYTES, "Cumulative Bytes" },
+    { COL_CUSTOM, "Custom" },
+    { COL_DELTA_TIME_DIS, "Delta time displayed" },
+    { COL_DELTA_TIME, "Delta time" },
+    { COL_RES_DST, "Dest addr (resolved)" },
+    { COL_UNRES_DST, "Dest addr (unresolved)" },
+    { COL_RES_DST_PORT, "Dest port (resolved)" },
+    { COL_UNRES_DST_PORT, "Dest port (unresolved)" },
+    { COL_DEF_DST, "Destination address" },
+    { COL_DEF_DST_PORT, "Destination port" },
+    { COL_EXPERT, "Expert Info Severity" },
+    { COL_IF_DIR, "FW-1 monitor if/direction" },
+    { COL_FREQ_CHAN, "Frequency/Channel" },
+    { COL_DEF_DL_DST, "Hardware dest addr" },
+    { COL_DEF_DL_SRC, "Hardware src addr" },
+    { COL_RES_DL_DST, "Hw dest addr (resolved)" },
+    { COL_UNRES_DL_DST, "Hw dest addr (unresolved)" },
+    { COL_RES_DL_SRC, "Hw src addr (resolved)" },
+    { COL_UNRES_DL_SRC, "Hw src addr (unresolved)" },
+    { COL_RSSI, "IEEE 802.11 RSSI" },
+    { COL_TX_RATE, "IEEE 802.11 TX rate" },
+    { COL_DSCP_VALUE, "IP DSCP Value" },
+    { COL_INFO, "Information" },
+    { COL_RES_NET_DST, "Net dest addr (resolved)" },
+    { COL_UNRES_NET_DST, "Net dest addr (unresolved)" },
+    { COL_RES_NET_SRC, "Net src addr (resolved)" },
+    { COL_UNRES_NET_SRC, "Net src addr (unresolved)" },
+    { COL_DEF_NET_DST, "Network dest addr" },
+    { COL_DEF_NET_SRC, "Network src addr" },
+    { COL_NUMBER, "Number" },
+    { COL_NUMBER_DIS, "Number displayed" },
+    { COL_PACKET_LENGTH, "Packet length (bytes)" },
+    { COL_PROTOCOL, "Protocol" },
+    { COL_REL_TIME, "Relative time" },
+    { COL_DEF_SRC, "Source address" },
+    { COL_DEF_SRC_PORT, "Source port" },
+    { COL_RES_SRC, "Src addr (resolved)" },
+    { COL_UNRES_SRC, "Src addr (unresolved)" },
+    { COL_RES_SRC_PORT, "Src port (resolved)" },
+    { COL_UNRES_SRC_PORT, "Src port (unresolved)" },
+    { COL_CLS_TIME, "Time (format as specified)" },
+    { COL_UTC_YMD_TIME, "UTC date, as YYYY-MM-DD, and time" },
+    { COL_UTC_YDOY_TIME, "UTC date, as YYYY/DOY, and time" },
+    { COL_UTC_TIME, "UTC time" },
+
+    { 0, NULL }
   };
 
-  g_assert((fmt >= 0) && (fmt < NUM_COL_FMTS));
-  return(dlist[fmt]);
+  const char *val_str = try_val_to_str(fmt_num, dlist_vals);
+  ws_assert(val_str != NULL);
+  return val_str;
+}
+
+/* Given a format number (as defined in column-utils.h), returns its
+  filter abbreviation. This can return NULL for columns that can't
+  be used in filters. */
+const char *
+col_format_abbrev(const int fmt_num) {
+
+  static const value_string alist_vals[] = {
+
+    { COL_ABS_YMD_TIME, COLUMN_FIELD_FILTER"abs_ymd_time" },
+    { COL_ABS_YDOY_TIME, COLUMN_FIELD_FILTER"abs_ydoy_time" },
+    { COL_ABS_TIME, COLUMN_FIELD_FILTER"abs_time" },
+#if 0
+    /* Don't have abbreviations or register fields for these columns, because
+     * they don't work. Cumulative Bytes, Delta Time Displayed and Number Displayed
+     * depend on whether the current field and previous fields are displayed, and so
+     * aren't idempotent. We might want to do custom columns in the future,
+     * though the implementation is harder.
+     */
+    { COL_CUMULATIVE_BYTES, COLUMN_FIELD_FILTER"cumulative_bytes" },
+    { COL_CUSTOM, COLUMN_FIELD_FILTER"custom" },
+    { COL_DELTA_TIME_DIS, COLUMN_FIELD_FILTER"delta_time_dis" },
+    { COL_NUMBER_DIS, COLUMN_FIELD_FILTER"number_displayed" },
+#endif
+    { COL_DELTA_TIME, COLUMN_FIELD_FILTER"delta_time" },
+    { COL_RES_DST, COLUMN_FIELD_FILTER"res_dst" },
+    { COL_UNRES_DST, COLUMN_FIELD_FILTER"unres_dst" },
+    { COL_RES_DST_PORT, COLUMN_FIELD_FILTER"res_dst_port" },
+    { COL_UNRES_DST_PORT, COLUMN_FIELD_FILTER"unres_dst_port" },
+    { COL_DEF_DST, COLUMN_FIELD_FILTER"def_dst" },
+    { COL_DEF_DST_PORT, COLUMN_FIELD_FILTER"def_dst_port" },
+    { COL_EXPERT, COLUMN_FIELD_FILTER"expert" },
+    { COL_IF_DIR, COLUMN_FIELD_FILTER"if_dir" },
+    { COL_FREQ_CHAN, COLUMN_FIELD_FILTER"freq_chan" },
+    { COL_DEF_DL_DST, COLUMN_FIELD_FILTER"def_dl_dst" },
+    { COL_DEF_DL_SRC, COLUMN_FIELD_FILTER"def_dl_src" },
+    { COL_RES_DL_DST, COLUMN_FIELD_FILTER"res_dl_dst" },
+    { COL_UNRES_DL_DST, COLUMN_FIELD_FILTER"unres_dl_dst" },
+    { COL_RES_DL_SRC, COLUMN_FIELD_FILTER"res_dl_src" },
+    { COL_UNRES_DL_SRC, COLUMN_FIELD_FILTER"unres_dl_src" },
+    { COL_RSSI, COLUMN_FIELD_FILTER"rssi" },
+    { COL_TX_RATE, COLUMN_FIELD_FILTER"tx_rate" },
+    { COL_DSCP_VALUE, COLUMN_FIELD_FILTER"dscp" },
+    { COL_INFO, COLUMN_FIELD_FILTER"info" },
+    { COL_RES_NET_DST, COLUMN_FIELD_FILTER"res_net_dst" },
+    { COL_UNRES_NET_DST, COLUMN_FIELD_FILTER"unres_net_dst" },
+    { COL_RES_NET_SRC, COLUMN_FIELD_FILTER"res_net_src" },
+    { COL_UNRES_NET_SRC, COLUMN_FIELD_FILTER"unres_net_src" },
+    { COL_DEF_NET_DST, COLUMN_FIELD_FILTER"def_net_dst" },
+    { COL_DEF_NET_SRC, COLUMN_FIELD_FILTER"def_net_src" },
+    { COL_NUMBER, COLUMN_FIELD_FILTER"number" },
+    { COL_PACKET_LENGTH, COLUMN_FIELD_FILTER"packet_length" },
+    { COL_PROTOCOL, COLUMN_FIELD_FILTER"protocol" },
+    { COL_REL_TIME, COLUMN_FIELD_FILTER"rel_time" },
+    { COL_DEF_SRC, COLUMN_FIELD_FILTER"def_src" },
+    { COL_DEF_SRC_PORT, COLUMN_FIELD_FILTER"def_src_port" },
+    { COL_RES_SRC, COLUMN_FIELD_FILTER"res_src" },
+    { COL_UNRES_SRC, COLUMN_FIELD_FILTER"unres_src" },
+    { COL_RES_SRC_PORT, COLUMN_FIELD_FILTER"res_src_port" },
+    { COL_UNRES_SRC_PORT, COLUMN_FIELD_FILTER"unres_src_port" },
+    { COL_CLS_TIME, COLUMN_FIELD_FILTER"cls_time" },
+    { COL_UTC_YMD_TIME, COLUMN_FIELD_FILTER"utc_ymc_time" },
+    { COL_UTC_YDOY_TIME, COLUMN_FIELD_FILTER"utc_ydoy_time" },
+    { COL_UTC_TIME, COLUMN_FIELD_FILTER"utc_time" },
+
+    { 0, NULL }
+  };
+
+  const char *val_str = try_val_to_str(fmt_num, alist_vals);
+  //ws_assert(val_str != NULL);
+  return val_str;
+}
+/* Array of columns that have been migrated to custom columns */
+struct deprecated_columns {
+    const char *col_fmt;
+    const char *col_expr;
+};
+
+static struct deprecated_columns migrated_columns[] = {
+    { /* COL_COS_VALUE */ "%U", "vlan.priority" },
+    { /* COL_CIRCUIT_ID */ "%c", "iax2.call" },
+    { /* COL_BSSGP_TLLI */ "%l", "bssgp.tlli" },
+    { /* COL_HPUX_SUBSYS */ "%H", "nettl.subsys" },
+    { /* COL_HPUX_DEVID */ "%P", "nettl.devid" },
+    { /* COL_FR_DLCI */ "%C", "fr.dlci" },
+    { /* COL_REL_CONV_TIME */ "%rct", "tcp.time_relative" },
+    { /* COL_DELTA_CONV_TIME */ "%dct", "tcp.time_delta" },
+    { /* COL_OXID */ "%XO", "fc.ox_id" },
+    { /* COL_RXID */ "%XR", "fc.rx_id" },
+    { /* COL_SRCIDX */ "%Xd", "mdshdr.srcidx" },
+    { /* COL_DSTIDX */ "%Xs", "mdshdr.dstidx" },
+    { /* COL_DCE_CTX */ "%z", "dcerpc.cn_ctx_id" },
+    /* The columns above here have been migrated since August 2009 and all
+     * completely removed since January 2016. At some point we could remove
+     * these; how many people have a preference file that they haven't opened
+     * and saved since then?
+     */
+    { /* COL_8021Q_VLAN_ID */ "%q", "vlan.id||nstrace.vlan" },
+    { /* COL_VSAN */ "%V", "mdshdr.vsan||brdwlk.vsan||fc.vft.vf_id" },
+    { /* COL_DCE_CALL */ "%y", "dcerpc.cn_call_id||dcerpc.dg_seqnum" },
+    { /* COL_TEI */ "%E", "lapd.tei" },
+};
+
+const char*
+try_convert_to_column_field(const char *field)
+{
+    static const value_string migrated_fields[] = {
+        { COL_NUMBER, COLUMN_FIELD_FILTER"No." },
+        { COL_CLS_TIME, COLUMN_FIELD_FILTER"Time" },
+        { COL_DEF_SRC, COLUMN_FIELD_FILTER"Source" },
+        { COL_DEF_DST, COLUMN_FIELD_FILTER"Destination" },
+        { COL_PROTOCOL, COLUMN_FIELD_FILTER"Protocol" },
+        { COL_PACKET_LENGTH, COLUMN_FIELD_FILTER"Length" },
+        { COL_INFO, COLUMN_FIELD_FILTER"Info" },
+        { 0, NULL },
+    };
+
+    int idx;
+
+    idx = str_to_val_idx(field, migrated_fields);
+
+    if (idx >= 0) {
+        return col_format_abbrev(migrated_fields[idx].value);
+    }
+
+    return NULL;
+}
+
+/*
+ * Parse a column format, filling in the relevant fields of a fmt_data.
+ */
+bool
+parse_column_format(fmt_data *cfmt, const char *fmt)
+{
+    const char *cust_format = col_format_to_string(COL_CUSTOM);
+    size_t cust_format_len = strlen(cust_format);
+    GPtrArray *cust_format_info;
+    char *p;
+    int col_fmt;
+    char *col_custom_fields = NULL;
+    long col_custom_occurrence = 0;
+    char col_display = COLUMN_DISPLAY_STRINGS;
+
+    /*
+     * Is this a custom column?
+     */
+    if ((strlen(fmt) > cust_format_len) && (fmt[cust_format_len] == ':') &&
+        strncmp(fmt, cust_format, cust_format_len) == 0) {
+        /* Yes. */
+        col_fmt = COL_CUSTOM;
+        cust_format_info = g_ptr_array_new();
+        char *fmt_copy = g_strdup(&fmt[cust_format_len + 1]);
+        p = strrchr(fmt_copy, ':');
+        /* Pull off the two right most tokens for occurrences and
+         * "show resolved". We do it this way because the filter might
+         * have a ':' in it, e.g. for slices.
+         */
+        for (int token = 2; token > 0 && p != NULL; token--) {
+            g_ptr_array_insert(cust_format_info, 0, &p[1]);
+            *p = '\0';
+            p = strrchr(fmt_copy, ':');
+        }
+        g_ptr_array_insert(cust_format_info, 0, fmt_copy);
+        /* XXX - The last two tokens have been written since at least 1.6.x
+         * (commit f5ab6c1930d588f9f0be453a7be279150922b347). We could
+         * just fail at this point if cust_format_info->len < 3
+         */
+        if (cust_format_info->len > 0) {
+            col_custom_fields = g_strdup(cust_format_info->pdata[0]);
+        }
+        if (cust_format_info->len > 1) {
+            col_custom_occurrence = strtol(cust_format_info->pdata[1], &p, 10);
+            if (p == cust_format_info->pdata[1] || *p != '\0') {
+                /* Not a valid number. */
+                g_free(fmt_copy);
+                g_ptr_array_unref(cust_format_info);
+                return false;
+            }
+        }
+        if (cust_format_info->len > 2) {
+            p = cust_format_info->pdata[2];
+            col_display = p[0];
+        }
+        g_free(fmt_copy);
+        g_ptr_array_unref(cust_format_info);
+    } else {
+        col_fmt = get_column_format_from_str(fmt);
+        if (col_fmt == -1)
+            return false;
+    }
+
+    cfmt->fmt = col_fmt;
+    cfmt->custom_fields = col_custom_fields;
+    cfmt->custom_occurrence = (int)col_custom_occurrence;
+    cfmt->display = col_display;
+    return true;
+}
+
+char *
+column_fmt_data_to_str(const fmt_data *cfmt)
+{
+    if (!cfmt) {
+        return NULL;
+    }
+
+    if ((cfmt->fmt == COL_CUSTOM) && (cfmt->custom_fields)) {
+        return ws_strdup_printf("%s:%s:%d:%c",
+            col_format_to_string(cfmt->fmt),
+            cfmt->custom_fields,
+            cfmt->custom_occurrence,
+            cfmt->display);
+    }
+
+    return ws_strdup(col_format_to_string(cfmt->fmt));
+}
+
+void
+try_convert_to_custom_column(char **fmt)
+{
+    unsigned haystack_idx;
+
+    for (haystack_idx = 0;
+         haystack_idx < G_N_ELEMENTS(migrated_columns);
+         ++haystack_idx) {
+
+        if (strcmp(migrated_columns[haystack_idx].col_fmt, *fmt) == 0) {
+            char *cust_col = ws_strdup_printf("%%Cus:%s:0",
+                                migrated_columns[haystack_idx].col_expr);
+
+            g_free(*fmt);
+            *fmt = cust_col;
+        }
+    }
 }
 
 void
 column_dump_column_formats(void)
 {
-  gint fmt;
+  int fmt;
 
   for (fmt = 0; fmt < NUM_COL_FMTS; fmt++) {
-    printf("%s\t%s\n", col_format_to_string(fmt), col_format_desc(fmt));
+    printf("%s\t%-35s\t%s\n", col_format_to_string(fmt), col_format_desc(fmt),
+      col_format_abbrev(fmt) ? col_format_abbrev(fmt) : "");
   }
 
-  printf("\nFor example, to print Wireshark's default columns with tshark:\n\n"
+  printf("\nFor each row above, the first field is the format string for specifying the\n"
+    "column in preferences, and the third field is the abbreviation used for the\n"
+    "column text in a packet matching expression. Note that a column with the format\n"
+    "must be configured in preferences for it to be filterable.\n");
+
+  /* XXX - Actually retrieve the default values from prefs. We could also
+   * then output the default columns for Stratoshark, if this is Stratoshark. (stshark?)
+   */
+  printf("\nThese format strings are used to specify a column format in preferences.\n"
+    "For example, to print Wireshark's default columns with tshark:\n\n"
 #ifdef _WIN32
   "tshark.exe -o \"gui.column.format:"
     "\\\"No.\\\",\\\"%%m\\\","
@@ -206,209 +434,333 @@ column_dump_column_formats(void)
     "\"Length\",\"%%L\","
     "\"Info\",\"%%i\"'\n");
 #endif
+
+  if (prefs.col_list) {
+    fmt_data *cfmt;
+    char *prefs_fmt;
+    GString *current_cols = g_string_new(NULL);
+    for (GList *elem = g_list_first(prefs.col_list); elem != NULL; elem = elem->next) {
+      cfmt = (fmt_data*)elem->data;
+      prefs_fmt = column_fmt_data_to_str(cfmt);
+      if (current_cols->len != 0) {
+        g_string_append_c(current_cols, ',');
+      }
+#ifdef _WIN32
+      g_string_append_printf(current_cols, "\\\"%s\\\",\\\"%s\\\"", cfmt->title, prefs_fmt);
+#else
+      g_string_append_printf(current_cols, "\"%s\",\"%s\"", cfmt->title, prefs_fmt);
+#endif
+      g_free(prefs_fmt);
+    }
+    printf("\nand to print the current configuration profile's columns with tshark:\n\n"
+#ifdef _WIN32
+    "tshark -o \"gui.column.format:%s\"\n", current_cols->str);
+#else
+    "tshark -o 'gui.column.format:%s'\n", current_cols->str);
+#endif
+    g_string_free(current_cols, TRUE);
+  }
 }
 
 /* Marks each array element true if it can be substituted for the given
    column format */
 void
-get_column_format_matches(gboolean *fmt_list, const gint format) {
+get_column_format_matches(bool *fmt_list, const int format) {
 
   /* Get the obvious: the format itself */
   if ((format >= 0) && (format < NUM_COL_FMTS))
-    fmt_list[format] = TRUE;
+    fmt_list[format] = true;
 
   /* Get any formats lower down on the chain */
   switch (format) {
     case COL_DEF_SRC:
-      fmt_list[COL_RES_DL_SRC] = TRUE;
-      fmt_list[COL_RES_NET_SRC] = TRUE;
+      fmt_list[COL_RES_DL_SRC] = true;
+      fmt_list[COL_RES_NET_SRC] = true;
       break;
     case COL_RES_SRC:
-      fmt_list[COL_RES_DL_SRC] = TRUE;
-      fmt_list[COL_RES_NET_SRC] = TRUE;
+      fmt_list[COL_RES_DL_SRC] = true;
+      fmt_list[COL_RES_NET_SRC] = true;
       break;
     case COL_UNRES_SRC:
-      fmt_list[COL_UNRES_DL_SRC] = TRUE;
-      fmt_list[COL_UNRES_NET_SRC] = TRUE;
+      fmt_list[COL_UNRES_DL_SRC] = true;
+      fmt_list[COL_UNRES_NET_SRC] = true;
       break;
     case COL_DEF_DST:
-      fmt_list[COL_RES_DL_DST] = TRUE;
-      fmt_list[COL_RES_NET_DST] = TRUE;
+      fmt_list[COL_RES_DL_DST] = true;
+      fmt_list[COL_RES_NET_DST] = true;
       break;
     case COL_RES_DST:
-      fmt_list[COL_RES_DL_DST] = TRUE;
-      fmt_list[COL_RES_NET_DST] = TRUE;
+      fmt_list[COL_RES_DL_DST] = true;
+      fmt_list[COL_RES_NET_DST] = true;
       break;
     case COL_UNRES_DST:
-      fmt_list[COL_UNRES_DL_DST] = TRUE;
-      fmt_list[COL_UNRES_NET_DST] = TRUE;
+      fmt_list[COL_UNRES_DL_DST] = true;
+      fmt_list[COL_UNRES_NET_DST] = true;
       break;
     case COL_DEF_DL_SRC:
-      fmt_list[COL_RES_DL_SRC] = TRUE;
+      fmt_list[COL_RES_DL_SRC] = true;
       break;
     case COL_DEF_DL_DST:
-      fmt_list[COL_RES_DL_DST] = TRUE;
+      fmt_list[COL_RES_DL_DST] = true;
       break;
     case COL_DEF_NET_SRC:
-      fmt_list[COL_RES_NET_SRC] = TRUE;
+      fmt_list[COL_RES_NET_SRC] = true;
       break;
     case COL_DEF_NET_DST:
-      fmt_list[COL_RES_NET_DST] = TRUE;
+      fmt_list[COL_RES_NET_DST] = true;
       break;
     case COL_DEF_SRC_PORT:
-      fmt_list[COL_RES_SRC_PORT] = TRUE;
+      fmt_list[COL_RES_SRC_PORT] = true;
       break;
     case COL_DEF_DST_PORT:
-      fmt_list[COL_RES_DST_PORT] = TRUE;
+      fmt_list[COL_RES_DST_PORT] = true;
       break;
     default:
       break;
   }
 }
 
+/*
+ * These tables are indexed by the number of digits of precision for
+ * time stamps; all TS_PREC_FIXED_ types have values equal to the
+ * number of digits of precision, and NUM_WS_TSPREC_VALS is the
+ * total number of such values as there's a one-to-one correspondence
+ * between WS_TSPREC_ values and TS_PREC_FIXED_ values.
+ */
+
+/*
+ * Strings for YYYY-MM-DD HH:MM:SS.SSSS dates and times.
+ * (Yes, we know, this has a Y10K problem.)
+ */
+static const char *ts_ymd[NUM_WS_TSPREC_VALS] = {
+    "0000-00-00 00:00:00",
+    "0000-00-00 00:00:00.0",
+    "0000-00-00 00:00:00.00",
+    "0000-00-00 00:00:00.000",
+    "0000-00-00 00:00:00.0000",
+    "0000-00-00 00:00:00.00000",
+    "0000-00-00 00:00:00.000000",
+    "0000-00-00 00:00:00.0000000",
+    "0000-00-00 00:00:00.00000000",
+    "0000-00-00 00:00:00.000000000",
+};
+
+static const char *ts_ymd_utc[NUM_WS_TSPREC_VALS] = {
+    "0000-00-00 00:00:00Z",
+    "0000-00-00 00:00:00.0Z",
+    "0000-00-00 00:00:00.00Z",
+    "0000-00-00 00:00:00.000Z",
+    "0000-00-00 00:00:00.0000Z",
+    "0000-00-00 00:00:00.00000Z",
+    "0000-00-00 00:00:00.000000Z",
+    "0000-00-00 00:00:00.0000000Z",
+    "0000-00-00 00:00:00.00000000Z",
+    "0000-00-00 00:00:00.000000000Z",
+};
+
+/*
+ * Strings for YYYY/DOY HH:MM:SS.SSSS dates and times.
+ * (Yes, we know, this also has a Y10K problem.)
+ */
+static const char *ts_ydoy[NUM_WS_TSPREC_VALS] = {
+    "0000/000 00:00:00",
+    "0000/000 00:00:00.0",
+    "0000/000 00:00:00.00",
+    "0000/000 00:00:00.000",
+    "0000/000 00:00:00.0000",
+    "0000/000 00:00:00.00000",
+    "0000/000 00:00:00.000000",
+    "0000/000 00:00:00.0000000",
+    "0000/000 00:00:00.00000000",
+    "0000/000 00:00:00.000000000",
+};
+
+static const char *ts_ydoy_utc[NUM_WS_TSPREC_VALS] = {
+    "0000/000 00:00:00Z",
+    "0000/000 00:00:00.0Z",
+    "0000/000 00:00:00.00Z",
+    "0000/000 00:00:00.000Z",
+    "0000/000 00:00:00.0000Z",
+    "0000/000 00:00:00.00000Z",
+    "0000/000 00:00:00.000000Z",
+    "0000/000 00:00:00.0000000Z",
+    "0000/000 00:00:00.00000000Z",
+    "0000/000 00:00:00.000000000Z",
+};
+
+/*
+ * Strings for HH:MM:SS.SSSS absolute times without dates.
+ */
+static const char *ts_abstime[NUM_WS_TSPREC_VALS] = {
+    "00:00:00",
+    "00:00:00.0",
+    "00:00:00.00",
+    "00:00:00.000",
+    "00:00:00.0000",
+    "00:00:00.00000",
+    "00:00:00.000000",
+    "00:00:00.0000000",
+    "00:00:00.00000000",
+    "00:00:00.000000000",
+};
+
+static const char *ts_abstime_utc[NUM_WS_TSPREC_VALS] = {
+    "00:00:00Z",
+    "00:00:00.0Z",
+    "00:00:00.00Z",
+    "00:00:00.000Z",
+    "00:00:00.0000Z",
+    "00:00:00.00000Z",
+    "00:00:00.000000Z",
+    "00:00:00.0000000Z",
+    "00:00:00.00000000Z",
+    "00:00:00.000000000Z",
+};
+
+/*
+ * Strings for SSSS.S relative and delta times.
+ * (Yes, this has s 10,000-seconds problem.)
+ */
+static const char *ts_rel_delta_time[NUM_WS_TSPREC_VALS] = {
+    "0000",
+    "0000.0",
+    "0000.00",
+    "0000.000",
+    "0000.0000",
+    "0000.00000",
+    "0000.000000",
+    "0000.0000000",
+    "0000.00000000",
+    "0000.000000000",
+};
+
+/*
+ * Strings for UN*X/POSIX Epoch times.
+ */
+static const char *ts_epoch_time[NUM_WS_TSPREC_VALS] = {
+    "0000000000000000000",
+    "0000000000000000000.0",
+    "0000000000000000000.00",
+    "0000000000000000000.000",
+    "0000000000000000000.0000",
+    "0000000000000000000.00000",
+    "0000000000000000000.000000",
+    "0000000000000000000.0000000",
+    "0000000000000000000.00000000",
+    "0000000000000000000.000000000",
+};
+
 /* Returns a string representing the longest possible value for
    a timestamp column type. */
 static const char *
-get_timestamp_column_longest_string(const gint type, const gint precision)
+get_timestamp_column_longest_string(const int type, const int precision)
 {
 
     switch(type) {
     case(TS_ABSOLUTE_WITH_YMD):
+        if(precision == TS_PREC_AUTO) {
+            /*
+             * Return the string for the maximum precision, so that
+             * our caller leaves room for that string.
+             */
+            return ts_ymd[WS_TSPREC_MAX];
+        } else if(precision >= 0 && precision < NUM_WS_TSPREC_VALS)
+            return ts_ymd[precision];
+        else
+            ws_assert_not_reached();
+        break;
     case(TS_UTC_WITH_YMD):
-        switch(precision) {
-            case(TS_PREC_FIXED_SEC):
-                return "0000-00-00 00:00:00";
-                break;
-            case(TS_PREC_FIXED_DSEC):
-                return "0000-00-00 00:00:00.0";
-                break;
-            case(TS_PREC_FIXED_CSEC):
-                return "0000-00-00 00:00:00.00";
-                break;
-            case(TS_PREC_FIXED_MSEC):
-                return "0000-00-00 00:00:00.000";
-                break;
-            case(TS_PREC_FIXED_USEC):
-                return "0000-00-00 00:00:00.000000";
-                break;
-            case(TS_PREC_FIXED_NSEC):
-            case(TS_PREC_AUTO):    /* Leave enough room for the maximum */
-                return "0000-00-00 00:00:00.000000000";
-                break;
-            default:
-                g_assert_not_reached();
-        }
-            break;
+        if(precision == TS_PREC_AUTO) {
+            /*
+             * Return the string for the maximum precision, so that
+             * our caller leaves room for that string.
+             */
+            return ts_ymd_utc[WS_TSPREC_MAX];
+        } else if(precision >= 0 && precision < NUM_WS_TSPREC_VALS)
+            return ts_ymd_utc[precision];
+        else
+            ws_assert_not_reached();
+        break;
     case(TS_ABSOLUTE_WITH_YDOY):
+        if(precision == TS_PREC_AUTO) {
+            /*
+             * Return the string for the maximum precision, so that
+             * our caller leaves room for that string.
+             */
+            return ts_ydoy[WS_TSPREC_MAX];
+        } else if(precision >= 0 && precision < NUM_WS_TSPREC_VALS)
+            return ts_ydoy[precision];
+        else
+            ws_assert_not_reached();
+        break;
     case(TS_UTC_WITH_YDOY):
-        switch(precision) {
-            case(TS_PREC_FIXED_SEC):
-                return "0000/000 00:00:00";
-                break;
-            case(TS_PREC_FIXED_DSEC):
-                return "0000/000 00:00:00.0";
-                break;
-            case(TS_PREC_FIXED_CSEC):
-                return "0000/000 00:00:00.00";
-                break;
-            case(TS_PREC_FIXED_MSEC):
-                return "0000/000 00:00:00.000";
-                break;
-            case(TS_PREC_FIXED_USEC):
-                return "0000/000 00:00:00.000000";
-                break;
-            case(TS_PREC_FIXED_NSEC):
-            case(TS_PREC_AUTO):    /* Leave enough room for the maximum */
-                return "0000/000 00:00:00.000000000";
-                break;
-            default:
-                g_assert_not_reached();
-        }
-            break;
+        if(precision == TS_PREC_AUTO) {
+            /*
+             * Return the string for the maximum precision, so that
+             * our caller leaves room for that string.
+             */
+            return ts_ydoy_utc[WS_TSPREC_MAX];
+        } else if(precision >= 0 && precision < NUM_WS_TSPREC_VALS)
+            return ts_ydoy_utc[precision];
+        else
+            ws_assert_not_reached();
+        break;
     case(TS_ABSOLUTE):
+        if(precision == TS_PREC_AUTO) {
+            /*
+             * Return the string for the maximum precision, so that
+             * our caller leaves room for that string.
+             */
+            return ts_abstime[WS_TSPREC_MAX];
+        } else if(precision >= 0 && precision < NUM_WS_TSPREC_VALS)
+            return ts_abstime[precision];
+        else
+            ws_assert_not_reached();
+        break;
     case(TS_UTC):
-        switch(precision) {
-            case(TS_PREC_FIXED_SEC):
-                return "00:00:00";
-                break;
-            case(TS_PREC_FIXED_DSEC):
-                return "00:00:00.0";
-                break;
-            case(TS_PREC_FIXED_CSEC):
-                return "00:00:00.00";
-                break;
-            case(TS_PREC_FIXED_MSEC):
-                return "00:00:00.000";
-                break;
-            case(TS_PREC_FIXED_USEC):
-                return "00:00:00.000000";
-                break;
-            case(TS_PREC_FIXED_NSEC):
-            case(TS_PREC_AUTO):    /* Leave enough room for the maximum */
-                return "00:00:00.000000000";
-                break;
-            default:
-                g_assert_not_reached();
-        }
+        if(precision == TS_PREC_AUTO) {
+            /*
+             * Return the string for the maximum precision, so that
+             * our caller leaves room for that string.
+             */
+            return ts_abstime_utc[WS_TSPREC_MAX];
+        } else if(precision >= 0 && precision < NUM_WS_TSPREC_VALS)
+            return ts_abstime_utc[precision];
+        else
+            ws_assert_not_reached();
         break;
     case(TS_RELATIVE):  /* fallthrough */
     case(TS_DELTA):
     case(TS_DELTA_DIS):
-        switch(precision) {
-            case(TS_PREC_FIXED_SEC):
-                return "0000";
-                break;
-            case(TS_PREC_FIXED_DSEC):
-                return "0000.0";
-                break;
-            case(TS_PREC_FIXED_CSEC):
-                return "0000.00";
-                break;
-            case(TS_PREC_FIXED_MSEC):
-                return "0000.000";
-                break;
-            case(TS_PREC_FIXED_USEC):
-                return "0000.000000";
-                break;
-            case(TS_PREC_FIXED_NSEC):
-            case(TS_PREC_AUTO):    /* Leave enough room for the maximum */
-                return "0000.000000000";
-                break;
-            default:
-                g_assert_not_reached();
-        }
+        if(precision == TS_PREC_AUTO) {
+            /*
+             * Return the string for the maximum precision, so that
+             * our caller leaves room for that string.
+             */
+            return ts_rel_delta_time[WS_TSPREC_MAX];
+        } else if(precision >= 0 && precision < NUM_WS_TSPREC_VALS)
+            return ts_rel_delta_time[precision];
+        else
+            ws_assert_not_reached();
         break;
     case(TS_EPOCH):
         /* This is enough to represent 2^63 (signed 64-bit integer) + fractions */
-        switch(precision) {
-            case(TS_PREC_FIXED_SEC):
-                return "0000000000000000000";
-                break;
-            case(TS_PREC_FIXED_DSEC):
-                return "0000000000000000000.0";
-                break;
-            case(TS_PREC_FIXED_CSEC):
-                return "0000000000000000000.00";
-                break;
-            case(TS_PREC_FIXED_MSEC):
-                return "0000000000000000000.000";
-                break;
-            case(TS_PREC_FIXED_USEC):
-                return "0000000000000000000.000000";
-                break;
-            case(TS_PREC_FIXED_NSEC):
-            case(TS_PREC_AUTO):    /* Leave enough room for the maximum */
-                return "0000000000000000000.000000000";
-                break;
-            default:
-                g_assert_not_reached();
-        }
+        if(precision == TS_PREC_AUTO) {
+            /*
+             * Return the string for the maximum precision, so that
+             * our caller leaves room for that string.
+             */
+            return ts_epoch_time[WS_TSPREC_MAX];
+        } else if(precision >= 0 && precision < NUM_WS_TSPREC_VALS)
+            return ts_epoch_time[precision];
+        else
+            ws_assert_not_reached();
         break;
     case(TS_NOT_SET):
+        /* This should not happen. */
         return "0000.000000";
-        break;
     default:
-        g_assert_not_reached();
+        ws_assert_not_reached();
     }
 
     /* never reached, satisfy compiler */
@@ -427,43 +779,33 @@ get_timestamp_column_longest_string(const gint type, const gint precision)
    is done, and given that the width for COL...SRC and COL...DST columns
    is somewhat arbitrary in any case.  We should probably clean
    that up eventually, though. */
-static const char *
-get_column_longest_string(const gint format)
+const char *
+get_column_longest_string(const int format)
 {
   switch (format) {
     case COL_NUMBER:
+    case COL_NUMBER_DIS:
       return "0000000";
-      break;
     case COL_CLS_TIME:
       return get_timestamp_column_longest_string(timestamp_get_type(), timestamp_get_precision());
-      break;
     case COL_ABS_YMD_TIME:
       return get_timestamp_column_longest_string(TS_ABSOLUTE_WITH_YMD, timestamp_get_precision());
-      break;
     case COL_ABS_YDOY_TIME:
       return get_timestamp_column_longest_string(TS_ABSOLUTE_WITH_YDOY, timestamp_get_precision());
-      break;
     case COL_UTC_YMD_TIME:
       return get_timestamp_column_longest_string(TS_UTC_WITH_YMD, timestamp_get_precision());
-      break;
     case COL_UTC_YDOY_TIME:
       return get_timestamp_column_longest_string(TS_UTC_WITH_YDOY, timestamp_get_precision());
-      break;
     case COL_ABS_TIME:
       return get_timestamp_column_longest_string(TS_ABSOLUTE, timestamp_get_precision());
-      break;
     case COL_UTC_TIME:
       return get_timestamp_column_longest_string(TS_UTC, timestamp_get_precision());
-      break;
     case COL_REL_TIME:
       return get_timestamp_column_longest_string(TS_RELATIVE, timestamp_get_precision());
-      break;
     case COL_DELTA_TIME:
       return get_timestamp_column_longest_string(TS_DELTA, timestamp_get_precision());
-      break;
     case COL_DELTA_TIME_DIS:
       return get_timestamp_column_longest_string(TS_DELTA_DIS, timestamp_get_precision());
-      break;
     case COL_DEF_SRC:
     case COL_RES_SRC:
     case COL_UNRES_SRC:
@@ -483,7 +825,6 @@ get_column_longest_string(const gint format)
     case COL_RES_NET_DST:
     case COL_UNRES_NET_DST:
       return "00000000.000000000000"; /* IPX-style */
-      break;
     case COL_DEF_SRC_PORT:
     case COL_RES_SRC_PORT:
     case COL_UNRES_SRC_PORT:
@@ -491,59 +832,35 @@ get_column_longest_string(const gint format)
     case COL_RES_DST_PORT:
     case COL_UNRES_DST_PORT:
       return "000000";
-      break;
     case COL_PROTOCOL:
       return "Protocol";    /* not the longest, but the longest is too long */
-      break;
     case COL_PACKET_LENGTH:
       return "00000";
-      break;
     case COL_CUMULATIVE_BYTES:
       return "00000000";
-      break;
     case COL_IF_DIR:
       return "i 00000000 I";
-      break;
-    case COL_VSAN:
-     return "000000";
-      break;
     case COL_TX_RATE:
       return "108.0";
-      break;
     case COL_RSSI:
       return "100";
-      break;
-    case COL_DCE_CALL:
-      return "0000";
-      break;
-    case COL_8021Q_VLAN_ID:
-      return "0000";
-      break;
     case COL_DSCP_VALUE:
       return "AAA BBB";    /* not the longest, but the longest is too long */
-      break;
-    case COL_TEI:
-      return "127";
-      break;
     case COL_EXPERT:
       return "ERROR";
-      break;
     case COL_FREQ_CHAN:
       return "9999 MHz [A 999]";
-      break;
     case COL_CUSTOM:
       return "0000000000";  /* not the longest, but the longest is too long */
-      break;
     default: /* COL_INFO */
       return "Source port: kerberos-master  Destination port: kerberos-master";
-      break;
   }
 }
 
 /* Returns the longer string of the column title or the hard-coded width of
  * its contents for building the packet list layout. */
-const gchar *
-get_column_width_string(const gint format, const gint col)
+const char *
+get_column_width_string(const int format, const int col)
 {
     if(strlen(get_column_longest_string(format)) >
        strlen(get_column_title(col)))
@@ -554,14 +871,14 @@ get_column_width_string(const gint format, const gint col)
 
 /* Returns the longest possible width, in characters, for a particular
    column type. */
-gint
-get_column_char_width(const gint format)
+int
+get_column_char_width(const int format)
 {
-  return (gint)strlen(get_column_longest_string(format));
+  return (int)strlen(get_column_longest_string(format));
 }
 
-gint
-get_column_format(const gint col)
+int
+get_column_format(const int col)
 {
   GList    *clp = g_list_nth(prefs.col_list, col);
   fmt_data *cfmt;
@@ -575,7 +892,7 @@ get_column_format(const gint col)
 }
 
 void
-set_column_format(const gint col, const gint fmt)
+set_column_format(const int col, const int fmt)
 {
   GList    *clp = g_list_nth(prefs.col_list, col);
   fmt_data *cfmt;
@@ -588,10 +905,10 @@ set_column_format(const gint col, const gint fmt)
   cfmt->fmt = fmt;
 }
 
-gint
-get_column_format_from_str(const gchar *str)
+int
+get_column_format_from_str(const char *str)
 {
-  gint i;
+  int i;
 
   for (i = 0; i < NUM_COL_FMTS; i++) {
     if (strcmp(str, col_format_to_string(i)) == 0)
@@ -600,8 +917,8 @@ get_column_format_from_str(const gchar *str)
   return -1;    /* illegal */
 }
 
-gchar *
-get_column_title(const gint col)
+char *
+get_column_title(const int col)
 {
   GList    *clp = g_list_nth(prefs.col_list, col);
   fmt_data *cfmt;
@@ -615,7 +932,7 @@ get_column_title(const gint col)
 }
 
 void
-set_column_title(const gint col, const gchar *title)
+set_column_title(const int col, const char *title)
 {
   GList    *clp = g_list_nth(prefs.col_list, col);
   fmt_data *cfmt;
@@ -629,14 +946,14 @@ set_column_title(const gint col, const gchar *title)
   cfmt->title = g_strdup (title);
 }
 
-gboolean
-get_column_visible(const gint col)
+bool
+get_column_visible(const int col)
 {
   GList    *clp = g_list_nth(prefs.col_list, col);
   fmt_data *cfmt;
 
   if (!clp)  /* Invalid column requested */
-    return TRUE;
+    return true;
 
   cfmt = (fmt_data *) clp->data;
 
@@ -644,7 +961,7 @@ get_column_visible(const gint col)
 }
 
 void
-set_column_visible(const gint col, gboolean visible)
+set_column_visible(const int col, bool visible)
 {
   GList    *clp = g_list_nth(prefs.col_list, col);
   fmt_data *cfmt;
@@ -657,22 +974,22 @@ set_column_visible(const gint col, gboolean visible)
   cfmt->visible = visible;
 }
 
-gboolean
-get_column_resolved(const gint col)
+char
+get_column_display_format(const int col)
 {
   GList    *clp = g_list_nth(prefs.col_list, col);
   fmt_data *cfmt;
 
   if (!clp)  /* Invalid column requested */
-    return TRUE;
+    return true;
 
   cfmt = (fmt_data *) clp->data;
 
-  return(cfmt->resolved);
+  return(cfmt->display);
 }
 
 void
-set_column_resolved(const gint col, gboolean resolved)
+set_column_display_format(const int col, char display)
 {
   GList    *clp = g_list_nth(prefs.col_list, col);
   fmt_data *cfmt;
@@ -682,11 +999,11 @@ set_column_resolved(const gint col, gboolean resolved)
 
   cfmt = (fmt_data *) clp->data;
 
-  cfmt->resolved = resolved;
+  cfmt->display = display;
 }
 
-const gchar *
-get_column_custom_fields(const gint col)
+const char *
+get_column_custom_fields(const int col)
 {
   GList    *clp = g_list_nth(prefs.col_list, col);
   fmt_data *cfmt;
@@ -700,7 +1017,7 @@ get_column_custom_fields(const gint col)
 }
 
 void
-set_column_custom_fields(const gint col, const char *custom_fields)
+set_column_custom_fields(const int col, const char *custom_fields)
 {
   GList    *clp = g_list_nth(prefs.col_list, col);
   fmt_data *cfmt;
@@ -714,8 +1031,8 @@ set_column_custom_fields(const gint col, const char *custom_fields)
   cfmt->custom_fields = g_strdup (custom_fields);
 }
 
-gint
-get_column_custom_occurrence(const gint col)
+int
+get_column_custom_occurrence(const int col)
 {
   GList    *clp = g_list_nth(prefs.col_list, col);
   fmt_data *cfmt;
@@ -729,7 +1046,7 @@ get_column_custom_occurrence(const gint col)
 }
 
 void
-set_column_custom_occurrence(const gint col, const gint custom_occurrence)
+set_column_custom_occurrence(const int col, const int custom_occurrence)
 {
   GList    *clp = g_list_nth(prefs.col_list, col);
   fmt_data *cfmt;
@@ -742,38 +1059,43 @@ set_column_custom_occurrence(const gint col, const gint custom_occurrence)
   cfmt->custom_occurrence = custom_occurrence;
 }
 
-static gchar *
-get_custom_field_tooltip (gchar *custom_field, gint occurrence)
+static char *
+get_custom_field_tooltip (char *custom_field, int occurrence)
 {
     header_field_info *hfi = proto_registrar_get_byname(custom_field);
     if (hfi == NULL) {
         /* Not a valid field */
-        return g_strdup_printf("Unknown Field: %s", custom_field);
+        dfilter_t *dfilter;
+        if (dfilter_compile(custom_field, &dfilter, NULL)) {
+            dfilter_free(dfilter);
+            return ws_strdup_printf("Expression: %s", custom_field);
+        }
+        return ws_strdup_printf("Unknown Field: %s", custom_field);
     }
 
     if (hfi->parent == -1) {
         /* Protocol */
-        return g_strdup_printf("%s (%s)", hfi->name, hfi->abbrev);
+        return ws_strdup_printf("%s (%s)", hfi->name, hfi->abbrev);
     }
 
     if (occurrence == 0) {
         /* All occurrences */
-        return g_strdup_printf("%s\n%s (%s)", proto_get_protocol_name(hfi->parent), hfi->name, hfi->abbrev);
+        return ws_strdup_printf("%s\n%s (%s)", proto_get_protocol_name(hfi->parent), hfi->name, hfi->abbrev);
     }
 
-    /* One given occurence */
-    return g_strdup_printf("%s\n%s (%s#%d)", proto_get_protocol_name(hfi->parent), hfi->name, hfi->abbrev, occurrence);
+    /* One given occurrence */
+    return ws_strdup_printf("%s\n%s (%s#%d)", proto_get_protocol_name(hfi->parent), hfi->name, hfi->abbrev, occurrence);
 }
 
-gchar *
-get_column_tooltip(const gint col)
+char *
+get_column_tooltip(const int col)
 {
     GList    *clp = g_list_nth(prefs.col_list, col);
     fmt_data *cfmt;
-    gchar   **fields;
-    gboolean  first = TRUE;
+    char    **fields;
+    bool      first = true;
     GString  *column_tooltip;
-    guint     i;
+    unsigned  i;
 
     if (!clp)  /* Invalid column requested */
         return NULL;
@@ -786,18 +1108,19 @@ get_column_tooltip(const gint col)
     }
 
     fields = g_regex_split_simple(COL_CUSTOM_PRIME_REGEX, cfmt->custom_fields,
-                                  G_REGEX_ANCHORED, G_REGEX_MATCH_ANCHORED);
+                                  (GRegexCompileFlags) (G_REGEX_RAW),
+                                  0);
     column_tooltip = g_string_new("");
 
     for (i = 0; i < g_strv_length(fields); i++) {
         if (fields[i] && *fields[i]) {
-            gchar *field_tooltip = get_custom_field_tooltip(fields[i], cfmt->custom_occurrence);
+            char *field_tooltip = get_custom_field_tooltip(fields[i], cfmt->custom_occurrence);
             if (!first) {
                 g_string_append(column_tooltip, "\n\nOR\n\n");
             }
             g_string_append(column_tooltip, field_tooltip);
             g_free (field_tooltip);
-            first = FALSE;
+            first = false;
         }
     }
 
@@ -806,23 +1129,31 @@ get_column_tooltip(const gint col)
     return g_string_free (column_tooltip, FALSE);
 }
 
+const char*
+get_column_text(column_info *cinfo, const int col)
+{
+  ws_assert(cinfo);
+  ws_assert(col < cinfo->num_cols);
+
+  if ((get_column_display_format(col) == COLUMN_DISPLAY_VALUES) && cinfo->col_expr.col_expr_val[col]) {
+      /* Use the unresolved value in col_expr_val */
+      return cinfo->col_expr.col_expr_val[col];
+  }
+
+  return cinfo->columns[col].col_data;
+}
+
 void
-build_column_format_array(column_info *cinfo, const gint num_cols, const gboolean reset_fences)
+col_finalize(column_info *cinfo)
 {
   int i;
   col_item_t* col_item;
-
-  /* Build the column format array */
-  col_setup(cinfo, num_cols);
+  dfilter_t *dfilter;
 
   for (i = 0; i < cinfo->num_cols; i++) {
     col_item = &cinfo->columns[i];
-    col_item->col_fmt = get_column_format(i);
-    col_item->col_title = g_strdup(get_column_title(i));
 
     if (col_item->col_fmt == COL_CUSTOM) {
-      col_item->col_custom_fields = g_strdup(get_column_custom_fields(i));
-      col_item->col_custom_occurrence = get_column_custom_occurrence(i);
       if(!dfilter_compile(col_item->col_custom_fields, &col_item->col_custom_dfilter, NULL)) {
         /* XXX: Should we issue a warning? */
         g_free(col_item->col_custom_fields);
@@ -831,17 +1162,21 @@ build_column_format_array(column_info *cinfo, const gint num_cols, const gboolea
         col_item->col_custom_dfilter = NULL;
       }
       if (col_item->col_custom_fields) {
-        gchar **fields = g_regex_split(cinfo->prime_regex, col_item->col_custom_fields,
-                                       G_REGEX_MATCH_ANCHORED);
-        guint i_field;
+        char **fields = g_regex_split(cinfo->prime_regex, col_item->col_custom_fields,
+                                       0);
+        unsigned i_field;
 
         for (i_field = 0; i_field < g_strv_length(fields); i_field++) {
           if (fields[i_field] && *fields[i_field]) {
-            header_field_info *hfinfo = proto_registrar_get_byname(fields[i_field]);
-            if (hfinfo) {
-              int *idx = g_new(int, 1);
-              *idx = hfinfo->id;
-              col_item->col_custom_fields_ids = g_slist_append(col_item->col_custom_fields_ids, idx);
+            if (dfilter_compile_full(fields[i_field], &dfilter, NULL, DF_EXPAND_MACROS|DF_OPTIMIZE|DF_RETURN_VALUES, __func__)) {
+              col_custom_t *custom_info = g_new0(col_custom_t, 1);
+              custom_info->dftext = g_strdup(fields[i_field]);
+              custom_info->dfilter = dfilter;
+              header_field_info *hfinfo = proto_registrar_get_byname(fields[i_field]);
+              if (hfinfo) {
+                custom_info->field_id = hfinfo->id;
+              }
+              col_item->col_custom_fields_ids = g_slist_append(col_item->col_custom_fields_ids, custom_info);
             }
           }
         }
@@ -853,20 +1188,19 @@ build_column_format_array(column_info *cinfo, const gint num_cols, const gboolea
       col_item->col_custom_dfilter = NULL;
     }
 
-    col_item->fmt_matx = (gboolean *) g_malloc0(sizeof(gboolean) * NUM_COL_FMTS);
+    col_item->fmt_matx = g_new0(bool, NUM_COL_FMTS);
     get_column_format_matches(col_item->fmt_matx, col_item->col_fmt);
     col_item->col_data = NULL;
 
-    if (col_item->col_fmt == COL_INFO)
-      col_item->col_buf = (gchar *) g_malloc(sizeof(gchar) * COL_MAX_INFO_LEN);
-    else
-      col_item->col_buf = (gchar *) g_malloc(sizeof(gchar) * COL_MAX_LEN);
-
-    if(reset_fences)
-      col_item->col_fence = 0;
+    if (col_item->col_fmt == COL_INFO) {
+      col_item->col_buf = g_new(char, COL_MAX_INFO_LEN);
+      cinfo->col_expr.col_expr_val[i] = g_new(char, COL_MAX_INFO_LEN);
+    } else {
+      col_item->col_buf = g_new(char, COL_MAX_LEN);
+      cinfo->col_expr.col_expr_val[i] = g_new(char, COL_MAX_LEN);
+    }
 
     cinfo->col_expr.col_expr[i] = "";
-    cinfo->col_expr.col_expr_val[i] = (gchar *) g_malloc(sizeof(gchar) * COL_MAX_LEN);
   }
 
   cinfo->col_expr.col_expr[i] = NULL;
@@ -887,8 +1221,94 @@ build_column_format_array(column_info *cinfo, const gint num_cols, const gboolea
   }
 }
 
+void
+build_column_format_array(column_info *cinfo, const int num_cols, const bool reset_fences)
+{
+  int i;
+  col_item_t* col_item;
+
+  /* Build the column format array */
+  col_setup(cinfo, num_cols);
+
+  for (i = 0; i < cinfo->num_cols; i++) {
+    col_item = &cinfo->columns[i];
+    col_item->col_fmt = get_column_format(i);
+    col_item->col_title = g_strdup(get_column_title(i));
+    if (col_item->col_fmt == COL_CUSTOM) {
+      col_item->col_custom_fields = g_strdup(get_column_custom_fields(i));
+      col_item->col_custom_occurrence = get_column_custom_occurrence(i);
+    }
+    col_item->hf_id = proto_registrar_get_id_byname(col_format_abbrev(col_item->col_fmt));
+
+    if(reset_fences)
+      col_item->col_fence = 0;
+  }
+
+  col_finalize(cinfo);
+}
+
+static void
+column_deregister_fields(void)
+{
+  if (hf_cols) {
+    for (unsigned int i = 0; i < hf_cols_cleanup; ++i) {
+      proto_deregister_field(proto_cols, *(hf_cols[i].p_id));
+      g_free(hf_cols[i].p_id);
+    }
+    proto_add_deregistered_data(hf_cols);
+    hf_cols = NULL;
+    hf_cols_cleanup = 0;
+  }
+}
+
+void
+column_register_fields(void)
+{
+
+  int* hf_id;
+  GArray *hf_col_array;
+  hf_register_info new_hf;
+  fmt_data *cfmt;
+  bool *used_fmts;
+  if (proto_cols <= 0) {
+    proto_cols = proto_get_id_by_filter_name("_ws.col");
+  }
+  if (proto_cols <= 0) {
+    proto_cols = proto_register_protocol("Wireshark Columns", "Columns", "_ws.col");
+  }
+  column_deregister_fields();
+  if (prefs.col_list != NULL) {
+    prefs.num_cols = g_list_length(prefs.col_list);
+    hf_col_array = g_array_new(false, true, sizeof(hf_register_info));
+    used_fmts = g_new0(bool, NUM_COL_FMTS);
+    for (GList *elem = g_list_first(prefs.col_list); elem != NULL; elem = elem->next) {
+      cfmt = (fmt_data*)elem->data;
+      if (col_format_abbrev(cfmt->fmt) && !used_fmts[cfmt->fmt]) {
+        used_fmts[cfmt->fmt] = true;
+        hf_id = g_new(int, 1);
+        *hf_id = 0;
+        new_hf.p_id = hf_id;
+        new_hf.hfinfo.name = g_strdup(col_format_desc(cfmt->fmt));
+        new_hf.hfinfo.abbrev = g_strdup(col_format_abbrev(cfmt->fmt));
+        new_hf.hfinfo.type = FT_STRING;
+        new_hf.hfinfo.display = BASE_NONE;
+        new_hf.hfinfo.strings = NULL;
+        new_hf.hfinfo.bitmask = 0;
+        new_hf.hfinfo.blurb = NULL;
+        HFILL_INIT(new_hf);
+        g_array_append_vals(hf_col_array, &new_hf, 1);
+      }
+    }
+    g_free(used_fmts);
+    hf_cols_cleanup = hf_col_array->len;
+
+    proto_register_field_array(proto_cols, (hf_register_info*)hf_col_array->data, hf_col_array->len);
+    hf_cols = (hf_register_info*)g_array_free(hf_col_array, false);
+  }
+}
+
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 2

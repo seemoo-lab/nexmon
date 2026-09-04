@@ -19,6 +19,10 @@ macro(add_test_executable _executable)
     target_link_libraries(${_executable}
       ${ARGN} ${LIBRARY_NAME}_static ${PCAP_LINK_LIBRARIES})
   endif(WIN32)
+  if(NOT "${LINKER_FLAGS}" STREQUAL "")
+    set_target_properties(${_executable} PROPERTIES
+      LINK_FLAGS "${LINKER_FLAGS}")
+  endif()
   add_dependencies(testprogs ${_executable})
 endmacro()
 
@@ -26,8 +30,11 @@ add_test_executable(can_set_rfmon_test)
 add_test_executable(capturetest)
 add_test_executable(filtertest)
 add_test_executable(findalldevstest)
+add_test_executable(findalldevstest-perf)
 add_test_executable(opentest)
 add_test_executable(reactivatetest)
+add_test_executable(versiontest)
+add_test_executable(writecaptest)
 
 if(NOT WIN32)
   add_test_executable(selpolltest)
@@ -35,6 +42,17 @@ endif()
 
 add_test_executable(threadsignaltest ${CMAKE_THREAD_LIBS_INIT})
 
-if(NOT WIN32)
+# Same as in configure.ac.
+if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR
+   CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR
+   CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_test_executable(valgrindtest)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" OR
+   CMAKE_SYSTEM_NAME STREQUAL "Darwin" OR
+   CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  if(IS_DIRECTORY ${CMAKE_HOME_DIRECTORY}/.git)
+     add_subdirectory(fuzz)
+  endif(IS_DIRECTORY ${CMAKE_HOME_DIRECTORY}/.git)
 endif()

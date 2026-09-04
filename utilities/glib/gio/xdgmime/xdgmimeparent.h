@@ -6,21 +6,7 @@
  * Copyright (C) 2004  Red Hat, Inc.
  * Copyright (C) 200  Matthias Clasen <mclasen@redhat.com>
  *
- * Licensed under the Academic Free License version 2.0
- * Or under the following terms:
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * SPDX-License-Identifier: LGPL-2.1-or-later or AFL-2.0
  */
 
 #ifndef __XDG_MIME_PARENT_H__
@@ -44,8 +30,6 @@ XdgParentList *_xdg_mime_parent_list_new       (void);
 void           _xdg_mime_parent_list_free      (XdgParentList *list);
 const char   **_xdg_mime_parent_list_lookup    (XdgParentList *list,
 						const char    *mime);
-#ifdef NOT_USED_IN_GIO
 void           _xdg_mime_parent_list_dump      (XdgParentList *list);
-#endif
 
 #endif /* __XDG_MIME_PARENT_H__ */

@@ -1,10 +1,12 @@
 /* 
  * Copyright © 2007 Ryan Lortie
  * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  * 
  * See the included COPYING file for more information.
  */
@@ -76,7 +78,7 @@ start (GMarkupParseContext  *context,
     }
 }
 
-static GMarkupParser parser = { start };
+static GMarkupParser parser = { start, NULL, NULL, NULL, NULL };
 
 struct test
 {
@@ -91,13 +93,14 @@ static struct test tests[] =
   { "<bool mb='y'>", "<bool(1) 1 0 -1>",
     G_MARKUP_ERROR_PARSE, "'bool'" },
 
-  { "<bool mb='false'/>", "<bool(1) 0 0 -1>" },
-  { "<bool mb='true'/>", "<bool(1) 1 0 -1>" },
-  { "<bool mb='t' ob='f' tri='1'/>", "<bool(1) 1 0 1>" },
-  { "<bool mb='y' ob='n' tri='0'/>", "<bool(1) 1 0 0>" },
+  { "<bool mb='false'/>", "<bool(1) 0 0 -1>", 0, NULL },
+  { "<bool mb='true'/>", "<bool(1) 1 0 -1>", 0, NULL },
+  { "<bool mb='t' ob='f' tri='1'/>", "<bool(1) 1 0 1>", 0, NULL },
+  { "<bool mb='y' ob='n' tri='0'/>", "<bool(1) 1 0 0>", 0, NULL },
 
-  { "<bool mb='y' my:attr='q'><my:tag/></bool>", "<bool(1) 1 0 -1>" },
-  { "<bool mb='y' my:attr='q'><my:tag>some <b>text</b> is in here</my:tag></bool>", "<bool(1) 1 0 -1>" },
+  { "<bool mb='y' my:attr='q'><my:tag/></bool>", "<bool(1) 1 0 -1>", 0, NULL },
+  { "<bool mb='y' my:attr='q'><my:tag>some <b>text</b> is in here</my:tag></bool>",
+    "<bool(1) 1 0 -1>", 0, NULL },
 
   { "<bool ob='y'/>", "<bool(0) 0 0 -1>",
     G_MARKUP_ERROR_MISSING_ATTRIBUTE, "'mb'" },
@@ -108,7 +111,7 @@ static struct test tests[] =
   { "<bool mb='y' tri='y' tri='n'/>", "<bool(0) 0 0 -1>",
     G_MARKUP_ERROR_INVALID_CONTENT, "'tri'" },
 
-  { "<str cm='x' am='y'/>", "<str(1) x y (null) (null)>" },
+  { "<str cm='x' am='y'/>", "<str(1) x y (null) (null)>", 0, NULL },
 
   { "<str am='x' co='y'/>", "<str(0) (null) (null) (null) (null)>",
     G_MARKUP_ERROR_MISSING_ATTRIBUTE, "'cm'" },
@@ -165,7 +168,7 @@ test_collect (gconstpointer d)
     }
   else
     {
-      g_assert_error (error, G_MARKUP_ERROR, test->error_code);
+      g_assert_error (error, G_MARKUP_ERROR, (gint) test->error_code);
     }
 
   g_markup_parse_context_free (ctx);
@@ -194,7 +197,7 @@ start_element (GMarkupParseContext  *context,
 }
 
 static GMarkupParser cleanup_parser = {
-  start_element
+  start_element, NULL, NULL, NULL, NULL
 };
 
 static void
@@ -205,7 +208,9 @@ test_cleanup (void)
   if (!g_test_undefined ())
     return;
 
-  context = g_markup_parse_context_new (&cleanup_parser, 0, NULL, NULL);
+  context = g_markup_parse_context_new (&cleanup_parser,
+                                        G_MARKUP_DEFAULT_FLAGS, NULL,
+                                        NULL);
   g_markup_parse_context_parse (context, XML, -1, NULL);
 
   g_test_expect_message (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL,
@@ -219,14 +224,14 @@ test_cleanup (void)
 int
 main (int argc, char **argv)
 {
-  int i;
+  gsize i;
   gchar *path;
 
   g_test_init (&argc, &argv, NULL);
 
   for (i = 0; i < G_N_ELEMENTS (tests); i++)
     {
-      path = g_strdup_printf ("/markup/collect/%d", i);
+      path = g_strdup_printf ("/markup/collect/%" G_GSIZE_FORMAT, i);
       g_test_add_data_func (path, &tests[i], test_collect);
       g_free (path);
     }

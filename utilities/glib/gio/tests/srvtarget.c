@@ -1,6 +1,8 @@
 /* GLib testing framework examples and tests
  * Copyright (C) 2009 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -28,7 +30,8 @@
 
 struct {
   const char *order;
-  int expected, seen;
+  gdouble expected;
+  unsigned int seen;
 } ordering[] = {
   /* There are 32 legitimate orderings; the result always has to start
    * with either "fe" (usually) or "ef" (rarely). For the remaining
@@ -139,8 +142,8 @@ test_srv_target_ordering (void)
    */
   for (o = 0; o < NUM_ORDERINGS; o++)
     {
-      g_assert_cmpint (ordering[o].seen, >, ordering[o].expected / 2);
-      g_assert_cmpint (ordering[o].seen, <, ordering[o].expected * 2);
+      g_assert_cmpuint (ordering[o].seen, >, (guint64) (ordering[o].expected / 2));
+      g_assert_cmpuint (ordering[o].seen, <, (guint64) (ordering[o].expected * 2));
     }
 
   g_resolver_free_targets (targets);

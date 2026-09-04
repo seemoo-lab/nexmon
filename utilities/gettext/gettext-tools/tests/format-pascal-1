@@ -48,6 +48,8 @@ cat <<\EOF > f-op-1.data
 "abc%y"
 # Invalid: flags after width
 "abc%*-g"
+# Valid: null precision
+"abc%.f"
 # Invalid: twice precision
 "abc%.4.2g"
 # Valid: three arguments

@@ -1,60 +1,48 @@
-/* tap-rlc-stream.h
+/** @file
+ *
  * LTE RLC stream statistics
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __TAP_RLC_GRAPH_H__
 #define __TAP_RLC_GRAPH_H__
 
+#include <epan/epan.h>
+#include <epan/packet.h>
+#include <cfile.h>
+#include <epan/dissectors/packet-rlc-lte.h>
+#include <epan/dissectors/packet-rlc-3gpp-common.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-#include <epan/epan.h>
-#include <epan/packet.h>
-#include <wiretap/wtap.h>
-#include <cfile.h>
-#include <epan/dissectors/packet-rlc-lte.h>
-
 struct rlc_segment {
     struct rlc_segment *next;
-    guint32 num;            /* framenum */
-    guint32 rel_secs;
-    guint32 rel_usecs;
-    guint32 abs_secs;
-    guint32 abs_usecs;
+    uint32_t        num;            /* framenum */
+    time_t          rel_secs;
+    uint32_t        rel_usecs;
 
-    gboolean        isControlPDU;
-    guint16         SN;
-    guint16         isResegmented;
-    guint16         ACKNo;
-    #define MAX_NACKs 128
-    guint16         noOfNACKs;
-    guint16         NACKs[MAX_NACKs];
-    guint16         pduLength;
+    bool            isControlPDU;
+    uint32_t        SN;
+    uint16_t        isResegmented;
+    uint32_t        ACKNo;
+    uint16_t        noOfNACKs;
+    uint32_t        NACKs[MAX_NACKs];
+    uint16_t        pduLength;
 
-    guint16         ueid;
-    guint16         channelType;
-    guint16         channelId;
-    guint8          rlcMode;
-    guint8          direction;
+    uint8_t         rat;
+    uint16_t        ueid;
+    uint16_t        channelType;
+    uint16_t        channelId;
+    uint8_t         rlcMode;
+    uint8_t         direction;
+    uint16_t        sequenceNumberLength;
 };
 
 /* A collection of channels that may be found in one frame.  Used when working out
@@ -62,7 +50,7 @@ struct rlc_segment {
 typedef struct _th_t {
     int num_hdrs;
     #define MAX_SUPPORTED_CHANNELS 8
-    rlc_lte_tap_info *rlchdrs[MAX_SUPPORTED_CHANNELS];
+    rlc_3gpp_tap_info *rlchdrs[MAX_SUPPORTED_CHANNELS];
 } th_t;
 
 struct rlc_graph {
@@ -71,29 +59,28 @@ struct rlc_graph {
     struct rlc_segment *last_segment;
 
     /* These are filled in with the channel/direction this graph is showing */
-    gboolean        channelSet;
-    guint16         ueid;
-    guint16         channelType;
-    guint16         channelId;
-    guint8          rlcMode;
-    guint8          direction;
+    bool            channelSet;
 
-    /* Lists of elements to draw. N.B. GTK version only. */
-    struct element_list *elists;
+    uint8_t         rat;
+    uint16_t        ueid;
+    uint16_t        channelType;
+    uint16_t        channelId;
+    uint8_t         rlcMode;
+    uint8_t         direction;
 };
 
-gboolean rlc_graph_segment_list_get(capture_file *cf, struct rlc_graph *tg, gboolean stream_known,
+bool rlc_graph_segment_list_get(capture_file *cf, struct rlc_graph *tg, bool stream_known,
                                     char **err_string);
 void rlc_graph_segment_list_free(struct rlc_graph * );
 
 
 
-int compare_rlc_headers(guint16 ueid1, guint16 channelType1, guint16 channelId1, guint8 rlcMode1, guint8 direction1,
-                        guint16 ueid2, guint16 channelType2, guint16 channelId2, guint8 rlcMode2, guint8 direction2,
-                        gboolean isControlFrame);
-rlc_lte_tap_info *select_rlc_lte_session(capture_file *cf, struct rlc_segment *hdrs,
-                                         gchar **err_msg);
-int rlc_lte_tap_for_graph_data(void *pct, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *vip);
+bool compare_rlc_headers(uint8_t rat1, uint8_t rat2,
+                             uint16_t ueid1, uint16_t channelType1, uint16_t channelId1, uint8_t rlcMode1, uint8_t direction1,
+                             uint16_t ueid2, uint16_t channelType2, uint16_t channelId2, uint8_t rlcMode2, uint8_t direction2,
+                             bool isControlFrame);
+rlc_3gpp_tap_info *select_rlc_lte_session(capture_file *cf, struct rlc_segment *hdrs,
+                                         char **err_msg);
 
 
 #ifdef __cplusplus

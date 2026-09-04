@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,6 +23,8 @@
 #include <gio/gio.h>
 #include <unistd.h>
 #include <string.h>
+
+#include "gdbusprivate.h"
 
 /* ---------------------------------------------------------------------------------------------------- */
 /* Test that registered errors are properly mapped */
@@ -64,13 +68,13 @@ test_registered_errors (void)
    *
    * We just check a couple of well-known errors.
    */
-  check_registered_error ("org.freedesktop.DBus.Error.Failed",
+  check_registered_error (DBUS_ERROR_FAILED,
                           G_DBUS_ERROR,
                           G_DBUS_ERROR_FAILED);
   check_registered_error ("org.freedesktop.DBus.Error.AddressInUse",
                           G_DBUS_ERROR,
                           G_DBUS_ERROR_ADDRESS_IN_USE);
-  check_registered_error ("org.freedesktop.DBus.Error.UnknownMethod",
+  check_registered_error (DBUS_ERROR_UNKNOWN_METHOD,
                           G_DBUS_ERROR,
                           G_DBUS_ERROR_UNKNOWN_METHOD);
   check_registered_error ("org.freedesktop.DBus.Error.UnknownObject",
@@ -258,7 +262,7 @@ int
 main (int   argc,
       char *argv[])
 {
-  g_test_init (&argc, &argv, NULL);
+  g_test_init (&argc, &argv, G_TEST_OPTION_ISOLATE_DIRS, NULL);
 
   g_test_add_func ("/gdbus/registered-errors", test_registered_errors);
   g_test_add_func ("/gdbus/unregistered-errors", test_unregistered_errors);

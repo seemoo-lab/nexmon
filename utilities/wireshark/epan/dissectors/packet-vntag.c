@@ -4,60 +4,63 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/etypes.h>
+#include <epan/expert.h>
+#include <epan/tfs.h>
+#include "packet-ieee8023.h"
 
 void proto_register_vntag(void);
 void proto_reg_handoff_vntag(void);
 
+static dissector_handle_t vntag_handle;
 static dissector_handle_t ethertype_handle;
 
-static int proto_vntag = -1;
+static int proto_vntag;
 
-static int hf_vntag_etype = -1;
-static int hf_vntag_dir = -1;
-static int hf_vntag_ptr = -1;
-static int hf_vntag_vif_list_id = -1;
-static int hf_vntag_dst = -1;
-static int hf_vntag_looped = -1;
-static int hf_vntag_r = -1;
-static int hf_vntag_version = -1;
-static int hf_vntag_src = -1;
-/* static int hf_vntag_len = -1; */
-static int hf_vntag_trailer = -1;
+static int hf_vntag_etype;
+static int hf_vntag_dir;
+static int hf_vntag_ptr;
+static int hf_vntag_dst;
+static int hf_vntag_looped;
+static int hf_vntag_r;
+static int hf_vntag_version;
+static int hf_vntag_src;
+static int hf_vntag_len;
+static int hf_vntag_trailer;
 
-static gint ett_vntag = -1;
+static int ett_vntag;
+
+static expert_field ei_vntag_len;
+
+static const true_false_string vntag_dir_tfs = {
+        "From Bridge",
+        "To Bridge"
+};
+static const true_false_string vntag_ptr_tfs = {
+        "vif_list_id",
+        "vif_id"
+};
 
 static int
 dissect_vntag(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	guint16     encap_proto;
+	uint16_t    encap_proto;
 	proto_tree *vntag_tree = NULL;
 	ethertype_data_t ethertype_data;
 
-	/* from scapy (http://hg.secdev.org/scapy-com/rev/37acec891993) GPLv2: */
-	/* another: http://www.definethecloud.net/access-layer-network-virtualization-vn-tag-and-vepa */
-	static const int * fields[] = {
+	/* Documentation:
+	   https://d2zmdbbm9feqrf.cloudfront.net/2012/usa/pdf/BRKDCT-2340.pdf p.61
+	   http://www.definethecloud.net/access-layer-network-virtualization-vn-tag-and-vepa
+	 */
+	static int * const fields[] = {
 		&hf_vntag_dir,
 		&hf_vntag_ptr,
-		&hf_vntag_vif_list_id,
 		&hf_vntag_dst,
 		&hf_vntag_looped,
 		&hf_vntag_r,
@@ -78,10 +81,9 @@ dissect_vntag(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 
 	encap_proto = tvb_get_ntohs(tvb, 4);
 
-	/* copied from packet-vlan.c do we need it also for VNTAG? */
-#if 0
+	/* VNTAG may also carry 802.2 encapsulated data */
 	if (encap_proto <= IEEE_802_3_MAX_LEN) {
-		gboolean is_802_2;
+		bool is_802_2;
 
 		/* Is there an 802.2 layer? I can tell by looking at the first 2
 		   bytes after the VLAN header. If they are 0xffff, then what
@@ -90,28 +92,27 @@ dissect_vntag(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 		   straight 802.3 packet, so presumably the same applies for
 		   Ethernet VLAN packets). A non-0xffff value means that there's an
 		   802.2 layer inside the VLAN layer */
-		is_802_2 = TRUE;
+		is_802_2 = true;
 
 		/* Don't throw an exception for this check (even a BoundsError) */
-		if (tvb_captured_length_remaining(tvb, 4) >= 2) {
-			if (tvb_get_ntohs(tvb, 4) == 0xffff)
-				is_802_2 = FALSE;
+		if (tvb_captured_length_remaining(tvb, 6) >= 2) {
+			if (tvb_get_ntohs(tvb, 6) == 0xffff)
+				is_802_2 = false;
 		}
 
-		dissect_802_3(encap_proto, is_802_2, tvb, 4, pinfo, tree, vntag_tree, hf_vntag_len, hf_vntag_trailer, 0);
+		dissect_802_3(encap_proto, is_802_2, tvb, 6, pinfo, tree, vntag_tree, hf_vntag_len, hf_vntag_trailer, &ei_vntag_len, 0);
 	} else {
-#endif
+		proto_tree_add_uint(vntag_tree, hf_vntag_etype, tvb, 4, 2,
+		    encap_proto);
+
 		ethertype_data.etype = encap_proto;
-		ethertype_data.offset_after_ethertype = 6;
+		ethertype_data.payload_offset = 6;
 		ethertype_data.fh_tree = vntag_tree;
-		ethertype_data.etype_id = hf_vntag_etype;
 		ethertype_data.trailer_id = hf_vntag_trailer;
 		ethertype_data.fcs_len = 0;
 
 		call_dissector_with_data(ethertype_handle, tvb, pinfo, tree, &ethertype_data);
-#if 0
 	}
-#endif
 	return tvb_captured_length(tvb);
 }
 
@@ -123,19 +124,16 @@ proto_register_vntag(void)
 			{ "Type", "vntag.etype", FT_UINT16, BASE_HEX, VALS(etype_vals), 0x0, NULL, HFILL }
 		},
 		{ &hf_vntag_dir,
-			{ "Direction", "vntag.dir", FT_UINT32, BASE_DEC, NULL, 0x80000000, NULL, HFILL }
+			{ "Direction", "vntag.dir", FT_BOOLEAN, 32, TFS(&vntag_dir_tfs), 0x80000000, NULL, HFILL }
 		},
 		{ &hf_vntag_ptr,
-			{ "Pointer", "vntag.ptr", FT_UINT32, BASE_DEC, NULL, 0x40000000, NULL, HFILL }
-		},
-		{ &hf_vntag_vif_list_id,
-			{ "Downlink Ports", "vntag.vif_list_id", FT_UINT32, BASE_DEC, NULL, 0x30000000, NULL, HFILL }
+			{ "Pointer", "vntag.ptr", FT_BOOLEAN, 32, TFS(&vntag_ptr_tfs), 0x40000000, NULL, HFILL }
 		},
 		{ &hf_vntag_dst,
-			{ "Destination", "vntag.dst", FT_UINT32, BASE_DEC, NULL, 0x0FFF0000, NULL, HFILL }
+			{ "Destination", "vntag.dst", FT_UINT32, BASE_DEC, NULL, 0x3FFF0000, NULL, HFILL }
 		},
 		{ &hf_vntag_looped,
-			{ "Looped", "vntag.looped", FT_UINT32, BASE_DEC, NULL, 0x00008000, NULL, HFILL }
+			{ "Looped", "vntag.looped", FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00008000, NULL, HFILL }
 		},
 		{ &hf_vntag_r,
 			{ "Reserved", "vntag.r", FT_UINT32, BASE_DEC, NULL, 0x00004000, NULL, HFILL }
@@ -146,41 +144,41 @@ proto_register_vntag(void)
 		{ &hf_vntag_src,
 			{ "Source", "vntag.src", FT_UINT32, BASE_DEC, NULL, 0x00000FFF, NULL, HFILL }
 		},
-
-#if 0
 		{ &hf_vntag_len,
 			{ "Length", "vntag.len", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
 		},
-#endif
 		{ &hf_vntag_trailer,
 			{ "Trailer", "vntag.trailer", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }
 		}
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_vntag
 	};
+
+	static ei_register_info ei[] = {
+		{ &ei_vntag_len, { "vntag.len.past_end", PI_MALFORMED, PI_ERROR, "Length field value goes past the end of the payload", EXPFILL }},
+	};
+	expert_module_t* expert_vntag;
 
 	proto_vntag = proto_register_protocol("VN-Tag", "VNTAG", "vntag");
 	proto_register_field_array(proto_vntag, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+	expert_vntag = expert_register_protocol(proto_vntag);
+	expert_register_field_array(expert_vntag, ei, array_length(ei));
+	vntag_handle = register_dissector("vntag", dissect_vntag, proto_vntag);
 }
 
 void
 proto_reg_handoff_vntag(void)
 {
-	dissector_handle_t vntag_handle;
-
-	/* XXX, add 0x8926 define to epan/etypes.h && etype_vals */
-
-	vntag_handle = create_dissector_handle(dissect_vntag, proto_vntag);
 	dissector_add_uint("ethertype", ETHERTYPE_VNTAG, vntag_handle);
 
 	ethertype_handle = find_dissector_add_dependency("ethertype", proto_vntag);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

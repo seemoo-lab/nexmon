@@ -1,0 +1,7 @@
+./test/valid/t8.xml:6: parser error : Content error in the internal subset
+%defroot; %defmiddle; %deftest;
+         ^
+Entity: line 1: 
+&lt;!ELEMENT root (middle) >
+^
+./test/valid/t8.xml : failed to parse

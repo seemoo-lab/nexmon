@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -30,7 +18,6 @@
 
 #include <epan/packet.h>
 #include <epan/expert.h>
-#include <epan/prefs.h>
 
 /* Forward declaration we need below */
 void proto_register_brp(void);
@@ -39,11 +26,9 @@ void proto_reg_handoff_brp(void);
 #define PROTO_TAG_BRP   "BRP"
 
 /* Wireshark ID of the BRP protocol */
-static int proto_brp = -1;
+static int proto_brp;
 
 static dissector_handle_t brp_handle;
-
-/*static int global_brp_port = 1958; *//* The port is registered for another protocol */
 
 static const value_string brp_packettype_names[] = {
     {  0, "BRP" },
@@ -95,40 +80,37 @@ static const value_string brp_stat_vals[] = {
 * our data fields; they are filled out when we call
 * proto_register_field_array() in proto_register_brp()
 */
-static gint hf_brp_type = -1;
-static gint hf_brp_trans = -1;
-static gint hf_brp_ver = -1;
-static gint hf_brp_stat = -1;
-static gint hf_brp_srcip = -1;
-static gint hf_brp_dstip = -1;
-static gint hf_brp_dstuport = -1;
-static gint hf_brp_mbz = -1;
-static gint hf_brp_bw = -1;
-static gint hf_brp_life = -1;
-static gint hf_brp_flid = -1;
-static gint hf_brp_rmttl = -1;
-static gint hf_brp_fltype = -1;
+static int hf_brp_type;
+static int hf_brp_trans;
+static int hf_brp_ver;
+static int hf_brp_stat;
+static int hf_brp_srcip;
+static int hf_brp_dstip;
+static int hf_brp_dstuport;
+static int hf_brp_mbz;
+static int hf_brp_bw;
+static int hf_brp_life;
+static int hf_brp_flid;
+static int hf_brp_rmttl;
+static int hf_brp_fltype;
 
 /* These are the ids of the subtrees that we may be creating */
-static gint ett_brp = -1;
-static gint ett_brp_type = -1;
-static gint ett_brp_trans = -1;
-static gint ett_brp_ver = -1;
-static gint ett_brp_stat = -1;
-static gint ett_brp_srcip = -1;
-static gint ett_brp_dstip = -1;
-static gint ett_brp_dstuport = -1;
-static gint ett_brp_mbz = -1;
-static gint ett_brp_bw = -1;
-static gint ett_brp_life = -1;
-static gint ett_brp_flid = -1;
-static gint ett_brp_rmttl = -1;
-static gint ett_brp_fltype = -1;
+static int ett_brp;
+static int ett_brp_type;
+static int ett_brp_trans;
+static int ett_brp_ver;
+static int ett_brp_stat;
+static int ett_brp_srcip;
+static int ett_brp_dstip;
+static int ett_brp_dstuport;
+static int ett_brp_mbz;
+static int ett_brp_bw;
+static int ett_brp_life;
+static int ett_brp_flid;
+static int ett_brp_rmttl;
+static int ett_brp_fltype;
 
-static expert_field ei_brp_type_unknown = EI_INIT;
-
-/* Preferences */
-static guint global_brp_port = 0;
+static expert_field ei_brp_type_unknown;
 
 static int
 dissect_brp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
@@ -136,9 +118,9 @@ dissect_brp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 
     proto_item *brp_item    = NULL;
     proto_tree *brp_tree    = NULL;
-    gint        offset      = 0;
-    guint8      type        = 0;
-    guint8      packet_type = tvb_get_guint8(tvb, 0);
+    int         offset      = 0;
+    uint8_t     type        = 0;
+    uint8_t     packet_type = tvb_get_uint8(tvb, 0);
 
     /* If there is a "tree" requested, we handle that request. */
 
@@ -146,7 +128,7 @@ dissect_brp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
     /* We add some snazzy bizness to the info field to quickly ascertain
         what type of message was sent to/from the BRS/BRC. */
     col_add_fstr(pinfo->cinfo, COL_INFO, "Message Type - %s",
-            val_to_str(packet_type, brp_packettype_names, "Unknown (0x%02x)"));
+            val_to_str(pinfo->pool, packet_type, brp_packettype_names, "Unknown (0x%02x)"));
 
     /* This call adds our tree to the main dissection tree. */
 
@@ -156,8 +138,8 @@ dissect_brp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
         brp_item = proto_tree_add_item( tree, proto_brp, tvb, 0, -1, ENC_NA );
         brp_tree = proto_item_add_subtree( brp_item, ett_brp);
 
-        /* We use tvb_get_guint8 to get our type value out. */
-        type = tvb_get_guint8(tvb, offset);
+        /* We use tvb_get_uint8 to get our type value out. */
+        type = tvb_get_uint8(tvb, offset);
         offset += 0;
 
         brp_item = proto_tree_add_item( brp_tree, hf_brp_type, tvb, offset, 1, ENC_BIG_ENDIAN );
@@ -324,7 +306,6 @@ return offset;
 /*--- proto_register_brp ----------------------------------------------*/
 void proto_register_brp (void)
 {
-    module_t *brp_module;
     expert_module_t* expert_brp;
 
     /* A data field is something you can search/filter on.
@@ -338,13 +319,13 @@ void proto_register_brp (void)
           { "Type", "brp.type", FT_UINT8, BASE_DEC, VALS(brp_packettype_names), 0x0,
             NULL, HFILL }},
         { &hf_brp_trans,
-          { "Transaction ID", "brp.trans", FT_UINT8, BASE_DEC, NULL, 0x0,
+          { "Transaction ID", "brp.trans", FT_UINT24, BASE_DEC, NULL, 0x0,
             NULL, HFILL }},
         { &hf_brp_ver,
-          { "Version", "brp.ver", FT_UINT8, BASE_DEC, NULL, 0x0,
+          { "Version", "brp.ver", FT_UINT32, BASE_DEC, NULL, 0x0,
             NULL, HFILL }},
         { &hf_brp_stat,
-          { "Status", "brp.stat", FT_UINT8, BASE_DEC, VALS(brp_stat_vals), 0x0,
+          { "Status", "brp.stat", FT_UINT32, BASE_DEC, VALS(brp_stat_vals), 0x0,
             NULL, HFILL }},
         { &hf_brp_srcip,
           { "Source IP Address", "brp.srcip", FT_IPv4, BASE_NONE, NULL, 0x0,
@@ -353,10 +334,10 @@ void proto_register_brp (void)
           { "Destination IP Address", "brp.dstip", FT_IPv4, BASE_NONE, NULL, 0x0,
             NULL, HFILL }},
         { &hf_brp_dstuport,
-          { "Destination UDP Port", "brp.dstuport", FT_UINT16, BASE_DEC, NULL, 0x0,
+          { "Destination UDP Port", "brp.dstuport", FT_UINT16, BASE_PT_UDP, NULL, 0x0,
             NULL, HFILL }},
         { &hf_brp_mbz,
-          { "MBZ", "brp.mbz", FT_UINT8, BASE_DEC, NULL, 0x0,
+          { "MBZ", "brp.mbz", FT_UINT24, BASE_DEC, NULL, 0x0,
             NULL, HFILL }},
         { &hf_brp_bw,
           { "Bandwidth - Kbytes/sec", "brp.bw", FT_UINT32, BASE_DEC, NULL, 0x0,
@@ -365,7 +346,7 @@ void proto_register_brp (void)
           { "Lifetime", "brp.life", FT_UINT32, BASE_DEC, NULL, 0x0,
             NULL, HFILL }},
         { &hf_brp_flid,
-          { "Flow Identifier", "brp.flid", FT_UINT16, BASE_DEC, NULL, 0x0,
+          { "Flow Identifier", "brp.flid", FT_UINT32, BASE_DEC, NULL, 0x0,
             NULL, HFILL }},
         { &hf_brp_fltype,
           { "Flow Type", "brp.fltype", FT_UINT8, BASE_DEC, NULL, 0x0,
@@ -374,7 +355,7 @@ void proto_register_brp (void)
           { "Remaining TTL", "brp.rmttl", FT_UINT32, BASE_DEC, NULL, 0x0,
             NULL, HFILL }},
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_brp,
         &ett_brp_type,
         &ett_brp_trans,
@@ -402,42 +383,17 @@ void proto_register_brp (void)
     expert_brp = expert_register_protocol(proto_brp);
     expert_register_field_array(expert_brp, ei, array_length(ei));
 
-    /* Register preferences module */
-    brp_module = prefs_register_protocol(proto_brp, proto_reg_handoff_brp);
-
-    /* Register preferences */
-    prefs_register_uint_preference(brp_module, "port",
-                                   "BRP Port",
-                                   "Set the UDP port for BRP messages",
-                                   10, &global_brp_port);
-
     brp_handle = register_dissector("brp", dissect_brp, proto_brp);
 }
 
 /*--- proto_reg_handoff_brp -------------------------------------------*/
 void proto_reg_handoff_brp(void)
 {
-    static gboolean           initialized = FALSE;
-    static guint              saved_brp_port;
-
-    if (!initialized) {
-        dissector_add_for_decode_as("udp.port", brp_handle);
-        initialized = TRUE;
-    } else {
-        if (saved_brp_port != 0) {
-            dissector_delete_uint("udp.port", saved_brp_port, brp_handle);
-        }
-    }
-
-    /* Set the port number */
-    if (global_brp_port != 0) {
-        dissector_add_uint("udp.port", global_brp_port, brp_handle);
-    }
-    saved_brp_port = global_brp_port;
+    dissector_add_for_decode_as_with_preference("udp.port", brp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

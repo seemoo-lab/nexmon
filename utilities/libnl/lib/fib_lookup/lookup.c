@@ -1,21 +1,17 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/fib_lookup/lookup.c	FIB Lookup
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
- * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
+ * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
 /**
+ * @ingroup rtnl
  * @defgroup fib_lookup FIB Lookup
  * @brief
  * @{
  */
 
-#include <netlink-local.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/attr.h>
 #include <netlink/utils.h>
@@ -25,7 +21,24 @@
 #include <netlink/fib_lookup/request.h>
 #include <netlink/fib_lookup/lookup.h>
 
+#include "nl-priv-dynamic-core/object-api.h"
+#include "nl-priv-dynamic-core/cache-api.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+
 /** @cond SKIP */
+struct flnl_result
+{
+	NLHDR_COMMON
+
+	struct flnl_request *	fr_req;
+	uint8_t			fr_table_id;
+	uint8_t			fr_prefixlen;
+	uint8_t			fr_nh_sel;
+	uint8_t			fr_type;
+	uint8_t			fr_scope;
+	uint32_t		fr_error;
+};
+
 static struct nl_cache_ops fib_lookup_ops;
 static struct nl_object_ops result_obj_ops;
 
@@ -59,11 +72,13 @@ static int result_clone(struct nl_object *_dst, struct nl_object *_src)
 	struct flnl_result *dst = nl_object_priv(_dst);
 	struct flnl_result *src = nl_object_priv(_src);
 
-	if (src->fr_req)
-		if (!(dst->fr_req = (struct flnl_request *)
-				nl_object_clone(OBJ_CAST(src->fr_req))))
+	dst->fr_req = NULL;
+
+	if (src->fr_req) {
+		if (!(dst->fr_req = (struct flnl_request *) nl_object_clone(OBJ_CAST(src->fr_req))))
 			return -NLE_NOMEM;
-	
+	}
+
 	return 0;
 }
 
@@ -123,7 +138,7 @@ errout:
 static void result_dump_line(struct nl_object *obj, struct nl_dump_params *p)
 {
 	struct flnl_result *res = (struct flnl_result *) obj;
-	char buf[128];
+	char buf[256];
 
 	nl_dump_line(p, "table %s prefixlen %u next-hop-selector %u\n",
 		rtnl_route_table2str(res->fr_table_id, buf, sizeof(buf)),
@@ -132,7 +147,7 @@ static void result_dump_line(struct nl_object *obj, struct nl_dump_params *p)
 		     nl_rtntype2str(res->fr_type, buf, sizeof(buf)));
 	nl_dump(p, "scope %s error %s (%d)\n",
 		rtnl_scope2str(res->fr_scope, buf, sizeof(buf)),
-		strerror(-res->fr_error), res->fr_error);
+		nl_strerror_l(-res->fr_error), res->fr_error);
 }
 
 static void result_dump_details(struct nl_object *obj, struct nl_dump_params *p)
@@ -140,8 +155,8 @@ static void result_dump_details(struct nl_object *obj, struct nl_dump_params *p)
 	result_dump_line(obj, p);
 }
 
-static int result_compare(struct nl_object *_a, struct nl_object *_b,
-			uint32_t attrs, int flags)
+static uint64_t result_compare(struct nl_object *_a, struct nl_object *_b,
+			uint64_t attrs, int flags)
 {
 	return 0;
 }
@@ -192,6 +207,7 @@ struct nl_cache *flnl_result_alloc_cache(void)
  * Builds a netlink request message to do a lookup
  * @arg req		Requested match.
  * @arg flags		additional netlink message flags
+ * @arg result		Result pointer
  *
  * Builds a new netlink message requesting a change of link attributes.
  * The netlink message header isn't fully equipped with all relevant
@@ -201,9 +217,7 @@ struct nl_cache *flnl_result_alloc_cache(void)
  * and \a tmpl must contain the attributes to be changed set via
  * \c rtnl_link_set_* functions.
  *
- * @return New netlink message
- * @note Not all attributes can be changed, see
- *       \ref link_changeable "Changeable Attributes" for more details.
+ * @return 0 on success or a negative error code.
  */
 int flnl_lookup_build_request(struct flnl_request *req, int flags,
 			      struct nl_msg **result)
@@ -222,7 +236,7 @@ int flnl_lookup_build_request(struct flnl_request *req, int flags,
 	fr.fl_fwmark = fwmark != UINT_LEAST64_MAX ? fwmark : 0;
 	fr.fl_tos = tos >= 0 ? tos : 0;
 	fr.fl_scope = scope >= 0 ? scope : RT_SCOPE_UNIVERSE;
-	fr.tb_id_in = table >= 0 ? table : RT_TABLE_UNSPEC;
+	fr.tb_id_in = table >= 0 ? (unsigned)table : (unsigned)RT_TABLE_UNSPEC;
 
 	addr = flnl_request_get_addr(req);
 	if (!addr)
@@ -270,7 +284,7 @@ int flnl_lookup(struct nl_sock *sk, struct flnl_request *req,
 	if (err < 0)
 		return err;
 
-	return nl_cache_pickup(sk, cache);
+	return nl_cache_pickup_checkdup(sk, cache);
 }
 
 /** @} */
@@ -336,12 +350,12 @@ static struct nl_cache_ops fib_lookup_ops = {
 	.co_obj_ops		= &result_obj_ops,
 };
 
-static void __init fib_lookup_init(void)
+static void _nl_init fib_lookup_init(void)
 {
 	nl_cache_mngt_register(&fib_lookup_ops);
 }
 
-static void __exit fib_lookup_exit(void)
+static void _nl_exit fib_lookup_exit(void)
 {
 	nl_cache_mngt_unregister(&fib_lookup_ops);
 }

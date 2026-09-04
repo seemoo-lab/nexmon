@@ -1,10 +1,13 @@
-nope:
+# glib 2.89.4 is cross-compiled by build-android.sh (meson + NDK) rather
+# than ndk-build; the script refreshes the checked-in archives and the
+# glib-2.0/ headers consumed by libwsutil/libwiretap/libwireshark.
+APP_ABI ?= arm64-v8a
 
-all: libs/armeabi/libglib-2.0.a
+all:
+	./build-android.sh $(APP_ABI)
 
-libs/armeabi/libglib-2.0.a: Android.mk
-	$(NDK_ROOT)/ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_APP_OUT=. TARGET_PLATFORM=android-23
+install:
+	@echo "nothing to install ..."
 
 clean:
-	rm -Rf libs
-	rm -Rf local
+	rm -Rf libs local

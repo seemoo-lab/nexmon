@@ -7,43 +7,25 @@
 
 #.OMIT_ASSIGNMENT
 CalledNumber
+CauseForTerm
 ChargeIndicator
+DataVolumeOctets
 MscNo
 SystemType
-SGSNMTLCSRecord
-SGSNMOLCSRecord
-SGSNNILCSRecord
-LCSCause
-LCSClientIdentity
-LCSQoSInfo
-LocationAreaAndCell
-PositioningData
-MCC-MNC
 NodeAddress
 ServiceContextID
 ChangeLocationV651
-CTEID
-DataVolumeMBMS
 SubscriberEquipmentNumber
 SubscriberEquipmentType
+Session-Id
+PriorityType
+MessageClass
 # 6.4 If these are needed MBMS asn1 should be added.
-SGSNMBMSRecord
-GGSNMBMSRecord
-GWMBMSRecord
-ChangeOfMBMSCondition
-CNIPMulticastDistribution
-MBMS2G3GIndicator
-TMGI
-MBMSSessionIdentity
-MBMSServiceType
-MBMSUserServiceType
-MBMSServiceArea
-RequiredMBMSBearerCapabilities
-
-#.NO_EMIT
-MBMSInformation
+MSCAddress
 
 #.EXPORTS
+CAMELInformationPDP
+CAMELInformationPDP_PDU
 GPRSCallEventRecord
 GPRSCallEventRecord_PDU
 GPRSRecord
@@ -57,10 +39,15 @@ GPRSRecord_PDU
 &id                    ObjectIdentifierType
 &Value
 
+#.FIELD_RENAME
+IPBinaryAddress/iPBinV6Address iPBinV6Address_choice
+#.FIELD_ATTR
+IPBinaryAddress/iPBinV6Address ABBREV=iPBinV6Address_choice
+
 #.PDU
+CAMELInformationPDP
 GPRSCallEventRecord
 GPRSRecord
-
 
 # Get the OID
 #.FN_PARS ManagementExtension/identifier FN_VARIANT = _str  VAL_PTR = &obj_id
@@ -75,44 +62,59 @@ GPRSRecord
     proto_tree_add_expert(ext_tree, actx->pinfo, &ei_gprscdr_not_dissected, tvb, offset, -1);
   }
 
-#.FN_BODY TimeStamp VAL_PTR = &parameter_tvb
-/*
- *
- * The contents of this field are a compact form of the UTCTime format
- * containing local time plus an offset to universal time. Binary coded
- * decimal encoding is employed for the digits to reduce the storage and
- * transmission overhead
- * e.g. YYMMDDhhmmssShhmm
- * where
- * YY   =       Year 00 to 99           BCD encoded
- * MM   =       Month 01 to 12          BCD encoded
- * DD   =       Day 01 to 31            BCD encoded
- * hh   =       hour 00 to 23           BCD encoded
- * mm   =       minute 00 to 59         BCD encoded
- * ss   =       second 00 to 59         BCD encoded
- * S    =       Sign 0 = "+", "-"       ASCII encoded
- * hh   =       hour 00 to 23           BCD encoded
- * mm   =       minute 00 to 59         BCD encoded
- */
+#.FN_BODY TimeStamp
+  uint32_t len;
+  nstime_t ts;
+  const char *date_str, *tz_str, *iso_str;
 
- tvbuff_t *parameter_tvb;
-
-%(DEFAULT_BODY)s
-
-  if (!parameter_tvb)
+  /* TimeStamp should be length of nine octets. */
+  len = tvb_reported_length(tvb);
+  if (len != 9)
+  {
+    expert_add_info_format(actx->pinfo, tree, &ei_gprscdr_timestamp_wrong_format,
+                           "Expected nine octets; got %u octets", len);
+    offset += len;
     return offset;
+  }
 
-  proto_item_append_text(actx->created_item, " (UTC %%x-%%x-%%x %%x:%%x:%%x %%s%%x:%%x)",
-                         tvb_get_guint8(parameter_tvb,0),                        /* Year */
-                         tvb_get_guint8(parameter_tvb,1),                        /* Month */
-                         tvb_get_guint8(parameter_tvb,2),                        /* Day */
-                         tvb_get_guint8(parameter_tvb,3),                        /* Hour */
-                         tvb_get_guint8(parameter_tvb,4),                        /* Minute */
-                         tvb_get_guint8(parameter_tvb,5),                        /* Second */
-                         tvb_get_string_enc(wmem_packet_scope(), parameter_tvb,6,1,ENC_ASCII|ENC_NA), /* Sign */
-                         tvb_get_guint8(parameter_tvb,7),                        /* Hour */
-                         tvb_get_guint8(parameter_tvb,8)                         /* Minute */
-                        );
+  /* The contents of this field are a compact form of the UTCTime format
+   * containing local time plus an offset to universal time. Binary coded
+   * decimal encoding is employed for the digits to reduce the storage and
+   * transmission overhead
+   * e.g. YYMMDDhhmmssShhmm
+   * where
+   * YY = Year 00 to 99		  BCD encoded
+   * MM = Month 01 to 12		BCD encoded
+   * DD = Day 01 to 31		  BCD encoded
+   * hh = hour 00 to 23		  BCD encoded
+   * mm = minute 00 to 59		BCD encoded
+   * ss = second 00 to 59		BCD encoded
+   * S = Sign 0 = "+", "-"	ASCII encoded
+   * hh = hour 00 to 23		  BCD encoded
+   * mm = minute 00 to 59		BCD encoded
+   */
+  date_str = tvb_bcd_dig_to_str_be(actx->pinfo->pool, tvb, 0, 6, NULL, false);
+  tz_str = tvb_bcd_dig_to_str_be(actx->pinfo->pool, tvb, 7, 2, NULL, false);
+
+  /* Format result as iso8601 format: YYYYMMDDhhmmss+hhmm.
+   * Field contains only last two digits of year and assume start from 2000 year.
+   */
+  iso_str = wmem_strdup_printf(actx->pinfo->pool, "20%s%s%s",
+                               date_str,  /* YYMMDDhhmmss  */
+                               tvb_get_string_enc(actx->pinfo->pool, tvb, 6, 1, ENC_ASCII | ENC_NA), /* TZ sign */
+                               tz_str);  /* TZ hhmm */
+
+  if (!iso8601_to_nstime(&ts, iso_str, ISO8601_DATETIME_BASIC))
+  {
+    expert_add_info_format(actx->pinfo, tree, &ei_gprscdr_timestamp_wrong_format,
+                           "TimeStamp invalid format: %s", iso_str);
+
+    offset += len;
+    return offset;
+  }
+
+  proto_tree_add_time(tree, hf_index, tvb, offset, len, &ts);
+  offset += len;
 
 #.FN_BODY MSTimeZone VAL_PTR = &parameter_tvb
 /*
@@ -120,7 +122,7 @@ GPRSRecord
  * 1.Octet: Time Zone and 2. Octet: Daylight saving time, see TS 29.060 [75]
  */
   tvbuff_t *parameter_tvb;
-  guint8 data, data2;
+  uint8_t data, data2;
   char sign;
 
 %(DEFAULT_BODY)s
@@ -128,11 +130,11 @@ GPRSRecord
   if (!parameter_tvb)
     return offset;
 
-  data = tvb_get_guint8(parameter_tvb, 0);
+  data = tvb_get_uint8(parameter_tvb, 0);
   sign = (data & 0x08) ? '-' : '+';
   data = (data >> 4) + (data & 0x07) * 10;
 
-  data2 = tvb_get_guint8(tvb, 1) & 0x3;
+  data2 = tvb_get_uint8(tvb, 1) & 0x3;
 
   proto_item_append_text(actx->created_item, " (GMT %%c %%d hours %%d minutes %%s)",
                          sign,
@@ -151,12 +153,124 @@ GPRSRecord
     return offset;
 
   subtree = proto_item_add_subtree(actx->created_item, ett_gprscdr_plmn_id);
-  dissect_e212_mcc_mnc(parameter_tvb, actx->pinfo, subtree, 0, E212_NONE, TRUE);
+  dissect_e212_mcc_mnc(parameter_tvb, actx->pinfo, subtree, 0, E212_NONE, true);
+
+#.FN_BODY QoSInformation
+
+  /* This octet string is a 1:1 copy of the contents (i.e. starting with octet 4) of the
+   * Quality of Service (QoS) Profile information element specified in 29.060, ch7.7.34.
+   *
+   */
+
+  header_field_info *hfi;
+  hfi = proto_registrar_get_nth(hf_index);
+
+  offset = decode_qos_umts(tvb, 0, actx->pinfo, tree, hfi->name, 0);
+
+#.FN_BODY EPCQoSInformation/aRP
+  proto_tree *ext_tree_arp;
+  unsigned length;
+
+  /*
+   * 8.86 Allocation/Retention Priority (ARP)
+   * 3GPP TS 29.274
+   */
+
+  length = tvb_reported_length(tvb);
+  ext_tree_arp = proto_tree_add_subtree(tree, tvb, 0, length, ett_gprscdr_eps_qos_arp, NULL, "aRP");
+
+  dissect_gtpv2_arp(tvb, actx->pinfo, ext_tree_arp, NULL, length, 0, 0, NULL);
+
+  offset = length;
+
+
+#.FN_BODY GGSNPDPRecord/userLocationInformation
+
+  offset = dissect_gprscdr_uli(tvb, actx, tree, 1);
+
+#.FN_BODY GGSNPDPRecordV750/userLocationInformation
+
+  offset = dissect_gprscdr_uli(tvb, actx, tree, 1);
+
+#.FN_BODY EGSNPDPRecord/userLocationInformation
+
+  offset = dissect_gprscdr_uli(tvb, actx, tree, 1);
+
+#.FN_BODY EGSNPDPRecordV750/userLocationInformation
+
+  offset = dissect_gprscdr_uli(tvb, actx, tree, 1);
+
+#.FN_BODY ChangeOfCharConditionV651/userLocationInformation
+
+  offset = dissect_gprscdr_uli(tvb, actx, tree, 1);
+
+#.FN_BODY ChangeOfServiceConditionV750/userLocationInformation
+
+  offset = dissect_gprscdr_uli(tvb, actx, tree, 1);
+
+#.FN_BODY SGWRecord/userLocationInformation
+
+  offset = dissect_gprscdr_uli(tvb, actx, tree, 2);
+
+#.FN_BODY SGWRecord/lastUserLocationInformation
+
+  offset = dissect_gprscdr_uli(tvb, actx, tree, 2);
+
+#.FN_BODY PGWRecord/userLocationInformation
+
+  offset = dissect_gprscdr_uli(tvb, actx, tree, 2);
+
+#.FN_BODY PGWRecord/lastUserLocationInformation
+
+  offset = dissect_gprscdr_uli(tvb, actx, tree, 2);
+
+#.FN_BODY ChangeOfCharCondition/userLocationInformation
+
+  offset = dissect_gprscdr_uli(tvb, actx, tree, 2);
+
+#.FN_BODY ChangeOfServiceCondition/userLocationInformation
+
+  offset = dissect_gprscdr_uli(tvb, actx, tree, 2);
+
+#.FN_BODY RelatedChangeOfCharCondition/userLocationInformation
+
+  offset = dissect_gprscdr_uli(tvb, actx, tree, 2);
+
+#.FN_BODY RelatedChangeOfServiceCondition/userLocationInformation
+
+  offset = dissect_gprscdr_uli(tvb, actx, tree, 2);
+
+#.FN_BODY PDPType
+  proto_tree *ext_tree_pdp_pdn_type;
+  unsigned length;
+
+  length = tvb_reported_length(tvb);
+
+  if(length == 1) {
+    /*
+     * PDN/EPS Bearer
+     * TS 29.274
+     * 8.34 PDN Type
+     */
+    ext_tree_pdp_pdn_type = proto_tree_add_subtree(tree, tvb, 0, length, ett_gprscdr_pdp_pdn_type, NULL, "pDNType");
+    dissect_gtpv2_pdn_type(tvb, actx->pinfo, ext_tree_pdp_pdn_type, NULL, length, 0, 0, NULL);
+    offset = length;
+  }
+  else {
+    /* PDP context
+     * TS 29.060
+     * 7.7.27 End User Address
+     * Octet 4-5
+     */
+    ext_tree_pdp_pdn_type = proto_tree_add_subtree(tree, tvb, 0, length, ett_gprscdr_pdp_pdn_type, NULL, "pDPType");
+    offset = de_sm_pdp_addr(tvb, ext_tree_pdp_pdn_type, actx->pinfo, 0, length, NULL, 0);
+  }
+
 
 #.FN_BODY GPRSRecord VAL_PTR = &branch_taken
 proto_item *item;
-gint branch_taken, t_offset = offset;
-gint32   tag;
+int branch_taken, t_offset = offset;
+int32_t  tag;
 
   %(DEFAULT_BODY)s
 
@@ -168,12 +282,28 @@ gint32   tag;
               "Record type(BER choice) not found: %%u", tag);
  }
 #.TYPE_ATTR
-IPBinaryAddress/iPBinV4Address TYPE = FT_IPv4  DISPLAY = BASE_NONE
-IPBinaryAddress/iPBinV6Address TYPE = FT_IPv6  DISPLAY = BASE_NONE
+IPBinV4Address TYPE = FT_IPv4  DISPLAY = BASE_NONE
+IPBinV6Address TYPE = FT_IPv6  DISPLAY = BASE_NONE
+RATType  TYPE = FT_UINT32  DISPLAY = BASE_DEC  STRINGS = VALS(gprscdr_rat_type_vals)
+EPCQoSInformation/maxRequestedBandwithUL  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+EPCQoSInformation/maxRequestedBandwithDL  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+EPCQoSInformation/guaranteedBitrateUL  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+EPCQoSInformation/guaranteedBitrateDL  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+EPCQoSInformation/aPNAggregateMaxBitrateUL  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+EPCQoSInformation/aPNAggregateMaxBitrateDL  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+EPCQoSInformation/extendedMaxRequestedBWUL  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+EPCQoSInformation/extendedMaxRequestedBWDL  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+EPCQoSInformation/extendedGBRUL  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+EPCQoSInformation/extendedGBRDL  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+EPCQoSInformation/extendedAPNAMBRUL  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+EPCQoSInformation/extendedAPNAMBRDL  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+CSGId  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+RatingGroupId  TYPE = FT_UINT32  DISPLAY = BASE_DEC
+TimeStamp TYPE = FT_ABSOLUTE_TIME  DISPLAY = ABSOLUTE_TIME_LOCAL
 #.END
 
 #
-# Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+# Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 #
 # Local variables:
 # c-basic-offset: 2

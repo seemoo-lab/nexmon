@@ -1,8 +1,39 @@
 
+####################### V 2.0.0-b9:
+
+security:
+	Socat security advisory 8
+	A stack overflow in vulnerability was found that can be triggered when
+	command line arguments (complete address specifications, host names,
+	file names) are longer than 512 bytes.
+	Successful exploitation might allow an attacker to execute arbitrary
+	code with the privileges of the socat process.
+	This vulnerability can only be exploited when an attacker is able to
+	inject data into socat's command line.
+	A vulnerable scenario would be a CGI script that reads data from clients
+	and uses (parts of) this data as hostname for a Socat invocation.
+	Test: NESTEDOVFL
+	Credits to Takumi Akiyama for finding and reporting this issue.
+
+	Socat security advisory 7
+	MSVR-1499
+	In the OpenSSL address implementation the hard coded 1024 bit DH p
+	parameter was not prime. The effective cryptographic strength of a key
+	exchange using these parameters was weaker than the one one could get by
+	using a prime p. Moreover, since there is no indication of how these
+	parameters were chosen, the existence of a trapdoor that makes possible
+	for an eavesdropper to recover the shared secret from a key exchange
+	that uses them cannot be ruled out.
+	Futhermore, 1024bit is not considered sufficiently secure.
+	Fix: generated a new 2048bit prime.
+	Thanks to Santiago Zanella-Beguelin and Microsoft Vulnerability
+	Research (MSVR) for finding and reporting this issue.
+
 ####################### V 2.0.0-b8:
 
 security:
-	CVE-2015-1379
+	Socat security advisory 6
+	CVE-2015-1379: Possible DoS with fork
 	Fixed problems with signal handling caused by use of not async signal
 	safe functions in signal handlers that could freeze socat, allowing
 	denial of service attacks.
@@ -418,6 +449,7 @@ testing:
 ####################### V 2.0.0-b7:
 
 security:
+	Socat security advisory 5
 	CVE-2014-0019: socats PROXY-CONNECT address was vulnerable to a buffer
 	overflow with data from command line (see socat-secadv5.txt)
 	Credits to Florian Weimer of the Red Hat Product Security Team
@@ -425,6 +457,7 @@ security:
 ####################### V 2.0.0-b6:
 
 security:
+	Socat security advisory 4
 	CVE-2013-3571:
 	after refusing a client connection due to bad source address or source
 	port socat shutdown() the socket but did not close() it, resulting in
@@ -436,6 +469,7 @@ security:
 ####################### V 2.0.0-b5:
 
 security:
+	Socat security advisory 3
 	CVE-2012-0219:
 	fixed a possible heap buffer overflow in the readline address. This bug
 	could be exploited when all of the following conditions were met:
@@ -450,6 +484,7 @@ security:
 ####################### V 2.0.0-b4:
 
 security:
+	Socat security advisory 2
 	CVE-2010-2799:
 	fixed a stack overflow vulnerability that occurred when command
 	line arguments (whole addresses, host names, file names) were longer
@@ -935,6 +970,7 @@ further corrections:
 ####################### V 1.4.0.3:
 
 security:
+	Socat security advisory 1
 	CVE-2004-1484:
 	fix to a syslog() based format string vulnerability that can lead to
 	remote code execution. See advisory socat-adv-1.txt

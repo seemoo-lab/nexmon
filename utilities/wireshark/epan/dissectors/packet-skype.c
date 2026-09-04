@@ -7,25 +7,14 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
  * Documentation that formed the basis of the packet decoding:
  * https://github.com/matthiasbock/OpenSkype/wiki/Skype's-UDP-Format
- * For additional information see: https://wiki.wireshark.org/Skype
+ * For additional information see:
+ *     https://gitlab.com/wireshark/wireshark/-/wikis/Skype
  *
  *  TODO:
  *  - Authentication
@@ -34,7 +23,8 @@
  *  - Decryption (with given keys)
  *  - Test CRC check (requires working decryption)
  *  - Heuristics to reliably detect Skype traffic - most likely impossible
- *    to implement in Wireshark (see http://en.wikipedia.org/wiki/Skype)
+ *    to implement in Wireshark (see
+ *    https://gitlab.com/wireshark/wireshark/-/wikis/Skype)
  *  - Improve tests
  */
 
@@ -46,51 +36,53 @@
 void proto_register_skype(void);
 void proto_reg_handoff_skype(void);
 
+static dissector_handle_t skype_handle;
+
 /* Things we may want to remember for a whole conversation */
 typedef struct _skype_udp_conv_info_t {
-	guint32 global_src_ip;
-	guint32 global_dst_ip;
+	uint32_t global_src_ip;
+	uint32_t global_dst_ip;
 } skype_udp_conv_info_t;
 
 /* protocol handles */
-static int proto_skype = -1;
+static int proto_skype;
 
 /* ett handles */
-static int ett_skype = -1;
+static int ett_skype;
 
 #define SKYPE_SOM_UNK_MASK	0xF0
 #define SKYPE_SOM_TYPE_MASK	0x0F
 
 /* hf elements */
 /* Start of Message */
-static int hf_skype_som_id = -1;
-static int hf_skype_som_unk = -1;
-static int hf_skype_som_type = -1;
+static int hf_skype_som_id;
+static int hf_skype_som_unk;
+static int hf_skype_som_type;
 /* Message body */
 /* Unknown_0 */
-static int hf_skype_unknown_0_unk1 = -1;
+static int hf_skype_unknown_0_unk1;
 /* Payload */
-static int hf_skype_payload_iv = -1;
-static int hf_skype_payload_crc = -1;
-static int hf_skype_payload_enc_data = -1;
+static int hf_skype_payload_iv;
+static int hf_skype_payload_crc;
+static int hf_skype_payload_enc_data;
 /* Resend */
-static int hf_skype_ffr_num = -1;
-static int hf_skype_ffr_unk1 = -1;
-static int hf_skype_ffr_iv = -1;
-static int hf_skype_ffr_crc = -1;
-static int hf_skype_ffr_enc_data = -1;
+static int hf_skype_ffr_num;
+static int hf_skype_ffr_unk1;
+static int hf_skype_ffr_iv;
+static int hf_skype_ffr_crc;
+static int hf_skype_ffr_enc_data;
 /* Nat info */
-static int hf_skype_natinfo_srcip = -1;
-static int hf_skype_natinfo_dstip = -1;
+static int hf_skype_natinfo_srcip;
+static int hf_skype_natinfo_dstip;
 /* Nat request */
-static int hf_skype_natrequest_srcip = -1;
-static int hf_skype_natrequest_dstip = -1;
+static int hf_skype_natrequest_srcip;
+static int hf_skype_natrequest_dstip;
 /* Audio */
-static int hf_skype_audio_unk1 = -1;
+static int hf_skype_audio_unk1;
 /* Unknown_f */
-static int hf_skype_unknown_f_unk1 = -1;
+static int hf_skype_unknown_f_unk1;
 /* Unknown packet type */
-static int hf_skype_unknown_packet = -1;
+static int hf_skype_unknown_packet;
 
 
 #define PROTO_SHORT_NAME "SKYPE"
@@ -125,9 +117,9 @@ dissect_skype_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 	proto_item *ti;
 	proto_tree *skype_tree = NULL;
-	guint32 offset = 0;
-	guint32 packet_length;
-	guint8 packet_type;
+	uint32_t offset = 0;
+	uint32_t packet_length;
+	uint8_t packet_type;
 
 	/* XXX: Just until we know how to decode skype over tcp */
 	packet_type = 255;
@@ -135,7 +127,7 @@ dissect_skype_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	packet_length = tvb_captured_length(tvb);
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_SHORT_NAME);
-	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(packet_type,
+	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, packet_type,
 		skype_type_vals, "Type 0x%1x"));
 
 	if (tree) {
@@ -162,9 +154,9 @@ dissect_skype_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 	proto_item *ti;
 	proto_tree *skype_tree = NULL;
-	guint32 offset = 0;
-	guint32 packet_length;
-	guint8 packet_type, packet_unk;
+	uint32_t offset = 0;
+	uint32_t packet_length;
+	uint8_t packet_type, packet_unk;
 
 	conversation_t   *conversation = NULL;
 	skype_udp_conv_info_t *skype_udp_info;
@@ -184,13 +176,13 @@ dissect_skype_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	}
 	/* at this point the conversation data is ready */
 
-	packet_type = tvb_get_guint8(tvb, 2) & SKYPE_SOM_TYPE_MASK;
-	packet_unk = (tvb_get_guint8(tvb, 2) & SKYPE_SOM_UNK_MASK) >> 4;
+	packet_type = tvb_get_uint8(tvb, 2) & SKYPE_SOM_TYPE_MASK;
+	packet_unk = (tvb_get_uint8(tvb, 2) & SKYPE_SOM_UNK_MASK) >> 4;
 
 	packet_length = tvb_captured_length(tvb);
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_SHORT_NAME);
-	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(packet_type,
+	col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, packet_type,
 		skype_type_vals, "Type 0x%1x"));
 	if (packet_unk) {
 		col_append_fstr(pinfo->cinfo, COL_INFO, " Unk: %1x", packet_unk);
@@ -287,13 +279,13 @@ dissect_skype_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	return offset;
 }
 
-static gboolean
+static bool
 test_skype_udp(tvbuff_t *tvb)
 {
 	/* Minimum of 3 bytes, check for valid message type */
 	if (tvb_captured_length(tvb) > 3)
 	{
-		guint8 type = tvb_get_guint8(tvb, 2) & 0xF;
+		uint8_t type = tvb_get_uint8(tvb, 2) & 0xF;
 		if ( type == 0   ||
 			/* FIXME: Extend this by minimum or exact length per message type */
 			type == 2   ||
@@ -304,21 +296,21 @@ test_skype_udp(tvbuff_t *tvb)
 			type == 0xf
 			)
 		{
-			return TRUE;
+			return true;
 		}
 	}
-	return FALSE;
+	return false;
 }
 
-static gboolean
+static bool
 dissect_skype_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
 	if ( !test_skype_udp(tvb) ) {
-		return FALSE;
+		return false;
 	}
 
 	dissect_skype_udp(tvb, pinfo, tree);
-	return TRUE;
+	return true;
 }
 
 static int
@@ -429,29 +421,28 @@ proto_register_skype(void)
 			0x0, NULL, HFILL }},
 
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_skype,
 	};
 
 	proto_skype = proto_register_protocol(PROTO_LONG_NAME, PROTO_SHORT_NAME, "skype");
 	proto_register_field_array(proto_skype, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	skype_handle = register_dissector("skype", dissect_skype_static, proto_skype);
 }
 
 void
 proto_reg_handoff_skype(void)
 {
-	dissector_handle_t skype_handle;
-
-	skype_handle = create_dissector_handle(dissect_skype_static, proto_skype);
-	dissector_add_for_decode_as("tcp.port", skype_handle);
-	dissector_add_for_decode_as("udp.port", skype_handle);
+	dissector_add_for_decode_as_with_preference("tcp.port", skype_handle);
+	dissector_add_for_decode_as_with_preference("udp.port", skype_handle);
 
 	heur_dissector_add("udp", dissect_skype_heur, "Skype over UDP", "skype_udp", proto_skype, HEURISTIC_DISABLE);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

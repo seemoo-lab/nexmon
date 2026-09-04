@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -24,51 +12,51 @@
 
 #include <epan/packet.h>
 #include <wiretap/wtap.h>
-#include <epan/conversation.h>
+#include <epan/tfs.h>
 #include <epan/expert.h>
 #include <epan/proto_data.h>
 #include "packet-umts_fp.h"
 #include "packet-umts_mac.h"
-#include "packet-rlc.h"
+#include "packet-umts_rlc.h"
 
 void proto_register_fp_hint(void);
 void proto_reg_handoff_fp_hint(void);
 
-static int proto_fp_hint = -1;
+static int proto_fp_hint;
 extern int proto_fp;
 extern int proto_umts_mac;
-extern int proto_rlc;
+extern int proto_umts_rlc;
 
-static int ett_fph = -1;
-static int ett_fph_rb = -1;
-static int ett_fph_ddi_entry = -1;
-static int ett_fph_tf = -1;
+static int ett_fph;
+static int ett_fph_rb;
+static int ett_fph_ddi_entry;
+static int ett_fph_tf;
 
-static int hf_fph_frametype = -1;
-static int hf_fph_channeltype = -1;
-static int hf_fph_chcnt = -1;
-static int hf_fph_dchid = -1;
-static int hf_fph_urnti = -1;
-static int hf_fph_rlcmode = -1;
-static int hf_fph_content = -1;
-static int hf_fph_rbid = -1;
-static int hf_fph_ctmux = -1;
-static int hf_fph_ciphered = -1;
-static int hf_fph_deciphered = -1;
-static int hf_fph_macdflowid = -1;
-static int hf_fph_macehs = -1;
-static int hf_fph_rb = -1;
-static int hf_fph_ddi_entry = -1;
-static int hf_fph_ddi_size = -1;
-static int hf_fph_ddi_logical = -1;
-static int hf_fph_ddi_value = -1;
-static int hf_fph_tf = -1;
-static int hf_fph_tf_n = -1;
-static int hf_fph_tf_size = -1;
+static int hf_fph_frametype;
+static int hf_fph_channeltype;
+static int hf_fph_chcnt;
+static int hf_fph_dchid;
+static int hf_fph_urnti;
+static int hf_fph_rlcmode;
+static int hf_fph_content;
+static int hf_fph_rbid;
+static int hf_fph_ctmux;
+static int hf_fph_ciphered;
+static int hf_fph_deciphered;
+static int hf_fph_macdflowid;
+static int hf_fph_macehs;
+static int hf_fph_rb;
+static int hf_fph_ddi_entry;
+static int hf_fph_ddi_size;
+static int hf_fph_ddi_logical;
+static int hf_fph_ddi_value;
+static int hf_fph_tf;
+static int hf_fph_tf_n;
+static int hf_fph_tf_size;
 
-static expert_field ei_fph_radio_bearers = EI_INIT;
-static expert_field ei_fph_mac_frames = EI_INIT;
-static expert_field ei_fph_fp_channels = EI_INIT;
+static expert_field ei_fph_radio_bearers;
+static expert_field ei_fph_mac_frames;
+static expert_field ei_fph_fp_channels;
 
 static dissector_handle_t data_handle;
 static dissector_handle_t ethwithfcs_handle;
@@ -145,32 +133,32 @@ static const true_false_string fph_deciphered_vals = {
     "Deciphered", "Not deciphered"
 };
 
-static guint16 assign_rb_info(tvbuff_t *tvb, packet_info *pinfo, guint16 offset, guint8 rbcnt, proto_tree *tree)
+static uint16_t assign_rb_info(tvbuff_t *tvb, packet_info *pinfo, uint16_t offset, uint8_t rbcnt, proto_tree *tree)
 {
-    guint8 i = 0, next_byte;
-    guint8 rlc_mode, content, rb_id, ctmux, ciphered, deciphered;
-    guint32 urnti;
+    uint8_t i = 0, next_byte;
+    uint8_t rlc_mode, content, rb_id, ctmux, ciphered, deciphered;
+    uint32_t urnti;
     struct umts_mac_info *macinf;
     struct rlc_info *rlcinf;
 
     macinf = (umts_mac_info *)p_get_proto_data(wmem_file_scope(), pinfo, proto_umts_mac, 0);
-    rlcinf = (rlc_info *)p_get_proto_data(wmem_file_scope(), pinfo, proto_rlc, 0);
+    rlcinf = (rlc_info *)p_get_proto_data(wmem_file_scope(), pinfo, proto_umts_rlc, 0);
     if (!macinf) {
         macinf = wmem_new0(wmem_file_scope(), struct umts_mac_info);
         p_add_proto_data(wmem_file_scope(), pinfo, proto_umts_mac, 0, macinf);
     }
     if (!rlcinf) {
         rlcinf = wmem_new0(wmem_file_scope(), struct rlc_info);
-        p_add_proto_data(wmem_file_scope(), pinfo, proto_rlc, 0, rlcinf);
+        p_add_proto_data(wmem_file_scope(), pinfo, proto_umts_rlc, 0, rlcinf);
     }
 
     while (i < rbcnt) {
         urnti = tvb_get_letohl(tvb, offset);
-        next_byte = tvb_get_guint8(tvb, offset + 4);
+        next_byte = tvb_get_uint8(tvb, offset + 4);
         rlc_mode = next_byte & 0x3;
         content = (next_byte >> 2) & 0x3;
         rb_id = next_byte >> 4;
-        next_byte = tvb_get_guint8(tvb, offset + 5);
+        next_byte = tvb_get_uint8(tvb, offset + 5);
         rb_id |= (next_byte & 0x01) << 4;
         ctmux = (next_byte >> 1) & 0x1;
         ciphered = (next_byte >> 2) & 0x1;
@@ -191,12 +179,12 @@ static guint16 assign_rb_info(tvbuff_t *tvb, packet_info *pinfo, guint16 offset,
 
         rlcinf->mode[i] = rlc_mode;
         rlcinf->rbid[i] = rb_id;
-        rlcinf->urnti[i] = urnti;
+        rlcinf->ueid[i] = urnti;
         rlcinf->ciphered[i] = ciphered;
         rlcinf->deciphered[i] = deciphered;
         rlcinf->li_size[i] = RLC_LI_VARIABLE;
 
-        macinf->ctmux[i] = ctmux ? TRUE : FALSE;
+        macinf->ctmux[i] = ctmux ? true : false;
         switch (content) {
             case FPH_CONTENT_DCCH:
                 macinf->content[i] = MAC_CONTENT_DCCH;
@@ -233,11 +221,11 @@ static guint16 assign_rb_info(tvbuff_t *tvb, packet_info *pinfo, guint16 offset,
     return offset;
 }
 
-static void assign_fph_pch(tvbuff_t *tvb, packet_info *pinfo _U_, guint16 offset, fp_info *fpi, proto_tree *tree _U_)
+static void assign_fph_pch(tvbuff_t *tvb, packet_info *pinfo _U_, uint16_t offset, fp_info *fpi, proto_tree *tree _U_)
 {
-    guint8 pich;
-    guint16 blkcnt, blksz;
-    const guint8 *hdr;
+    uint8_t pich;
+    uint16_t blkcnt, blksz;
+    const uint8_t *hdr;
 
     fpi->channel = CHANNEL_PCH;
 
@@ -267,11 +255,11 @@ static void assign_fph_pch(tvbuff_t *tvb, packet_info *pinfo _U_, guint16 offset
     fpi->chan_num_tbs[0] = blkcnt;
 }
 
-static void assign_fph_rach(tvbuff_t *tvb, packet_info *pinfo, guint16 offset, fp_info *fpi, proto_tree *tree)
+static void assign_fph_rach(tvbuff_t *tvb, packet_info *pinfo, uint16_t offset, fp_info *fpi, proto_tree *tree)
 {
-    const guint8 *hdr;
-    guint8 rbcnt;
-    guint16 blkcnt, blksz;
+    const uint8_t *hdr;
+    uint8_t rbcnt;
+    uint16_t blkcnt, blksz;
 
     fpi->channel = CHANNEL_RACH_FDD;
 
@@ -284,22 +272,22 @@ static void assign_fph_rach(tvbuff_t *tvb, packet_info *pinfo, guint16 offset, f
     fpi->chan_num_tbs[0] = blkcnt;
 
     offset += 4;
-    rbcnt = tvb_get_guint8(tvb, offset); offset++;
+    rbcnt = tvb_get_uint8(tvb, offset); offset++;
     if (rbcnt > 0)
         /*offset =*/ assign_rb_info(tvb, pinfo, offset, rbcnt, tree);
 }
 
-static void assign_fph_dch(tvbuff_t *tvb, packet_info *pinfo, guint16 offset, fp_info *fpi, proto_tree *tree)
+static void assign_fph_dch(tvbuff_t *tvb, packet_info *pinfo, uint16_t offset, fp_info *fpi, proto_tree *tree)
 {
-    guint8 dch_id, rbcnt;
-    guint16 N, size;
-    guint32 cnt, i = 0;
-    const guint8 *hdr;
+    uint8_t dch_id, rbcnt;
+    uint16_t N, size;
+    uint32_t cnt, i = 0;
+    const uint8_t *hdr;
     proto_tree *subtree;
     proto_item *pi;
 
     fpi->channel = CHANNEL_DCH;
-    cnt = tvb_get_guint8(tvb, offset); offset++;
+    cnt = tvb_get_uint8(tvb, offset); offset++;
 
     if (tree)
         proto_tree_add_uint(tree, hf_fph_chcnt, tvb, offset-1, 1, cnt);
@@ -334,16 +322,16 @@ static void assign_fph_dch(tvbuff_t *tvb, packet_info *pinfo, guint16 offset, fp
         }
         i++;
     }
-    rbcnt = tvb_get_guint8(tvb, offset); offset++;
+    rbcnt = tvb_get_uint8(tvb, offset); offset++;
     if (rbcnt > 0)
         /*offset =*/ assign_rb_info(tvb, pinfo, offset, rbcnt, tree);
 }
 
-static void assign_fph_fach(tvbuff_t *tvb, packet_info *pinfo, guint16 offset, fp_info *fpi, proto_tree *tree)
+static void assign_fph_fach(tvbuff_t *tvb, packet_info *pinfo, uint16_t offset, fp_info *fpi, proto_tree *tree)
 {
-    const guint8 *hdr;
-    guint8 rbcnt;
-    guint16 blkcnt, blksz;
+    const uint8_t *hdr;
+    uint8_t rbcnt;
+    uint16_t blkcnt, blksz;
 
     fpi->channel = CHANNEL_FACH_FDD;
 
@@ -356,16 +344,16 @@ static void assign_fph_fach(tvbuff_t *tvb, packet_info *pinfo, guint16 offset, f
     fpi->chan_num_tbs[0] = blkcnt;
 
     offset += 4;
-    rbcnt = tvb_get_guint8(tvb, offset); offset++;
+    rbcnt = tvb_get_uint8(tvb, offset); offset++;
     if (rbcnt > 0)
         /*offset =*/ assign_rb_info(tvb, pinfo, offset, rbcnt, tree);
 }
 
-static void assign_fph_hsdsch(tvbuff_t *tvb, packet_info *pinfo, guint16 offset, fp_info *fpi, proto_tree *tree)
+static void assign_fph_hsdsch(tvbuff_t *tvb, packet_info *pinfo, uint16_t offset, fp_info *fpi, proto_tree *tree)
 {
-    guint8 rbcnt, hsdsch_info;
+    uint8_t rbcnt, hsdsch_info;
 
-    hsdsch_info = tvb_get_guint8(tvb, offset);
+    hsdsch_info = tvb_get_uint8(tvb, offset);
     fpi->hsdsch_entity = hsdsch_info & 0x08 ? ehs : hs;
     fpi->channel = CHANNEL_HSDSCH;
 
@@ -377,33 +365,33 @@ static void assign_fph_hsdsch(tvbuff_t *tvb, packet_info *pinfo, guint16 offset,
     }
 
     offset++;
-    rbcnt = tvb_get_guint8(tvb, offset); offset++;
+    rbcnt = tvb_get_uint8(tvb, offset); offset++;
     if (rbcnt > 0)
         /*offset =*/ assign_rb_info(tvb, pinfo, offset, rbcnt, tree);
 }
 
-static void assign_fph_edch(tvbuff_t *tvb, packet_info *pinfo, guint16 offset, fp_info *fpi, proto_tree *tree)
+static void assign_fph_edch(tvbuff_t *tvb, packet_info *pinfo, uint16_t offset, fp_info *fpi, proto_tree *tree)
 {
-    guint8 rbcnt, macdflow_id, maces_cnt, i = 0;
-    guint8 logical, ddi;
-    guint16 maces_size;
+    uint8_t rbcnt, macdflow_id, maces_cnt, i = 0;
+    uint8_t logical, ddi;
+    uint16_t maces_size;
     proto_item *pi;
     proto_tree *subtree = NULL;
 
     fpi->channel = CHANNEL_EDCH;
-    macdflow_id = tvb_get_guint8(tvb, offset);
+    macdflow_id = tvb_get_uint8(tvb, offset);
 
     if (tree) {
         proto_tree_add_uint(tree, hf_fph_macdflowid, tvb, offset, 1, macdflow_id);
     }
 
     offset++;
-    maces_cnt = tvb_get_guint8(tvb, offset); offset++;
+    maces_cnt = tvb_get_uint8(tvb, offset); offset++;
 
     fpi->no_ddi_entries = maces_cnt;
     while (i < maces_cnt) {
-        ddi = tvb_get_guint8(tvb, offset++);
-        logical = tvb_get_guint8(tvb, offset++);
+        ddi = tvb_get_uint8(tvb, offset++);
+        logical = tvb_get_uint8(tvb, offset++);
         maces_size = tvb_get_letohs(tvb, offset);
         offset += 2;
         fpi->edch_ddi[i] = ddi;
@@ -425,12 +413,12 @@ static void assign_fph_edch(tvbuff_t *tvb, packet_info *pinfo, guint16 offset, f
     }
 
 
-    rbcnt = tvb_get_guint8(tvb, offset); offset++;
+    rbcnt = tvb_get_uint8(tvb, offset); offset++;
     if (rbcnt > 0)
         /*offset =*/ assign_rb_info(tvb, pinfo, offset, rbcnt, tree);
 }
 
-static void attach_info(tvbuff_t *tvb, packet_info *pinfo, guint16 offset, guint8 channel_type, guint8 frame_type, proto_tree *tree)
+static void attach_info(tvbuff_t *tvb, packet_info *pinfo, uint16_t offset, uint8_t channel_type, uint8_t frame_type, proto_tree *tree)
 {
     fp_info *fpi;
 
@@ -489,9 +477,9 @@ static void attach_info(tvbuff_t *tvb, packet_info *pinfo, guint16 offset, guint
 
 static int dissect_fp_hint(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-    guint8 frame_type, channel_type;
-    guint16 hdrlen;
-    guint32 atm_hdr, aal2_ext;
+    uint8_t frame_type, channel_type;
+    uint16_t hdrlen;
+    uint32_t atm_hdr, aal2_ext;
     tvbuff_t *next_tvb;
     dissector_handle_t next_dissector;
     void *next_dissector_data;
@@ -502,8 +490,8 @@ static int dissect_fp_hint(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "FP Hint");
 
     hdrlen = tvb_get_letohs(tvb, 0);
-    frame_type = tvb_get_guint8(tvb, 2);
-    channel_type = tvb_get_guint8(tvb, 3);
+    frame_type = tvb_get_uint8(tvb, 2);
+    channel_type = tvb_get_uint8(tvb, 3);
 
     if (tree) {
         ti = proto_tree_add_item(tree, proto_fp_hint, tvb, 0, hdrlen, ENC_NA);
@@ -575,7 +563,7 @@ proto_register_fp_hint(void)
         { &hf_fph_deciphered, { "Deciphered", "fp_hint.rb.deciphered", FT_BOOLEAN, BASE_NONE, TFS(&fph_deciphered_vals), 0, "Deciphered flag", HFILL } }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_fph,
         &ett_fph_rb,
         &ett_fph_ddi_entry,
@@ -609,7 +597,7 @@ proto_reg_handoff_fp_hint(void)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -1,0 +1,660 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchematronParserCtxt" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchematronParserCtxt</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1ac765329451135abec74c45e1897abf26" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlSchematronParserCtxt::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="178" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="178" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1aae1656d6ef75afd46b497f6ef5e1480a" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* URL</definition>
+        <argsstring></argsstring>
+        <name>URL</name>
+        <qualifiedname>_xmlSchematronParserCtxt::URL</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="179" column="19" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="179" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1acb7e0779c02127031b073502aca38a8c" prot="public" static="no" mutable="no">
+        <type>xmlDocPtr</type>
+        <definition>xmlDocPtr doc</definition>
+        <argsstring></argsstring>
+        <name>doc</name>
+        <qualifiedname>_xmlSchematronParserCtxt::doc</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="180" column="15" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="180" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a0ce329e01b9be61a7d1731d1886888fb" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int preserve</definition>
+        <argsstring></argsstring>
+        <name>preserve</name>
+        <qualifiedname>_xmlSchematronParserCtxt::preserve</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="181" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="181" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1adae84acc92cd77a04f6aaf533643a33a" prot="public" static="no" mutable="no">
+        <type>const char *</type>
+        <definition>const char* buffer</definition>
+        <argsstring></argsstring>
+        <name>buffer</name>
+        <qualifiedname>_xmlSchematronParserCtxt::buffer</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="182" column="16" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="182" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a439227feff9d7f55384e8780cfc2eb82" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int size</definition>
+        <argsstring></argsstring>
+        <name>size</name>
+        <qualifiedname>_xmlSchematronParserCtxt::size</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="183" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="183" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a2f89a426c195c2ad019b65e822791a21" prot="public" static="no" mutable="no">
+        <type>xmlDictPtr</type>
+        <definition>xmlDictPtr dict</definition>
+        <argsstring></argsstring>
+        <name>dict</name>
+        <qualifiedname>_xmlSchematronParserCtxt::dict</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="185" column="16" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="185" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a5b2a08e1efe0dda13547f755f76049da" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nberrors</definition>
+        <argsstring></argsstring>
+        <name>nberrors</name>
+        <qualifiedname>_xmlSchematronParserCtxt::nberrors</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="187" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="187" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a6ce68847c12434f60d1b2654a3dc3409" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int err</definition>
+        <argsstring></argsstring>
+        <name>err</name>
+        <qualifiedname>_xmlSchematronParserCtxt::err</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="188" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="188" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a342f8cf6f0f824bbdda9fa6319bace2f" prot="public" static="no" mutable="no">
+        <type>xmlXPathContextPtr</type>
+        <definition>xmlXPathContextPtr xctxt</definition>
+        <argsstring></argsstring>
+        <name>xctxt</name>
+        <qualifiedname>_xmlSchematronParserCtxt::xctxt</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="189" column="24" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="189" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a2de2ed8641fc27cec4607793933d8298" prot="public" static="no" mutable="no">
+        <type>xmlSchematronPtr</type>
+        <definition>xmlSchematronPtr schema</definition>
+        <argsstring></argsstring>
+        <name>schema</name>
+        <qualifiedname>_xmlSchematronParserCtxt::schema</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="190" column="22" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="190" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a60c766b831bac2b6f0f907f1b160a623" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbNamespaces</definition>
+        <argsstring></argsstring>
+        <name>nbNamespaces</name>
+        <qualifiedname>_xmlSchematronParserCtxt::nbNamespaces</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="192" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="192" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a030ad7c1285d489dd9c3db4ab8763fab" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxNamespaces</definition>
+        <argsstring></argsstring>
+        <name>maxNamespaces</name>
+        <qualifiedname>_xmlSchematronParserCtxt::maxNamespaces</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="193" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="193" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a3ce9a154b52c3b295915ff0308d417eb" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+        <definition>const xmlChar** namespaces</definition>
+        <argsstring></argsstring>
+        <name>namespaces</name>
+        <qualifiedname>_xmlSchematronParserCtxt::namespaces</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="194" column="19" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="194" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a19560086b7ce2fb349a96b066caf0c71" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbIncludes</definition>
+        <argsstring></argsstring>
+        <name>nbIncludes</name>
+        <qualifiedname>_xmlSchematronParserCtxt::nbIncludes</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="196" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="196" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a1dcfca6af065a7ab20b67f4cdada864b" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxIncludes</definition>
+        <argsstring></argsstring>
+        <name>maxIncludes</name>
+        <qualifiedname>_xmlSchematronParserCtxt::maxIncludes</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="197" column="9" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="197" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a6a741a9d20ea43420faaadb953503aac" prot="public" static="no" mutable="no">
+        <type>xmlNodePtr *</type>
+        <definition>xmlNodePtr* includes</definition>
+        <argsstring></argsstring>
+        <name>includes</name>
+        <qualifiedname>_xmlSchematronParserCtxt::includes</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="198" column="16" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="198" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a2e294dd14122c554baa0665072b4ca7a" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* userData</definition>
+        <argsstring></argsstring>
+        <name>userData</name>
+        <qualifiedname>_xmlSchematronParserCtxt::userData</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="201" column="10" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="201" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a2ee3dd92c84381dc29d8211b630e79dd" prot="public" static="no" mutable="no">
+        <type><ref refid="schematron_8h_1a8ccc28cafcea9df8a370b4d919e72d55" kindref="member">xmlSchematronValidityErrorFunc</ref></type>
+        <definition>xmlSchematronValidityErrorFunc error</definition>
+        <argsstring></argsstring>
+        <name>error</name>
+        <qualifiedname>_xmlSchematronParserCtxt::error</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="202" column="36" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="202" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a08872dd3673512dbf9e3fde5b02014c5" prot="public" static="no" mutable="no">
+        <type><ref refid="schematron_8h_1a81f66c445d335895bcce12e6145a8f25" kindref="member">xmlSchematronValidityWarningFunc</ref></type>
+        <definition>xmlSchematronValidityWarningFunc warning</definition>
+        <argsstring></argsstring>
+        <name>warning</name>
+        <qualifiedname>_xmlSchematronParserCtxt::warning</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="203" column="38" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="203" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchematronParserCtxt_1a08a1f87b354a96c4a17b4e0039b8103c" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+        <definition>xmlStructuredErrorFunc serror</definition>
+        <argsstring></argsstring>
+        <name>serror</name>
+        <qualifiedname>_xmlSchematronParserCtxt::serror</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/schematron.c" line="204" column="28" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="204" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="5">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlDict</label>
+        <childnode refid="9" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlDictStrings</label>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="15">
+        <label>_xmlError</label>
+        <link refid="struct__xmlError"/>
+      </node>
+      <node id="11">
+        <label>_xmlHashTable</label>
+        <childnode refid="12" relation="usage">
+          <edgelabel>table</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="14">
+        <label>_xmlNodeSet</label>
+        <link refid="struct__xmlNodeSet"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>nodeTab</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="23">
+        <label>_xmlPattern</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="23" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="24" relation="usage">
+          <edgelabel>steps</edgelabel>
+        </childnode>
+        <childnode refid="25" relation="usage">
+          <edgelabel>stream</edgelabel>
+        </childnode>
+      </node>
+      <node id="16">
+        <label>_xmlSchematron</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="17" relation="usage">
+          <edgelabel>patterns</edgelabel>
+        </childnode>
+        <childnode refid="18" relation="usage">
+          <edgelabel>rules</edgelabel>
+        </childnode>
+      </node>
+      <node id="27">
+        <label>_xmlSchematronLet</label>
+        <childnode refid="27" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="20" relation="usage">
+          <edgelabel>comp</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlSchematronParserCtxt</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>xctxt</edgelabel>
+        </childnode>
+        <childnode refid="16" relation="usage">
+          <edgelabel>schema</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>includes</edgelabel>
+        </childnode>
+        <childnode refid="15" relation="usage">
+          <edgelabel>serror</edgelabel>
+        </childnode>
+      </node>
+      <node id="17">
+        <label>_xmlSchematronPattern</label>
+        <childnode refid="17" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="18" relation="usage">
+          <edgelabel>rules</edgelabel>
+        </childnode>
+      </node>
+      <node id="18">
+        <label>_xmlSchematronRule</label>
+        <childnode refid="18" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>patnext</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="19" relation="usage">
+          <edgelabel>tests</edgelabel>
+        </childnode>
+        <childnode refid="23" relation="usage">
+          <edgelabel>pattern</edgelabel>
+        </childnode>
+        <childnode refid="27" relation="usage">
+          <edgelabel>lets</edgelabel>
+        </childnode>
+      </node>
+      <node id="19">
+        <label>_xmlSchematronTest</label>
+        <childnode refid="19" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="20" relation="usage">
+          <edgelabel>comp</edgelabel>
+        </childnode>
+      </node>
+      <node id="24">
+        <label>_xmlStepOp</label>
+      </node>
+      <node id="25">
+        <label>_xmlStreamComp</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="26" relation="usage">
+          <edgelabel>steps</edgelabel>
+        </childnode>
+      </node>
+      <node id="26">
+        <label>_xmlStreamStep</label>
+      </node>
+      <node id="20">
+        <label>_xmlXPathCompExpr</label>
+        <childnode refid="21" relation="usage">
+          <edgelabel>steps</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlXPathContext</label>
+        <link refid="struct__xmlXPathContext"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>debugNode</edgelabel>
+          <edgelabel>here</edgelabel>
+          <edgelabel>node</edgelabel>
+          <edgelabel>origin</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>funcHash</edgelabel>
+          <edgelabel>nsHash</edgelabel>
+          <edgelabel>varHash</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>namespaces</edgelabel>
+          <edgelabel>tmpNsList</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>varLookupFunc</edgelabel>
+        </childnode>
+        <childnode refid="15" relation="usage">
+          <edgelabel>error</edgelabel>
+          <edgelabel>lastError</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="13">
+        <label>_xmlXPathObject</label>
+        <link refid="struct__xmlXPathObject"/>
+        <childnode refid="14" relation="usage">
+          <edgelabel>nodesetval</edgelabel>
+        </childnode>
+      </node>
+      <node id="22">
+        <label>_xmlXPathParserContext</label>
+        <link refid="struct__xmlXPathParserContext"/>
+        <childnode refid="10" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>value</edgelabel>
+          <edgelabel>valueTab</edgelabel>
+        </childnode>
+        <childnode refid="20" relation="usage">
+          <edgelabel>comp</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>ancestor</edgelabel>
+        </childnode>
+      </node>
+      <node id="21">
+        <label>_xmlXPathStepOp</label>
+        <childnode refid="22" relation="usage">
+          <edgelabel>cache</edgelabel>
+        </childnode>
+      </node>
+      <node id="12">
+        <label>xmlHashEntry</label>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/schematron.c" line="177" column="1" bodyfile="/builds/GNOME/libxml2/schematron.c" bodystart="177" bodyend="205"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchematronParserCtxt_1adae84acc92cd77a04f6aaf533643a33a" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>buffer</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a2f89a426c195c2ad019b65e822791a21" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>dict</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1acb7e0779c02127031b073502aca38a8c" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>doc</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a6ce68847c12434f60d1b2654a3dc3409" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>err</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a2ee3dd92c84381dc29d8211b630e79dd" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>error</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a6a741a9d20ea43420faaadb953503aac" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>includes</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a1dcfca6af065a7ab20b67f4cdada864b" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>maxIncludes</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a030ad7c1285d489dd9c3db4ab8763fab" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>maxNamespaces</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a3ce9a154b52c3b295915ff0308d417eb" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>namespaces</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a5b2a08e1efe0dda13547f755f76049da" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>nberrors</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a19560086b7ce2fb349a96b066caf0c71" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>nbIncludes</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a60c766b831bac2b6f0f907f1b160a623" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>nbNamespaces</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a0ce329e01b9be61a7d1731d1886888fb" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>preserve</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a2de2ed8641fc27cec4607793933d8298" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>schema</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a08a1f87b354a96c4a17b4e0039b8103c" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>serror</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a439227feff9d7f55384e8780cfc2eb82" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>size</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1ac765329451135abec74c45e1897abf26" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>type</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1aae1656d6ef75afd46b497f6ef5e1480a" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>URL</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a2e294dd14122c554baa0665072b4ca7a" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>userData</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a08872dd3673512dbf9e3fde5b02014c5" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>warning</name></member>
+      <member refid="struct__xmlSchematronParserCtxt_1a342f8cf6f0f824bbdda9fa6319bace2f" prot="public" virt="non-virtual"><scope>_xmlSchematronParserCtxt</scope><name>xctxt</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

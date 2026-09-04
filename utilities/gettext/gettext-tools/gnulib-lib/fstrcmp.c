@@ -1,10 +1,10 @@
 /* Functions to make fuzzy comparisons between strings
-   Copyright (C) 1988-1989, 1992-1993, 1995, 2001-2003, 2006, 2008-2016 Free
+   Copyright (C) 1988-1989, 1992-1993, 1995, 2001-2003, 2006, 2008-2026 Free
    Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,7 +13,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 
 #include <config.h>
@@ -22,14 +22,13 @@
 #include "fstrcmp.h"
 
 #include <string.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <limits.h>
 
-#include "glthread/lock.h"
+#include "glthread/once.h"
 #include "glthread/tls.h"
 #include "minmax.h"
 #include "xalloc.h"
@@ -38,6 +37,7 @@
 #define ELEMENT char
 #define EQUAL(x,y) ((x) == (y))
 #define OFFSET ptrdiff_t
+#define OFFSET_MAX PTRDIFF_MAX
 #define EXTRA_CONTEXT_FIELDS \
   /* The number of edits beyond which the computation can be aborted. */ \
   ptrdiff_t edit_count_limit; \
@@ -46,6 +46,7 @@
   ptrdiff_t edit_count;
 #define NOTE_DELETE(ctxt, xoff) ctxt->edit_count++
 #define NOTE_INSERT(ctxt, yoff) ctxt->edit_count++
+#define NOTE_ORDERED false
 #define EARLY_ABORT(ctxt) ctxt->edit_count > 0
 /* We don't need USE_HEURISTIC, since it is unlikely in typical uses of
    fstrcmp().  */
@@ -73,6 +74,19 @@ keys_init (void)
 /* Ensure that keys_init is called once only.  */
 gl_once_define(static, keys_init_once)
 
+void
+fstrcmp_free_resources (void)
+{
+  gl_once (keys_init_once, keys_init);
+  ptrdiff_t *buffer = gl_tls_get (buffer_key);
+  if (buffer != NULL)
+    {
+      gl_tls_set (buffer_key, NULL);
+      gl_tls_set (bufmax_key, (void *) (uintptr_t) 0);
+      free (buffer);
+    }
+}
+
 
 /* In the code below, branch probabilities were measured by Ralf Wildenhues,
    by running "msgmerge LL.po coreutils.pot" with msgmerge 0.18 for many
@@ -84,15 +98,9 @@ gl_once_define(static, keys_init_once)
 double
 fstrcmp_bounded (const char *string1, const char *string2, double lower_bound)
 {
-  struct context ctxt;
   size_t xvec_length = strlen (string1);
   size_t yvec_length = strlen (string2);
   size_t length_sum = xvec_length + yvec_length;
-  ptrdiff_t i;
-
-  ptrdiff_t fdiag_len;
-  ptrdiff_t *buffer;
-  uintptr_t bufmax;
 
   /* short-circuit obvious comparisons */
   if (xvec_length == 0 || yvec_length == 0) /* Prob: 1% */
@@ -151,25 +159,23 @@ fstrcmp_bounded (const char *string1, const char *string2, double lower_bound)
                     / (xvec_length + yvec_length).
            */
           ptrdiff_t occ_diff[UCHAR_MAX + 1]; /* array C -> OCC(X,C) - OCC(Y,C) */
-          ptrdiff_t sum;
-          double dsum;
 
           /* Determine the occurrence counts in X.  */
           memset (occ_diff, 0, sizeof (occ_diff));
-          for (i = xvec_length - 1; i >= 0; i--)
+          for (ptrdiff_t i = xvec_length - 1; i >= 0; i--)
             occ_diff[(unsigned char) string1[i]]++;
           /* Subtract the occurrence counts in Y.  */
-          for (i = yvec_length - 1; i >= 0; i--)
+          for (ptrdiff_t i = yvec_length - 1; i >= 0; i--)
             occ_diff[(unsigned char) string2[i]]--;
           /* Sum up the absolute values.  */
-          sum = 0;
-          for (i = 0; i <= UCHAR_MAX; i++)
+          ptrdiff_t sum = 0;
+          for (ptrdiff_t i = 0; i <= UCHAR_MAX; i++)
             {
               ptrdiff_t d = occ_diff[i];
               sum += (d >= 0 ? d : -d);
             }
 
-          dsum = sum;
+          double dsum = sum;
           upper_bound = 1.0 - dsum / length_sum;
 
           if (upper_bound < lower_bound) /* Prob: 66% */
@@ -180,14 +186,23 @@ fstrcmp_bounded (const char *string1, const char *string2, double lower_bound)
     }
 
   /* set the info for each string.  */
+  struct context ctxt;
   ctxt.xvec = string1;
   ctxt.yvec = string2;
 
+  /* Set TOO_EXPENSIVE to be approximate square root of input size,
+     bounded below by 4096.  */
+  ctxt.too_expensive = 1;
+  for (ptrdiff_t i = xvec_length + yvec_length; i != 0; i >>= 2)
+    ctxt.too_expensive <<= 1;
+  if (ctxt.too_expensive < 4096)
+    ctxt.too_expensive = 4096;
+
   /* Allocate memory for fdiag and bdiag from a thread-local pool.  */
-  fdiag_len = length_sum + 3;
+  ptrdiff_t fdiag_len = length_sum + 3;
   gl_once (keys_init_once, keys_init);
-  buffer = gl_tls_get (buffer_key);
-  bufmax = (uintptr_t) gl_tls_get (bufmax_key);
+  ptrdiff_t *buffer = gl_tls_get (buffer_key);
+  uintptr_t bufmax = (uintptr_t) gl_tls_get (bufmax_key);
   if (fdiag_len > bufmax)
     {
       /* Need more memory.  */
@@ -221,7 +236,7 @@ fstrcmp_bounded (const char *string1, const char *string2, double lower_bound)
 
   /* Now do the main comparison algorithm */
   ctxt.edit_count = - ctxt.edit_count_limit;
-  if (compareseq (0, xvec_length, 0, yvec_length, &ctxt)) /* Prob: 98% */
+  if (compareseq (0, xvec_length, 0, yvec_length, 0, &ctxt)) /* Prob: 98% */
     /* The edit_count passed the limit.  Hence the result would be
        < lower_bound.  We can return any value < lower_bound instead.  */
     return 0.0;

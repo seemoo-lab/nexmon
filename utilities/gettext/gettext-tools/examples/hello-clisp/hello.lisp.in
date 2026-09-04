@@ -11,5 +11,5 @@
 (write-line (_ "Hello, world!"))
 
 (format t (_ "This program is running as process number ~D.")
-          (system::program-id))
+          (ext:process-id))
 (terpri)

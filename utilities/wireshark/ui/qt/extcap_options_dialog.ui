@@ -30,7 +30,7 @@
    <item>
     <widget class="QCheckBox" name="checkSaveOnStart">
      <property name="text">
-      <string>Save parameter on capture start</string>
+      <string>Save parameters on capture start</string>
      </property>
      <property name="checked">
       <bool>true</bool>
@@ -40,7 +40,7 @@
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
-      <set>QDialogButtonBox::Close|QDialogButtonBox::Help|QDialogButtonBox::Ok|QDialogButtonBox::RestoreDefaults</set>
+      <set>QDialogButtonBox::Discard|QDialogButtonBox::Help|QDialogButtonBox::Ok|QDialogButtonBox::Save|QDialogButtonBox::RestoreDefaults</set>
      </property>
     </widget>
    </item>

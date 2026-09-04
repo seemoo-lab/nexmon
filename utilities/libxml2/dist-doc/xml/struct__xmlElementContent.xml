@@ -1,0 +1,141 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlElementContent" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlElementContent</compoundname>
+    <includes local="no">tree.h</includes>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlElementContent_1a5132f4f911efded82a8c2900757736d1" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1adeb8f7de0529e7177a243c86434b081b" kindref="member">xmlElementContentType</ref></type>
+        <definition>xmlElementContentType type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlElementContent::type</qualifiedname>
+        <briefdescription>
+<para>PCDATA, ELEMENT, SEQ or OR. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="425" column="31" bodyfile="tree.h" bodystart="425" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlElementContent_1aef24c39f22c5c3e3ae6198570b56b699" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1a657b3f48031548535c3d6c88dc0f3a59" kindref="member">xmlElementContentOccur</ref></type>
+        <definition>xmlElementContentOccur ocur</definition>
+        <argsstring></argsstring>
+        <name>ocur</name>
+        <qualifiedname>_xmlElementContent::ocur</qualifiedname>
+        <briefdescription>
+<para>ONCE, OPT, MULT or PLUS. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="427" column="31" bodyfile="tree.h" bodystart="427" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlElementContent_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlElementContent::name</qualifiedname>
+        <briefdescription>
+<para>element name </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="429" column="31" bodyfile="tree.h" bodystart="429" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlElementContent_1a92273d2d75495deeafbbd605c1e93a7d" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlElementContent" kindref="compound">_xmlElementContent</ref> *</type>
+        <definition>struct _xmlElementContent* c1</definition>
+        <argsstring></argsstring>
+        <name>c1</name>
+        <qualifiedname>_xmlElementContent::c1</qualifiedname>
+        <briefdescription>
+<para>first child </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="431" column="29" bodyfile="tree.h" bodystart="431" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlElementContent_1afad8ffae2ed55a9d961f4a73246aa1a4" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlElementContent" kindref="compound">_xmlElementContent</ref> *</type>
+        <definition>struct _xmlElementContent* c2</definition>
+        <argsstring></argsstring>
+        <name>c2</name>
+        <qualifiedname>_xmlElementContent::c2</qualifiedname>
+        <briefdescription>
+<para>second child </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="433" column="29" bodyfile="tree.h" bodystart="433" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlElementContent_1a044312a7a81b77e9d6c930e64563fdd9" prot="public" static="no" mutable="no">
+        <type>struct <ref refid="struct__xmlElementContent" kindref="compound">_xmlElementContent</ref> *</type>
+        <definition>struct _xmlElementContent* parent</definition>
+        <argsstring></argsstring>
+        <name>parent</name>
+        <qualifiedname>_xmlElementContent::parent</qualifiedname>
+        <briefdescription>
+<para>parent </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="435" column="29" bodyfile="tree.h" bodystart="435" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlElementContent_1a58c92e44a4fb4e2a2ab327f2870ac85e" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* prefix</definition>
+        <argsstring></argsstring>
+        <name>prefix</name>
+        <qualifiedname>_xmlElementContent::prefix</qualifiedname>
+        <briefdescription>
+<para>namespace prefix </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="tree.h" line="437" column="31" bodyfile="tree.h" bodystart="437" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>An XML Element content as stored after parsing an element definition in a DTD. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>Should be treated as opaque. Accessing members directly is deprecated. </para>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="1">
+        <label>_xmlElementContent</label>
+        <link refid="struct__xmlElementContent"/>
+        <childnode refid="1" relation="usage">
+          <edgelabel>c1</edgelabel>
+          <edgelabel>c2</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="tree.h" line="423" column="1" bodyfile="tree.h" bodystart="423" bodyend="438"/>
+    <listofallmembers>
+      <member refid="struct__xmlElementContent_1a92273d2d75495deeafbbd605c1e93a7d" prot="public" virt="non-virtual"><scope>_xmlElementContent</scope><name>c1</name></member>
+      <member refid="struct__xmlElementContent_1afad8ffae2ed55a9d961f4a73246aa1a4" prot="public" virt="non-virtual"><scope>_xmlElementContent</scope><name>c2</name></member>
+      <member refid="struct__xmlElementContent_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" virt="non-virtual"><scope>_xmlElementContent</scope><name>name</name></member>
+      <member refid="struct__xmlElementContent_1aef24c39f22c5c3e3ae6198570b56b699" prot="public" virt="non-virtual"><scope>_xmlElementContent</scope><name>ocur</name></member>
+      <member refid="struct__xmlElementContent_1a044312a7a81b77e9d6c930e64563fdd9" prot="public" virt="non-virtual"><scope>_xmlElementContent</scope><name>parent</name></member>
+      <member refid="struct__xmlElementContent_1a58c92e44a4fb4e2a2ab327f2870ac85e" prot="public" virt="non-virtual"><scope>_xmlElementContent</scope><name>prefix</name></member>
+      <member refid="struct__xmlElementContent_1a5132f4f911efded82a8c2900757736d1" prot="public" virt="non-virtual"><scope>_xmlElementContent</scope><name>type</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

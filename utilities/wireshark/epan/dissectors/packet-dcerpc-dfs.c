@@ -10,9 +10,10 @@
 
 
 #include "config.h"
-#include <glib.h>
 #include <string.h>
+#include <wsutil/array.h>
 #include <epan/packet.h>
+#include <epan/tfs.h>
 
 #include "packet-dcerpc.h"
 #include "packet-dcerpc-nt.h"
@@ -22,214 +23,214 @@ void proto_register_dcerpc_netdfs(void);
 void proto_reg_handoff_dcerpc_netdfs(void);
 
 /* Ett declarations */
-static gint ett_dcerpc_netdfs = -1;
-static gint ett_netdfs_dfs_Info0 = -1;
-static gint ett_netdfs_dfs_Info1 = -1;
-static gint ett_netdfs_dfs_VolumeState = -1;
-static gint ett_netdfs_dfs_Info2 = -1;
-static gint ett_netdfs_dfs_StorageState = -1;
-static gint ett_netdfs_dfs_StorageInfo = -1;
-static gint ett_netdfs_dfs_Info3 = -1;
-static gint ett_netdfs_dfs_Info4 = -1;
-static gint ett_netdfs_dfs_PropertyFlags = -1;
-static gint ett_netdfs_dfs_Info5 = -1;
-static gint ett_netdfs_dfs_Target_Priority = -1;
-static gint ett_netdfs_dfs_StorageInfo2 = -1;
-static gint ett_netdfs_dfs_Info6 = -1;
-static gint ett_netdfs_dfs_Info7 = -1;
-static gint ett_netdfs_dfs_Info100 = -1;
-static gint ett_netdfs_dfs_Info101 = -1;
-static gint ett_netdfs_dfs_Info102 = -1;
-static gint ett_netdfs_dfs_Info103 = -1;
-static gint ett_netdfs_dfs_Info104 = -1;
-static gint ett_netdfs_dfs_Info105 = -1;
-static gint ett_netdfs_dfs_Info106 = -1;
-static gint ett_netdfs_dfs_Info200 = -1;
-static gint ett_netdfs_dfs_Info300 = -1;
-static gint ett_netdfs_dfs_Info = -1;
-static gint ett_netdfs_dfs_EnumArray1 = -1;
-static gint ett_netdfs_dfs_EnumArray2 = -1;
-static gint ett_netdfs_dfs_EnumArray3 = -1;
-static gint ett_netdfs_dfs_EnumArray4 = -1;
-static gint ett_netdfs_dfs_EnumArray200 = -1;
-static gint ett_netdfs_dfs_EnumArray300 = -1;
-static gint ett_netdfs_dfs_EnumInfo = -1;
-static gint ett_netdfs_dfs_EnumStruct = -1;
-static gint ett_netdfs_dfs_UnknownStruct = -1;
+static int ett_dcerpc_netdfs;
+static int ett_netdfs_dfs_Info0;
+static int ett_netdfs_dfs_Info1;
+static int ett_netdfs_dfs_VolumeState;
+static int ett_netdfs_dfs_Info2;
+static int ett_netdfs_dfs_StorageState;
+static int ett_netdfs_dfs_StorageInfo;
+static int ett_netdfs_dfs_Info3;
+static int ett_netdfs_dfs_Info4;
+static int ett_netdfs_dfs_PropertyFlags;
+static int ett_netdfs_dfs_Info5;
+static int ett_netdfs_dfs_Target_Priority;
+static int ett_netdfs_dfs_StorageInfo2;
+static int ett_netdfs_dfs_Info6;
+static int ett_netdfs_dfs_Info7;
+static int ett_netdfs_dfs_Info100;
+static int ett_netdfs_dfs_Info101;
+static int ett_netdfs_dfs_Info102;
+static int ett_netdfs_dfs_Info103;
+static int ett_netdfs_dfs_Info104;
+static int ett_netdfs_dfs_Info105;
+static int ett_netdfs_dfs_Info106;
+static int ett_netdfs_dfs_Info200;
+static int ett_netdfs_dfs_Info300;
+static int ett_netdfs_dfs_Info;
+static int ett_netdfs_dfs_EnumArray1;
+static int ett_netdfs_dfs_EnumArray2;
+static int ett_netdfs_dfs_EnumArray3;
+static int ett_netdfs_dfs_EnumArray4;
+static int ett_netdfs_dfs_EnumArray200;
+static int ett_netdfs_dfs_EnumArray300;
+static int ett_netdfs_dfs_EnumInfo;
+static int ett_netdfs_dfs_EnumStruct;
+static int ett_netdfs_dfs_UnknownStruct;
 
 
 /* Header field declarations */
-static gint hf_netdfs_dfs_AddFtRoot_comment = -1;
-static gint hf_netdfs_dfs_AddFtRoot_dfs_config_dn = -1;
-static gint hf_netdfs_dfs_AddFtRoot_dfsname = -1;
-static gint hf_netdfs_dfs_AddFtRoot_dns_servername = -1;
-static gint hf_netdfs_dfs_AddFtRoot_flags = -1;
-static gint hf_netdfs_dfs_AddFtRoot_rootshare = -1;
-static gint hf_netdfs_dfs_AddFtRoot_servername = -1;
-static gint hf_netdfs_dfs_AddFtRoot_unknown1 = -1;
-static gint hf_netdfs_dfs_AddFtRoot_unknown2 = -1;
-static gint hf_netdfs_dfs_AddStdRootForced_comment = -1;
-static gint hf_netdfs_dfs_AddStdRootForced_rootshare = -1;
-static gint hf_netdfs_dfs_AddStdRootForced_servername = -1;
-static gint hf_netdfs_dfs_AddStdRootForced_store = -1;
-static gint hf_netdfs_dfs_AddStdRoot_comment = -1;
-static gint hf_netdfs_dfs_AddStdRoot_flags = -1;
-static gint hf_netdfs_dfs_AddStdRoot_rootshare = -1;
-static gint hf_netdfs_dfs_AddStdRoot_servername = -1;
-static gint hf_netdfs_dfs_Add_comment = -1;
-static gint hf_netdfs_dfs_Add_flags = -1;
-static gint hf_netdfs_dfs_Add_path = -1;
-static gint hf_netdfs_dfs_Add_server = -1;
-static gint hf_netdfs_dfs_Add_share = -1;
-static gint hf_netdfs_dfs_EnumArray1_count = -1;
-static gint hf_netdfs_dfs_EnumArray1_s = -1;
-static gint hf_netdfs_dfs_EnumArray200_count = -1;
-static gint hf_netdfs_dfs_EnumArray200_s = -1;
-static gint hf_netdfs_dfs_EnumArray2_count = -1;
-static gint hf_netdfs_dfs_EnumArray2_s = -1;
-static gint hf_netdfs_dfs_EnumArray300_count = -1;
-static gint hf_netdfs_dfs_EnumArray300_s = -1;
-static gint hf_netdfs_dfs_EnumArray3_count = -1;
-static gint hf_netdfs_dfs_EnumArray3_s = -1;
-static gint hf_netdfs_dfs_EnumArray4_count = -1;
-static gint hf_netdfs_dfs_EnumArray4_s = -1;
-static gint hf_netdfs_dfs_EnumEx_bufsize = -1;
-static gint hf_netdfs_dfs_EnumEx_dfs_name = -1;
-static gint hf_netdfs_dfs_EnumEx_info = -1;
-static gint hf_netdfs_dfs_EnumEx_level = -1;
-static gint hf_netdfs_dfs_EnumEx_total = -1;
-static gint hf_netdfs_dfs_EnumInfo_info1 = -1;
-static gint hf_netdfs_dfs_EnumInfo_info2 = -1;
-static gint hf_netdfs_dfs_EnumInfo_info200 = -1;
-static gint hf_netdfs_dfs_EnumInfo_info3 = -1;
-static gint hf_netdfs_dfs_EnumInfo_info300 = -1;
-static gint hf_netdfs_dfs_EnumInfo_info4 = -1;
-static gint hf_netdfs_dfs_EnumStruct_e = -1;
-static gint hf_netdfs_dfs_EnumStruct_level = -1;
-static gint hf_netdfs_dfs_Enum_bufsize = -1;
-static gint hf_netdfs_dfs_Enum_info = -1;
-static gint hf_netdfs_dfs_Enum_level = -1;
-static gint hf_netdfs_dfs_Enum_total = -1;
-static gint hf_netdfs_dfs_FlushFtTable_rootshare = -1;
-static gint hf_netdfs_dfs_FlushFtTable_servername = -1;
-static gint hf_netdfs_dfs_GetInfo_dfs_entry_path = -1;
-static gint hf_netdfs_dfs_GetInfo_info = -1;
-static gint hf_netdfs_dfs_GetInfo_level = -1;
-static gint hf_netdfs_dfs_GetInfo_servername = -1;
-static gint hf_netdfs_dfs_GetInfo_sharename = -1;
-static gint hf_netdfs_dfs_GetManagerVersion_version = -1;
-static gint hf_netdfs_dfs_Info100_comment = -1;
-static gint hf_netdfs_dfs_Info101_state = -1;
-static gint hf_netdfs_dfs_Info102_timeout = -1;
-static gint hf_netdfs_dfs_Info103_flags = -1;
-static gint hf_netdfs_dfs_Info104_priority = -1;
-static gint hf_netdfs_dfs_Info105_comment = -1;
-static gint hf_netdfs_dfs_Info105_property_flag_mask = -1;
-static gint hf_netdfs_dfs_Info105_property_flags = -1;
-static gint hf_netdfs_dfs_Info105_state = -1;
-static gint hf_netdfs_dfs_Info105_timeout = -1;
-static gint hf_netdfs_dfs_Info106_priority = -1;
-static gint hf_netdfs_dfs_Info106_state = -1;
-static gint hf_netdfs_dfs_Info1_path = -1;
-static gint hf_netdfs_dfs_Info200_dom_root = -1;
-static gint hf_netdfs_dfs_Info2_comment = -1;
-static gint hf_netdfs_dfs_Info2_num_stores = -1;
-static gint hf_netdfs_dfs_Info2_path = -1;
-static gint hf_netdfs_dfs_Info2_state = -1;
-static gint hf_netdfs_dfs_Info300_dom_root = -1;
-static gint hf_netdfs_dfs_Info300_flavor = -1;
-static gint hf_netdfs_dfs_Info3_comment = -1;
-static gint hf_netdfs_dfs_Info3_num_stores = -1;
-static gint hf_netdfs_dfs_Info3_path = -1;
-static gint hf_netdfs_dfs_Info3_state = -1;
-static gint hf_netdfs_dfs_Info3_stores = -1;
-static gint hf_netdfs_dfs_Info4_comment = -1;
-static gint hf_netdfs_dfs_Info4_guid = -1;
-static gint hf_netdfs_dfs_Info4_num_stores = -1;
-static gint hf_netdfs_dfs_Info4_path = -1;
-static gint hf_netdfs_dfs_Info4_state = -1;
-static gint hf_netdfs_dfs_Info4_stores = -1;
-static gint hf_netdfs_dfs_Info4_timeout = -1;
-static gint hf_netdfs_dfs_Info5_comment = -1;
-static gint hf_netdfs_dfs_Info5_flags = -1;
-static gint hf_netdfs_dfs_Info5_guid = -1;
-static gint hf_netdfs_dfs_Info5_num_stores = -1;
-static gint hf_netdfs_dfs_Info5_path = -1;
-static gint hf_netdfs_dfs_Info5_pktsize = -1;
-static gint hf_netdfs_dfs_Info5_state = -1;
-static gint hf_netdfs_dfs_Info5_timeout = -1;
-static gint hf_netdfs_dfs_Info6_comment = -1;
-static gint hf_netdfs_dfs_Info6_entry_path = -1;
-static gint hf_netdfs_dfs_Info6_flags = -1;
-static gint hf_netdfs_dfs_Info6_guid = -1;
-static gint hf_netdfs_dfs_Info6_num_stores = -1;
-static gint hf_netdfs_dfs_Info6_pktsize = -1;
-static gint hf_netdfs_dfs_Info6_state = -1;
-static gint hf_netdfs_dfs_Info6_stores = -1;
-static gint hf_netdfs_dfs_Info6_timeout = -1;
-static gint hf_netdfs_dfs_Info7_generation_guid = -1;
-static gint hf_netdfs_dfs_Info_info0 = -1;
-static gint hf_netdfs_dfs_Info_info1 = -1;
-static gint hf_netdfs_dfs_Info_info100 = -1;
-static gint hf_netdfs_dfs_Info_info101 = -1;
-static gint hf_netdfs_dfs_Info_info102 = -1;
-static gint hf_netdfs_dfs_Info_info103 = -1;
-static gint hf_netdfs_dfs_Info_info104 = -1;
-static gint hf_netdfs_dfs_Info_info105 = -1;
-static gint hf_netdfs_dfs_Info_info106 = -1;
-static gint hf_netdfs_dfs_Info_info2 = -1;
-static gint hf_netdfs_dfs_Info_info3 = -1;
-static gint hf_netdfs_dfs_Info_info4 = -1;
-static gint hf_netdfs_dfs_Info_info5 = -1;
-static gint hf_netdfs_dfs_Info_info6 = -1;
-static gint hf_netdfs_dfs_Info_info7 = -1;
-static gint hf_netdfs_dfs_ManagerInitialize_flags = -1;
-static gint hf_netdfs_dfs_ManagerInitialize_servername = -1;
-static gint hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_CLUSTER_ENABLED = -1;
-static gint hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_INSITE_REFERRALS = -1;
-static gint hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_ROOT_SCALABILITY = -1;
-static gint hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_SITE_COSTING = -1;
-static gint hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_TARGET_FAILBACK = -1;
-static gint hf_netdfs_dfs_RemoveFtRoot_dfsname = -1;
-static gint hf_netdfs_dfs_RemoveFtRoot_dns_servername = -1;
-static gint hf_netdfs_dfs_RemoveFtRoot_flags = -1;
-static gint hf_netdfs_dfs_RemoveFtRoot_rootshare = -1;
-static gint hf_netdfs_dfs_RemoveFtRoot_servername = -1;
-static gint hf_netdfs_dfs_RemoveFtRoot_unknown = -1;
-static gint hf_netdfs_dfs_RemoveStdRoot_flags = -1;
-static gint hf_netdfs_dfs_RemoveStdRoot_rootshare = -1;
-static gint hf_netdfs_dfs_RemoveStdRoot_servername = -1;
-static gint hf_netdfs_dfs_Remove_dfs_entry_path = -1;
-static gint hf_netdfs_dfs_Remove_servername = -1;
-static gint hf_netdfs_dfs_Remove_sharename = -1;
-static gint hf_netdfs_dfs_SetInfo_dfs_entry_path = -1;
-static gint hf_netdfs_dfs_SetInfo_info = -1;
-static gint hf_netdfs_dfs_SetInfo_level = -1;
-static gint hf_netdfs_dfs_SetInfo_servername = -1;
-static gint hf_netdfs_dfs_SetInfo_sharename = -1;
-static gint hf_netdfs_dfs_StorageInfo2_info = -1;
-static gint hf_netdfs_dfs_StorageInfo2_target_priority = -1;
-static gint hf_netdfs_dfs_StorageInfo_server = -1;
-static gint hf_netdfs_dfs_StorageInfo_share = -1;
-static gint hf_netdfs_dfs_StorageInfo_state = -1;
-static gint hf_netdfs_dfs_StorageState_DFS_STORAGE_STATE_ACTIVE = -1;
-static gint hf_netdfs_dfs_StorageState_DFS_STORAGE_STATE_OFFLINE = -1;
-static gint hf_netdfs_dfs_StorageState_DFS_STORAGE_STATE_ONLINE = -1;
-static gint hf_netdfs_dfs_Target_Priority_reserved = -1;
-static gint hf_netdfs_dfs_Target_Priority_target_priority_class = -1;
-static gint hf_netdfs_dfs_Target_Priority_target_priority_rank = -1;
-static gint hf_netdfs_dfs_UnknownStruct_unknown1 = -1;
-static gint hf_netdfs_dfs_UnknownStruct_unknown2 = -1;
-static gint hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_AD_BLOB = -1;
-static gint hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_INCONSISTENT = -1;
-static gint hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_OFFLINE = -1;
-static gint hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_OK = -1;
-static gint hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_ONLINE = -1;
-static gint hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_STANDALONE = -1;
-static gint hf_netdfs_opnum = -1;
-static gint hf_netdfs_werror = -1;
+static int hf_netdfs_dfs_AddFtRoot_comment;
+static int hf_netdfs_dfs_AddFtRoot_dfs_config_dn;
+static int hf_netdfs_dfs_AddFtRoot_dfsname;
+static int hf_netdfs_dfs_AddFtRoot_dns_servername;
+static int hf_netdfs_dfs_AddFtRoot_flags;
+static int hf_netdfs_dfs_AddFtRoot_rootshare;
+static int hf_netdfs_dfs_AddFtRoot_servername;
+static int hf_netdfs_dfs_AddFtRoot_unknown1;
+static int hf_netdfs_dfs_AddFtRoot_unknown2;
+static int hf_netdfs_dfs_AddStdRootForced_comment;
+static int hf_netdfs_dfs_AddStdRootForced_rootshare;
+static int hf_netdfs_dfs_AddStdRootForced_servername;
+static int hf_netdfs_dfs_AddStdRootForced_store;
+static int hf_netdfs_dfs_AddStdRoot_comment;
+static int hf_netdfs_dfs_AddStdRoot_flags;
+static int hf_netdfs_dfs_AddStdRoot_rootshare;
+static int hf_netdfs_dfs_AddStdRoot_servername;
+static int hf_netdfs_dfs_Add_comment;
+static int hf_netdfs_dfs_Add_flags;
+static int hf_netdfs_dfs_Add_path;
+static int hf_netdfs_dfs_Add_server;
+static int hf_netdfs_dfs_Add_share;
+static int hf_netdfs_dfs_EnumArray1_count;
+static int hf_netdfs_dfs_EnumArray1_s;
+static int hf_netdfs_dfs_EnumArray200_count;
+static int hf_netdfs_dfs_EnumArray200_s;
+static int hf_netdfs_dfs_EnumArray2_count;
+static int hf_netdfs_dfs_EnumArray2_s;
+static int hf_netdfs_dfs_EnumArray300_count;
+static int hf_netdfs_dfs_EnumArray300_s;
+static int hf_netdfs_dfs_EnumArray3_count;
+static int hf_netdfs_dfs_EnumArray3_s;
+static int hf_netdfs_dfs_EnumArray4_count;
+static int hf_netdfs_dfs_EnumArray4_s;
+static int hf_netdfs_dfs_EnumEx_bufsize;
+static int hf_netdfs_dfs_EnumEx_dfs_name;
+static int hf_netdfs_dfs_EnumEx_info;
+static int hf_netdfs_dfs_EnumEx_level;
+static int hf_netdfs_dfs_EnumEx_total;
+static int hf_netdfs_dfs_EnumInfo_info1;
+static int hf_netdfs_dfs_EnumInfo_info2;
+static int hf_netdfs_dfs_EnumInfo_info200;
+static int hf_netdfs_dfs_EnumInfo_info3;
+static int hf_netdfs_dfs_EnumInfo_info300;
+static int hf_netdfs_dfs_EnumInfo_info4;
+static int hf_netdfs_dfs_EnumStruct_e;
+static int hf_netdfs_dfs_EnumStruct_level;
+static int hf_netdfs_dfs_Enum_bufsize;
+static int hf_netdfs_dfs_Enum_info;
+static int hf_netdfs_dfs_Enum_level;
+static int hf_netdfs_dfs_Enum_total;
+static int hf_netdfs_dfs_FlushFtTable_rootshare;
+static int hf_netdfs_dfs_FlushFtTable_servername;
+static int hf_netdfs_dfs_GetInfo_dfs_entry_path;
+static int hf_netdfs_dfs_GetInfo_info;
+static int hf_netdfs_dfs_GetInfo_level;
+static int hf_netdfs_dfs_GetInfo_servername;
+static int hf_netdfs_dfs_GetInfo_sharename;
+static int hf_netdfs_dfs_GetManagerVersion_version;
+static int hf_netdfs_dfs_Info100_comment;
+static int hf_netdfs_dfs_Info101_state;
+static int hf_netdfs_dfs_Info102_timeout;
+static int hf_netdfs_dfs_Info103_flags;
+static int hf_netdfs_dfs_Info104_priority;
+static int hf_netdfs_dfs_Info105_comment;
+static int hf_netdfs_dfs_Info105_property_flag_mask;
+static int hf_netdfs_dfs_Info105_property_flags;
+static int hf_netdfs_dfs_Info105_state;
+static int hf_netdfs_dfs_Info105_timeout;
+static int hf_netdfs_dfs_Info106_priority;
+static int hf_netdfs_dfs_Info106_state;
+static int hf_netdfs_dfs_Info1_path;
+static int hf_netdfs_dfs_Info200_dom_root;
+static int hf_netdfs_dfs_Info2_comment;
+static int hf_netdfs_dfs_Info2_num_stores;
+static int hf_netdfs_dfs_Info2_path;
+static int hf_netdfs_dfs_Info2_state;
+static int hf_netdfs_dfs_Info300_dom_root;
+static int hf_netdfs_dfs_Info300_flavor;
+static int hf_netdfs_dfs_Info3_comment;
+static int hf_netdfs_dfs_Info3_num_stores;
+static int hf_netdfs_dfs_Info3_path;
+static int hf_netdfs_dfs_Info3_state;
+static int hf_netdfs_dfs_Info3_stores;
+static int hf_netdfs_dfs_Info4_comment;
+static int hf_netdfs_dfs_Info4_guid;
+static int hf_netdfs_dfs_Info4_num_stores;
+static int hf_netdfs_dfs_Info4_path;
+static int hf_netdfs_dfs_Info4_state;
+static int hf_netdfs_dfs_Info4_stores;
+static int hf_netdfs_dfs_Info4_timeout;
+static int hf_netdfs_dfs_Info5_comment;
+static int hf_netdfs_dfs_Info5_flags;
+static int hf_netdfs_dfs_Info5_guid;
+static int hf_netdfs_dfs_Info5_num_stores;
+static int hf_netdfs_dfs_Info5_path;
+static int hf_netdfs_dfs_Info5_pktsize;
+static int hf_netdfs_dfs_Info5_state;
+static int hf_netdfs_dfs_Info5_timeout;
+static int hf_netdfs_dfs_Info6_comment;
+static int hf_netdfs_dfs_Info6_entry_path;
+static int hf_netdfs_dfs_Info6_flags;
+static int hf_netdfs_dfs_Info6_guid;
+static int hf_netdfs_dfs_Info6_num_stores;
+static int hf_netdfs_dfs_Info6_pktsize;
+static int hf_netdfs_dfs_Info6_state;
+static int hf_netdfs_dfs_Info6_stores;
+static int hf_netdfs_dfs_Info6_timeout;
+static int hf_netdfs_dfs_Info7_generation_guid;
+static int hf_netdfs_dfs_Info_info0;
+static int hf_netdfs_dfs_Info_info1;
+static int hf_netdfs_dfs_Info_info100;
+static int hf_netdfs_dfs_Info_info101;
+static int hf_netdfs_dfs_Info_info102;
+static int hf_netdfs_dfs_Info_info103;
+static int hf_netdfs_dfs_Info_info104;
+static int hf_netdfs_dfs_Info_info105;
+static int hf_netdfs_dfs_Info_info106;
+static int hf_netdfs_dfs_Info_info2;
+static int hf_netdfs_dfs_Info_info3;
+static int hf_netdfs_dfs_Info_info4;
+static int hf_netdfs_dfs_Info_info5;
+static int hf_netdfs_dfs_Info_info6;
+static int hf_netdfs_dfs_Info_info7;
+static int hf_netdfs_dfs_ManagerInitialize_flags;
+static int hf_netdfs_dfs_ManagerInitialize_servername;
+static int hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_CLUSTER_ENABLED;
+static int hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_INSITE_REFERRALS;
+static int hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_ROOT_SCALABILITY;
+static int hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_SITE_COSTING;
+static int hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_TARGET_FAILBACK;
+static int hf_netdfs_dfs_RemoveFtRoot_dfsname;
+static int hf_netdfs_dfs_RemoveFtRoot_dns_servername;
+static int hf_netdfs_dfs_RemoveFtRoot_flags;
+static int hf_netdfs_dfs_RemoveFtRoot_rootshare;
+static int hf_netdfs_dfs_RemoveFtRoot_servername;
+static int hf_netdfs_dfs_RemoveFtRoot_unknown;
+static int hf_netdfs_dfs_RemoveStdRoot_flags;
+static int hf_netdfs_dfs_RemoveStdRoot_rootshare;
+static int hf_netdfs_dfs_RemoveStdRoot_servername;
+static int hf_netdfs_dfs_Remove_dfs_entry_path;
+static int hf_netdfs_dfs_Remove_servername;
+static int hf_netdfs_dfs_Remove_sharename;
+static int hf_netdfs_dfs_SetInfo_dfs_entry_path;
+static int hf_netdfs_dfs_SetInfo_info;
+static int hf_netdfs_dfs_SetInfo_level;
+static int hf_netdfs_dfs_SetInfo_servername;
+static int hf_netdfs_dfs_SetInfo_sharename;
+static int hf_netdfs_dfs_StorageInfo2_info;
+static int hf_netdfs_dfs_StorageInfo2_target_priority;
+static int hf_netdfs_dfs_StorageInfo_server;
+static int hf_netdfs_dfs_StorageInfo_share;
+static int hf_netdfs_dfs_StorageInfo_state;
+static int hf_netdfs_dfs_StorageState_DFS_STORAGE_STATE_ACTIVE;
+static int hf_netdfs_dfs_StorageState_DFS_STORAGE_STATE_OFFLINE;
+static int hf_netdfs_dfs_StorageState_DFS_STORAGE_STATE_ONLINE;
+static int hf_netdfs_dfs_Target_Priority_reserved;
+static int hf_netdfs_dfs_Target_Priority_target_priority_class;
+static int hf_netdfs_dfs_Target_Priority_target_priority_rank;
+static int hf_netdfs_dfs_UnknownStruct_unknown1;
+static int hf_netdfs_dfs_UnknownStruct_unknown2;
+static int hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_AD_BLOB;
+static int hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_INCONSISTENT;
+static int hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_OFFLINE;
+static int hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_OK;
+static int hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_ONLINE;
+static int hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_STANDALONE;
+static int hf_netdfs_opnum;
+static int hf_netdfs_werror;
 
-static gint proto_dcerpc_netdfs = -1;
+static int proto_dcerpc_netdfs;
 /* Version information */
 
 
@@ -237,7 +238,7 @@ static e_guid_t uuid_dcerpc_netdfs = {
 	0x4fc742e0, 0x4a10, 0x11cf,
 	{ 0x82, 0x73, 0x00, 0xaa, 0x00, 0x4a, 0xe6, 0x73 }
 };
-static guint16 ver_dcerpc_netdfs = 3;
+static uint16_t ver_dcerpc_netdfs = 3;
 
 const value_string netdfs_dfs_ManagerVersion_vals[] = {
 	{ DFS_MANAGER_VERSION_NT4, "DFS_MANAGER_VERSION_NT4" },
@@ -245,8 +246,8 @@ const value_string netdfs_dfs_ManagerVersion_vals[] = {
 	{ DFS_MANAGER_VERSION_W2K3, "DFS_MANAGER_VERSION_W2K3" },
 { 0, NULL }
 };
-static int netdfs_dissect_element_dfs_Info1_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info1_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
+static int netdfs_dissect_element_dfs_Info1_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info1_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 static const true_false_string dfs_VolumeState_DFS_VOLUME_STATE_OK_tfs = {
    "DFS_VOLUME_STATE_OK is SET",
    "DFS_VOLUME_STATE_OK is NOT SET",
@@ -271,12 +272,12 @@ static const true_false_string dfs_VolumeState_DFS_VOLUME_STATE_AD_BLOB_tfs = {
    "DFS_VOLUME_STATE_AD_BLOB is SET",
    "DFS_VOLUME_STATE_AD_BLOB is NOT SET",
 };
-static int netdfs_dissect_element_dfs_Info2_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info2_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info2_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info2_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info2_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info2_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
+static int netdfs_dissect_element_dfs_Info2_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info2_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info2_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info2_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info2_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info2_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 static const true_false_string dfs_StorageState_DFS_STORAGE_STATE_OFFLINE_tfs = {
    "DFS_STORAGE_STATE_OFFLINE is SET",
    "DFS_STORAGE_STATE_OFFLINE is NOT SET",
@@ -289,31 +290,31 @@ static const true_false_string dfs_StorageState_DFS_STORAGE_STATE_ACTIVE_tfs = {
    "DFS_STORAGE_STATE_ACTIVE is SET",
    "DFS_STORAGE_STATE_ACTIVE is NOT SET",
 };
-static int netdfs_dissect_element_dfs_StorageInfo_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_StorageInfo_server(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_StorageInfo_server_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_StorageInfo_share(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_StorageInfo_share_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info3_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info3_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info3_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info3_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info3_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info3_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info3_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info3_stores_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info3_stores__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info4_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info4_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info4_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info4_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info4_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info4_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info4_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info4_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info4_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info4_stores_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info4_stores__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
+static int netdfs_dissect_element_dfs_StorageInfo_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_StorageInfo_server(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_StorageInfo_server_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_StorageInfo_share(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_StorageInfo_share_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info3_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info3_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info3_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info3_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info3_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info3_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info3_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info3_stores_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info3_stores__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info4_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info4_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info4_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info4_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info4_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info4_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info4_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info4_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info4_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info4_stores_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info4_stores__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 static const true_false_string dfs_PropertyFlags_DFS_PROPERTY_FLAG_INSITE_REFERRALS_tfs = {
    "DFS_PROPERTY_FLAG_INSITE_REFERRALS is SET",
    "DFS_PROPERTY_FLAG_INSITE_REFERRALS is NOT SET",
@@ -334,16 +335,16 @@ static const true_false_string dfs_PropertyFlags_DFS_PROPERTY_FLAG_CLUSTER_ENABL
    "DFS_PROPERTY_FLAG_CLUSTER_ENABLED is SET",
    "DFS_PROPERTY_FLAG_CLUSTER_ENABLED is NOT SET",
 };
-static int netdfs_dissect_element_dfs_Info5_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info5_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info5_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info5_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info5_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info5_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info5_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info5_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info5_pktsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info5_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
+static int netdfs_dissect_element_dfs_Info5_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info5_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info5_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info5_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info5_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info5_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info5_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info5_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info5_pktsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info5_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 const value_string netdfs_dfs_Target_PriorityClass_vals[] = {
 	{ DFS_INVALID_PRIORITY_CLASS, "DFS_INVALID_PRIORITY_CLASS" },
 	{ DFS_SITE_COST_NORMAL_PRIORITY_CLASS, "DFS_SITE_COST_NORMAL_PRIORITY_CLASS" },
@@ -353,201 +354,201 @@ const value_string netdfs_dfs_Target_PriorityClass_vals[] = {
 	{ DFS_GLOBAL_LOW_PRIORITY_CLASS, "DFS_GLOBAL_LOW_PRIORITY_CLASS" },
 { 0, NULL }
 };
-static int netdfs_dissect_element_dfs_Target_Priority_target_priority_class(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Target_Priority_target_priority_rank(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Target_Priority_reserved(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_StorageInfo2_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_StorageInfo2_target_priority(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info6_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info6_entry_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info6_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info6_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info6_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info6_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info6_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info6_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info6_pktsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info6_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info6_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info6_stores_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info6_stores__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info7_generation_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info100_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info100_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info101_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info102_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info103_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info104_priority(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info105_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info105_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info105_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info105_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info105_property_flag_mask(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info105_property_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info106_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info106_priority(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info200_dom_root(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info200_dom_root_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
+static int netdfs_dissect_element_dfs_Target_Priority_target_priority_class(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Target_Priority_target_priority_rank(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Target_Priority_reserved(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_StorageInfo2_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_StorageInfo2_target_priority(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info6_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info6_entry_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info6_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info6_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info6_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info6_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info6_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info6_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info6_pktsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info6_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info6_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info6_stores_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info6_stores__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info7_generation_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info100_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info100_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info101_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info102_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info103_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info104_priority(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info105_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info105_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info105_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info105_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info105_property_flag_mask(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info105_property_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info106_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info106_priority(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info200_dom_root(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info200_dom_root_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 const value_string netdfs_dfs_VolumeFlavor_vals[] = {
 	{ DFS_VOLUME_FLAVOR_STANDALONE, "DFS_VOLUME_FLAVOR_STANDALONE" },
 	{ DFS_VOLUME_FLAVOR_AD_BLOB, "DFS_VOLUME_FLAVOR_AD_BLOB" },
 { 0, NULL }
 };
-static int netdfs_dissect_element_dfs_Info300_flavor(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info300_dom_root(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info300_dom_root_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info1_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info3_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info4(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info4_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info5(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info5_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info6(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info6_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info7(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info7_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info100(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info100_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info101(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info101_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info102(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info102_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info103(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info103_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info104(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info104_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info105(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info105_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info106(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Info_info106_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray1_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray1_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray1_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray1_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray2_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray2_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray2_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray2_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray3_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray3_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray3_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray3_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray4_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray4_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray4_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray4_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray200_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray200_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray200_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray200_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray300_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray300_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray300_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumArray300_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumInfo_info1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumInfo_info1_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumInfo_info2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumInfo_info2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumInfo_info3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumInfo_info3_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumInfo_info4(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumInfo_info4_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumInfo_info200(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumInfo_info200_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumInfo_info300(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumInfo_info300_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumStruct_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, guint32 *level);
-static int netdfs_dissect_element_dfs_EnumStruct_e(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, guint32 *level);
-static int netdfs_dissect_element_dfs_UnknownStruct_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_UnknownStruct_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_UnknownStruct_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_GetManagerVersion_version(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_GetManagerVersion_version_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Add_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Add_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Add_server(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Add_server_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Add_share(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Add_share_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Add_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Add_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Add_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Remove_dfs_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Remove_dfs_entry_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Remove_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Remove_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Remove_sharename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Remove_sharename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_SetInfo_dfs_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_SetInfo_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_SetInfo_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_SetInfo_sharename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_SetInfo_sharename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_SetInfo_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_SetInfo_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_SetInfo_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_GetInfo_dfs_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_GetInfo_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_GetInfo_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_GetInfo_sharename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_GetInfo_sharename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_GetInfo_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_GetInfo_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_GetInfo_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Enum_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Enum_bufsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Enum_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Enum_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Enum_total(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_Enum_total_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddFtRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddFtRoot_dns_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddFtRoot_dfsname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddFtRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddFtRoot_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddFtRoot_dfs_config_dn(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddFtRoot_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddFtRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddFtRoot_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddFtRoot_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddFtRoot_unknown2__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_RemoveFtRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_RemoveFtRoot_dns_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_RemoveFtRoot_dfsname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_RemoveFtRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_RemoveFtRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_RemoveFtRoot_unknown(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_RemoveFtRoot_unknown_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_RemoveFtRoot_unknown__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddStdRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddStdRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddStdRoot_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddStdRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_RemoveStdRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_RemoveStdRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_RemoveStdRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_ManagerInitialize_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_ManagerInitialize_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_ManagerInitialize_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddStdRootForced_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddStdRootForced_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddStdRootForced_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_AddStdRootForced_store(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_FlushFtTable_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_FlushFtTable_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumEx_dfs_name(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumEx_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumEx_bufsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumEx_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumEx_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumEx_total(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
-static int netdfs_dissect_element_dfs_EnumEx_total_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_);
+static int netdfs_dissect_element_dfs_Info300_flavor(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info300_dom_root(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info300_dom_root_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info1_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info3_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info4(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info4_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info5(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info5_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info6(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info6_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info7(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info7_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info100(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info100_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info101(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info101_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info102(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info102_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info103(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info103_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info104(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info104_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info105(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info105_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info106(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Info_info106_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray1_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray1_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray1_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray1_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray2_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray2_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray2_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray2_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray3_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray3_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray3_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray3_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray4_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray4_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray4_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray4_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray200_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray200_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray200_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray200_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray300_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray300_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray300_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumArray300_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumInfo_info1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumInfo_info1_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumInfo_info2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumInfo_info2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumInfo_info3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumInfo_info3_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumInfo_info4(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumInfo_info4_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumInfo_info200(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumInfo_info200_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumInfo_info300(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumInfo_info300_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumStruct_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, uint32_t *level);
+static int netdfs_dissect_element_dfs_EnumStruct_e(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, uint32_t *level);
+static int netdfs_dissect_element_dfs_UnknownStruct_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_UnknownStruct_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_UnknownStruct_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_GetManagerVersion_version(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_GetManagerVersion_version_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Add_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Add_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Add_server(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Add_server_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Add_share(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Add_share_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Add_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Add_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Add_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Remove_dfs_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Remove_dfs_entry_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Remove_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Remove_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Remove_sharename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Remove_sharename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_SetInfo_dfs_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_SetInfo_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_SetInfo_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_SetInfo_sharename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_SetInfo_sharename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_SetInfo_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_SetInfo_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_SetInfo_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_GetInfo_dfs_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_GetInfo_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_GetInfo_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_GetInfo_sharename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_GetInfo_sharename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_GetInfo_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_GetInfo_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_GetInfo_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Enum_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Enum_bufsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Enum_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Enum_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Enum_total(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_Enum_total_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddFtRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddFtRoot_dns_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddFtRoot_dfsname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddFtRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddFtRoot_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddFtRoot_dfs_config_dn(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddFtRoot_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddFtRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddFtRoot_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddFtRoot_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddFtRoot_unknown2__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_RemoveFtRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_RemoveFtRoot_dns_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_RemoveFtRoot_dfsname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_RemoveFtRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_RemoveFtRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_RemoveFtRoot_unknown(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_RemoveFtRoot_unknown_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_RemoveFtRoot_unknown__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddStdRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddStdRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddStdRoot_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddStdRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_RemoveStdRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_RemoveStdRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_RemoveStdRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_ManagerInitialize_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_ManagerInitialize_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_ManagerInitialize_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddStdRootForced_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddStdRootForced_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddStdRootForced_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_AddStdRootForced_store(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_FlushFtTable_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_FlushFtTable_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumEx_dfs_name(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumEx_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumEx_bufsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumEx_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumEx_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumEx_total(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
+static int netdfs_dissect_element_dfs_EnumEx_total_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_);
 
 
 /* IDL: enum { */
@@ -557,9 +558,9 @@ static int netdfs_dissect_element_dfs_EnumEx_total_(tvbuff_t *tvb _U_, int offse
 /* IDL: } */
 
 int
-netdfs_dissect_enum_dfs_ManagerVersion(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 *param _U_)
+netdfs_dissect_enum_dfs_ManagerVersion(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t *param _U_)
 {
-	guint32 parameter=0;
+	uint32_t parameter=0;
 	if (param) {
 		parameter = *param;
 	}
@@ -575,7 +576,7 @@ netdfs_dissect_enum_dfs_ManagerVersion(tvbuff_t *tvb _U_, int offset _U_, packet
 /* IDL: } */
 
 int
-netdfs_dissect_struct_dfs_Info0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	int old_offset;
@@ -599,7 +600,7 @@ netdfs_dissect_struct_dfs_Info0(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info1_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info1_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info1_path_, NDR_POINTER_UNIQUE, "Pointer to Path (uint16)",hf_netdfs_dfs_Info1_path);
 
@@ -607,18 +608,18 @@ netdfs_dissect_element_dfs_Info1_path(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info1_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info1_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info1_path, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info1_path, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 int
-netdfs_dissect_struct_dfs_Info1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -652,15 +653,15 @@ netdfs_dissect_struct_dfs_Info1(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: 	DFS_VOLUME_STATE_INCONSISTENT =  0x2 , */
 /* IDL: 	DFS_VOLUME_STATE_OFFLINE =  0x4 , */
 /* IDL: 	DFS_VOLUME_STATE_ONLINE =  0x8 , */
-/* IDL: 	DFS_VOLUME_STATE_STANDALONE =  DFS_VOLUME_FLAVOR_STANDALONE , */
-/* IDL: 	DFS_VOLUME_STATE_AD_BLOB =  DFS_VOLUME_FLAVOR_AD_BLOB , */
+/* IDL: 	DFS_VOLUME_STATE_STANDALONE =  0x100 , */
+/* IDL: 	DFS_VOLUME_STATE_AD_BLOB =  0x200 , */
 /* IDL: } */
 
 int
-netdfs_dissect_bitmap_dfs_VolumeState(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_bitmap_dfs_VolumeState(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item;
-	static const int * netdfs_dfs_VolumeState_fields[] = {
+	static int * const netdfs_dfs_VolumeState_fields[] = {
 		&hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_OK,
 		&hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_INCONSISTENT,
 		&hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_OFFLINE,
@@ -669,7 +670,7 @@ netdfs_dissect_bitmap_dfs_VolumeState(tvbuff_t *tvb _U_, int offset _U_, packet_
 		&hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_AD_BLOB,
 		NULL
 	};
-	guint32 flags;
+	uint32_t flags;
 	ALIGN_TO_4_BYTES;
 
 	item = proto_tree_add_bitmask_with_flags(parent_tree, tvb, offset, hf_index,
@@ -680,8 +681,8 @@ netdfs_dissect_bitmap_dfs_VolumeState(tvbuff_t *tvb _U_, int offset _U_, packet_
 	if (!flags)
 		proto_item_append_text(item, ": (No values set)");
 
-	if (flags & (~0x000001cd)) {
-		flags &= (~0x000001cd);
+	if (flags & (~0x0000030f)) {
+		flags &= (~0x0000030f);
 		proto_item_append_text(item, "Unknown bitmap value 0x%x", flags);
 	}
 
@@ -697,7 +698,7 @@ netdfs_dissect_bitmap_dfs_VolumeState(tvbuff_t *tvb _U_, int offset _U_, packet_
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info2_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info2_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info2_path_, NDR_POINTER_UNIQUE, "Pointer to Path (uint16)",hf_netdfs_dfs_Info2_path);
 
@@ -705,18 +706,18 @@ netdfs_dissect_element_dfs_Info2_path(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info2_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info2_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info2_path, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info2_path, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Info2_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info2_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info2_comment_, NDR_POINTER_UNIQUE, "Pointer to Comment (uint16)",hf_netdfs_dfs_Info2_comment);
 
@@ -724,18 +725,18 @@ netdfs_dissect_element_dfs_Info2_comment(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info2_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info2_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info2_comment, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info2_comment, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Info2_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info2_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_bitmap_dfs_VolumeState(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info2_state, 0);
 
@@ -743,7 +744,7 @@ netdfs_dissect_element_dfs_Info2_state(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info2_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info2_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info2_num_stores, 0);
 
@@ -751,7 +752,7 @@ netdfs_dissect_element_dfs_Info2_num_stores(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 int
-netdfs_dissect_struct_dfs_Info2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -793,16 +794,16 @@ netdfs_dissect_struct_dfs_Info2(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: } */
 
 int
-netdfs_dissect_bitmap_dfs_StorageState(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_bitmap_dfs_StorageState(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item;
-	static const int * netdfs_dfs_StorageState_fields[] = {
+	static int * const netdfs_dfs_StorageState_fields[] = {
 		&hf_netdfs_dfs_StorageState_DFS_STORAGE_STATE_OFFLINE,
 		&hf_netdfs_dfs_StorageState_DFS_STORAGE_STATE_ONLINE,
 		&hf_netdfs_dfs_StorageState_DFS_STORAGE_STATE_ACTIVE,
 		NULL
 	};
-	guint32 flags;
+	uint32_t flags;
 	ALIGN_TO_4_BYTES;
 
 	item = proto_tree_add_bitmask_with_flags(parent_tree, tvb, offset, hf_index,
@@ -829,7 +830,7 @@ netdfs_dissect_bitmap_dfs_StorageState(tvbuff_t *tvb _U_, int offset _U_, packet
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_StorageInfo_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_StorageInfo_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_bitmap_dfs_StorageState(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_StorageInfo_state, 0);
 
@@ -837,7 +838,7 @@ netdfs_dissect_element_dfs_StorageInfo_state(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-netdfs_dissect_element_dfs_StorageInfo_server(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_StorageInfo_server(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_StorageInfo_server_, NDR_POINTER_UNIQUE, "Pointer to Server (uint16)",hf_netdfs_dfs_StorageInfo_server);
 
@@ -845,18 +846,18 @@ netdfs_dissect_element_dfs_StorageInfo_server(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-netdfs_dissect_element_dfs_StorageInfo_server_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_StorageInfo_server_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_StorageInfo_server, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_StorageInfo_server, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_StorageInfo_share(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_StorageInfo_share(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_StorageInfo_share_, NDR_POINTER_UNIQUE, "Pointer to Share (uint16)",hf_netdfs_dfs_StorageInfo_share);
 
@@ -864,18 +865,18 @@ netdfs_dissect_element_dfs_StorageInfo_share(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-netdfs_dissect_element_dfs_StorageInfo_share_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_StorageInfo_share_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_StorageInfo_share, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_StorageInfo_share, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 int
-netdfs_dissect_struct_dfs_StorageInfo(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_StorageInfo(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -917,7 +918,7 @@ netdfs_dissect_struct_dfs_StorageInfo(tvbuff_t *tvb _U_, int offset _U_, packet_
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info3_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info3_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info3_path_, NDR_POINTER_UNIQUE, "Pointer to Path (uint16)",hf_netdfs_dfs_Info3_path);
 
@@ -925,18 +926,18 @@ netdfs_dissect_element_dfs_Info3_path(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info3_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info3_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info3_path, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info3_path, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Info3_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info3_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info3_comment_, NDR_POINTER_UNIQUE, "Pointer to Comment (uint16)",hf_netdfs_dfs_Info3_comment);
 
@@ -944,18 +945,18 @@ netdfs_dissect_element_dfs_Info3_comment(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info3_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info3_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info3_comment, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info3_comment, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Info3_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info3_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_bitmap_dfs_VolumeState(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info3_state, 0);
 
@@ -963,7 +964,7 @@ netdfs_dissect_element_dfs_Info3_state(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info3_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info3_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info3_num_stores, 0);
 
@@ -971,7 +972,7 @@ netdfs_dissect_element_dfs_Info3_num_stores(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-netdfs_dissect_element_dfs_Info3_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info3_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info3_stores_, NDR_POINTER_UNIQUE, "Pointer to Stores (dfs_StorageInfo)",hf_netdfs_dfs_Info3_stores);
 
@@ -979,7 +980,7 @@ netdfs_dissect_element_dfs_Info3_stores(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_Info3_stores_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info3_stores_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info3_stores__);
 
@@ -987,7 +988,7 @@ netdfs_dissect_element_dfs_Info3_stores_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info3_stores__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info3_stores__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_StorageInfo(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info3_stores,0);
 
@@ -995,7 +996,7 @@ netdfs_dissect_element_dfs_Info3_stores__(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 int
-netdfs_dissect_struct_dfs_Info3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -1043,7 +1044,7 @@ netdfs_dissect_struct_dfs_Info3(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info4_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info4_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info4_path_, NDR_POINTER_UNIQUE, "Pointer to Path (uint16)",hf_netdfs_dfs_Info4_path);
 
@@ -1051,18 +1052,18 @@ netdfs_dissect_element_dfs_Info4_path(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info4_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info4_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info4_path, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info4_path, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Info4_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info4_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info4_comment_, NDR_POINTER_UNIQUE, "Pointer to Comment (uint16)",hf_netdfs_dfs_Info4_comment);
 
@@ -1070,18 +1071,18 @@ netdfs_dissect_element_dfs_Info4_comment(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info4_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info4_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info4_comment, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info4_comment, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Info4_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info4_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_bitmap_dfs_VolumeState(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info4_state, 0);
 
@@ -1089,7 +1090,7 @@ netdfs_dissect_element_dfs_Info4_state(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info4_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info4_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info4_timeout, 0);
 
@@ -1097,7 +1098,7 @@ netdfs_dissect_element_dfs_Info4_timeout(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info4_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info4_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_uuid_t(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info4_guid, NULL);
 
@@ -1105,7 +1106,7 @@ netdfs_dissect_element_dfs_Info4_guid(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info4_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info4_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info4_num_stores, 0);
 
@@ -1113,7 +1114,7 @@ netdfs_dissect_element_dfs_Info4_num_stores(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-netdfs_dissect_element_dfs_Info4_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info4_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info4_stores_, NDR_POINTER_UNIQUE, "Pointer to Stores (dfs_StorageInfo)",hf_netdfs_dfs_Info4_stores);
 
@@ -1121,7 +1122,7 @@ netdfs_dissect_element_dfs_Info4_stores(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_Info4_stores_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info4_stores_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info4_stores__);
 
@@ -1129,7 +1130,7 @@ netdfs_dissect_element_dfs_Info4_stores_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info4_stores__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info4_stores__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_StorageInfo(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info4_stores,0);
 
@@ -1137,7 +1138,7 @@ netdfs_dissect_element_dfs_Info4_stores__(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 int
-netdfs_dissect_struct_dfs_Info4(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info4(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -1179,18 +1180,18 @@ netdfs_dissect_struct_dfs_Info4(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 
 
 /* IDL: bitmap { */
-/* IDL: 	DFS_PROPERTY_FLAG_INSITE_REFERRALS =  0x01 , */
-/* IDL: 	DFS_PROPERTY_FLAG_ROOT_SCALABILITY =  0x02 , */
-/* IDL: 	DFS_PROPERTY_FLAG_SITE_COSTING =  0x04 , */
-/* IDL: 	DFS_PROPERTY_FLAG_TARGET_FAILBACK =  0x08 , */
-/* IDL: 	DFS_PROPERTY_FLAG_CLUSTER_ENABLED =  0x10 , */
+/* IDL: 	DFS_PROPERTY_FLAG_INSITE_REFERRALS =  0x00000001 , */
+/* IDL: 	DFS_PROPERTY_FLAG_ROOT_SCALABILITY =  0x00000002 , */
+/* IDL: 	DFS_PROPERTY_FLAG_SITE_COSTING =  0x00000004 , */
+/* IDL: 	DFS_PROPERTY_FLAG_TARGET_FAILBACK =  0x00000008 , */
+/* IDL: 	DFS_PROPERTY_FLAG_CLUSTER_ENABLED =  0x00000010 , */
 /* IDL: } */
 
 int
-netdfs_dissect_bitmap_dfs_PropertyFlags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_bitmap_dfs_PropertyFlags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item;
-	static const int * netdfs_dfs_PropertyFlags_fields[] = {
+	static int * const netdfs_dfs_PropertyFlags_fields[] = {
 		&hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_INSITE_REFERRALS,
 		&hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_ROOT_SCALABILITY,
 		&hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_SITE_COSTING,
@@ -1198,7 +1199,7 @@ netdfs_dissect_bitmap_dfs_PropertyFlags(tvbuff_t *tvb _U_, int offset _U_, packe
 		&hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_CLUSTER_ENABLED,
 		NULL
 	};
-	guint32 flags;
+	uint32_t flags;
 	ALIGN_TO_4_BYTES;
 
 	item = proto_tree_add_bitmask_with_flags(parent_tree, tvb, offset, hf_index,
@@ -1230,7 +1231,7 @@ netdfs_dissect_bitmap_dfs_PropertyFlags(tvbuff_t *tvb _U_, int offset _U_, packe
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info5_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info5_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info5_path_, NDR_POINTER_UNIQUE, "Pointer to Path (uint16)",hf_netdfs_dfs_Info5_path);
 
@@ -1238,18 +1239,18 @@ netdfs_dissect_element_dfs_Info5_path(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info5_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info5_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info5_path, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info5_path, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Info5_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info5_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info5_comment_, NDR_POINTER_UNIQUE, "Pointer to Comment (uint16)",hf_netdfs_dfs_Info5_comment);
 
@@ -1257,18 +1258,18 @@ netdfs_dissect_element_dfs_Info5_comment(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info5_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info5_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info5_comment, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info5_comment, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Info5_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info5_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_bitmap_dfs_VolumeState(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info5_state, 0);
 
@@ -1276,7 +1277,7 @@ netdfs_dissect_element_dfs_Info5_state(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info5_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info5_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info5_timeout, 0);
 
@@ -1284,7 +1285,7 @@ netdfs_dissect_element_dfs_Info5_timeout(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info5_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info5_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_uuid_t(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info5_guid, NULL);
 
@@ -1292,7 +1293,7 @@ netdfs_dissect_element_dfs_Info5_guid(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info5_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info5_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_bitmap_dfs_PropertyFlags(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info5_flags, 0);
 
@@ -1300,7 +1301,7 @@ netdfs_dissect_element_dfs_Info5_flags(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info5_pktsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info5_pktsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info5_pktsize, 0);
 
@@ -1308,7 +1309,7 @@ netdfs_dissect_element_dfs_Info5_pktsize(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info5_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info5_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info5_num_stores, 0);
 
@@ -1316,7 +1317,7 @@ netdfs_dissect_element_dfs_Info5_num_stores(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 int
-netdfs_dissect_struct_dfs_Info5(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info5(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -1369,9 +1370,9 @@ netdfs_dissect_struct_dfs_Info5(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: } */
 
 int
-netdfs_dissect_enum_dfs_Target_PriorityClass(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 *param _U_)
+netdfs_dissect_enum_dfs_Target_PriorityClass(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t *param _U_)
 {
-	guint32 parameter=0;
+	uint32_t parameter=0;
 	if (param) {
 		parameter = *param;
 	}
@@ -1390,7 +1391,7 @@ netdfs_dissect_enum_dfs_Target_PriorityClass(tvbuff_t *tvb _U_, int offset _U_, 
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Target_Priority_target_priority_class(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Target_Priority_target_priority_class(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_enum_dfs_Target_PriorityClass(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Target_Priority_target_priority_class, 0);
 
@@ -1398,7 +1399,7 @@ netdfs_dissect_element_dfs_Target_Priority_target_priority_class(tvbuff_t *tvb _
 }
 
 static int
-netdfs_dissect_element_dfs_Target_Priority_target_priority_rank(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Target_Priority_target_priority_rank(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Target_Priority_target_priority_rank, 0);
 
@@ -1406,7 +1407,7 @@ netdfs_dissect_element_dfs_Target_Priority_target_priority_rank(tvbuff_t *tvb _U
 }
 
 static int
-netdfs_dissect_element_dfs_Target_Priority_reserved(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Target_Priority_reserved(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Target_Priority_reserved, 0);
 
@@ -1414,7 +1415,7 @@ netdfs_dissect_element_dfs_Target_Priority_reserved(tvbuff_t *tvb _U_, int offse
 }
 
 int
-netdfs_dissect_struct_dfs_Target_Priority(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Target_Priority(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -1453,7 +1454,7 @@ netdfs_dissect_struct_dfs_Target_Priority(tvbuff_t *tvb _U_, int offset _U_, pac
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_StorageInfo2_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_StorageInfo2_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_StorageInfo(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_StorageInfo2_info,0);
 
@@ -1461,7 +1462,7 @@ netdfs_dissect_element_dfs_StorageInfo2_info(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-netdfs_dissect_element_dfs_StorageInfo2_target_priority(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_StorageInfo2_target_priority(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Target_Priority(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_StorageInfo2_target_priority,0);
 
@@ -1469,7 +1470,7 @@ netdfs_dissect_element_dfs_StorageInfo2_target_priority(tvbuff_t *tvb _U_, int o
 }
 
 int
-netdfs_dissect_struct_dfs_StorageInfo2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_StorageInfo2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -1513,7 +1514,7 @@ netdfs_dissect_struct_dfs_StorageInfo2(tvbuff_t *tvb _U_, int offset _U_, packet
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info6_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info6_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info6_entry_path_, NDR_POINTER_UNIQUE, "Pointer to Entry Path (uint16)",hf_netdfs_dfs_Info6_entry_path);
 
@@ -1521,18 +1522,18 @@ netdfs_dissect_element_dfs_Info6_entry_path(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-netdfs_dissect_element_dfs_Info6_entry_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info6_entry_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info6_entry_path, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info6_entry_path, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Info6_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info6_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info6_comment_, NDR_POINTER_UNIQUE, "Pointer to Comment (uint16)",hf_netdfs_dfs_Info6_comment);
 
@@ -1540,18 +1541,18 @@ netdfs_dissect_element_dfs_Info6_comment(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info6_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info6_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info6_comment, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info6_comment, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Info6_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info6_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_bitmap_dfs_VolumeState(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info6_state, 0);
 
@@ -1559,7 +1560,7 @@ netdfs_dissect_element_dfs_Info6_state(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info6_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info6_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info6_timeout, 0);
 
@@ -1567,7 +1568,7 @@ netdfs_dissect_element_dfs_Info6_timeout(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info6_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info6_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_uuid_t(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info6_guid, NULL);
 
@@ -1575,7 +1576,7 @@ netdfs_dissect_element_dfs_Info6_guid(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info6_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info6_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_bitmap_dfs_PropertyFlags(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info6_flags, 0);
 
@@ -1583,7 +1584,7 @@ netdfs_dissect_element_dfs_Info6_flags(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info6_pktsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info6_pktsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info6_pktsize, 0);
 
@@ -1591,7 +1592,7 @@ netdfs_dissect_element_dfs_Info6_pktsize(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info6_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info6_num_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint16(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info6_num_stores, 0);
 
@@ -1599,7 +1600,7 @@ netdfs_dissect_element_dfs_Info6_num_stores(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-netdfs_dissect_element_dfs_Info6_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info6_stores(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info6_stores_, NDR_POINTER_UNIQUE, "Pointer to Stores (dfs_StorageInfo2)",hf_netdfs_dfs_Info6_stores);
 
@@ -1607,7 +1608,7 @@ netdfs_dissect_element_dfs_Info6_stores(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_Info6_stores_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info6_stores_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info6_stores__);
 
@@ -1615,7 +1616,7 @@ netdfs_dissect_element_dfs_Info6_stores_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info6_stores__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info6_stores__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_StorageInfo2(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info6_stores,0);
 
@@ -1623,7 +1624,7 @@ netdfs_dissect_element_dfs_Info6_stores__(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 int
-netdfs_dissect_struct_dfs_Info6(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info6(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -1673,7 +1674,7 @@ netdfs_dissect_struct_dfs_Info6(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info7_generation_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info7_generation_guid(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_uuid_t(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info7_generation_guid, NULL);
 
@@ -1681,7 +1682,7 @@ netdfs_dissect_element_dfs_Info7_generation_guid(tvbuff_t *tvb _U_, int offset _
 }
 
 int
-netdfs_dissect_struct_dfs_Info7(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info7(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -1715,7 +1716,7 @@ netdfs_dissect_struct_dfs_Info7(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info100_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info100_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info100_comment_, NDR_POINTER_UNIQUE, "Pointer to Comment (uint16)",hf_netdfs_dfs_Info100_comment);
 
@@ -1723,18 +1724,18 @@ netdfs_dissect_element_dfs_Info100_comment(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-netdfs_dissect_element_dfs_Info100_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info100_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info100_comment, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info100_comment, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 int
-netdfs_dissect_struct_dfs_Info100(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info100(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -1768,7 +1769,7 @@ netdfs_dissect_struct_dfs_Info100(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info101_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info101_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_bitmap_dfs_StorageState(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info101_state, 0);
 
@@ -1776,7 +1777,7 @@ netdfs_dissect_element_dfs_Info101_state(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 int
-netdfs_dissect_struct_dfs_Info101(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info101(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -1810,7 +1811,7 @@ netdfs_dissect_struct_dfs_Info101(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info102_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info102_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info102_timeout, 0);
 
@@ -1818,7 +1819,7 @@ netdfs_dissect_element_dfs_Info102_timeout(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 int
-netdfs_dissect_struct_dfs_Info102(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info102(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -1852,7 +1853,7 @@ netdfs_dissect_struct_dfs_Info102(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info103_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info103_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_bitmap_dfs_PropertyFlags(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info103_flags, 0);
 
@@ -1860,7 +1861,7 @@ netdfs_dissect_element_dfs_Info103_flags(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 int
-netdfs_dissect_struct_dfs_Info103(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info103(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -1894,7 +1895,7 @@ netdfs_dissect_struct_dfs_Info103(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info104_priority(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info104_priority(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Target_Priority(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info104_priority,0);
 
@@ -1902,7 +1903,7 @@ netdfs_dissect_element_dfs_Info104_priority(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 int
-netdfs_dissect_struct_dfs_Info104(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info104(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -1940,7 +1941,7 @@ netdfs_dissect_struct_dfs_Info104(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info105_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info105_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info105_comment_, NDR_POINTER_UNIQUE, "Pointer to Comment (uint16)",hf_netdfs_dfs_Info105_comment);
 
@@ -1948,18 +1949,18 @@ netdfs_dissect_element_dfs_Info105_comment(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-netdfs_dissect_element_dfs_Info105_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info105_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info105_comment, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info105_comment, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Info105_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info105_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_bitmap_dfs_VolumeState(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info105_state, 0);
 
@@ -1967,7 +1968,7 @@ netdfs_dissect_element_dfs_Info105_state(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info105_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info105_timeout(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info105_timeout, 0);
 
@@ -1975,7 +1976,7 @@ netdfs_dissect_element_dfs_Info105_timeout(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-netdfs_dissect_element_dfs_Info105_property_flag_mask(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info105_property_flag_mask(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info105_property_flag_mask, 0);
 
@@ -1983,7 +1984,7 @@ netdfs_dissect_element_dfs_Info105_property_flag_mask(tvbuff_t *tvb _U_, int off
 }
 
 static int
-netdfs_dissect_element_dfs_Info105_property_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info105_property_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info105_property_flags, 0);
 
@@ -1991,7 +1992,7 @@ netdfs_dissect_element_dfs_Info105_property_flags(tvbuff_t *tvb _U_, int offset 
 }
 
 int
-netdfs_dissect_struct_dfs_Info105(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info105(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -2034,7 +2035,7 @@ netdfs_dissect_struct_dfs_Info105(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info106_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info106_state(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_bitmap_dfs_StorageState(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info106_state, 0);
 
@@ -2042,7 +2043,7 @@ netdfs_dissect_element_dfs_Info106_state(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info106_priority(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info106_priority(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Target_Priority(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info106_priority,0);
 
@@ -2050,7 +2051,7 @@ netdfs_dissect_element_dfs_Info106_priority(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 int
-netdfs_dissect_struct_dfs_Info106(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info106(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -2086,7 +2087,7 @@ netdfs_dissect_struct_dfs_Info106(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info200_dom_root(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info200_dom_root(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info200_dom_root_, NDR_POINTER_UNIQUE, "Pointer to Dom Root (uint16)",hf_netdfs_dfs_Info200_dom_root);
 
@@ -2094,18 +2095,18 @@ netdfs_dissect_element_dfs_Info200_dom_root(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-netdfs_dissect_element_dfs_Info200_dom_root_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info200_dom_root_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info200_dom_root, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info200_dom_root, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 int
-netdfs_dissect_struct_dfs_Info200(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info200(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -2140,9 +2141,9 @@ netdfs_dissect_struct_dfs_Info200(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: } */
 
 int
-netdfs_dissect_enum_dfs_VolumeFlavor(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint1632 *param _U_)
+netdfs_dissect_enum_dfs_VolumeFlavor(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t *param _U_)
 {
-	guint1632 parameter=0;
+	uint32_t parameter=0;
 	if (param) {
 		parameter = *param;
 	}
@@ -2160,7 +2161,7 @@ netdfs_dissect_enum_dfs_VolumeFlavor(tvbuff_t *tvb _U_, int offset _U_, packet_i
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info300_flavor(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info300_flavor(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_enum_dfs_VolumeFlavor(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Info300_flavor, 0);
 
@@ -2168,7 +2169,7 @@ netdfs_dissect_element_dfs_Info300_flavor(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-netdfs_dissect_element_dfs_Info300_dom_root(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info300_dom_root(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info300_dom_root_, NDR_POINTER_UNIQUE, "Pointer to Dom Root (uint16)",hf_netdfs_dfs_Info300_dom_root);
 
@@ -2176,18 +2177,18 @@ netdfs_dissect_element_dfs_Info300_dom_root(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-netdfs_dissect_element_dfs_Info300_dom_root_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info300_dom_root_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Info300_dom_root, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Info300_dom_root, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 int
-netdfs_dissect_struct_dfs_Info300(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_Info300(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -2237,7 +2238,7 @@ netdfs_dissect_struct_dfs_Info300(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_Info_info0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info0(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info0_, NDR_POINTER_UNIQUE, "Pointer to Info0 (dfs_Info0)",hf_netdfs_dfs_Info_info0);
 
@@ -2245,7 +2246,7 @@ netdfs_dissect_element_dfs_Info_info0(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info0_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info0(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info0,0);
 
@@ -2253,7 +2254,7 @@ netdfs_dissect_element_dfs_Info_info0_(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info1_, NDR_POINTER_UNIQUE, "Pointer to Info1 (dfs_Info1)",hf_netdfs_dfs_Info_info1);
 
@@ -2261,7 +2262,7 @@ netdfs_dissect_element_dfs_Info_info1(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info1_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info1_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info1(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info1,0);
 
@@ -2269,7 +2270,7 @@ netdfs_dissect_element_dfs_Info_info1_(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info2_, NDR_POINTER_UNIQUE, "Pointer to Info2 (dfs_Info2)",hf_netdfs_dfs_Info_info2);
 
@@ -2277,7 +2278,7 @@ netdfs_dissect_element_dfs_Info_info2(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info2(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info2,0);
 
@@ -2285,7 +2286,7 @@ netdfs_dissect_element_dfs_Info_info2_(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info3_, NDR_POINTER_UNIQUE, "Pointer to Info3 (dfs_Info3)",hf_netdfs_dfs_Info_info3);
 
@@ -2293,7 +2294,7 @@ netdfs_dissect_element_dfs_Info_info3(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info3_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info3_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info3(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info3,0);
 
@@ -2301,7 +2302,7 @@ netdfs_dissect_element_dfs_Info_info3_(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info4(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info4(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info4_, NDR_POINTER_UNIQUE, "Pointer to Info4 (dfs_Info4)",hf_netdfs_dfs_Info_info4);
 
@@ -2309,7 +2310,7 @@ netdfs_dissect_element_dfs_Info_info4(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info4_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info4_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info4(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info4,0);
 
@@ -2317,7 +2318,7 @@ netdfs_dissect_element_dfs_Info_info4_(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info5(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info5(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info5_, NDR_POINTER_UNIQUE, "Pointer to Info5 (dfs_Info5)",hf_netdfs_dfs_Info_info5);
 
@@ -2325,7 +2326,7 @@ netdfs_dissect_element_dfs_Info_info5(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info5_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info5_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info5(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info5,0);
 
@@ -2333,7 +2334,7 @@ netdfs_dissect_element_dfs_Info_info5_(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info6(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info6(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info6_, NDR_POINTER_UNIQUE, "Pointer to Info6 (dfs_Info6)",hf_netdfs_dfs_Info_info6);
 
@@ -2341,7 +2342,7 @@ netdfs_dissect_element_dfs_Info_info6(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info6_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info6_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info6(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info6,0);
 
@@ -2349,7 +2350,7 @@ netdfs_dissect_element_dfs_Info_info6_(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info7(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info7(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info7_, NDR_POINTER_UNIQUE, "Pointer to Info7 (dfs_Info7)",hf_netdfs_dfs_Info_info7);
 
@@ -2357,7 +2358,7 @@ netdfs_dissect_element_dfs_Info_info7(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info7_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info7_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info7(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info7,0);
 
@@ -2365,7 +2366,7 @@ netdfs_dissect_element_dfs_Info_info7_(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info100(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info100(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info100_, NDR_POINTER_UNIQUE, "Pointer to Info100 (dfs_Info100)",hf_netdfs_dfs_Info_info100);
 
@@ -2373,7 +2374,7 @@ netdfs_dissect_element_dfs_Info_info100(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info100_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info100_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info100(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info100,0);
 
@@ -2381,7 +2382,7 @@ netdfs_dissect_element_dfs_Info_info100_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info101(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info101(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info101_, NDR_POINTER_UNIQUE, "Pointer to Info101 (dfs_Info101)",hf_netdfs_dfs_Info_info101);
 
@@ -2389,7 +2390,7 @@ netdfs_dissect_element_dfs_Info_info101(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info101_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info101_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info101(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info101,0);
 
@@ -2397,7 +2398,7 @@ netdfs_dissect_element_dfs_Info_info101_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info102(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info102(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info102_, NDR_POINTER_UNIQUE, "Pointer to Info102 (dfs_Info102)",hf_netdfs_dfs_Info_info102);
 
@@ -2405,7 +2406,7 @@ netdfs_dissect_element_dfs_Info_info102(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info102_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info102_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info102(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info102,0);
 
@@ -2413,7 +2414,7 @@ netdfs_dissect_element_dfs_Info_info102_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info103(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info103(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info103_, NDR_POINTER_UNIQUE, "Pointer to Info103 (dfs_Info103)",hf_netdfs_dfs_Info_info103);
 
@@ -2421,7 +2422,7 @@ netdfs_dissect_element_dfs_Info_info103(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info103_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info103_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info103(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info103,0);
 
@@ -2429,7 +2430,7 @@ netdfs_dissect_element_dfs_Info_info103_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info104(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info104(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info104_, NDR_POINTER_UNIQUE, "Pointer to Info104 (dfs_Info104)",hf_netdfs_dfs_Info_info104);
 
@@ -2437,7 +2438,7 @@ netdfs_dissect_element_dfs_Info_info104(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info104_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info104_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info104(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info104,0);
 
@@ -2445,7 +2446,7 @@ netdfs_dissect_element_dfs_Info_info104_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info105(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info105(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info105_, NDR_POINTER_UNIQUE, "Pointer to Info105 (dfs_Info105)",hf_netdfs_dfs_Info_info105);
 
@@ -2453,7 +2454,7 @@ netdfs_dissect_element_dfs_Info_info105(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info105_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info105_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info105(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info105,0);
 
@@ -2461,7 +2462,7 @@ netdfs_dissect_element_dfs_Info_info105_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info106(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info106(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Info_info106_, NDR_POINTER_UNIQUE, "Pointer to Info106 (dfs_Info106)",hf_netdfs_dfs_Info_info106);
 
@@ -2469,7 +2470,7 @@ netdfs_dissect_element_dfs_Info_info106(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_Info_info106_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Info_info106_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info106(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Info_info106,0);
 
@@ -2477,12 +2478,12 @@ netdfs_dissect_element_dfs_Info_info106_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_dfs_Info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_dfs_Info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
 	int old_offset;
-	guint32 level;
+	uint32_t level;
 
 	old_offset = offset;
 	if (parent_tree) {
@@ -2565,7 +2566,7 @@ netdfs_dissect_dfs_Info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_EnumArray1_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray1_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_EnumArray1_count, 0);
 
@@ -2573,7 +2574,7 @@ netdfs_dissect_element_dfs_EnumArray1_count(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray1_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray1_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumArray1_s_, NDR_POINTER_UNIQUE, "Pointer to S (dfs_Info1)",hf_netdfs_dfs_EnumArray1_s);
 
@@ -2581,7 +2582,7 @@ netdfs_dissect_element_dfs_EnumArray1_s(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray1_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray1_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumArray1_s__);
 
@@ -2589,7 +2590,7 @@ netdfs_dissect_element_dfs_EnumArray1_s_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray1_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray1_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info1(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_EnumArray1_s,0);
 
@@ -2597,7 +2598,7 @@ netdfs_dissect_element_dfs_EnumArray1_s__(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 int
-netdfs_dissect_struct_dfs_EnumArray1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_EnumArray1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -2634,7 +2635,7 @@ netdfs_dissect_struct_dfs_EnumArray1(tvbuff_t *tvb _U_, int offset _U_, packet_i
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_EnumArray2_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray2_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_EnumArray2_count, 0);
 
@@ -2642,7 +2643,7 @@ netdfs_dissect_element_dfs_EnumArray2_count(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray2_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray2_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumArray2_s_, NDR_POINTER_UNIQUE, "Pointer to S (dfs_Info2)",hf_netdfs_dfs_EnumArray2_s);
 
@@ -2650,7 +2651,7 @@ netdfs_dissect_element_dfs_EnumArray2_s(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray2_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray2_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumArray2_s__);
 
@@ -2658,7 +2659,7 @@ netdfs_dissect_element_dfs_EnumArray2_s_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray2_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray2_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info2(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_EnumArray2_s,0);
 
@@ -2666,7 +2667,7 @@ netdfs_dissect_element_dfs_EnumArray2_s__(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 int
-netdfs_dissect_struct_dfs_EnumArray2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_EnumArray2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -2703,7 +2704,7 @@ netdfs_dissect_struct_dfs_EnumArray2(tvbuff_t *tvb _U_, int offset _U_, packet_i
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_EnumArray3_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray3_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_EnumArray3_count, 0);
 
@@ -2711,7 +2712,7 @@ netdfs_dissect_element_dfs_EnumArray3_count(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray3_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray3_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumArray3_s_, NDR_POINTER_UNIQUE, "Pointer to S (dfs_Info3)",hf_netdfs_dfs_EnumArray3_s);
 
@@ -2719,7 +2720,7 @@ netdfs_dissect_element_dfs_EnumArray3_s(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray3_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray3_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumArray3_s__);
 
@@ -2727,7 +2728,7 @@ netdfs_dissect_element_dfs_EnumArray3_s_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray3_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray3_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info3(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_EnumArray3_s,0);
 
@@ -2735,7 +2736,7 @@ netdfs_dissect_element_dfs_EnumArray3_s__(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 int
-netdfs_dissect_struct_dfs_EnumArray3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_EnumArray3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -2772,7 +2773,7 @@ netdfs_dissect_struct_dfs_EnumArray3(tvbuff_t *tvb _U_, int offset _U_, packet_i
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_EnumArray4_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray4_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_EnumArray4_count, 0);
 
@@ -2780,7 +2781,7 @@ netdfs_dissect_element_dfs_EnumArray4_count(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray4_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray4_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumArray4_s_, NDR_POINTER_UNIQUE, "Pointer to S (dfs_Info4)",hf_netdfs_dfs_EnumArray4_s);
 
@@ -2788,7 +2789,7 @@ netdfs_dissect_element_dfs_EnumArray4_s(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray4_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray4_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumArray4_s__);
 
@@ -2796,7 +2797,7 @@ netdfs_dissect_element_dfs_EnumArray4_s_(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray4_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray4_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info4(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_EnumArray4_s,0);
 
@@ -2804,7 +2805,7 @@ netdfs_dissect_element_dfs_EnumArray4_s__(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 int
-netdfs_dissect_struct_dfs_EnumArray4(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_EnumArray4(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -2841,7 +2842,7 @@ netdfs_dissect_struct_dfs_EnumArray4(tvbuff_t *tvb _U_, int offset _U_, packet_i
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_EnumArray200_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray200_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_EnumArray200_count, 0);
 
@@ -2849,7 +2850,7 @@ netdfs_dissect_element_dfs_EnumArray200_count(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray200_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray200_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumArray200_s_, NDR_POINTER_UNIQUE, "Pointer to S (dfs_Info200)",hf_netdfs_dfs_EnumArray200_s);
 
@@ -2857,7 +2858,7 @@ netdfs_dissect_element_dfs_EnumArray200_s(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray200_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray200_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumArray200_s__);
 
@@ -2865,7 +2866,7 @@ netdfs_dissect_element_dfs_EnumArray200_s_(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray200_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray200_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info200(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_EnumArray200_s,0);
 
@@ -2873,7 +2874,7 @@ netdfs_dissect_element_dfs_EnumArray200_s__(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 int
-netdfs_dissect_struct_dfs_EnumArray200(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_EnumArray200(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -2910,7 +2911,7 @@ netdfs_dissect_struct_dfs_EnumArray200(tvbuff_t *tvb _U_, int offset _U_, packet
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_EnumArray300_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray300_count(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_EnumArray300_count, 0);
 
@@ -2918,7 +2919,7 @@ netdfs_dissect_element_dfs_EnumArray300_count(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray300_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray300_s(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumArray300_s_, NDR_POINTER_UNIQUE, "Pointer to S (dfs_Info300)",hf_netdfs_dfs_EnumArray300_s);
 
@@ -2926,7 +2927,7 @@ netdfs_dissect_element_dfs_EnumArray300_s(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray300_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray300_s_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_ucarray(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumArray300_s__);
 
@@ -2934,7 +2935,7 @@ netdfs_dissect_element_dfs_EnumArray300_s_(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-netdfs_dissect_element_dfs_EnumArray300_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumArray300_s__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_Info300(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_EnumArray300_s,0);
 
@@ -2942,7 +2943,7 @@ netdfs_dissect_element_dfs_EnumArray300_s__(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 int
-netdfs_dissect_struct_dfs_EnumArray300(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_EnumArray300(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -2983,7 +2984,7 @@ netdfs_dissect_struct_dfs_EnumArray300(tvbuff_t *tvb _U_, int offset _U_, packet
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_EnumInfo_info1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumInfo_info1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumInfo_info1_, NDR_POINTER_UNIQUE, "Pointer to Info1 (dfs_EnumArray1)",hf_netdfs_dfs_EnumInfo_info1);
 
@@ -2991,7 +2992,7 @@ netdfs_dissect_element_dfs_EnumInfo_info1(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-netdfs_dissect_element_dfs_EnumInfo_info1_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumInfo_info1_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_EnumArray1(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_EnumInfo_info1,0);
 
@@ -2999,7 +3000,7 @@ netdfs_dissect_element_dfs_EnumInfo_info1_(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-netdfs_dissect_element_dfs_EnumInfo_info2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumInfo_info2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumInfo_info2_, NDR_POINTER_UNIQUE, "Pointer to Info2 (dfs_EnumArray2)",hf_netdfs_dfs_EnumInfo_info2);
 
@@ -3007,7 +3008,7 @@ netdfs_dissect_element_dfs_EnumInfo_info2(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-netdfs_dissect_element_dfs_EnumInfo_info2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumInfo_info2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_EnumArray2(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_EnumInfo_info2,0);
 
@@ -3015,7 +3016,7 @@ netdfs_dissect_element_dfs_EnumInfo_info2_(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-netdfs_dissect_element_dfs_EnumInfo_info3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumInfo_info3(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumInfo_info3_, NDR_POINTER_UNIQUE, "Pointer to Info3 (dfs_EnumArray3)",hf_netdfs_dfs_EnumInfo_info3);
 
@@ -3023,7 +3024,7 @@ netdfs_dissect_element_dfs_EnumInfo_info3(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-netdfs_dissect_element_dfs_EnumInfo_info3_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumInfo_info3_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_EnumArray3(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_EnumInfo_info3,0);
 
@@ -3031,7 +3032,7 @@ netdfs_dissect_element_dfs_EnumInfo_info3_(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-netdfs_dissect_element_dfs_EnumInfo_info4(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumInfo_info4(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumInfo_info4_, NDR_POINTER_UNIQUE, "Pointer to Info4 (dfs_EnumArray4)",hf_netdfs_dfs_EnumInfo_info4);
 
@@ -3039,7 +3040,7 @@ netdfs_dissect_element_dfs_EnumInfo_info4(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-netdfs_dissect_element_dfs_EnumInfo_info4_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumInfo_info4_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_EnumArray4(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_EnumInfo_info4,0);
 
@@ -3047,7 +3048,7 @@ netdfs_dissect_element_dfs_EnumInfo_info4_(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-netdfs_dissect_element_dfs_EnumInfo_info200(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumInfo_info200(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumInfo_info200_, NDR_POINTER_UNIQUE, "Pointer to Info200 (dfs_EnumArray200)",hf_netdfs_dfs_EnumInfo_info200);
 
@@ -3055,7 +3056,7 @@ netdfs_dissect_element_dfs_EnumInfo_info200(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-netdfs_dissect_element_dfs_EnumInfo_info200_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumInfo_info200_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_EnumArray200(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_EnumInfo_info200,0);
 
@@ -3063,7 +3064,7 @@ netdfs_dissect_element_dfs_EnumInfo_info200_(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-netdfs_dissect_element_dfs_EnumInfo_info300(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumInfo_info300(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumInfo_info300_, NDR_POINTER_UNIQUE, "Pointer to Info300 (dfs_EnumArray300)",hf_netdfs_dfs_EnumInfo_info300);
 
@@ -3071,7 +3072,7 @@ netdfs_dissect_element_dfs_EnumInfo_info300(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-netdfs_dissect_element_dfs_EnumInfo_info300_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumInfo_info300_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_EnumArray300(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_EnumInfo_info300,0);
 
@@ -3079,12 +3080,12 @@ netdfs_dissect_element_dfs_EnumInfo_info300_(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-netdfs_dissect_dfs_EnumInfo(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_dfs_EnumInfo(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
 	int old_offset;
-	guint32 level;
+	uint32_t level;
 
 	old_offset = offset;
 	if (parent_tree) {
@@ -3131,7 +3132,7 @@ netdfs_dissect_dfs_EnumInfo(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinf
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_EnumStruct_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, guint32 *level)
+netdfs_dissect_element_dfs_EnumStruct_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, uint32_t *level)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_EnumStruct_level, *level);
 
@@ -3139,7 +3140,7 @@ netdfs_dissect_element_dfs_EnumStruct_level(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-netdfs_dissect_element_dfs_EnumStruct_e(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, guint32 *level)
+netdfs_dissect_element_dfs_EnumStruct_e(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, uint32_t *level)
 {
 	offset = netdfs_dissect_dfs_EnumInfo(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_EnumStruct_e, *level);
 
@@ -3147,9 +3148,9 @@ netdfs_dissect_element_dfs_EnumStruct_e(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 int
-netdfs_dissect_struct_dfs_EnumStruct(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_EnumStruct(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
-	guint32 level = 0;
+	uint32_t level = 0;
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
 	int old_offset;
@@ -3185,7 +3186,7 @@ netdfs_dissect_struct_dfs_EnumStruct(tvbuff_t *tvb _U_, int offset _U_, packet_i
 /* IDL: } */
 
 static int
-netdfs_dissect_element_dfs_UnknownStruct_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_UnknownStruct_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_UnknownStruct_unknown1, 0);
 
@@ -3193,7 +3194,7 @@ netdfs_dissect_element_dfs_UnknownStruct_unknown1(tvbuff_t *tvb _U_, int offset 
 }
 
 static int
-netdfs_dissect_element_dfs_UnknownStruct_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_UnknownStruct_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_UnknownStruct_unknown2_, NDR_POINTER_UNIQUE, "Pointer to Unknown2 (uint16)",hf_netdfs_dfs_UnknownStruct_unknown2);
 
@@ -3201,18 +3202,18 @@ netdfs_dissect_element_dfs_UnknownStruct_unknown2(tvbuff_t *tvb _U_, int offset 
 }
 
 static int
-netdfs_dissect_element_dfs_UnknownStruct_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_UnknownStruct_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_UnknownStruct_unknown2, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_UnknownStruct_unknown2, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 int
-netdfs_dissect_struct_dfs_UnknownStruct(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, guint8 *drep _U_, int hf_index _U_, guint32 param _U_)
+netdfs_dissect_struct_dfs_UnknownStruct(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *parent_tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_, int hf_index _U_, uint32_t param _U_)
 {
 	proto_item *item = NULL;
 	proto_tree *tree = NULL;
@@ -3243,7 +3244,7 @@ netdfs_dissect_struct_dfs_UnknownStruct(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_GetManagerVersion_version(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_GetManagerVersion_version(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_GetManagerVersion_version_, NDR_POINTER_REF, "Pointer to Version (dfs_ManagerVersion)",hf_netdfs_dfs_GetManagerVersion_version);
 
@@ -3251,7 +3252,7 @@ netdfs_dissect_element_dfs_GetManagerVersion_version(tvbuff_t *tvb _U_, int offs
 }
 
 static int
-netdfs_dissect_element_dfs_GetManagerVersion_version_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_GetManagerVersion_version_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_enum_dfs_ManagerVersion(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_GetManagerVersion_version, 0);
 
@@ -3263,7 +3264,7 @@ netdfs_dissect_element_dfs_GetManagerVersion_version_(tvbuff_t *tvb _U_, int off
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_GetManagerVersion_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_GetManagerVersion_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_GetManagerVersion";
 	offset = netdfs_dissect_element_dfs_GetManagerVersion_version(tvb, offset, pinfo, tree, di, drep);
@@ -3273,14 +3274,14 @@ netdfs_dissect_dfs_GetManagerVersion_response(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-netdfs_dissect_dfs_GetManagerVersion_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_GetManagerVersion_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_GetManagerVersion";
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Add_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Add_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Add_path_, NDR_POINTER_REF, "Pointer to Path (uint16)",hf_netdfs_dfs_Add_path);
 
@@ -3288,18 +3289,18 @@ netdfs_dissect_element_dfs_Add_path(tvbuff_t *tvb _U_, int offset _U_, packet_in
 }
 
 static int
-netdfs_dissect_element_dfs_Add_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Add_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Add_path, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Add_path, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Add_server(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Add_server(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Add_server_, NDR_POINTER_REF, "Pointer to Server (uint16)",hf_netdfs_dfs_Add_server);
 
@@ -3307,18 +3308,18 @@ netdfs_dissect_element_dfs_Add_server(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Add_server_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Add_server_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Add_server, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Add_server, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Add_share(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Add_share(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Add_share_, NDR_POINTER_UNIQUE, "Pointer to Share (uint16)",hf_netdfs_dfs_Add_share);
 
@@ -3326,18 +3327,18 @@ netdfs_dissect_element_dfs_Add_share(tvbuff_t *tvb _U_, int offset _U_, packet_i
 }
 
 static int
-netdfs_dissect_element_dfs_Add_share_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Add_share_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Add_share, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Add_share, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Add_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Add_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Add_comment_, NDR_POINTER_UNIQUE, "Pointer to Comment (uint16)",hf_netdfs_dfs_Add_comment);
 
@@ -3345,18 +3346,18 @@ netdfs_dissect_element_dfs_Add_comment(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_Add_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Add_comment_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Add_comment, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Add_comment, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Add_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Add_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Add_flags, 0);
 
@@ -3372,21 +3373,21 @@ netdfs_dissect_element_dfs_Add_flags(tvbuff_t *tvb _U_, int offset _U_, packet_i
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_Add_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_Add_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_Add";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_Add_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_Add_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_Add";
 	offset = netdfs_dissect_element_dfs_Add_path(tvb, offset, pinfo, tree, di, drep);
@@ -3403,7 +3404,7 @@ netdfs_dissect_dfs_Add_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *p
 }
 
 static int
-netdfs_dissect_element_dfs_Remove_dfs_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Remove_dfs_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Remove_dfs_entry_path_, NDR_POINTER_REF, "Pointer to Dfs Entry Path (uint16)",hf_netdfs_dfs_Remove_dfs_entry_path);
 
@@ -3411,18 +3412,18 @@ netdfs_dissect_element_dfs_Remove_dfs_entry_path(tvbuff_t *tvb _U_, int offset _
 }
 
 static int
-netdfs_dissect_element_dfs_Remove_dfs_entry_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Remove_dfs_entry_path_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Remove_dfs_entry_path, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Remove_dfs_entry_path, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Remove_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Remove_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Remove_servername_, NDR_POINTER_UNIQUE, "Pointer to Servername (uint16)",hf_netdfs_dfs_Remove_servername);
 
@@ -3430,18 +3431,18 @@ netdfs_dissect_element_dfs_Remove_servername(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-netdfs_dissect_element_dfs_Remove_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Remove_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Remove_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Remove_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_Remove_sharename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Remove_sharename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Remove_sharename_, NDR_POINTER_UNIQUE, "Pointer to Sharename (uint16)",hf_netdfs_dfs_Remove_sharename);
 
@@ -3449,11 +3450,11 @@ netdfs_dissect_element_dfs_Remove_sharename(tvbuff_t *tvb _U_, int offset _U_, p
 }
 
 static int
-netdfs_dissect_element_dfs_Remove_sharename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Remove_sharename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_Remove_sharename, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_Remove_sharename, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
@@ -3466,21 +3467,21 @@ netdfs_dissect_element_dfs_Remove_sharename_(tvbuff_t *tvb _U_, int offset _U_, 
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_Remove_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_Remove_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_Remove";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_Remove_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_Remove_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_Remove";
 	offset = netdfs_dissect_element_dfs_Remove_dfs_entry_path(tvb, offset, pinfo, tree, di, drep);
@@ -3493,18 +3494,18 @@ netdfs_dissect_dfs_Remove_request(tvbuff_t *tvb _U_, int offset _U_, packet_info
 }
 
 static int
-netdfs_dissect_element_dfs_SetInfo_dfs_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_SetInfo_dfs_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_SetInfo_dfs_entry_path, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_SetInfo_dfs_entry_path, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_SetInfo_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_SetInfo_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_SetInfo_servername_, NDR_POINTER_UNIQUE, "Pointer to Servername (uint16)",hf_netdfs_dfs_SetInfo_servername);
 
@@ -3512,18 +3513,18 @@ netdfs_dissect_element_dfs_SetInfo_servername(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-netdfs_dissect_element_dfs_SetInfo_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_SetInfo_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_SetInfo_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_SetInfo_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_SetInfo_sharename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_SetInfo_sharename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_SetInfo_sharename_, NDR_POINTER_UNIQUE, "Pointer to Sharename (uint16)",hf_netdfs_dfs_SetInfo_sharename);
 
@@ -3531,18 +3532,18 @@ netdfs_dissect_element_dfs_SetInfo_sharename(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-netdfs_dissect_element_dfs_SetInfo_sharename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_SetInfo_sharename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_SetInfo_sharename, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_SetInfo_sharename, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_SetInfo_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_SetInfo_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_SetInfo_level, 0);
 
@@ -3550,7 +3551,7 @@ netdfs_dissect_element_dfs_SetInfo_level(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_SetInfo_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_SetInfo_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_SetInfo_info_, NDR_POINTER_REF, "Pointer to Info (dfs_Info)",hf_netdfs_dfs_SetInfo_info);
 
@@ -3558,7 +3559,7 @@ netdfs_dissect_element_dfs_SetInfo_info(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_SetInfo_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_SetInfo_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_dfs_Info(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_SetInfo_info, 0);
 
@@ -3574,21 +3575,21 @@ netdfs_dissect_element_dfs_SetInfo_info_(tvbuff_t *tvb _U_, int offset _U_, pack
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_SetInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_SetInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_SetInfo";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_SetInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_SetInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_SetInfo";
 	offset = netdfs_dissect_element_dfs_SetInfo_dfs_entry_path(tvb, offset, pinfo, tree, di, drep);
@@ -3605,18 +3606,18 @@ netdfs_dissect_dfs_SetInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 }
 
 static int
-netdfs_dissect_element_dfs_GetInfo_dfs_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_GetInfo_dfs_entry_path(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_GetInfo_dfs_entry_path, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_GetInfo_dfs_entry_path, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_GetInfo_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_GetInfo_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_GetInfo_servername_, NDR_POINTER_UNIQUE, "Pointer to Servername (uint16)",hf_netdfs_dfs_GetInfo_servername);
 
@@ -3624,18 +3625,18 @@ netdfs_dissect_element_dfs_GetInfo_servername(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-netdfs_dissect_element_dfs_GetInfo_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_GetInfo_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_GetInfo_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_GetInfo_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_GetInfo_sharename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_GetInfo_sharename(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_GetInfo_sharename_, NDR_POINTER_UNIQUE, "Pointer to Sharename (uint16)",hf_netdfs_dfs_GetInfo_sharename);
 
@@ -3643,18 +3644,18 @@ netdfs_dissect_element_dfs_GetInfo_sharename(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-netdfs_dissect_element_dfs_GetInfo_sharename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_GetInfo_sharename_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_GetInfo_sharename, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_GetInfo_sharename, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_GetInfo_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_GetInfo_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_GetInfo_level, 0);
 
@@ -3662,7 +3663,7 @@ netdfs_dissect_element_dfs_GetInfo_level(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_GetInfo_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_GetInfo_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_GetInfo_info_, NDR_POINTER_REF, "Pointer to Info (dfs_Info)",hf_netdfs_dfs_GetInfo_info);
 
@@ -3670,7 +3671,7 @@ netdfs_dissect_element_dfs_GetInfo_info(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_GetInfo_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_GetInfo_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_dfs_Info(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_GetInfo_info, 0);
 
@@ -3686,9 +3687,9 @@ netdfs_dissect_element_dfs_GetInfo_info_(tvbuff_t *tvb _U_, int offset _U_, pack
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_GetInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_GetInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_GetInfo";
 	offset = netdfs_dissect_element_dfs_GetInfo_info(tvb, offset, pinfo, tree, di, drep);
@@ -3697,13 +3698,13 @@ netdfs_dissect_dfs_GetInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_in
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_GetInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_GetInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_GetInfo";
 	offset = netdfs_dissect_element_dfs_GetInfo_dfs_entry_path(tvb, offset, pinfo, tree, di, drep);
@@ -3718,7 +3719,7 @@ netdfs_dissect_dfs_GetInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 }
 
 static int
-netdfs_dissect_element_dfs_Enum_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Enum_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Enum_level, 0);
 
@@ -3726,7 +3727,7 @@ netdfs_dissect_element_dfs_Enum_level(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Enum_bufsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Enum_bufsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Enum_bufsize, 0);
 
@@ -3734,7 +3735,7 @@ netdfs_dissect_element_dfs_Enum_bufsize(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_Enum_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Enum_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Enum_info_, NDR_POINTER_UNIQUE, "Pointer to Info (dfs_EnumStruct)",hf_netdfs_dfs_Enum_info);
 
@@ -3742,7 +3743,7 @@ netdfs_dissect_element_dfs_Enum_info(tvbuff_t *tvb _U_, int offset _U_, packet_i
 }
 
 static int
-netdfs_dissect_element_dfs_Enum_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Enum_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_EnumStruct(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_Enum_info,0);
 
@@ -3750,7 +3751,7 @@ netdfs_dissect_element_dfs_Enum_info_(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Enum_total(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Enum_total(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_Enum_total_, NDR_POINTER_UNIQUE, "Pointer to Total (uint32)",hf_netdfs_dfs_Enum_total);
 
@@ -3758,7 +3759,7 @@ netdfs_dissect_element_dfs_Enum_total(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_Enum_total_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_Enum_total_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_Enum_total, 0);
 
@@ -3773,9 +3774,9 @@ netdfs_dissect_element_dfs_Enum_total_(tvbuff_t *tvb _U_, int offset _U_, packet
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_Enum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_Enum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_Enum";
 	offset = netdfs_dissect_element_dfs_Enum_info(tvb, offset, pinfo, tree, di, drep);
@@ -3787,13 +3788,13 @@ netdfs_dissect_dfs_Enum_response(tvbuff_t *tvb _U_, int offset _U_, packet_info 
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_Enum_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_Enum_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_Enum";
 	offset = netdfs_dissect_element_dfs_Enum_level(tvb, offset, pinfo, tree, di, drep);
@@ -3812,21 +3813,21 @@ netdfs_dissect_dfs_Enum_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_Rename_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_Rename_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_Rename";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_Rename_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_Rename_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_Rename";
 	return offset;
@@ -3837,21 +3838,21 @@ netdfs_dissect_dfs_Rename_request(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_Move_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_Move_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_Move";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_Move_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_Move_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_Move";
 	return offset;
@@ -3862,21 +3863,21 @@ netdfs_dissect_dfs_Move_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_ManagerGetConfigInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_ManagerGetConfigInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_ManagerGetConfigInfo";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_ManagerGetConfigInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_ManagerGetConfigInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_ManagerGetConfigInfo";
 	return offset;
@@ -3887,94 +3888,94 @@ netdfs_dissect_dfs_ManagerGetConfigInfo_request(tvbuff_t *tvb _U_, int offset _U
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_ManagerSendSiteInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_ManagerSendSiteInfo_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_ManagerSendSiteInfo";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_ManagerSendSiteInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_ManagerSendSiteInfo_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_ManagerSendSiteInfo";
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_AddFtRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddFtRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_AddFtRoot_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_AddFtRoot_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_AddFtRoot_dns_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddFtRoot_dns_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_AddFtRoot_dns_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_AddFtRoot_dns_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_AddFtRoot_dfsname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddFtRoot_dfsname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_AddFtRoot_dfsname, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_AddFtRoot_dfsname, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_AddFtRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddFtRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_AddFtRoot_rootshare, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_AddFtRoot_rootshare, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_AddFtRoot_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddFtRoot_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_AddFtRoot_comment, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_AddFtRoot_comment, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_AddFtRoot_dfs_config_dn(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddFtRoot_dfs_config_dn(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_AddFtRoot_dfs_config_dn, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_AddFtRoot_dfs_config_dn, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_AddFtRoot_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddFtRoot_unknown1(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint8(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_AddFtRoot_unknown1, 0);
 
@@ -3982,7 +3983,7 @@ netdfs_dissect_element_dfs_AddFtRoot_unknown1(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-netdfs_dissect_element_dfs_AddFtRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddFtRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_AddFtRoot_flags, 0);
 
@@ -3990,7 +3991,7 @@ netdfs_dissect_element_dfs_AddFtRoot_flags(tvbuff_t *tvb _U_, int offset _U_, pa
 }
 
 static int
-netdfs_dissect_element_dfs_AddFtRoot_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddFtRoot_unknown2(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_AddFtRoot_unknown2_, NDR_POINTER_UNIQUE, "Pointer to Unknown2 (dfs_UnknownStruct)",hf_netdfs_dfs_AddFtRoot_unknown2);
 
@@ -3998,7 +3999,7 @@ netdfs_dissect_element_dfs_AddFtRoot_unknown2(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-netdfs_dissect_element_dfs_AddFtRoot_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddFtRoot_unknown2_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_AddFtRoot_unknown2__, NDR_POINTER_UNIQUE, "Pointer to Unknown2 (dfs_UnknownStruct)",hf_netdfs_dfs_AddFtRoot_unknown2);
 
@@ -4006,7 +4007,7 @@ netdfs_dissect_element_dfs_AddFtRoot_unknown2_(tvbuff_t *tvb _U_, int offset _U_
 }
 
 static int
-netdfs_dissect_element_dfs_AddFtRoot_unknown2__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddFtRoot_unknown2__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_UnknownStruct(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_AddFtRoot_unknown2,0);
 
@@ -4026,9 +4027,9 @@ netdfs_dissect_element_dfs_AddFtRoot_unknown2__(tvbuff_t *tvb _U_, int offset _U
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_AddFtRoot_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_AddFtRoot_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_AddFtRoot";
 	offset = netdfs_dissect_element_dfs_AddFtRoot_unknown2(tvb, offset, pinfo, tree, di, drep);
@@ -4037,13 +4038,13 @@ netdfs_dissect_dfs_AddFtRoot_response(tvbuff_t *tvb _U_, int offset _U_, packet_
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_AddFtRoot_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_AddFtRoot_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_AddFtRoot";
 	offset = netdfs_dissect_element_dfs_AddFtRoot_servername(tvb, offset, pinfo, tree, di, drep);
@@ -4068,51 +4069,51 @@ netdfs_dissect_dfs_AddFtRoot_request(tvbuff_t *tvb _U_, int offset _U_, packet_i
 }
 
 static int
-netdfs_dissect_element_dfs_RemoveFtRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_RemoveFtRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_RemoveFtRoot_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_RemoveFtRoot_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_RemoveFtRoot_dns_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_RemoveFtRoot_dns_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_RemoveFtRoot_dns_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_RemoveFtRoot_dns_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_RemoveFtRoot_dfsname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_RemoveFtRoot_dfsname(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_RemoveFtRoot_dfsname, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_RemoveFtRoot_dfsname, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_RemoveFtRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_RemoveFtRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_RemoveFtRoot_rootshare, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_RemoveFtRoot_rootshare, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_RemoveFtRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_RemoveFtRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_RemoveFtRoot_flags, 0);
 
@@ -4120,7 +4121,7 @@ netdfs_dissect_element_dfs_RemoveFtRoot_flags(tvbuff_t *tvb _U_, int offset _U_,
 }
 
 static int
-netdfs_dissect_element_dfs_RemoveFtRoot_unknown(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_RemoveFtRoot_unknown(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_RemoveFtRoot_unknown_, NDR_POINTER_UNIQUE, "Pointer to Unknown (dfs_UnknownStruct)",hf_netdfs_dfs_RemoveFtRoot_unknown);
 
@@ -4128,7 +4129,7 @@ netdfs_dissect_element_dfs_RemoveFtRoot_unknown(tvbuff_t *tvb _U_, int offset _U
 }
 
 static int
-netdfs_dissect_element_dfs_RemoveFtRoot_unknown_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_RemoveFtRoot_unknown_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_embedded_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_RemoveFtRoot_unknown__, NDR_POINTER_UNIQUE, "Pointer to Unknown (dfs_UnknownStruct)",hf_netdfs_dfs_RemoveFtRoot_unknown);
 
@@ -4136,7 +4137,7 @@ netdfs_dissect_element_dfs_RemoveFtRoot_unknown_(tvbuff_t *tvb _U_, int offset _
 }
 
 static int
-netdfs_dissect_element_dfs_RemoveFtRoot_unknown__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_RemoveFtRoot_unknown__(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_UnknownStruct(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_RemoveFtRoot_unknown,0);
 
@@ -4153,9 +4154,9 @@ netdfs_dissect_element_dfs_RemoveFtRoot_unknown__(tvbuff_t *tvb _U_, int offset 
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_RemoveFtRoot_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_RemoveFtRoot_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_RemoveFtRoot";
 	offset = netdfs_dissect_element_dfs_RemoveFtRoot_unknown(tvb, offset, pinfo, tree, di, drep);
@@ -4164,13 +4165,13 @@ netdfs_dissect_dfs_RemoveFtRoot_response(tvbuff_t *tvb _U_, int offset _U_, pack
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_RemoveFtRoot_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_RemoveFtRoot_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_RemoveFtRoot";
 	offset = netdfs_dissect_element_dfs_RemoveFtRoot_servername(tvb, offset, pinfo, tree, di, drep);
@@ -4189,40 +4190,40 @@ netdfs_dissect_dfs_RemoveFtRoot_request(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_AddStdRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddStdRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_AddStdRoot_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_AddStdRoot_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_AddStdRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddStdRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_AddStdRoot_rootshare, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_AddStdRoot_rootshare, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_AddStdRoot_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddStdRoot_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_AddStdRoot_comment, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_AddStdRoot_comment, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_AddStdRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddStdRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_AddStdRoot_flags, 0);
 
@@ -4237,21 +4238,21 @@ netdfs_dissect_element_dfs_AddStdRoot_flags(tvbuff_t *tvb _U_, int offset _U_, p
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_AddStdRoot_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_AddStdRoot_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_AddStdRoot";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_AddStdRoot_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_AddStdRoot_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_AddStdRoot";
 	offset = netdfs_dissect_element_dfs_AddStdRoot_servername(tvb, offset, pinfo, tree, di, drep);
@@ -4266,29 +4267,29 @@ netdfs_dissect_dfs_AddStdRoot_request(tvbuff_t *tvb _U_, int offset _U_, packet_
 }
 
 static int
-netdfs_dissect_element_dfs_RemoveStdRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_RemoveStdRoot_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_RemoveStdRoot_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_RemoveStdRoot_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_RemoveStdRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_RemoveStdRoot_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_RemoveStdRoot_rootshare, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_RemoveStdRoot_rootshare, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_RemoveStdRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_RemoveStdRoot_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_RemoveStdRoot_flags, 0);
 
@@ -4302,21 +4303,21 @@ netdfs_dissect_element_dfs_RemoveStdRoot_flags(tvbuff_t *tvb _U_, int offset _U_
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_RemoveStdRoot_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_RemoveStdRoot_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_RemoveStdRoot";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_RemoveStdRoot_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_RemoveStdRoot_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_RemoveStdRoot";
 	offset = netdfs_dissect_element_dfs_RemoveStdRoot_servername(tvb, offset, pinfo, tree, di, drep);
@@ -4329,7 +4330,7 @@ netdfs_dissect_dfs_RemoveStdRoot_request(tvbuff_t *tvb _U_, int offset _U_, pack
 }
 
 static int
-netdfs_dissect_element_dfs_ManagerInitialize_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_ManagerInitialize_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_ManagerInitialize_servername_, NDR_POINTER_REF, "Pointer to Servername (uint16)",hf_netdfs_dfs_ManagerInitialize_servername);
 
@@ -4337,18 +4338,18 @@ netdfs_dissect_element_dfs_ManagerInitialize_servername(tvbuff_t *tvb _U_, int o
 }
 
 static int
-netdfs_dissect_element_dfs_ManagerInitialize_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_ManagerInitialize_servername_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_ManagerInitialize_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_ManagerInitialize_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_ManagerInitialize_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_ManagerInitialize_flags(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_ManagerInitialize_flags, 0);
 
@@ -4361,21 +4362,21 @@ netdfs_dissect_element_dfs_ManagerInitialize_flags(tvbuff_t *tvb _U_, int offset
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_ManagerInitialize_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_ManagerInitialize_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_ManagerInitialize";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_ManagerInitialize_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_ManagerInitialize_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_ManagerInitialize";
 	offset = netdfs_dissect_element_dfs_ManagerInitialize_servername(tvb, offset, pinfo, tree, di, drep);
@@ -4386,44 +4387,44 @@ netdfs_dissect_dfs_ManagerInitialize_request(tvbuff_t *tvb _U_, int offset _U_, 
 }
 
 static int
-netdfs_dissect_element_dfs_AddStdRootForced_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddStdRootForced_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_AddStdRootForced_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_AddStdRootForced_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_AddStdRootForced_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddStdRootForced_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_AddStdRootForced_rootshare, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_AddStdRootForced_rootshare, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_AddStdRootForced_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddStdRootForced_comment(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_AddStdRootForced_comment, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_AddStdRootForced_comment, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_AddStdRootForced_store(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_AddStdRootForced_store(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_AddStdRootForced_store, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_AddStdRootForced_store, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
@@ -4437,21 +4438,21 @@ netdfs_dissect_element_dfs_AddStdRootForced_store(tvbuff_t *tvb _U_, int offset 
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_AddStdRootForced_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_AddStdRootForced_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_AddStdRootForced";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_AddStdRootForced_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_AddStdRootForced_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_AddStdRootForced";
 	offset = netdfs_dissect_element_dfs_AddStdRootForced_servername(tvb, offset, pinfo, tree, di, drep);
@@ -4470,21 +4471,21 @@ netdfs_dissect_dfs_AddStdRootForced_request(tvbuff_t *tvb _U_, int offset _U_, p
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_GetDcAddress_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_GetDcAddress_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_GetDcAddress";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_GetDcAddress_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_GetDcAddress_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_GetDcAddress";
 	return offset;
@@ -4495,43 +4496,43 @@ netdfs_dissect_dfs_GetDcAddress_request(tvbuff_t *tvb _U_, int offset _U_, packe
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_SetDcAddress_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_SetDcAddress_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_SetDcAddress";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_SetDcAddress_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_SetDcAddress_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_SetDcAddress";
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_FlushFtTable_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_FlushFtTable_servername(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_FlushFtTable_servername, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_FlushFtTable_servername, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_FlushFtTable_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_FlushFtTable_rootshare(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_FlushFtTable_rootshare, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_FlushFtTable_rootshare, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
@@ -4543,21 +4544,21 @@ netdfs_dissect_element_dfs_FlushFtTable_rootshare(tvbuff_t *tvb _U_, int offset 
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_FlushFtTable_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_FlushFtTable_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_FlushFtTable";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_FlushFtTable_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_FlushFtTable_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_FlushFtTable";
 	offset = netdfs_dissect_element_dfs_FlushFtTable_servername(tvb, offset, pinfo, tree, di, drep);
@@ -4572,21 +4573,21 @@ netdfs_dissect_dfs_FlushFtTable_request(tvbuff_t *tvb _U_, int offset _U_, packe
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_Add2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_Add2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_Add2";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_Add2_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_Add2_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_Add2";
 	return offset;
@@ -4597,39 +4598,39 @@ netdfs_dissect_dfs_Add2_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_Remove2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_Remove2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_Remove2";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_Remove2_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_Remove2_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_Remove2";
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_EnumEx_dfs_name(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumEx_dfs_name(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	char *data;
 
-	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(guint16), hf_netdfs_dfs_EnumEx_dfs_name, FALSE, &data);
+	offset = dissect_ndr_cvstring(tvb, offset, pinfo, tree, di, drep, sizeof(uint16_t), hf_netdfs_dfs_EnumEx_dfs_name, false, &data);
 	proto_item_append_text(tree, ": %s", data);
 
 	return offset;
 }
 
 static int
-netdfs_dissect_element_dfs_EnumEx_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumEx_level(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_EnumEx_level, 0);
 
@@ -4637,7 +4638,7 @@ netdfs_dissect_element_dfs_EnumEx_level(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_EnumEx_bufsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumEx_bufsize(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_EnumEx_bufsize, 0);
 
@@ -4645,7 +4646,7 @@ netdfs_dissect_element_dfs_EnumEx_bufsize(tvbuff_t *tvb _U_, int offset _U_, pac
 }
 
 static int
-netdfs_dissect_element_dfs_EnumEx_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumEx_info(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumEx_info_, NDR_POINTER_UNIQUE, "Pointer to Info (dfs_EnumStruct)",hf_netdfs_dfs_EnumEx_info);
 
@@ -4653,7 +4654,7 @@ netdfs_dissect_element_dfs_EnumEx_info(tvbuff_t *tvb _U_, int offset _U_, packet
 }
 
 static int
-netdfs_dissect_element_dfs_EnumEx_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumEx_info_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = netdfs_dissect_struct_dfs_EnumStruct(tvb,offset,pinfo,tree,di,drep,hf_netdfs_dfs_EnumEx_info,0);
 
@@ -4661,7 +4662,7 @@ netdfs_dissect_element_dfs_EnumEx_info_(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_EnumEx_total(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumEx_total(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = dissect_ndr_toplevel_pointer(tvb, offset, pinfo, tree, di, drep, netdfs_dissect_element_dfs_EnumEx_total_, NDR_POINTER_UNIQUE, "Pointer to Total (uint32)",hf_netdfs_dfs_EnumEx_total);
 
@@ -4669,7 +4670,7 @@ netdfs_dissect_element_dfs_EnumEx_total(tvbuff_t *tvb _U_, int offset _U_, packe
 }
 
 static int
-netdfs_dissect_element_dfs_EnumEx_total_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_element_dfs_EnumEx_total_(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	offset = PIDL_dissect_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_dfs_EnumEx_total, 0);
 
@@ -4685,9 +4686,9 @@ netdfs_dissect_element_dfs_EnumEx_total_(tvbuff_t *tvb _U_, int offset _U_, pack
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_EnumEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_EnumEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_EnumEx";
 	offset = netdfs_dissect_element_dfs_EnumEx_info(tvb, offset, pinfo, tree, di, drep);
@@ -4699,13 +4700,13 @@ netdfs_dissect_dfs_EnumEx_response(tvbuff_t *tvb _U_, int offset _U_, packet_inf
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_EnumEx_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_EnumEx_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_EnumEx";
 	offset = netdfs_dissect_element_dfs_EnumEx_dfs_name(tvb, offset, pinfo, tree, di, drep);
@@ -4726,28 +4727,28 @@ netdfs_dissect_dfs_EnumEx_request(tvbuff_t *tvb _U_, int offset _U_, packet_info
 /* IDL: ); */
 
 static int
-netdfs_dissect_dfs_SetInfo2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_SetInfo2_response(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
-	guint32 status;
+	uint32_t status;
 
 	di->dcerpc_procedure_name="dfs_SetInfo2";
 	offset = dissect_ndr_uint32(tvb, offset, pinfo, tree, di, drep, hf_netdfs_werror, &status);
 
 	if (status != 0)
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str(status, WERR_errors, "Unknown DOS error 0x%08x"));
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", Error: %s", val_to_str_ext(pinfo->pool, status, &WERR_errors_ext, "Unknown DOS error 0x%08x"));
 
 	return offset;
 }
 
 static int
-netdfs_dissect_dfs_SetInfo2_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, guint8 *drep _U_)
+netdfs_dissect_dfs_SetInfo2_request(tvbuff_t *tvb _U_, int offset _U_, packet_info *pinfo _U_, proto_tree *tree _U_, dcerpc_info* di _U_, uint8_t *drep _U_)
 {
 	di->dcerpc_procedure_name="dfs_SetInfo2";
 	return offset;
 }
 
 
-static dcerpc_sub_dissector netdfs_dissectors[] = {
+static const dcerpc_sub_dissector netdfs_dissectors[] = {
 	{ 0, "dfs_GetManagerVersion",
 	   netdfs_dissect_dfs_GetManagerVersion_request, netdfs_dissect_dfs_GetManagerVersion_response},
 	{ 1, "dfs_Add",
@@ -4801,347 +4802,347 @@ void proto_register_dcerpc_netdfs(void)
 {
 	static hf_register_info hf[] = {
 	{ &hf_netdfs_dfs_AddFtRoot_comment,
-		{ "Comment", "netdfs.dfs_AddFtRoot.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Comment", "netdfs.dfs_AddFtRoot.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddFtRoot_dfs_config_dn,
-		{ "Dfs Config Dn", "netdfs.dfs_AddFtRoot.dfs_config_dn", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Dfs Config Dn", "netdfs.dfs_AddFtRoot.dfs_config_dn", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddFtRoot_dfsname,
-		{ "Dfsname", "netdfs.dfs_AddFtRoot.dfsname", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Dfsname", "netdfs.dfs_AddFtRoot.dfsname", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddFtRoot_dns_servername,
-		{ "Dns Servername", "netdfs.dfs_AddFtRoot.dns_servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Dns Servername", "netdfs.dfs_AddFtRoot.dns_servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddFtRoot_flags,
-		{ "Flags", "netdfs.dfs_AddFtRoot.flags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Flags", "netdfs.dfs_AddFtRoot.flags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddFtRoot_rootshare,
-		{ "Rootshare", "netdfs.dfs_AddFtRoot.rootshare", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Rootshare", "netdfs.dfs_AddFtRoot.rootshare", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddFtRoot_servername,
-		{ "Servername", "netdfs.dfs_AddFtRoot.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Servername", "netdfs.dfs_AddFtRoot.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddFtRoot_unknown1,
-		{ "Unknown1", "netdfs.dfs_AddFtRoot.unknown1", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown1", "netdfs.dfs_AddFtRoot.unknown1", FT_UINT8, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddFtRoot_unknown2,
-		{ "Unknown2", "netdfs.dfs_AddFtRoot.unknown2", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Unknown2", "netdfs.dfs_AddFtRoot.unknown2", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddStdRootForced_comment,
-		{ "Comment", "netdfs.dfs_AddStdRootForced.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Comment", "netdfs.dfs_AddStdRootForced.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddStdRootForced_rootshare,
-		{ "Rootshare", "netdfs.dfs_AddStdRootForced.rootshare", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Rootshare", "netdfs.dfs_AddStdRootForced.rootshare", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddStdRootForced_servername,
-		{ "Servername", "netdfs.dfs_AddStdRootForced.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Servername", "netdfs.dfs_AddStdRootForced.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddStdRootForced_store,
-		{ "Store", "netdfs.dfs_AddStdRootForced.store", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Store", "netdfs.dfs_AddStdRootForced.store", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddStdRoot_comment,
-		{ "Comment", "netdfs.dfs_AddStdRoot.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Comment", "netdfs.dfs_AddStdRoot.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddStdRoot_flags,
-		{ "Flags", "netdfs.dfs_AddStdRoot.flags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Flags", "netdfs.dfs_AddStdRoot.flags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddStdRoot_rootshare,
-		{ "Rootshare", "netdfs.dfs_AddStdRoot.rootshare", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Rootshare", "netdfs.dfs_AddStdRoot.rootshare", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_AddStdRoot_servername,
-		{ "Servername", "netdfs.dfs_AddStdRoot.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Servername", "netdfs.dfs_AddStdRoot.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Add_comment,
-		{ "Comment", "netdfs.dfs_Add.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Comment", "netdfs.dfs_Add.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Add_flags,
-		{ "Flags", "netdfs.dfs_Add.flags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Flags", "netdfs.dfs_Add.flags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Add_path,
-		{ "Path", "netdfs.dfs_Add.path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Path", "netdfs.dfs_Add.path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Add_server,
-		{ "Server", "netdfs.dfs_Add.server", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Server", "netdfs.dfs_Add.server", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Add_share,
-		{ "Share", "netdfs.dfs_Add.share", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Share", "netdfs.dfs_Add.share", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumArray1_count,
-		{ "Count", "netdfs.dfs_EnumArray1.count", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Count", "netdfs.dfs_EnumArray1.count", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumArray1_s,
-		{ "S", "netdfs.dfs_EnumArray1.s", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "S", "netdfs.dfs_EnumArray1.s", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumArray200_count,
-		{ "Count", "netdfs.dfs_EnumArray200.count", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Count", "netdfs.dfs_EnumArray200.count", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumArray200_s,
-		{ "S", "netdfs.dfs_EnumArray200.s", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "S", "netdfs.dfs_EnumArray200.s", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumArray2_count,
-		{ "Count", "netdfs.dfs_EnumArray2.count", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Count", "netdfs.dfs_EnumArray2.count", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumArray2_s,
-		{ "S", "netdfs.dfs_EnumArray2.s", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "S", "netdfs.dfs_EnumArray2.s", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumArray300_count,
-		{ "Count", "netdfs.dfs_EnumArray300.count", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Count", "netdfs.dfs_EnumArray300.count", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumArray300_s,
-		{ "S", "netdfs.dfs_EnumArray300.s", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "S", "netdfs.dfs_EnumArray300.s", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumArray3_count,
-		{ "Count", "netdfs.dfs_EnumArray3.count", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Count", "netdfs.dfs_EnumArray3.count", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumArray3_s,
-		{ "S", "netdfs.dfs_EnumArray3.s", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "S", "netdfs.dfs_EnumArray3.s", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumArray4_count,
-		{ "Count", "netdfs.dfs_EnumArray4.count", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Count", "netdfs.dfs_EnumArray4.count", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumArray4_s,
-		{ "S", "netdfs.dfs_EnumArray4.s", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "S", "netdfs.dfs_EnumArray4.s", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumEx_bufsize,
-		{ "Bufsize", "netdfs.dfs_EnumEx.bufsize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Bufsize", "netdfs.dfs_EnumEx.bufsize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumEx_dfs_name,
-		{ "Dfs Name", "netdfs.dfs_EnumEx.dfs_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Dfs Name", "netdfs.dfs_EnumEx.dfs_name", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumEx_info,
-		{ "Info", "netdfs.dfs_EnumEx.info", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info", "netdfs.dfs_EnumEx.info", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumEx_level,
-		{ "Level", "netdfs.dfs_EnumEx.level", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Level", "netdfs.dfs_EnumEx.level", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumEx_total,
-		{ "Total", "netdfs.dfs_EnumEx.total", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Total", "netdfs.dfs_EnumEx.total", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumInfo_info1,
-		{ "Info1", "netdfs.dfs_EnumInfo.info1", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info1", "netdfs.dfs_EnumInfo.info1", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumInfo_info2,
-		{ "Info2", "netdfs.dfs_EnumInfo.info2", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info2", "netdfs.dfs_EnumInfo.info2", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumInfo_info200,
-		{ "Info200", "netdfs.dfs_EnumInfo.info200", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info200", "netdfs.dfs_EnumInfo.info200", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumInfo_info3,
-		{ "Info3", "netdfs.dfs_EnumInfo.info3", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info3", "netdfs.dfs_EnumInfo.info3", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumInfo_info300,
-		{ "Info300", "netdfs.dfs_EnumInfo.info300", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info300", "netdfs.dfs_EnumInfo.info300", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumInfo_info4,
-		{ "Info4", "netdfs.dfs_EnumInfo.info4", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info4", "netdfs.dfs_EnumInfo.info4", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumStruct_e,
-		{ "E", "netdfs.dfs_EnumStruct.e", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "E", "netdfs.dfs_EnumStruct.e", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_EnumStruct_level,
-		{ "Level", "netdfs.dfs_EnumStruct.level", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Level", "netdfs.dfs_EnumStruct.level", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Enum_bufsize,
-		{ "Bufsize", "netdfs.dfs_Enum.bufsize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Bufsize", "netdfs.dfs_Enum.bufsize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Enum_info,
-		{ "Info", "netdfs.dfs_Enum.info", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info", "netdfs.dfs_Enum.info", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Enum_level,
-		{ "Level", "netdfs.dfs_Enum.level", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Level", "netdfs.dfs_Enum.level", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Enum_total,
-		{ "Total", "netdfs.dfs_Enum.total", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Total", "netdfs.dfs_Enum.total", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_FlushFtTable_rootshare,
-		{ "Rootshare", "netdfs.dfs_FlushFtTable.rootshare", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Rootshare", "netdfs.dfs_FlushFtTable.rootshare", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_FlushFtTable_servername,
-		{ "Servername", "netdfs.dfs_FlushFtTable.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Servername", "netdfs.dfs_FlushFtTable.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_GetInfo_dfs_entry_path,
-		{ "Dfs Entry Path", "netdfs.dfs_GetInfo.dfs_entry_path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Dfs Entry Path", "netdfs.dfs_GetInfo.dfs_entry_path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_GetInfo_info,
-		{ "Info", "netdfs.dfs_GetInfo.info", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info", "netdfs.dfs_GetInfo.info", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_GetInfo_level,
-		{ "Level", "netdfs.dfs_GetInfo.level", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Level", "netdfs.dfs_GetInfo.level", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_GetInfo_servername,
-		{ "Servername", "netdfs.dfs_GetInfo.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Servername", "netdfs.dfs_GetInfo.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_GetInfo_sharename,
-		{ "Sharename", "netdfs.dfs_GetInfo.sharename", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Sharename", "netdfs.dfs_GetInfo.sharename", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_GetManagerVersion_version,
-		{ "Version", "netdfs.dfs_GetManagerVersion.version", FT_UINT32, BASE_DEC, VALS(netdfs_dfs_ManagerVersion_vals), 0, NULL, HFILL }},
+	  { "Version", "netdfs.dfs_GetManagerVersion.version", FT_UINT32, BASE_DEC, VALS(netdfs_dfs_ManagerVersion_vals), 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info100_comment,
-		{ "Comment", "netdfs.dfs_Info100.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Comment", "netdfs.dfs_Info100.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info101_state,
-		{ "State", "netdfs.dfs_Info101.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "State", "netdfs.dfs_Info101.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info102_timeout,
-		{ "Timeout", "netdfs.dfs_Info102.timeout", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Timeout", "netdfs.dfs_Info102.timeout", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info103_flags,
-		{ "Flags", "netdfs.dfs_Info103.flags", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "Flags", "netdfs.dfs_Info103.flags", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info104_priority,
-		{ "Priority", "netdfs.dfs_Info104.priority", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Priority", "netdfs.dfs_Info104.priority", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info105_comment,
-		{ "Comment", "netdfs.dfs_Info105.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Comment", "netdfs.dfs_Info105.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info105_property_flag_mask,
-		{ "Property Flag Mask", "netdfs.dfs_Info105.property_flag_mask", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Property Flag Mask", "netdfs.dfs_Info105.property_flag_mask", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info105_property_flags,
-		{ "Property Flags", "netdfs.dfs_Info105.property_flags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Property Flags", "netdfs.dfs_Info105.property_flags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info105_state,
-		{ "State", "netdfs.dfs_Info105.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "State", "netdfs.dfs_Info105.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info105_timeout,
-		{ "Timeout", "netdfs.dfs_Info105.timeout", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Timeout", "netdfs.dfs_Info105.timeout", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info106_priority,
-		{ "Priority", "netdfs.dfs_Info106.priority", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Priority", "netdfs.dfs_Info106.priority", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info106_state,
-		{ "State", "netdfs.dfs_Info106.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "State", "netdfs.dfs_Info106.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info1_path,
-		{ "Path", "netdfs.dfs_Info1.path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Path", "netdfs.dfs_Info1.path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info200_dom_root,
-		{ "Dom Root", "netdfs.dfs_Info200.dom_root", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Dom Root", "netdfs.dfs_Info200.dom_root", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info2_comment,
-		{ "Comment", "netdfs.dfs_Info2.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Comment", "netdfs.dfs_Info2.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info2_num_stores,
-		{ "Num Stores", "netdfs.dfs_Info2.num_stores", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Num Stores", "netdfs.dfs_Info2.num_stores", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info2_path,
-		{ "Path", "netdfs.dfs_Info2.path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Path", "netdfs.dfs_Info2.path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info2_state,
-		{ "State", "netdfs.dfs_Info2.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "State", "netdfs.dfs_Info2.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info300_dom_root,
-		{ "Dom Root", "netdfs.dfs_Info300.dom_root", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Dom Root", "netdfs.dfs_Info300.dom_root", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info300_flavor,
-		{ "Flavor", "netdfs.dfs_Info300.flavor", FT_UINT1632, BASE_DEC, VALS(netdfs_dfs_VolumeFlavor_vals), 0, NULL, HFILL }},
+	  { "Flavor", "netdfs.dfs_Info300.flavor", FT_UINT1632, BASE_DEC, VALS(netdfs_dfs_VolumeFlavor_vals), 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info3_comment,
-		{ "Comment", "netdfs.dfs_Info3.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Comment", "netdfs.dfs_Info3.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info3_num_stores,
-		{ "Num Stores", "netdfs.dfs_Info3.num_stores", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Num Stores", "netdfs.dfs_Info3.num_stores", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info3_path,
-		{ "Path", "netdfs.dfs_Info3.path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Path", "netdfs.dfs_Info3.path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info3_state,
-		{ "State", "netdfs.dfs_Info3.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "State", "netdfs.dfs_Info3.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info3_stores,
-		{ "Stores", "netdfs.dfs_Info3.stores", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Stores", "netdfs.dfs_Info3.stores", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info4_comment,
-		{ "Comment", "netdfs.dfs_Info4.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Comment", "netdfs.dfs_Info4.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info4_guid,
-		{ "Guid", "netdfs.dfs_Info4.guid", FT_GUID, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Guid", "netdfs.dfs_Info4.guid", FT_GUID, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info4_num_stores,
-		{ "Num Stores", "netdfs.dfs_Info4.num_stores", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Num Stores", "netdfs.dfs_Info4.num_stores", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info4_path,
-		{ "Path", "netdfs.dfs_Info4.path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Path", "netdfs.dfs_Info4.path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info4_state,
-		{ "State", "netdfs.dfs_Info4.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "State", "netdfs.dfs_Info4.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info4_stores,
-		{ "Stores", "netdfs.dfs_Info4.stores", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Stores", "netdfs.dfs_Info4.stores", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info4_timeout,
-		{ "Timeout", "netdfs.dfs_Info4.timeout", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Timeout", "netdfs.dfs_Info4.timeout", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info5_comment,
-		{ "Comment", "netdfs.dfs_Info5.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Comment", "netdfs.dfs_Info5.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info5_flags,
-		{ "Flags", "netdfs.dfs_Info5.flags", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "Flags", "netdfs.dfs_Info5.flags", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info5_guid,
-		{ "Guid", "netdfs.dfs_Info5.guid", FT_GUID, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Guid", "netdfs.dfs_Info5.guid", FT_GUID, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info5_num_stores,
-		{ "Num Stores", "netdfs.dfs_Info5.num_stores", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Num Stores", "netdfs.dfs_Info5.num_stores", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info5_path,
-		{ "Path", "netdfs.dfs_Info5.path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Path", "netdfs.dfs_Info5.path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info5_pktsize,
-		{ "Pktsize", "netdfs.dfs_Info5.pktsize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Pktsize", "netdfs.dfs_Info5.pktsize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info5_state,
-		{ "State", "netdfs.dfs_Info5.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "State", "netdfs.dfs_Info5.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info5_timeout,
-		{ "Timeout", "netdfs.dfs_Info5.timeout", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Timeout", "netdfs.dfs_Info5.timeout", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info6_comment,
-		{ "Comment", "netdfs.dfs_Info6.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Comment", "netdfs.dfs_Info6.comment", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info6_entry_path,
-		{ "Entry Path", "netdfs.dfs_Info6.entry_path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Entry Path", "netdfs.dfs_Info6.entry_path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info6_flags,
-		{ "Flags", "netdfs.dfs_Info6.flags", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "Flags", "netdfs.dfs_Info6.flags", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info6_guid,
-		{ "Guid", "netdfs.dfs_Info6.guid", FT_GUID, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Guid", "netdfs.dfs_Info6.guid", FT_GUID, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info6_num_stores,
-		{ "Num Stores", "netdfs.dfs_Info6.num_stores", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Num Stores", "netdfs.dfs_Info6.num_stores", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info6_pktsize,
-		{ "Pktsize", "netdfs.dfs_Info6.pktsize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Pktsize", "netdfs.dfs_Info6.pktsize", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info6_state,
-		{ "State", "netdfs.dfs_Info6.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "State", "netdfs.dfs_Info6.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info6_stores,
-		{ "Stores", "netdfs.dfs_Info6.stores", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Stores", "netdfs.dfs_Info6.stores", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info6_timeout,
-		{ "Timeout", "netdfs.dfs_Info6.timeout", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Timeout", "netdfs.dfs_Info6.timeout", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info7_generation_guid,
-		{ "Generation Guid", "netdfs.dfs_Info7.generation_guid", FT_GUID, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Generation Guid", "netdfs.dfs_Info7.generation_guid", FT_GUID, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info0,
-		{ "Info0", "netdfs.dfs_Info.info0", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info0", "netdfs.dfs_Info.info0", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info1,
-		{ "Info1", "netdfs.dfs_Info.info1", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info1", "netdfs.dfs_Info.info1", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info100,
-		{ "Info100", "netdfs.dfs_Info.info100", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info100", "netdfs.dfs_Info.info100", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info101,
-		{ "Info101", "netdfs.dfs_Info.info101", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info101", "netdfs.dfs_Info.info101", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info102,
-		{ "Info102", "netdfs.dfs_Info.info102", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info102", "netdfs.dfs_Info.info102", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info103,
-		{ "Info103", "netdfs.dfs_Info.info103", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info103", "netdfs.dfs_Info.info103", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info104,
-		{ "Info104", "netdfs.dfs_Info.info104", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info104", "netdfs.dfs_Info.info104", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info105,
-		{ "Info105", "netdfs.dfs_Info.info105", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info105", "netdfs.dfs_Info.info105", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info106,
-		{ "Info106", "netdfs.dfs_Info.info106", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info106", "netdfs.dfs_Info.info106", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info2,
-		{ "Info2", "netdfs.dfs_Info.info2", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info2", "netdfs.dfs_Info.info2", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info3,
-		{ "Info3", "netdfs.dfs_Info.info3", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info3", "netdfs.dfs_Info.info3", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info4,
-		{ "Info4", "netdfs.dfs_Info.info4", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info4", "netdfs.dfs_Info.info4", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info5,
-		{ "Info5", "netdfs.dfs_Info.info5", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info5", "netdfs.dfs_Info.info5", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info6,
-		{ "Info6", "netdfs.dfs_Info.info6", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info6", "netdfs.dfs_Info.info6", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Info_info7,
-		{ "Info7", "netdfs.dfs_Info.info7", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info7", "netdfs.dfs_Info.info7", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_ManagerInitialize_flags,
-		{ "Flags", "netdfs.dfs_ManagerInitialize.flags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Flags", "netdfs.dfs_ManagerInitialize.flags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_ManagerInitialize_servername,
-		{ "Servername", "netdfs.dfs_ManagerInitialize.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Servername", "netdfs.dfs_ManagerInitialize.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_CLUSTER_ENABLED,
-		{ "Dfs Property Flag Cluster Enabled", "netdfs.dfs_PropertyFlags.DFS_PROPERTY_FLAG_CLUSTER_ENABLED", FT_BOOLEAN, 32, TFS(&dfs_PropertyFlags_DFS_PROPERTY_FLAG_CLUSTER_ENABLED_tfs), ( 0x10 ), NULL, HFILL }},
+	  { "DFS PROPERTY FLAG CLUSTER ENABLED", "netdfs.dfs_PropertyFlags.DFS_PROPERTY_FLAG_CLUSTER_ENABLED", FT_BOOLEAN, 32, TFS(&dfs_PropertyFlags_DFS_PROPERTY_FLAG_CLUSTER_ENABLED_tfs), ( 0x00000010 ), NULL, HFILL }},
 	{ &hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_INSITE_REFERRALS,
-		{ "Dfs Property Flag Insite Referrals", "netdfs.dfs_PropertyFlags.DFS_PROPERTY_FLAG_INSITE_REFERRALS", FT_BOOLEAN, 32, TFS(&dfs_PropertyFlags_DFS_PROPERTY_FLAG_INSITE_REFERRALS_tfs), ( 0x01 ), NULL, HFILL }},
+	  { "DFS PROPERTY FLAG INSITE REFERRALS", "netdfs.dfs_PropertyFlags.DFS_PROPERTY_FLAG_INSITE_REFERRALS", FT_BOOLEAN, 32, TFS(&dfs_PropertyFlags_DFS_PROPERTY_FLAG_INSITE_REFERRALS_tfs), ( 0x00000001 ), NULL, HFILL }},
 	{ &hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_ROOT_SCALABILITY,
-		{ "Dfs Property Flag Root Scalability", "netdfs.dfs_PropertyFlags.DFS_PROPERTY_FLAG_ROOT_SCALABILITY", FT_BOOLEAN, 32, TFS(&dfs_PropertyFlags_DFS_PROPERTY_FLAG_ROOT_SCALABILITY_tfs), ( 0x02 ), NULL, HFILL }},
+	  { "DFS PROPERTY FLAG ROOT SCALABILITY", "netdfs.dfs_PropertyFlags.DFS_PROPERTY_FLAG_ROOT_SCALABILITY", FT_BOOLEAN, 32, TFS(&dfs_PropertyFlags_DFS_PROPERTY_FLAG_ROOT_SCALABILITY_tfs), ( 0x00000002 ), NULL, HFILL }},
 	{ &hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_SITE_COSTING,
-		{ "Dfs Property Flag Site Costing", "netdfs.dfs_PropertyFlags.DFS_PROPERTY_FLAG_SITE_COSTING", FT_BOOLEAN, 32, TFS(&dfs_PropertyFlags_DFS_PROPERTY_FLAG_SITE_COSTING_tfs), ( 0x04 ), NULL, HFILL }},
+	  { "DFS PROPERTY FLAG SITE COSTING", "netdfs.dfs_PropertyFlags.DFS_PROPERTY_FLAG_SITE_COSTING", FT_BOOLEAN, 32, TFS(&dfs_PropertyFlags_DFS_PROPERTY_FLAG_SITE_COSTING_tfs), ( 0x00000004 ), NULL, HFILL }},
 	{ &hf_netdfs_dfs_PropertyFlags_DFS_PROPERTY_FLAG_TARGET_FAILBACK,
-		{ "Dfs Property Flag Target Failback", "netdfs.dfs_PropertyFlags.DFS_PROPERTY_FLAG_TARGET_FAILBACK", FT_BOOLEAN, 32, TFS(&dfs_PropertyFlags_DFS_PROPERTY_FLAG_TARGET_FAILBACK_tfs), ( 0x08 ), NULL, HFILL }},
+	  { "DFS PROPERTY FLAG TARGET FAILBACK", "netdfs.dfs_PropertyFlags.DFS_PROPERTY_FLAG_TARGET_FAILBACK", FT_BOOLEAN, 32, TFS(&dfs_PropertyFlags_DFS_PROPERTY_FLAG_TARGET_FAILBACK_tfs), ( 0x00000008 ), NULL, HFILL }},
 	{ &hf_netdfs_dfs_RemoveFtRoot_dfsname,
-		{ "Dfsname", "netdfs.dfs_RemoveFtRoot.dfsname", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Dfsname", "netdfs.dfs_RemoveFtRoot.dfsname", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_RemoveFtRoot_dns_servername,
-		{ "Dns Servername", "netdfs.dfs_RemoveFtRoot.dns_servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Dns Servername", "netdfs.dfs_RemoveFtRoot.dns_servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_RemoveFtRoot_flags,
-		{ "Flags", "netdfs.dfs_RemoveFtRoot.flags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Flags", "netdfs.dfs_RemoveFtRoot.flags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_RemoveFtRoot_rootshare,
-		{ "Rootshare", "netdfs.dfs_RemoveFtRoot.rootshare", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Rootshare", "netdfs.dfs_RemoveFtRoot.rootshare", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_RemoveFtRoot_servername,
-		{ "Servername", "netdfs.dfs_RemoveFtRoot.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Servername", "netdfs.dfs_RemoveFtRoot.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_RemoveFtRoot_unknown,
-		{ "Unknown", "netdfs.dfs_RemoveFtRoot.unknown", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Unknown", "netdfs.dfs_RemoveFtRoot.unknown", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_RemoveStdRoot_flags,
-		{ "Flags", "netdfs.dfs_RemoveStdRoot.flags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Flags", "netdfs.dfs_RemoveStdRoot.flags", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_RemoveStdRoot_rootshare,
-		{ "Rootshare", "netdfs.dfs_RemoveStdRoot.rootshare", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Rootshare", "netdfs.dfs_RemoveStdRoot.rootshare", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_RemoveStdRoot_servername,
-		{ "Servername", "netdfs.dfs_RemoveStdRoot.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Servername", "netdfs.dfs_RemoveStdRoot.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Remove_dfs_entry_path,
-		{ "Dfs Entry Path", "netdfs.dfs_Remove.dfs_entry_path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Dfs Entry Path", "netdfs.dfs_Remove.dfs_entry_path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Remove_servername,
-		{ "Servername", "netdfs.dfs_Remove.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Servername", "netdfs.dfs_Remove.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Remove_sharename,
-		{ "Sharename", "netdfs.dfs_Remove.sharename", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Sharename", "netdfs.dfs_Remove.sharename", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_SetInfo_dfs_entry_path,
-		{ "Dfs Entry Path", "netdfs.dfs_SetInfo.dfs_entry_path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Dfs Entry Path", "netdfs.dfs_SetInfo.dfs_entry_path", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_SetInfo_info,
-		{ "Info", "netdfs.dfs_SetInfo.info", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info", "netdfs.dfs_SetInfo.info", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_SetInfo_level,
-		{ "Level", "netdfs.dfs_SetInfo.level", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Level", "netdfs.dfs_SetInfo.level", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_SetInfo_servername,
-		{ "Servername", "netdfs.dfs_SetInfo.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Servername", "netdfs.dfs_SetInfo.servername", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_SetInfo_sharename,
-		{ "Sharename", "netdfs.dfs_SetInfo.sharename", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Sharename", "netdfs.dfs_SetInfo.sharename", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_StorageInfo2_info,
-		{ "Info", "netdfs.dfs_StorageInfo2.info", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Info", "netdfs.dfs_StorageInfo2.info", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_StorageInfo2_target_priority,
-		{ "Target Priority", "netdfs.dfs_StorageInfo2.target_priority", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Target Priority", "netdfs.dfs_StorageInfo2.target_priority", FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_StorageInfo_server,
-		{ "Server", "netdfs.dfs_StorageInfo.server", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Server", "netdfs.dfs_StorageInfo.server", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_StorageInfo_share,
-		{ "Share", "netdfs.dfs_StorageInfo.share", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Share", "netdfs.dfs_StorageInfo.share", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_StorageInfo_state,
-		{ "State", "netdfs.dfs_StorageInfo.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
+	  { "State", "netdfs.dfs_StorageInfo.state", FT_UINT32, BASE_HEX, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_StorageState_DFS_STORAGE_STATE_ACTIVE,
-		{ "Dfs Storage State Active", "netdfs.dfs_StorageState.DFS_STORAGE_STATE_ACTIVE", FT_BOOLEAN, 32, TFS(&dfs_StorageState_DFS_STORAGE_STATE_ACTIVE_tfs), ( 4 ), NULL, HFILL }},
+	  { "DFS STORAGE STATE ACTIVE", "netdfs.dfs_StorageState.DFS_STORAGE_STATE_ACTIVE", FT_BOOLEAN, 32, TFS(&dfs_StorageState_DFS_STORAGE_STATE_ACTIVE_tfs), ( 4 ), NULL, HFILL }},
 	{ &hf_netdfs_dfs_StorageState_DFS_STORAGE_STATE_OFFLINE,
-		{ "Dfs Storage State Offline", "netdfs.dfs_StorageState.DFS_STORAGE_STATE_OFFLINE", FT_BOOLEAN, 32, TFS(&dfs_StorageState_DFS_STORAGE_STATE_OFFLINE_tfs), ( 1 ), NULL, HFILL }},
+	  { "DFS STORAGE STATE OFFLINE", "netdfs.dfs_StorageState.DFS_STORAGE_STATE_OFFLINE", FT_BOOLEAN, 32, TFS(&dfs_StorageState_DFS_STORAGE_STATE_OFFLINE_tfs), ( 1 ), NULL, HFILL }},
 	{ &hf_netdfs_dfs_StorageState_DFS_STORAGE_STATE_ONLINE,
-		{ "Dfs Storage State Online", "netdfs.dfs_StorageState.DFS_STORAGE_STATE_ONLINE", FT_BOOLEAN, 32, TFS(&dfs_StorageState_DFS_STORAGE_STATE_ONLINE_tfs), ( 2 ), NULL, HFILL }},
+	  { "DFS STORAGE STATE ONLINE", "netdfs.dfs_StorageState.DFS_STORAGE_STATE_ONLINE", FT_BOOLEAN, 32, TFS(&dfs_StorageState_DFS_STORAGE_STATE_ONLINE_tfs), ( 2 ), NULL, HFILL }},
 	{ &hf_netdfs_dfs_Target_Priority_reserved,
-		{ "Reserved", "netdfs.dfs_Target_Priority.reserved", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Reserved", "netdfs.dfs_Target_Priority.reserved", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Target_Priority_target_priority_class,
-		{ "Target Priority Class", "netdfs.dfs_Target_Priority.target_priority_class", FT_UINT32, BASE_DEC, VALS(netdfs_dfs_Target_PriorityClass_vals), 0, NULL, HFILL }},
+	  { "Target Priority Class", "netdfs.dfs_Target_Priority.target_priority_class", FT_UINT32, BASE_DEC, VALS(netdfs_dfs_Target_PriorityClass_vals), 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_Target_Priority_target_priority_rank,
-		{ "Target Priority Rank", "netdfs.dfs_Target_Priority.target_priority_rank", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Target Priority Rank", "netdfs.dfs_Target_Priority.target_priority_rank", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_UnknownStruct_unknown1,
-		{ "Unknown1", "netdfs.dfs_UnknownStruct.unknown1", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Unknown1", "netdfs.dfs_UnknownStruct.unknown1", FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_UnknownStruct_unknown2,
-		{ "Unknown2", "netdfs.dfs_UnknownStruct.unknown2", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
+	  { "Unknown2", "netdfs.dfs_UnknownStruct.unknown2", FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_AD_BLOB,
-		{ "Dfs Volume State Ad Blob", "netdfs.dfs_VolumeState.DFS_VOLUME_STATE_AD_BLOB", FT_BOOLEAN, 32, TFS(&dfs_VolumeState_DFS_VOLUME_STATE_AD_BLOB_tfs), ( DFS_VOLUME_FLAVOR_AD_BLOB ), NULL, HFILL }},
+	  { "DFS VOLUME STATE AD BLOB", "netdfs.dfs_VolumeState.DFS_VOLUME_STATE_AD_BLOB", FT_BOOLEAN, 32, TFS(&dfs_VolumeState_DFS_VOLUME_STATE_AD_BLOB_tfs), ( 0x200 ), NULL, HFILL }},
 	{ &hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_INCONSISTENT,
-		{ "Dfs Volume State Inconsistent", "netdfs.dfs_VolumeState.DFS_VOLUME_STATE_INCONSISTENT", FT_BOOLEAN, 32, TFS(&dfs_VolumeState_DFS_VOLUME_STATE_INCONSISTENT_tfs), ( 0x2 ), NULL, HFILL }},
+	  { "DFS VOLUME STATE INCONSISTENT", "netdfs.dfs_VolumeState.DFS_VOLUME_STATE_INCONSISTENT", FT_BOOLEAN, 32, TFS(&dfs_VolumeState_DFS_VOLUME_STATE_INCONSISTENT_tfs), ( 0x2 ), NULL, HFILL }},
 	{ &hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_OFFLINE,
-		{ "Dfs Volume State Offline", "netdfs.dfs_VolumeState.DFS_VOLUME_STATE_OFFLINE", FT_BOOLEAN, 32, TFS(&dfs_VolumeState_DFS_VOLUME_STATE_OFFLINE_tfs), ( 0x4 ), NULL, HFILL }},
+	  { "DFS VOLUME STATE OFFLINE", "netdfs.dfs_VolumeState.DFS_VOLUME_STATE_OFFLINE", FT_BOOLEAN, 32, TFS(&dfs_VolumeState_DFS_VOLUME_STATE_OFFLINE_tfs), ( 0x4 ), NULL, HFILL }},
 	{ &hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_OK,
-		{ "Dfs Volume State Ok", "netdfs.dfs_VolumeState.DFS_VOLUME_STATE_OK", FT_BOOLEAN, 32, TFS(&dfs_VolumeState_DFS_VOLUME_STATE_OK_tfs), ( 0x1 ), NULL, HFILL }},
+	  { "DFS VOLUME STATE OK", "netdfs.dfs_VolumeState.DFS_VOLUME_STATE_OK", FT_BOOLEAN, 32, TFS(&dfs_VolumeState_DFS_VOLUME_STATE_OK_tfs), ( 0x1 ), NULL, HFILL }},
 	{ &hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_ONLINE,
-		{ "Dfs Volume State Online", "netdfs.dfs_VolumeState.DFS_VOLUME_STATE_ONLINE", FT_BOOLEAN, 32, TFS(&dfs_VolumeState_DFS_VOLUME_STATE_ONLINE_tfs), ( 0x8 ), NULL, HFILL }},
+	  { "DFS VOLUME STATE ONLINE", "netdfs.dfs_VolumeState.DFS_VOLUME_STATE_ONLINE", FT_BOOLEAN, 32, TFS(&dfs_VolumeState_DFS_VOLUME_STATE_ONLINE_tfs), ( 0x8 ), NULL, HFILL }},
 	{ &hf_netdfs_dfs_VolumeState_DFS_VOLUME_STATE_STANDALONE,
-		{ "Dfs Volume State Standalone", "netdfs.dfs_VolumeState.DFS_VOLUME_STATE_STANDALONE", FT_BOOLEAN, 32, TFS(&dfs_VolumeState_DFS_VOLUME_STATE_STANDALONE_tfs), ( DFS_VOLUME_FLAVOR_STANDALONE ), NULL, HFILL }},
+	  { "DFS VOLUME STATE STANDALONE", "netdfs.dfs_VolumeState.DFS_VOLUME_STATE_STANDALONE", FT_BOOLEAN, 32, TFS(&dfs_VolumeState_DFS_VOLUME_STATE_STANDALONE_tfs), ( 0x100 ), NULL, HFILL }},
 	{ &hf_netdfs_opnum,
-		{ "Operation", "netdfs.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
+	  { "Operation", "netdfs.opnum", FT_UINT16, BASE_DEC, NULL, 0, NULL, HFILL }},
 	{ &hf_netdfs_werror,
-		{ "Windows Error", "netdfs.werror", FT_UINT32, BASE_HEX, VALS(WERR_errors), 0, NULL, HFILL }},
+	  { "Windows Error", "netdfs.werror", FT_UINT32, BASE_HEX|BASE_EXT_STRING, &WERR_errors_ext, 0, NULL, HFILL }},
 	};
 
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_dcerpc_netdfs,
 		&ett_netdfs_dfs_Info0,
 		&ett_netdfs_dfs_Info1,

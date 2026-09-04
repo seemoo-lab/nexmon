@@ -1,8 +1,10 @@
-# asm-underscore.m4 serial 3
-dnl Copyright (C) 2010-2016 Free Software Foundation, Inc.
+# asm-underscore.m4
+# serial 6
+dnl Copyright (C) 2010-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 dnl From Bruno Haible. Based on as-underscore.m4 in GNU clisp.
 
@@ -14,6 +16,7 @@ dnl From Bruno Haible. Based on as-underscore.m4 in GNU clisp.
 
 AC_DEFUN([gl_ASM_SYMBOL_PREFIX],
 [
+  AC_REQUIRE([AC_PROG_EGREP])
   dnl We don't use GCC's __USER_LABEL_PREFIX__ here, because
   dnl 1. It works only for GCC.
   dnl 2. It is incorrectly defined on some platforms, in some GCC versions.
@@ -29,12 +32,12 @@ int foo(void) { return 0; }
 EOF
      # Look for the assembly language name in the .s file.
      AC_TRY_COMMAND(${CC-cc} $CFLAGS $CPPFLAGS $gl_c_asm_opt conftest.c) >/dev/null 2>&1
-     if LC_ALL=C grep -E '(^|[^a-zA-Z0-9_])_foo([^a-zA-Z0-9_]|$)' conftest.$gl_asmext >/dev/null; then
+     if LC_ALL=C $EGREP '(^|[[^a-zA-Z0-9_]])_foo([[^a-zA-Z0-9_]]|$)' conftest.$gl_asmext >/dev/null; then
        gl_cv_prog_as_underscore=yes
      else
        gl_cv_prog_as_underscore=no
      fi
-     rm -f conftest*
+     rm -fr conftest*
     ])
   if test $gl_cv_prog_as_underscore = yes; then
     USER_LABEL_PREFIX=_
@@ -62,8 +65,19 @@ AC_DEFUN([gl_C_ASM],
 MicrosoftCompiler
 #endif
     ],
-    [gl_asmext='asm'
-     gl_c_asm_opt='-c -Fa'
+    [dnl Microsoft's 'cl' and 'clang-cl' produce an .asm file, whereas 'clang'
+     dnl produces a .s file. Need to distinguish 'clang' and 'clang-cl'.
+     rm -fr conftest*
+     echo 'int dummy;' > conftest.c
+     AC_TRY_COMMAND(${CC-cc} $CFLAGS $CPPFLAGS -c conftest.c) >/dev/null 2>&1
+     if test -f conftest.o; then
+       gl_asmext='s'
+       gl_c_asm_opt='-S'
+     else
+       gl_asmext='asm'
+       gl_c_asm_opt='-c -Fa'
+     fi
+     rm -fr conftest*
     ],
     [gl_asmext='s'
      gl_c_asm_opt='-S'

@@ -86,7 +86,11 @@ public class MonitorModeService extends Service {
         };
 
         IntentFilter intentFiler = new IntentFilter(INTENT_RECEIVER);
-        registerReceiver(receiver, intentFiler);
+        // This receiver runs root commands to toggle monitor mode; gate it with
+        // the app's signature-level permission so no other app can trigger a
+        // privileged monitor-mode transition. Same-app senders are unaffected.
+        registerReceiver(receiver, intentFiler,
+                de.tu_darmstadt.seemoo.nexmon.MyApplication.PERMISSION_INTERNAL_BROADCAST, null);
 
     }
 

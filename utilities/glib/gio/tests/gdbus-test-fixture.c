@@ -1,5 +1,5 @@
 
-#include "gdbus-object-manager-example/gdbus-example-objectmanager-generated.h"
+#include "gdbus-object-manager-example/objectmanager-gen.h"
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -15,16 +15,20 @@ static void
 fixture_setup (TestFixture *fixture, gconstpointer unused)
 {
   GError *error = NULL;
+  gchar *relative, *servicesdir;
 
   /* Create the global dbus-daemon for this test suite
    */
   fixture->dbus = g_test_dbus_new (G_TEST_DBUS_NONE);
 
-  /* Add the private directory with our in-tree service files, 
-   * TEST_SERVICES is defined by the build system to point
-   * to the right directory.
+  /* Add the private directory with our in-tree service files.
    */
-  g_test_dbus_add_service_dir (fixture->dbus, TEST_SERVICES);
+  relative = g_test_build_filename (G_TEST_BUILT, "services", NULL);
+  servicesdir = g_canonicalize_filename (relative, NULL);
+  g_free (relative);
+
+  g_test_dbus_add_service_dir (fixture->dbus, servicesdir);
+  g_free (servicesdir);
 
   /* Start the private D-Bus daemon
    */
@@ -76,7 +80,7 @@ int
 main (int   argc,
       char *argv[])
 {
-  g_test_init (&argc, &argv, NULL);
+  g_test_init (&argc, &argv, G_TEST_OPTION_ISOLATE_DIRS, NULL);
 
   /* This test simply ensures that we can bring the GTestDBus up and down a hand
    * full of times in a row, each time successfully activating the in-tree service

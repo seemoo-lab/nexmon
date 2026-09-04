@@ -1,0 +1,217 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaAttributeUseProhib" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaAttributeUseProhib</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaAttributeUseProhib_1af2264bc4c40cc1d673156af962622b1c" prot="public" static="no" mutable="no">
+        <type><ref refid="schemasInternals_8h_1a08455b380785b2588bd3f6cebd3b035b" kindref="member">xmlSchemaTypeType</ref></type>
+        <definition>xmlSchemaTypeType type</definition>
+        <argsstring></argsstring>
+        <name>type</name>
+        <qualifiedname>_xmlSchemaAttributeUseProhib::type</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="539" column="23" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="539" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaAttributeUseProhib_1af22243a9342e852a5bcc0b878913a289" prot="public" static="no" mutable="no">
+        <type>xmlNodePtr</type>
+        <definition>xmlNodePtr node</definition>
+        <argsstring></argsstring>
+        <name>node</name>
+        <qualifiedname>_xmlSchemaAttributeUseProhib::node</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="540" column="16" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="540" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaAttributeUseProhib_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlSchemaAttributeUseProhib::name</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="541" column="19" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="541" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaAttributeUseProhib_1a3e7f65fedb1d1ed284e955f0387a02bc" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* targetNamespace</definition>
+        <argsstring></argsstring>
+        <name>targetNamespace</name>
+        <qualifiedname>_xmlSchemaAttributeUseProhib::targetNamespace</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="542" column="19" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="542" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaAttributeUseProhib_1a4faf6047ae1e7a3a4a3040160b52582f" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int isRef</definition>
+        <argsstring></argsstring>
+        <name>isRef</name>
+        <qualifiedname>_xmlSchemaAttributeUseProhib::isRef</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="543" column="9" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="543" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="8">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlDict</label>
+        <childnode refid="7" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlDictStrings</label>
+        <childnode refid="7" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="5" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlSchemaAttributeUseProhib</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xmlschemas.c" line="538" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="538" bodyend="544"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaAttributeUseProhib_1a4faf6047ae1e7a3a4a3040160b52582f" prot="public" virt="non-virtual"><scope>_xmlSchemaAttributeUseProhib</scope><name>isRef</name></member>
+      <member refid="struct__xmlSchemaAttributeUseProhib_1a9d09be92db244aa2ecd5921f41f43ded" prot="public" virt="non-virtual"><scope>_xmlSchemaAttributeUseProhib</scope><name>name</name></member>
+      <member refid="struct__xmlSchemaAttributeUseProhib_1af22243a9342e852a5bcc0b878913a289" prot="public" virt="non-virtual"><scope>_xmlSchemaAttributeUseProhib</scope><name>node</name></member>
+      <member refid="struct__xmlSchemaAttributeUseProhib_1a3e7f65fedb1d1ed284e955f0387a02bc" prot="public" virt="non-virtual"><scope>_xmlSchemaAttributeUseProhib</scope><name>targetNamespace</name></member>
+      <member refid="struct__xmlSchemaAttributeUseProhib_1af2264bc4c40cc1d673156af962622b1c" prot="public" virt="non-virtual"><scope>_xmlSchemaAttributeUseProhib</scope><name>type</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,35 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test heuristic recognition of Ruby format strings like "100% complete".
+
+(rxgettext --version) >/dev/null 2>/dev/null \
+  || { echo "Skipping test: rxgettext not found"; Exit 77; }
+
+cat <<\EOF > f-r-3.rb
+gettext("Test 1a is 100% complete");
+gettext("Test 2a from 0% complete to 100% complete");
+gettext("Test 3a of %s is 100% complete");
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d f-r-3.tmp f-r-3.rb || Exit 1
+LC_ALL=C tr -d '\r' < f-r-3.tmp.po > f-r-3.po || Exit 1
+
+cat <<\EOF > f-r-3.ok
+msgid "Test 1a is 100% complete"
+msgstr ""
+
+msgid "Test 2a from 0% complete to 100% complete"
+msgstr ""
+
+#, ruby-format
+msgid "Test 3a of %s is 100% complete"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} f-r-3.ok f-r-3.po
+result=$?
+
+exit $result

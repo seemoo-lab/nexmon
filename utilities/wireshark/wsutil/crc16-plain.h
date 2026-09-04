@@ -1,24 +1,11 @@
-/*
- * crc16-plain.h
+/** @file
  * http://www.tty1.net/pycrc/faq_en.html#code-ownership
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /**
@@ -43,10 +30,10 @@
 #ifndef __CRC____PLAIN_H__
 #define __CRC____PLAIN_H__
 
-#include "ws_symbol_export.h"
+#include <stddef.h>
+#include <stdint.h>
 
-#include <glib.h>
-#include <stdlib.h>
+#include "ws_symbol_export.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,7 +49,7 @@ extern "C" {
  *
  * This type must be big enough to contain at least 16 bits.
  *****************************************************************************/
-typedef guint16 crc16_plain_t;
+typedef uint16_t crc16_plain_t;
 
 /**
  * Reflect all bits of a \a data word of \a data_len bytes.
@@ -124,7 +111,7 @@ static inline crc16_plain_t crc16_plain_finalize(crc16_plain_t crc)
  * \return         The crc value.
  *****************************************************************************/
 WS_DLL_PUBLIC
-guint16 crc16_8005_noreflect_noxor(const guint8 *data, guint64 data_len);
+uint16_t crc16_8005_noreflect_noxor(const uint8_t *data, uint64_t data_len);
 
 
 #ifdef __cplusplus

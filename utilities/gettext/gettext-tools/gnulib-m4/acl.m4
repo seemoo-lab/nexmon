@@ -1,43 +1,51 @@
-# acl.m4 - check for access control list (ACL) primitives
-# serial 22
+# acl.m4
+# serial 40
+dnl Copyright (C) 2002, 2004-2026 Free Software Foundation, Inc.
+dnl This file is free software; the Free Software Foundation
+dnl gives unlimited permission to copy and/or distribute it,
+dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
-# Copyright (C) 2002, 2004-2016 Free Software Foundation, Inc.
-# This file is free software; the Free Software Foundation
-# gives unlimited permission to copy and/or distribute it,
-# with or without modifications, as long as this notice is preserved.
+# Check for access control list (ACL) primitives
 
 # Written by Paul Eggert and Jim Meyering.
 
 AC_DEFUN([gl_FUNC_ACL_ARG],
 [
-  gl_need_lib_has_acl=
   AC_ARG_ENABLE([acl],
-    AS_HELP_STRING([--disable-acl], [do not support ACLs]),
+    AS_HELP_STRING([[--disable-acl]], [do not support ACLs]),
     , [enable_acl=auto])
+  AC_ARG_WITH([libsmack],
+    [AS_HELP_STRING([--without-libsmack],
+       [do not use libsmack, even on systems that have it])],
+    [], [with_libsmack=maybe])
 ])
 
-
-AC_DEFUN([gl_FUNC_ACL],
+# Prerequisites of module acl-permissions.
+AC_DEFUN_ONCE([gl_FUNC_ACL],
 [
   AC_REQUIRE([gl_FUNC_ACL_ARG])
   AC_CHECK_FUNCS_ONCE([fchmod])
   LIB_ACL=
   use_acl=0
+  NEED_ACL_ENTRIES=0
   if test "$enable_acl" != no; then
     dnl On all platforms, the ACL related API is declared in <sys/acl.h>.
     AC_CHECK_HEADERS([sys/acl.h])
     if test $ac_cv_header_sys_acl_h = yes; then
-      ac_save_LIBS=$LIBS
+      gl_saved_LIBS=$LIBS
 
-      dnl Test for POSIX-draft-like API (GNU/Linux, FreeBSD, Mac OS X,
-      dnl IRIX, Tru64).  -lacl is needed on GNU/Linux, -lpacl on OSF/1.
+      dnl Test for POSIX-draft-like API (GNU/Linux, FreeBSD, NetBSD >= 10,
+      dnl Mac OS X, Cygwin >= 2.5).
+      dnl -lacl is needed on GNU/Linux.
       if test $use_acl = 0; then
-        AC_SEARCH_LIBS([acl_get_file], [acl pacl],
+        AC_SEARCH_LIBS([acl_get_file], [acl],
           [if test "$ac_cv_search_acl_get_file" != "none required"; then
              LIB_ACL=$ac_cv_search_acl_get_file
            fi
            AC_CHECK_FUNCS(
              [acl_get_file acl_get_fd acl_set_file acl_set_fd \
+              acl_get_link_np \
               acl_free acl_from_mode acl_from_text \
               acl_delete_def_file acl_extended_file \
               acl_delete_fd_np acl_delete_file_np \
@@ -48,7 +56,10 @@ AC_DEFUN([gl_FUNC_ACL],
            if test $use_acl = 1; then
              dnl On GNU/Linux, an additional API is declared in <acl/libacl.h>.
              AC_CHECK_HEADERS([acl/libacl.h])
-             AC_REPLACE_FUNCS([acl_entries])
+             AC_CHECK_FUNC([acl_entries],
+               [AC_DEFINE([HAVE_ACL_ENTRIES], [1],
+                  [Define to 1 if libc or libacl defines the function acl_entries.])],
+               [NEED_ACL_ENTRIES=1])
              AC_CACHE_CHECK([for ACL_FIRST_ENTRY],
                [gl_cv_acl_ACL_FIRST_ENTRY],
                [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
@@ -128,7 +139,7 @@ int type = ACL_TYPE_EXTENDED;]])],
         fi
       fi
 
-      LIBS=$ac_save_LIBS
+      LIBS=$gl_saved_LIBS
     fi
 
     if test "$enable_acl$use_acl" = yes0; then
@@ -138,7 +149,6 @@ int type = ACL_TYPE_EXTENDED;]])],
       AC_MSG_WARN([AC_PACKAGE_NAME will be built without ACL support.])
     fi
   fi
-  test $gl_need_lib_has_acl && LIB_HAS_ACL=$LIB_ACL
   AC_SUBST([LIB_ACL])
   AC_DEFINE_UNQUOTED([USE_ACL], [$use_acl],
     [Define to nonzero if you want access control list support.])
@@ -174,37 +184,63 @@ AC_DEFUN([gl_ACL_GET_FILE],
   AS_IF([test "$gl_cv_func_working_acl_get_file" != no], [$1], [$2])
 ])
 
-# On GNU/Linux, testing if a file has an acl can be done with the getxattr
-# syscall which doesn't require linking against additional libraries.
+# Prerequisites of module file-has-acl.
 AC_DEFUN([gl_FILE_HAS_ACL],
 [
   AC_REQUIRE([gl_FUNC_ACL_ARG])
-  if test "$enable_acl" != no; then
-    AC_CACHE_CHECK([for getxattr with XATTR_NAME_POSIX_ACL macros],
-      [gl_cv_getxattr_with_posix_acls],
-      [gl_cv_getxattr_with_posix_acls=no
-       AC_LINK_IFELSE(
-         [AC_LANG_PROGRAM(
-            [[#include <sys/types.h>
-              #include <sys/xattr.h>
-              #include <linux/xattr.h>
-            ]],
-            [[ssize_t a = getxattr (".", XATTR_NAME_POSIX_ACL_ACCESS, 0, 0);
-              ssize_t b = getxattr (".", XATTR_NAME_POSIX_ACL_DEFAULT, 0, 0);
-              return a < 0 || b < 0;
-            ]])],
-         [gl_cv_getxattr_with_posix_acls=yes])])
-  fi
-  if test "$gl_cv_getxattr_with_posix_acls" = yes; then
-    LIB_HAS_ACL=
-    AC_DEFINE([GETXATTR_WITH_POSIX_ACLS], 1,
-      [Define to 1 if getxattr works with XATTR_NAME_POSIX_ACL_ACCESS
-       and XATTR_NAME_POSIX_ACL_DEFAULT.])
+  AC_REQUIRE([gl_FUNC_ACL])
+  # On GNU/Linux, testing if a file has an acl can be done with the
+  # listxattr and getxattr syscalls, which don't require linking
+  # against additional libraries.  Assume this works if linux/attr.h
+  # and listxattr are present.
+  AC_CHECK_HEADERS_ONCE([linux/xattr.h])
+  AC_CHECK_FUNCS_ONCE([listxattr])
+  FILE_HAS_ACL_LIB=
+
+  gl_file_has_acl_uses_smack=no
+  AS_CASE([$enable_acl,$with_libsmack,$ac_cv_header_linux_xattr_h,$ac_cv_func_listxattr],
+    [no,* | *,no,*], [],
+    [*,*,yes,yes],
+      [AC_CHECK_HEADER([sys/smack.h],
+         [gl_saved_LIBS=$LIBS
+          AC_SEARCH_LIBS([smack_new_label_from_path], [smack],
+            [AC_DEFINE([HAVE_SMACK], [1],
+               [Define to 1 if libsmack is usable.])
+             AS_CASE([$ac_cv_search_smack_new_label_from_path],
+               ["none required"], [],
+               [FILE_HAS_ACL_LIB=$ac_cv_search_new_label_from_path])
+             gl_file_has_acl_uses_smack=yes],
+            [AS_CASE([$with_libsmack],
+               [yes], [AC_MSG_ERROR([libsmack not found or unusable])])])
+          LIBS=$gl_saved_LIBS])])
+
+  gl_file_has_acl_uses_selinux=no
+  AS_CASE([$enable_acl,$with_selinux,$ac_cv_header_linux_xattr_h,$ac_cv_func_listxattr],
+    [no,* | *,no,*], [],
+    [*,*,yes,yes],
+      [AC_REQUIRE([gl_CHECK_HEADER_SELINUX_SELINUX_H])
+       AS_IF([test $USE_SELINUX_SELINUX_H = 1],
+         [FILE_HAS_ACL_LIB="$FILE_HAS_ACL_LIB $LIB_SELINUX"
+          gl_file_has_acl_uses_selinux=yes])])
+
+  AS_CASE([$enable_acl,$gl_file_has_acl_uses_selinux,$gl_file_has_acl_uses_smack],
+    [no,* | *,yes,* | *,yes], [],
+    [*],
+      [FILE_HAS_ACL_LIB=$LIB_ACL])
+  AC_SUBST([FILE_HAS_ACL_LIB])
+])
+
+# Prerequisites of module qcopy-acl.
+AC_DEFUN([gl_QCOPY_ACL],
+[
+  AC_REQUIRE([gl_FUNC_ACL])
+  AC_REQUIRE([gl_FILE_HAS_ACL])
+  AC_CHECK_HEADERS_ONCE([linux/xattr.h])
+  gl_FUNC_XATTR
+  if test "$use_xattr" = yes; then
+    QCOPY_ACL_LIB="$LIB_XATTR $FILE_HAS_ACL_LIB"
   else
-    dnl Set gl_need_lib_has_acl to a nonempty value, so that any
-    dnl later gl_FUNC_ACL call will set LIB_HAS_ACL=$LIB_ACL.
-    gl_need_lib_has_acl=1
-    LIB_HAS_ACL=$LIB_ACL
+    QCOPY_ACL_LIB="$LIB_ACL"
   fi
-  AC_SUBST([LIB_HAS_ACL])
+  AC_SUBST([QCOPY_ACL_LIB])
 ])

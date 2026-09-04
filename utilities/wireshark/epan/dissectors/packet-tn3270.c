@@ -5,21 +5,25 @@
  *  3270 Information Display System: Data Stream Programmer's Reference
  *    GA23-0059-07
  *    http://publib.boulder.ibm.com/cgi-bin/bookmgr_OS390/BOOKS/CN7P4000
+ *      (dead, not archived on the Wayback Machine)
+ *    http://bitsavers.trailing-edge.com/pdf/ibm/3174/GA23-0059-07_3270_Data_Stream_Programmers_Reference_199206.pdf
+ *      (some weird format)
+ *    http://bitsavers.trailing-edge.com/pdf/ibm/3270/GA23-0059-07_3270_Data_Stream_Programmers_Reference_199206.pdf
+ *      (straightforward scanned PDF, with OCR so searching might work)
  *    (Paragraph references in the comments in this file (e.g., 6.15) are to the above document)
  *
  *  3174 Establishment Controller Functional Description
  *    GA23-0218-11
  *    http://publib.boulder.ibm.com/cgi-bin/bookmgr/BOOKS/cn7a7003
  *
- *
  *  RFC 1041: Telnet 3270 Regime Option
- *    http://tools.ietf.org/html/rfc1041
+ *    https://tools.ietf.org/html/rfc1041
  *
  *  RFC 1576: TN3270 Current Practices
- *    http://tools.ietf.org/html/rfc1576
+ *    https://tools.ietf.org/html/rfc1576
  *
  *  RFC 2355: TN3270 Enhancements
- *    http://tools.ietf.org/html/rfc2355
+ *    https://tools.ietf.org/html/rfc2355
  *
  *
  * Copyright 2009, Robert Hogan <robert@roberthogan.net>
@@ -28,19 +32,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -49,6 +41,8 @@
 #include <epan/packet.h>
 #include <epan/conversation.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 #include "packet-tn3270.h"
 
@@ -1238,411 +1232,407 @@ static const value_string vals_tn3270_header_response_flags_response[] = {
 };
 
 /*
- * Data structure attached to a conversation, giving authentication
- * information from a bind request.
+ * Data structure attached to a conversation, giving session information.
  */
 typedef struct tn3270_conv_info_t {
-  address outbound_addr;
-  guint32 outbound_port;
-  address inbound_addr;
-  guint32 inbound_port;
-  gint    extended;
-  guint8  altrows;
-  guint8  altcols;
-  guint8  rows;
-  guint8  cols;
+  uint32_t outbound_port;
+  int     extended;
+  uint8_t altrows;
+  uint8_t altcols;
+  uint8_t rows;
+  uint8_t cols;
 } tn3270_conv_info_t;
 
 
-static int proto_tn3270 = -1;
+static int proto_tn3270;
 
-static int hf_tn3270_fa_display = -1;
-static int hf_tn3270_fa_graphic_convert = -1;
-static int hf_tn3270_fa_modified = -1;
-static int hf_tn3270_fa_numeric = -1;
-static int hf_tn3270_fa_protected = -1;
-static int hf_tn3270_fa_reserved = -1;
-static int hf_tn3270_field_attribute = -1;
-static int hf_tn3270_aid = -1;
-static int hf_tn3270_all_character_attributes = -1;
-static int hf_tn3270_attribute_type = -1;
-static int hf_tn3270_begin_end_flags1 = -1;
-static int hf_tn3270_begin_end_flags2 = -1;
-static int hf_tn3270_bsc = -1;
-static int hf_tn3270_buffer_address = -1;
-static int hf_tn3270_c_cav = -1;
-static int hf_tn3270_cc = -1;
-static int hf_tn3270_character_code = -1;
-static int hf_tn3270_character_set = -1;
-static int hf_tn3270_charset = -1;
-static int hf_tn3270_checkpoint = -1;
-static int hf_tn3270_c_ci = -1;
-static int hf_tn3270_c_offset = -1;
-static int hf_tn3270_color = -1;
-static int hf_tn3270_color_command = -1;
-static int hf_tn3270_color_flags = -1;
-static int hf_tn3270_command_code = -1;
-static int hf_tn3270_cro = -1;
-static int hf_tn3270_c_scsoff = -1;
-static int hf_tn3270_c_seqoff = -1;
-static int hf_tn3270_c_sequence = -1;
-static int hf_tn3270_cursor_address = -1;
-static int hf_tn3270_cw = -1;
-static int hf_tn3270_data_chain_fields = -1;
-static int hf_tn3270_data_chain_group = -1;
-static int hf_tn3270_data_chain_inbound_control = -1;
-static int hf_tn3270_destination_or_origin_flags_input_control = -1;
-static int hf_tn3270_destination_or_origin_doid = -1;
-static int hf_tn3270_erase_flags = -1;
-static int hf_tn3270_exception_or_status_flags = -1;
-static int hf_tn3270_extended_highlighting = -1;
-static int hf_tn3270_extended_ps_color = -1;
-static int hf_tn3270_extended_ps_echar = -1;
-static int hf_tn3270_extended_ps_flags = -1;
-static int hf_tn3270_extended_ps_length = -1;
-static int hf_tn3270_extended_ps_lw = -1;
-static int hf_tn3270_extended_ps_lh = -1;
-static int hf_tn3270_extended_ps_nh = -1;
-static int hf_tn3270_extended_ps_nw = -1;
-static int hf_tn3270_extended_ps_res = -1;
-static int hf_tn3270_extended_ps_stsubs = -1;
-static int hf_tn3270_extended_ps_subsn = -1;
-static int hf_tn3270_featl = -1;
-static int hf_tn3270_feats = -1;
-static int hf_tn3270_field_data = -1;
-static int hf_tn3270_field_outlining = -1;
-static int hf_tn3270_field_validation_mandatory_entry = -1;
-static int hf_tn3270_field_validation_mandatory_fill = -1;
-static int hf_tn3270_field_validation_trigger = -1;
-static int hf_tn3270_format_group = -1;
-static int hf_tn3270_format_name = -1;
-static int hf_tn3270_fov = -1;
-static int hf_tn3270_fpc = -1;
-static int hf_tn3270_hilite = -1;
-static int hf_tn3270_h_length = -1;
-static int hf_tn3270_h_offset = -1;
-static int hf_tn3270_horizon = -1;
-static int hf_tn3270_h_sequence = -1;
-static int hf_tn3270_hw = -1;
-static int hf_tn3270_interval = -1;
-static int hf_tn3270_limin = -1;
-static int hf_tn3270_limout = -1;
-static int hf_tn3270_lines = -1;
-static int hf_tn3270_load_color_command = -1;
-static int hf_tn3270_load_format_storage_flags1 = -1;
-static int hf_tn3270_load_format_storage_flags2 = -1;
-static int hf_tn3270_load_format_storage_format_data = -1;
-static int hf_tn3270_load_format_storage_localname = -1;
-static int hf_tn3270_load_format_storage_operand = -1;
-static int hf_tn3270_load_line_type_command = -1;
-static int hf_tn3270_lvl = -1;
-static int hf_tn3270_mode = -1;
-static int hf_tn3270_msr_ind_mask = -1;
-static int hf_tn3270_msr_ind_value = -1;
-static int hf_tn3270_msr_state_mask = -1;
-static int hf_tn3270_msr_state_value = -1;
-static int hf_tn3270_msr_type = -1;
-static int hf_tn3270_ap_na = -1;
-static int hf_tn3270_ap_m = -1;
-static int hf_tn3270_ap_vertical_scrolling = -1;
-static int hf_tn3270_ap_horizontal_scrolling = -1;
-static int hf_tn3270_ap_apres1 = -1;
-static int hf_tn3270_ap_apa = -1;
-static int hf_tn3270_ap_pp = -1;
-static int hf_tn3270_ap_lc = -1;
-static int hf_tn3270_ap_mp = -1;
-static int hf_tn3270_ap_apres2 = -1;
-static int hf_tn3270_c_np = -1;
-static int hf_tn3270_number_of_attributes = -1;
-static int hf_tn3270_object_control_flags = -1;
-static int hf_tn3270_object_type = -1;
-static int hf_tn3270_order_code = -1;
-static int hf_tn3270_outbound_text_header_operation_type = -1;
-static int hf_tn3270_outbound_text_header_hdr = -1;
-static int hf_tn3270_outbound_text_header_lhdr = -1;
-static int hf_tn3270_pages = -1;
-static int hf_tn3270_partition_command = -1;
-static int hf_tn3270_partition_cv = -1;
-static int hf_tn3270_partition_cw = -1;
-static int hf_tn3270_partition_flags = -1;
-static int hf_tn3270_partition_height = -1;
-static int hf_tn3270_partition_hv = -1;
-static int hf_tn3270_partition_id = -1;
-static int hf_tn3270_partition_ph = -1;
-static int hf_tn3270_partition_pw = -1;
-static int hf_tn3270_partition_res = -1;
-static int hf_tn3270_partition_rs = -1;
-static int hf_tn3270_partition_rv = -1;
-static int hf_tn3270_partition_rw = -1;
-static int hf_tn3270_partition_uom = -1;
-static int hf_tn3270_partition_width = -1;
-static int hf_tn3270_partition_wv = -1;
-static int hf_tn3270_prime = -1;
-static int hf_tn3270_printer_flags = -1;
-static int hf_tn3270_ps_char = -1;
-static int hf_tn3270_ps_flags = -1;
-static int hf_tn3270_ps_lcid = -1;
-static int hf_tn3270_ps_rws = -1;
-static int hf_tn3270_query_reply_alphanumeric_flags = -1;
-static int hf_tn3270_recovery_data_flags = -1;
-static int hf_tn3270_reply_mode_attr_list = -1;
-static int hf_tn3270_read_partition_operation_type = -1;
-static int hf_tn3270_read_partition_reqtyp = -1;
-static int hf_tn3270_resbyte = -1;
-static int hf_tn3270_resbytes = -1;
-static int hf_tn3270_res_twobytes = -1;
-static int hf_tn3270_rw = -1;
-static int hf_tn3270_save_or_restore_format_flags = -1;
-static int hf_tn3270_scs_data = -1;
-static int hf_tn3270_sf_single_byte_id = -1;
-static int hf_tn3270_sf_double_byte_id = -1;
-static int hf_tn3270_sf_length = -1;
-static int hf_tn3270_sf_query_reply = -1;
-static int hf_tn3270_sld = -1;
-static int hf_tn3270_spd = -1;
-static int hf_tn3270_start_line = -1;
-static int hf_tn3270_start_page = -1;
-static int hf_tn3270_stop_address = -1;
-static int hf_tn3270_transparency = -1;
-static int hf_tn3270_type_1_text_outbound_data = -1;
-static int hf_tn3270_vertical = -1;
-static int hf_tn3270_v_length = -1;
-static int hf_tn3270_v_offset = -1;
-static int hf_tn3270_v_sequence = -1;
-static int hf_tn3270_wcc_nop = -1;
-static int hf_tn3270_wcc_reset = -1;
-static int hf_tn3270_wcc_printer1 = -1;
-static int hf_tn3270_wcc_printer2 = -1;
-static int hf_tn3270_wcc_start_printer = -1;
-static int hf_tn3270_wcc_sound_alarm = -1;
-static int hf_tn3270_wcc_keyboard_restore = -1;
-static int hf_tn3270_wcc_reset_mdt = -1;
-static int hf_tn3270_ww = -1;
-static int hf_tn3270_tn3270e_data_type = -1;
-static int hf_tn3270_tn3270e_request_flag = -1;
-static int hf_tn3270_tn3270e_response_flag_3270_SCS = -1;
-static int hf_tn3270_tn3270e_response_flag_response = -1;
-static int hf_tn3270_tn3270e_response_flag_unused = -1;
-static int hf_tn3270_tn3270e_seq_number = -1;
-static int hf_tn3270_tn3270e_header_data = -1;
-static int hf_tn3270_ua_cell_units = -1;
-static int hf_tn3270_ua_characters = -1;
-static int hf_tn3270_ua_hard_copy = -1;
-static int hf_tn3270_ua_page_printer = -1;
-static int hf_tn3270_ua_reserved1 = -1;
-static int hf_tn3270_ua_reserved2 = -1;
-static int hf_tn3270_ua_variable_cells = -1;
-static int hf_tn3270_usable_area_flags1 = -1;
-static int hf_tn3270_usable_area_flags2 = -1;
-static int hf_tn3270_ua_addressing = -1;
-static int hf_tn3270_ua_width_cells_pels = -1;
-static int hf_tn3270_ua_height_cells_pels = -1;
-static int hf_tn3270_ua_uom_cells_pels = -1;
-static int hf_tn3270_ua_xr = -1;
-static int hf_tn3270_ua_yr = -1;
-static int hf_tn3270_ua_aw = -1;
-static int hf_tn3270_ua_ah = -1;
-static int hf_tn3270_ua_buffsz = -1;
-static int hf_tn3270_ua_xmin = -1;
-static int hf_tn3270_ua_ymin = -1;
-static int hf_tn3270_ua_xmax = -1;
-static int hf_tn3270_ua_ymax = -1;
-static int hf_tn3270_cs_ge = -1;
-static int hf_tn3270_cs_mi = -1;
-static int hf_tn3270_cs_lps = -1;
-static int hf_tn3270_cs_lpse = -1;
-static int hf_tn3270_cs_ms = -1;
-static int hf_tn3270_cs_ch2 = -1;
-static int hf_tn3270_cs_gf = -1;
-static int hf_tn3270_cs_res = -1;
-static int hf_tn3270_cs_res2 = -1;
-static int hf_tn3270_cs_pscs = -1;
-static int hf_tn3270_cs_res3 = -1;
-static int hf_tn3270_cs_cf = -1;
-static int hf_tn3270_cs_form_type1 = -1;
-static int hf_tn3270_cs_form_type2 = -1;
-static int hf_tn3270_cs_form_type3 = -1;
-static int hf_tn3270_cs_form_type4 = -1;
-static int hf_tn3270_cs_form_type5 = -1;
-static int hf_tn3270_cs_form_type6 = -1;
-static int hf_tn3270_cs_form_type8 = -1;
-static int hf_tn3270_cs_ds_load = -1;
-static int hf_tn3270_cs_ds_triple = -1;
-static int hf_tn3270_cs_ds_char = -1;
-static int hf_tn3270_cs_ds_cb = -1;
-static int hf_tn3270_character_sets_flags1 = -1;
-static int hf_tn3270_character_sets_flags2 = -1;
-static int hf_tn3270_sdw = -1;
-static int hf_tn3270_sdh = -1;
-static int hf_tn3270_form = -1;
-static int hf_tn3270_formres = -1;
-static int hf_tn3270_cs_dl = -1;
-static int hf_tn3270_cs_descriptor_set = -1;
-static int hf_tn3270_cs_descriptor_flags = -1;
-static int hf_tn3270_lcid = -1;
-static int hf_tn3270_sw = -1;
-static int hf_tn3270_sh = -1;
-static int hf_tn3270_ssubsn = -1;
-static int hf_tn3270_esubsn = -1;
-static int hf_tn3270_ccsgid = -1;
-static int hf_tn3270_ccsid = -1;
-static int hf_tn3270_c_prtblk = -1;
-static int hf_tn3270_h_np = -1;
-static int hf_tn3270_h_vi = -1;
-static int hf_tn3270_h_ai = -1;
-static int hf_tn3270_ddm_flags = -1;
-static int hf_tn3270_ddm_limin = -1;
-static int hf_tn3270_ddm_limout = -1;
-static int hf_tn3270_ddm_nss = -1;
-static int hf_tn3270_ddm_ddmss = -1;
-static int hf_tn3270_rpq_device = -1;
-static int hf_tn3270_rpq_mid = -1;
-static int hf_tn3270_rpq_rpql = -1;
-static int hf_tn3270_rpq_name = -1;
-static int hf_tn3270_ip_flags = -1;
-static int hf_tn3270_ipdd_wd = -1;
-static int hf_tn3270_ipdd_hd = -1;
-static int hf_tn3270_ipdd_wa = -1;
-static int hf_tn3270_ipdd_ha = -1;
-static int hf_tn3270_ippd_dpbs = -1;
-static int hf_tn3270_ippd_apbs = -1;
-static int hf_tn3270_ipccd_wcd = -1;
-static int hf_tn3270_ipccd_hcd = -1;
-static int hf_tn3270_ipccd_wca = -1;
-static int hf_tn3270_ipccd_hca = -1;
-static int hf_tn3270_dc_dir = -1;
-static int hf_tn3270_oem_dsref = -1;
-static int hf_tn3270_oem_dtype = -1;
-static int hf_tn3270_oem_uname = -1;
-static int hf_tn3270_sdp_daid = -1;
-static int hf_tn3270_oem_sdp_ll_limin = -1;
-static int hf_tn3270_oem_sdp_ll_limout = -1;
-static int hf_tn3270_oem_sdp_pclk_vers = -1;
-static int hf_tn3270_null = -1;
-static int hf_tn3270_unknown_data = -1;
-static int hf_tn3270_ds_default_sfid = -1;
-static int hf_tn3270_ds_sfid = -1;
-static int hf_tn3270_asia_sdp_sosi_soset = -1;
-static int hf_tn3270_asia_sdp_ic_func = -1;
-static int hf_tn3270_ccc = -1;
-static int hf_tn3270_ccc_coding = -1;
-static int hf_tn3270_ccc_printout = -1;
-static int hf_tn3270_ccc_start_print = -1;
-static int hf_tn3270_ccc_sound_alarm = -1;
-static int hf_tn3270_ccc_copytype = -1;
-static int hf_tn3270_msr_user = -1;
-static int hf_tn3270_msr_locked = -1;
-static int hf_tn3270_msr_auto = -1;
-static int hf_tn3270_msr_ind1 = -1;
-static int hf_tn3270_msr_ind2 = -1;
-static int hf_tn3270_spc_sdp_ot = -1;
-static int hf_tn3270_spc_sdp_ob = -1;
-static int hf_tn3270_spc_sdp_ol = -1;
-static int hf_tn3270_spc_sdp_or = -1;
-static int hf_tn3270_spc_sdp_eucflags = -1;
-static int hf_tn3270_spc_sdp_srepc = -1;
-static int hf_tn3270_srf_fpcb = -1;
-static int hf_tn3270_sdp_statcode = -1;
-static int hf_tn3270_sdp_excode = -1;
-static int hf_tn3270_sdp_ngl = -1;
-static int hf_tn3270_sdp_nml = -1;
-static int hf_tn3270_sdp_nlml = -1;
-static int hf_tn3270_sdp_stor = -1;
-static int hf_tn3270_ap_cm = -1;
-static int hf_tn3270_ap_ro = -1;
-static int hf_tn3270_ap_co = -1;
-static int hf_tn3270_ap_fo = -1;
-static int hf_tn3270_sdp_ln = -1;
-static int hf_tn3270_sdp_id = -1;
-static int hf_tn3270_db_cavdef = -1;
-static int hf_tn3270_db_cidef = -1;
-static int hf_tn3270_dia_flags = -1;
-static int hf_tn3270_dia_limin = -1;
-static int hf_tn3270_dia_limout = -1;
-static int hf_tn3270_dia_nfs = -1;
-static int hf_tn3270_dia_diafs = -1;
-static int hf_tn3270_dia_diafn = -1;
-static int hf_tn3270_fo_flags = -1;
-static int hf_tn3270_fo_vpos = -1;
-static int hf_tn3270_fo_hpos = -1;
-static int hf_tn3270_fo_hpos0 = -1;
-static int hf_tn3270_fo_hpos1 = -1;
-static int hf_tn3270_fsad_flags = -1;
-static int hf_tn3270_fsad_limin = -1;
-static int hf_tn3270_fsad_limout = -1;
-static int hf_tn3270_fsad_size = -1;
-static int hf_tn3270_ibm_flags = -1;
-static int hf_tn3270_ibm_limin = -1;
-static int hf_tn3270_ibm_limout = -1;
-static int hf_tn3270_ibm_type = -1;
-static int hf_tn3270_msr_nd = -1;
-static int hf_tn3270_pft_flags = -1;
-static int hf_tn3270_pft_tmo = -1;
-static int hf_tn3270_pft_bmo = -1;
-static int hf_tn3270_ioca_limin = -1;
-static int hf_tn3270_ioca_limout = -1;
-static int hf_tn3270_ioca_type = -1;
-static int hf_tn3270_pc_vo_thickness = -1;
-static int hf_tn3270_pdds_ssid = -1;
-static int hf_tn3270_pdds_refid = -1;
-static int hf_tn3270_srf_fpcbl = -1;
-static int hf_tn3270_spc_epc_flags = -1;
-static int hf_tn3270_sp_spid = -1;
-static int hf_tn3270_sp_size = -1;
-static int hf_tn3270_sp_space = -1;
-static int hf_tn3270_sp_objlist = -1;
-static int hf_tn3270_tp_nt = -1;
-static int hf_tn3270_tp_m = -1;
-static int hf_tn3270_tp_flags = -1;
-static int hf_tn3270_tp_ntt = -1;
-static int hf_tn3270_tp_tlist = -1;
-static int hf_tn3270_t_np = -1;
-static int hf_tn3270_t_vi = -1;
-static int hf_tn3270_t_ai = -1;
-static int hf_tn3270_3270_tranlim = -1;
+static int hf_tn3270_fa_display;
+static int hf_tn3270_fa_graphic_convert;
+static int hf_tn3270_fa_modified;
+static int hf_tn3270_fa_numeric;
+static int hf_tn3270_fa_protected;
+static int hf_tn3270_fa_reserved;
+static int hf_tn3270_field_attribute;
+static int hf_tn3270_aid;
+static int hf_tn3270_all_character_attributes;
+static int hf_tn3270_attribute_type;
+static int hf_tn3270_begin_end_flags1;
+static int hf_tn3270_begin_end_flags2;
+static int hf_tn3270_bsc;
+static int hf_tn3270_buffer_address;
+static int hf_tn3270_c_cav;
+static int hf_tn3270_cc;
+static int hf_tn3270_character_code;
+static int hf_tn3270_character_set;
+static int hf_tn3270_charset;
+static int hf_tn3270_checkpoint;
+static int hf_tn3270_c_ci;
+static int hf_tn3270_c_offset;
+static int hf_tn3270_color;
+static int hf_tn3270_color_command;
+static int hf_tn3270_color_flags;
+static int hf_tn3270_command_code;
+static int hf_tn3270_cro;
+static int hf_tn3270_c_scsoff;
+static int hf_tn3270_c_seqoff;
+static int hf_tn3270_c_sequence;
+static int hf_tn3270_cursor_address;
+static int hf_tn3270_cw;
+static int hf_tn3270_data_chain_fields;
+static int hf_tn3270_data_chain_group;
+static int hf_tn3270_data_chain_inbound_control;
+static int hf_tn3270_destination_or_origin_flags_input_control;
+static int hf_tn3270_destination_or_origin_doid;
+static int hf_tn3270_erase_flags;
+static int hf_tn3270_exception_or_status_flags;
+static int hf_tn3270_extended_highlighting;
+static int hf_tn3270_extended_ps_color;
+static int hf_tn3270_extended_ps_echar;
+static int hf_tn3270_extended_ps_flags;
+static int hf_tn3270_extended_ps_length;
+static int hf_tn3270_extended_ps_lw;
+static int hf_tn3270_extended_ps_lh;
+static int hf_tn3270_extended_ps_nh;
+static int hf_tn3270_extended_ps_nw;
+static int hf_tn3270_extended_ps_res;
+static int hf_tn3270_extended_ps_stsubs;
+static int hf_tn3270_extended_ps_subsn;
+static int hf_tn3270_featl;
+static int hf_tn3270_feats;
+static int hf_tn3270_field_data;
+static int hf_tn3270_field_outlining;
+static int hf_tn3270_field_validation_mandatory_entry;
+static int hf_tn3270_field_validation_mandatory_fill;
+static int hf_tn3270_field_validation_trigger;
+static int hf_tn3270_format_group;
+static int hf_tn3270_format_name;
+static int hf_tn3270_fov;
+static int hf_tn3270_fpc;
+static int hf_tn3270_hilite;
+static int hf_tn3270_h_length;
+static int hf_tn3270_h_offset;
+static int hf_tn3270_horizon;
+static int hf_tn3270_h_sequence;
+static int hf_tn3270_hw;
+static int hf_tn3270_interval;
+static int hf_tn3270_limin;
+static int hf_tn3270_limout;
+static int hf_tn3270_lines;
+static int hf_tn3270_load_color_command;
+static int hf_tn3270_load_format_storage_flags1;
+static int hf_tn3270_load_format_storage_flags2;
+static int hf_tn3270_load_format_storage_format_data;
+static int hf_tn3270_load_format_storage_localname;
+static int hf_tn3270_load_format_storage_operand;
+static int hf_tn3270_load_line_type_command;
+static int hf_tn3270_lvl;
+static int hf_tn3270_mode;
+static int hf_tn3270_msr_ind_mask;
+static int hf_tn3270_msr_ind_value;
+static int hf_tn3270_msr_state_mask;
+static int hf_tn3270_msr_state_value;
+static int hf_tn3270_msr_type;
+static int hf_tn3270_ap_na;
+static int hf_tn3270_ap_m;
+static int hf_tn3270_ap_vertical_scrolling;
+static int hf_tn3270_ap_horizontal_scrolling;
+static int hf_tn3270_ap_apres1;
+static int hf_tn3270_ap_apa;
+static int hf_tn3270_ap_pp;
+static int hf_tn3270_ap_lc;
+static int hf_tn3270_ap_mp;
+static int hf_tn3270_ap_apres2;
+static int hf_tn3270_c_np;
+static int hf_tn3270_number_of_attributes;
+static int hf_tn3270_object_control_flags;
+static int hf_tn3270_object_type;
+static int hf_tn3270_order_code;
+static int hf_tn3270_outbound_text_header_operation_type;
+static int hf_tn3270_outbound_text_header_hdr;
+static int hf_tn3270_outbound_text_header_lhdr;
+static int hf_tn3270_pages;
+static int hf_tn3270_partition_command;
+static int hf_tn3270_partition_cv;
+static int hf_tn3270_partition_cw;
+static int hf_tn3270_partition_flags;
+static int hf_tn3270_partition_height;
+static int hf_tn3270_partition_hv;
+static int hf_tn3270_partition_id;
+static int hf_tn3270_partition_ph;
+static int hf_tn3270_partition_pw;
+static int hf_tn3270_partition_res;
+static int hf_tn3270_partition_rs;
+static int hf_tn3270_partition_rv;
+static int hf_tn3270_partition_rw;
+static int hf_tn3270_partition_uom;
+static int hf_tn3270_partition_width;
+static int hf_tn3270_partition_wv;
+static int hf_tn3270_prime;
+static int hf_tn3270_printer_flags;
+static int hf_tn3270_ps_char;
+static int hf_tn3270_ps_flags;
+static int hf_tn3270_ps_lcid;
+static int hf_tn3270_ps_rws;
+static int hf_tn3270_query_reply_alphanumeric_flags;
+static int hf_tn3270_recovery_data_flags;
+static int hf_tn3270_reply_mode_attr_list;
+static int hf_tn3270_read_partition_operation_type;
+static int hf_tn3270_read_partition_reqtyp;
+static int hf_tn3270_resbyte;
+static int hf_tn3270_resbytes;
+static int hf_tn3270_res_twobytes;
+static int hf_tn3270_rw;
+static int hf_tn3270_save_or_restore_format_flags;
+static int hf_tn3270_scs_data;
+static int hf_tn3270_sf_single_byte_id;
+static int hf_tn3270_sf_double_byte_id;
+static int hf_tn3270_sf_length;
+static int hf_tn3270_sf_query_reply;
+static int hf_tn3270_sld;
+static int hf_tn3270_spd;
+static int hf_tn3270_start_line;
+static int hf_tn3270_start_page;
+static int hf_tn3270_stop_address;
+static int hf_tn3270_transparency;
+static int hf_tn3270_type_1_text_outbound_data;
+static int hf_tn3270_vertical;
+static int hf_tn3270_v_length;
+static int hf_tn3270_v_offset;
+static int hf_tn3270_v_sequence;
+static int hf_tn3270_wcc_nop;
+static int hf_tn3270_wcc_reset;
+static int hf_tn3270_wcc_printer1;
+static int hf_tn3270_wcc_printer2;
+static int hf_tn3270_wcc_start_printer;
+static int hf_tn3270_wcc_sound_alarm;
+static int hf_tn3270_wcc_keyboard_restore;
+static int hf_tn3270_wcc_reset_mdt;
+static int hf_tn3270_ww;
+static int hf_tn3270_tn3270e_data_type;
+static int hf_tn3270_tn3270e_request_flag;
+static int hf_tn3270_tn3270e_response_flag_3270_SCS;
+static int hf_tn3270_tn3270e_response_flag_response;
+static int hf_tn3270_tn3270e_response_flag_unused;
+static int hf_tn3270_tn3270e_seq_number;
+static int hf_tn3270_tn3270e_header_data;
+static int hf_tn3270_ua_cell_units;
+static int hf_tn3270_ua_characters;
+static int hf_tn3270_ua_hard_copy;
+static int hf_tn3270_ua_page_printer;
+static int hf_tn3270_ua_reserved1;
+static int hf_tn3270_ua_reserved2;
+static int hf_tn3270_ua_variable_cells;
+static int hf_tn3270_usable_area_flags1;
+static int hf_tn3270_usable_area_flags2;
+static int hf_tn3270_ua_addressing;
+static int hf_tn3270_ua_width_cells_pels;
+static int hf_tn3270_ua_height_cells_pels;
+static int hf_tn3270_ua_uom_cells_pels;
+static int hf_tn3270_ua_xr;
+static int hf_tn3270_ua_yr;
+static int hf_tn3270_ua_aw;
+static int hf_tn3270_ua_ah;
+static int hf_tn3270_ua_buffsz;
+static int hf_tn3270_ua_xmin;
+static int hf_tn3270_ua_ymin;
+static int hf_tn3270_ua_xmax;
+static int hf_tn3270_ua_ymax;
+static int hf_tn3270_cs_ge;
+static int hf_tn3270_cs_mi;
+static int hf_tn3270_cs_lps;
+static int hf_tn3270_cs_lpse;
+static int hf_tn3270_cs_ms;
+static int hf_tn3270_cs_ch2;
+static int hf_tn3270_cs_gf;
+static int hf_tn3270_cs_res;
+static int hf_tn3270_cs_res2;
+static int hf_tn3270_cs_pscs;
+static int hf_tn3270_cs_res3;
+static int hf_tn3270_cs_cf;
+static int hf_tn3270_cs_form_type1;
+static int hf_tn3270_cs_form_type2;
+static int hf_tn3270_cs_form_type3;
+static int hf_tn3270_cs_form_type4;
+static int hf_tn3270_cs_form_type5;
+static int hf_tn3270_cs_form_type6;
+static int hf_tn3270_cs_form_type8;
+static int hf_tn3270_cs_ds_load;
+static int hf_tn3270_cs_ds_triple;
+static int hf_tn3270_cs_ds_char;
+static int hf_tn3270_cs_ds_cb;
+static int hf_tn3270_character_sets_flags1;
+static int hf_tn3270_character_sets_flags2;
+static int hf_tn3270_sdw;
+static int hf_tn3270_sdh;
+static int hf_tn3270_form;
+static int hf_tn3270_formres;
+static int hf_tn3270_cs_dl;
+static int hf_tn3270_cs_descriptor_set;
+static int hf_tn3270_cs_descriptor_flags;
+static int hf_tn3270_lcid;
+static int hf_tn3270_sw;
+static int hf_tn3270_sh;
+static int hf_tn3270_ssubsn;
+static int hf_tn3270_esubsn;
+static int hf_tn3270_ccsgid;
+static int hf_tn3270_ccsid;
+static int hf_tn3270_c_prtblk;
+static int hf_tn3270_h_np;
+static int hf_tn3270_h_vi;
+static int hf_tn3270_h_ai;
+static int hf_tn3270_ddm_flags;
+static int hf_tn3270_ddm_limin;
+static int hf_tn3270_ddm_limout;
+static int hf_tn3270_ddm_nss;
+static int hf_tn3270_ddm_ddmss;
+static int hf_tn3270_rpq_device;
+static int hf_tn3270_rpq_mid;
+static int hf_tn3270_rpq_rpql;
+static int hf_tn3270_rpq_name;
+static int hf_tn3270_ip_flags;
+static int hf_tn3270_ipdd_wd;
+static int hf_tn3270_ipdd_hd;
+static int hf_tn3270_ipdd_wa;
+static int hf_tn3270_ipdd_ha;
+static int hf_tn3270_ippd_dpbs;
+static int hf_tn3270_ippd_apbs;
+static int hf_tn3270_ipccd_wcd;
+static int hf_tn3270_ipccd_hcd;
+static int hf_tn3270_ipccd_wca;
+static int hf_tn3270_ipccd_hca;
+static int hf_tn3270_dc_dir;
+static int hf_tn3270_oem_dsref;
+static int hf_tn3270_oem_dtype;
+static int hf_tn3270_oem_uname;
+static int hf_tn3270_sdp_daid;
+static int hf_tn3270_oem_sdp_ll_limin;
+static int hf_tn3270_oem_sdp_ll_limout;
+static int hf_tn3270_oem_sdp_pclk_vers;
+static int hf_tn3270_null;
+static int hf_tn3270_unknown_data;
+static int hf_tn3270_ds_default_sfid;
+static int hf_tn3270_ds_sfid;
+static int hf_tn3270_asia_sdp_sosi_soset;
+static int hf_tn3270_asia_sdp_ic_func;
+static int hf_tn3270_ccc;
+static int hf_tn3270_ccc_coding;
+static int hf_tn3270_ccc_printout;
+static int hf_tn3270_ccc_start_print;
+static int hf_tn3270_ccc_sound_alarm;
+static int hf_tn3270_ccc_copytype;
+static int hf_tn3270_msr_user;
+static int hf_tn3270_msr_locked;
+static int hf_tn3270_msr_auto;
+static int hf_tn3270_msr_ind1;
+static int hf_tn3270_msr_ind2;
+static int hf_tn3270_spc_sdp_ot;
+static int hf_tn3270_spc_sdp_ob;
+static int hf_tn3270_spc_sdp_ol;
+static int hf_tn3270_spc_sdp_or;
+static int hf_tn3270_spc_sdp_eucflags;
+static int hf_tn3270_spc_sdp_srepc;
+static int hf_tn3270_srf_fpcb;
+static int hf_tn3270_sdp_statcode;
+static int hf_tn3270_sdp_excode;
+static int hf_tn3270_sdp_ngl;
+static int hf_tn3270_sdp_nml;
+static int hf_tn3270_sdp_nlml;
+static int hf_tn3270_sdp_stor;
+static int hf_tn3270_ap_cm;
+static int hf_tn3270_ap_ro;
+static int hf_tn3270_ap_co;
+static int hf_tn3270_ap_fo;
+static int hf_tn3270_sdp_ln;
+static int hf_tn3270_sdp_id;
+static int hf_tn3270_db_cavdef;
+static int hf_tn3270_db_cidef;
+static int hf_tn3270_dia_flags;
+static int hf_tn3270_dia_limin;
+static int hf_tn3270_dia_limout;
+static int hf_tn3270_dia_nfs;
+static int hf_tn3270_dia_diafs;
+static int hf_tn3270_dia_diafn;
+static int hf_tn3270_fo_flags;
+static int hf_tn3270_fo_vpos;
+static int hf_tn3270_fo_hpos;
+static int hf_tn3270_fo_hpos0;
+static int hf_tn3270_fo_hpos1;
+static int hf_tn3270_fsad_flags;
+static int hf_tn3270_fsad_limin;
+static int hf_tn3270_fsad_limout;
+static int hf_tn3270_fsad_size;
+static int hf_tn3270_ibm_flags;
+static int hf_tn3270_ibm_limin;
+static int hf_tn3270_ibm_limout;
+static int hf_tn3270_ibm_type;
+static int hf_tn3270_msr_nd;
+static int hf_tn3270_pft_flags;
+static int hf_tn3270_pft_tmo;
+static int hf_tn3270_pft_bmo;
+static int hf_tn3270_ioca_limin;
+static int hf_tn3270_ioca_limout;
+static int hf_tn3270_ioca_type;
+static int hf_tn3270_pc_vo_thickness;
+static int hf_tn3270_pdds_ssid;
+static int hf_tn3270_pdds_refid;
+static int hf_tn3270_srf_fpcbl;
+static int hf_tn3270_spc_epc_flags;
+static int hf_tn3270_sp_spid;
+static int hf_tn3270_sp_size;
+static int hf_tn3270_sp_space;
+static int hf_tn3270_sp_objlist;
+static int hf_tn3270_tp_nt;
+static int hf_tn3270_tp_m;
+static int hf_tn3270_tp_flags;
+static int hf_tn3270_tp_ntt;
+static int hf_tn3270_tp_tlist;
+static int hf_tn3270_t_np;
+static int hf_tn3270_t_vi;
+static int hf_tn3270_t_ai;
+static int hf_tn3270_3270_tranlim;
 
-static gint ett_tn3270 = -1;
-static gint ett_tn3270e_hdr = -1;
-static gint ett_sf = -1;
-static gint ett_tn3270_field_attribute = -1;
-static gint ett_tn3270_field_validation = -1;
-static gint ett_tn3270_wcc = -1;
-static gint ett_tn3270_usable_area_flags1 = -1;
-static gint ett_tn3270_usable_area_flags2 = -1;
-static gint ett_tn3270_query_reply_alphanumeric_flags = -1;
-static gint ett_tn3270_character_sets_flags1 = -1;
-static gint ett_tn3270_character_sets_flags2 = -1;
-static gint ett_tn3270_character_sets_form = -1;
-static gint ett_tn3270_cs_descriptor_flags = -1;
-static gint ett_tn3270_color_flags = -1;
-static gint ett_tn3270_ccc = -1;
-static gint ett_tn3270_msr_state_mask = -1;
-static gint ett_tn3270_data_chain_fields = -1;
-static gint ett_tn3270_query_list = -1;
+static int ett_tn3270;
+static int ett_tn3270e_hdr;
+static int ett_sf;
+static int ett_tn3270_field_attribute;
+static int ett_tn3270_field_validation;
+static int ett_tn3270_wcc;
+static int ett_tn3270_usable_area_flags1;
+static int ett_tn3270_usable_area_flags2;
+static int ett_tn3270_query_reply_alphanumeric_flags;
+static int ett_tn3270_character_sets_flags1;
+static int ett_tn3270_character_sets_flags2;
+static int ett_tn3270_character_sets_form;
+static int ett_tn3270_cs_descriptor_flags;
+static int ett_tn3270_color_flags;
+static int ett_tn3270_ccc;
+static int ett_tn3270_msr_state_mask;
+static int ett_tn3270_data_chain_fields;
+static int ett_tn3270_query_list;
 
-static expert_field ei_tn3270_order_code = EI_INIT;
-static expert_field ei_tn3270_command_code = EI_INIT;
-static expert_field ei_tn3270_aid = EI_INIT;
+static expert_field ei_tn3270_order_code;
+static expert_field ei_tn3270_command_code;
+static expert_field ei_tn3270_aid;
 
-static gint dissect_orders_and_data(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *tvb, gint offset, tn3270_conv_info_t *tn3270_info);
-static gint dissect_buffer_address(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset, gint hf, tn3270_conv_info_t *tn3270_info);
+static int dissect_orders_and_data(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *tvb, int offset, tn3270_conv_info_t *tn3270_info);
+static int dissect_buffer_address(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset, int hf, tn3270_conv_info_t *tn3270_info);
 
 typedef struct hf_items {
   int         *hf_idx_p;
-  gint        *bitmask_ett_idx_p;
-  gint         length;
-  const gint **bitmask;
-  const gint   encoding;
+  int         *bitmask_ett_idx_p;
+  int          length;
+  int         * const *bitmask;
+  const int    encoding;
 } hf_items;
 
 /* Utility Functions */
 
-static gint
-tn3270_add_hf_items(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
+static int
+tn3270_add_hf_items(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
                     const hf_items *fields)
 {
-  gint start = offset;
-  gint i;
+  int start = offset;
+  int i;
 
   for (i = 0; fields[i].hf_idx_p; i++) {
     if (fields[i].bitmask == 0) {
@@ -1667,11 +1657,11 @@ tn3270_add_hf_items(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
  * start:       tvb offset of beginning of data;
  * data_length: total length of data;
  */
-static gint
-dissect_unknown_data(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset, gint start,
-                     gint data_length)
+static int
+dissect_unknown_data(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset, int start,
+                     int data_length)
 {
-  gint len_left;
+  int len_left;
 
   len_left = (data_length) - (offset - start);
 
@@ -1685,11 +1675,11 @@ dissect_unknown_data(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset, gint s
   return 0;
 }
 
-static gint
-add_data_until_next_order_code(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+add_data_until_next_order_code(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
-  gint datalen          = 0;
-  gint length_remaining = tvb_reported_length_remaining(tvb, offset);
+  int datalen          = 0;
+  int length_remaining = tvb_reported_length_remaining(tvb, offset);
 
   /* XXX: From 4.3:
    *  "All order codes have an EBCDIC value in the range of hexadecimal 00
@@ -1699,8 +1689,8 @@ add_data_until_next_order_code(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offs
    */
 
   while (datalen < length_remaining) {
-    guint order_code;
-    order_code = tvb_get_guint8(tvb, offset + datalen);
+    unsigned order_code;
+    order_code = tvb_get_uint8(tvb, offset + datalen);
     if ((order_code > 0) && (order_code <= OC_MAX))
       break;
     datalen += 1;
@@ -1709,17 +1699,17 @@ add_data_until_next_order_code(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offs
   if (datalen > 0) {
     /* XXX: Need to handle "Format Control Orders" ??  */
     proto_tree_add_item(tn3270_tree, hf_tn3270_field_data, tvb, offset,
-                        datalen, ENC_EBCDIC|ENC_NA);
+                        datalen, ENC_EBCDIC);
   }
 
   return datalen;
 }
 
-static gint
-dissect_query_reply_resbytes(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                             gint sf_body_length)
+static int
+dissect_query_reply_resbytes(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                             int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items fields[] = {
     { &hf_tn3270_res_twobytes, NULL, 2, NULL, ENC_BIG_ENDIAN },
@@ -1735,11 +1725,11 @@ dissect_query_reply_resbytes(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset
   return (offset - start);
 }
 
-static gint
-dissect_wcc(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_wcc(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
 
-  static const gint *wcc_fields[] = {
+  static int * const wcc_fields[] = {
     &hf_tn3270_wcc_nop,
     &hf_tn3270_wcc_reset,
     &hf_tn3270_wcc_printer1,
@@ -1758,12 +1748,12 @@ dissect_wcc(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
 
 }
 
-static gint
-dissect_3270_field_validation(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_3270_field_validation(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
-  gint start = offset;
+  int start = offset;
 
-  static const gint *byte[] = {
+  static int * const byte[] = {
     &hf_tn3270_field_validation_mandatory_fill,
     &hf_tn3270_field_validation_mandatory_entry,
     &hf_tn3270_field_validation_trigger,
@@ -1779,12 +1769,12 @@ dissect_3270_field_validation(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offse
 }
 
 
-static gint
-dissect_3270_field_attribute(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_3270_field_attribute(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
-  gint start = offset;
+  int start = offset;
 
-  static const gint *byte[] = {
+  static int * const byte[] = {
     &hf_tn3270_fa_graphic_convert,
     &hf_tn3270_fa_protected,
     &hf_tn3270_fa_numeric,
@@ -1804,12 +1794,12 @@ dissect_3270_field_attribute(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset
 }
 
 /* 8.7 - Copy Control Code */
-static gint
-dissect_ccc(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_ccc(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
-  gint start = offset;
+  int start = offset;
 
-  static const gint *byte[] = {
+  static int * const byte[] = {
     &hf_tn3270_ccc_coding,
     &hf_tn3270_ccc_printout,
     &hf_tn3270_ccc_start_print,
@@ -1837,10 +1827,10 @@ dissect_ccc(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
 /* 5.5 Activate Partition - Search for ACTIVATE_PARTITION */
 /* 5.6 Begin/End of File - Search for BEGIN_OR_END_OF_FILE */
 /* 5.7 Create Partition */
-static gint
-dissect_create_partition(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset, gint sf_body_length)
+static int
+dissect_create_partition(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset, int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items fields[] = {
     { &hf_tn3270_partition_id,     NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -1876,11 +1866,11 @@ dissect_create_partition(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset, gi
 /* 5.10 Load Color Table - Search for LOAD_COLOR_TABLE */
 
 /* 5.11 Load Format Storage */
-static gint
-dissect_load_format_storage(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset, gint sf_body_length)
+static int
+dissect_load_format_storage(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset, int sf_body_length)
 {
-  gint start = offset;
-  gint operand;
+  int start = offset;
+  int operand;
 
   static const hf_items fields[] = {
     { &hf_tn3270_load_format_storage_flags1,    NULL,  1, NULL, ENC_BIG_ENDIAN },
@@ -1892,15 +1882,15 @@ dissect_load_format_storage(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
     { NULL, NULL, 0, NULL, 0 }
   };
 
-  operand = tvb_get_guint8(tvb, offset+2);
+  operand = tvb_get_uint8(tvb, offset+2);
 
   offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                 fields);
 
   if (operand == LOAD_FORMAT_STORAGE_OPERAND_ADD) {
-    gint fmtln = sf_body_length - (offset - start);
+    int fmtln = sf_body_length - (offset - start);
     proto_tree_add_item(tn3270_tree, hf_tn3270_load_format_storage_format_data,
-                        tvb, offset, fmtln, ENC_EBCDIC|ENC_NA);
+                        tvb, offset, fmtln, ENC_EBCDIC);
     offset += fmtln;
   }
 
@@ -1912,12 +1902,12 @@ dissect_load_format_storage(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
 /* 5.12 Load Line Type - Search for LOAD_LINE_TYPE */
 
 /* 5.13 Load Programmed Symbols (Load PS) */
-static gint
-dissect_load_programmed_symbols(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset, gint sf_body_length)
+static int
+dissect_load_programmed_symbols(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset, int sf_body_length)
 {
-  gint  start = offset, i;
-  gint8 flags;
-  gint8 extended_ps_length;
+  int   start = offset, i;
+  int8_t flags;
+  int8_t extended_ps_length;
 
   static const hf_items ps_fields[] = {
     { &hf_tn3270_ps_flags, NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -1940,7 +1930,7 @@ dissect_load_programmed_symbols(proto_tree *tn3270_tree, tvbuff_t *tvb, gint off
     { NULL, NULL, 0, NULL, 0 }
   };
 
-  flags   = tvb_get_guint8(tvb, offset);
+  flags   = tvb_get_uint8(tvb, offset);
   offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                 ps_fields);
 
@@ -1949,7 +1939,7 @@ dissect_load_programmed_symbols(proto_tree *tn3270_tree, tvbuff_t *tvb, gint off
     return (offset - start);
   }
 
-  extended_ps_length = tvb_get_guint8(tvb, offset);
+  extended_ps_length = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tn3270_tree, hf_tn3270_extended_ps_length,
                       tvb, offset, 1, ENC_BIG_ENDIAN);
   offset += 1;
@@ -1974,10 +1964,10 @@ dissect_load_programmed_symbols(proto_tree *tn3270_tree, tvbuff_t *tvb, gint off
 }
 
 /* 5.14 Modify Partition) */
-static gint
-dissect_modify_partition(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset, gint sf_body_length)
+static int
+dissect_modify_partition(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset, int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items fields[] = {
     { &hf_tn3270_resbyte,         NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -2009,12 +1999,12 @@ dissect_modify_partition(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset, gi
 }
 
 /* 5.15 Outbound Text Header */
-static gint
-dissect_outbound_text_header(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                             gint sf_body_length)
+static int
+dissect_outbound_text_header(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                             int sf_body_length)
 {
-  gint   start = offset;
-  gint16 hdr_length;
+  int    start = offset;
+  int16_t hdr_length;
 
   static const hf_items outbound_text_header_fields1[] = {
     { &hf_tn3270_partition_id,                        NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -2053,12 +2043,12 @@ dissect_outbound_text_header(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset
 }
 
 /* 5.16 Outbound 3270DS */
-static gint
-dissect_outbound_3270ds(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *tvb, gint offset,
-                        tn3270_conv_info_t *tn3270_info, gint sf_body_length )
+static int
+dissect_outbound_3270ds(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *tvb, int offset,
+                        tn3270_conv_info_t *tn3270_info, int sf_body_length )
 {
-  gint start = offset;
-  gint cmd;
+  int start = offset;
+  int cmd;
 
   proto_tree_add_item(tn3270_tree,
                       hf_tn3270_partition_id,
@@ -2067,7 +2057,7 @@ dissect_outbound_3270ds(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *t
                       ENC_BIG_ENDIAN);
   offset += 1;
 
-  cmd = tvb_get_guint8(tvb, offset);
+  cmd = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tn3270_tree,
                       hf_tn3270_partition_command,
                       tvb, offset,
@@ -2112,11 +2102,11 @@ dissect_outbound_3270ds(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *t
 }
 
 /* 5.17 Present Absolute Format */
-static gint
-dissect_present_absolute_format(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                gint sf_body_length)
+static int
+dissect_present_absolute_format(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   proto_tree_add_item(tn3270_tree,
                       hf_tn3270_partition_id,
@@ -2138,18 +2128,18 @@ dissect_present_absolute_format(proto_tree *tn3270_tree, tvbuff_t *tvb, gint off
                       hf_tn3270_format_name,
                       tvb, offset,
                       sf_body_length - (offset - start),
-                      ENC_EBCDIC|ENC_NA);
+                      ENC_EBCDIC);
   offset += (sf_body_length - (offset - start));
 
   return (offset - start);
 }
 
 /* 5.18 Present Relative Format */
-static gint
-dissect_present_relative_format(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                gint sf_body_length)
+static int
+dissect_present_relative_format(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   proto_tree_add_item(tn3270_tree,
                       hf_tn3270_partition_id,
@@ -2178,21 +2168,21 @@ dissect_present_relative_format(proto_tree *tn3270_tree, tvbuff_t *tvb, gint off
                       hf_tn3270_format_name,
                       tvb, offset,
                       sf_body_length - (offset - start),
-                      ENC_EBCDIC|ENC_NA);
+                      ENC_EBCDIC);
   offset += (sf_body_length - (offset - start));
 
   return (offset - start);
 }
 
 /* 5.19 Read Partition */
-static gint
-dissect_read_partition(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                       gint sf_body_length)
+static int
+dissect_read_partition(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                       int sf_body_length)
 {
-  gint        start = offset;
-  gint        type;
+  int         start = offset;
+  int         type;
   proto_tree *query_list_tree;
-  gint        qcode_list_len, i;
+  int         qcode_list_len, i;
 
   proto_tree_add_item(tn3270_tree,
                       hf_tn3270_partition_id,
@@ -2201,11 +2191,11 @@ dissect_read_partition(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
                       ENC_BIG_ENDIAN);
   offset += 1;
 
-  type = tvb_get_guint8(tvb, offset);
+  type = tvb_get_uint8(tvb, offset);
   if (type == 0xFF) { /* Partition ID of 0xFF is escaped with another 0xFF */
                       /* XXX: removing tn3270 IAX escapes should be handled in the telnet dissector ! */
     offset += 1;
-    type = tvb_get_guint8(tvb, offset);
+    type = tvb_get_uint8(tvb, offset);
   }
 
   proto_tree_add_item(tn3270_tree,
@@ -2243,11 +2233,11 @@ dissect_read_partition(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
 /*5.21 Reset Partition - Search for RESET_PARTITION */
 
 /*5.22 Restart */
-static gint
-dissect_restart(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                gint sf_body_length)
+static int
+dissect_restart(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   proto_tree_add_item(tn3270_tree,
                       hf_tn3270_resbyte,
@@ -2287,13 +2277,13 @@ dissect_restart(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
 /* 5.26 Set Checkpoint Interval - Search for CHECKPOINT_INTERVAL */
 
 /* 5.27 Set MSR Control */
-static gint
-dissect_set_msr_control(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                        gint sf_body_length)
+static int
+dissect_set_msr_control(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                        int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
-  static const gint *byte[] = {
+  static int * const byte[] = {
     &hf_tn3270_msr_user,
     &hf_tn3270_msr_locked,
     &hf_tn3270_msr_auto,
@@ -2322,12 +2312,12 @@ dissect_set_msr_control(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
 }
 
 /* 5.28 Set Partition Characteristics */
-static gint
-dissect_set_partition_characteristics_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_set_partition_characteristics_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
 
-  gint    start = offset;
-  guint16 sdp;
+  int     start = offset;
+  uint16_t sdp;
 
   static const hf_items sdp1[] = {
     { &hf_tn3270_sdp_ln,     NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -2378,13 +2368,13 @@ dissect_set_partition_characteristics_sd_parms(proto_tree *tn3270_tree, tvbuff_t
 
 }
 
-static gint
-dissect_set_partition_characteristics(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                      gint sf_body_length)
+static int
+dissect_set_partition_characteristics(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                      int sf_body_length)
 {
 
-  gint start = offset;
-  gint i;
+  int start = offset;
+  int i;
 
   static const hf_items fields[] = {
     { &hf_tn3270_partition_id, NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -2408,12 +2398,12 @@ dissect_set_partition_characteristics(proto_tree *tn3270_tree, tvbuff_t *tvb, gi
 }
 
 /* 5.29 Set Printer Characteristics */
-static gint
-dissect_set_printer_characteristics_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_set_printer_characteristics_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
 
-  gint    start = offset;
-  guint16 sdp;
+  int     start = offset;
+  uint16_t sdp;
 
   static const hf_items sdp1[] = {
     { &hf_tn3270_sdp_ln,        NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -2437,13 +2427,13 @@ dissect_set_printer_characteristics_sd_parms(proto_tree *tn3270_tree, tvbuff_t *
 
 }
 
-static gint
-dissect_set_printer_characteristics(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                    gint sf_body_length)
+static int
+dissect_set_printer_characteristics(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                    int sf_body_length)
 {
 
-  gint start = offset;
-  gint i;
+  int start = offset;
+  int i;
 
   static const hf_items fields[] = {
     { &hf_tn3270_printer_flags, NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -2467,13 +2457,13 @@ dissect_set_printer_characteristics(proto_tree *tn3270_tree, tvbuff_t *tvb, gint
 
 
 /* 5.30 Set Reply Mode */
-static gint
-dissect_set_reply_mode(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                       gint sf_body_length)
+static int
+dissect_set_reply_mode(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                       int sf_body_length)
 {
-  gint start = offset;
-  gint type;
-  gint i;
+  int start = offset;
+  int type;
+  int i;
 
   static const hf_items fields[] = {
     { &hf_tn3270_partition_id, NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -2481,7 +2471,7 @@ dissect_set_reply_mode(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
     { NULL, NULL, 0, NULL, 0 }
   };
 
-  type = tvb_get_guint8(tvb, offset+1);
+  type = tvb_get_uint8(tvb, offset+1);
 
   offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                 fields);
@@ -2501,11 +2491,11 @@ dissect_set_reply_mode(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
 /* 5.31 Set Window Origin - Search for SET_WINDOW_ORIGIN */
 /* 6.6 Type 1 Text Inbound
    5.32 Type 1 Text Outbound */
-static gint
-dissect_type_1_text(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                    gint sf_body_length)
+static int
+dissect_type_1_text(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                    int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items fields[] = {
     { &hf_tn3270_partition_id, NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -2519,20 +2509,20 @@ dissect_type_1_text(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
                       hf_tn3270_field_data,
                       tvb, offset,
                       sf_body_length - (offset - start),
-                      ENC_EBCDIC|ENC_NA);
+                      ENC_EBCDIC);
   offset += (sf_body_length - (offset - start));
 
   return (offset - start);
 }
 
 /* 5.34 Data Chain */
-static guint
-dissect_data_chain(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                       gint sf_body_length)
+static unsigned
+dissect_data_chain(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                       int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
-  static const gint *byte[] = {
+  static int * const byte[] = {
     &hf_tn3270_data_chain_group,
     &hf_tn3270_data_chain_inbound_control,
     NULL
@@ -2555,11 +2545,11 @@ dissect_data_chain(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
 /* 5.35 Destination/Origin -  Search for DESTINATION_OR_ORIGIN*/
 
 /* 5.36 Object Control */
-static gint
-dissect_object_control(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                       gint sf_body_length)
+static int
+dissect_object_control(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                       int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items fields[] = {
     { &hf_tn3270_partition_id,         NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -2586,11 +2576,11 @@ dissect_object_control(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
 /* 5.39 OEM Data - Search for OEM_DATA */
 
 /* 5.40 Save/Restore Format */
-static gint
-dissect_save_or_restore_format(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                               gint sf_body_length)
+static int
+dissect_save_or_restore_format(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                               int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   hf_items fields[] = {
     { &hf_tn3270_save_or_restore_format_flags, NULL, 1,                NULL, ENC_BIG_ENDIAN },
@@ -2613,12 +2603,12 @@ dissect_save_or_restore_format(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offs
 /* -----------------------------------------*/
 
 /* 6.2 Exception/Status */
-static gint
-dissect_exception_or_status_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_exception_or_status_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
 
-  gint    start = offset;
-  guint16 sdp;
+  int     start = offset;
+  uint16_t sdp;
 
   static const hf_items sdp1[] = {
     { &hf_tn3270_sdp_ln,     NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -2692,11 +2682,11 @@ dissect_exception_or_status_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, gin
 
 }
 
-static gint
-dissect_exception_or_status(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                            gint sf_body_length)
+static int
+dissect_exception_or_status(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                            int sf_body_length)
 {
-  gint start = offset, i;
+  int start = offset, i;
 
   static const hf_items fields[] = {
     { &hf_tn3270_partition_id,              NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -2720,11 +2710,11 @@ dissect_exception_or_status(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
 }
 
 /* 6.3 Inbound Text Header */
-static gint
-dissect_inbound_text_header(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                            gint sf_body_length)
+static int
+dissect_inbound_text_header(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                            int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items outbound_text_header_fields[] = {
     { &hf_tn3270_partition_id, NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -2752,11 +2742,11 @@ dissect_inbound_text_header(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
 }
 
 /* 6.4 Inbound 3270DS */
-static gint
-dissect_inbound_3270ds(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                       tn3270_conv_info_t *tn3270_info, gint sf_body_length)
+static int
+dissect_inbound_3270ds(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                       tn3270_conv_info_t *tn3270_info, int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items fields1[] = {
     { &hf_tn3270_partition_id,   NULL, 1,                  NULL, ENC_BIG_ENDIAN },
@@ -2779,11 +2769,11 @@ dissect_inbound_3270ds(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
 
 
 /* 6.5 Recovery Data */
-static gint
-dissect_recovery_data(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                      gint sf_body_length)
+static int
+dissect_recovery_data(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                      int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
 
   static const hf_items fields[] = {
@@ -2826,12 +2816,12 @@ dissect_recovery_data(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
 /* 6.7 and 6.8 Query Reply - Introductory Matter */
 
 /* 6.9 Query Reply (Alphanumeric Partitions) */
-static gint
-dissect_query_reply_alphanumeric_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_query_reply_alphanumeric_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
 
-  gint    start = offset;
-  guint16 sdp;
+  int     start = offset;
+  uint16_t sdp;
 
   static const hf_items sdp1[] = {
     { &hf_tn3270_sdp_ln, NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -2859,13 +2849,13 @@ dissect_query_reply_alphanumeric_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb
 
 }
 
-static gint
-dissect_query_reply_alphanumeric(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                 gint sf_body_length)
+static int
+dissect_query_reply_alphanumeric(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                 int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
-  static const gint *byte[] = {
+  static int * const byte[] = {
     &hf_tn3270_ap_vertical_scrolling,
     &hf_tn3270_ap_horizontal_scrolling,
     &hf_tn3270_ap_apres1,
@@ -2898,14 +2888,14 @@ dissect_query_reply_alphanumeric(proto_tree *tn3270_tree, tvbuff_t *tvb, gint of
 /* 6.11 Query Reply (BEGIN/End of File ) - Search for QUERY_REPLY_BEGIN_OR_END_OF_FILE */
 
 /* 6.12 Query Reply (Character Sets) */
-static gint
-dissect_query_reply_character_sets(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                   gint sf_body_length)
+static int
+dissect_query_reply_character_sets(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                   int sf_body_length)
 {
-  gint start = offset;
-  gint flagbyte1, flagbyte2;
+  int start = offset;
+  int flagbyte1, flagbyte2;
 
-  static const gint *byte1[] = {
+  static int * const byte1[] = {
     &hf_tn3270_cs_ge,
     &hf_tn3270_cs_mi,
     &hf_tn3270_cs_lps,
@@ -2917,7 +2907,7 @@ dissect_query_reply_character_sets(proto_tree *tn3270_tree, tvbuff_t *tvb, gint 
     NULL
   };
 
-  static const gint *byte2[] = {
+  static int * const byte2[] = {
     &hf_tn3270_cs_res2,
     &hf_tn3270_cs_pscs,
     &hf_tn3270_cs_res3,
@@ -2925,7 +2915,7 @@ dissect_query_reply_character_sets(proto_tree *tn3270_tree, tvbuff_t *tvb, gint 
     NULL
   };
 
-  static const gint *byte3[] = {
+  static int * const byte3[] = {
     &hf_tn3270_cs_form_type1,
     &hf_tn3270_cs_form_type2,
     &hf_tn3270_cs_form_type3,
@@ -2936,7 +2926,7 @@ dissect_query_reply_character_sets(proto_tree *tn3270_tree, tvbuff_t *tvb, gint 
     NULL
   };
 
-  static const gint *byte4[] = {
+  static int * const byte4[] = {
     &hf_tn3270_cs_ds_load,
     &hf_tn3270_cs_ds_triple,
     &hf_tn3270_cs_ds_char,
@@ -2987,8 +2977,8 @@ dissect_query_reply_character_sets(proto_tree *tn3270_tree, tvbuff_t *tvb, gint 
     { NULL, NULL, 0, NULL, 0 }
   };
 
-  flagbyte1 = tvb_get_guint8(tvb, offset);
-  flagbyte2 = tvb_get_guint8(tvb, offset+1);
+  flagbyte1 = tvb_get_uint8(tvb, offset);
+  flagbyte2 = tvb_get_uint8(tvb, offset+1);
 
   offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                 fields);
@@ -3024,12 +3014,12 @@ dissect_query_reply_character_sets(proto_tree *tn3270_tree, tvbuff_t *tvb, gint 
 }
 
 /* 6.13 Query Reply (Color) */
-static gint
-dissect_query_reply_color_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_query_reply_color_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
 
-  gint    start = offset;
-  guint16 sdp;
+  int     start = offset;
+  uint16_t sdp;
 
   static const hf_items sdp1[] = {
     { &hf_tn3270_sdp_ln,    NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3055,15 +3045,15 @@ dissect_query_reply_color_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, gint 
 
 }
 
-static gint
-dissect_query_reply_color(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                          gint sf_body_length)
+static int
+dissect_query_reply_color(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                          int sf_body_length)
 {
-  gint start = offset;
-  gint i;
-  gint np;
+  int start = offset;
+  int i;
+  int np;
 
-  static const gint *byte[] = {
+  static int * const byte[] = {
     &hf_tn3270_c_prtblk,
     NULL
   };
@@ -3075,12 +3065,12 @@ dissect_query_reply_color(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
   };
 
 
-  np = tvb_get_guint8(tvb, offset +1);
+  np = tvb_get_uint8(tvb, offset +1);
   offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                 fields);
 
   for (i=0; i < np; i++) {
-    if (tvb_get_guint8(tvb, offset) == 0xFF) {
+    if (tvb_get_uint8(tvb, offset) == 0xFF) {
       offset += 1;
     }
     proto_tree_add_item(tn3270_tree,
@@ -3089,7 +3079,7 @@ dissect_query_reply_color(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
                         1,
                         ENC_BIG_ENDIAN);
     offset += 1;
-    if (tvb_get_guint8(tvb, offset) == 0xFF) {
+    if (tvb_get_uint8(tvb, offset) == 0xFF) {
       offset += 1;
     }
     proto_tree_add_item(tn3270_tree,
@@ -3108,11 +3098,11 @@ dissect_query_reply_color(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
 
 
 /* 6.36 - Query Reply (OEM Auxiliary Device) Self-Defining Parameters */
-static gint
-dissect_daid_sd_parm(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_daid_sd_parm(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
 
-  gint start = offset;
+  int start = offset;
 
   static const hf_items sdp1[] = {
     { &hf_tn3270_sdp_ln,   NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3127,11 +3117,11 @@ dissect_daid_sd_parm(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
 
 }
 
-static gint
-dissect_pclk_sd_parm(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_pclk_sd_parm(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
 
-  gint start = offset;
+  int start = offset;
 
   static const hf_items sdp1[] = {
     { &hf_tn3270_sdp_ln,            NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3146,13 +3136,13 @@ dissect_pclk_sd_parm(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
 
 }
 
-static gint
-dissect_query_reply_oem_auxiliary_device_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_query_reply_oem_auxiliary_device_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
 
-  gint start = offset;
-  gint sdp_len;
-  gint sdp;
+  int start = offset;
+  int sdp_len;
+  int sdp;
 
   static const hf_items sdp1[] = {
     { &hf_tn3270_sdp_ln,   NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3178,12 +3168,12 @@ dissect_query_reply_oem_auxiliary_device_sd_parms(proto_tree *tn3270_tree, tvbuf
   };
 
 
-  sdp_len = tvb_get_guint8(tvb, offset);
+  sdp_len = tvb_get_uint8(tvb, offset);
   if ((sdp_len != 0x04) && (sdp_len != 0x06)) {
     return 0;
   }
 
-  sdp = tvb_get_guint8(tvb, offset+1);
+  sdp = tvb_get_uint8(tvb, offset+1);
 
   switch (sdp) {
     case 0x01:
@@ -3207,11 +3197,11 @@ dissect_query_reply_oem_auxiliary_device_sd_parms(proto_tree *tn3270_tree, tvbuf
 }
 
 /* 6.14 - Query Reply (Cooperative Processing Requestor) */
-static gint
-dissect_query_reply_cooperative(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                gint sf_body_length)
+static int
+dissect_query_reply_cooperative(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items fields[] = {
     { &hf_tn3270_res_twobytes, NULL, 2, NULL, ENC_BIG_ENDIAN },
@@ -3232,7 +3222,7 @@ dissect_query_reply_cooperative(proto_tree *tn3270_tree, tvbuff_t *tvb, gint off
                       hf_tn3270_field_data,
                       tvb, offset,
                       sf_body_length - (offset-start),
-                      ENC_EBCDIC|ENC_NA);
+                      ENC_EBCDIC);
   offset += (sf_body_length - (offset - start));
 
   /* Uses same Self-Defining Parm as OEM Auxiliary Device */
@@ -3245,11 +3235,11 @@ dissect_query_reply_cooperative(proto_tree *tn3270_tree, tvbuff_t *tvb, gint off
 }
 
 /* 6.15 - Query Reply (Data Chaining) */
-static gint
-dissect_query_reply_data_chaining(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                  gint sf_body_length)
+static int
+dissect_query_reply_data_chaining(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                  int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items fields[] = {
     { &hf_tn3270_dc_dir,  NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3267,12 +3257,12 @@ dissect_query_reply_data_chaining(proto_tree *tn3270_tree, tvbuff_t *tvb, gint o
 
 /* 6.16 - Query Reply (Data Streams) */
 
-static gint
-dissect_query_reply_data_streams(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                 gint sf_body_length)
+static int
+dissect_query_reply_data_streams(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                 int sf_body_length)
 {
-  gint start = offset;
-  gint i;
+  int start = offset;
+  int i;
 
   proto_tree_add_item(tn3270_tree, hf_tn3270_ds_default_sfid, tvb, offset, 1,
                       ENC_BIG_ENDIAN);
@@ -3293,13 +3283,13 @@ dissect_query_reply_data_streams(proto_tree *tn3270_tree, tvbuff_t *tvb, gint of
 
 /* 6.17 - Query Reply (DBCS Asia) */
 
-static gint
-dissect_query_reply_dbcs_asia_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_query_reply_dbcs_asia_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
 
-  gint start = offset;
-  gint sdp_len;
-  gint sdp;
+  int start = offset;
+  int sdp_len;
+  int sdp;
 
   static const hf_items sdp1[] = {
     { &hf_tn3270_sdp_ln,              NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3315,12 +3305,12 @@ dissect_query_reply_dbcs_asia_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, g
     { NULL, NULL, 0, NULL, 0 }
   };
 
-  sdp_len = tvb_get_guint8(tvb, offset);
+  sdp_len = tvb_get_uint8(tvb, offset);
   if (sdp_len != 0x03) {
     return 0;
   }
 
-  sdp = tvb_get_guint8(tvb, offset+1);
+  sdp = tvb_get_uint8(tvb, offset+1);
 
   switch (sdp) {
     case 0x01: /*SO/SI*/
@@ -3339,13 +3329,13 @@ dissect_query_reply_dbcs_asia_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, g
 
 }
 
-static gint
-dissect_query_reply_dbcs_asia(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                              gint sf_body_length)
+static int
+dissect_query_reply_dbcs_asia(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                              int sf_body_length)
 {
 
-  gint start = offset;
-  gint i;
+  int start = offset;
+  int i;
 
   static const hf_items fields[] = {
     { &hf_tn3270_resbyte, NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3368,11 +3358,11 @@ dissect_query_reply_dbcs_asia(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offse
 }
 
 /* 6.18 - Query Reply (Device Characteristics) */
-static gint
+static int
 dissect_query_reply_device_characteristics(proto_tree *tn3270_tree, tvbuff_t *tvb,
-                                           gint offset, gint sf_body_length)
+                                           int offset, int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
 #if 0 /* XXX: I don't think this is correct (i.e., this field is not part of this message) .... */
   proto_tree_add_item(tn3270_tree,
@@ -3390,13 +3380,13 @@ dissect_query_reply_device_characteristics(proto_tree *tn3270_tree, tvbuff_t *tv
 }
 
 /* 6.19 - Query Reply (Distributed Data Management) */
-static gint
-dissect_query_reply_distributed_data_management(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                                gint sf_body_length)
+static int
+dissect_query_reply_distributed_data_management(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                                int sf_body_length)
 {
-  gint     start = offset, i;
-  gint     sdp;
-  gboolean done  = FALSE;
+  int      start = offset, i;
+  int      sdp;
+  bool done  = false;
 
   static const hf_items fields[] = {
     { &hf_tn3270_ddm_flags,  NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3412,11 +3402,11 @@ dissect_query_reply_distributed_data_management(proto_tree *tn3270_tree, tvbuff_
                                 fields);
 
   for (i = 0; i < 3; i++) {
-    sdp = tvb_get_guint8(tvb, offset+1);
+    sdp = tvb_get_uint8(tvb, offset+1);
     switch (sdp) {
       case 0x02: /*DDM*/
         /*TODO: DDM */
-        offset += dissect_unknown_data(tn3270_tree, tvb, offset, start, tvb_get_guint8(tvb,offset));
+        offset += dissect_unknown_data(tn3270_tree, tvb, offset, start, tvb_get_uint8(tvb,offset));
         break;
       case 0x01: /*DAID*/
         offset += dissect_daid_sd_parm(tn3270_tree, tvb, offset);
@@ -3425,7 +3415,7 @@ dissect_query_reply_distributed_data_management(proto_tree *tn3270_tree, tvbuff_
         offset += dissect_pclk_sd_parm(tn3270_tree, tvb, offset);
         break;
       default:
-        done = TRUE;
+        done = true;
         break;
     }
     if ((tvb_reported_length_remaining(tvb, offset) <= 0) || done)
@@ -3438,11 +3428,11 @@ dissect_query_reply_distributed_data_management(proto_tree *tn3270_tree, tvbuff_
 }
 
 /* 6.20 - Query Reply (Document Interchange Architecture) */
-static gint
-dissect_query_reply_document_interchange_architecture(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                                      gint sf_body_length)
+static int
+dissect_query_reply_document_interchange_architecture(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                                      int sf_body_length)
 {
-  gint start = offset, sdp, ln, i;
+  int start = offset, sdp, ln, i;
 
   static const hf_items fields[] = {
     { &hf_tn3270_dia_flags,  NULL, 2, NULL, ENC_BIG_ENDIAN },
@@ -3454,7 +3444,7 @@ dissect_query_reply_document_interchange_architecture(proto_tree *tn3270_tree, t
   offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                 fields);
 
-  ln = tvb_get_guint8(tvb, offset);
+  ln = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tn3270_tree, hf_tn3270_dia_nfs, tvb, offset, 1, ENC_BIG_ENDIAN);
 
   for (i=0; i < ln; i++) {
@@ -3466,7 +3456,7 @@ dissect_query_reply_document_interchange_architecture(proto_tree *tn3270_tree, t
     offset += 1;
   }
 
-  sdp = tvb_get_guint8(tvb, offset+1);
+  sdp = tvb_get_uint8(tvb, offset+1);
   if (sdp == 0x01) { /*DAID*/
     offset += dissect_daid_sd_parm(tn3270_tree, tvb, offset);
   }
@@ -3477,14 +3467,14 @@ dissect_query_reply_document_interchange_architecture(proto_tree *tn3270_tree, t
 }
 
 /* 6.21 - Query Reply (Extended Drawing Routine) */
-static gint
+static int
 dissect_query_reply_extended_drawing_routine(proto_tree *tn3270_tree, tvbuff_t *tvb,
-                                             gint offset, gint sf_body_length)
+                                             int offset, int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   proto_tree_add_item(tn3270_tree, hf_tn3270_field_data ,tvb, offset,
-                      sf_body_length, ENC_EBCDIC|ENC_NA);
+                      sf_body_length, ENC_EBCDIC);
 
   offset += sf_body_length;
 
@@ -3492,11 +3482,11 @@ dissect_query_reply_extended_drawing_routine(proto_tree *tn3270_tree, tvbuff_t *
 }
 
 /* 6.22 - Query Reply (Field Outlining) */
-static gint
-dissect_query_reply_field_outlining(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                    gint sf_body_length)
+static int
+dissect_query_reply_field_outlining(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                    int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items fields[] = {
     { &hf_tn3270_resbyte,  NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3520,11 +3510,11 @@ dissect_query_reply_field_outlining(proto_tree *tn3270_tree, tvbuff_t *tvb, gint
 /* 6.24 - Query Reply (Format Presentation) - Search for FORMAT_PRESENTATION*/
 
 /* 6.25 - Query Reply (Format Storage Auxiliary Device)*/
-static gint
-dissect_query_reply_format_storage_aux_device(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                              gint sf_body_length)
+static int
+dissect_query_reply_format_storage_aux_device(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                              int sf_body_length)
 {
-  gint start = offset, sdp;
+  int start = offset, sdp;
 
   static const hf_items fields[] = {
     { &hf_tn3270_fsad_flags,  NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3537,7 +3527,7 @@ dissect_query_reply_format_storage_aux_device(proto_tree *tn3270_tree, tvbuff_t 
   offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                 fields);
 
-  sdp = tvb_get_guint8(tvb, offset+1);
+  sdp = tvb_get_uint8(tvb, offset+1);
   if (sdp == 0x01) { /*DAID*/
     offset += dissect_daid_sd_parm(tn3270_tree, tvb, offset);
     proto_tree_add_item(tn3270_tree, hf_tn3270_fsad_size ,tvb, offset,
@@ -3554,13 +3544,13 @@ dissect_query_reply_format_storage_aux_device(proto_tree *tn3270_tree, tvbuff_t 
 /* 6.27 - Query Reply (Graphic Symbol Sets) - Search for GRAPHIC_SYMBOL_SETS*/
 
 /* 6.28 - Query Reply (Highlighting) */
-static gint
-dissect_query_reply_highlighting(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                 gint sf_body_length)
+static int
+dissect_query_reply_highlighting(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                 int sf_body_length)
 {
-  gint start = offset;
-  gint i;
-  gint np;
+  int start = offset;
+  int i;
+  int np;
 
   static const hf_items fields[] = {
     { &hf_tn3270_h_np, NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3568,12 +3558,12 @@ dissect_query_reply_highlighting(proto_tree *tn3270_tree, tvbuff_t *tvb, gint of
   };
 
 
-  np = tvb_get_guint8(tvb, offset);
+  np = tvb_get_uint8(tvb, offset);
   offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                 fields);
 
   for (i=0; i < np; i++) {
-    if (tvb_get_guint8(tvb, offset) == 0xFF) {
+    if (tvb_get_uint8(tvb, offset) == 0xFF) {
       offset += 1;
     }
     proto_tree_add_item(tn3270_tree,
@@ -3582,7 +3572,7 @@ dissect_query_reply_highlighting(proto_tree *tn3270_tree, tvbuff_t *tvb, gint of
                         1,
                         ENC_BIG_ENDIAN);
     offset += 1;
-    if (tvb_get_guint8(tvb, offset) == 0xFF) {
+    if (tvb_get_uint8(tvb, offset) == 0xFF) {
       offset += 1;
     }
     proto_tree_add_item(tn3270_tree,
@@ -3599,12 +3589,12 @@ dissect_query_reply_highlighting(proto_tree *tn3270_tree, tvbuff_t *tvb, gint of
 }
 
 /* 6.29 - Query Reply (IBM Auxiliary Device) */
-static gint
-dissect_query_reply_ibm_aux_device(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                   gint sf_body_length)
+static int
+dissect_query_reply_ibm_aux_device(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                   int sf_body_length)
 {
-  gint     start = offset, i, sdp;
-  gboolean done  = FALSE;
+  int      start = offset, i, sdp;
+  bool done  = false;
 
   static const hf_items fields[] = {
     { &hf_tn3270_ibm_flags,  NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3619,11 +3609,11 @@ dissect_query_reply_ibm_aux_device(proto_tree *tn3270_tree, tvbuff_t *tvb, gint 
                                 fields);
 
   for (i = 0; i < 3; i++) {
-    sdp = tvb_get_guint8(tvb, offset+1);
+    sdp = tvb_get_uint8(tvb, offset+1);
     switch (sdp) {
       case 0x02: /*Printer Name*/
         /*TODO: Printer Name */
-        offset += dissect_unknown_data(tn3270_tree, tvb, offset, start, tvb_get_guint8(tvb,offset));
+        offset += dissect_unknown_data(tn3270_tree, tvb, offset, start, tvb_get_uint8(tvb,offset));
         break;
       case 0x01: /*DAID*/
         offset += dissect_daid_sd_parm(tn3270_tree, tvb, offset);
@@ -3632,7 +3622,7 @@ dissect_query_reply_ibm_aux_device(proto_tree *tn3270_tree, tvbuff_t *tvb, gint 
         offset += dissect_pclk_sd_parm(tn3270_tree, tvb, offset);
         break;
       default:
-        done = TRUE;
+        done = true;
         break;
     }
     if ((tvb_reported_length_remaining(tvb, offset) <= 0) || done)
@@ -3647,13 +3637,13 @@ dissect_query_reply_ibm_aux_device(proto_tree *tn3270_tree, tvbuff_t *tvb, gint 
 /* 6.30 - Query Reply (Image) */
 
 /* 6.31 - Query Reply (Implicit Partitions) */
-static gint
-dissect_query_reply_implicit_partitions_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_query_reply_implicit_partitions_sd_parms(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
 
-  gint start = offset;
-  gint sdp_len;
-  gint sdp;
+  int start = offset;
+  int sdp_len;
+  int sdp;
 
   static const hf_items sdp1[] = {
     { &hf_tn3270_sdp_ln,   NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3686,12 +3676,12 @@ dissect_query_reply_implicit_partitions_sd_parms(proto_tree *tn3270_tree, tvbuff
     { NULL, NULL, 0, NULL, 0 }
   };
 
-  sdp_len = tvb_get_guint8(tvb, offset);
+  sdp_len = tvb_get_uint8(tvb, offset);
   if (sdp_len != 0x0B) {
     return 0;
   }
 
-  sdp = tvb_get_guint8(tvb, offset+1);
+  sdp = tvb_get_uint8(tvb, offset+1);
 
   switch (sdp) {
     case QR_IP_SDP_DISPLAY:
@@ -3715,12 +3705,12 @@ dissect_query_reply_implicit_partitions_sd_parms(proto_tree *tn3270_tree, tvbuff
 
 }
 
-static gint
-dissect_query_reply_implicit_partitions(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                        gint sf_body_length)
+static int
+dissect_query_reply_implicit_partitions(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                        int sf_body_length)
 {
-  gint start = offset;
-  gint i;
+  int start = offset;
+  int i;
 
   static const hf_items fields[] = {
     { &hf_tn3270_ip_flags, NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3732,7 +3722,7 @@ dissect_query_reply_implicit_partitions(proto_tree *tn3270_tree, tvbuff_t *tvb, 
                                 fields);
 
   for (i = 0; i < 3; i++) {
-    gint len;
+    int len;
     len = dissect_query_reply_implicit_partitions_sd_parms(tn3270_tree, tvb, offset);
     if ((len == 0) || (tvb_reported_length_remaining(tvb, offset) <= 0))
       break;
@@ -3745,11 +3735,11 @@ dissect_query_reply_implicit_partitions(proto_tree *tn3270_tree, tvbuff_t *tvb, 
 }
 
 /* 6.32 - Query Reply (IOCA Auxiliary Device) */
-static gint
-dissect_query_reply_ioca_aux_device(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                    gint sf_body_length)
+static int
+dissect_query_reply_ioca_aux_device(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                    int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items fields[] = {
     { &hf_tn3270_resbyte,     NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3771,11 +3761,11 @@ dissect_query_reply_ioca_aux_device(proto_tree *tn3270_tree, tvbuff_t *tvb, gint
 /* 6.33 - Query Reply (Line Type) - Search for LINE_TYPE*/
 
 /* 6.34 - Query Reply (MSR Control) */
-static gint
-dissect_query_reply_msr_control(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                gint sf_body_length)
+static int
+dissect_query_reply_msr_control(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items fields[] = {
     { &hf_tn3270_resbyte,  NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3794,12 +3784,12 @@ dissect_query_reply_msr_control(proto_tree *tn3270_tree, tvbuff_t *tvb, gint off
 /* 6.35 - Query Reply (Null) - Search for QUERY_REPLY_NULL */
 
 /* 6.36 - Query Reply (OEM Auxiliary Device) */
-static gint
-dissect_query_reply_oem_auxiliary_device(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                         gint sf_body_length)
+static int
+dissect_query_reply_oem_auxiliary_device(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                         int sf_body_length)
 {
-  gint start = offset;
-  gint i;
+  int start = offset;
+  int i;
 
   static const hf_items fields[] = {
     { &hf_tn3270_resbyte,   NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3824,11 +3814,11 @@ dissect_query_reply_oem_auxiliary_device(proto_tree *tn3270_tree, tvbuff_t *tvb,
 }
 
 /* 6.37 - Query Reply (Paper Feed Techniques) */
-static gint
-dissect_query_reply_paper_feed_techniques(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                          gint sf_body_length)
+static int
+dissect_query_reply_paper_feed_techniques(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                          int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items fields[] = {
     { &hf_tn3270_pft_flags, NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3845,12 +3835,12 @@ dissect_query_reply_paper_feed_techniques(proto_tree *tn3270_tree, tvbuff_t *tvb
 }
 
 /* 6.38 - Query Reply (Partition Characteristics) */
-static gint
-dissect_query_reply_partition_characteristics(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                              gint sf_body_length)
+static int
+dissect_query_reply_partition_characteristics(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                              int sf_body_length)
 {
-  gint     start = offset, i, sdp;
-  gboolean done  = FALSE;
+  int      start = offset, i, sdp;
+  bool done  = false;
 
   static const hf_items fields[] = {
     { &hf_tn3270_sdp_ln, NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -3859,7 +3849,7 @@ dissect_query_reply_partition_characteristics(proto_tree *tn3270_tree, tvbuff_t 
   };
 
   for (i = 0; i < 2; i++) {
-    sdp = tvb_get_guint8(tvb, offset+1);
+    sdp = tvb_get_uint8(tvb, offset+1);
     switch (sdp) {
       case 0x01: /*Viewport Outline*/
         offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
@@ -3873,7 +3863,7 @@ dissect_query_reply_partition_characteristics(proto_tree *tn3270_tree, tvbuff_t 
                                       fields);
         break;
       default:
-        done = TRUE;
+        done = true;
         break;
     }
     if ((tvb_reported_length_remaining(tvb, offset) <= 0) || done)
@@ -3889,11 +3879,11 @@ dissect_query_reply_partition_characteristics(proto_tree *tn3270_tree, tvbuff_t 
 /* 6.40 - Query Reply (Procedure) - Search for QUERY_REPLY_PROCEDURE */
 
 /* 6.41 - Query Reply ((Product Defined Data Stream) */
-static gint
-dissect_query_reply_product_defined_data_stream(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                                gint sf_body_length)
+static int
+dissect_query_reply_product_defined_data_stream(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                                int sf_body_length)
 {
-  gint start = offset, sdp;
+  int start = offset, sdp;
 
   static const hf_items fields[] = {
     { &hf_tn3270_resbytes,   NULL, 2, NULL, ENC_BIG_ENDIAN },
@@ -3905,7 +3895,7 @@ dissect_query_reply_product_defined_data_stream(proto_tree *tn3270_tree, tvbuff_
   offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                 fields);
 
-  sdp = tvb_get_guint8(tvb, offset+1);
+  sdp = tvb_get_uint8(tvb, offset+1);
   if (sdp == 0x01) { /*DAID*/
     offset += dissect_daid_sd_parm(tn3270_tree, tvb, offset);
   }
@@ -3916,12 +3906,12 @@ dissect_query_reply_product_defined_data_stream(proto_tree *tn3270_tree, tvbuff_
 }
 
 /* 6.42 - Query Reply (Modes) */
-static gint
-dissect_query_reply_modes(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                          gint sf_body_length)
+static int
+dissect_query_reply_modes(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                          int sf_body_length)
 {
-  gint start = offset;
-  gint i;
+  int start = offset;
+  int i;
 
   for (i=0; i < sf_body_length; i++) {
     proto_tree_add_item(tn3270_tree,
@@ -3936,12 +3926,12 @@ dissect_query_reply_modes(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
 }
 
 /* 6.43 - Query Reply (RPQ Names) */
-static gint
-dissect_query_reply_rpq_names(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                              gint sf_body_length)
+static int
+dissect_query_reply_rpq_names(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                              int sf_body_length)
 {
-  gint start = offset;
-  gint rpql;
+  int start = offset;
+  int rpql;
 
   static const hf_items fields[] = {
     { &hf_tn3270_rpq_device, NULL, 4, NULL, ENC_EBCDIC|ENC_NA },
@@ -3952,7 +3942,7 @@ dissect_query_reply_rpq_names(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offse
   offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                 fields);
 
-  rpql = tvb_get_guint8(tvb, offset);
+  rpql = tvb_get_uint8(tvb, offset);
 
   proto_tree_add_item(tn3270_tree,
                       hf_tn3270_rpq_rpql,
@@ -3965,7 +3955,7 @@ dissect_query_reply_rpq_names(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offse
                       hf_tn3270_rpq_name,
                       tvb, offset,
                       (rpql - 1),
-                      ENC_EBCDIC|ENC_NA);
+                      ENC_EBCDIC);
   offset += (rpql-1);
 
   offset += dissect_unknown_data(tn3270_tree, tvb, offset, start, sf_body_length);
@@ -3974,11 +3964,11 @@ dissect_query_reply_rpq_names(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offse
 }
 
 /* 6.44 - Query Reply (Save/Restore Format) */
-static gint
-dissect_query_reply_save_or_restore_format(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                           gint sf_body_length)
+static int
+dissect_query_reply_save_or_restore_format(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                           int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items fields[] = {
     { &hf_tn3270_srf_fpcbl, NULL, 1, NULL, ENC_NA },
@@ -3996,11 +3986,11 @@ dissect_query_reply_save_or_restore_format(proto_tree *tn3270_tree, tvbuff_t *tv
 /* 6.45 - Query Reply (Segment) - Search for QUERY_REPLY_SEGMENT */
 
 /* 6.46 - Query Reply ((Settable Printer Characteristics) */
-static gint
-dissect_query_reply_settable_printer_characteristics(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                                     gint sf_body_length)
+static int
+dissect_query_reply_settable_printer_characteristics(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                                     int sf_body_length)
 {
-  gint start = offset, sdp;
+  int start = offset, sdp;
 
   static const hf_items fields[] = {
     { &hf_tn3270_resbytes, NULL, 2, NULL, ENC_BIG_ENDIAN },
@@ -4016,7 +4006,7 @@ dissect_query_reply_settable_printer_characteristics(proto_tree *tn3270_tree, tv
   offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                 fields);
 
-  sdp = tvb_get_guint8(tvb, offset+1);
+  sdp = tvb_get_uint8(tvb, offset+1);
   if (sdp == 0x01) { /*Early Print Complete*/
     offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                   fields2);
@@ -4031,11 +4021,11 @@ dissect_query_reply_settable_printer_characteristics(proto_tree *tn3270_tree, tv
 }
 
 /* 6.47 - Query Reply (Storage Pools) */
-static gint
-dissect_query_reply_storage_pools(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                  gint sf_body_length)
+static int
+dissect_query_reply_storage_pools(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                  int sf_body_length)
 {
-  gint start = offset, sdp, i;
+  int start = offset, sdp, i;
 
   static const hf_items fields2[] = {
     { &hf_tn3270_sdp_ln,   NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -4046,7 +4036,7 @@ dissect_query_reply_storage_pools(proto_tree *tn3270_tree, tvbuff_t *tvb, gint o
     { NULL, NULL, 0, NULL, 0 }
   };
 
-  sdp = tvb_get_guint8(tvb, offset+1);
+  sdp = tvb_get_uint8(tvb, offset+1);
   if (sdp == 0x01) { /* Storage Pool Characteristics */
     offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                   fields2);
@@ -4063,13 +4053,13 @@ dissect_query_reply_storage_pools(proto_tree *tn3270_tree, tvbuff_t *tvb, gint o
 }
 
 /* 6.48 - Query Reply (Summary) */
-static gint
-dissect_query_reply_summary(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                            gint sf_body_length)
+static int
+dissect_query_reply_summary(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                            int sf_body_length)
 {
-  gint i;
-  gint datalen          = 0;
-  gint length_remaining = tvb_reported_length_remaining(tvb, offset);
+  int i;
+  int datalen          = 0;
+  int length_remaining = tvb_reported_length_remaining(tvb, offset);
 
   for (i=0; i < sf_body_length; i++) {
     if (datalen >= length_remaining) {
@@ -4088,11 +4078,11 @@ dissect_query_reply_summary(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
 }
 
 /* 6.49 - Query Reply (Text Partitions) */
-static gint
-dissect_query_reply_text_partitions(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                    gint sf_body_length)
+static int
+dissect_query_reply_text_partitions(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                    int sf_body_length)
 {
-  gint start = offset, len, i;
+  int start = offset, len, i;
 
   static const hf_items fields[] = {
     { &hf_tn3270_tp_nt,    NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -4104,7 +4094,7 @@ dissect_query_reply_text_partitions(proto_tree *tn3270_tree, tvbuff_t *tvb, gint
   offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                 fields);
 
-  len = tvb_get_guint8(tvb, offset);
+  len = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tn3270_tree, hf_tn3270_tp_ntt, tvb, offset, 1, ENC_BIG_ENDIAN);
   offset += 1;
 
@@ -4120,13 +4110,13 @@ dissect_query_reply_text_partitions(proto_tree *tn3270_tree, tvbuff_t *tvb, gint
 }
 
 /* 6.50 - Query Reply (Transparency) */
-static gint
-dissect_query_reply_transparency(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                 gint sf_body_length)
+static int
+dissect_query_reply_transparency(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                 int sf_body_length)
 {
-  gint start = offset, i, len;
+  int start = offset, i, len;
 
-  len = tvb_get_guint8(tvb, offset);
+  len = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tn3270_tree, hf_tn3270_t_np, tvb, offset, 1, ENC_BIG_ENDIAN);
   offset += 1;
 
@@ -4145,14 +4135,14 @@ dissect_query_reply_transparency(proto_tree *tn3270_tree, tvbuff_t *tvb, gint of
 }
 
 /* 6.51 - Query Reply Usable Area */
-static gint
-dissect_query_reply_usable_area(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                gint sf_body_length)
+static int
+dissect_query_reply_usable_area(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                int sf_body_length)
 {
-  gint start = offset;
-  gint vcp;
+  int start = offset;
+  int vcp;
 
-  static const gint *byte1[] = {
+  static int * const byte1[] = {
     &hf_tn3270_ua_reserved1,
     &hf_tn3270_ua_page_printer,
     &hf_tn3270_ua_reserved2,
@@ -4161,7 +4151,7 @@ dissect_query_reply_usable_area(proto_tree *tn3270_tree, tvbuff_t *tvb, gint off
     NULL
   };
 
-  static const gint *byte2[] = {
+  static int * const byte2[] = {
     &hf_tn3270_ua_variable_cells,
     &hf_tn3270_ua_characters,
     &hf_tn3270_ua_cell_units,
@@ -4190,7 +4180,7 @@ dissect_query_reply_usable_area(proto_tree *tn3270_tree, tvbuff_t *tvb, gint off
     { NULL, NULL, 0, NULL, 0 }
   };
 
-  vcp = tvb_get_guint8(tvb, offset+1);
+  vcp = tvb_get_uint8(tvb, offset+1);
 
   offset += tn3270_add_hf_items(tn3270_tree, tvb, offset,
                                 fields);
@@ -4207,11 +4197,11 @@ dissect_query_reply_usable_area(proto_tree *tn3270_tree, tvbuff_t *tvb, gint off
 }
 
 /* 6.52 - Query Reply 3270 IPDS */
-static gint
-dissect_query_reply_3270_ipds(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                              gint sf_body_length)
+static int
+dissect_query_reply_3270_ipds(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                              int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   static const hf_items fields[] = {
     { &hf_tn3270_resbytes,     NULL, 2, NULL, ENC_BIG_ENDIAN },
@@ -4228,11 +4218,11 @@ dissect_query_reply_3270_ipds(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offse
 
 /* sf_body_length is the total length of the structured field including the sf_len and sf_id fields */
 /* call only with valid sf_id */
-static gint
-process_inbound_structured_field(proto_tree *sf_tree, tvbuff_t *tvb, gint offset,
-                                 tn3270_conv_info_t *tn3270_info, guint sf_id,  gint sf_body_length)
+static int
+process_inbound_structured_field(proto_tree *sf_tree, tvbuff_t *tvb, int offset,
+                                 tn3270_conv_info_t *tn3270_info, unsigned sf_id,  int sf_body_length)
 {
-  gint start = offset;          /* start of structured field param(s) */
+  int start = offset;          /* start of structured field param(s) */
 
   switch (sf_id) {
   case SF_IB_EXCEPTION_OR_STATUS:
@@ -4379,11 +4369,11 @@ process_inbound_structured_field(proto_tree *sf_tree, tvbuff_t *tvb, gint offset
 
 /* sf_body_length is the total length of the structured field including the sf_len and sf_id fields */
 /* call only with valid sf_id */
-static gint
-process_outbound_structured_field(proto_tree *sf_tree, packet_info *pinfo, tvbuff_t *tvb, gint offset,
-                                  tn3270_conv_info_t *tn3270_info, guint sf_id, gint sf_body_length)
+static int
+process_outbound_structured_field(proto_tree *sf_tree, packet_info *pinfo, tvbuff_t *tvb, int offset,
+                                  tn3270_conv_info_t *tn3270_info, unsigned sf_id, int sf_body_length)
 {
-  gint start = offset;          /* start of structured field param(s) */
+  int start = offset;          /* start of structured field param(s) */
 
   switch (sf_id) {
     case SF_OB_READ_PARTITION:
@@ -4405,7 +4395,7 @@ process_outbound_structured_field(proto_tree *sf_tree, packet_info *pinfo, tvbuf
     case SF_OB_ERASE_OR_RESET:
       /* Bit 0: 0= Use default screen size; 1= use alternate screen size     */
       /* XXX: Not really valid: See comment under dissect_outbound_stream(). */
-      if ((tvb_get_guint8(tvb, offset) & 0x80) != 0) {
+      if ((tvb_get_uint8(tvb, offset) & 0x80) != 0) {
         tn3270_info->rows = tn3270_info->altrows;
         tn3270_info->cols = tn3270_info->altcols;
       }
@@ -4460,7 +4450,7 @@ process_outbound_structured_field(proto_tree *sf_tree, packet_info *pinfo, tvbuf
                           hf_tn3270_format_group,
                           tvb, offset,
                           (sf_body_length - (offset - start)),
-                          ENC_EBCDIC|ENC_NA);
+                          ENC_EBCDIC);
       offset += (sf_body_length - (offset - start));
       break;
     case SF_OB_SET_WINDOW_ORIGIN:
@@ -4586,11 +4576,11 @@ process_outbound_structured_field(proto_tree *sf_tree, packet_info *pinfo, tvbuf
 
 /* sf_body_length is the total length of the structured field including the sf_len and sf_id fields */
 /* call only with valid sf_id */
-static gint
-process_outbound_inbound_structured_field(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                                           tn3270_conv_info_t *tn3270_info _U_, guint sf_id, gint sf_body_length)
+static int
+process_outbound_inbound_structured_field(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                                           tn3270_conv_info_t *tn3270_info _U_, unsigned sf_id, int sf_body_length)
 {
-  gint start = offset;
+  int start = offset;
 
   switch (sf_id) {
     case SF_OB_IB_DATA_CHAIN:
@@ -4642,8 +4632,8 @@ process_outbound_inbound_structured_field(proto_tree *tn3270_tree, tvbuff_t *tvb
 }
 
 static proto_tree *
-display_sf_hdr(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
-                   gint sf_length, guint sf_id, guint sf_id_len, const gchar *sf_id_str)
+display_sf_hdr(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset,
+                   int sf_length, unsigned sf_id, unsigned sf_id_len, const char *sf_id_str)
 {
   proto_tree *sf_tree;
 
@@ -4664,16 +4654,16 @@ display_sf_hdr(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset,
   return sf_tree;
 }
 
-static gint
-dissect_structured_fields(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *tvb, gint offset,
-                          tn3270_conv_info_t *tn3270_info, gboolean direction_inbound)
+static int
+dissect_structured_fields(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *tvb, int offset,
+                          tn3270_conv_info_t *tn3270_info, bool direction_inbound)
 {
   proto_tree  *sf_tree;
-  gint         start;
-  gint         sf_length;
-  guint        sf_id;
-  guint        sf_id_len;
-  const gchar *sf_id_str;
+  int          start;
+  int          sf_length;
+  unsigned     sf_id;
+  unsigned     sf_id_len;
+  const char *sf_id_str;
 
   start = offset;
 
@@ -4695,12 +4685,12 @@ dissect_structured_fields(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t 
       continue;
     }
 
-    sf_id     = tvb_get_guint8(tvb, offset+2);
+    sf_id     = tvb_get_uint8(tvb, offset+2);
     sf_id_len = 1;
     if ((sf_id == 0x0F) ||
         (sf_id == 0x10) ||
         (sf_id == 0x81)) {
-      sf_id = (sf_id << 8) + tvb_get_guint8(tvb, offset+3);
+      sf_id = (sf_id << 8) + tvb_get_uint8(tvb, offset+3);
       sf_id_len = 2;
     }
 
@@ -4730,7 +4720,7 @@ dissect_structured_fields(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t 
     }
 
     /* Not found */
-    sf_id_str = wmem_strdup_printf(wmem_packet_scope(), "Unknown [%0*x]", sf_id_len*2, sf_id);
+    sf_id_str = wmem_strdup_printf(pinfo->pool, "Unknown [%0*x]", sf_id_len*2, sf_id);
     display_sf_hdr(tn3270_tree, tvb, offset, sf_length,
                    sf_length, sf_id_len, sf_id_str);
     offset += sf_length;
@@ -4742,11 +4732,11 @@ dissect_structured_fields(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t 
 
 /* Start: Handle WCC, Orders and Data */
 
-static gint
-dissect_stop_address(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_stop_address(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
-  gint start = offset;
-  gint is_oc_ge;
+  int start = offset;
+  int is_oc_ge;
 
   proto_tree_add_item(tn3270_tree,
                       hf_tn3270_stop_address,
@@ -4754,7 +4744,7 @@ dissect_stop_address(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
                       2,
                       ENC_BIG_ENDIAN);
   offset += 1;
-  is_oc_ge = tvb_get_guint8(tvb, offset);
+  is_oc_ge = tvb_get_uint8(tvb, offset);
   if (is_oc_ge != OC_GE) {
     proto_tree_add_item(tn3270_tree,
                         hf_tn3270_character_code,
@@ -4789,15 +4779,15 @@ dissect_stop_address(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
 #define SBA_RESERVED            0x2
 #define SBA_12_BIT_CODED_2      0x3
 
-static gint
-dissect_buffer_address(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset, gint hf, tn3270_conv_info_t *tn3270_info)
+static int
+dissect_buffer_address(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset, int hf, tn3270_conv_info_t *tn3270_info)
 {
-  gint    start = offset;
-  guint16 buffer_addr;
-  guint16 address_format, address_value;
-  guint8  b1, b2;
-  guint8  rowsx = tn3270_info->rows;
-  guint8  colsx = tn3270_info->cols;
+  int     start = offset;
+  uint16_t buffer_addr;
+  uint16_t address_format, address_value;
+  uint8_t b1, b2;
+  uint8_t rowsx = tn3270_info->rows;
+  uint8_t colsx = tn3270_info->cols;
 
   buffer_addr    = tvb_get_ntohs(tvb, offset);
   address_format = SBA_ADDRESS_FORMAT(buffer_addr);
@@ -4861,13 +4851,13 @@ dissect_buffer_address(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset, gint
   return (offset - start);
 }
 
-static gint
-dissect_field_attribute_pair(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_field_attribute_pair(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
-  gint start = offset;
-  gint attribute_type;
+  int start = offset;
+  int attribute_type;
 
-  attribute_type = tvb_get_guint8(tvb, offset);
+  attribute_type = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tn3270_tree,
                       hf_tn3270_attribute_type,
                       tvb, offset,
@@ -4935,14 +4925,14 @@ dissect_field_attribute_pair(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset
   return (offset - start);
 }
 
-static gint
-dissect_field_attribute_pairs(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_field_attribute_pairs(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
-  gint start = offset;
-  gint no_of_pairs;
-  gint i;
+  int start = offset;
+  int no_of_pairs;
+  int i;
 
-  no_of_pairs = tvb_get_guint8(tvb, offset);
+  no_of_pairs = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tn3270_tree,
                       hf_tn3270_number_of_attributes,
                       tvb, offset,
@@ -4957,18 +4947,18 @@ dissect_field_attribute_pairs(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offse
   return (offset - start);
 }
 
-static gint
-dissect_orders_and_data(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *tvb, gint offset, tn3270_conv_info_t *tn3270_info)
+static int
+dissect_orders_and_data(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *tvb, int offset, tn3270_conv_info_t *tn3270_info)
 {
-  gint start = offset;
-  gint order_code;
+  int start = offset;
+  int order_code;
   proto_item* item;
 
   /* Order Code */
 
   /* XXX: '0' is treated as data; See comment under add_data_until_next_order_code() */
   while (tvb_reported_length_remaining(tvb, offset) > 0) {
-    order_code = tvb_get_guint8(tvb, offset);
+    order_code = tvb_get_uint8(tvb, offset);
     if ((order_code > 0) && (order_code <= OC_MAX)) {  /* XXX: also 0xFF ?? */
       item = proto_tree_add_item(tn3270_tree,
                           hf_tn3270_order_code,
@@ -5022,13 +5012,13 @@ dissect_orders_and_data(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *t
 /* End: Handle WCC, Orders and Data */
 
 
-static gint
-dissect_tn3270e_header(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
+static int
+dissect_tn3270e_header(proto_tree *tn3270_tree, tvbuff_t *tvb, int offset)
 {
   proto_item *pi;
   proto_tree *tn3270e_hdr_tree;
-  gint        start = offset;
-  gint        data_type;
+  int         start = offset;
+  int         data_type;
 
   static const hf_items fields[] = {
     { &hf_tn3270_tn3270e_data_type,              NULL, 1, NULL, ENC_BIG_ENDIAN },
@@ -5036,7 +5026,7 @@ dissect_tn3270e_header(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
     { NULL, NULL, 0, NULL, 0 }
   };
 
-  data_type = tvb_get_guint8(tvb, offset);
+  data_type = tvb_get_uint8(tvb, offset);
 
   tn3270e_hdr_tree = proto_tree_add_subtree_format(tn3270_tree, tvb, offset, -1,
                            ett_tn3270e_hdr, &pi, "TN3270E Header (Data Type: %s)",
@@ -5074,7 +5064,7 @@ dissect_tn3270e_header(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
     case TN3270E_SCS_DATA:
     case TN3270E_SSCP_LU_DATA:
     case TN3270E_UNBIND:
-      proto_tree_add_item(tn3270e_hdr_tree, hf_tn3270_tn3270e_header_data, tvb, offset, -1, ENC_EBCDIC|ENC_NA);
+      proto_tree_add_item(tn3270e_hdr_tree, hf_tn3270_tn3270e_header_data, tvb, offset, -1, ENC_EBCDIC);
       offset += tvb_reported_length_remaining(tvb, offset);
       break;
     default:
@@ -5087,15 +5077,15 @@ dissect_tn3270e_header(proto_tree *tn3270_tree, tvbuff_t *tvb, gint offset)
 }
 
 /* Detect and Handle Direction of Stream */
-static gint
-dissect_outbound_stream(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *tvb, gint offset, tn3270_conv_info_t *tn3270_info)
+static int
+dissect_outbound_stream(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *tvb, int offset, tn3270_conv_info_t *tn3270_info)
 {
-  gint command_code;
-  gint start = offset;
+  int command_code;
+  int start = offset;
   proto_item* item;
 
   /* Command Code*/
-  command_code = tvb_get_guint8(tvb, offset);
+  command_code = tvb_get_uint8(tvb, offset);
 
   /* XXX: Storing rows/cols each time they change is not valid         */
   /*      since packets can (will be) randomly selected for dissection */
@@ -5139,7 +5129,7 @@ dissect_outbound_stream(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *t
       break;
     case CC_LCL_WSF:
     case CC_RMT_WSF:
-      offset += dissect_structured_fields(tn3270_tree, pinfo, tvb, offset, tn3270_info, FALSE);
+      offset += dissect_structured_fields(tn3270_tree, pinfo, tvb, offset, tn3270_info, false);
       break;
     case CC_LCL_RB:
     case CC_LCL_RM:
@@ -5159,15 +5149,15 @@ dissect_outbound_stream(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *t
 
 /* INBOUND DATA STREAM (DISPLAY -> MAINFRAME PROGRAM) */
 /* Dissect tvb as inbound */
-static gint
-dissect_inbound_stream(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *tvb, gint offset, tn3270_conv_info_t *tn3270_info)
+static int
+dissect_inbound_stream(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *tvb, int offset, tn3270_conv_info_t *tn3270_info)
 {
-  gint start = offset;
-  gint aid;
+  int start = offset;
+  int aid;
   proto_item* item;
 
   /* Command Code*/
-  aid = tvb_get_guint8(tvb, offset);
+  aid = tvb_get_uint8(tvb, offset);
   item = proto_tree_add_item(tn3270_tree,
                       hf_tn3270_aid,
                       tvb, offset,
@@ -5176,7 +5166,7 @@ dissect_inbound_stream(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *tv
   offset += 1;
   switch (aid) {
     case  AID_STRUCTURED_FIELD:
-      offset += dissect_structured_fields(tn3270_tree, pinfo, tvb, offset, tn3270_info, TRUE);
+      offset += dissect_structured_fields(tn3270_tree, pinfo, tvb, offset, tn3270_info, true);
       break;
     case  AID_PA1_KEY:
     case  AID_PA2_KEY_CNCL:
@@ -5186,7 +5176,7 @@ dissect_inbound_stream(proto_tree *tn3270_tree, packet_info *pinfo, tvbuff_t *tv
       /* XXX: Is this the correct/complete set of AID bytes for this case ? */
       if (tvb_reported_length_remaining(tvb, offset) <= 0)
         break;
-      /* fall into next */
+      /* FALL THROUGH */
     case  AID_READ_PARTITION_AID:
     case  AID_NO_AID_GENERATED:
     case  AID_NO_AID_GENERATED_PRINTER_ONLY:
@@ -5239,18 +5229,16 @@ dissect_tn3270(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 {
   proto_tree         *tn3270_tree;
   proto_item         *pi;
-  gint                offset      = 0;
+  int                 offset      = 0;
   conversation_t     *conversation;
   tn3270_conv_info_t *tn3270_info = NULL;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "TN3270");
 
-  pinfo->fd->flags.encoding = PACKET_CHAR_ENC_CHAR_EBCDIC;
+  pinfo->fd->encoding = PACKET_CHAR_ENC_CHAR_EBCDIC;
 
   /* Do we have a conversation for this connection? */
-  conversation = find_conversation(pinfo->num, &pinfo->src, &pinfo->dst,
-                                   pinfo->ptype, pinfo->srcport,
-                                   pinfo->destport, 0);
+  conversation = find_conversation_pinfo(pinfo, 0);
   if (conversation != NULL) {
     /* Do we already have a type and mechanism? */
     tn3270_info = (tn3270_conv_info_t *)conversation_get_proto_data(conversation, proto_tn3270);
@@ -5292,7 +5280,7 @@ dissect_tn3270(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 }
 
 void
-add_tn3270_conversation(packet_info *pinfo, int tn3270e, gint model)
+add_tn3270_conversation(packet_info *pinfo, int tn3270e, int model)
 {
   conversation_t     *conversation;
   tn3270_conv_info_t *tn3270_info;
@@ -5309,11 +5297,7 @@ add_tn3270_conversation(packet_info *pinfo, int tn3270e, gint model)
      */
     tn3270_info = wmem_new(wmem_file_scope(), tn3270_conv_info_t);
 
-    copy_address(&(tn3270_info->outbound_addr), &(pinfo->dst));
     tn3270_info->outbound_port = pinfo->destport;
-
-    copy_address(&(tn3270_info->inbound_addr), &(pinfo->src));
-    tn3270_info->inbound_port  = pinfo->srcport;
 
     conversation_add_proto_data(conversation, proto_tn3270, tn3270_info);
   }
@@ -5354,9 +5338,7 @@ find_tn3270_conversation(packet_info *pinfo)
   /*
    * Do we have a conversation for this connection?
    */
-  conversation = find_conversation(pinfo->num, &pinfo->src, &pinfo->dst,
-                                   pinfo->ptype, pinfo->srcport,
-                                   pinfo->destport, 0);
+  conversation = find_conversation_pinfo(pinfo, 0);
   if (conversation != NULL) {
     tn3270_info = (tn3270_conv_info_t *)conversation_get_proto_data(conversation, proto_tn3270);
     if (tn3270_info != NULL) {
@@ -5775,7 +5757,7 @@ proto_register_tn3270(void)
          NULL, HFILL }
     },
     { &hf_tn3270_load_format_storage_operand,
-      {  "Operand:",
+      {  "Operand",
          "tn3270.load_format_storage_operand",
          FT_UINT8, BASE_HEX, VALS(vals_load_storage_format_operand), 0x0,
          NULL, HFILL }
@@ -5857,7 +5839,7 @@ proto_register_tn3270(void)
          NULL, HFILL }
     },
     { &hf_tn3270_extended_ps_lh,
-      {  "Number of Y-units in character cell (depth ofcharacter matrixes)",
+      {  "Number of Y-units in character cell (depth of character matrixes)",
          "tn3270.extended_ps_lh",
          FT_UINT8, BASE_HEX, NULL, 0x0,
          NULL, HFILL }
@@ -5950,7 +5932,7 @@ proto_register_tn3270(void)
     { &hf_tn3270_bsc,
       {  "SNA BSC",
          "tn3270.bsc",
-         FT_UINT8, BASE_HEX, NULL, 0x0,
+         FT_UINT16, BASE_HEX, NULL, 0x0,
          NULL, HFILL }
     },
     /* END - 5.16 - Outbound 3270DS */
@@ -5976,7 +5958,7 @@ proto_register_tn3270(void)
     /* 5.19 - Read Partition */
     { &hf_tn3270_read_partition_operation_type,
       {  "Read Partition Operation Type",
-         "tn3270.read_partition_reqtyp",
+         "tn3270.read_partition_optyp",
          FT_UINT8, BASE_HEX, VALS(vals_read_partition_operation_type), 0x0,
          NULL, HFILL }
     },
@@ -6022,7 +6004,7 @@ proto_register_tn3270(void)
     { &hf_tn3270_interval,
       {  "Checkpoint interval",
          "tn3270.interval",
-         FT_UINT8, BASE_HEX, NULL, 0x0,
+         FT_UINT16, BASE_HEX, NULL, 0x0,
          "Specifies the number of pages in the interval between terminal checkpoints", HFILL }
     },
     /* End - 5.26 - Set Checkpoint Interval */
@@ -6401,7 +6383,7 @@ proto_register_tn3270(void)
     },
     { &hf_tn3270_checkpoint,
       {  "Byte offset from Set Checkpoint Interval structured field to the first"
-         " character afterhe code point or character that caused an eject to the"
+         " character after the code point or character that caused an eject to the"
          " checkpointed page",
          "tn3270.checkpoint",
          FT_UINT32, BASE_DEC, NULL, 0x0,
@@ -7472,7 +7454,7 @@ proto_register_tn3270(void)
     },
     { &hf_tn3270_ua_yr,
       {  "Distance between points in Y direction as a fraction",
-         "tn3270.ua_xr",
+         "tn3270.ua_yr",
          FT_UINT32, BASE_HEX, NULL, 0x0,
          "measured in UNITS, with 2-byte numerator and 2-byte denominator", HFILL }
     },
@@ -7551,7 +7533,7 @@ proto_register_tn3270(void)
     { &hf_tn3270_resbytes,
       {  "Flags (Reserved)",
          "tn3270.resbytes",
-         FT_UINT8, BASE_HEX, NULL, 0x0,
+         FT_UINT16, BASE_HEX, NULL, 0x0,
          NULL, HFILL }
     },
     { &hf_tn3270_res_twobytes,
@@ -7636,7 +7618,7 @@ proto_register_tn3270(void)
     }
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_tn3270,
     &ett_tn3270e_hdr,
     &ett_sf,

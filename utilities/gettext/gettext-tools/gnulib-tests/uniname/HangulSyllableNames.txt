@@ -1,5 +1,7 @@
 # Auxiliary tables for Hangul syllable names, see the Unicode 3.0 book,
-# sections 3.11 and 4.4.
+# sections 3.11 and 4.4.  This table was automatically generated.
+
+# This file is in the public domain.
 
 AC00;HANGUL SYLLABLE GA;Lo;0;L;;;;;N;;;;;
 AC01;HANGUL SYLLABLE GAG;Lo;0;L;;;;;N;;;;;

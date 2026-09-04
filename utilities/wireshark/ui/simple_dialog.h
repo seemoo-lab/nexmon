@@ -1,4 +1,5 @@
-/* simple_dialog.h
+/** @file
+ *
  * Definitions for alert box routines with toolkit-independent APIs but
  * toolkit-dependent implementations.
  *
@@ -6,23 +7,15 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __SIMPLE_DIALOG_UI_H__
 #define __SIMPLE_DIALOG_UI_H__
+
+#include <glib.h>
+
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,47 +73,19 @@ typedef enum {
 
 /** Create and show a simple dialog.
  *
- * @param Type type of dialog, e.g. ESD_TYPE_WARN
+ * @param type type of dialog, e.g. ESD_TYPE_WARN
  * @param btn_mask The buttons to display, e.g. ESD_BTNS_OK_CANCEL
  * @param msg_format Printf like message format. Text must be plain.
  * @param ... Printf like parameters
  * @return The newly created dialog
  */
-/*
- * XXX This is a bit clunky. We typically pass in:
- * - simple_dialog_primary_start
- * - The primary message
- * - simple_dialog_primary_end
- * - Optionally, the secondary message.
- *
- * In the GTK+ UI primary_start and primary_end make up a <span> that adds
- * text formatting. The whole string is then shoved into a GtkLabel.
- *
- * In the Qt UI we use primary_start and _end to split the primary and
- * secondary messages. They are then added to a QMessageBox via setText and
- * setInformativeText respectively. No formatting is applied.
- *
- * Callers are responsible for wrapping the primary message and formatting
- * the message text.
- *
- * Explicitly passing in separate primary and secondary messages would let us
- * get rid of primary_start and primary_end and reduce the amount of
- * gymnastics we have to to in the Qt UI.
- */
-extern gpointer simple_dialog(ESD_TYPE_E type, gint btn_mask,
-    const gchar *msg_format, ...)
+extern void *simple_dialog(ESD_TYPE_E type, int btn_mask,
+    const char *msg_format, ...)
     G_GNUC_PRINTF(3, 4);
 
-/** Surround the primary dialog message text by
- *  simple_dialog_primary_start() and simple_dialog_primary_end().
- *  To highlight the first sentence (will take effect on GTK2 only).
- */
-extern const char *simple_dialog_primary_start(void);
-/** Surround the primary dialog message text by
- *  simple_dialog_primary_start() and simple_dialog_primary_end().
- *  To highlight the first sentence (will take effect on GTK2 only).
- */
-extern const char *simple_dialog_primary_end(void);
+extern void *simple_dialog_async(ESD_TYPE_E type, int btn_mask,
+    const char *msg_format, ...)
+    G_GNUC_PRINTF(3, 4);
 
 /** Escape the message text, if it probably contains Pango escape sequences.
  *  For example html like tags starting with a <.
@@ -134,7 +99,7 @@ extern char *simple_dialog_format_message(const char *msg);
  * Alert box, with optional "don't show this message again" variable
  * and checkbox, and optional secondary text.
  */
-extern void simple_message_box(ESD_TYPE_E type, gboolean *notagain,
+extern void simple_message_box(ESD_TYPE_E type, bool *notagain,
                                const char *secondary_msg,
                                const char *msg_format, ...) G_GNUC_PRINTF(4, 5);
 
@@ -148,21 +113,13 @@ extern void vsimple_error_message_box(const char *msg_format, va_list ap);
  */
 extern void simple_error_message_box(const char *msg_format, ...) G_GNUC_PRINTF(1, 2);
 
+/*
+ * Warning alert box, taking a format and a va_list argument.
+ */
+extern void vsimple_warning_message_box(const char *msg_format, va_list ap);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
 
 #endif /* __SIMPLE_DIALOG_UI_H__ */
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

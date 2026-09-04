@@ -3,6 +3,9 @@
 
 # Test filling Plural-Forms: with Unicode CLDR
 
+# This test may fail on Cygwin before 'make install', because the PATH set in
+# msginit.c considers the installation directory, not the build directory.
+
 LC_ALL=C "$top_builddir/src/cldr-plurals" ru /dev/null 2>&1 | grep 'extraction is not supported' > /dev/null 2>&1
 test $? = 0 && {
   echo "Skipping test: cldr-plurals was built without XML support"
@@ -44,7 +47,10 @@ msgstr ""
 EOF
 
 : ${MSGINIT=msginit}
-GETTEXTLIBDIR="$top_builddir"/src GETTEXTCLDRDIR="$abs_srcdir" ${MSGINIT} -l foo --no-translator --no-wrap -o mi-test4.tmp 2>mi-test4.err
+GETTEXTLIBEXECDIR_SRCDIR="$wabs_top_srcdir"/src \
+GETTEXTLIBEXECDIR_BUILDDIR="$top_builddir"/src \
+GETTEXTCLDRDIR="$wabs_srcdir" \
+${MSGINIT} -i mi-test4.pot -l foo --no-translator --no-wrap -o mi-test4.tmp 2>mi-test4.err
 test $? = 0 || { cat mi-test4.err 1>&2; Exit 1; }
 
 # The charset stored in the header entry is the locale encoding of the gl_IE
@@ -52,7 +58,7 @@ test $? = 0 || { cat mi-test4.err 1>&2; Exit 1; }
 #
 # Project-Id-Version contains version constructed from a temporary
 # directory name
-sed -e '1,10d' -e 's/\(ISO-8859-1\|CP1252\|UTF-8\)/ASCII/g' < mi-test4.tmp | grep -v Project-Id-Version | LC_ALL=C tr -d '\r' > mi-test4.out || Exit 1
+sed -e '1,10d' -e 's/ISO-8859-1/ASCII/g' -e 's/CP1252/ASCII/g' -e 's/UTF-8/ASCII/g' < mi-test4.tmp | grep -v Project-Id-Version | LC_ALL=C tr -d '\r' > mi-test4.out || Exit 1
 cat <<\EOF > mi-test4.ok
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"

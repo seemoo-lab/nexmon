@@ -1,9 +1,11 @@
 /* packet-sstp.c
  * routines for sstp packet dissasembly
- * - http://msdn.microsoft.com/en-us/library/cc247338(v=prot.20).aspx
+ * - MS-SSTP:
+ *
+ *    https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-sstp
  *
  * Created as part of a semester project at the University of Applied Sciences Hagenberg
- * (http://www.fh-ooe.at/en/hagenberg-campus/)
+ * (https://www.fh-ooe.at/en/hagenberg-campus/)
  *
  * Copyright (c) 2013:
  *   Hofer Manuel (manuel@mnlhfr.at)
@@ -12,19 +14,7 @@
  *   Stiftinger Thomas
  *   Werner Sebastian
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
@@ -45,7 +35,7 @@ void proto_reg_handoff_sstp(void);
 #define SSTP_CERT_HASH_PROTOCOL_SHA256 0x02
 #define SSTP_ENCAPSULATED_PPP 0x0001
 
-/* bytewise offsets inside the paket buffer */
+/* bytewise offsets inside the packet buffer */
 #define SSTP_OFFSET_ATTRIBUTES    8
 #define SSTP_OFFSET_DATA          4
 #define SSTP_OFFSET_RESERVED      1
@@ -112,31 +102,31 @@ void proto_reg_handoff_sstp(void);
 #define SSTP_ATTRIB_STATUS_UNRECOGNIZED_ATTRIBUTE 0x000002
 #define SSTP_ATTRIB_STATUS_VALUE_NOT_SUPPORTED 0x000004
 
-static dissector_handle_t ppp_handle = NULL;
-static gint ett_sstp = -1;
-static gint ett_sstp_attribute = -1;
-static gint ett_sstp_version = -1;
-static gint hf_sstp_attrib_id = -1;
-static gint hf_sstp_attrib_length = -1;
-static gint hf_sstp_attrib_length_reserved = -1;
-static gint hf_sstp_attrib_reserved = -1;
-static gint hf_sstp_attrib_value = -1;
-static gint hf_sstp_cert_hash = -1;
-static gint hf_sstp_compound_mac = -1;
-static gint hf_sstp_control_flag = -1;
-static gint hf_sstp_data_unknown = -1;
-static gint hf_sstp_ecapsulated_protocol = -1;
-static gint hf_sstp_hash_protocol = -1;
-static gint hf_sstp_length = -1;
-static gint hf_sstp_major = -1;
-static gint hf_sstp_messagetype = -1;
-static gint hf_sstp_minor = -1;
-static gint hf_sstp_nonce = -1;
-static gint hf_sstp_numattrib = -1;
-static gint hf_sstp_padding = -1;
-static gint hf_sstp_reserved = -1;
-static gint hf_sstp_status = -1;
-static gint proto_sstp = -1;
+static dissector_handle_t ppp_hdlc_handle;
+static int ett_sstp;
+static int ett_sstp_attribute;
+static int ett_sstp_version;
+static int hf_sstp_attrib_id;
+static int hf_sstp_attrib_length;
+static int hf_sstp_attrib_length_reserved;
+static int hf_sstp_attrib_reserved;
+static int hf_sstp_attrib_value;
+static int hf_sstp_cert_hash;
+static int hf_sstp_compound_mac;
+static int hf_sstp_control_flag;
+static int hf_sstp_data_unknown;
+static int hf_sstp_ecapsulated_protocol;
+static int hf_sstp_hash_protocol;
+static int hf_sstp_length;
+static int hf_sstp_major;
+static int hf_sstp_messagetype;
+static int hf_sstp_minor;
+static int hf_sstp_nonce;
+static int hf_sstp_numattrib;
+static int hf_sstp_padding;
+static int hf_sstp_reserved;
+static int hf_sstp_status;
+static int proto_sstp;
 
 static const value_string sstp_messagetypes[] = {
   {SSTP_MSG_CALL_CONNECT_REQUEST, "SSTP_MSG_CALL_CONNECT_REQUEST"},
@@ -190,15 +180,15 @@ static const value_string attrib_status[] = {
 static int
 dissect_sstp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-  guint16 sstp_control_flag;
-  guint32 offset = 0;
-  guint8 sstp_major;
-  guint8 sstp_minor;
+  uint16_t sstp_control_flag;
+  uint32_t offset = 0;
+  uint8_t sstp_major;
+  uint8_t sstp_minor;
   proto_item *ti;
   proto_tree *sstp_tree;
   proto_tree *sstp_tree_attribute;
   proto_tree *sstp_tree_version;
-  guint16 sstp_numattrib;
+  uint16_t sstp_numattrib;
   tvbuff_t *tvb_next;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "SSTP");
@@ -208,9 +198,9 @@ dissect_sstp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
   ti = proto_tree_add_item(tree, proto_sstp, tvb, 0, -1, ENC_NA);
   sstp_tree = proto_item_add_subtree(ti, ett_sstp);
 
-  sstp_control_flag = tvb_get_guint8(tvb, SSTP_OFFSET_ISCONTROL) & SSTP_BITMASK_CONTROLFLAG;
-  sstp_minor = (tvb_get_guint8(tvb, SSTP_OFFSET_MINORVERSION) & SSTP_BITMASK_MINORVERSION); /* leftmost 4 bit */
-  sstp_major = (tvb_get_guint8(tvb, SSTP_OFFSET_MAJORVERSION) >> 4); /* rightmost 4 bit */
+  sstp_control_flag = tvb_get_uint8(tvb, SSTP_OFFSET_ISCONTROL) & SSTP_BITMASK_CONTROLFLAG;
+  sstp_minor = (tvb_get_uint8(tvb, SSTP_OFFSET_MINORVERSION) & SSTP_BITMASK_MINORVERSION); /* leftmost 4 bit */
+  sstp_major = (tvb_get_uint8(tvb, SSTP_OFFSET_MAJORVERSION) >> 4); /* rightmost 4 bit */
   col_append_fstr(pinfo->cinfo, COL_INFO, "SSTP-%u.%u ", sstp_major, sstp_minor);
 
   sstp_tree_version = proto_tree_add_subtree_format(sstp_tree, tvb, offset, SSTP_FSIZE_MAJORVERSION, ett_sstp_version,
@@ -223,25 +213,25 @@ dissect_sstp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
 
   /* check wether we got a control or data packet */
   if (sstp_control_flag) {
-    guint16 sstp_messagetype = tvb_get_guint16(tvb, SSTP_OFFSET_MSGTYPE, ENC_BIG_ENDIAN);
+    uint16_t sstp_messagetype = tvb_get_uint16(tvb, SSTP_OFFSET_MSGTYPE, ENC_BIG_ENDIAN);
 
-    col_append_fstr(pinfo->cinfo, COL_INFO, "Type: CONTROL, %s; ", val_to_str(sstp_messagetype, sstp_messagetypes, "Unknown Messagetype"));
+    col_append_fstr(pinfo->cinfo, COL_INFO, "Type: CONTROL, %s; ", val_to_str_const(sstp_messagetype, sstp_messagetypes, "Unknown Messagetype"));
     proto_tree_add_item(sstp_tree, hf_sstp_messagetype, tvb,  SSTP_OFFSET_MSGTYPE, SSTP_FSIZE_MSGTYPE, ENC_BIG_ENDIAN);
     proto_tree_add_item(sstp_tree, hf_sstp_numattrib, tvb,    SSTP_OFFSET_NUMATTRIB, SSTP_FSIZE_NUMATTRIB, ENC_BIG_ENDIAN);
     sstp_numattrib = tvb_get_ntohs(tvb, SSTP_OFFSET_NUMATTRIB);
 
     /* display attributes */
     if (sstp_numattrib > 0) {
-      guint16 attrib_length = 0;
-      guint8 attrib_id = 0;
-      guint8 hashproto = 0;
+      uint16_t attrib_length = 0;
+      uint8_t attrib_id = 0;
+      uint8_t hashproto = 0;
       offset = SSTP_OFFSET_ATTRIBUTES;
 
       for(;sstp_numattrib > 0; sstp_numattrib--) {
         /* read attribute id and create subtree for attribute */
-        attrib_id = tvb_get_guint8(tvb, offset+1);
+        attrib_id = tvb_get_uint8(tvb, offset+1);
         sstp_tree_attribute = proto_tree_add_subtree_format(sstp_tree, tvb, offset, SSTP_FSIZE_ATTRIB_RESERVED, ett_sstp_attribute,
-            NULL, "Attribute %s", val_to_str(attrib_id, sstp_attributes, "Unknown Attribute"));
+            NULL, "Attribute %s", val_to_str_const(attrib_id, sstp_attributes, "Unknown Attribute"));
         proto_tree_add_item(sstp_tree_attribute, hf_sstp_attrib_reserved, tvb, offset, SSTP_FSIZE_ATTRIB_RESERVED, ENC_BIG_ENDIAN);
         offset++;
         proto_tree_add_item(sstp_tree_attribute, hf_sstp_attrib_id, tvb, offset, SSTP_FSIZE_ATTRIB_ID, ENC_BIG_ENDIAN);
@@ -285,7 +275,7 @@ dissect_sstp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
             proto_tree_add_item(sstp_tree_attribute, hf_sstp_reserved, tvb, offset, SSTP_FSIZE_RESERVED2, ENC_NA);
             offset += SSTP_FSIZE_RESERVED2;
             proto_tree_add_item(sstp_tree_attribute, hf_sstp_hash_protocol, tvb, offset, SSTP_FSIZE_HASH_PROTOCOL, ENC_BIG_ENDIAN);
-            hashproto = tvb_get_guint8(tvb, offset);
+            hashproto = tvb_get_uint8(tvb, offset);
             offset += SSTP_FSIZE_HASH_PROTOCOL;
             proto_tree_add_item(sstp_tree_attribute, hf_sstp_nonce, tvb, offset, SSTP_FSIZE_NONCE, ENC_NA);
             offset += SSTP_FSIZE_NONCE;
@@ -325,17 +315,17 @@ dissect_sstp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
     }
 
   } else {
-    col_append_fstr(pinfo->cinfo, COL_INFO, "Type: DATA; ");
+    col_append_str(pinfo->cinfo, COL_INFO, "Type: DATA; ");
     /* our work here is done, since sstp encapsulates ppp, we hand the remaining buffer
        over to the ppp dissector for further analysis */
     tvb_next = tvb_new_subset_remaining(tvb, SSTP_OFFSET_DATA);
-    call_dissector(ppp_handle, tvb_next, pinfo, tree);
+    call_dissector(ppp_hdlc_handle, tvb_next, pinfo, tree);
   }
 
   return tvb_captured_length(tvb);
 }
 
-static guint
+static unsigned
 get_sstp_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
   return tvb_get_ntohs(tvb, offset+SSTP_OFFSET_LENGTH);
@@ -344,7 +334,7 @@ get_sstp_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _
 static int
 dissect_sstp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  tcp_dissect_pdus(tvb, pinfo, tree, TRUE, SSTP_OFFSET_LENGTH+SSTP_FSIZE_LENGTH, get_sstp_pdu_len, dissect_sstp_pdu, data);
+  tcp_dissect_pdus(tvb, pinfo, tree, true, SSTP_OFFSET_LENGTH+SSTP_FSIZE_LENGTH, get_sstp_pdu_len, dissect_sstp_pdu, data);
   return tvb_captured_length(tvb);
 }
 
@@ -432,7 +422,11 @@ proto_register_sstp(void)
       NULL, HFILL }
     },
     /* Undocumented Data in SSTP_MSG_CALL_CONNECT_REQUEST
-       see also: http://msdn.microsoft.com/en-us/library/cc247340.aspx */
+       see also MS-SSTP section 2.2.9 "Call Connect Request Message
+       (SSTP_MSG_CALL_CONNECT_REQUEST)":
+
+           https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-sstp/e73ced14-7bef-407b-a85b-a6f624324dd1
+     */
     { &hf_sstp_data_unknown,
       { "Unknown Data", "sstp.dataunknown",
       FT_BYTES, BASE_NONE,
@@ -476,7 +470,7 @@ proto_register_sstp(void)
     },
     /* Encapsulated Protocol (2 Bytes) */
     { &hf_sstp_ecapsulated_protocol,
-      { "Encapsulated Procotol", "sstp.encapsulatedprotocol",
+      { "Encapsulated Protocol", "sstp.encapsulatedprotocol",
       FT_UINT16, BASE_HEX,
       VALS(encapsulated_protocols), 0x0,
       NULL, HFILL }
@@ -498,7 +492,7 @@ proto_register_sstp(void)
   };
 
   /* Setup protocol subtree array */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_sstp,
     &ett_sstp_attribute,
     &ett_sstp_version
@@ -514,11 +508,11 @@ proto_register_sstp(void)
 void
 proto_reg_handoff_sstp(void)
 {
-  ppp_handle = find_dissector_add_dependency("ppp", proto_sstp);
+  ppp_hdlc_handle = find_dissector_add_dependency("ppp_hdlc", proto_sstp);
 }
 
 /*
-* Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+* Editor modelines  -  https://www.wireshark.org/tools/modelines.html
 *
 * Local variables:
 * c-basic-offset: 2

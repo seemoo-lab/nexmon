@@ -1,0 +1,49 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Scheme support: #!fold-case and #!no-fold-case directives.
+
+cat <<\EOF > xg-sc-6.scm
+(display (gettext "orange"))
+(Display (GetText "mango"))
+#!fold-case
+(Display (GetText "apple"))
+(DISPLAY (GETTEXT "banana"))
+#!fold-case
+(Display (GetText "pear"))
+(FORMAT T (GETTEXT "Got ~D dollars" n))
+#!no-fold-case
+(display (gettext "cherry"))
+(Display (GetText "plum"))
+(FORMAT T (GETTEXT "Got ~D euros" n))
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-sc-6 xg-sc-6.scm || Exit 1
+
+cat <<\EOF > xg-sc-6.ok
+msgid "orange"
+msgstr ""
+
+msgid "apple"
+msgstr ""
+
+msgid "banana"
+msgstr ""
+
+msgid "pear"
+msgstr ""
+
+#, scheme-format
+msgid "Got ~D dollars"
+msgstr ""
+
+msgid "cherry"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-sc-6.ok xg-sc-6.po
+result=$?
+
+exit $result

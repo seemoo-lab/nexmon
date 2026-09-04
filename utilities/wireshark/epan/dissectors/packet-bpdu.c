@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,6 +19,8 @@
 #include <epan/addr_resolv.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
+#include <epan/cisco_pid.h>
+#include <epan/tfs.h>
 
 /* Offsets of fields within a BPDU */
 
@@ -102,100 +92,103 @@
 void proto_register_bpdu(void);
 void proto_reg_handoff_bpdu(void);
 
-static int proto_bpdu = -1;
-static int hf_bpdu_proto_id = -1;
-static int hf_bpdu_version_id = -1;
-static int hf_bpdu_type = -1;
-static int hf_bpdu_flags = -1;
-static int hf_bpdu_flags_tcack = -1;
-static int hf_bpdu_flags_agreement = -1;
-static int hf_bpdu_flags_forwarding = -1;
-static int hf_bpdu_flags_learning = -1;
-static int hf_bpdu_flags_port_role = -1;
-static int hf_bpdu_flags_proposal = -1;
-static int hf_bpdu_flags_tc = -1;
-static int hf_bpdu_root_prio = -1;
-static int hf_bpdu_root_sys_id_ext = -1;
-static int hf_bpdu_root_mac = -1;
-static int hf_bpdu_root_cost = -1;
-static int hf_bpdu_bridge_prio = -1;
-static int hf_bpdu_bridge_sys_id_ext = -1;
-static int hf_bpdu_bridge_mac = -1;
-static int hf_bpdu_port_id = -1;
-static int hf_bpdu_msg_age = -1;
-static int hf_bpdu_max_age = -1;
-static int hf_bpdu_hello_time = -1;
-static int hf_bpdu_forward_delay = -1;
-static int hf_bpdu_version_1_length = -1;
-static int hf_bpdu_version_3_length = -1;
-static int hf_bpdu_mst_config_format_selector = -1;
-static int hf_bpdu_mst_config_name = -1;
-static int hf_bpdu_mst_config_revision_level = -1;
-static int hf_bpdu_mst_config_digest = -1;
-static int hf_bpdu_cist_internal_root_path_cost = -1;
-static int hf_bpdu_cist_bridge_prio = -1;
-static int hf_bpdu_cist_bridge_sys_id_ext = -1;
-static int hf_bpdu_cist_bridge_mac = -1;
-static int hf_bpdu_cist_remaining_hops = -1;
-static int hf_bpdu_msti_flags = -1;
-static int hf_bpdu_msti_id = -1;
-static int hf_bpdu_msti_id_FFF = -1;
-static int hf_bpdu_mst_priority = -1;
-static int hf_bpdu_msti_regional_root_id = -1;
-static int hf_bpdu_msti_regional_root_mac = -1;
-static int hf_bpdu_msti_internal_root_path_cost = -1;
-static int hf_bpdu_msti_bridge_identifier_priority = -1;
-static int hf_bpdu_msti_port_identifier_priority = -1;
-static int hf_bpdu_msti_port_id = -1;
-static int hf_bpdu_msti_bridge_id = -1;
-static int hf_bpdu_msti_bridge_id_priority = -1;
-static int hf_bpdu_msti_bridge_id_mac = -1;
-static int hf_bpdu_msti_remaining_hops = -1;
-static int hf_bpdu_version_4_length = -1;
-static int hf_bpdu_spt_config_format_selector = -1;
-static int hf_bpdu_spt_config_name = -1;
-static int hf_bpdu_spt_config_revision_level = -1;
-static int hf_bpdu_spt_config_digest = -1;
-static int hf_bpdu_flags_agree_num = -1;
-static int hf_bpdu_flags_dagree_num = -1;
-static int hf_bpdu_flags_agree_valid = -1;
-static int hf_bpdu_flags_restricted_role = -1;
-static int hf_bpdu_spt_agreement_digest = -1;
-static int hf_bpdu_agreement_digest_format_id = -1;
-static int hf_bpdu_agreement_digest_format_capabilities = -1;
-static int hf_bpdu_agreement_digest_convention_id = -1;
-static int hf_bpdu_agreement_digest_convention_capabilities = -1;
-static int hf_bpdu_agreement_digest_edge_count = -1;
+static int proto_bpdu;
+static int hf_bpdu_proto_id;
+static int hf_bpdu_version_id;
+static int hf_bpdu_type;
+static int hf_bpdu_flags;
+static int hf_bpdu_flags_tcack;
+static int hf_bpdu_flags_agreement;
+static int hf_bpdu_flags_forwarding;
+static int hf_bpdu_flags_learning;
+static int hf_bpdu_flags_port_role;
+static int hf_bpdu_flags_proposal;
+static int hf_bpdu_flags_tc;
+static int hf_bpdu_root_prio;
+static int hf_bpdu_root_sys_id_ext;
+static int hf_bpdu_root_mac;
+static int hf_bpdu_root_cost;
+static int hf_bpdu_bridge_prio;
+static int hf_bpdu_bridge_sys_id_ext;
+static int hf_bpdu_bridge_mac;
+static int hf_bpdu_port_id;
+static int hf_bpdu_msg_age;
+static int hf_bpdu_max_age;
+static int hf_bpdu_hello_time;
+static int hf_bpdu_forward_delay;
+static int hf_bpdu_version_1_length;
+static int hf_bpdu_version_3_length;
+static int hf_bpdu_mst_config_format_selector;
+static int hf_bpdu_mst_config_name;
+static int hf_bpdu_mst_config_revision_level;
+static int hf_bpdu_mst_config_digest;
+static int hf_bpdu_cist_internal_root_path_cost;
+static int hf_bpdu_cist_bridge_prio;
+static int hf_bpdu_cist_bridge_sys_id_ext;
+static int hf_bpdu_cist_bridge_mac;
+static int hf_bpdu_cist_remaining_hops;
+static int hf_bpdu_msti_flags;
+static int hf_bpdu_msti_id;
+static int hf_bpdu_msti_id_FFF;
+static int hf_bpdu_mst_priority;
+static int hf_bpdu_msti_regional_root_id;
+static int hf_bpdu_msti_regional_root_mac;
+static int hf_bpdu_msti_internal_root_path_cost;
+static int hf_bpdu_msti_bridge_identifier_priority;
+static int hf_bpdu_msti_port_identifier_priority;
+static int hf_bpdu_msti_port_id;
+static int hf_bpdu_msti_bridge_id;
+static int hf_bpdu_msti_bridge_id_priority;
+static int hf_bpdu_msti_bridge_id_mac;
+static int hf_bpdu_msti_remaining_hops;
+static int hf_bpdu_version_4_length;
+static int hf_bpdu_spt_config_format_selector;
+static int hf_bpdu_spt_config_name;
+static int hf_bpdu_spt_config_revision_level;
+static int hf_bpdu_spt_config_digest;
+static int hf_bpdu_flags_agree_num;
+static int hf_bpdu_flags_dagree_num;
+static int hf_bpdu_flags_agree_valid;
+static int hf_bpdu_flags_restricted_role;
+static int hf_bpdu_spt_agreement_digest;
+static int hf_bpdu_agreement_digest_format_id;
+static int hf_bpdu_agreement_digest_format_capabilities;
+static int hf_bpdu_agreement_digest_convention_id;
+static int hf_bpdu_agreement_digest_convention_capabilities;
+static int hf_bpdu_agreement_digest_edge_count;
 
-static int hf_bpdu_pvst_tlvtype = -1;
-static int hf_bpdu_pvst_tlvlength = -1;
-static int hf_bpdu_pvst_tlvvalue = -1;
-static int hf_bpdu_pvst_tlv_origvlan = -1;
+static int hf_bpdu_pvst_tlvtype;
+static int hf_bpdu_pvst_tlvlength;
+static int hf_bpdu_pvst_tlvvalue;
+static int hf_bpdu_pvst_tlv_origvlan;
 
-static gint ett_bpdu = -1;
-static gint ett_bpdu_flags = -1;
-static gint ett_root_id = -1;
-static gint ett_bridge_id = -1;
-static gint ett_mstp = -1;
-static gint ett_msti = -1;
-static gint ett_cist_bridge_id = -1;
-static gint ett_spt = -1;
-static gint ett_aux_mcid = -1;
-static gint ett_agreement = -1;
-static gint ett_bpdu_pvst_tlv = -1;
+static int ett_bpdu;
+static int ett_bpdu_flags;
+static int ett_root_id;
+static int ett_bridge_id;
+static int ett_mstp;
+static int ett_msti;
+static int ett_cist_bridge_id;
+static int ett_spt;
+static int ett_aux_mcid;
+static int ett_agreement;
+static int ett_bpdu_pvst_tlv;
 
-static expert_field ei_pvst_tlv_length_invalid = EI_INIT;
-static expert_field ei_pvst_tlv_origvlan_missing = EI_INIT;
-static expert_field ei_pvst_tlv_truncated = EI_INIT;
-static expert_field ei_pvst_tlv_unknown = EI_INIT;
-static expert_field ei_bpdu_type = EI_INIT;
-static expert_field ei_bpdu_version_support = EI_INIT;
+static expert_field ei_pvst_tlv_length_invalid;
+static expert_field ei_pvst_tlv_origvlan_missing;
+static expert_field ei_pvst_tlv_truncated;
+static expert_field ei_pvst_tlv_unknown;
+static expert_field ei_bpdu_type;
+static expert_field ei_bpdu_version_support;
 
 
-static gboolean bpdu_use_system_id_extensions = TRUE;
+static bool bpdu_use_system_id_extensions = true;
 
 static dissector_handle_t gvrp_handle;
 static dissector_handle_t gmrp_handle;
+
+static dissector_handle_t bpdu_handle;
+static dissector_handle_t bpdu_cisco_handle;
 
 static const value_string protocol_id_vals[] = {
   { 0, "Spanning Tree Protocol" },
@@ -244,13 +237,11 @@ static const value_string role_vals[] = {
   { 0, NULL }
 };
 
-static const char initial_sep[] = " (";
-static const char cont_sep[] = ", ";
 
 static void
 dissect_bpdu_pvst_tlv(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb) {
-  gboolean pvst_tlv_origvlan_present = FALSE;
-  guint16 tlv_type, tlv_length;
+  bool pvst_tlv_origvlan_present = false;
+  uint16_t tlv_type, tlv_length;
   int offset = BPDU_PVST_TLV;
   proto_item * ti = NULL;
   proto_item * tlv_length_item = NULL;
@@ -265,7 +256,7 @@ dissect_bpdu_pvst_tlv(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb) {
 
     tlv_tree = proto_tree_add_subtree(tree, tvb, offset, 4 + tlv_length,
                         ett_bpdu_pvst_tlv, &ti,
-                        val_to_str(tlv_type, bpdu_pvst_tlv_vals, "Unknown TLV type: 0x%04x"));
+                        val_to_str(pinfo->pool, tlv_type, bpdu_pvst_tlv_vals, "Unknown TLV type: 0x%04x"));
 
     proto_tree_add_item(tlv_tree, hf_bpdu_pvst_tlvtype, tvb, offset, 2, ENC_BIG_ENDIAN);
     tlv_length_item = proto_tree_add_item(tlv_tree, hf_bpdu_pvst_tlvlength,
@@ -283,7 +274,7 @@ dissect_bpdu_pvst_tlv(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb) {
         if (tlv_length == 2) { /* Originating VLAN ID must be 2 bytes long */
           proto_item_append_text(ti, " (PVID): %u", tvb_get_ntohs(tvb, offset));
           proto_tree_add_item(tlv_tree, hf_bpdu_pvst_tlv_origvlan, tvb, offset, tlv_length, ENC_BIG_ENDIAN);
-          pvst_tlv_origvlan_present = TRUE;
+          pvst_tlv_origvlan_present = true;
         }
         else
           expert_add_info(pinfo, tlv_length_item, &ei_pvst_tlv_length_invalid);
@@ -298,47 +289,47 @@ dissect_bpdu_pvst_tlv(packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb) {
     offset += tlv_length;
   }
 
-  if (pvst_tlv_origvlan_present == FALSE) /* If a (R)PVST+ BPDU lacks the Originating VLAN TLV, it is malformed */
+  if (pvst_tlv_origvlan_present == false) /* If a (R)PVST+ BPDU lacks the Originating VLAN TLV, it is malformed */
     expert_add_info(pinfo, tree, &ei_pvst_tlv_origvlan_missing);
 }
 
 static void
-dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bpdu_pvst)
+dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, bool is_bpdu_pvst)
 {
-  guint16 protocol_identifier;
-  guint8  protocol_version_identifier;
-  guint8  bpdu_type;
-  guint8  flags;
-  guint16 root_identifier_bridge_priority;
-  guint16 root_identifier_system_id_extension = 0;
-  const gchar *root_identifier_mac_str;
-  guint32 root_path_cost;
-  guint16 bridge_identifier_bridge_priority;
-  guint16 bridge_identifier_system_id_extension = 0;
-  const gchar *bridge_identifier_mac_str;
-  guint16 port_identifier;
+  uint16_t protocol_identifier;
+  uint8_t protocol_version_identifier;
+  uint8_t bpdu_type;
+  uint8_t flags;
+  uint16_t root_identifier_bridge_priority;
+  uint16_t root_identifier_system_id_extension = 0;
+  const char *root_identifier_mac_str;
+  uint32_t root_path_cost;
+  uint16_t bridge_identifier_bridge_priority;
+  uint16_t bridge_identifier_system_id_extension = 0;
+  const char *bridge_identifier_mac_str;
+  uint16_t port_identifier;
   double message_age;
   double max_age;
   double hello_time;
   double forward_delay;
-  guint8 version_1_length;
-  guint16 version_3_length;
-  guint16 version_4_length = 0;
-  guint16 bpdu_version_4_length = 0;
-  guint8 config_format_selector;
-  guint16 cist_bridge_identifier_bridge_priority;
-  guint16 cist_bridge_identifier_system_id_extension = 0;
-  const gchar *cist_bridge_identifier_mac_str;
-  guint32 msti_regional_root_mstid, msti_regional_root_priority;
-  const gchar *msti_regional_root_mac_str;
-  guint16 msti_bridge_identifier_priority, msti_port_identifier_priority;
-  int   total_msti_length, offset, msti, msti_format;
+  uint8_t version_1_length;
+  uint16_t version_3_length;
+  uint16_t version_4_length = 0;
+  uint16_t bpdu_version_4_length = 0;
+  uint8_t config_format_selector;
+  uint16_t cist_bridge_identifier_bridge_priority;
+  uint16_t cist_bridge_identifier_system_id_extension = 0;
+  const char *cist_bridge_identifier_mac_str;
+  uint32_t msti_regional_root_mstid, msti_regional_root_priority;
+  const char *msti_regional_root_mac_str;
+  uint16_t msti_bridge_identifier_priority, msti_port_identifier_priority;
+  int   total_msti_length, offset, msti_format;
   int   msti_length_remaining;
 
   int spt_offset = 0;
 
   int MCID_LEN = 51;
-  guint8 spt_agree_data = 0;
+  uint8_t spt_agree_data = 0;
 
   proto_tree *bpdu_tree;
   proto_tree *mstp_tree, *msti_tree, *spt_tree = NULL, *aux_mcid_tree = NULL, *agreement_tree = NULL;
@@ -347,15 +338,14 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
   proto_tree *root_id_tree;
   proto_tree *bridge_id_tree;
   proto_tree *cist_bridge_id_tree;
-  const char *sep;
 
-  static const int * bpdu_flags[] = {
+  static int * const bpdu_flags[] = {
     &hf_bpdu_flags_tcack,
     &hf_bpdu_flags_tc,
     NULL
   };
 
-  static const int * rst_flags[] = {
+  static int * const rst_flags[] = {
     &hf_bpdu_flags_tcack,
     &hf_bpdu_flags_agreement,
     &hf_bpdu_flags_forwarding,
@@ -377,9 +367,9 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
      on Linux cooked captures, there *is* no destination address,
      so it's AT_NONE. */
   if (pinfo->dl_dst.type == AT_ETHER) {
-    const guint8 *dstaddr;
+    const uint8_t *dstaddr;
 
-    dstaddr = (const guint8 *)pinfo->dl_dst.data;
+    dstaddr = (const uint8_t *)pinfo->dl_dst.data;
     if(dstaddr[0] == 0x01 && dstaddr[1] == 0x80 &&
        dstaddr[2] == 0xC2 && dstaddr[3] == 0x00 &&
        dstaddr[4] == 0x00 && ((dstaddr[5] == 0x0D) || ((dstaddr[5] & 0xF0) == 0x20))) {
@@ -411,21 +401,21 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "STP"); /* Spanning Tree Protocol */
   col_clear(pinfo->cinfo, COL_INFO);
 
-  bpdu_type = tvb_get_guint8(tvb, BPDU_TYPE);
+  bpdu_type = tvb_get_uint8(tvb, BPDU_TYPE);
 
-  protocol_version_identifier = tvb_get_guint8(tvb, BPDU_VERSION_IDENTIFIER);
+  protocol_version_identifier = tvb_get_uint8(tvb, BPDU_VERSION_IDENTIFIER);
 
   switch (bpdu_type) {
 
   case BPDU_TYPE_CONF:
   case BPDU_TYPE_RST:
-    flags = tvb_get_guint8(tvb, BPDU_FLAGS);
+    flags = tvb_get_uint8(tvb, BPDU_FLAGS);
     root_identifier_bridge_priority = tvb_get_ntohs(tvb,BPDU_ROOT_IDENTIFIER);
     if (bpdu_use_system_id_extensions ) {
       root_identifier_system_id_extension = root_identifier_bridge_priority & 0x0fff;
       root_identifier_bridge_priority &= 0xf000;
     }
-    root_identifier_mac_str = tvb_ether_to_str(tvb, BPDU_ROOT_IDENTIFIER + 2);
+    root_identifier_mac_str = tvb_ether_to_str(pinfo->pool, tvb, BPDU_ROOT_IDENTIFIER + 2);
     root_path_cost = tvb_get_ntohl(tvb, BPDU_ROOT_PATH_COST);
     port_identifier = tvb_get_ntohs(tvb, BPDU_PORT_IDENTIFIER);
     break;
@@ -534,7 +524,7 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
       bridge_identifier_system_id_extension = bridge_identifier_bridge_priority & 0x0fff;
       bridge_identifier_bridge_priority &= 0xf000;
     }
-    bridge_identifier_mac_str = tvb_ether_to_str(tvb, BPDU_BRIDGE_IDENTIFIER + 2);
+    bridge_identifier_mac_str = tvb_ether_to_str(pinfo->pool, tvb, BPDU_BRIDGE_IDENTIFIER + 2);
 
     if (bpdu_type == BPDU_TYPE_RST) {
        proto_tree_add_bitmask_value_with_flags(bpdu_tree, tvb, BPDU_FLAGS, hf_bpdu_flags, ett_bpdu_flags, rst_flags, flags, BMT_NO_FALSE|BMT_NO_TFS);
@@ -639,7 +629,7 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
     }
 
     /* RST or MST BPDU */
-    version_1_length = tvb_get_guint8(tvb, BPDU_VERSION_1_LENGTH);
+    version_1_length = tvb_get_uint8(tvb, BPDU_VERSION_1_LENGTH);
     proto_tree_add_uint(bpdu_tree, hf_bpdu_version_1_length, tvb,
                         BPDU_VERSION_1_LENGTH, 1, version_1_length);
     /* Is this an MST BPDU? */
@@ -663,7 +653,7 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
        * field BPDU_MST_CONFIG_FORMAT_SELECTOR as a length-field
        * for the MSTI data.
        */
-      config_format_selector = tvb_get_guint8(tvb, BPDU_MST_CONFIG_FORMAT_SELECTOR);
+      config_format_selector = tvb_get_uint8(tvb, BPDU_MST_CONFIG_FORMAT_SELECTOR);
       if (version_3_length != 0) {
         msti_format = MSTI_FORMAT_IEEE_8021S;
         if (version_3_length >= VERSION_3_STATIC_LENGTH) {
@@ -695,7 +685,7 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
           total_msti_length = version_3_length * MSTI_MESSAGE_SIZE;
         }
       } else {
-        if (tvb_reported_length(tvb) == (guint)config_format_selector + MST_BPDU_SIZE + 1 ) {
+        if (tvb_reported_length(tvb) == (unsigned)config_format_selector + MST_BPDU_SIZE + 1 ) {
           msti_format = MSTI_FORMAT_ALTERNATIVE;
           total_msti_length = config_format_selector - VERSION_3_STATIC_LENGTH;
         } else {
@@ -731,7 +721,7 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
                             BPDU_CIST_INTERNAL_ROOT_PATH_COST, 4, ENC_BIG_ENDIAN);
 
         cist_bridge_identifier_bridge_priority = tvb_get_ntohs(tvb,BPDU_CIST_BRIDGE_IDENTIFIER);
-        cist_bridge_identifier_mac_str = tvb_ether_to_str(tvb, BPDU_CIST_BRIDGE_IDENTIFIER + 2);
+        cist_bridge_identifier_mac_str = tvb_ether_to_str(pinfo->pool, tvb, BPDU_CIST_BRIDGE_IDENTIFIER + 2);
 
         /* add Identifier with format based on preference value
          * bpdu_use_system_id_extensions
@@ -775,7 +765,7 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
 
       case MSTI_FORMAT_ALTERNATIVE:
         cist_bridge_identifier_bridge_priority = tvb_get_ntohs(tvb,ALT_BPDU_CIST_BRIDGE_IDENTIFIER);
-        cist_bridge_identifier_mac_str = tvb_ether_to_str(tvb, ALT_BPDU_CIST_BRIDGE_IDENTIFIER + 2);
+        cist_bridge_identifier_mac_str = tvb_ether_to_str(pinfo->pool, tvb, ALT_BPDU_CIST_BRIDGE_IDENTIFIER + 2);
 
         /* add Identifier with format based on preference value
          * bpdu_use_system_id_extensions
@@ -824,17 +814,16 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
                           BPDU_CIST_REMAINING_HOPS, 1, ENC_BIG_ENDIAN);
       /* MSTI messages */
       offset = BPDU_MSTI;
-      msti = 1;
       msti_length_remaining = total_msti_length;
       while (msti_length_remaining > 0) {
         switch(msti_format) {
 
         case MSTI_FORMAT_IEEE_8021S:
-          msti_regional_root_mstid = tvb_get_guint8(tvb,  offset+ MSTI_REGIONAL_ROOT);
+          msti_regional_root_mstid = tvb_get_uint8(tvb,  offset+ MSTI_REGIONAL_ROOT);
           msti_regional_root_priority = (msti_regional_root_mstid &0xf0) << 8;
           msti_regional_root_mstid = ((msti_regional_root_mstid & 0x0f) << 8) +
-                                     tvb_get_guint8(tvb,  offset+ MSTI_REGIONAL_ROOT+1);
-          msti_regional_root_mac_str = tvb_ether_to_str(tvb, offset + MSTI_REGIONAL_ROOT + 2);
+                                     tvb_get_uint8(tvb,  offset+ MSTI_REGIONAL_ROOT+1);
+          msti_regional_root_mac_str = tvb_ether_to_str(pinfo->pool, tvb, offset + MSTI_REGIONAL_ROOT + 2);
 
           msti_tree = proto_tree_add_subtree_format(mstp_tree, tvb, offset, 16, ett_msti, NULL,
                                           "MSTID %d, Regional Root Identifier %d / %s",
@@ -854,8 +843,8 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
           proto_tree_add_item(msti_tree, hf_bpdu_msti_internal_root_path_cost, tvb,
                               offset+MSTI_INTERNAL_ROOT_PATH_COST, 4, ENC_BIG_ENDIAN);
 
-          msti_bridge_identifier_priority = tvb_get_guint8(tvb, offset+MSTI_BRIDGE_IDENTIFIER_PRIORITY) >> 4;
-          msti_port_identifier_priority = tvb_get_guint8(tvb, offset+MSTI_PORT_IDENTIFIER_PRIORITY) >> 4;
+          msti_bridge_identifier_priority = tvb_get_uint8(tvb, offset+MSTI_BRIDGE_IDENTIFIER_PRIORITY) >> 4;
+          msti_port_identifier_priority = tvb_get_uint8(tvb, offset+MSTI_PORT_IDENTIFIER_PRIORITY) >> 4;
 
           proto_tree_add_uint(msti_tree, hf_bpdu_msti_bridge_identifier_priority, tvb,
                               offset+MSTI_BRIDGE_IDENTIFIER_PRIORITY, 1,
@@ -872,11 +861,11 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
           break;
 
         case MSTI_FORMAT_ALTERNATIVE:
-          msti_regional_root_mstid = tvb_get_guint8(tvb,  offset+ ALT_MSTI_REGIONAL_ROOT);
+          msti_regional_root_mstid = tvb_get_uint8(tvb,  offset+ ALT_MSTI_REGIONAL_ROOT);
           msti_regional_root_priority = (msti_regional_root_mstid &0xf0) << 8;
           msti_regional_root_mstid = ((msti_regional_root_mstid & 0x0f) << 8) +
-                                     tvb_get_guint8(tvb,  offset+ ALT_MSTI_REGIONAL_ROOT+1);
-          msti_regional_root_mac_str = tvb_ether_to_str(tvb, offset+ ALT_MSTI_REGIONAL_ROOT + 2);
+                                     tvb_get_uint8(tvb,  offset+ ALT_MSTI_REGIONAL_ROOT+1);
+          msti_regional_root_mac_str = tvb_ether_to_str(pinfo->pool, tvb, offset+ ALT_MSTI_REGIONAL_ROOT + 2);
 
           msti_tree = proto_tree_add_subtree_format(mstp_tree, tvb, offset, 16, ett_msti, NULL,
                                           "MSTID %d, Regional Root Identifier %d / %s",
@@ -912,7 +901,6 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
           offset += ALT_MSTI_MESSAGE_SIZE;
           break;
         }
-        msti++;
       }
 
       if (protocol_version_identifier >= 4 && version_1_length == 0
@@ -932,7 +920,7 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
         /* version 4 length is 55 or more.
          */
         if (version_4_length >= 53) {
-          static const int * agreements[] = {
+          static int * const agreements[] = {
               &hf_bpdu_flags_agree_num,
               &hf_bpdu_flags_dagree_num,
               &hf_bpdu_flags_agree_valid,
@@ -967,19 +955,13 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
           agreement_tree = proto_tree_add_subtree(spt_tree, tvb, spt_offset,
                                                -1, ett_agreement, &agreement_item, "Agreement Data");
 
-          spt_agree_data = tvb_get_guint8(tvb, spt_offset);
+          spt_agree_data = tvb_get_uint8(tvb, spt_offset);
 
-          sep = initial_sep;
-          proto_item_append_text(agreement_item, "%sAN: %d", sep, (spt_agree_data & 0x03));
+          proto_item_append_text(agreement_item, " (AN: %d", (spt_agree_data & 0x03));
 
           proto_tree_add_bitmask_list_value(agreement_tree, tvb, spt_offset, 1, agreements, spt_agree_data);
-          sep = cont_sep;
 
-          proto_item_append_text(agreement_item, "%sDAN: %d", sep, ((spt_agree_data & 0x0C) >> 2));
-
-          if (sep != initial_sep) {
-            proto_item_append_text(agreement_item, ")");
-          }
+          proto_item_append_text(agreement_item, ", DAN: %d)", ((spt_agree_data & 0x0C) >> 2));
           spt_offset += 2;
 
           proto_tree_add_item(agreement_tree, hf_bpdu_agreement_digest_format_id, tvb, spt_offset, 1, ENC_NA);
@@ -1011,14 +993,14 @@ dissect_bpdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, gboolean is_bp
 static int
 dissect_bpdu_cisco(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  dissect_bpdu(tvb, pinfo, tree, TRUE);
+  dissect_bpdu(tvb, pinfo, tree, true);
   return tvb_captured_length(tvb);
 }
 
 static int
 dissect_bpdu_generic(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  dissect_bpdu(tvb, pinfo, tree, FALSE);
+  dissect_bpdu(tvb, pinfo, tree, false);
   return tvb_captured_length(tvb);
 }
 
@@ -1149,7 +1131,7 @@ proto_register_bpdu(void)
         NULL, HFILL }},
     { &hf_bpdu_mst_config_name,
       { "MST Config name",              "mstp.config_name",
-        FT_STRINGZ,     BASE_NONE,      NULL,   0x0,
+        FT_STRINGZPAD,  BASE_NONE,      NULL,   0x0,
         NULL, HFILL }},
     { &hf_bpdu_mst_config_revision_level,
       { "MST Config revision",          "mstp.config_revision_level",
@@ -1245,7 +1227,7 @@ proto_register_bpdu(void)
                 NULL, HFILL }},
         { &hf_bpdu_spt_config_name,
           {"SPT Config name",   "mstp.config_name",
-        FT_STRINGZ, BASE_NONE, NULL, 0x0,
+        FT_STRINGZPAD, BASE_NONE, NULL, 0x0,
             NULL, HFILL } },
         { &hf_bpdu_spt_config_revision_level,
           { "SPT Config revision",    "mstp.config_revision_level",
@@ -1296,7 +1278,7 @@ proto_register_bpdu(void)
         FT_UINT16, BASE_DEC, NULL, 0x0,
             NULL, HFILL }},
   };
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_bpdu,
     &ett_bpdu_flags,
     &ett_root_id,
@@ -1343,8 +1325,8 @@ proto_register_bpdu(void)
   proto_register_field_array(proto_bpdu, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
 
-  register_dissector("bpdu", dissect_bpdu_generic, proto_bpdu);
-  register_dissector("bpdu_cisco", dissect_bpdu_cisco, proto_bpdu);
+  bpdu_handle = register_dissector("bpdu", dissect_bpdu_generic, proto_bpdu);
+  bpdu_cisco_handle = register_dissector("bpdu_cisco", dissect_bpdu_cisco, proto_bpdu);
 
   expert_bpdu = expert_register_protocol(proto_bpdu);
   expert_register_field_array(expert_bpdu, ei, array_length(ei));
@@ -1359,8 +1341,6 @@ proto_register_bpdu(void)
 void
 proto_reg_handoff_bpdu(void)
 {
-  dissector_handle_t bpdu_handle;
-
   /*
    * Get handle for the GVRP dissector.
    */
@@ -1371,18 +1351,17 @@ proto_reg_handoff_bpdu(void)
    */
   gmrp_handle = find_dissector_add_dependency("gmrp", proto_bpdu);
 
-  bpdu_handle = find_dissector_add_dependency("bpdu", proto_bpdu);
   dissector_add_uint("llc.dsap", SAP_BPDU, bpdu_handle);
   dissector_add_uint("chdlc.protocol", CHDLCTYPE_BPDU, bpdu_handle);
   dissector_add_uint("ethertype", ETHERTYPE_STP, bpdu_handle);
-  dissector_add_uint("llc.cisco_pid", 0x010c, bpdu_handle); /* Cisco's VLAN-bridge STP is just plain STP */
-
-  bpdu_handle = find_dissector("bpdu_cisco");
-  dissector_add_uint("llc.cisco_pid", 0x010b, bpdu_handle); /* Handle Cisco's (R)PVST+ TLV extensions */
+  dissector_add_uint("llc.cisco_pid", CISCO_PID_RLQ_REQ, bpdu_handle); /* Cisco's RLQ is just plain STP */
+  dissector_add_uint("llc.cisco_pid", CISCO_PID_RLQ_RESP, bpdu_handle); /* Cisco's RLQ is just plain STP */
+  dissector_add_uint("llc.cisco_pid", CISCO_PID_VLAN_BRIDGE, bpdu_handle); /* Cisco's VLAN-bridge STP is just plain STP */
+  dissector_add_uint("llc.cisco_pid", CISCO_PID_PVSTPP, bpdu_cisco_handle); /* Handle Cisco's (R)PVST+ TLV extensions */
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2
