@@ -1,11 +1,11 @@
 Mark Gates
-Alex Warshavsky 
+Alex Warshavsky
 
   * original authors
 
 Ajay Tirumala
 
-  * general improvements 
+  * general improvements
 
 Jim Ferguson <ferguson@ncsa.uiuc.edu>
 
@@ -35,4 +35,4 @@ Nathan Jones <nmjones@users.sourceforge.net>
 Gerrit Renker <grenker@users.sourceforge.net>
   * replace costly gettimeofday() with nanonsleep()
 
-Robert J. McMahon & Tim Auckland 
+Robert J. McMahon & Tim Auckland

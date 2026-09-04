@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = compat doc include src man
+SUBDIRS = compat doc include src man flows
 
 AM_CPPFLAGS = @STRIP_BEGIN@ \
 	      -I$(top_srcdir)/include \
@@ -8,3 +8,12 @@ AM_CPPFLAGS = @STRIP_BEGIN@ \
 
 AM_CXXFLAGS = -Wall
 AM_FLAGS = -Wall
+
+EXTRA_DIST = t
+TEST_EXTENSIONS = .sh
+TESTS = t/t1_tcp.sh t/t2_tcp6.sh t/t3_udp.sh t/t4_udp6.sh \
+	t/t5_f.sh t/t6_filelong.sh t/t7_n.sh t/t8_num.sh \
+	t/t9_parallel.sh t/t10_dualtest.sh t/t11_tradeoff.sh \
+	t/t12_full_duplex.sh t/t13_reverse.sh t/t14_udp_triptimes.sh \
+	t/t15_udp_enhanced.sh t/t16_udp_histograms.sh
+

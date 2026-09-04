@@ -1,0 +1,419 @@
+Many of iperf 2's latency features require the client's and server's clocks to be synchronized.
+
+This document will explain how to use Precision Time Protocol (PTP) found at https://sourceforge.net/projects/ptpd/
+Also, 'dnf install ptpd' will install on fedora systems. Other options for linux are linux-ptp or ptp4l.  We've also downloaded
+Eric Raymond's "Stratum-1-Microserver HOWTO" and placed a copy in doc/www.ntpsec.org/white-papers/stratum-1-microserver-howto/index.html
+
+
+Use DNF or equivalent to get ptpd (google ptpd install for others)
+
+o) dnf install ptpd
+o) configure /etc/ptpd.conf (as shown below), change domain to something not zero
+o) updated ptpd2.service file (as shown below)
+o) issue 'systemctl daemon-reload'
+o) disable ntpd and chronyd
+   - systemctl stop chronyd
+   - systemctl disable chronyd
+   - systemctl stop ntpd
+o) enable ptpd
+   - systemctl enable ptpd2
+   - systemctl start ptpd2
+o) verify with 'systemctl status ptpd2'
+o) reboot
+o) verify corrections (as shown below)
+
+First thing is to define a device to act as the PTP grandmaster for a domain. The configure it as grandmaster.
+
+MULTICAST MODE:
+===============
+
+Grandmaster device:
+
+; ==============================================================================
+; This is a recommended configuration for a PTPv2 grandmaster
+; For a full list of options run ptpd2 -H or see the documentation and man pages
+; ==============================================================================
+
+; interface has to be specified
+ptpengine:interface=enp2s0 //*** define the interface that PTP will advertise on
+
+; PTP domain
+ptpengine:domain=0 //*** Set a PTP domain. Preferrably not the default of zero.
+
+; available presets are slaveonly, masteronly and masterslave (full IEEE 1588 implementation)
+ptpengine:preset=masteronly
+
+; multicast for both sync and delay requests - use hybrid for unicast delay requests
+ptpengine:ip_mode=multicast
+
+PTP slaves.
+
+[root@localhost ~]# more /etc/ptpd2.conf
+; ==============================================================================
+; This is a recommended configuration for a PTPv2 slave
+; For a full list of options run ptpd2 -H or see the documentation and man pages
+; ==============================================================================
+
+; interface has to be specified
+ptpengine:interface=enp2s0 // *** Set this value to the interface used or PTP
+
+; PTP domain
+ptpengine:domain=0 // *** Set a domain value here (preferrably not 0) to set it's scope
+
+; available presets are slaveonly, masteronly and masterslave (full IEEE 1588 implementation)
+ptpengine:preset=slaveonly
+
+; multicast for both sync and delay requests - use hybrid for unicast delay requests
+ptpengine:ip_mode=multicast
+
+; when enabled, sniffing is used instead of sockets to send and receive packets
+ptpengine:use_libpcap=n
+
+; update online statistics every 5 seconds
+global:statistics_update_interval=5
+
+; wait 5 statistics intervals for one-way delay to stabilise
+ptpengine:calibration_delay=5
+
+; log file, event log only. if timing statistics are needed, see statistics_file
+global:log_file=/var/log/ptpd2.log
+; log file up to 5M
+global:log_file_max_size=5000
+; rotate logs up to 5 files
+global:log_file_max_files=5
+
+; status file providing an overview of ptpd's operation and statistics
+global:log_status=y
+
+; required if ip_mode is set to hybrid
+;ptpengine:log_delayreq_interval=0
+
+; uncomment this to log a timing log like in previous ptpd versions
+global:statistics_file=/var/log/ptpd2.stats
+global:statistics_file_max_size=500000
+
+; on multi-core systems it is recommended to bind ptpd to a single core
+global:cpuaffinity_cpucore=0
+
+; use DSCP 46 for expedited forwarding over ipv4 networks
+ptpengine:ip_dscp=46
+
+; always keep a new line in the end
+
+
+
+[root@localhost fdt]# more /usr/lib/systemd/system/ptpd2.service
+[Unit]
+Description=ptpd time precision daemon
+Wants=network-online.target
+After=network.target network-online.target
+
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/sysconfig/ptpd2
+ExecStart=/usr/bin/ptpd2 -c $PTPD_CONFIG_FILE $PTPD_EXTRA_OPTIONS
+ExecStartPost=/usr/bin/sleep 10
+ExecStartPost=/usr/bin/pkill ptpd --signal SIGUSR1
+
+
+[Install]
+WantedBy=multi-user.target
+
+
+Check the error corrections
+
+The error corrections can be found in the /var/log/ptpd.stats file.  Tail this file to read them. The units are nanoseconds.  Here is an example. I removed some columns, using ellipses, in the first two lines for readability. The highlighted columns show that the clock is being corrected by -1201 nanoseconds or -1.2 microseconds.  It’s suggested that these corrections should be sub 25 microseconds for WiFi latency testing.
+
+[root@localhost fdt]# tail -n 20 /var/log/ptpd2.stats
+2020-12-10 07:52:05.078368, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  …,  0.000090683,  0.000094390
+2020-12-10 07:52:05.328450, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  …, 0.000092167,  0.000094390
+
+2020-12-10 07:52:05.578442, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000090683,  0.000094390
+2020-12-10 07:52:05.590040, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, D, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000090683,  0.000095715
+2020-12-10 07:52:05.876909, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000090683,  0.000095715
+2020-12-10 07:52:06.078439, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000090533,  0.000095715
+2020-12-10 07:52:06.328409, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000090095,  0.000095715
+2020-12-10 07:52:06.425850, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, D, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000090095,  0.000095265
+2020-12-10 07:52:06.578374, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000086198,  0.000095265
+2020-12-10 07:52:06.828399, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000086198,  0.000095265
+2020-12-10 07:52:07.078434, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000089226,  0.000095265
+2020-12-10 07:52:07.158394, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, D, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000089226,  0.000093841
+2020-12-10 07:52:07.328398, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000086198,  0.000093841
+2020-12-10 07:52:07.578358, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000082906,  0.000093841
+2020-12-10 07:52:07.719444, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, D, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000082906,  0.000094916
+2020-12-10 07:52:07.797430, slv, 141877fffe2b5446(unknown)/1,  0.000094581, -0.000001201,  0.000095889,  0.000092929, 294.638250000, D, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000082906,  0.000095889
+2020-12-10 07:52:07.828386, slv, 141877fffe2b5446(unknown)/1,  0.000094581, -0.000001201,  0.000095889,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000082906,  0.000095889
+2020-12-10 07:52:08.078403, slv, 141877fffe2b5446(unknown)/1,  0.000094581, -0.000001201,  0.000095889,  0.000092929, 294.638250000, S, 0.000094563, 18, -0.000001072, 300, 296, 1,  0.000082817,  0.000095889
+2020-12-10 07:52:08.328402, slv, 141877fffe2b5446(unknown)/1,  0.000094581, -0.000001201,  0.000095889,  0.000092929, 294.638250000, S, 0.000094563, 18, -0.000001072, 300, 296, 1,  0.000081650,  0.000095889
+
+
+Plot the errors using gnuplot (credit Tim A.)
+
+
+You might find useful a simple way to plot the ptp error corrections from the stats file.  It reports the last 8 hours (or whatever history you have configured). Start gnuplot (dnf gnuplot if not installed) then:
+
+gnuplot> set xlabel "hours"
+gnuplot> set ylabel "ms fast"
+gnuplot> set datafile separator ","
+gnuplot> plot "< cat /var/log/ptpd2.stats{.5,.4,.3,.2,.1,}" using ($0/5/60/60):(1000*$5) with l title "ptp"
+
+
+
+UNICAST MODE:
+=============
+
+PTP Unicast Mode
+
+This document describes how to configure PTP in unicast mode and a bit on how to check the corrections
+
+Grandmaster setup (unicast mode)
+* add DUT ip address to ptpengine:unicast_destinations=
+* announce a ptp grandmaster restart to work peers using the same grandmaster
+* restart ptpd2 via systemctl restart ptpd2.service
+DUT setup
+* Install PTP - dnf install ptp
+* Configure ptp via/etc/ptpd.conf (see below)
+* Update systemd file of /usr/lib/systemd/system/ptpd2.service (see below)
+* Disable chronyd via systemctl disable chronyd
+* Disable ntpd via systemctl disable ntpd
+* Enable ptpd via systemctl enable ptpd2.service
+* Reboot DUT
+* Check ntpd, chrony dead and ptpd2 working
+   * systemctl status ntpd
+   * systemctl status chronyd
+   * systemctl status ptpd2
+* Check the clock corrections in /var/log/ptpd2.stats
+Modifications needed in /etc/ptpd.conf per each DUT
+* ptpengine:interface=<dev>, e.g. enp2s0
+* for unicast mode, ptpengine:unicast_destinations=<ip grandmaster> e.g. 10.59.13.17
+* clock:step_startup_force=y
+* global:statistics_file=/var/log/ptpd2.stats
+* global:statistics_file_max_size=5000
+; on multi-core systems it is recommended to bind ptpd to a single core
+* global:cpuaffinity_cpucore=0
+systemd service file looks like (can be directly copied from another DUT)
+
+
+[root@localhost fdt]# more /usr/lib/systemd/system/ptpd2.service
+[Unit]
+Description=ptpd time precision daemon
+Wants=network-online.target
+After=network.target network-online.target
+
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/sysconfig/ptpd2
+ExecStart=/usr/bin/ptpd2 -c $PTPD_CONFIG_FILE $PTPD_EXTRA_OPTIONS
+ExecStartPost=/usr/bin/sleep 10
+ExecStartPost=/usr/bin/pkill ptpd --signal SIGUSR1
+
+
+[Install]
+WantedBy=multi-user.target
+
+
+Check the error corrections
+
+The error corrections can be found in the /var/log/ptpd.stats file.  Tail this file to read them. The units are nanoseconds.  Here is an example. I removed some columns, using ellipses, in the first two lines for readability. The highlighted columns show that the clock is being corrected by -1201 nanoseconds or -1.2 microseconds.  It’s suggested that these corrections should be sub 25 microseconds for WiFi latency testing.
+
+[root@localhost fdt]# tail -n 20 /var/log/ptpd2.stats
+2020-12-10 07:52:05.078368, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  …,  0.000090683,  0.000094390
+2020-12-10 07:52:05.328450, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  …, 0.000092167,  0.000094390
+
+2020-12-10 07:52:05.578442, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000090683,  0.000094390
+2020-12-10 07:52:05.590040, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, D, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000090683,  0.000095715
+2020-12-10 07:52:05.876909, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000090683,  0.000095715
+2020-12-10 07:52:06.078439, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000090533,  0.000095715
+2020-12-10 07:52:06.328409, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000090095,  0.000095715
+2020-12-10 07:52:06.425850, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, D, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000090095,  0.000095265
+2020-12-10 07:52:06.578374, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000086198,  0.000095265
+2020-12-10 07:52:06.828399, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000086198,  0.000095265
+2020-12-10 07:52:07.078434, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000089226,  0.000095265
+2020-12-10 07:52:07.158394, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, D, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000089226,  0.000093841
+2020-12-10 07:52:07.328398, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000086198,  0.000093841
+2020-12-10 07:52:07.578358, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000082906,  0.000093841
+2020-12-10 07:52:07.719444, slv, 141877fffe2b5446(unknown)/1,  0.000094584, -0.000001201,  0.000095768,  0.000092929, 294.638250000, D, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000082906,  0.000094916
+2020-12-10 07:52:07.797430, slv, 141877fffe2b5446(unknown)/1,  0.000094581, -0.000001201,  0.000095889,  0.000092929, 294.638250000, D, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000082906,  0.000095889
+2020-12-10 07:52:07.828386, slv, 141877fffe2b5446(unknown)/1,  0.000094581, -0.000001201,  0.000095889,  0.000092929, 294.638250000, S, 0.000094557, 16, 0.000000178, 1145, 296, 1,  0.000082906,  0.000095889
+2020-12-10 07:52:08.078403, slv, 141877fffe2b5446(unknown)/1,  0.000094581, -0.000001201,  0.000095889,  0.000092929, 294.638250000, S, 0.000094563, 18, -0.000001072, 300, 296, 1,  0.000082817,  0.000095889
+2020-12-10 07:52:08.328402, slv, 141877fffe2b5446(unknown)/1,  0.000094581, -0.000001201,  0.000095889,  0.000092929, 294.638250000, S, 0.000094563, 18, -0.000001072, 300, 296, 1,  0.000081650,  0.000095889
+
+
+Plot the errors using gnuplot (credit Tim A.)
+
+
+You might find useful a simple way to plot the ptp error corrections from the stats file.  It reports the last 8 hours (or whatever history you have configured). Start gnuplot (dnf gnuplot if not installed) then:
+
+gnuplot> set xlabel "hours"
+gnuplot> set ylabel "ms fast"
+gnuplot> set datafile separator ","
+gnuplot> plot "< cat /var/log/ptpd2.stats{.5,.4,.3,.2,.1,}" using ($0/5/60/60):(1000*$5) with l title "ptp"
+
+
+
+Force a time sync (requires version 2.3.2)
+
+A PTP slave can be forçed to time sync to the grandmaster immediately by sending the ptpd process a SIGUSR1.
+
+
+   * ps -ef | grep ptpd2.conf
+   * kill -SIGUSR1 $ptp_pid
+
+
+[root@mc20tst3 ~]# ps -ef | grep ptpd
+root      9271     1  0 Nov20 ?        01:45:37 /usr/local/sbin/ptpd2 -c /etc/ptpd2.conf
+root     31452 26633  0 08:03 pts/0    00:00:00 grep --color=auto ptpd
+
+
+
+
+
+
+
+Then on the slaves:
+
+[root@localhost ptpd-code]# more /etc/ptpd2.conf
+; ==============================================================================
+; This is a recommended configuration for a PTPv2 slave
+; For a full list of options run ptpd2 -H or see the documentation and man pages
+; ==============================================================================
+
+; interface has to be specified
+ptpengine:interface=enp2s0
+clock:step_startup_force=y
+clock:set_rtc_on_step = y
+
+; PTP domain
+ptpengine:domain=0
+
+; available presets are slaveonly, masteronly and masterslave (full IEEE 1588 implementation)
+ptpengine:preset=slaveonly
+
+; multicast for both sync and delay requests - use hybrid for unicast delay requests
+ptpengine:ip_mode=multicast
+
+; when enabled, sniffing is used instead of sockets to send and receive packets
+ptpengine:use_libpcap=n
+
+; go into panic mode for 10 minutes instead of resetting the clock
+ptpengine:panic_mode=y
+ptpengine:panic_mode_duration=10
+
+; uncomment this to enable outlier filters
+ptpengine:sync_outlier_filter_enable=y
+ptpengine:delay_outlier_filter_enable=y
+
+; store observed drift in a file
+clock:drift_handling=file
+clock:drift_file=/var/log/ptpd2_kernelclock.drift
+
+; update online statistics every 5 seconds
+global:statistics_update_interval=5
+
+; wait 5 statistics intervals for one-way delay to stabilise
+ptpengine:calibration_delay=5
+
+; log file, event log only. if timing statistics are needed, see statistics_file
+global:log_file=/var/log/ptpd2.log
+global:log_level=LOG_ALL
+; log file up to 5M
+global:log_file_max_size=5000
+; rotate logs up to 5 files
+global:log_file_max_files=5
+
+; status file providing an overview of ptpd's operation and statistics
+global:log_status=y
+; required if ip_mode is set to hybrid
+;ptpengine:log_delayreq_interval=0
+
+; uncomment this to log a timing log like in previous ptpd versions
+global:statistics_file=/var/log/ptpd2.stats
+global:statistics_file_max_size=500
+
+; on multi-core systems it is recommended to bind ptpd to a single core
+global:cpuaffinity_cpucore=0
+
+; use DSCP 46 for expedited forwarding over ipv4 networks
+ptpengine:ip_dscp=46
+
+; always keep a new line in the end
+
+
+Cause PTP to send a SIGUSR1 as part of boot up:
+
+[root@localhost ptpd-code]# systemctl status ptpd2.service
+● ptpd2.service - ptpd time precision daemon
+     Loaded: loaded (/usr/lib/systemd/system/ptpd2.service; enabled; vendor preset: disabled)
+     Active: active (running) since Thu 2020-11-05 12:19:06 PST; 2 days ago
+   Main PID: 794 (ptpd2)
+      Tasks: 1 (limit: 11802)
+     Memory: 5.2M
+        CPU: 8min 36.406s
+     CGroup: /system.slice/ptpd2.service
+             └─794 /usr/bin/ptpd2 -c /etc/ptpd2.conf
+
+Nov 05 12:18:56 localhost.localdomain systemd[1]: Starting ptpd time precision daemon...
+Nov 05 12:18:56 localhost.localdomain ptpd2[786]: PTPd version 2.3.2 starting
+Nov 05 12:18:56 localhost.localdomain ptpd2[786]: Starting ptpd2 daemon with parameters:      /usr/bin/ptpd2 -c /etc/ptpd2.conf
+Nov 05 12:18:56 localhost.localdomain ptpd2[786]: Loading configuration file: /etc/ptpd2.conf
+Nov 05 12:18:56 localhost.localdomain ptpd2[786]: Checking configuration
+Nov 05 12:18:56 localhost.localdomain ptpd2[786]: Configuration OK
+Nov 05 12:18:56 localhost.localdomain ptpd2[786]: Successfully acquired lock on /var/run/ptpd2.lock
+Nov 05 12:19:06 localhost.localdomain systemd[1]: Started ptpd time precision daemon.
+
+[root@localhost ptpd-code]# more /usr/lib/systemd/system/ptpd2.service
+[Unit]
+Description=ptpd time precision daemon
+Wants=network-online.target
+After=network.target network-online.target
+[Service]
+Type=forking
+EnvironmentFile=-/etc/sysconfig/ptpd2
+ExecStart=/usr/bin/ptpd2 -c $PTPD_CONFIG_FILE $PTPD_EXTRA_OPTIONS
+ExecStartPost=/usr/bin/sleep 10
+ExecStartPost=/usr/bin/pkill ptpd --signal SIGUSR1
+[Install]
+WantedBy=multi-user.target
+
+
+Then use tcpdump to verify the clock packets are being recieved, e.g.
+
+[root@localhost ptpd-code]# tcpdump -i any host 224.0.1.129 -n -e
+dropped privs to tcpdump
+tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
+listening on any, link-type LINUX_SLL (Linux cooked v1), capture size 262144 bytes
+20:31:55.713992   M 00:11:32:be:ba:b2 ethertype IPv4 (0x0800), length 88: 192.168.1.10.ptp-event > 224.0.1.129.ptp-event: UDP, length 44
+20:31:55.715921   M 00:11:32:be:ba:b2 ethertype IPv4 (0x0800), length 88: 192.168.1.10.ptp-general > 224.0.1.129.ptp-general: UDP, length 44
+20:31:55.964001   M 00:11:32:be:ba:b2 ethertype IPv4 (0x0800), length 88: 192.168.1.10.ptp-event > 224.0.1.129.ptp-event: UDP, length 44
+20:31:55.965927   M 00:11:32:be:ba:b2 ethertype IPv4 (0x0800), length 88: 192.168.1.10.ptp-general > 224.0.1.129.ptp-general: UDP, length 44
+20:31:56.213993   M 00:11:32:be:ba:b2 ethertype IPv4 (0x0800), length 88: 192.168.1.10.ptp-event > 224.0.1.129.ptp-event: UDP, length 44
+20:31:56.215919   M 00:11:32:be:ba:b2 ethertype IPv4 (0x0800), length 88: 192.168.1.10.ptp-general > 224.0.1.129.ptp-general: UDP, length 44
+20:31:56.309369 Out 40:8d:5c:f7:5a:73 ethertype IPv4 (0x0800), length 88: 192.168.1.36.ptp-event > 224.0.1.129.ptp-event: UDP, length 44
+20:31:56.309831   M 00:11:32:be:ba:b2 ethertype IPv4 (0x0800), length 98: 192.168.1.10.ptp-general > 224.0.1.129.ptp-general: UDP, length 54
+
+
+Then look at the stats file for the corrections (units are nanonseconds) per the 5th columm, e.g.  -0.000001249
+
+[root@localhost ptpd-code]# tail -n 20 /var/log/ptpd2.stats
+2020-11-07 20:33:23.966052, slv, 001132fffebebab2(unknown)/1,  0.000116807, -0.000001249,  0.000118058,  0.000116023, 124.005500000, S, 12346, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000116023,  0.000118058
+2020-11-07 20:33:24.216067, slv, 001132fffebebab2(unknown)/1,  0.000116807, -0.000001249,  0.000118058,  0.000116023, 123.693250000, S, 12347, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000123686,  0.000118058
+2020-11-07 20:33:24.466048, slv, 001132fffebebab2(unknown)/1,  0.000116807, -0.000000842,  0.000118058,  0.000115906, 123.693250000, S, 12348, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000115906,  0.000118058
+2020-11-07 20:33:24.624053, slv, 001132fffebebab2(unknown)/1,  0.000116807, -0.000000842,  0.000118058,  0.000115906, 123.482750000, D, 05715, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000115906,  0.000137903
+2020-11-07 20:33:24.716073, slv, 001132fffebebab2(unknown)/1,  0.000116807, -0.000000842,  0.000118058,  0.000115906, 123.482750000, S, 12349, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000124509,  0.000137903
+2020-11-07 20:33:24.966073, slv, 001132fffebebab2(unknown)/1,  0.000116807, -0.000000842,  0.000118058,  0.000115906, 123.482750000, S, 12350, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000092817,  0.000137903
+2020-11-07 20:33:25.215999, slv, 001132fffebebab2(unknown)/1,  0.000116807, -0.000000842,  0.000118058,  0.000115906, 123.482750000, S, 12351, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000119022,  0.000137903
+2020-11-07 20:33:25.466070, slv, 001132fffebebab2(unknown)/1,  0.000116807, -0.000000842,  0.000118058,  0.000115906, 123.482750000, S, 12352, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000118677,  0.000137903
+2020-11-07 20:33:25.548019, slv, 001132fffebebab2(unknown)/1,  0.000116807, -0.000000842,  0.000118058,  0.000115906, 123.482750000, D, 05716, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000118677,  0.000085844
+2020-11-07 20:33:25.716014, slv, 001132fffebebab2(unknown)/1,  0.000116807, -0.000001047,  0.000118058,  0.000115612, 123.482750000, S, 12353, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000115612,  0.000085844
+2020-11-07 20:33:25.966041, slv, 001132fffebebab2(unknown)/1,  0.000116807, -0.000001047,  0.000118058,  0.000115612, 123.221000000, S, 12354, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000119447,  0.000085844
+2020-11-07 20:33:26.216004, slv, 001132fffebebab2(unknown)/1,  0.000116807, -0.000003106,  0.000118058,  0.000111789, 123.221000000, S, 12355, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000111789,  0.000085844
+2020-11-07 20:33:26.466074, slv, 001132fffebebab2(unknown)/1,  0.000116807, -0.000003106,  0.000118058,  0.000111789, 122.444500000, S, 12356, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000123317,  0.000085844
+2020-11-07 20:33:26.716085, slv, 001132fffebebab2(unknown)/1,  0.000116807, -0.000003106,  0.000118058,  0.000111789, 122.444500000, S, 12357, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000122937,  0.000085844
+2020-11-07 20:33:26.882083, slv, 001132fffebebab2(unknown)/1,  0.000116796, -0.000003106,  0.000119652,  0.000111789, 122.444500000, D, 05717, 0.000116808, 19, -0.000000871, 1715, 128, 1,  0.000122937,  0.000119652
+2020-11-07 20:33:26.966076, slv, 001132fffebebab2(unknown)/1,  0.000116796, -0.000003106,  0.000119652,  0.000111789, 122.444500000, S, 12358, 0.000116808, 14, -0.000001537, 789, 124, 1,  0.000089006,  0.000119652
+2020-11-07 20:33:27.216040, slv, 001132fffebebab2(unknown)/1,  0.000116796, -0.000002701,  0.000119652,  0.000116412, 122.444500000, S, 12359, 0.000116808, 14, -0.000001537, 789, 124, 1,  0.000116412,  0.000119652
+2020-11-07 20:33:27.466054, slv, 001132fffebebab2(unknown)/1,  0.000116796, -0.000000944,  0.000119652,  0.000115291, 121.769250000, S, 12360, 0.000116808, 14, -0.000001537, 789, 124, 1,  0.000115291,  0.000119652
+2020-11-07 20:33:27.600076, slv, 001132fffebebab2(unknown)/1,  0.000116796, -0.000000944,  0.000119652,  0.000115291, 121.533250000, D, 05718, 0.000116808, 14, -0.000001537, 789, 124, 1,  0.000115291,  0.000134920
+2020-11-07 20:33:27.716072, slv, 001132fffebebab2(unknown)/1,  0.000116796, -0.000000944,  0.000119652,  0.000115291, 121.533250000, S, 12361, 0.000116808, 14, -0.000001537, 789, 124, 1,  0.000125607,  0.000134920
