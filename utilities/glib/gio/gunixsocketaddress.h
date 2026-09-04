@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008 Christian Kellner, Samuel Cormier-Iijima
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -52,28 +54,28 @@ struct _GUnixSocketAddressClass
   GSocketAddressClass parent_class;
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType           g_unix_socket_address_get_type    (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType           g_unix_socket_address_get_type    (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GSocketAddress *g_unix_socket_address_new             (const gchar        *path);
-GLIB_DEPRECATED_FOR(g_unix_socket_address_new_with_type)
+GIO_DEPRECATED_FOR(g_unix_socket_address_new_with_type)
 GSocketAddress *g_unix_socket_address_new_abstract    (const gchar        *path,
                                                        gint                path_len);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GSocketAddress *g_unix_socket_address_new_with_type   (const gchar            *path,
                                                        gint                    path_len,
                                                        GUnixSocketAddressType  type);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const char *    g_unix_socket_address_get_path        (GUnixSocketAddress *address);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gsize           g_unix_socket_address_get_path_len    (GUnixSocketAddress *address);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GUnixSocketAddressType g_unix_socket_address_get_address_type (GUnixSocketAddress *address);
-GLIB_DEPRECATED
+GIO_DEPRECATED
 gboolean        g_unix_socket_address_get_is_abstract (GUnixSocketAddress *address);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gboolean        g_unix_socket_address_abstract_names_supported (void);
 
 G_END_DECLS

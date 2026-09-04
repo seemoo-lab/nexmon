@@ -4,10 +4,12 @@
  *
  * gquark.c: Functions for dealing with quarks and interned strings
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -41,6 +43,7 @@
 #include "gtestutils.h"
 #include "glib_trace.h"
 #include "glib-init.h"
+#include "glib-private.h"
 
 #define QUARK_BLOCK_SIZE         2048
 #define QUARK_STRING_BLOCK_SIZE (4096 - sizeof (gsize))
@@ -65,40 +68,34 @@ g_quark_init (void)
 }
 
 /**
- * SECTION:quarks
- * @title: Quarks
- * @short_description: a 2-way association between a string and a
- *     unique integer identifier
- *
- * Quarks are associations between strings and integer identifiers.
- * Given either the string or the #GQuark identifier it is possible to
- * retrieve the other.
- *
- * Quarks are used for both [datasets][glib-Datasets] and
- * [keyed data lists][glib-Keyed-Data-Lists].
- *
- * To create a new quark from a string, use g_quark_from_string() or
- * g_quark_from_static_string().
- *
- * To find the string corresponding to a given #GQuark, use
- * g_quark_to_string().
- *
- * To find the #GQuark corresponding to a given string, use
- * g_quark_try_string().
- *
- * Another use for the string pool maintained for the quark functions
- * is string interning, using g_intern_string() or
- * g_intern_static_string(). An interned string is a canonical
- * representation for a string. One important advantage of interned
- * strings is that they can be compared for equality by a simple
- * pointer comparison, rather than using strcmp().
- */
-
-/**
  * GQuark:
  *
  * A GQuark is a non-zero integer which uniquely identifies a
- * particular string. A GQuark value of zero is associated to %NULL.
+ * particular string.
+ *
+ * A GQuark value of zero is associated to `NULL`.
+ *
+ * Given either the string or the `GQuark` identifier it is possible to
+ * retrieve the other.
+ *
+ * Quarks are used for both
+ * [datasets and keyed data lists](datalist-and-dataset.html).
+ *
+ * To create a new quark from a string, use [func@GLib.quark_from_string]
+ * or [func@GLib.quark_from_static_string].
+ *
+ * To find the string corresponding to a given `GQuark`, use
+ * [func@GLib.quark_to_string].
+ *
+ * To find the `GQuark` corresponding to a given string, use
+ * [func@GLib.quark_try_string].
+ *
+ * Another use for the string pool maintained for the quark functions
+ * is string interning, using [func@GLib.intern_string] or
+ * [func@GLib.intern_static_string]. An interned string is a canonical
+ * representation for a string. One important advantage of interned
+ * strings is that they can be compared for equality by a simple
+ * pointer comparison, rather than using `strcmp()`.
  */
 
 /**
@@ -118,13 +115,16 @@ g_quark_init (void)
 
 /**
  * g_quark_try_string:
- * @string: (allow-none): a string
+ * @string: (nullable): a string
  *
  * Gets the #GQuark associated with the given string, or 0 if string is
  * %NULL or it has no associated #GQuark.
  *
  * If you want the GQuark to be created if it doesn't already exist,
  * use g_quark_from_string() or g_quark_from_static_string().
+ *
+ * This function must not be used before library constructors have finished
+ * running.
  *
  * Returns: the #GQuark associated with the string, or 0 if @string is
  *     %NULL or there is no #GQuark associated with it
@@ -190,34 +190,45 @@ quark_from_string (const gchar *string,
   return quark;
 }
 
-/**
- * g_quark_from_string:
- * @string: (allow-none): a string
- *
- * Gets the #GQuark identifying the given string. If the string does
- * not currently have an associated #GQuark, a new #GQuark is created,
- * using a copy of the string.
- *
- * Returns: the #GQuark identifying the string, or 0 if @string is %NULL
- */
-GQuark
-g_quark_from_string (const gchar *string)
+static inline GQuark
+quark_from_string_locked (const gchar   *string,
+                          gboolean       duplicate)
 {
-  GQuark quark;
+  GQuark quark = 0;
 
   if (!string)
     return 0;
 
   G_LOCK (quark_global);
-  quark = quark_from_string (string, TRUE);
+  quark = quark_from_string (string, duplicate);
   G_UNLOCK (quark_global);
 
   return quark;
 }
 
 /**
+ * g_quark_from_string:
+ * @string: (nullable): a string
+ *
+ * Gets the #GQuark identifying the given string. If the string does
+ * not currently have an associated #GQuark, a new #GQuark is created,
+ * using a copy of the string.
+ *
+ * This function must not be used before library constructors have finished
+ * running. In particular, this means it cannot be used to initialize global
+ * variables in C++.
+ *
+ * Returns: the #GQuark identifying the string, or 0 if @string is %NULL
+ */
+GQuark
+g_quark_from_string (const gchar *string)
+{
+  return quark_from_string_locked (string, TRUE);
+}
+
+/**
  * g_quark_from_static_string:
- * @string: (allow-none): a string
+ * @string: (nullable): a string
  *
  * Gets the #GQuark identifying the given (static) string. If the
  * string does not currently have an associated #GQuark, a new #GQuark
@@ -230,23 +241,18 @@ g_quark_from_string (const gchar *string)
  * with statically allocated strings in the main program, but not with
  * statically allocated memory in dynamically loaded modules, if you
  * expect to ever unload the module again (e.g. do not use this
- * function in GTK+ theme engines).
+ * function in GTK theme engines).
+ *
+ * This function must not be used before library constructors have finished
+ * running. In particular, this means it cannot be used to initialize global
+ * variables in C++.
  *
  * Returns: the #GQuark identifying the string, or 0 if @string is %NULL
  */
 GQuark
 g_quark_from_static_string (const gchar *string)
 {
-  GQuark quark;
-
-  if (!string)
-    return 0;
-
-  G_LOCK (quark_global);
-  quark = quark_from_string (string, FALSE);
-  G_UNLOCK (quark_global);
-
-  return quark;
+  return quark_from_string_locked (string, FALSE);
 }
 
 /**
@@ -262,9 +268,9 @@ g_quark_to_string (GQuark quark)
 {
   gchar* result = NULL;
   gchar **strings;
-  gint seq_id;
+  guint seq_id;
 
-  seq_id = g_atomic_int_get (&quark_seq_id);
+  seq_id = (guint) g_atomic_int_get (&quark_seq_id);
   strings = g_atomic_pointer_get (&quarks);
 
   if (quark < seq_id)
@@ -290,6 +296,7 @@ quark_new (gchar *string)
        * us to do lockless lookup of the arrays, and there shouldn't be that
        * many quarks in an app
        */
+      g_ignore_leak (g_atomic_pointer_get (&quarks));
       g_atomic_pointer_set (&quarks, quarks_new);
     }
 
@@ -301,13 +308,35 @@ quark_new (gchar *string)
   return quark;
 }
 
+static inline const gchar *
+quark_intern_string_locked (const gchar   *string,
+                            gboolean       duplicate)
+{
+  const gchar *result;
+  GQuark quark;
+
+  if (!string)
+    return NULL;
+
+  G_LOCK (quark_global);
+  quark = quark_from_string (string, duplicate);
+  result = quarks[quark];
+  G_UNLOCK (quark_global);
+
+  return result;
+}
+
 /**
  * g_intern_string:
- * @string: (allow-none): a string
+ * @string: (nullable): a string
  *
  * Returns a canonical representation for @string. Interned strings
  * can be compared for equality by comparing the pointers, instead of
  * using strcmp().
+ *
+ * This function must not be used before library constructors have finished
+ * running. In particular, this means it cannot be used to initialize global
+ * variables in C++.
  *
  * Returns: a canonical representation for the string
  *
@@ -316,28 +345,21 @@ quark_new (gchar *string)
 const gchar *
 g_intern_string (const gchar *string)
 {
-  const gchar *result;
-  GQuark quark;
-
-  if (!string)
-    return NULL;
-
-  G_LOCK (quark_global);
-  quark = quark_from_string (string, TRUE);
-  result = quarks[quark];
-  G_UNLOCK (quark_global);
-
-  return result;
+  return quark_intern_string_locked (string, TRUE);
 }
 
 /**
  * g_intern_static_string:
- * @string: (allow-none): a static string
+ * @string: (nullable): a static string
  *
  * Returns a canonical representation for @string. Interned strings
  * can be compared for equality by comparing the pointers, instead of
  * using strcmp(). g_intern_static_string() does not copy the string,
  * therefore @string must not be freed or modified.
+ *
+ * This function must not be used before library constructors have finished
+ * running. In particular, this means it cannot be used to initialize global
+ * variables in C++.
  *
  * Returns: a canonical representation for the string
  *
@@ -346,16 +368,5 @@ g_intern_string (const gchar *string)
 const gchar *
 g_intern_static_string (const gchar *string)
 {
-  GQuark quark;
-  const gchar *result;
-
-  if (!string)
-    return NULL;
-
-  G_LOCK (quark_global);
-  quark = quark_from_string (string, FALSE);
-  result = quarks[quark];
-  G_UNLOCK (quark_global);
-
-  return result;
+  return quark_intern_string_locked (string, FALSE);
 }

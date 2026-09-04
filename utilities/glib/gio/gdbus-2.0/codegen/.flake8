@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2022 Emmanuele Bassi
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
+[flake8]
+# We are generating long lines through templates
+max-line-length = 120
+exclude = __pycache__

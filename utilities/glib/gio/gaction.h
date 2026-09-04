@@ -1,10 +1,12 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -56,40 +58,40 @@ struct _GActionInterface
                                                  GVariant *parameter);
 };
 
-GLIB_AVAILABLE_IN_2_30
-GType                   g_action_get_type                               (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_2_30
+GType                   g_action_get_type                               (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const gchar *           g_action_get_name                               (GAction            *action);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const GVariantType *    g_action_get_parameter_type                     (GAction            *action);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const GVariantType *    g_action_get_state_type                         (GAction            *action);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GVariant *              g_action_get_state_hint                         (GAction            *action);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gboolean                g_action_get_enabled                            (GAction            *action);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GVariant *              g_action_get_state                              (GAction            *action);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                    g_action_change_state                           (GAction            *action,
                                                                          GVariant           *value);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                    g_action_activate                               (GAction            *action,
                                                                          GVariant           *parameter);
 
-GLIB_AVAILABLE_IN_2_28
+GIO_AVAILABLE_IN_2_28
 gboolean                g_action_name_is_valid                          (const gchar        *action_name);
 
-GLIB_AVAILABLE_IN_2_38
+GIO_AVAILABLE_IN_2_38
 gboolean                g_action_parse_detailed_name                    (const gchar        *detailed_name,
                                                                          gchar             **action_name,
                                                                          GVariant          **target_value,
                                                                          GError            **error);
 
-GLIB_AVAILABLE_IN_2_38
+GIO_AVAILABLE_IN_2_38
 gchar *                 g_action_print_detailed_name                    (const gchar        *action_name,
                                                                          GVariant           *target_value);
 

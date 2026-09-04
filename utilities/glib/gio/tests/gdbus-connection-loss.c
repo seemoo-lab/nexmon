@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -53,7 +55,7 @@ on_timeout (gpointer user_data)
 {
   /* tear down bus */
   session_bus_stop ();
-  return FALSE; /* remove source */
+  return G_SOURCE_REMOVE;
 }
 
 static void
@@ -112,7 +114,7 @@ main (int   argc,
   gint ret;
   gchar *path;
 
-  g_test_init (&argc, &argv, NULL);
+  g_test_init (&argc, &argv, G_TEST_OPTION_ISOLATE_DIRS, NULL);
 
   /* all the tests rely on a shared main loop */
   loop = g_main_loop_new (NULL, FALSE);
@@ -124,19 +126,23 @@ main (int   argc,
   g_assert (g_spawn_command_line_async (path, NULL));
   g_free (path);
 
-  ensure_gdbus_testserver_up ();
-
   /* Create the connection in the main thread */
   error = NULL;
   c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
   g_assert_no_error (error);
   g_assert (c != NULL);
 
+  ensure_gdbus_testserver_up (c, NULL);
+
   g_test_add_func ("/gdbus/connection-loss", test_connection_loss);
 
   ret = g_test_run();
 
   g_object_unref (c);
+
+  session_bus_down ();
+
+  g_main_loop_unref (loop);
 
   return ret;
 }

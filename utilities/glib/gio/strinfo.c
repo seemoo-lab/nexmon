@@ -1,10 +1,12 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -61,24 +63,24 @@
  *
  * The operations that someone may want to perform with the map:
  *
- *   - lookup if a string is valid (and not an alias)
- *   - lookup the integer value for a enum 'nick'
- *   - lookup the integer value for the target of an alias
- *   - lookup an alias and convert it to its target string
- *   - lookup the enum nick for a given value
+ *   - look up if a string is valid (and not an alias)
+ *   - look up the integer value for a enum 'nick'
+ *   - look up the integer value for the target of an alias
+ *   - look up an alias and convert it to its target string
+ *   - look up the enum nick for a given value
  *
- * In order to lookup if a string is valid, it is padded on either side
+ * In order to look up if a string is valid, it is padded on either side
  * (as described) and scanned for in the array.  For example, you might
  * look for "foo":
  *
  *                   xff 'f' 'o' 'o'   x00 x00 x00 xff
  *
- * In order to lookup the integer value for a nick, the string is padded
+ * In order to look up the integer value for a nick, the string is padded
  * on either side and scanned for in the array, as above.  Instead of
  * merely succeeding, we look at the integer value to the left of the
  * match.  This is the enum value.
  *
- * In order to lookup an alias and convert it to its target enum value,
+ * In order to look up an alias and convert it to its target enum value,
  * the string is padded on either side (as described, with 0xfe) and
  * scanned for.  For example, you might look for "baz":
  *
@@ -92,7 +94,7 @@
  * added past the start of the integer value to find the start of the
  * string.
  *
- * To lookup the enum nick for a given value, the value is searched for
+ * To look up the enum nick for a given value, the value is searched for
  * in the array.  To ensure that the value isn't matching the inside of a
  * string, we must check that it is either the first item in the array or
  * immediately preceded by the byte 0xff.  It must also be immediately
@@ -270,7 +272,7 @@ strinfo_enumerate (const guint32 *strinfo,
 
   ptr += 4;
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE_STRING_ARRAY);
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE_STRING_ARRAY);
 
   while (ptr < end)
     {

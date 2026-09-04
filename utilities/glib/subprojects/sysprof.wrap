@@ -1,0 +1,5 @@
+[wrap-git]
+directory=sysprof
+url=https://gitlab.gnome.org/GNOME/sysprof.git
+revision=02e50efa49885a5a20a84a8cd7feda10ae7e7e98
+depth=1

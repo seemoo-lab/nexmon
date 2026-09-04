@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,36 +31,34 @@
 
 
 /**
- * SECTION:gdrive
- * @short_description: Drive management
- * @include: gio/gio.h
+ * GDrive:
  *
- * #GDrive - this represent a piece of hardware connected to the machine.
- * It's generally only created for removable hardware or hardware with
- * removable media.
+ * `GDrive` represents a piece of hardware connected to the machine.
+ * It’s generally only created for removable hardware or hardware with
+ * removable media. For example, an optical disc drive, or a USB flash drive.
  *
- * #GDrive is a container class for #GVolume objects that stem from
- * the same piece of media. As such, #GDrive abstracts a drive with
+ * `GDrive` is a container class for [iface@Gio.Volume] objects that stem from
+ * the same piece of media. As such, `GDrive` abstracts a drive with
  * (or without) removable media and provides operations for querying
  * whether media is available, determining whether media change is
  * automatically detected and ejecting the media.
  *
- * If the #GDrive reports that media isn't automatically detected, one
+ * If the `GDrive` reports that media isn’t automatically detected, one
  * can poll for media; typically one should not do this periodically
- * as a poll for media operation is potententially expensive and may
+ * as a poll for media operation is potentially expensive and may
  * spin up the drive creating noise.
  *
- * #GDrive supports starting and stopping drives with authentication
+ * `GDrive` supports starting and stopping drives with authentication
  * support for the former. This can be used to support a diverse set
  * of use cases including connecting/disconnecting iSCSI devices,
  * powering down external disk enclosures and starting/stopping
  * multi-disk devices such as RAID devices. Note that the actual
- * semantics and side-effects of starting/stopping a #GDrive may vary
+ * semantics and side-effects of starting/stopping a `GDrive` may vary
  * according to implementation. To choose the correct verbs in e.g. a
- * file manager, use g_drive_get_start_stop_type().
+ * file manager, use [method@Gio.Drive.get_start_stop_type].
  *
- * For porting from GnomeVFS note that there is no equivalent of
- * #GDrive in that API.
+ * For [porting from GnomeVFS](migrating-gnome-vfs.html) note that there is no
+ * equivalent of `GDrive` in that API.
  **/
 
 typedef GDriveIface GDriveInterface;
@@ -78,7 +78,7 @@ g_drive_default_init (GDriveInterface *iface)
 		G_SIGNAL_RUN_LAST,
 		G_STRUCT_OFFSET (GDriveIface, changed),
 		NULL, NULL,
-		g_cclosure_marshal_VOID__VOID,
+		NULL,
 		G_TYPE_NONE, 0);
 
   /**
@@ -95,7 +95,7 @@ g_drive_default_init (GDriveInterface *iface)
 		G_SIGNAL_RUN_LAST,
 		G_STRUCT_OFFSET (GDriveIface, disconnected),
 		NULL, NULL,
-		g_cclosure_marshal_VOID__VOID,
+		NULL,
 		G_TYPE_NONE, 0);
 
   /**
@@ -110,7 +110,7 @@ g_drive_default_init (GDriveInterface *iface)
 		G_SIGNAL_RUN_LAST,
 		G_STRUCT_OFFSET (GDriveIface, eject_button),
 		NULL, NULL,
-		g_cclosure_marshal_VOID__VOID,
+		NULL,
 		G_TYPE_NONE, 0);
 
   /**
@@ -127,7 +127,7 @@ g_drive_default_init (GDriveInterface *iface)
 		G_SIGNAL_RUN_LAST,
 		G_STRUCT_OFFSET (GDriveIface, stop_button),
 		NULL, NULL,
-		g_cclosure_marshal_VOID__VOID,
+		NULL,
 		G_TYPE_NONE, 0);
 }
 
@@ -249,9 +249,9 @@ g_drive_get_volumes (GDrive *drive)
  * g_drive_is_media_check_automatic:
  * @drive: a #GDrive.
  * 
- * Checks if @drive is capabable of automatically detecting media changes.
+ * Checks if @drive is capable of automatically detecting media changes.
  * 
- * Returns: %TRUE if the @drive is capabable of automatically detecting 
+ * Returns: %TRUE if the @drive is capable of automatically detecting
  *     media changes, %FALSE otherwise.
  **/
 gboolean
@@ -264,6 +264,31 @@ g_drive_is_media_check_automatic (GDrive *drive)
   iface = G_DRIVE_GET_IFACE (drive);
 
   return (* iface->is_media_check_automatic) (drive);
+}
+
+/**
+ * g_drive_is_removable:
+ * @drive: a #GDrive.
+ *
+ * Checks if the #GDrive and/or its media is considered removable by the user.
+ * See g_drive_is_media_removable().
+ *
+ * Returns: %TRUE if @drive and/or its media is considered removable, %FALSE otherwise.
+ *
+ * Since: 2.50
+ **/
+gboolean
+g_drive_is_removable (GDrive *drive)
+{
+  GDriveIface *iface;
+
+  g_return_val_if_fail (G_IS_DRIVE (drive), FALSE);
+
+  iface = G_DRIVE_GET_IFACE (drive);
+  if (iface->is_removable != NULL)
+    return iface->is_removable (drive);
+
+  return FALSE;
 }
 
 /**
@@ -359,8 +384,8 @@ g_drive_can_poll_for_media (GDrive *drive)
  * g_drive_eject:
  * @drive: a #GDrive.
  * @flags: flags affecting the unmount if required for eject
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
- * @callback: (allow-none): a #GAsyncReadyCallback, or %NULL.
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
+ * @callback: (nullable): a #GAsyncReadyCallback, or %NULL.
  * @user_data: user data to pass to @callback
  * 
  * Asynchronously ejects a drive.
@@ -389,7 +414,7 @@ g_drive_eject (GDrive              *drive,
       g_task_report_new_error (drive, callback, user_data,
                                g_drive_eject_with_operation,
                                G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                               _("drive doesn't implement eject"));
+                               _("drive doesn’t implement eject"));
       return;
     }
   
@@ -433,10 +458,10 @@ g_drive_eject_finish (GDrive        *drive,
  * g_drive_eject_with_operation:
  * @drive: a #GDrive.
  * @flags: flags affecting the unmount if required for eject
- * @mount_operation: (allow-none): a #GMountOperation or %NULL to avoid
+ * @mount_operation: (nullable): a #GMountOperation or %NULL to avoid
  *     user interaction.
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
- * @callback: (allow-none): a #GAsyncReadyCallback, or %NULL.
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
+ * @callback: (nullable): a #GAsyncReadyCallback, or %NULL.
  * @user_data: user data passed to @callback.
  *
  * Ejects a drive. This is an asynchronous operation, and is
@@ -467,7 +492,7 @@ g_drive_eject_with_operation (GDrive              *drive,
                                /* Translators: This is an error
                                 * message for drive objects that
                                 * don't implement any of eject or eject_with_operation. */
-                               _("drive doesn't implement eject or eject_with_operation"));
+                               _("drive doesn’t implement eject or eject_with_operation"));
       return;
     }
 
@@ -516,8 +541,8 @@ g_drive_eject_with_operation_finish (GDrive        *drive,
 /**
  * g_drive_poll_for_media:
  * @drive: a #GDrive.
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
- * @callback: (allow-none): a #GAsyncReadyCallback, or %NULL.
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
+ * @callback: (nullable): a #GAsyncReadyCallback, or %NULL.
  * @user_data: user data to pass to @callback
  * 
  * Asynchronously polls @drive to see if media has been inserted or removed.
@@ -543,7 +568,7 @@ g_drive_poll_for_media (GDrive              *drive,
       g_task_report_new_error (drive, callback, user_data,
                                g_drive_poll_for_media,
                                G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                               _("drive doesn't implement polling for media"));
+                               _("drive doesn’t implement polling for media"));
       return;
     }
   
@@ -586,10 +611,12 @@ g_drive_poll_for_media_finish (GDrive        *drive,
  * @drive: a #GDrive
  * @kind: the kind of identifier to return
  *
- * Gets the identifier of the given kind for @drive.
+ * Gets the identifier of the given kind for @drive. The only
+ * identifier currently available is
+ * %G_DRIVE_IDENTIFIER_KIND_UNIX_DEVICE.
  *
- * Returns: a newly allocated string containing the
- *     requested identfier, or %NULL if the #GDrive
+ * Returns: (nullable) (transfer full): a newly allocated string containing the
+ *     requested identifier, or %NULL if the #GDrive
  *     doesn't have this kind of identifier.
  */
 char *
@@ -715,10 +742,10 @@ g_drive_can_start_degraded (GDrive *drive)
  * g_drive_start:
  * @drive: a #GDrive.
  * @flags: flags affecting the start operation.
- * @mount_operation: (allow-none): a #GMountOperation or %NULL to avoid
+ * @mount_operation: (nullable): a #GMountOperation or %NULL to avoid
  *     user interaction.
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
- * @callback: (allow-none): a #GAsyncReadyCallback, or %NULL.
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
+ * @callback: (nullable): a #GAsyncReadyCallback, or %NULL.
  * @user_data: user data to pass to @callback
  *
  * Asynchronously starts a drive.
@@ -748,7 +775,7 @@ g_drive_start (GDrive              *drive,
       g_task_report_new_error (drive, callback, user_data,
                                g_drive_start,
                                G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                               _("drive doesn't implement start"));
+                               _("drive doesn’t implement start"));
       return;
     }
 
@@ -817,10 +844,10 @@ g_drive_can_stop (GDrive *drive)
  * g_drive_stop:
  * @drive: a #GDrive.
  * @flags: flags affecting the unmount if required for stopping.
- * @mount_operation: (allow-none): a #GMountOperation or %NULL to avoid
+ * @mount_operation: (nullable): a #GMountOperation or %NULL to avoid
  *     user interaction.
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore.
- * @callback: (allow-none): a #GAsyncReadyCallback, or %NULL.
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore.
+ * @callback: (nullable): a #GAsyncReadyCallback, or %NULL.
  * @user_data: user data to pass to @callback
  *
  * Asynchronously stops a drive.
@@ -850,7 +877,7 @@ g_drive_stop (GDrive               *drive,
       g_task_report_new_error (drive, callback, user_data,
                                g_drive_start,
                                G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                               _("drive doesn't implement stop"));
+                               _("drive doesn’t implement stop"));
       return;
     }
 
@@ -896,7 +923,7 @@ g_drive_stop_finish (GDrive        *drive,
  *
  * Gets the sort key for @drive, if any.
  *
- * Returns: Sorting key for @drive or %NULL if no such key is available.
+ * Returns: (nullable): Sorting key for @drive or %NULL if no such key is available.
  *
  * Since: 2.32
  */

@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -97,31 +99,83 @@ test_find (void)
    * U+0041 Latin Capital Letter A (\101)
    * U+1EB6 Latin Capital Letter A With Breve And Dot Below (\341\272\266)
    */
-  const gchar *str = "\340\254\213\360\220\244\200\101\341\272\266";
-  const gchar *p = str + strlen (str);
+#define TEST_STR "\340\254\213\360\220\244\200\101\341\272\266\0\101"
+  const gsize str_size = sizeof TEST_STR;
+  const gchar *str = TEST_STR;
+  const gchar str_array[] = TEST_STR;
+  const gchar * volatile str_volatile = TEST_STR;
+#undef TEST_STR
+  gchar *str_copy = g_malloc (str_size);
+  const gchar *p;
   const gchar *q;
+  memcpy (str_copy, str, str_size);
 
-  q = g_utf8_find_prev_char (str, p);
-  g_assert (q == str + 8);
-  q = g_utf8_find_prev_char (str, q);
-  g_assert (q == str + 7);
-  q = g_utf8_find_prev_char (str, q);
-  g_assert (q == str + 3);
-  q = g_utf8_find_prev_char (str, q);
-  g_assert (q == str);
-  q = g_utf8_find_prev_char (str, q);
-  g_assert (q == NULL);
+#define TEST_SET(STR)  \
+  G_STMT_START { \
+    p = STR + (str_size - 1); \
+    \
+    q = g_utf8_find_prev_char (STR, p); \
+    g_assert (q == STR + 12); \
+    q = g_utf8_find_prev_char (STR, q); \
+    g_assert (q == STR + 11); \
+    q = g_utf8_find_prev_char (STR, q); \
+    g_assert (q == STR + 8); \
+    q = g_utf8_find_prev_char (STR, q); \
+    g_assert (q == STR + 7); \
+    q = g_utf8_find_prev_char (STR, q); \
+    g_assert (q == STR + 3); \
+    q = g_utf8_find_prev_char (STR, q); \
+    g_assert (q == STR); \
+    q = g_utf8_find_prev_char (STR, q); \
+    g_assert_null (q); \
+    \
+    p = STR + 4; \
+    q = g_utf8_find_prev_char (STR, p); \
+    g_assert (q == STR + 3); \
+    \
+    p = STR + 2; \
+    q = g_utf8_find_prev_char (STR, p); \
+    g_assert (q == STR); \
+    \
+    p = STR + 2; \
+    q = g_utf8_find_next_char (p, NULL); \
+    g_assert (q == STR + 3); \
+    q = g_utf8_find_next_char (q, NULL); \
+    g_assert (q == STR + 7); \
+    \
+    q = g_utf8_find_next_char (p, STR + 6); \
+    g_assert (q == STR + 3); \
+    q = g_utf8_find_next_char (q, STR + 6); \
+    g_assert_null (q); \
+    \
+    q = g_utf8_find_next_char (STR, STR); \
+    g_assert_null (q); \
+    \
+    q = g_utf8_find_next_char (STR + strlen (STR), NULL); \
+    g_assert (q == STR + strlen (STR) + 1); \
+    \
+    /* Check return values when reaching the end of the string, \
+     * with @end set and unset. */ \
+    q = g_utf8_find_next_char (STR + 10, NULL); \
+    g_assert_nonnull (q); \
+    g_assert (*q == '\0'); \
+    \
+    q = g_utf8_find_next_char (STR + 10, STR + 11); \
+    g_assert_null (q); \
+  } G_STMT_END
 
-  p = str + 2;
-  q = g_utf8_find_next_char (p, NULL);
-  g_assert (q == str + 3);
-  q = g_utf8_find_next_char (q, NULL);
-  g_assert (q == str + 7);
+  TEST_SET(str_array);
+  TEST_SET(str_copy);
+  TEST_SET(str_volatile);
+  /* Starting with GCC 8 tests on @str with "-O2 -flto" in CFLAGS fail due to
+   * (incorrect?) constant propagation of @str into @g_utf8_find_prev_char. It
+   * doesn't happen if @TEST_STR doesn't contain \0 in the middle but the tests
+   * should cover all corner cases.
+   * For instance, see https://gitlab.gnome.org/GNOME/glib/issues/1917 */
 
-  q = g_utf8_find_next_char (p, str + 6);
-  g_assert (q == str + 3);
-  q = g_utf8_find_next_char (q, str + 6);
-  g_assert (q == NULL);
+#undef TEST_SET
+
+  g_free (str_copy);
 }
 
 int main (int argc, char *argv[])

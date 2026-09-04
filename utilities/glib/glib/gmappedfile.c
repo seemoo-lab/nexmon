@@ -3,10 +3,12 @@
  *
  * Copyright 2005 Matthias Clasen
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -46,6 +48,10 @@
 #define S_ISREG(m) (((m) & _S_IFMT) == _S_IFREG)
 #endif
 
+#endif
+
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
 #endif
 
 #include "gconvert.h"
@@ -120,19 +126,22 @@ mapped_file_new_from_fd (int           fd,
 
   if (fstat (fd, &st) == -1)
     {
-      int save_errno = errno;
-      gchar *display_filename = filename ? g_filename_display_name (filename) : NULL;
+      if (error != NULL)
+        {
+          int save_errno = errno;
+          gchar *display_filename = filename ? g_filename_display_name (filename) : NULL;
 
-      g_set_error (error,
-                   G_FILE_ERROR,
-                   g_file_error_from_errno (save_errno),
-                   _("Failed to get attributes of file '%s%s%s%s': fstat() failed: %s"),
-		   display_filename ? display_filename : "fd",
-		   display_filename ? "' " : "",
-		   display_filename ? display_filename : "",
-		   display_filename ? "'" : "",
-		   g_strerror (save_errno));
-      g_free (display_filename);
+          g_set_error (error,
+                       G_FILE_ERROR,
+                       g_file_error_from_errno (save_errno),
+                       _("Failed to get attributes of file “%s%s%s%s”: fstat() failed: %s"),
+                       display_filename ? display_filename : "fd",
+                       display_filename ? "' " : "",
+                       display_filename ? display_filename : "",
+                       display_filename ? "'" : "",
+                       g_strerror (save_errno));
+          g_free (display_filename);
+        }
       goto out;
     }
 
@@ -146,11 +155,18 @@ mapped_file_new_from_fd (int           fd,
       file->contents = NULL;
       return file;
     }
+  else if (st.st_size == 0)
+    {
+      errno = EINVAL;
+      file->length = 0;
+      file->contents = MAP_FAILED;
+      goto error;
+    }
 
   file->contents = MAP_FAILED;
 
 #ifdef HAVE_MMAP
-  if (st.st_size > G_MAXSIZE)
+  if (sizeof (st.st_size) > sizeof (gsize) && st.st_size > (off_t) G_MAXSIZE)
     {
       errno = EINVAL;
     }
@@ -183,22 +199,25 @@ mapped_file_new_from_fd (int           fd,
     }
 #endif
 
-  
+error:
   if (file->contents == MAP_FAILED)
     {
-      int save_errno = errno;
-      gchar *display_filename = filename ? g_filename_display_name (filename) : NULL;
+      if (error != NULL)
+        {
+          int save_errno = errno;
+          gchar *display_filename = filename ? g_filename_display_name (filename) : NULL;
 
-      g_set_error (error,
-		   G_FILE_ERROR,
-		   g_file_error_from_errno (save_errno),
-		   _("Failed to map %s%s%s%s: mmap() failed: %s"),
-		   display_filename ? display_filename : "fd",
-		   display_filename ? "' " : "",
-		   display_filename ? display_filename : "",
-		   display_filename ? "'" : "",
-		   g_strerror (save_errno));
-      g_free (display_filename);
+          g_set_error (error,
+                       G_FILE_ERROR,
+                       g_file_error_from_errno (save_errno),
+                       _("Failed to map %s%s%s%s: mmap() failed: %s"),
+                       display_filename ? display_filename : "fd",
+                       display_filename ? "' " : "",
+                       display_filename ? display_filename : "",
+                       display_filename ? "'" : "",
+                       g_strerror (save_errno));
+          g_free (display_filename);
+        }
       goto out;
     }
 
@@ -212,7 +231,8 @@ mapped_file_new_from_fd (int           fd,
 
 /**
  * g_mapped_file_new:
- * @filename: The path of the file to load, in the GLib filename encoding
+ * @filename: (type filename): The path of the file to load, in the GLib
+ *     filename encoding
  * @writable: whether the mapping should be writable
  * @error: return location for a #GError, or %NULL
  *
@@ -231,7 +251,7 @@ mapped_file_new_from_fd (int           fd,
  * If @filename is the name of an empty, regular file, the function
  * will successfully return an empty #GMappedFile. In other cases of
  * size 0 (e.g. device files such as /dev/null), @error will be set
- * to the #GFileError value #G_FILE_ERROR_INVAL.
+ * to the #GFileError value %G_FILE_ERROR_INVAL.
  *
  * Returns: a newly allocated #GMappedFile which must be unref'd
  *    with g_mapped_file_unref(), or %NULL if the mapping failed.
@@ -249,19 +269,23 @@ g_mapped_file_new (const gchar  *filename,
   g_return_val_if_fail (filename != NULL, NULL);
   g_return_val_if_fail (!error || *error == NULL, NULL);
 
-  fd = g_open (filename, (writable ? O_RDWR : O_RDONLY) | _O_BINARY, 0);
+  fd = g_open (filename, (writable ? O_RDWR : O_RDONLY) | _O_BINARY | O_CLOEXEC, 0);
   if (fd == -1)
     {
-      int save_errno = errno;
-      gchar *display_filename = g_filename_display_name (filename);
+      if (error != NULL)
+        {
+          int save_errno = errno;
+          gchar *display_filename = g_filename_display_name (filename);
 
-      g_set_error (error,
-                   G_FILE_ERROR,
-                   g_file_error_from_errno (save_errno),
-                   _("Failed to open file '%s': open() failed: %s"),
-                   display_filename,
-		   g_strerror (save_errno));
-      g_free (display_filename);
+          g_set_error (error,
+                       G_FILE_ERROR,
+                       g_file_error_from_errno (save_errno),
+                       _("Failed to open file “%s”: open() failed: %s"),
+                       display_filename,
+                       g_strerror (save_errno));
+          g_free (display_filename);
+        }
+
       return NULL;
     }
 
@@ -333,7 +357,7 @@ g_mapped_file_get_length (GMappedFile *file)
  *
  * If the file is empty then %NULL is returned.
  *
- * Returns: the contents of @file, or %NULL.
+ * Returns: (transfer none) (nullable): the contents of @file, or %NULL.
  *
  * Since: 2.8
  */

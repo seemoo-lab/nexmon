@@ -1,10 +1,12 @@
 /*
  * Copyright © 2009, 2010 Codethink Limited
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -156,7 +158,8 @@ add_to_tree (gpointer key,
              gpointer value,
              gpointer user_data)
 {
-  g_tree_insert (user_data, g_strdup (key), g_variant_ref (value));
+  /* A value may be %NULL if its key has been reset */
+  g_tree_insert (user_data, g_strdup (key), (value != NULL) ? g_variant_ref (value) : NULL);
   return FALSE;
 }
 
@@ -203,6 +206,8 @@ g_delayed_settings_backend_reset (GSettingsBackend *backend,
   was_empty = g_tree_nnodes (delayed->priv->delayed) == 0;
   g_tree_insert (delayed->priv->delayed, g_strdup (key), NULL);
   g_mutex_unlock (&delayed->priv->lock);
+
+  g_settings_backend_changed (backend, key, origin_tag);
 
   if (was_empty)
     g_delayed_settings_backend_notify_unapplied (delayed);
@@ -401,7 +406,7 @@ delayed_backend_path_writable_changed (GObject          *target,
 
   if (n_keys > 0)
     {
-      CheckPrefixState state = { path, g_new (const gchar *, n_keys) };
+      CheckPrefixState state = { path, g_new (const gchar *, n_keys), 0 };
       gsize i;
 
       /* collect a list of possibly-affected keys (ie: matching the path) */

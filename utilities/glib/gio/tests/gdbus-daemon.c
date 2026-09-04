@@ -19,7 +19,7 @@ main (int argc, char *argv[])
     { "config-file", 0, 0, G_OPTION_ARG_STRING, &config_file, N_("Ignored, for compat with GTestDbus"), NULL },
     { "print-address", 0, 0, G_OPTION_ARG_NONE, &print_address, N_("Print address"), NULL },
     { "print-env", 0, 0, G_OPTION_ARG_NONE, &print_env, N_("Print address in shell mode"), NULL },
-    { NULL }
+    G_OPTION_ENTRY_NULL
   };
 
   context = g_option_context_new ("");

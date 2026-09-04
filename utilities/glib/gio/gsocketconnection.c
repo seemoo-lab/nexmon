@@ -4,10 +4,12 @@
  *           © 2008 codethink
  * Copyright © 2009 Red Hat, Inc
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -38,27 +40,24 @@
 
 
 /**
- * SECTION:gsocketconnection
- * @short_description: A socket connection
- * @include: gio/gio.h
- * @see_also: #GIOStream, #GSocketClient, #GSocketListener
+ * GSocketConnection:
  *
- * #GSocketConnection is a #GIOStream for a connected socket. They
- * can be created either by #GSocketClient when connecting to a host,
- * or by #GSocketListener when accepting a new client.
+ * `GSocketConnection` is a [class@Gio.IOStream] for a connected socket. They
+ * can be created either by [class@Gio.SocketClient] when connecting to a host,
+ * or by [class@Gio.SocketListener] when accepting a new client.
  *
- * The type of the #GSocketConnection object returned from these calls
+ * The type of the `GSocketConnection` object returned from these calls
  * depends on the type of the underlying socket that is in use. For
- * instance, for a TCP/IP connection it will be a #GTcpConnection.
+ * instance, for a TCP/IP connection it will be a [class@Gio.TcpConnection].
  *
  * Choosing what type of object to construct is done with the socket
- * connection factory, and it is possible for 3rd parties to register
+ * connection factory, and it is possible for third parties to register
  * custom socket connection types for specific combination of socket
- * family/type/protocol using g_socket_connection_factory_register_type().
+ * family/type/protocol using [func@Gio.SocketConnection.factory_register_type].
  *
- * To close a #GSocketConnection, use g_io_stream_close(). Closing both
- * substreams of the #GIOStream separately will not close the underlying
- * #GSocket.
+ * To close a `GSocketConnection`, use [method@Gio.IOStream.close]. Closing both
+ * substreams of the [class@Gio.IOStream] separately will not close the
+ * underlying [class@Gio.Socket].
  *
  * Since: 2.22
  */
@@ -139,7 +138,7 @@ g_socket_connection_is_connected (GSocketConnection  *connection)
  * g_socket_connection_connect:
  * @connection: a #GSocketConnection
  * @address: a #GSocketAddress specifying the remote address.
- * @cancellable: (allow-none): a %GCancellable or %NULL
+ * @cancellable: (nullable): a %GCancellable or %NULL
  * @error: #GError for error reporting, or %NULL to ignore.
  *
  * Connect @connection to the specified remote address.
@@ -169,14 +168,18 @@ static gboolean g_socket_connection_connect_callback (GSocket      *socket,
  * g_socket_connection_connect_async:
  * @connection: a #GSocketConnection
  * @address: a #GSocketAddress specifying the remote address.
- * @cancellable: (allow-none): a %GCancellable or %NULL
+ * @cancellable: (nullable): a %GCancellable or %NULL
  * @callback: (scope async): a #GAsyncReadyCallback
- * @user_data: (closure): user data for the callback
+ * @user_data: user data for the callback
  *
  * Asynchronously connect @connection to the specified remote address.
  *
  * This clears the #GSocket:blocking flag on @connection's underlying
  * socket if it is currently set.
+ *
+ * If #GSocket:timeout is set, the operation will time out and return
+ * %G_IO_ERROR_TIMED_OUT after that period. Otherwise, it will continue
+ * indefinitely until operating system timeouts (if any) are hit.
  *
  * Use g_socket_connection_connect_finish() to retrieve the result.
  *
@@ -196,6 +199,7 @@ g_socket_connection_connect_async (GSocketConnection   *connection,
   g_return_if_fail (G_IS_SOCKET_ADDRESS (address));
 
   task = g_task_new (connection, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_socket_connection_connect_async);
 
   g_socket_set_blocking (connection->priv->socket, FALSE);
 
@@ -272,7 +276,7 @@ g_socket_connection_connect_finish (GSocketConnection  *connection,
  * This can be useful if you want to do something unusual on it
  * not supported by the #GSocketConnection APIs.
  *
- * Returns: (transfer none): a #GSocket or %NULL on error.
+ * Returns: (transfer none) (not nullable): the underlying socket
  *
  * Since: 2.22
  */
@@ -328,8 +332,16 @@ g_socket_connection_get_remote_address (GSocketConnection  *connection,
 {
   if (!g_socket_is_connected (connection->priv->socket))
     {
-      return connection->priv->cached_remote_address ?
-        g_object_ref (connection->priv->cached_remote_address) : NULL;
+      if (connection->priv->cached_remote_address)
+        {
+          return g_object_ref (connection->priv->cached_remote_address);
+        }
+      else
+        {
+          g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_CONNECTED,
+                       _("Socket connection not connected"));
+          return NULL;
+        }
     }
   return g_socket_get_remote_address (connection->priv->socket, error);
 }
@@ -388,7 +400,9 @@ g_socket_connection_set_property (GObject      *object,
 static void
 g_socket_connection_constructed (GObject *object)
 {
+#ifndef G_DISABLE_ASSERT
   GSocketConnection *connection = G_SOCKET_CONNECTION (object);
+#endif
 
   g_assert (connection->priv->socket != NULL);
 }
@@ -443,11 +457,16 @@ g_socket_connection_class_init (GSocketConnectionClass *klass)
   stream_class->close_async = g_socket_connection_close_async;
   stream_class->close_finish = g_socket_connection_close_finish;
 
+  /**
+   * GSocketConnection:socket:
+   *
+   * The underlying [class@Gio.Socket].
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (gobject_class,
                                    PROP_SOCKET,
-                                   g_param_spec_object ("socket",
-			                                P_("Socket"),
-			                                P_("The underlying GSocket"),
+                                   g_param_spec_object ("socket", NULL, NULL,
                                                         G_TYPE_SOCKET,
                                                         G_PARAM_CONSTRUCT_ONLY |
                                                         G_PARAM_READWRITE |
@@ -501,6 +520,7 @@ g_socket_connection_close_async (GIOStream           *stream,
   class = G_IO_STREAM_GET_CLASS (stream);
 
   task = g_task_new (stream, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_socket_connection_close_async);
 
   /* socket close is not blocked, just do it! */
   error = NULL;
@@ -611,9 +631,7 @@ g_socket_connection_factory_register_type (GType         g_type,
 static void
 init_builtin_types (void)
 {
-#ifndef G_OS_WIN32
   g_type_ensure (G_TYPE_UNIX_CONNECTION);
-#endif
   g_type_ensure (G_TYPE_TCP_CONNECTION);
 }
 

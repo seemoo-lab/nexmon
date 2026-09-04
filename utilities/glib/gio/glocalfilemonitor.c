@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -46,7 +48,7 @@ struct _GFileMonitorSource {
   GSource       source;
 
   GMutex        lock;
-  gpointer      instance;
+  GWeakRef      instance_ref;
   GFileMonitorFlags flags;
   gchar        *dirname;
   gchar        *basename;
@@ -229,8 +231,14 @@ g_file_monitor_source_queue_event (GFileMonitorSource *fms,
 
   event = g_slice_new (QueuedEvent);
   event->event_type = event_type;
-  if (child)
+  if (child != NULL && fms->dirname != NULL)
     event->child = g_local_file_new_from_dirname_and_basename (fms->dirname, child);
+  else if (child != NULL)
+    {
+      gchar *dirname = g_path_get_dirname (fms->filename);
+      event->child = g_local_file_new_from_dirname_and_basename (dirname, child);
+      g_free (dirname);
+    }
   else if (fms->dirname)
     event->child = _g_local_file_new (fms->dirname);
   else if (fms->filename)
@@ -322,6 +330,7 @@ g_file_monitor_source_send_synthetic_created (GFileMonitorSource *fms,
   g_file_monitor_source_queue_event (fms, G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT, child, NULL);
 }
 
+#ifndef G_DISABLE_ASSERT
 static gboolean
 is_basename (const gchar *name)
 {
@@ -330,6 +339,7 @@ is_basename (const gchar *name)
 
   return !strchr (name, '/');
 }
+#endif  /* !G_DISABLE_ASSERT */
 
 gboolean
 g_file_monitor_source_handle_event (GFileMonitorSource *fms,
@@ -350,8 +360,24 @@ g_file_monitor_source_handle_event (GFileMonitorSource *fms,
 
   g_mutex_lock (&fms->lock);
 
-  /* monitor is already gone -- don't bother */
-  if (!fms->instance)
+  /* NOTE:
+   *
+   * We process events even if the file monitor has already been disposed.
+   * The reason is that we must not take a reference to the instance here as
+   * destroying it from the event handling thread will lead to a deadlock when
+   * taking the lock in _ih_sub_cancel.
+   *
+   * This results in seemingly-unbounded growth of the `event_queue` with the
+   * calls to `g_file_monitor_source_queue_event()`. However, each of those sets
+   * the ready time on the #GSource, which means that it will be dispatched in
+   * a subsequent iteration of the #GMainContext it’s attached to. At that
+   * point, `g_file_monitor_source_dispatch()` will return %FALSE, and this will
+   * trigger finalisation of the source. That will clear the `event_queue`.
+   *
+   * If the source is no longer attached, this will return early to prevent
+   * unbounded queueing.
+   */
+  if (g_source_is_destroyed ((GSource *) fms))
     {
       g_mutex_unlock (&fms->lock);
       return TRUE;
@@ -394,23 +420,29 @@ g_file_monitor_source_handle_event (GFileMonitorSource *fms,
 
     case G_FILE_MONITOR_EVENT_RENAMED:
       g_assert (!other && rename_to);
-      if (fms->flags & G_FILE_MONITOR_WATCH_MOVES)
+      if (fms->flags & (G_FILE_MONITOR_WATCH_MOVES | G_FILE_MONITOR_SEND_MOVED))
         {
-          GFile *other;
+          GFile *other_file;
+          const gchar *dirname;
+          gchar *allocated_dirname = NULL;
+          GFileMonitorEvent event;
 
-          other = g_local_file_new_from_dirname_and_basename (fms->dirname, rename_to);
-          g_file_monitor_source_file_changes_done (fms, rename_to);
-          g_file_monitor_source_send_event (fms, G_FILE_MONITOR_EVENT_RENAMED, child, other);
-          g_object_unref (other);
-        }
-      else if (fms->flags & G_FILE_MONITOR_SEND_MOVED)
-        {
-          GFile *other;
+          event = (fms->flags & G_FILE_MONITOR_WATCH_MOVES) ? G_FILE_MONITOR_EVENT_RENAMED : G_FILE_MONITOR_EVENT_MOVED;
 
-          other = g_local_file_new_from_dirname_and_basename (fms->dirname, rename_to);
+          if (fms->dirname != NULL)
+            dirname = fms->dirname;
+          else
+            {
+              allocated_dirname = g_path_get_dirname (fms->filename);
+              dirname = allocated_dirname;
+            }
+
+          other_file = g_local_file_new_from_dirname_and_basename (dirname, rename_to);
           g_file_monitor_source_file_changes_done (fms, rename_to);
-          g_file_monitor_source_send_event (fms, G_FILE_MONITOR_EVENT_MOVED, child, other);
-          g_object_unref (other);
+          g_file_monitor_source_send_event (fms, event, child, other_file);
+
+          g_object_unref (other_file);
+          g_free (allocated_dirname);
         }
       else
         {
@@ -486,9 +518,11 @@ g_file_monitor_source_dispatch (GSource     *source,
   QueuedEvent *event;
   GQueue event_queue;
   gint64 now;
+  GFileMonitor *instance = NULL;
 
   /* make sure the monitor still exists */
-  if (!fms->instance)
+  instance = g_weak_ref_get (&fms->instance_ref);
+  if (instance == NULL)
     return FALSE;
 
   now = g_source_get_time (source);
@@ -537,14 +571,17 @@ g_file_monitor_source_dispatch (GSource     *source,
   g_file_monitor_source_update_ready_time (fms);
 
   g_mutex_unlock (&fms->lock);
+  g_clear_object (&instance);
 
   /* We now have our list of events to deliver */
   while ((event = g_queue_pop_head (&event_queue)))
     {
       /* an event handler could destroy 'instance', so check each time */
-      if (fms->instance)
-        g_file_monitor_emit_event (fms->instance, event->child, event->other, event->event_type);
+      instance = g_weak_ref_get (&fms->instance_ref);
+      if (instance != NULL)
+        g_file_monitor_emit_event (instance, event->child, event->other, event->event_type);
 
+      g_clear_object (&instance);
       queued_event_free (event);
     }
 
@@ -554,35 +591,32 @@ g_file_monitor_source_dispatch (GSource     *source,
 static void
 g_file_monitor_source_dispose (GFileMonitorSource *fms)
 {
+  GHashTableIter iter;
+  gpointer seqiter;
+  QueuedEvent *event;
+
   g_mutex_lock (&fms->lock);
 
-  if (fms->instance)
+  g_hash_table_iter_init (&iter, fms->pending_changes_table);
+  while (g_hash_table_iter_next (&iter, NULL, &seqiter))
     {
-      GHashTableIter iter;
-      gpointer seqiter;
-      QueuedEvent *event;
-
-      g_hash_table_iter_init (&iter, fms->pending_changes_table);
-      while (g_hash_table_iter_next (&iter, NULL, &seqiter))
-        {
-          g_hash_table_iter_remove (&iter);
-          g_sequence_remove (seqiter);
-        }
-
-      while ((event = g_queue_pop_head (&fms->event_queue)))
-        queued_event_free (event);
-
-      g_assert (g_sequence_is_empty (fms->pending_changes));
-      g_assert (g_hash_table_size (fms->pending_changes_table) == 0);
-      g_assert (fms->event_queue.length == 0);
-      fms->instance = NULL;
-
-      g_file_monitor_source_update_ready_time (fms);
+      g_hash_table_iter_remove (&iter);
+      g_sequence_remove (seqiter);
     }
 
-  g_mutex_unlock (&fms->lock);
+  while ((event = g_queue_pop_head (&fms->event_queue)))
+    queued_event_free (event);
+
+  g_assert (g_sequence_is_empty (fms->pending_changes));
+  g_assert (g_hash_table_size (fms->pending_changes_table) == 0);
+  g_assert (fms->event_queue.length == 0);
+  g_weak_ref_set (&fms->instance_ref, NULL);
+
+  g_file_monitor_source_update_ready_time (fms);
 
   g_source_destroy ((GSource *) fms);
+
+  g_mutex_unlock (&fms->lock);
 }
 
 static void
@@ -591,7 +625,9 @@ g_file_monitor_source_finalize (GSource *source)
   GFileMonitorSource *fms = (GFileMonitorSource *) source;
 
   /* should already have been cleared in dispose of the monitor */
-  g_assert (fms->instance == NULL);
+  g_assert (g_weak_ref_get (&fms->instance_ref) == NULL);
+  g_weak_ref_clear (&fms->instance_ref);
+
   g_assert (g_sequence_is_empty (fms->pending_changes));
   g_assert (g_hash_table_size (fms->pending_changes_table) == 0);
   g_assert (fms->event_queue.length == 0);
@@ -628,7 +664,8 @@ g_file_monitor_source_new (gpointer           instance,
   static GSourceFuncs source_funcs = {
     NULL, NULL,
     g_file_monitor_source_dispatch,
-    g_file_monitor_source_finalize
+    g_file_monitor_source_finalize,
+    NULL, NULL
   };
   GFileMonitorSource *fms;
   GSource *source;
@@ -636,8 +673,10 @@ g_file_monitor_source_new (gpointer           instance,
   source = g_source_new (&source_funcs, sizeof (GFileMonitorSource));
   fms = (GFileMonitorSource *) source;
 
+  g_source_set_static_name (source, "GFileMonitorSource");
+
   g_mutex_init (&fms->lock);
-  fms->instance = instance;
+  g_weak_ref_init (&fms->instance_ref, instance);
   fms->pending_changes = g_sequence_new (pending_change_free);
   fms->pending_changes_table = g_hash_table_new (str_hash0, str_equal0);
   fms->rate_limit = DEFAULT_RATE_LIMIT;
@@ -714,12 +753,12 @@ g_local_file_monitor_mounts_changed (GUnixMountMonitor *mount_monitor,
   GFile *file;
 
   /* Emulate unmount detection */
-  mount = g_unix_mount_at (local_monitor->source->dirname, NULL);
+  mount = g_unix_mount_entry_at (local_monitor->source->dirname, NULL);
 
   is_mounted = mount != NULL;
 
   if (mount)
-    g_unix_mount_free (mount);
+    g_unix_mount_entry_free (mount);
 
   if (local_monitor->was_mounted != is_mounted)
     {
@@ -761,24 +800,25 @@ g_local_file_monitor_start (GLocalFileMonitor *local_monitor,
 
       /* Emulate unmount detection */
 
-      mount = g_unix_mount_at (local_monitor->source->dirname, NULL);
+      mount = g_unix_mount_entry_at (local_monitor->source->dirname, NULL);
 
       local_monitor->was_mounted = mount != NULL;
 
       if (mount)
-        g_unix_mount_free (mount);
+        g_unix_mount_entry_free (mount);
 
       local_monitor->mount_monitor = g_unix_mount_monitor_get ();
       g_signal_connect_object (local_monitor->mount_monitor, "mounts-changed",
-                               G_CALLBACK (g_local_file_monitor_mounts_changed), local_monitor, 0);
+                               G_CALLBACK (g_local_file_monitor_mounts_changed), local_monitor,
+                               G_CONNECT_DEFAULT);
 #endif
     }
+
+  g_source_attach ((GSource *) source, context);
 
   G_LOCAL_FILE_MONITOR_GET_CLASS (local_monitor)->start (local_monitor,
                                                          source->dirname, source->basename, source->filename,
                                                          source);
-
-  g_source_attach ((GSource *) source, context);
 }
 
 static void
@@ -820,6 +860,7 @@ static void g_local_file_monitor_class_init (GLocalFileMonitorClass *class)
 
 static GLocalFileMonitor *
 g_local_file_monitor_new (gboolean   is_remote_fs,
+                          gboolean   is_directory,
                           GError   **error)
 {
   GType type = G_TYPE_INVALID;
@@ -829,7 +870,8 @@ g_local_file_monitor_new (gboolean   is_remote_fs,
                                           "GIO_USE_FILE_MONITOR",
                                           G_STRUCT_OFFSET (GLocalFileMonitorClass, is_supported));
 
-  if (type == G_TYPE_INVALID)
+  /* Fallback rather to poll file monitor for remote files, see gfile.c. */
+  if (type == G_TYPE_INVALID && (!is_remote_fs || is_directory))
     type = _g_io_module_get_default_type (G_LOCAL_FILE_MONITOR_EXTENSION_POINT_NAME,
                                           "GIO_USE_FILE_MONITOR",
                                           G_STRUCT_OFFSET (GLocalFileMonitorClass, is_supported));
@@ -853,9 +895,9 @@ g_local_file_monitor_new_for_path (const gchar        *pathname,
   GLocalFileMonitor *monitor;
   gboolean is_remote_fs;
 
-  is_remote_fs = g_local_file_is_remote (pathname);
+  is_remote_fs = g_local_file_is_nfs_home (pathname);
 
-  monitor = g_local_file_monitor_new (is_remote_fs, error);
+  monitor = g_local_file_monitor_new (is_remote_fs, is_directory, error);
 
   if (monitor)
     g_local_file_monitor_start (monitor, pathname, is_directory, flags, g_main_context_get_thread_default ());
@@ -869,19 +911,21 @@ g_local_file_monitor_new_in_worker (const gchar           *pathname,
                                     GFileMonitorFlags      flags,
                                     GFileMonitorCallback   callback,
                                     gpointer               user_data,
+                                    GClosureNotify         destroy_user_data,
                                     GError               **error)
 {
   GLocalFileMonitor *monitor;
   gboolean is_remote_fs;
 
-  is_remote_fs = g_local_file_is_remote (pathname);
+  is_remote_fs = g_local_file_is_nfs_home (pathname);
 
-  monitor = g_local_file_monitor_new (is_remote_fs, error);
+  monitor = g_local_file_monitor_new (is_remote_fs, is_directory, error);
 
   if (monitor)
     {
       if (callback)
-        g_signal_connect (monitor, "changed", G_CALLBACK (callback), user_data);
+        g_signal_connect_data (monitor, "changed", G_CALLBACK (callback),
+                               user_data, destroy_user_data, G_CONNECT_DEFAULT);
 
       g_local_file_monitor_start (monitor, pathname, is_directory, flags, GLIB_PRIVATE_CALL(g_get_worker_context) ());
     }

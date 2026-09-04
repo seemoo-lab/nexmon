@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,10 +24,86 @@
 #include <unistd.h>
 #include <string.h>
 
+#include "gdbusprivate.h"
 #include "gdbus-tests.h"
 
 /* all tests rely on a global connection */
 static GDBusConnection *c = NULL;
+
+typedef struct
+{
+  GMainContext *context;
+  gboolean timed_out;
+} TimeoutData;
+
+static gboolean
+timeout_cb (gpointer user_data)
+{
+  TimeoutData *data = user_data;
+
+  data->timed_out = TRUE;
+  g_main_context_wakeup (data->context);
+
+  return G_SOURCE_REMOVE;
+}
+
+static gboolean
+wakeup_cb (gpointer user_data)
+{
+  /* nothing to do here */
+  return G_SOURCE_CONTINUE;
+}
+
+/* Check that the given @connection has only one ref, waiting to let any pending
+ * unrefs complete first. This is typically used on the shared connection, to
+ * ensure it’s in a correct state before beginning the next test. */
+static void
+(assert_connection_has_one_ref) (GDBusConnection *connection,
+                                 GMainContext    *context,
+                                 const gchar     *calling_function)
+{
+  GSource *timeout_source = NULL;
+  GSource *wakeup_source = NULL;
+  TimeoutData data = { context, FALSE };
+
+  if (g_atomic_int_get (&G_OBJECT (connection)->ref_count) == 1)
+    return;
+
+  /* Use two timeout sources: @timeout_source to set a deadline after which the
+   * test will fail if the @connection doesn’t have the right number of refs;
+   * and @wakeup_source to periodically wake the @context up to allow the
+   * termination condition to be checked. This allows the termination condition
+   * to be fulfilled by something which doesn’t wake @context up, such as an
+   * unref happening in the GDBus worker thread. */
+  timeout_source = g_timeout_source_new_seconds (3);
+  g_source_set_callback (timeout_source, timeout_cb, &data, NULL);
+  g_source_attach (timeout_source, context);
+
+  wakeup_source = g_timeout_source_new (50 /* ms */);
+  g_source_set_callback (wakeup_source, wakeup_cb, NULL, NULL);
+  g_source_attach (wakeup_source, context);
+
+  while (g_atomic_int_get (&G_OBJECT (connection)->ref_count) != 1 && !data.timed_out)
+    {
+      g_debug ("refcount of %p is not right (%u rather than 1) in %s(), sleeping",
+               connection, g_atomic_int_get (&G_OBJECT (connection)->ref_count), calling_function);
+      g_main_context_iteration (NULL, TRUE);
+    }
+
+  g_source_destroy (wakeup_source);
+  g_source_unref (wakeup_source);
+
+  g_source_destroy (timeout_source);
+  g_source_unref (timeout_source);
+
+  if (g_atomic_int_get (&G_OBJECT (connection)->ref_count) != 1)
+    g_error ("connection %p had too many refs (%u rather than 1) in %s()",
+             connection, g_atomic_int_get (&G_OBJECT (connection)->ref_count), calling_function);
+}
+
+/* Macro wrapper to add in the calling function name */
+#define assert_connection_has_one_ref(connection, context) \
+  (assert_connection_has_one_ref) (connection, context, G_STRFUNC)
 
 /* ---------------------------------------------------------------------------------------------------- */
 /* Ensure that signal and method replies are delivered in the right thread */
@@ -33,53 +111,24 @@ static GDBusConnection *c = NULL;
 
 typedef struct {
   GThread *thread;
-  GMainLoop *thread_loop;
+  GMainContext *context;
   guint signal_count;
+  gboolean unsubscribe_complete;
+  GAsyncResult *async_result;
 } DeliveryData;
 
 static void
-msg_cb_expect_success (GDBusConnection *connection,
-                       GAsyncResult    *res,
-                       gpointer         user_data)
+async_result_cb (GDBusConnection *connection,
+                 GAsyncResult    *res,
+                 gpointer         user_data)
 {
   DeliveryData *data = user_data;
-  GError *error;
-  GVariant *result;
 
-  error = NULL;
-  result = g_dbus_connection_call_finish (connection,
-                                          res,
-                                          &error);
-  g_assert_no_error (error);
-  g_assert (result != NULL);
-  g_variant_unref (result);
+  data->async_result = g_object_ref (res);
 
-  g_assert (g_thread_self () == data->thread);
+  g_assert_true (g_thread_self () == data->thread);
 
-  g_main_loop_quit (data->thread_loop);
-}
-
-static void
-msg_cb_expect_error_cancelled (GDBusConnection *connection,
-                               GAsyncResult    *res,
-                               gpointer         user_data)
-{
-  DeliveryData *data = user_data;
-  GError *error;
-  GVariant *result;
-
-  error = NULL;
-  result = g_dbus_connection_call_finish (connection,
-                                          res,
-                                          &error);
-  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
-  g_assert (!g_dbus_error_is_remote_error (error));
-  g_error_free (error);
-  g_assert (result == NULL);
-
-  g_assert (g_thread_self () == data->thread);
-
-  g_main_loop_quit (data->thread_loop);
+  g_main_context_wakeup (data->context);
 }
 
 static void
@@ -93,33 +142,43 @@ signal_handler (GDBusConnection *connection,
 {
   DeliveryData *data = user_data;
 
-  g_assert (g_thread_self () == data->thread);
+  g_assert_true (g_thread_self () == data->thread);
 
   data->signal_count++;
 
-  g_main_loop_quit (data->thread_loop);
+  g_main_context_wakeup (data->context);
+}
+
+static void
+signal_data_free_cb (gpointer user_data)
+{
+  DeliveryData *data = user_data;
+
+  g_assert_true (g_thread_self () == data->thread);
+
+  data->unsubscribe_complete = TRUE;
+
+  g_main_context_wakeup (data->context);
 }
 
 static gpointer
 test_delivery_in_thread_func (gpointer _data)
 {
-  GMainLoop *thread_loop;
   GMainContext *thread_context;
   DeliveryData data;
   GCancellable *ca;
   guint subscription_id;
-  GDBusConnection *priv_c;
-  GError *error;
-
-  error = NULL;
+  GError *error = NULL;
+  GVariant *result_variant = NULL;
 
   thread_context = g_main_context_new ();
-  thread_loop = g_main_loop_new (thread_context, FALSE);
   g_main_context_push_thread_default (thread_context);
 
   data.thread = g_thread_self ();
-  data.thread_loop = thread_loop;
+  data.context = thread_context;
   data.signal_count = 0;
+  data.unsubscribe_complete = FALSE;
+  data.async_result = NULL;
 
   /* ---------------------------------------------------------------------------------------------------- */
 
@@ -127,37 +186,53 @@ test_delivery_in_thread_func (gpointer _data)
    * Check that we get a reply to the GetId() method call.
    */
   g_dbus_connection_call (c,
-                          "org.freedesktop.DBus",  /* bus_name */
-                          "/org/freedesktop/DBus", /* object path */
-                          "org.freedesktop.DBus",  /* interface name */
+                          DBUS_SERVICE_DBUS,
+                          DBUS_PATH_DBUS,
+                          DBUS_INTERFACE_DBUS,
                           "GetId",                 /* method name */
                           NULL, NULL,
                           G_DBUS_CALL_FLAGS_NONE,
                           -1,
                           NULL,
-                          (GAsyncReadyCallback) msg_cb_expect_success,
+                          (GAsyncReadyCallback) async_result_cb,
                           &data);
-  g_main_loop_run (thread_loop);
+  while (data.async_result == NULL)
+    g_main_context_iteration (thread_context, TRUE);
+
+  result_variant = g_dbus_connection_call_finish (c, data.async_result, &error);
+  g_assert_no_error (error);
+  g_assert_nonnull (result_variant);
+  g_clear_pointer (&result_variant, g_variant_unref);
+  g_clear_object (&data.async_result);
 
   /*
    * Check that we never actually send a message if the GCancellable
-   * is already cancelled - i.e.  we should get #G_IO_ERROR_CANCELLED
+   * is already cancelled - i.e.  we should get G_IO_ERROR_CANCELLED
    * when the actual connection is not up.
    */
   ca = g_cancellable_new ();
   g_cancellable_cancel (ca);
   g_dbus_connection_call (c,
-                          "org.freedesktop.DBus",  /* bus_name */
-                          "/org/freedesktop/DBus", /* object path */
-                          "org.freedesktop.DBus",  /* interface name */
+                          DBUS_SERVICE_DBUS,
+                          DBUS_PATH_DBUS,
+                          DBUS_INTERFACE_DBUS,
                           "GetId",                 /* method name */
                           NULL, NULL,
                           G_DBUS_CALL_FLAGS_NONE,
                           -1,
                           ca,
-                          (GAsyncReadyCallback) msg_cb_expect_error_cancelled,
+                          (GAsyncReadyCallback) async_result_cb,
                           &data);
-  g_main_loop_run (thread_loop);
+  while (data.async_result == NULL)
+    g_main_context_iteration (thread_context, TRUE);
+
+  result_variant = g_dbus_connection_call_finish (c, data.async_result, &error);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
+  g_assert_false (g_dbus_error_is_remote_error (error));
+  g_clear_error (&error);
+  g_assert_null (result_variant);
+  g_clear_object (&data.async_result);
+
   g_object_unref (ca);
 
   /*
@@ -165,55 +240,81 @@ test_delivery_in_thread_func (gpointer _data)
    */
   ca = g_cancellable_new ();
   g_dbus_connection_call (c,
-                          "org.freedesktop.DBus",  /* bus_name */
-                          "/org/freedesktop/DBus", /* object path */
-                          "org.freedesktop.DBus",  /* interface name */
+                          DBUS_SERVICE_DBUS,
+                          DBUS_PATH_DBUS,
+                          DBUS_INTERFACE_DBUS,
                           "GetId",                 /* method name */
                           NULL, NULL,
                           G_DBUS_CALL_FLAGS_NONE,
                           -1,
                           ca,
-                          (GAsyncReadyCallback) msg_cb_expect_error_cancelled,
+                          (GAsyncReadyCallback) async_result_cb,
                           &data);
   g_cancellable_cancel (ca);
-  g_main_loop_run (thread_loop);
+
+  while (data.async_result == NULL)
+    g_main_context_iteration (thread_context, TRUE);
+
+  result_variant = g_dbus_connection_call_finish (c, data.async_result, &error);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_CANCELLED);
+  g_assert_false (g_dbus_error_is_remote_error (error));
+  g_clear_error (&error);
+  g_assert_null (result_variant);
+  g_clear_object (&data.async_result);
+
   g_object_unref (ca);
 
   /*
    * Check that signals are delivered to the correct thread.
    *
-   * First we subscribe to the signal, then we create a a private
-   * connection. This should cause a NameOwnerChanged message from
-   * the message bus.
+   * First we subscribe to the signal, then we call EmitSignal(). This should
+   * cause a TestSignal emission from the testserver.
    */
   subscription_id = g_dbus_connection_signal_subscribe (c,
-                                                        "org.freedesktop.DBus",  /* sender */
-                                                        "org.freedesktop.DBus",  /* interface */
-                                                        "NameOwnerChanged",      /* member */
-                                                        "/org/freedesktop/DBus", /* path */
+                                                        "com.example.TestService", /* sender */
+                                                        "com.example.Frob",        /* interface */
+                                                        "TestSignal",              /* member */
+                                                        "/com/example/TestObject", /* path */
                                                         NULL,
                                                         G_DBUS_SIGNAL_FLAGS_NONE,
                                                         signal_handler,
                                                         &data,
-                                                        NULL);
-  g_assert (subscription_id != 0);
-  g_assert (data.signal_count == 0);
+                                                        signal_data_free_cb);
+  g_assert_cmpuint (subscription_id, !=, 0);
+  g_assert_cmpuint (data.signal_count, ==, 0);
 
-  priv_c = _g_bus_get_priv (G_BUS_TYPE_SESSION, NULL, &error);
+  g_dbus_connection_call (c,
+                          "com.example.TestService", /* bus_name */
+                          "/com/example/TestObject", /* object path */
+                          "com.example.Frob",        /* interface name */
+                          "EmitSignal",              /* method name */
+                          g_variant_new_parsed ("('hello', @o '/com/example/TestObject')"),
+                          NULL,
+                          G_DBUS_CALL_FLAGS_NONE,
+                          -1,
+                          NULL,
+                          (GAsyncReadyCallback) async_result_cb,
+                          &data);
+  while (data.async_result == NULL || data.signal_count < 1)
+    g_main_context_iteration (thread_context, TRUE);
+
+  result_variant = g_dbus_connection_call_finish (c, data.async_result, &error);
   g_assert_no_error (error);
-  g_assert (priv_c != NULL);
+  g_assert_nonnull (result_variant);
+  g_clear_pointer (&result_variant, g_variant_unref);
+  g_clear_object (&data.async_result);
 
-  g_main_loop_run (thread_loop);
-  g_assert (data.signal_count == 1);
+  g_assert_cmpuint (data.signal_count, ==, 1);
 
-  g_object_unref (priv_c);
+  g_dbus_connection_signal_unsubscribe (c, g_steal_handle_id (&subscription_id));
 
-  g_dbus_connection_signal_unsubscribe (c, subscription_id);
+  while (!data.unsubscribe_complete)
+    g_main_context_iteration (thread_context, TRUE);
+  g_assert_true (data.unsubscribe_complete);
 
   /* ---------------------------------------------------------------------------------------------------- */
 
   g_main_context_pop_thread_default (thread_context);
-  g_main_loop_unref (thread_loop);
   g_main_context_unref (thread_context);
 
   return NULL;
@@ -229,6 +330,8 @@ test_delivery_in_thread (void)
                          NULL);
 
   g_thread_join (thread);
+
+  assert_connection_has_one_ref (c, NULL);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -257,11 +360,11 @@ sleep_cb (GDBusProxy   *proxy,
                                      res,
                                      &error);
   g_assert_no_error (error);
-  g_assert (result != NULL);
+  g_assert_nonnull (result);
   g_assert_cmpstr (g_variant_get_type_string (result), ==, "()");
   g_variant_unref (result);
 
-  g_assert (data->thread == g_thread_self ());
+  g_assert_true (data->thread == g_thread_self ());
 
   g_main_loop_quit (data->thread_loop);
 
@@ -317,7 +420,7 @@ test_sleep_in_thread_func (gpointer _data)
             g_printerr ("S");
           //g_debug ("done invoking sync (%p)", g_thread_self ());
           g_assert_no_error (error);
-          g_assert (result != NULL);
+          g_assert_nonnull (result);
           g_assert_cmpstr (g_variant_get_type_string (result), ==, "()");
           g_variant_unref (result);
         }
@@ -333,10 +436,10 @@ test_sleep_in_thread_func (gpointer _data)
 static void
 test_method_calls_on_proxy (GDBusProxy *proxy)
 {
-  guint n;
+  guint n, divisor;
 
   /*
-   * Check that multiple threads can do calls without interferring with
+   * Check that multiple threads can do calls without interfering with
    * each other. We do this by creating three threads that call the
    * Sleep() method on the server (which handles it asynchronously, e.g.
    * it won't block other requests) with different sleep durations and
@@ -352,6 +455,11 @@ test_method_calls_on_proxy (GDBusProxy *proxy)
    * again with sync calls
    */
 
+  if (g_test_thorough ())
+    divisor = 1;
+  else
+    divisor = 10;
+
   for (n = 0; n < 2; n++)
     {
       gboolean do_async;
@@ -361,17 +469,16 @@ test_method_calls_on_proxy (GDBusProxy *proxy)
       SyncThreadData data1;
       SyncThreadData data2;
       SyncThreadData data3;
-      GTimeVal start_time;
-      GTimeVal end_time;
+      gint64 start_time, end_time;
       guint elapsed_msec;
 
       do_async = (n == 0);
 
-      g_get_current_time (&start_time);
+      start_time = g_get_real_time ();
 
       data1.proxy = proxy;
       data1.msec = 40;
-      data1.num = 100;
+      data1.num = 100 / divisor;
       data1.async = do_async;
       thread1 = g_thread_new ("sleep",
                               test_sleep_in_thread_func,
@@ -379,7 +486,7 @@ test_method_calls_on_proxy (GDBusProxy *proxy)
 
       data2.proxy = proxy;
       data2.msec = 20;
-      data2.num = 200;
+      data2.num = 200 / divisor;
       data2.async = do_async;
       thread2 = g_thread_new ("sleep2",
                               test_sleep_in_thread_func,
@@ -387,7 +494,7 @@ test_method_calls_on_proxy (GDBusProxy *proxy)
 
       data3.proxy = proxy;
       data3.msec = 100;
-      data3.num = 40;
+      data3.num = 40 / divisor;
       data3.async = do_async;
       thread3 = g_thread_new ("sleep3",
                               test_sleep_in_thread_func,
@@ -397,16 +504,15 @@ test_method_calls_on_proxy (GDBusProxy *proxy)
       g_thread_join (thread2);
       g_thread_join (thread3);
 
-      g_get_current_time (&end_time);
+      end_time = g_get_real_time ();
 
-      elapsed_msec = ((end_time.tv_sec * G_USEC_PER_SEC + end_time.tv_usec) -
-                      (start_time.tv_sec * G_USEC_PER_SEC + start_time.tv_usec)) / 1000;
+      elapsed_msec = (end_time - start_time) / 1000;
 
       //g_debug ("Elapsed time for %s = %d msec", n == 0 ? "async" : "sync", elapsed_msec);
 
       /* elapsed_msec should be 4000 msec +/- change for overhead/inaccuracy */
-      g_assert_cmpint (elapsed_msec, >=, 3950);
-      g_assert_cmpint (elapsed_msec,  <, 8000);
+      g_assert_cmpint (elapsed_msec, >=, 3950 / divisor);
+      g_assert_cmpint (elapsed_msec,  <, 30000 / divisor);
 
       if (g_test_verbose ())
         g_printerr (" ");
@@ -443,6 +549,8 @@ test_method_calls_in_thread (void)
 
   if (g_test_verbose ())
     g_printerr ("\n");
+
+  assert_connection_has_one_ref (c, NULL);
 }
 
 #define SLEEP_MIN_USEC 1
@@ -455,12 +563,12 @@ ensure_connection_works (GDBusConnection *conn)
   GVariant *v;
   GError *error = NULL;
 
-  v = g_dbus_connection_call_sync (conn, "org.freedesktop.DBus",
-      "/org/freedesktop/DBus", "org.freedesktop.DBus", "GetId", NULL, NULL, 0, -1,
+  v = g_dbus_connection_call_sync (conn, DBUS_SERVICE_DBUS,
+      DBUS_PATH_DBUS, DBUS_INTERFACE_DBUS, "GetId", NULL, NULL, 0, -1,
       NULL, &error);
   g_assert_no_error (error);
-  g_assert (v != NULL);
-  g_assert (g_variant_is_of_type (v, G_VARIANT_TYPE ("(s)")));
+  g_assert_nonnull (v);
+  g_assert_true (g_variant_is_of_type (v, G_VARIANT_TYPE ("(s)")));
   g_variant_unref (v);
 }
 
@@ -502,29 +610,16 @@ test_threaded_singleton (void)
   if (g_test_thorough ())
     n = 100000;
   else
-    n = 5000;
+    n = 1000;
 
   for (i = 0; i < n; i++)
     {
       GThread *thread;
-      guint j;
       guint unref_delay, get_delay;
       GDBusConnection *new_conn;
 
       /* We want to be the last ref, so let it finish setting up */
-      for (j = 0; j < 100; j++)
-        {
-          guint r = g_atomic_int_get (&G_OBJECT (c)->ref_count);
-
-          if (r == 1)
-            break;
-
-          g_debug ("run %u: refcount is %u, sleeping", i, r);
-          g_usleep (1000);
-        }
-
-      if (j == 100)
-        g_error ("connection had too many refs");
+      assert_connection_has_one_ref (c, NULL);
 
       if (g_test_verbose () && (i % (n/50)) == 0)
         g_printerr ("%u%%\n", ((i * 100) / n));
@@ -582,22 +677,22 @@ main (int   argc,
   gint ret;
   gchar *path;
 
-  g_test_init (&argc, &argv, NULL);
+  g_test_init (&argc, &argv, G_TEST_OPTION_ISOLATE_DIRS, NULL);
 
   session_bus_up ();
 
   /* this is safe; testserver will exit once the bus goes away */
   path = g_test_build_filename (G_TEST_BUILT, "gdbus-testserver", NULL);
-  g_assert (g_spawn_command_line_async (path, NULL));
+  g_assert_true (g_spawn_command_line_async (path, NULL));
   g_free (path);
-
-  ensure_gdbus_testserver_up ();
 
   /* Create the connection in the main thread */
   error = NULL;
   c = g_bus_get_sync (G_BUS_TYPE_SESSION, NULL, &error);
   g_assert_no_error (error);
-  g_assert (c != NULL);
+  g_assert_nonnull (c);
+
+  ensure_gdbus_testserver_up (c, NULL);
 
   g_test_add_func ("/gdbus/delivery-in-thread", test_delivery_in_thread);
   g_test_add_func ("/gdbus/method-calls-in-thread", test_method_calls_in_thread);

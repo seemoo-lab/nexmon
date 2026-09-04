@@ -8,7 +8,7 @@ test_autoptr (void)
   g_autofree gchar *path = g_file_get_path (p);
   g_autofree gchar *istr = g_inet_address_to_string (a);
 
-  g_assert_cmpstr (path, ==, "/blah");
+  g_assert_cmpstr (path, ==, G_DIR_SEPARATOR_S "blah");
   g_assert_cmpstr (istr, ==, "127.0.0.1");
 }
 

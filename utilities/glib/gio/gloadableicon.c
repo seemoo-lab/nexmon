@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,13 +29,10 @@
 
 
 /**
- * SECTION:gloadableicon
- * @short_description: Loadable Icons
- * @include: gio/gio.h
- * @see_also: #GIcon, #GThemedIcon
+ * GLoadableIcon:
  * 
- * Extends the #GIcon interface and adds the ability to 
- * load icons from streams.
+ * `GLoadableIcon` extends the [iface@Gio.Icon] interface and adds the ability
+ * to load icons from streams.
  **/
 
 static void          g_loadable_icon_real_load_async  (GLoadableIcon        *icon,
@@ -62,7 +61,7 @@ g_loadable_icon_default_init (GLoadableIconIface *iface)
  * @size: an integer.
  * @type: (out) (optional): a location to store the type of the loaded
  * icon, %NULL to ignore.
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to
  * ignore.
  * @error: a #GError location to store the error occurring, or %NULL
  * to ignore.
@@ -92,10 +91,10 @@ g_loadable_icon_load (GLoadableIcon  *icon,
  * g_loadable_icon_load_async:
  * @icon: a #GLoadableIcon.
  * @size: an integer.
- * @cancellable: (allow-none): optional #GCancellable object, %NULL to ignore. 
- * @callback: (scope async): a #GAsyncReadyCallback to call when the
- *            request is satisfied
- * @user_data: (closure): the data to pass to callback function
+ * @cancellable: (nullable): optional #GCancellable object, %NULL to ignore. 
+ * @callback: (scope async): a #GAsyncReadyCallback
+ *   to call when the request is satisfied
+ * @user_data: the data to pass to callback function
  * 
  * Loads an icon asynchronously. To finish this function, see 
  * g_loadable_icon_load_finish(). For the synchronous, blocking 
@@ -200,6 +199,7 @@ g_loadable_icon_real_load_async (GLoadableIcon       *icon,
   LoadData *data;
 
   task = g_task_new (icon, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_loadable_icon_real_load_async);
   data = g_new0 (LoadData, 1);
   g_task_set_task_data (task, data, (GDestroyNotify) load_data_free);
   g_task_run_in_thread (task, load_async_thread);

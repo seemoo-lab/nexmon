@@ -1,10 +1,12 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,13 +28,13 @@
 #include "gaction.h"
 
 /**
- * SECTION:gsimpleactiongroup
- * @title: GSimpleActionGroup
- * @short_description: A simple GActionGroup implementation
- * @include: gio/gio.h
+ * GSimpleActionGroup:
  *
- * #GSimpleActionGroup is a hash table filled with #GAction objects,
- * implementing the #GActionGroup and #GActionMap interfaces.
+ * `GSimpleActionGroup` is a hash table filled with [iface@Gio.Action] objects,
+ * implementing the [iface@Gio.ActionGroup] and [iface@Gio.ActionMap]
+ * interfaces.
+ *
+ * Since: 2.28
  **/
 
 struct _GSimpleActionGroupPrivate
@@ -65,7 +67,7 @@ g_simple_action_group_list_actions (GActionGroup *group)
   g_hash_table_iter_init (&iter, simple->priv->table);
   while (g_hash_table_iter_next (&iter, &key, NULL))
     keys[i++] = g_strdup (key);
-  g_assert_cmpint (i, ==, n);
+  g_assert (i == n);
   keys[n] = NULL;
 
   return keys;

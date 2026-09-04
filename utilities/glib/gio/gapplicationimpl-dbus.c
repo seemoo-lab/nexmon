@@ -1,10 +1,12 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,6 +32,7 @@
 #include "gdbusconnection.h"
 #include "gdbusintrospection.h"
 #include "gdbuserror.h"
+#include "gdbusprivate.h"
 #include "glib/gstdio.h"
 
 #include <string.h>
@@ -43,7 +46,7 @@
 #include "gunixfdlist.h"
 #endif
 
-/* DBus Interface definition {{{1 */
+/* D-Bus Interface definition {{{1 */
 
 /* For documentation of these interfaces, see
  * https://wiki.gnome.org/Projects/GLib/GApplication/DBusAPI
@@ -111,6 +114,7 @@ struct _GApplicationImpl
   GDBusConnection *session_bus;
   GActionGroup    *exported_actions;
   const gchar     *bus_name;
+  guint            name_lost_signal;
 
   gchar           *object_path;
   guint            object_id;
@@ -120,6 +124,7 @@ struct _GApplicationImpl
   gboolean         properties_live;
   gboolean         primary;
   gboolean         busy;
+  gboolean         registered;
   GApplication    *app;
 };
 
@@ -151,7 +156,7 @@ send_property_change (GApplicationImpl *impl)
 {
   GVariantBuilder builder;
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE_ARRAY);
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE_ARRAY);
   g_variant_builder_add (&builder,
                          "{sv}",
                          "Busy", g_variant_new_boolean (impl->busy));
@@ -159,7 +164,7 @@ send_property_change (GApplicationImpl *impl)
   g_dbus_connection_emit_signal (impl->session_bus,
                                  NULL,
                                  impl->object_path,
-                                 "org.freedesktop.DBus.Properties",
+                                 DBUS_INTERFACE_PROPERTIES,
                                  "PropertiesChanged",
                                  g_variant_new ("(sa{sv}as)",
                                                 "org.gtk.Application",
@@ -206,7 +211,7 @@ g_application_impl_method_call (GDBusConnection       *connection,
       const gchar *hint;
       GVariant *array;
       GFile **files;
-      gint n, i;
+      size_t n, i;
 
       flags = g_application_get_flags (impl->app);
       if ((flags & G_APPLICATION_HANDLES_OPEN) == 0)
@@ -282,12 +287,58 @@ g_application_impl_method_call (GDBusConnection       *connection,
       GVariant *platform_data;
       GVariantIter *iter;
       const gchar *name;
+      const GVariantType *parameter_type = NULL;
 
       /* Only on the freedesktop interface */
 
       g_variant_get (parameters, "(&sav@a{sv})", &name, &iter, &platform_data);
-      g_variant_iter_next (iter, "v", &parameter);
+
+      /* Check the action exists and the parameter type matches. */
+      if (!g_action_group_query_action (impl->exported_actions,
+                                        name, NULL, &parameter_type,
+                                        NULL, NULL, NULL))
+        {
+          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                                 "Unknown action ‘%s’", name);
+          g_variant_iter_free (iter);
+          g_variant_unref (platform_data);
+          return;
+        }
+
+      /* Accept multiple parameters as a tuple with the exact number of parameters */
+      if (g_variant_iter_n_children (iter) > 1)
+        {
+          GVariant *value = NULL;
+          GVariantBuilder builder;
+
+          g_variant_builder_init_static (&builder, G_VARIANT_TYPE_TUPLE);
+
+          while (g_variant_iter_loop (iter, "v", &value))
+            {
+              g_variant_builder_add_value (&builder, value);
+            }
+
+          parameter = g_variant_ref_sink (g_variant_builder_end (&builder));
+        }
+      else
+        {
+          g_variant_iter_next (iter, "v", &parameter);
+        }
+
       g_variant_iter_free (iter);
+
+      if (!((parameter_type == NULL && parameter == NULL) ||
+            (parameter_type != NULL && parameter != NULL && g_variant_is_of_type (parameter, parameter_type))))
+        {
+          g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                                 "Invalid parameter for action ‘%s’: expected type %s but got type %s",
+                                                 name,
+                                                 (parameter_type != NULL) ? (const gchar *) parameter_type : "()",
+                                                 (parameter != NULL) ? g_variant_get_type_string (parameter) : "()");
+          g_clear_pointer (&parameter, g_variant_unref);
+          g_variant_unref (platform_data);
+          return;
+        }
 
       class->before_emit (impl->app, platform_data);
       g_action_group_activate_action (impl->exported_actions, name, parameter);
@@ -326,6 +377,25 @@ application_path_from_appid (const gchar *appid)
   return appid_path;
 }
 
+static void g_application_impl_stop_primary (GApplicationImpl *impl);
+
+static void
+name_lost (GDBusConnection *bus,
+           const char      *sender_name,
+           const char      *object_path,
+           const char      *interface_name,
+           const char      *signal_name,
+           GVariant        *parameters,
+           gpointer         user_data)
+{
+  GApplicationImpl *impl = user_data;
+  gboolean handled;
+
+  impl->primary = FALSE;
+  g_application_impl_stop_primary (impl);
+  g_signal_emit_by_name (impl->app, "name-lost", &handled);
+}
+
 /* Attempt to become the primary instance.
  *
  * Returns %TRUE if everything went OK, regardless of if we became the
@@ -340,31 +410,35 @@ g_application_impl_attempt_primary (GApplicationImpl  *impl,
                                     GCancellable      *cancellable,
                                     GError           **error)
 {
-  const static GDBusInterfaceVTable vtable = {
+  static const GDBusInterfaceVTable vtable = {
     g_application_impl_method_call,
     g_application_impl_get_property,
-    NULL /* set_property */
+    NULL, /* set_property */
+    { 0 }
   };
   GApplicationClass *app_class = G_APPLICATION_GET_CLASS (impl->app);
+  GBusNameOwnerFlags name_owner_flags;
+  GApplicationFlags app_flags;
   GVariant *reply;
   guint32 rval;
+  GError *local_error = NULL;
 
   if (org_gtk_Application == NULL)
     {
-      GError *error = NULL;
+      GError *my_error = NULL;
       GDBusNodeInfo *info;
 
-      info = g_dbus_node_info_new_for_xml (org_gtk_Application_xml, &error);
+      info = g_dbus_node_info_new_for_xml (org_gtk_Application_xml, &my_error);
       if G_UNLIKELY (info == NULL)
-        g_error ("%s", error->message);
+        g_error ("%s", my_error->message);
       org_gtk_Application = g_dbus_node_info_lookup_interface (info, "org.gtk.Application");
       g_assert (org_gtk_Application != NULL);
       g_dbus_interface_info_ref (org_gtk_Application);
       g_dbus_node_info_unref (info);
 
-      info = g_dbus_node_info_new_for_xml (org_freedesktop_Application_xml, &error);
+      info = g_dbus_node_info_new_for_xml (org_freedesktop_Application_xml, &my_error);
       if G_UNLIKELY (info == NULL)
-        g_error ("%s", error->message);
+        g_error ("%s", my_error->message);
       org_freedesktop_Application = g_dbus_node_info_lookup_interface (info, "org.freedesktop.Application");
       g_assert (org_freedesktop_Application != NULL);
       g_dbus_interface_info_ref (org_freedesktop_Application);
@@ -403,11 +477,18 @@ g_application_impl_attempt_primary (GApplicationImpl  *impl,
   if (impl->actions_id == 0)
     return FALSE;
 
+  impl->registered = TRUE;
   if (!app_class->dbus_register (impl->app,
                                  impl->session_bus,
                                  impl->object_path,
-                                 error))
-    return FALSE;
+                                 &local_error))
+    {
+      g_return_val_if_fail (local_error != NULL, FALSE);
+      g_propagate_error (error, g_steal_pointer (&local_error));
+      return FALSE;
+    }
+
+  g_return_val_if_fail (local_error == NULL, FALSE);
 
   if (impl->bus_name == NULL)
     {
@@ -424,10 +505,34 @@ g_application_impl_attempt_primary (GApplicationImpl  *impl,
    * the well-known name and fall back to remote mode (!is_primary)
    * in the case that we can't do that.
    */
-  /* DBUS_NAME_FLAG_DO_NOT_QUEUE: 0x4 */
-  reply = g_dbus_connection_call_sync (impl->session_bus, "org.freedesktop.DBus", "/org/freedesktop/DBus",
-                                       "org.freedesktop.DBus", "RequestName",
-                                       g_variant_new ("(su)", impl->bus_name, 0x4), G_VARIANT_TYPE ("(u)"),
+  name_owner_flags = G_BUS_NAME_OWNER_FLAGS_DO_NOT_QUEUE;
+  app_flags = g_application_get_flags (impl->app);
+
+  if (app_flags & G_APPLICATION_ALLOW_REPLACEMENT)
+    {
+      impl->name_lost_signal = g_dbus_connection_signal_subscribe (impl->session_bus,
+                                                                   DBUS_SERVICE_DBUS,
+                                                                   DBUS_INTERFACE_DBUS,
+                                                                   "NameLost",
+                                                                   DBUS_PATH_DBUS,
+                                                                   impl->bus_name,
+                                                                   G_DBUS_SIGNAL_FLAGS_NONE,
+                                                                   name_lost,
+                                                                   impl,
+                                                                   NULL);
+
+      name_owner_flags |= G_BUS_NAME_OWNER_FLAGS_ALLOW_REPLACEMENT;
+    }
+  if (app_flags & G_APPLICATION_REPLACE)
+    name_owner_flags |= G_BUS_NAME_OWNER_FLAGS_REPLACE;
+
+  reply = g_dbus_connection_call_sync (impl->session_bus,
+                                       DBUS_SERVICE_DBUS,
+                                       DBUS_PATH_DBUS,
+                                       DBUS_INTERFACE_DBUS,
+                                       "RequestName",
+                                       g_variant_new ("(su)", impl->bus_name, name_owner_flags),
+                                       G_VARIANT_TYPE ("(u)"),
                                        0, -1, cancellable, error);
 
   if (reply == NULL)
@@ -436,8 +541,10 @@ g_application_impl_attempt_primary (GApplicationImpl  *impl,
   g_variant_get (reply, "(u)", &rval);
   g_variant_unref (reply);
 
-  /* DBUS_REQUEST_NAME_REPLY_EXISTS: 3 */
-  impl->primary = (rval != 3);
+  impl->primary = (rval != DBUS_REQUEST_NAME_REPLY_EXISTS);
+
+  if (!impl->primary && impl->name_lost_signal)
+    g_dbus_connection_signal_unsubscribe (impl->session_bus, g_steal_handle_id (&impl->name_lost_signal));
 
   return TRUE;
 }
@@ -455,9 +562,13 @@ g_application_impl_stop_primary (GApplicationImpl *impl)
 {
   GApplicationClass *app_class = G_APPLICATION_GET_CLASS (impl->app);
 
-  app_class->dbus_unregister (impl->app,
-                              impl->session_bus,
-                              impl->object_path);
+  if (impl->registered)
+    {
+      app_class->dbus_unregister (impl->app,
+                                  impl->session_bus,
+                                  impl->object_path);
+      impl->registered = FALSE;
+    }
 
   if (impl->object_id)
     {
@@ -477,10 +588,13 @@ g_application_impl_stop_primary (GApplicationImpl *impl)
       impl->actions_id = 0;
     }
 
+  if (impl->name_lost_signal)
+    g_dbus_connection_signal_unsubscribe (impl->session_bus, g_steal_handle_id (&impl->name_lost_signal));
+
   if (impl->primary && impl->bus_name)
     {
-      g_dbus_connection_call (impl->session_bus, "org.freedesktop.DBus",
-                              "/org/freedesktop/DBus", "org.freedesktop.DBus",
+      g_dbus_connection_call (impl->session_bus, DBUS_SERVICE_DBUS,
+                              DBUS_PATH_DBUS, DBUS_INTERFACE_DBUS,
                               "ReleaseName", g_variant_new ("(s)", impl->bus_name),
                               NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
       impl->primary = FALSE;
@@ -576,7 +690,7 @@ g_application_impl_register (GApplication        *application,
 
   /* We are non-primary.  Try to get the primary's list of actions.
    * This also serves as a mechanism to ensure that the primary exists
-   * (ie: DBus service files installed correctly, etc).
+   * (ie: D-Bus service files installed correctly, etc).
    */
   actions = g_dbus_action_group_get (impl->session_bus, impl->bus_name, impl->object_path);
   if (!g_dbus_action_group_sync (actions, cancellable, error))
@@ -616,7 +730,7 @@ g_application_impl_open (GApplicationImpl  *impl,
   GVariantBuilder builder;
   gint i;
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("(assa{sv})"));
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("(assa{sv})"));
   g_variant_builder_open (&builder, G_VARIANT_TYPE_STRING_ARRAY);
   for (i = 0; i < n_files; i++)
     {
@@ -704,13 +818,13 @@ g_application_impl_command_line (GApplicationImpl    *impl,
                                  const gchar * const *arguments,
                                  GVariant            *platform_data)
 {
-  const static GDBusInterfaceVTable vtable = {
-    g_application_impl_cmdline_method_call
+  static const GDBusInterfaceVTable vtable = {
+    g_application_impl_cmdline_method_call, NULL, NULL, { 0 }
   };
   const gchar *object_path = "/org/gtk/Application/CommandLine";
   GMainContext *context;
   CommandLineData data;
-  guint object_id;
+  guint object_id G_GNUC_UNUSED  /* when compiling with G_DISABLE_ASSERT */;
 
   context = g_main_context_new ();
   data.loop = g_main_loop_new (context, FALSE);
@@ -746,7 +860,11 @@ g_application_impl_command_line (GApplicationImpl    *impl,
      */
     fd_list = g_unix_fd_list_new ();
     g_unix_fd_list_append (fd_list, 0, &error);
-    g_assert_no_error (error);
+    if (error != NULL)
+      {
+        g_error ("Error appending to FD list: %s", error->message);
+        g_clear_error (&error);
+      }
 
     g_dbus_connection_call_with_unix_fd_list (impl->session_bus, impl->bus_name, impl->object_path,
                                               "org.gtk.Application", "CommandLine",
@@ -870,18 +988,26 @@ g_dbus_command_line_get_stdin (GApplicationCommandLine *cmdline)
 static void
 g_dbus_command_line_finalize (GObject *object)
 {
-  GApplicationCommandLine *cmdline = G_APPLICATION_COMMAND_LINE (object);
   GDBusCommandLine *gdbcl = (GDBusCommandLine *) object;
+
+  g_object_unref (gdbcl->invocation);
+
+  G_OBJECT_CLASS (g_dbus_command_line_parent_class)
+    ->finalize (object);
+}
+
+static void
+g_dbus_command_line_done (GApplicationCommandLine *cmdline)
+{
+  GDBusCommandLine *gdbcl = (GDBusCommandLine *) cmdline;
   gint status;
 
   status = g_application_command_line_get_exit_status (cmdline);
 
   g_dbus_method_invocation_return_value (gdbcl->invocation,
                                          g_variant_new ("(i)", status));
-  g_object_unref (gdbcl->invocation);
 
-  G_OBJECT_CLASS (g_dbus_command_line_parent_class)
-    ->finalize (object);
+  G_APPLICATION_COMMAND_LINE_CLASS (g_dbus_command_line_parent_class)->done (cmdline);
 }
 
 static void
@@ -898,6 +1024,7 @@ g_dbus_command_line_class_init (GApplicationCommandLineClass *class)
   class->printerr_literal = g_dbus_command_line_printerr_literal;
   class->print_literal = g_dbus_command_line_print_literal;
   class->get_stdin = g_dbus_command_line_get_stdin;
+  class->done = g_dbus_command_line_done;
 }
 
 static GApplicationCommandLine *

@@ -3,10 +3,12 @@
  * Copyright (C) 2010 Collabora, Ltd.
  * Copyright (C) 2014 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -69,8 +71,9 @@ g_http_proxy_init (GHttpProxy *proxy)
 }
 
 static gchar *
-create_request (GProxyAddress *proxy_address,
-                gboolean      *has_cred)
+create_request (GProxyAddress  *proxy_address,
+                gboolean       *has_cred,
+                GError        **error)
 {
   const gchar *hostname;
   gint port;
@@ -83,13 +86,19 @@ create_request (GProxyAddress *proxy_address,
     *has_cred = FALSE;
 
   hostname = g_proxy_address_get_destination_hostname (proxy_address);
+  ascii_hostname = g_hostname_to_ascii (hostname);
+  if (!ascii_hostname)
+    {
+      g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
+                           _("Invalid hostname"));
+      return NULL;
+    }
   port = g_proxy_address_get_destination_port (proxy_address);
   username = g_proxy_address_get_username (proxy_address);
   password = g_proxy_address_get_password (proxy_address);
 
   request = g_string_new (NULL);
 
-  ascii_hostname = g_hostname_to_ascii (hostname);
   g_string_append_printf (request,
                           "CONNECT %s:%i HTTP/1.0\r\n"
                           "Host: %s:%i\r\n"
@@ -183,7 +192,7 @@ g_http_proxy_connect (GProxy         *proxy,
   GOutputStream *out;
   gchar *buffer = NULL;
   gsize buffer_length;
-  gssize bytes_read;
+  gsize bytes_read;
   gboolean has_cred;
   GIOStream *tlsconn = NULL;
 
@@ -214,7 +223,9 @@ g_http_proxy_connect (GProxy         *proxy,
   in = g_io_stream_get_input_stream (io_stream);
   out = g_io_stream_get_output_stream (io_stream);
 
-  buffer = create_request (proxy_address, &has_cred);
+  buffer = create_request (proxy_address, &has_cred, error);
+  if (!buffer)
+    goto error;
   if (!g_output_stream_write_all (out, buffer, strlen (buffer), NULL,
                                   cancellable, error))
     goto error;
@@ -230,12 +241,15 @@ g_http_proxy_connect (GProxy         *proxy,
    */
   do
     {
+      gssize signed_nread;
       gsize nread;
 
-      nread = g_input_stream_read (in, buffer + bytes_read, 1, cancellable, error);
-      if (nread == -1)
+      signed_nread =
+          g_input_stream_read (in, buffer + bytes_read, 1, cancellable, error);
+      if (signed_nread == -1)
         goto error;
 
+      nread = signed_nread;
       if (nread == 0)
         break;
 
@@ -243,6 +257,17 @@ g_http_proxy_connect (GProxy         *proxy,
 
       if (bytes_read == buffer_length)
         {
+          /* HTTP specifications does not defines any upper limit for
+           * headers. But, the most usual size used seems to be 8KB.
+           * Yet, the biggest we found was Tomcat's HTTP headers whose
+           * size is 48K. So, for a reasonable error margin, let's accept
+           * a header with a twice as large size but no more: 96KB */
+          if (buffer_length > 98304)
+            {
+              g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_PROXY_FAILED,
+                                   _("HTTP proxy response too big"));
+              goto error;
+            }
           buffer_length = 2 * buffer_length;
           buffer = g_realloc (buffer, buffer_length);
         }
@@ -327,6 +352,7 @@ g_http_proxy_connect_async (GProxy              *proxy,
   data->proxy_address = g_object_ref (proxy_address);
 
   task = g_task_new (proxy, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_http_proxy_connect_async);
   g_task_set_task_data (task, data, (GDestroyNotify) free_connect_data);
 
   g_task_run_in_thread (task, connect_thread);

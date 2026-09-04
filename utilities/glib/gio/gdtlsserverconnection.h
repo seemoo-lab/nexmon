@@ -3,10 +3,12 @@
  * Copyright © 2010 Red Hat, Inc.
  * Copyright © 2015 Collabora, Ltd.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,14 +35,6 @@ G_BEGIN_DECLS
 #define G_IS_DTLS_SERVER_CONNECTION(inst)            (G_TYPE_CHECK_INSTANCE_TYPE ((inst), G_TYPE_DTLS_SERVER_CONNECTION))
 #define G_DTLS_SERVER_CONNECTION_GET_INTERFACE(inst) (G_TYPE_INSTANCE_GET_INTERFACE ((inst), G_TYPE_DTLS_SERVER_CONNECTION, GDtlsServerConnectionInterface))
 
-/**
- * GDtlsServerConnection:
- *
- * DTLS server-side connection. This is the server-side implementation
- * of a #GDtlsConnection.
- *
- * Since: 2.48
- */
 typedef struct _GDtlsServerConnectionInterface GDtlsServerConnectionInterface;
 
 /**
@@ -56,10 +50,10 @@ struct _GDtlsServerConnectionInterface
   GTypeInterface g_iface;
 };
 
-GLIB_AVAILABLE_IN_2_48
-GType           g_dtls_server_connection_get_type (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_2_48
+GType           g_dtls_server_connection_get_type (void);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 GDatagramBased *g_dtls_server_connection_new      (GDatagramBased   *base_socket,
                                                    GTlsCertificate  *certificate,
                                                    GError          **error);

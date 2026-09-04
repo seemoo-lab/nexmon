@@ -23,16 +23,38 @@
 #ifndef __KQUEUE_HELPER_H
 #define __KQUEUE_HELPER_H
 
-#include "kqueue-sub.h"
 #include <gio/glocalfilemonitor.h>
 #include <gio/gfilemonitor.h>
 
-gboolean _kh_startup        (void);
-gboolean _kh_add_sub        (kqueue_sub *sub);
-gboolean _kh_cancel_sub     (kqueue_sub *sub);
+#include "dep-list.h"
 
-gboolean _kh_start_watching (kqueue_sub *sub);
+typedef struct _GKqueueFileMonitor GKqueueFileMonitor;
 
-void     _kh_dir_diff       (kqueue_sub *sub, GFileMonitorSource *source);
+/**
+ * kqueue_sub:
+ * @mon: a pointer to the GKqueueFileMonitor which holds this subscription
+ * @filename: a name of the file to monitor
+ * @fd: the associated file descriptor (used by kqueue)
+ *
+ * Represents a subscription on a file or directory. To check whether a
+ * subscription is active, check the fd field. If fd is not -1, it is an
+ * active subscription which can emit events from kqueue.
+ */
+typedef struct
+{
+  GKqueueFileMonitor  *mon;
+  GFileMonitorSource  *source;
+  gchar*    filename;
+  gchar*    basename;
+  int       fd;
+  dep_list* deps;
+  int       is_dir;
+} kqueue_sub;
+
+gboolean _kqsub_start_watching (kqueue_sub *sub);
+void _kh_dir_diff    (kqueue_sub *sub, gboolean handle_deleted);
+void _km_add_missing (kqueue_sub *sub);
+gboolean _km_scan_missing (kqueue_sub *check_this_sub_only);
+void _km_remove      (kqueue_sub *sub);
 
 #endif /* __KQUEUE_HELPER_H */

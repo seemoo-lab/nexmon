@@ -1,0 +1,159 @@
+option('runtime_libdir',
+       type : 'string',
+       value : '',
+       description : 'install runtime libraries relative to libdir',
+       deprecated: true)
+
+option('charsetalias_dir',
+       type : 'string',
+       value : '',
+       description : 'directory for charset.alias dir (default to \'libdir\' if unset)')
+
+option('gio_module_dir',
+       type : 'string',
+       value : '',
+       description : 'load gio modules from this directory (default to \'libdir/gio/modules\' if unset)')
+
+# FIXME: Deliberately not named runstatedir to avoid colliding with
+# https://github.com/mesonbuild/meson/issues/4141; port to that when Meson
+# supports it
+option('runtime_dir',
+       type: 'string',
+       value: '',
+       description: 'Directory for transient runtime state [default: /run]')
+
+option('selinux',
+       type : 'feature',
+       value : 'auto',
+       description : 'build with selinux support')
+
+option('xattr',
+       type : 'boolean',
+       value : true,
+       description : 'build with xattr support')
+
+option('libmount',
+       type : 'feature',
+       value : 'auto',
+       description : 'build with libmount support')
+
+option('man',
+       type : 'boolean',
+       value : false,
+       description : 'generate man pages (requires xsltproc)',
+       deprecated : 'man-pages')
+
+option('man-pages',
+       type : 'feature',
+       value : 'auto',
+       description : 'generate man pages (requires rst2man)',
+       deprecated : { 'true': 'enabled', 'false': 'disabled' })
+
+option('dtrace',
+       type : 'feature',
+       value : 'auto',
+       deprecated : { 'true': 'enabled', 'false': 'disabled' },
+       description : 'include tracing support for dtrace')
+
+option('systemtap',
+       type : 'feature',
+       value : 'auto',
+       deprecated : { 'true': 'enabled', 'false': 'disabled' },
+       description : 'include tracing support for systemtap')
+
+option('tapset_install_dir',
+       type : 'string',
+       value : '',
+       description : 'path where systemtap tapsets are installed')
+
+option('sysprof',
+       type : 'feature',
+       value : 'auto',
+       yield : true,
+       description : 'include tracing support for sysprof')
+
+option('documentation',
+       type : 'boolean',
+       value : false,
+       description : 'Build API reference and tools documentation')
+
+option('gtk_doc',
+       type : 'boolean',
+       value : false,
+       description : 'use gtk-doc to build documentation',
+       deprecated : 'documentation')
+
+option('bsymbolic_functions',
+       type : 'boolean',
+       value : true,
+       description : 'link with -Bsymbolic-functions if supported')
+
+option('force_posix_threads',
+       type : 'boolean',
+       value : false,
+       description : 'Also use posix threads in case the platform defaults to another implementation (on Windows for example)')
+
+option('tests',
+       type : 'boolean',
+       value : true,
+       description : 'build tests')
+
+option('installed_tests',
+       type : 'boolean',
+       value : false,
+       description : 'enable installed tests')
+
+option('nls',
+       type : 'feature',
+       value : 'auto',
+       yield: true,
+       description : 'Enable native language support (translations)')
+
+option('oss_fuzz',
+       type : 'feature',
+       value : 'disabled',
+       description : 'Indicate oss-fuzz build environment')
+
+option('glib_debug',
+       type : 'feature',
+       value : 'enabled',
+       yield : true,
+       description : 'Enable GLib debug infrastructure (distros typically want this disabled in production; see docs/macros.md)')
+
+option('glib_assert',
+       type : 'boolean',
+       value : true,
+       yield : true,
+       description : 'Enable GLib assertion (see docs/macros.md)')
+
+option('glib_checks',
+       type : 'boolean',
+       value : true,
+       yield : true,
+       description : 'Enable GLib checks such as API guards (see docs/macros.md)')
+
+option('libelf',
+       type : 'feature',
+       value : 'auto',
+       description : 'Enable support for listing and extracting from ELF resource files with gresource tool')
+
+option('multiarch',
+       type : 'boolean',
+       value : false,
+       description : 'Install some helper executables in per-architecture locations')
+
+option('gir_dir_prefix',
+       type: 'string',
+       description: 'Intermediate prefix for gir installation under ${prefix}')
+
+option('introspection',
+       type: 'feature',
+       value: 'auto',
+       yield: true,
+       description: 'Enable generating introspection data (requires gobject-introspection)')
+
+option('file_monitor_backend',
+       type : 'combo',
+       choices : ['auto', 'inotify', 'kqueue', 'libinotify-kqueue', 'win32'],
+       value : 'auto',
+       description : 'The name of the system API to use as a GFileMonitor backend')

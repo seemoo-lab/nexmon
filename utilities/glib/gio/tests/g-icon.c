@@ -2,6 +2,8 @@
  *
  * Copyright (C) 2008 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -24,6 +26,7 @@
 
 #include <glib/glib.h>
 #include <gio/gio.h>
+#include <locale.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -108,9 +111,28 @@ test_g_icon_to_string (void)
   g_object_unref (location);
 #endif
 
+  icon = g_themed_icon_new_with_default_fallbacks ("some-icon-symbolic");
+  g_themed_icon_append_name (G_THEMED_ICON (icon), "some-other-icon");
+  data = g_icon_to_string (icon);
+  g_assert_cmpstr (data, ==, ". GThemedIcon "
+                             "some-icon-symbolic some-symbolic some-other-icon some-other some "
+                             "some-icon some-other-icon-symbolic some-other-symbolic");
+  g_free (data);
+  g_object_unref (icon);
+
   icon = g_themed_icon_new ("network-server");
   data = g_icon_to_string (icon);
   g_assert_cmpstr (data, ==, "network-server");
+  icon2 = g_icon_new_for_string (data, &error);
+  g_assert_no_error (error);
+  g_assert (g_icon_equal (icon, icon2));
+  g_free (data);
+  g_object_unref (icon);
+  g_object_unref (icon2);
+
+  icon = g_themed_icon_new_with_default_fallbacks ("network-server");
+  data = g_icon_to_string (icon);
+  g_assert_cmpstr (data, ==, ". GThemedIcon network-server network network-server-symbolic network-symbolic");
   icon2 = g_icon_new_for_string (data, &error);
   g_assert_no_error (error);
   g_assert (g_icon_equal (icon, icon2));
@@ -371,7 +393,7 @@ test_themed_icon (void)
 {
   GIcon *icon1, *icon2, *icon3, *icon4;
   const gchar *const *names;
-  const gchar *names2[] = { "first", "testicon", "last", NULL };
+  const gchar *names2[] = { "first-symbolic", "testicon", "last", NULL };
   gchar *str;
   gboolean fallbacks;
   GVariant *variant;
@@ -382,17 +404,21 @@ test_themed_icon (void)
   g_assert (!fallbacks);
 
   names = g_themed_icon_get_names (G_THEMED_ICON (icon1));
-  g_assert_cmpint (g_strv_length ((gchar **)names), ==, 1);
+  g_assert_cmpint (g_strv_length ((gchar **)names), ==, 2);
   g_assert_cmpstr (names[0], ==, "testicon");
+  g_assert_cmpstr (names[1], ==, "testicon-symbolic");
 
-  g_themed_icon_prepend_name (G_THEMED_ICON (icon1), "first");
+  g_themed_icon_prepend_name (G_THEMED_ICON (icon1), "first-symbolic");
   g_themed_icon_append_name (G_THEMED_ICON (icon1), "last");
   names = g_themed_icon_get_names (G_THEMED_ICON (icon1));
-  g_assert_cmpint (g_strv_length ((gchar **)names), ==, 3);
-  g_assert_cmpstr (names[0], ==, "first");
+  g_assert_cmpint (g_strv_length ((gchar **)names), ==, 6);
+  g_assert_cmpstr (names[0], ==, "first-symbolic");
   g_assert_cmpstr (names[1], ==, "testicon");
   g_assert_cmpstr (names[2], ==, "last");
-  g_assert_cmpuint (g_icon_hash (icon1), ==, 2400773466U);
+  g_assert_cmpstr (names[3], ==, "first");
+  g_assert_cmpstr (names[4], ==, "testicon-symbolic");
+  g_assert_cmpstr (names[5], ==, "last-symbolic");
+  g_assert_cmpuint (g_icon_hash (icon1), ==, 1812785139);
 
   icon2 = g_themed_icon_new_from_names ((gchar**)names2, -1);
   g_assert (g_icon_equal (icon1, icon2));
@@ -448,11 +474,11 @@ test_emblemed_icon (void)
 
   emblem = emblems->data;
   g_assert (g_emblem_get_icon (emblem) == icon2);
-  g_assert (g_emblem_get_origin (emblem) == G_EMBLEM_ORIGIN_TAG);
+  g_assert (g_emblem_get_origin (emblem) == G_EMBLEM_ORIGIN_UNKNOWN);
 
   emblem = emblems->next->data;
   g_assert (g_emblem_get_icon (emblem) == icon2);
-  g_assert (g_emblem_get_origin (emblem) == G_EMBLEM_ORIGIN_UNKNOWN);
+  g_assert (g_emblem_get_origin (emblem) == G_EMBLEM_ORIGIN_TAG);
 
   g_emblemed_icon_clear_emblems (G_EMBLEMED_ICON (icon4));
   g_assert (g_emblemed_icon_get_emblems (G_EMBLEMED_ICON (icon4)) == NULL);
@@ -470,6 +496,51 @@ test_emblemed_icon (void)
 
   g_object_unref (emblem1);
   g_object_unref (emblem2);
+}
+
+static void
+test_emblem_parsing (void)
+{
+  struct
+    {
+      const char *input_string;
+      int expected_error_code;
+      GEmblemOrigin expected_origin;
+    }
+  vectors[] =
+    {
+      { ".GEmblem avatar-default-symbolic 0", G_IO_ERROR_INVALID_ARGUMENT, G_EMBLEM_ORIGIN_UNKNOWN },
+      { ". GEmblem avatar-default-symbolic 0", 0, G_EMBLEM_ORIGIN_UNKNOWN },
+      { ". GEmblem avatar-default-symbolic 1", 0, G_EMBLEM_ORIGIN_DEVICE },
+      { ". GEmblem avatar-default-symbolic 2", 0, G_EMBLEM_ORIGIN_LIVEMETADATA },
+      { ". GEmblem avatar-default-symbolic 3", 0, G_EMBLEM_ORIGIN_TAG },
+      { ". GEmblem avatar-default-symbolic 4", G_IO_ERROR_INVALID_ARGUMENT, G_EMBLEM_ORIGIN_UNKNOWN },
+      { ". GEmblem avatar-default-symbolic not-a-number", G_IO_ERROR_INVALID_ARGUMENT, G_EMBLEM_ORIGIN_UNKNOWN },
+    };
+
+  for (size_t i = 0; i < G_N_ELEMENTS (vectors); i++)
+    {
+      GIcon *icon = NULL;
+      GError *local_error = NULL;
+
+      icon = g_icon_new_for_string (vectors[i].input_string, &local_error);
+
+      if (vectors[i].expected_error_code == 0)
+        {
+          g_assert_no_error (local_error);
+          g_assert_nonnull (icon);
+          g_assert_true (G_IS_EMBLEM (icon));
+          g_assert_cmpint (g_emblem_get_origin (G_EMBLEM (icon)), ==, vectors[i].expected_origin);
+        }
+      else
+        {
+          g_assert_error (local_error, G_IO_ERROR, vectors[i].expected_error_code);
+          g_assert_null (icon);
+        }
+
+      g_clear_error (&local_error);
+      g_clear_object (&icon);
+    }
 }
 
 static void
@@ -586,12 +657,15 @@ int
 main (int   argc,
       char *argv[])
 {
+  setlocale (LC_ALL, "");
+
   g_test_init (&argc, &argv, NULL);
 
   g_test_add_func ("/icons/to-string", test_g_icon_to_string);
   g_test_add_func ("/icons/serialize", test_g_icon_serialize);
   g_test_add_func ("/icons/themed", test_themed_icon);
   g_test_add_func ("/icons/emblemed", test_emblemed_icon);
+  g_test_add_func ("/icons/emblem/parsing", test_emblem_parsing);
   g_test_add_func ("/icons/file", test_file_icon);
   g_test_add_func ("/icons/bytes", test_bytes_icon);
 

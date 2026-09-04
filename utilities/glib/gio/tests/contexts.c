@@ -81,7 +81,7 @@ idle_start_test1_thread (gpointer loop)
   g_mutex_lock (&test1_mutex);
   thread = g_thread_new ("test1", test1_thread, NULL);
 
-  time = g_get_monotonic_time () + 2 * G_TIME_SPAN_SECOND;
+  time = g_get_monotonic_time () + 20 * G_TIME_SPAN_SECOND;
   while (!test1_done)
     {
       io_completed = g_cond_wait_until (&test1_cond, &test1_mutex, time);
@@ -360,7 +360,8 @@ test_context_specific_emit (void)
 {
   GThread *threads[N_THREADS];
   gboolean exited = FALSE;
-  guint i, n;
+  gsize i;
+  gint k, n;
 
   for (i = 0; i < N_THREADS; i++)
     threads[i] = g_thread_new ("test", test_emit_thread, &observed_values[i]);
@@ -368,7 +369,7 @@ test_context_specific_emit (void)
   /* make changes and ensure that they are observed */
   for (n = 0; n < 1000; n++)
     {
-      guint64 expiry;
+      gint64 expiry;
 
       /* don't burn CPU forever */
       expiry = g_get_monotonic_time () + 10 * G_TIME_SPAN_SECOND;
@@ -376,7 +377,7 @@ test_context_specific_emit (void)
       g_atomic_int_set (&current_value, n);
 
       /* wake them to notice */
-      for (i = 0; i < g_test_rand_int_range (1, 5); i++)
+      for (k = 0; k < g_test_rand_int_range (1, 5); k++)
         g_context_specific_group_emit (&group, g_signal_lookup ("changed", per_thread_thing_get_type ()));
 
       for (i = 0; i < N_THREADS; i++)

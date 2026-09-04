@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,8 +29,8 @@
 #define G_FILE_ATTRIBUTE_VALUE_INIT {0}
 
 typedef struct  {
-  GFileAttributeType type : 8;
-  GFileAttributeStatus status : 8;
+  guint type : 8; /* GFileAttributeType */
+  guint status : 8; /* GFileAttributeStatus */
   union {
     gboolean boolean;
     gint32 int32;

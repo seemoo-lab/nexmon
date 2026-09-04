@@ -122,7 +122,12 @@ test_object_constructor_infanticide (void)
   GObject *obj;
   int i;
 
-  g_test_bug ("661576");
+#ifndef G_ENABLE_DEBUG
+  g_test_skip ("skip tests that rely on debug-only warnings");
+  return;
+#endif
+
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=661576");
 
   for (i = 0; i < 1000; i++)
     {
@@ -142,7 +147,6 @@ int
 main (int argc, char *argv[])
 {
   g_test_init (&argc, &argv, NULL);
-  g_test_bug_base ("http://bugzilla.gnome.org/");
 
   g_test_add_func ("/object/constructor/singleton", test_object_constructor_singleton);
   g_test_add_func ("/object/constructor/infanticide", test_object_constructor_infanticide);

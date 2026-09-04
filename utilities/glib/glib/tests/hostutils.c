@@ -1,10 +1,12 @@
 /* 
  * Copyright (C) 2008 Red Hat, Inc
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -54,6 +56,7 @@ static const struct {
   /* uppercase characters */
   { "EXAMPLE.COM", "example.com", FALSE, FALSE },
   { "\xc3\x89XAMPLE.COM", "xn--xample-9ua.com", TRUE, TRUE },
+  { "Ⅷ.com", "viii.com", TRUE, FALSE },
 
   /* unicode that decodes to ascii */
   { "\xe2\x93\x94\xe2\x93\xa7\xe2\x93\x90\xe2\x93\x9c\xe2\x93\x9f\xe2\x93\x9b\xe2\x93\x94.com", "example.com", TRUE, FALSE },
@@ -69,7 +72,24 @@ static const gint num_non_round_trip_names = G_N_ELEMENTS (non_round_trip_names)
 static const gchar *bad_names[] = {
   "disallowed\xef\xbf\xbd" "character",
   "non-utf\x88",
-  "xn--mixed-\xc3\xbcp"
+  "smallest-non-utf-char\x80",
+  "xn--mixed-\xc3\xbcp",
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong"
+  "verylongverylongverylongverylongverylongverylongverylongverylongverylong",
 };
 static const gint num_bad_names = G_N_ELEMENTS (bad_names);
 
@@ -81,7 +101,7 @@ test_to_ascii (void)
 
   for (i = 0; i < num_idn_test_domains; i++)
     {
-      g_assert (g_hostname_is_non_ascii (idn_test_domains[i].unicode_name));
+      g_assert_true (g_hostname_is_non_ascii (idn_test_domains[i].unicode_name));
       ascii = g_hostname_to_ascii (idn_test_domains[i].unicode_name);
       g_assert_cmpstr (idn_test_domains[i].ascii_name, ==, ascii);
       g_free (ascii);
@@ -94,14 +114,14 @@ test_to_ascii (void)
   for (i = 0; i < num_non_round_trip_names; i++)
     {
       if (non_round_trip_names[i].orig_is_unicode)
-	g_assert (g_hostname_is_non_ascii (non_round_trip_names[i].orig_name));
+        g_assert_true (g_hostname_is_non_ascii (non_round_trip_names[i].orig_name));
       else
-	g_assert (!g_hostname_is_non_ascii (non_round_trip_names[i].orig_name));
+        g_assert_true (!g_hostname_is_non_ascii (non_round_trip_names[i].orig_name));
 
       if (non_round_trip_names[i].ascii_is_encoded)
-	g_assert (g_hostname_is_ascii_encoded (non_round_trip_names[i].ascii_name));
+        g_assert_true (g_hostname_is_ascii_encoded (non_round_trip_names[i].ascii_name));
       else
-	g_assert (!g_hostname_is_ascii_encoded (non_round_trip_names[i].ascii_name));
+        g_assert_true (!g_hostname_is_ascii_encoded (non_round_trip_names[i].ascii_name));
 
       ascii = g_hostname_to_ascii (non_round_trip_names[i].orig_name);
       g_assert_cmpstr (non_round_trip_names[i].ascii_name, ==, ascii);
@@ -127,7 +147,7 @@ test_to_unicode (void)
 
   for (i = 0; i < num_idn_test_domains; i++)
     {
-      g_assert (g_hostname_is_ascii_encoded (idn_test_domains[i].ascii_name));
+      g_assert_true (g_hostname_is_ascii_encoded (idn_test_domains[i].ascii_name));
       unicode = g_hostname_to_unicode (idn_test_domains[i].ascii_name);
       g_assert_cmpstr (idn_test_domains[i].unicode_name, ==, unicode);
       g_free (unicode);
@@ -207,6 +227,11 @@ static const struct {
   { "0123::123.45.67.89", TRUE },
   { "::123.45.67.89", TRUE },
 
+  /* accept zone-id from rfc6874 */
+  { "0123:4567:89AB:cdef:3210:7654:ba98:FeDc%zoneid0", TRUE },
+  { "fe80::dead:beef%zonÉid0%weird", TRUE },
+  { "fe80::dead:beef%", FALSE },
+
   /* Contain non-hex chars */
   { "012x:4567:89AB:cdef:3210:7654:ba98:FeDc", FALSE },
   { "0123:45x7:89AB:cdef:3210:7654:ba98:FeDc", FALSE },
@@ -261,7 +286,6 @@ static const struct {
   { "0123:4567:89AB:cdef:123.45.67.89", FALSE },
   { "0123:4567:89AB:cdef:3210:123.45.67.89:FeDc", FALSE },
 
-
   /* IPv4 tests */
 
   { "123.45.67.89", TRUE },
@@ -308,6 +332,30 @@ test_is_ip_addr (void)
     }
 }
 
+static const gchar *ascii_names[] = {
+  "ascii-\x7F",
+};
+
+static const gchar *non_ascii_names[] = {
+  "disallowed\x80" "character",
+};
+
+static void
+test_hostname_is_non_ascii (void)
+{
+  for (size_t i = 0; i < G_N_ELEMENTS (ascii_names); i++)
+    g_assert_false (g_hostname_is_non_ascii (ascii_names[i]));
+
+  for (size_t i = 0; i < G_N_ELEMENTS (idn_test_domains); i++)
+    g_assert_false (g_hostname_is_non_ascii (idn_test_domains[i].ascii_name));
+
+  for (size_t i = 0; i < G_N_ELEMENTS (non_ascii_names); i++)
+    g_assert_true (g_hostname_is_non_ascii (non_ascii_names[i]));
+
+  for (size_t i = 0; i < G_N_ELEMENTS (idn_test_domains); i++)
+    g_assert_true (g_hostname_is_non_ascii (idn_test_domains[i].unicode_name));
+}
+
 /* FIXME: test names with both unicode and ACE-encoded labels */
 /* FIXME: test invalid unicode names */
 
@@ -339,6 +387,7 @@ main (int   argc,
       return 0;
     }
 
+  g_test_add_func ("/hostutils/hostname_is_non_ascii", test_hostname_is_non_ascii);
   g_test_add_func ("/hostutils/to_ascii", test_to_ascii);
   g_test_add_func ("/hostutils/to_unicode", test_to_unicode);
   g_test_add_func ("/hostutils/is_ip_addr", test_is_ip_addr);

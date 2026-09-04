@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -63,24 +65,12 @@ typedef struct _GPermission                   GPermission;
 typedef struct _GMenuModel                    GMenuModel;
 typedef struct _GNotification                 GNotification;
 
-/**
- * GDrive:
- *
- * Opaque drive object.
- **/
 typedef struct _GDrive                        GDrive; /* Dummy typedef */
 typedef struct _GFileEnumerator               GFileEnumerator;
 typedef struct _GFileMonitor                  GFileMonitor;
 typedef struct _GFilterInputStream            GFilterInputStream;
 typedef struct _GFilterOutputStream           GFilterOutputStream;
 
-/**
- * GFile:
- *
- * A handle to an object implementing the #GFileIface interface.
- * Generally stores a location within the file system. Handles do not
- * necessarily represent files or directories that currently exist.
- **/
 typedef struct _GFile                         GFile; /* Dummy typedef */
 typedef struct _GFileInfo                     GFileInfo;
 
@@ -92,7 +82,6 @@ typedef struct _GFileInfo                     GFileInfo;
 typedef struct _GFileAttributeMatcher         GFileAttributeMatcher;
 typedef struct _GFileAttributeInfo            GFileAttributeInfo;
 typedef struct _GFileAttributeInfoList        GFileAttributeInfoList;
-typedef struct _GFileDescriptorBased          GFileDescriptorBased;
 typedef struct _GFileInputStream              GFileInputStream;
 typedef struct _GFileOutputStream             GFileOutputStream;
 typedef struct _GFileIOStream                 GFileIOStream;
@@ -115,6 +104,9 @@ typedef struct _GIOExtension                  GIOExtension;
  * GIOSchedulerJob:
  *
  * Opaque class for defining and scheduling IO jobs.
+ *
+ * Deprecated: 2.36: Use [struct@GLib.ThreadPool] or
+ *   [method@Gio.Task.run_in_thread]
  **/
 typedef struct _GIOSchedulerJob               GIOSchedulerJob;
 typedef struct _GIOStreamAdapter              GIOStreamAdapter;
@@ -123,11 +115,6 @@ typedef struct _GBytesIcon                    GBytesIcon;
 typedef struct _GMemoryInputStream            GMemoryInputStream;
 typedef struct _GMemoryOutputStream           GMemoryOutputStream;
 
-/**
- * GMount:
- *
- * A handle to an object implementing the #GMountIface interface.
- **/
 typedef struct _GMount                        GMount; /* Dummy typedef */
 typedef struct _GMountOperation               GMountOperation;
 typedef struct _GNetworkAddress               GNetworkAddress;
@@ -140,88 +127,24 @@ typedef struct _GPollableInputStream          GPollableInputStream; /* Dummy typ
 typedef struct _GPollableOutputStream         GPollableOutputStream; /* Dummy typedef */
 typedef struct _GResolver                     GResolver;
 
-/**
- * GResource:
- *
- * A resource bundle.
- *
- * Since: 2.32
- */
 typedef struct _GResource                     GResource;
 typedef struct _GSeekable                     GSeekable;
 typedef struct _GSimpleAsyncResult            GSimpleAsyncResult;
 
-/**
- * GSocket:
- *
- * A lowlevel network socket object.
- *
- * Since: 2.22
- **/
 typedef struct _GSocket                       GSocket;
 
-/**
- * GSocketControlMessage:
- *
- * Base class for socket-type specific control messages that can be sent and
- * received over #GSocket.
- **/
 typedef struct _GSocketControlMessage         GSocketControlMessage;
-/**
- * GSocketClient:
- *
- * A helper class for network clients to make connections.
- *
- * Since: 2.22
- **/
 typedef struct _GSocketClient                               GSocketClient;
-/**
- * GSocketConnection:
- *
- * A socket connection GIOStream object for connection-oriented sockets.
- *
- * Since: 2.22
- **/
 typedef struct _GSocketConnection                           GSocketConnection;
-/**
- * GSocketListener:
- *
- * A helper class for network servers to listen for and accept connections.
- *
- * Since: 2.22
- **/
 typedef struct _GSocketListener                             GSocketListener;
-/**
- * GSocketService:
- *
- * A helper class for handling accepting incomming connections in the
- * glib mainloop.
- *
- * Since: 2.22
- **/
 typedef struct _GSocketService                              GSocketService;
 typedef struct _GSocketAddress                GSocketAddress;
 typedef struct _GSocketAddressEnumerator      GSocketAddressEnumerator;
 typedef struct _GSocketConnectable            GSocketConnectable;
 typedef struct _GSrvTarget                    GSrvTarget;
 typedef struct _GTask                         GTask;
-/**
- * GTcpConnection:
- *
- * A #GSocketConnection for TCP/IP connections.
- *
- * Since: 2.22
- **/
 typedef struct _GTcpConnection                              GTcpConnection;
 typedef struct _GTcpWrapperConnection                       GTcpWrapperConnection;
-/**
- * GThreadedSocketService:
- *
- * A helper class for handling accepting incoming connections in the
- * glib mainloop and handling them in a thread.
- *
- * Since: 2.22
- **/
 typedef struct _GThreadedSocketService                      GThreadedSocketService;
 typedef struct _GDtlsConnection               GDtlsConnection;
 typedef struct _GDtlsClientConnection         GDtlsClientConnection; /* Dummy typedef */
@@ -237,44 +160,42 @@ typedef struct _GTlsPassword                  GTlsPassword;
 typedef struct _GTlsServerConnection          GTlsServerConnection; /* Dummy typedef */
 typedef struct _GVfs                          GVfs; /* Dummy typedef */
 
-/**
- * GProxyResolver:
- *
- * A helper class to enumerate proxies base on URI.
- *
- * Since: 2.26
- **/
 typedef struct _GProxyResolver                GProxyResolver;
 typedef struct _GProxy			      GProxy;
 typedef struct _GProxyAddress		      GProxyAddress;
 typedef struct _GProxyAddressEnumerator	      GProxyAddressEnumerator;
 
-/**
- * GVolume:
- *
- * Opaque mountable volume object.
- **/
 typedef struct _GVolume                       GVolume; /* Dummy typedef */
 typedef struct _GVolumeMonitor                GVolumeMonitor;
 
 /**
  * GAsyncReadyCallback:
- * @source_object: the object the asynchronous operation was started with.
+ * @source_object: (nullable): the object the asynchronous operation was started with.
  * @res: a #GAsyncResult.
- * @user_data: user data passed to the callback.
+ * @data: user data passed to the callback.
  *
  * Type definition for a function that will be called back when an asynchronous
- * operation within GIO has been completed.
+ * operation within GIO has been completed. #GAsyncReadyCallback
+ * callbacks from #GTask are guaranteed to be invoked in a later
+ * iteration of the thread-default main context
+ * (see [method@GLib.MainContext.push_thread_default])
+ * where the #GTask was created. All other users of
+ * #GAsyncReadyCallback must likewise call it asynchronously in a
+ * later iteration of the main context.
+ *
+ * The asynchronous operation is guaranteed to have held a reference to
+ * @source_object from the time when the `*_async()` function was called, until
+ * after this callback returns.
  **/
 typedef void (*GAsyncReadyCallback) (GObject *source_object,
 				     GAsyncResult *res,
-				     gpointer user_data);
+				     gpointer data);
 
 /**
  * GFileProgressCallback:
  * @current_num_bytes: the current number of bytes in the operation.
  * @total_num_bytes: the total number of bytes in the operation.
- * @user_data: user data passed to the callback.
+ * @data: user data passed to the callback.
  *
  * When doing file operations that may take a while, such as moving
  * a file or copying a file, a progress callback is used to pass how
@@ -282,7 +203,7 @@ typedef void (*GAsyncReadyCallback) (GObject *source_object,
  **/
 typedef void (*GFileProgressCallback) (goffset current_num_bytes,
                                        goffset total_num_bytes,
-                                       gpointer user_data);
+                                       gpointer data);
 
 /**
  * GFileReadMoreCallback:
@@ -307,7 +228,7 @@ typedef gboolean (* GFileReadMoreCallback) (const char *file_contents,
  * @current_size: the current cumulative size measurement
  * @num_dirs: the number of directories visited so far
  * @num_files: the number of non-directory files encountered
- * @user_data: the data passed to the original request for this callback
+ * @data: the data passed to the original request for this callback
  *
  * This callback type is used by g_file_measure_disk_usage() to make
  * periodic progress reports when measuring the amount of disk spaced
@@ -329,7 +250,7 @@ typedef gboolean (* GFileReadMoreCallback) (const char *file_contents,
  * final async result would be reported).
  *
  * @current_size is in the same units as requested by the operation (see
- * %G_FILE_DISK_USAGE_APPARENT_SIZE).
+ * %G_FILE_MEASURE_APPARENT_SIZE).
  *
  * The frequency of the updates is implementation defined, but is
  * ideally about once every 200ms.
@@ -343,13 +264,13 @@ typedef void (* GFileMeasureProgressCallback) (gboolean reporting,
                                                guint64  current_size,
                                                guint64  num_dirs,
                                                guint64  num_files,
-                                               gpointer user_data);
+                                               gpointer data);
 
 /**
  * GIOSchedulerJobFunc:
  * @job: a #GIOSchedulerJob.
  * @cancellable: optional #GCancellable object, %NULL to ignore.
- * @user_data: the data to pass to callback function
+ * @data: data passed to the callback function
  *
  * I/O Job function.
  *
@@ -358,10 +279,12 @@ typedef void (* GFileMeasureProgressCallback) (gboolean reporting,
  *
  * Returns: %TRUE if this function should be called again to
  *    complete the job, %FALSE if the job is complete (or cancelled)
+ * Deprecated: 2.36: Use [struct@GLib.ThreadPool] or
+ *   [method@Gio.Task.run_in_thread]
  **/
 typedef gboolean (*GIOSchedulerJobFunc) (GIOSchedulerJob *job,
 					 GCancellable    *cancellable,
-					 gpointer         user_data);
+					 gpointer         data);
 
 /**
  * GSimpleAsyncThreadFunc:
@@ -380,7 +303,7 @@ typedef void (*GSimpleAsyncThreadFunc) (GSimpleAsyncResult *res,
  * GSocketSourceFunc:
  * @socket: the #GSocket
  * @condition: the current condition at the source fired.
- * @user_data: data passed in by the user.
+ * @data: data passed in by the user.
  *
  * This is the function type of the callback used for the #GSource
  * returned by g_socket_create_source().
@@ -391,13 +314,13 @@ typedef void (*GSimpleAsyncThreadFunc) (GSimpleAsyncResult *res,
  */
 typedef gboolean (*GSocketSourceFunc) (GSocket *socket,
 				       GIOCondition condition,
-				       gpointer user_data);
+				       gpointer data);
 
 /**
  * GDatagramBasedSourceFunc:
  * @datagram_based: the #GDatagramBased
  * @condition: the current condition at the source fired
- * @user_data: data passed in by the user
+ * @data: data passed in by the user
  *
  * This is the function type of the callback used for the #GSource
  * returned by g_datagram_based_create_source().
@@ -409,7 +332,7 @@ typedef gboolean (*GSocketSourceFunc) (GSocket *socket,
  */
 typedef gboolean (*GDatagramBasedSourceFunc) (GDatagramBased *datagram_based,
                                               GIOCondition    condition,
-                                              gpointer        user_data);
+                                              gpointer        data);
 
 /**
  * GInputVector:
@@ -505,12 +428,12 @@ struct _GOutputVector {
 
 /**
  * GOutputMessage:
- * @address: (allow-none): a #GSocketAddress, or %NULL
+ * @address: (nullable): a #GSocketAddress, or %NULL
  * @vectors: pointer to an array of output vectors
  * @num_vectors: the number of output vectors pointed to by @vectors.
  * @bytes_sent: initialize to 0. Will be set to the number of bytes
  *     that have been sent
- * @control_messages: (array length=num_control_messages) (allow-none): a pointer
+ * @control_messages: (array length=num_control_messages) (nullable): a pointer
  *   to an array of #GSocketControlMessages, or %NULL.
  * @num_control_messages: number of elements in @control_messages.
  *
@@ -561,7 +484,7 @@ typedef struct _GDBusNodeInfo                 GDBusNodeInfo;
 /**
  * GCancellableSourceFunc:
  * @cancellable: the #GCancellable
- * @user_data: data passed in by the user.
+ * @data: data passed in by the user.
  *
  * This is the function type of the callback used for the #GSource
  * returned by g_cancellable_source_new().
@@ -571,12 +494,12 @@ typedef struct _GDBusNodeInfo                 GDBusNodeInfo;
  * Since: 2.28
  */
 typedef gboolean (*GCancellableSourceFunc) (GCancellable *cancellable,
-					    gpointer      user_data);
+					    gpointer      data);
 
 /**
  * GPollableSourceFunc:
  * @pollable_stream: the #GPollableInputStream or #GPollableOutputStream
- * @user_data: data passed in by the user.
+ * @data: data passed in by the user.
  *
  * This is the function type of the callback used for the #GSource
  * returned by g_pollable_input_stream_create_source() and
@@ -587,7 +510,7 @@ typedef gboolean (*GCancellableSourceFunc) (GCancellable *cancellable,
  * Since: 2.28
  */
 typedef gboolean (*GPollableSourceFunc) (GObject  *pollable_stream,
-					 gpointer  user_data);
+					 gpointer  data);
 
 typedef struct _GDBusInterface              GDBusInterface; /* Dummy typedef */
 typedef struct _GDBusInterfaceSkeleton      GDBusInterfaceSkeleton;
@@ -602,19 +525,19 @@ typedef struct _GDBusObjectManagerServer    GDBusObjectManagerServer;
  * GDBusProxyTypeFunc:
  * @manager: A #GDBusObjectManagerClient.
  * @object_path: The object path of the remote object.
- * @interface_name: (allow-none): The interface name of the remote object or %NULL if a #GDBusObjectProxy #GType is requested.
- * @user_data: User data.
+ * @interface_name: (nullable): The interface name of the remote object or %NULL if a #GDBusObjectProxy #GType is requested.
+ * @data: data passed in by the user.
  *
  * Function signature for a function used to determine the #GType to
  * use for an interface proxy (if @interface_name is not %NULL) or
  * object proxy (if @interface_name is %NULL).
  *
- * This function is called in the
- * [thread-default main loop][g-main-context-push-thread-default]
+ * This function is called in the thread-default main context
+ * (see [method@GLib.MainContext.push_thread_default])
  * that @manager was constructed in.
  *
  * Returns: A #GType to use for the remote object. The returned type
- *   must be a #GDBusProxy<!-- -->- or #GDBusObjectProxy<!-- -->-derived
+ *   must be a #GDBusProxy or #GDBusObjectProxy -derived
  *   type.
  *
  * Since: 2.30
@@ -622,25 +545,11 @@ typedef struct _GDBusObjectManagerServer    GDBusObjectManagerServer;
 typedef GType (*GDBusProxyTypeFunc) (GDBusObjectManagerClient   *manager,
                                      const gchar                *object_path,
                                      const gchar                *interface_name,
-                                     gpointer                    user_data);
+                                     gpointer                    data);
 
 typedef struct _GTestDBus GTestDBus;
 
-/**
- * GSubprocess:
- *
- * A child process.
- *
- * Since: 2.40
- */
 typedef struct _GSubprocess                   GSubprocess;
-/**
- * GSubprocessLauncher:
- *
- * Options for launching a child process.
- *
- * Since: 2.40
- */
 typedef struct _GSubprocessLauncher           GSubprocessLauncher;
 
 G_END_DECLS

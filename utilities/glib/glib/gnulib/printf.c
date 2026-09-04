@@ -22,15 +22,19 @@
  * GLib at ftp://ftp.gtk.org/pub/gtk/. 
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
-#include <string.h>
-#include <stdlib.h>
+#include <config.h>
+
+#include <errno.h>
+#include <limits.h> /* for INT_MAX */
+#include <stdint.h> /* for uintptr_t, SIZE_MAX */
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "printf.h"
+
 #include "g-gnulib.h"
 #include "vasnprintf.h"
-#include "printf.h"
 
 int _g_gnulib_printf (char const *format, ...)
 {
@@ -100,39 +104,71 @@ int _g_gnulib_vfprintf (FILE *file, char const *format, va_list args)
   return rlength;
 }
 
-int _g_gnulib_vsprintf (char *string, char const *format, va_list args)
+int _g_gnulib_vsprintf (char *str, char const *format, va_list args)
 {
-  char *result;
-  size_t length;
+  char *output;
+  size_t len;
+  size_t lenbuf;
 
-  result = vasnprintf (NULL, &length, format, args);
-  if (result == NULL) 
+  /* Set lenbuf = min (SIZE_MAX, - (uintptr_t) str - 1).  */
+  lenbuf = SIZE_MAX;
+  if (lenbuf >= ~ (uintptr_t) str)
+    lenbuf = ~ (uintptr_t) str;
+
+  output = vasnprintf (str, &lenbuf, format, args);
+  len = lenbuf;
+
+  if (!output)
     return -1;
 
-  memcpy (string, result, length + 1);
-  free (result);
-  
-  return length;  
-}
-
-int _g_gnulib_vsnprintf (char *string, size_t n, char const *format, va_list args)
-{
-  char *result;
-  size_t length;
-
-  result = vasnprintf (NULL, &length, format, args);
-  if (result == NULL) 
-    return -1;
-
-  if (n > 0) 
+  if (output != str)
     {
-      memcpy (string, result, MIN(length + 1, n));
-      string[n - 1] = 0;
+      /* len is near SIZE_MAX.  */
+      free (output);
+      errno = ENOMEM;
+      return -1;
     }
 
-  free (result);
-  
-  return length;  
+  if (len > INT_MAX)
+    {
+      errno = EOVERFLOW;
+      return -1;
+    }
+
+  return len;
+}
+
+int _g_gnulib_vsnprintf (char *str, size_t size, char const *format, va_list args)
+{
+  char *output;
+  size_t len;
+  size_t lenbuf = size;
+
+  output = vasnprintf (str, &lenbuf, format, args);
+  len = lenbuf;
+
+  if (!output)
+    return -1;
+
+  if (output != str)
+    {
+      if (size)
+        {
+          size_t pruned_len = (len < size ? len : size - 1);
+          memcpy (str, output, pruned_len);
+          str[pruned_len] = '\0';
+        }
+
+      free (output);
+    }
+
+  if (len > INT_MAX)
+    {
+      errno = EOVERFLOW;
+      return -1;
+    }
+
+  return len;
 }
 
 int _g_gnulib_vasprintf (char **result, char const *format, va_list args)
@@ -145,8 +181,3 @@ int _g_gnulib_vasprintf (char **result, char const *format, va_list args)
   
   return length;  
 }
-
-
-
-
-

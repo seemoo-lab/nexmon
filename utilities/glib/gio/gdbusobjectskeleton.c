@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -32,15 +34,15 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gdbusobjectskeleton
- * @short_description: Service-side D-Bus object
- * @include: gio/gio.h
+ * GDBusObjectSkeleton:
  *
- * A #GDBusObjectSkeleton instance is essentially a group of D-Bus
+ * A `GDBusObjectSkeleton` instance is essentially a group of D-Bus
  * interfaces. The set of exported interfaces on the object may be
  * dynamic and change at runtime.
  *
- * This type is intended to be used with #GDBusObjectManager.
+ * This type is intended to be used with [iface@Gio.DBusObjectManager].
+ *
+ * Since: 2.30
  */
 
 struct _GDBusObjectSkeletonPrivate
@@ -155,9 +157,7 @@ g_dbus_object_skeleton_class_init (GDBusObjectSkeletonClass *klass)
    */
   g_object_class_install_property (gobject_class,
                                    PROP_G_OBJECT_PATH,
-                                   g_param_spec_string ("g-object-path",
-                                                        "Object Path",
-                                                        "The object path where the object is exported",
+                                   g_param_spec_string ("g-object-path", NULL, NULL,
                                                         NULL,
                                                         G_PARAM_READABLE |
                                                         G_PARAM_WRITABLE |
@@ -228,7 +228,7 @@ g_dbus_object_skeleton_new (const gchar *object_path)
 }
 
 /**
- * g_dbus_object_skeleton_set_object_path:
+ * g_dbus_object_skeleton_set_object_path: (set-property g-object-path)
  * @object: A #GDBusObjectSkeleton.
  * @object_path: A valid D-Bus object path.
  *
@@ -471,17 +471,21 @@ g_dbus_object_skeleton_get_interfaces (GDBusObject *_object)
 void
 g_dbus_object_skeleton_flush (GDBusObjectSkeleton *object)
 {
-  GList *to_flush, *l;
+  GPtrArray *to_flush;
 
   g_mutex_lock (&object->priv->lock);
-  to_flush = g_hash_table_get_values (object->priv->map_name_to_iface);
-  g_list_foreach (to_flush, (GFunc) g_object_ref, NULL);
+  to_flush = g_hash_table_get_values_as_ptr_array (object->priv->map_name_to_iface);
+  g_ptr_array_foreach (to_flush, (GFunc) g_object_ref, NULL);
+  g_ptr_array_set_free_func (to_flush, g_object_unref);
   g_mutex_unlock (&object->priv->lock);
 
-  for (l = to_flush; l != NULL; l = l->next)
-    g_dbus_interface_skeleton_flush (G_DBUS_INTERFACE_SKELETON (l->data));
+  for (guint i = 0; i < to_flush->len; ++i)
+    {
+      g_dbus_interface_skeleton_flush (
+        G_DBUS_INTERFACE_SKELETON (g_ptr_array_index (to_flush, i)));
+    }
 
-  g_list_free_full (to_flush, g_object_unref);
+  g_clear_pointer (&to_flush, g_ptr_array_unref);
 }
 
 static void

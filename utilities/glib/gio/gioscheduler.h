@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -30,20 +32,20 @@
 G_BEGIN_DECLS
 
 
-GLIB_DEPRECATED_IN_2_36_FOR ("GThreadPool or g_task_run_in_thread")
+GIO_DEPRECATED_IN_2_36_FOR ("GThreadPool or g_task_run_in_thread")
 void     g_io_scheduler_push_job                   (GIOSchedulerJobFunc  job_func,
 						    gpointer             user_data,
 						    GDestroyNotify       notify,
 						    gint                 io_priority,
 						    GCancellable        *cancellable);
-GLIB_DEPRECATED_IN_2_36
+GIO_DEPRECATED_IN_2_36
 void     g_io_scheduler_cancel_all_jobs            (void);
-GLIB_DEPRECATED_IN_2_36_FOR (g_main_context_invoke)
+GIO_DEPRECATED_IN_2_36_FOR (g_main_context_invoke)
 gboolean g_io_scheduler_job_send_to_mainloop       (GIOSchedulerJob     *job,
 						    GSourceFunc          func,
 						    gpointer             user_data,
 						    GDestroyNotify       notify);
-GLIB_DEPRECATED_IN_2_36_FOR (g_main_context_invoke)
+GIO_DEPRECATED_IN_2_36_FOR (g_main_context_invoke)
 void     g_io_scheduler_job_send_to_mainloop_async (GIOSchedulerJob     *job,
 						    GSourceFunc          func,
 						    gpointer             user_data,

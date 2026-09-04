@@ -5,10 +5,12 @@
  * Copyright 1998-2001 Sebastian Wilhelmi; University of Karlsruhe
  * Copyright 2001 Hans Breuer
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -58,12 +60,12 @@ g_thread_abort (gint         status,
 {
   fprintf (stderr, "GLib (gthread-win32.c): Unexpected error from C library during '%s': %s.  Aborting.\n",
            strerror (status), function);
-  abort ();
+  g_abort ();
 }
 
 /* Starting with Vista and Windows 2008, we have access to the
- * CONDITION_VARIABLE and SRWLock primatives on Windows, which are
- * pretty reasonable approximations of the primatives specified in
+ * CONDITION_VARIABLE and SRWLock primitives on Windows, which are
+ * pretty reasonable approximations of the primitives specified in
  * POSIX 2001 (pthread_cond_t and pthread_mutex_t respectively).
  *
  * Both of these types are structs containing a single pointer.  That
@@ -73,81 +75,36 @@ g_thread_abort (gint         status,
  * of these new types is that they can be statically initialised to
  * zero.  That means that they are completely ABI compatible with our
  * GMutex and GCond APIs.
- *
- * Unfortunately, Windows XP lacks these facilities and GLib still
- * needs to support Windows XP.  Our approach here is as follows:
- *
- *   - avoid depending on structure declarations at compile-time by
- *     declaring our own GMutex and GCond strutures to be
- *     ABI-compatible with SRWLock and CONDITION_VARIABLE and using
- *     those instead
- *
- *   - avoid a hard dependency on the symbols used to manipulate these
- *     structures by doing a dynamic lookup of those symbols at
- *     runtime
- *
- *   - if the symbols are not available, emulate them using other
- *     primatives
- *
- * Using this approach also allows us to easily build a GLib that lacks
- * support for Windows XP or to remove this code entirely when XP is no
- * longer supported (end of line is currently April 8, 2014).
  */
-typedef struct
-{
-  void     (__stdcall * CallThisOnThreadExit)        (void);              /* fake */
-
-  void     (__stdcall * InitializeSRWLock)           (gpointer lock);
-  void     (__stdcall * DeleteSRWLock)               (gpointer lock);     /* fake */
-  void     (__stdcall * AcquireSRWLockExclusive)     (gpointer lock);
-  BOOLEAN  (__stdcall * TryAcquireSRWLockExclusive)  (gpointer lock);
-  void     (__stdcall * ReleaseSRWLockExclusive)     (gpointer lock);
-  void     (__stdcall * AcquireSRWLockShared)        (gpointer lock);
-  BOOLEAN  (__stdcall * TryAcquireSRWLockShared)     (gpointer lock);
-  void     (__stdcall * ReleaseSRWLockShared)        (gpointer lock);
-
-  void     (__stdcall * InitializeConditionVariable) (gpointer cond);
-  void     (__stdcall * DeleteConditionVariable)     (gpointer cond);     /* fake */
-  BOOL     (__stdcall * SleepConditionVariableSRW)   (gpointer cond,
-                                                      gpointer lock,
-                                                      DWORD    timeout,
-                                                      ULONG    flags);
-  void     (__stdcall * WakeAllConditionVariable)    (gpointer cond);
-  void     (__stdcall * WakeConditionVariable)       (gpointer cond);
-} GThreadImplVtable;
-
-static GThreadImplVtable g_thread_impl_vtable;
 
 /* {{{1 GMutex */
-void
-g_mutex_init (GMutex *mutex)
+G_ALWAYS_INLINE static inline void
+g_mutex_init_impl (GMutex *mutex)
 {
-  g_thread_impl_vtable.InitializeSRWLock (mutex);
+  InitializeSRWLock ((gpointer) mutex);
 }
 
-void
-g_mutex_clear (GMutex *mutex)
+G_ALWAYS_INLINE static inline void
+g_mutex_clear_impl (GMutex *mutex)
 {
-  if (g_thread_impl_vtable.DeleteSRWLock != NULL)
-    g_thread_impl_vtable.DeleteSRWLock (mutex);
 }
 
-void
-g_mutex_lock (GMutex *mutex)
+G_ALWAYS_INLINE static inline void
+g_mutex_lock_impl (GMutex *mutex)
 {
-  g_thread_impl_vtable.AcquireSRWLockExclusive (mutex);
+  AcquireSRWLockExclusive ((gpointer) mutex);
 }
 
-gboolean
-g_mutex_trylock (GMutex *mutex)
+G_ALWAYS_INLINE static inline gboolean
+g_mutex_trylock_impl (GMutex *mutex)
 {
-  return g_thread_impl_vtable.TryAcquireSRWLockExclusive (mutex);
+  return TryAcquireSRWLockExclusive ((gpointer) mutex);
 }
 
-void
-g_mutex_unlock (GMutex *mutex)
+G_ALWAYS_INLINE static inline void
+g_mutex_unlock_impl (GMutex *mutex)
 {
-  g_thread_impl_vtable.ReleaseSRWLockExclusive (mutex);
+  ReleaseSRWLockExclusive ((gpointer) mutex);
 }
 
 /* {{{1 GRecMutex */
@@ -186,136 +143,153 @@ g_rec_mutex_get_impl (GRecMutex *mutex)
   return impl;
 }
 
-void
-g_rec_mutex_init (GRecMutex *mutex)
+G_ALWAYS_INLINE static inline void
+g_rec_mutex_init_impl (GRecMutex *mutex)
 {
   mutex->p = g_rec_mutex_impl_new ();
 }
 
-void
-g_rec_mutex_clear (GRecMutex *mutex)
+G_ALWAYS_INLINE static inline void
+g_rec_mutex_clear_impl (GRecMutex *mutex)
 {
   g_rec_mutex_impl_free (mutex->p);
 }
 
-void
-g_rec_mutex_lock (GRecMutex *mutex)
+G_ALWAYS_INLINE static inline void
+g_rec_mutex_lock_impl (GRecMutex *mutex)
 {
   EnterCriticalSection (g_rec_mutex_get_impl (mutex));
 }
 
-void
-g_rec_mutex_unlock (GRecMutex *mutex)
+G_ALWAYS_INLINE static inline void
+g_rec_mutex_unlock_impl (GRecMutex *mutex)
 {
   LeaveCriticalSection (mutex->p);
 }
 
-gboolean
-g_rec_mutex_trylock (GRecMutex *mutex)
+G_ALWAYS_INLINE static inline gboolean
+g_rec_mutex_trylock_impl (GRecMutex *mutex)
 {
   return TryEnterCriticalSection (g_rec_mutex_get_impl (mutex));
 }
 
 /* {{{1 GRWLock */
 
-void
-g_rw_lock_init (GRWLock *lock)
+G_ALWAYS_INLINE static inline void
+g_rw_lock_init_impl (GRWLock *lock)
 {
-  g_thread_impl_vtable.InitializeSRWLock (lock);
+  InitializeSRWLock ((gpointer) lock);
 }
 
-void
-g_rw_lock_clear (GRWLock *lock)
+G_ALWAYS_INLINE static inline void
+g_rw_lock_clear_impl (GRWLock *lock)
 {
-  if (g_thread_impl_vtable.DeleteSRWLock != NULL)
-    g_thread_impl_vtable.DeleteSRWLock (lock);
 }
 
-void
-g_rw_lock_writer_lock (GRWLock *lock)
+G_ALWAYS_INLINE static inline void
+g_rw_lock_writer_lock_impl (GRWLock *lock)
 {
-  g_thread_impl_vtable.AcquireSRWLockExclusive (lock);
+  AcquireSRWLockExclusive ((gpointer) lock);
 }
 
-gboolean
-g_rw_lock_writer_trylock (GRWLock *lock)
+G_ALWAYS_INLINE static inline gboolean
+g_rw_lock_writer_trylock_impl (GRWLock *lock)
 {
-  return g_thread_impl_vtable.TryAcquireSRWLockExclusive (lock);
+  return TryAcquireSRWLockExclusive ((gpointer) lock);
 }
 
-void
-g_rw_lock_writer_unlock (GRWLock *lock)
+G_ALWAYS_INLINE static inline void
+g_rw_lock_writer_unlock_impl (GRWLock *lock)
 {
-  g_thread_impl_vtable.ReleaseSRWLockExclusive (lock);
+  ReleaseSRWLockExclusive ((gpointer) lock);
 }
 
-void
-g_rw_lock_reader_lock (GRWLock *lock)
+G_ALWAYS_INLINE static inline void
+g_rw_lock_reader_lock_impl (GRWLock *lock)
 {
-  g_thread_impl_vtable.AcquireSRWLockShared (lock);
+  AcquireSRWLockShared ((gpointer) lock);
 }
 
-gboolean
-g_rw_lock_reader_trylock (GRWLock *lock)
+G_ALWAYS_INLINE static inline gboolean
+g_rw_lock_reader_trylock_impl (GRWLock *lock)
 {
-  return g_thread_impl_vtable.TryAcquireSRWLockShared (lock);
+  return TryAcquireSRWLockShared ((gpointer) lock);
 }
 
-void
-g_rw_lock_reader_unlock (GRWLock *lock)
+G_ALWAYS_INLINE static inline void
+g_rw_lock_reader_unlock_impl (GRWLock *lock)
 {
-  g_thread_impl_vtable.ReleaseSRWLockShared (lock);
+  ReleaseSRWLockShared ((gpointer) lock);
 }
 
 /* {{{1 GCond */
-void
-g_cond_init (GCond *cond)
+G_ALWAYS_INLINE static inline void
+g_cond_init_impl (GCond *cond)
 {
-  g_thread_impl_vtable.InitializeConditionVariable (cond);
+  InitializeConditionVariable ((gpointer) cond);
 }
 
-void
-g_cond_clear (GCond *cond)
+G_ALWAYS_INLINE static inline void
+g_cond_clear_impl (GCond *cond)
 {
-  if (g_thread_impl_vtable.DeleteConditionVariable)
-    g_thread_impl_vtable.DeleteConditionVariable (cond);
 }
 
-void
-g_cond_signal (GCond *cond)
+G_ALWAYS_INLINE static inline void
+g_cond_signal_impl (GCond *cond)
 {
-  g_thread_impl_vtable.WakeConditionVariable (cond);
+  WakeConditionVariable ((gpointer) cond);
 }
 
-void
-g_cond_broadcast (GCond *cond)
+G_ALWAYS_INLINE static inline void
+g_cond_broadcast_impl (GCond *cond)
 {
-  g_thread_impl_vtable.WakeAllConditionVariable (cond);
+  WakeAllConditionVariable ((gpointer) cond);
 }
 
-void
-g_cond_wait (GCond  *cond,
-             GMutex *entered_mutex)
+G_ALWAYS_INLINE static inline void
+g_cond_wait_impl (GCond  *cond,
+                  GMutex *entered_mutex)
 {
-  g_thread_impl_vtable.SleepConditionVariableSRW (cond, entered_mutex, INFINITE, 0);
+  SleepConditionVariableSRW ((gpointer) cond, (gpointer) entered_mutex, INFINITE, 0);
 }
 
-gboolean
-g_cond_wait_until (GCond  *cond,
-                   GMutex *entered_mutex,
-                   gint64  end_time)
+G_ALWAYS_INLINE static inline gboolean
+g_cond_wait_until_impl (GCond  *cond,
+                        GMutex *entered_mutex,
+                        gint64  end_time)
 {
-  gint64 span;
+  gint64 span, start_time;
+  DWORD span_millis;
+  gboolean signalled;
 
-  span = end_time - g_get_monotonic_time ();
+  start_time = g_get_monotonic_time ();
+  do
+    {
+      span = end_time - start_time;
 
-  if G_UNLIKELY (span < 0)
-    span = 0;
+      if G_UNLIKELY (span < 0)
+        span_millis = 0;
+      else if G_UNLIKELY (span > G_GINT64_CONSTANT (1000) * (DWORD) INFINITE)
+        span_millis = INFINITE;
+      else
+        /* Round up so we don't time out too early */
+        span_millis = (span + 1000 - 1) / 1000;
 
-  if G_UNLIKELY (span > G_GINT64_CONSTANT (1000) * G_MAXINT32)
-    span = INFINITE;
+      /* We never want to wait infinitely */
+      if (span_millis >= INFINITE)
+        span_millis = INFINITE - 1;
 
-  return g_thread_impl_vtable.SleepConditionVariableSRW (cond, entered_mutex, span / 1000, 0);
+      signalled = SleepConditionVariableSRW ((gpointer) cond, (gpointer) entered_mutex, span_millis, 0);
+      if (signalled)
+        break;
+
+      /* In case we didn't wait long enough after a timeout, wait again for the
+       * remaining time */
+      start_time = g_get_monotonic_time ();
+    }
+  while (start_time < end_time);
+
+  return signalled;
 }
 
 /* {{{1 GPrivate */
@@ -329,25 +303,35 @@ struct _GPrivateDestructor
   GPrivateDestructor *next;
 };
 
-static GPrivateDestructor * volatile g_private_destructors;
+static GPrivateDestructor *g_private_destructors;  /* (atomic) prepend-only */
 static CRITICAL_SECTION g_private_lock;
 
 static DWORD
-g_private_get_impl (GPrivate *key)
+_g_private_get_impl (GPrivate *key)
 {
-  DWORD impl = (DWORD) key->p;
+  DWORD impl = (DWORD) GPOINTER_TO_UINT(key->p);
 
   if G_UNLIKELY (impl == 0)
     {
       EnterCriticalSection (&g_private_lock);
-      impl = (DWORD) key->p;
+      impl = (UINT_PTR) key->p;
       if (impl == 0)
         {
           GPrivateDestructor *destructor;
 
           impl = TlsAlloc ();
 
-          if (impl == TLS_OUT_OF_INDEXES)
+          if G_UNLIKELY (impl == 0)
+            {
+              /* Ignore TLS index 0 temporarily (as 0 is the indicator that we
+               * haven't allocated TLS yet) and alloc again;
+               * See https://gitlab.gnome.org/GNOME/glib/-/issues/2058 */
+              DWORD impl2 = TlsAlloc ();
+              TlsFree (impl);
+              impl = impl2;
+            }
+
+          if (impl == TLS_OUT_OF_INDEXES || impl == 0)
             g_thread_abort (0, "TlsAlloc");
 
           if (key->notify != NULL)
@@ -357,7 +341,7 @@ g_private_get_impl (GPrivate *key)
                 g_thread_abort (errno, "malloc");
               destructor->index = impl;
               destructor->notify = key->notify;
-              destructor->next = g_private_destructors;
+              destructor->next = g_atomic_pointer_get (&g_private_destructors);
 
               /* We need to do an atomic store due to the unlocked
                * access to the destructor list from the thread exit
@@ -365,13 +349,14 @@ g_private_get_impl (GPrivate *key)
                *
                * It can double as a sanity check...
                */
-              if (InterlockedCompareExchangePointer (&g_private_destructors, destructor,
-                                                     destructor->next) != destructor->next)
+              if (!g_atomic_pointer_compare_and_exchange (&g_private_destructors,
+                                                          destructor->next,
+                                                          destructor))
                 g_thread_abort (0, "g_private_get_impl(1)");
             }
 
           /* Ditto, due to the unlocked access on the fast path */
-          if (InterlockedCompareExchangePointer (&key->p, impl, NULL) != NULL)
+          if (!g_atomic_pointer_compare_and_exchange (&key->p, NULL, GUINT_TO_POINTER (impl)))
             g_thread_abort (0, "g_private_get_impl(2)");
         }
       LeaveCriticalSection (&g_private_lock);
@@ -380,30 +365,30 @@ g_private_get_impl (GPrivate *key)
   return impl;
 }
 
-gpointer
-g_private_get (GPrivate *key)
+G_ALWAYS_INLINE static inline gpointer
+g_private_get_impl (GPrivate *key)
 {
-  return TlsGetValue (g_private_get_impl (key));
+  return TlsGetValue (_g_private_get_impl (key));
 }
 
-void
-g_private_set (GPrivate *key,
-               gpointer  value)
+G_ALWAYS_INLINE static inline void
+g_private_set_impl (GPrivate *key,
+                    gpointer  value)
 {
-  TlsSetValue (g_private_get_impl (key), value);
+  TlsSetValue (_g_private_get_impl (key), value);
 }
 
-void
-g_private_replace (GPrivate *key,
-                   gpointer  value)
+G_ALWAYS_INLINE static inline void
+g_private_replace_impl (GPrivate *key,
+                        gpointer  value)
 {
-  DWORD impl = g_private_get_impl (key);
+  DWORD impl = _g_private_get_impl (key);
   gpointer old;
 
   old = TlsGetValue (impl);
+  TlsSetValue (impl, value);
   if (old && key->notify)
     key->notify (old);
-  TlsSetValue (impl, value);
 }
 
 /* {{{1 GThread */
@@ -457,33 +442,91 @@ g_thread_win32_proxy (gpointer data)
 }
 
 GRealThread *
-g_system_thread_new (GThreadFunc   func,
-                     gulong        stack_size,
-                     GError      **error)
+g_system_thread_new (GThreadFunc proxy,
+                     gulong stack_size,
+                     const char *name,
+                     GThreadFunc func,
+                     gpointer data,
+                     GError **error)
 {
   GThreadWin32 *thread;
+  GRealThread *base_thread;
   guint ignore;
+  const gchar *message = NULL;
+  int thread_prio;
 
   thread = g_slice_new0 (GThreadWin32);
-  thread->proxy = func;
+  thread->proxy = proxy;
+  thread->handle = (HANDLE) NULL;
+  base_thread = (GRealThread*)thread;
+  base_thread->ref_count = 2;
+  base_thread->ours = TRUE;
+  base_thread->thread.joinable = TRUE;
+  base_thread->thread.func = func;
+  base_thread->thread.data = data;
+  if (name)
+    g_strlcpy (base_thread->name, name, 16);
 
-  thread->handle = (HANDLE) _beginthreadex (NULL, stack_size, g_thread_win32_proxy, thread, 0, &ignore);
+  thread->handle = (HANDLE) _beginthreadex (NULL, stack_size, g_thread_win32_proxy, thread,
+                                            CREATE_SUSPENDED, &ignore);
 
   if (thread->handle == NULL)
     {
-      gchar *win_error = g_win32_error_message (GetLastError ());
-      g_set_error (error, G_THREAD_ERROR, G_THREAD_ERROR_AGAIN,
-                   "Error creating thread: %s", win_error);
-      g_free (win_error);
-      g_slice_free (GThreadWin32, thread);
-      return NULL;
+      message = "Error creating thread";
+      goto error;
+    }
+
+  /* For thread priority inheritance we need to manually set the thread
+   * priority of the new thread to the priority of the current thread. We
+   * also have to start the thread suspended and resume it after actually
+   * setting the priority here.
+   *
+   * On Windows, by default all new threads are created with NORMAL thread
+   * priority.
+   */
+  {
+    HANDLE current_thread = GetCurrentThread ();
+    thread_prio = GetThreadPriority (current_thread);
+  }
+
+  if (thread_prio != THREAD_PRIORITY_ERROR_RETURN)
+    {
+      /* GetThreadPriority() may return non-predefined priority level
+       * which is not acceptable by SetThreadPriority().
+       * Ignores any errors occurred here since it's not a critical
+       */
+      if (!SetThreadPriority (thread->handle, thread_prio))
+        {
+          gchar *win_error = g_win32_error_message (GetLastError ());
+          g_debug ("SetThreadPriority with priority %d failed: %s",
+                   thread_prio, win_error);
+          g_free (win_error);
+        }
+    }
+
+  if (ResumeThread (thread->handle) == (DWORD) -1)
+    {
+      message = "Error resuming new thread";
+      goto error;
     }
 
   return (GRealThread *) thread;
+
+error:
+  {
+    gchar *win_error = g_win32_error_message (GetLastError ());
+    g_set_error (error, G_THREAD_ERROR, G_THREAD_ERROR_AGAIN,
+                 "%s: %s", message, win_error);
+    g_free (win_error);
+    if (thread->handle)
+      CloseHandle (thread->handle);
+    g_slice_free (GThreadWin32, thread);
+    return NULL;
+  }
 }
 
-void
-g_thread_yield (void)
+G_ALWAYS_INLINE static inline void
+g_thread_yield_impl (void)
 {
   Sleep(0);
 }
@@ -532,526 +575,110 @@ SetThreadName (DWORD  dwThreadID,
    info.dwThreadID = dwThreadID;
    info.dwFlags = 0;
 
-   infosize = sizeof (info) / sizeof (DWORD);
+   infosize = sizeof (info) / sizeof (ULONG_PTR);
 
 #ifdef _MSC_VER
    __try
      {
-       RaiseException (EXCEPTION_SET_THREAD_NAME, 0, infosize, (DWORD *) &info);
+       RaiseException (EXCEPTION_SET_THREAD_NAME, 0, infosize,
+                       (const ULONG_PTR *) &info);
      }
-   __except (EXCEPTION_EXECUTE_HANDLER)
+   __except (GetExceptionCode () == EXCEPTION_SET_THREAD_NAME ?
+             EXCEPTION_EXECUTE_HANDLER : EXCEPTION_CONTINUE_SEARCH)
      {
      }
 #else
-   /* Without a debugger we *must* have an exception handler,
-    * otherwise raising an exception will crash the process.
-    */
-   if ((!IsDebuggerPresent ()) && (SetThreadName_VEH_handle == NULL))
+   if ((!IsDebuggerPresent ()) || (SetThreadName_VEH_handle == NULL))
      return;
 
-   RaiseException (EXCEPTION_SET_THREAD_NAME, 0, infosize, (DWORD *) &info);
+   RaiseException (EXCEPTION_SET_THREAD_NAME, 0, infosize, (const ULONG_PTR *) &info);
 #endif
+}
+
+typedef HRESULT (WINAPI *pSetThreadDescription) (HANDLE hThread,
+                                                 PCWSTR lpThreadDescription);
+static pSetThreadDescription SetThreadDescriptionFunc = NULL;
+static HMODULE kernel32_module = NULL;
+
+static gboolean
+g_thread_win32_load_library (void)
+{
+  /* FIXME: Add support for UWP app */
+#if !defined(G_WINAPI_ONLY_APP)
+  static gsize _init_once = 0;
+  if (g_once_init_enter (&_init_once))
+    {
+      kernel32_module = LoadLibraryW (L"kernel32.dll");
+      if (kernel32_module)
+        {
+          SetThreadDescriptionFunc =
+              (pSetThreadDescription) GetProcAddress (kernel32_module,
+                                                      "SetThreadDescription");
+          if (!SetThreadDescriptionFunc)
+            FreeLibrary (kernel32_module);
+        }
+      g_once_init_leave (&_init_once, 1);
+    }
+#endif
+
+  return !!SetThreadDescriptionFunc;
+}
+
+static gboolean
+g_thread_win32_set_thread_desc (const gchar *name)
+{
+  HRESULT hr;
+  wchar_t *namew;
+
+  if (!g_thread_win32_load_library () || !name)
+    return FALSE;
+
+  namew = g_utf8_to_utf16 (name, -1, NULL, NULL, NULL);
+  if (!namew)
+    return FALSE;
+
+  hr = SetThreadDescriptionFunc (GetCurrentThread (), namew);
+
+  g_free (namew);
+  return SUCCEEDED (hr);
 }
 
 void
 g_system_thread_set_name (const gchar *name)
 {
-  SetThreadName ((DWORD) -1, name);
+  /* Prefer SetThreadDescription over exception based way if available,
+   * since thread description set by SetThreadDescription will be preserved
+   * in dump file */
+  if (!g_thread_win32_set_thread_desc (name))
+    SetThreadName ((DWORD) -1, name);
 }
 
-/* {{{1 SRWLock and CONDITION_VARIABLE emulation (for Windows XP) */
-
-static CRITICAL_SECTION g_thread_xp_lock;
-static DWORD            g_thread_xp_waiter_tls;
-
-/* {{{2 GThreadWaiter utility class for CONDITION_VARIABLE emulation */
-typedef struct _GThreadXpWaiter GThreadXpWaiter;
-struct _GThreadXpWaiter
+void
+g_system_thread_get_name (char  *buffer,
+                          gsize  length)
 {
-  HANDLE                     event;
-  volatile GThreadXpWaiter  *next;
-  volatile GThreadXpWaiter **my_owner;
-};
-
-static GThreadXpWaiter *
-g_thread_xp_waiter_get (void)
-{
-  GThreadXpWaiter *waiter;
-
-  waiter = TlsGetValue (g_thread_xp_waiter_tls);
-
-  if G_UNLIKELY (waiter == NULL)
-    {
-      waiter = malloc (sizeof (GThreadXpWaiter));
-      if (waiter == NULL)
-        g_thread_abort (GetLastError (), "malloc");
-      waiter->event = CreateEvent (0, FALSE, FALSE, NULL);
-      if (waiter->event == NULL)
-        g_thread_abort (GetLastError (), "CreateEvent");
-      waiter->my_owner = NULL;
-
-      TlsSetValue (g_thread_xp_waiter_tls, waiter);
-    }
-
-  return waiter;
-}
-
-static void __stdcall
-g_thread_xp_CallThisOnThreadExit (void)
-{
-  GThreadXpWaiter *waiter;
-
-  waiter = TlsGetValue (g_thread_xp_waiter_tls);
-
-  if (waiter != NULL)
-    {
-      TlsSetValue (g_thread_xp_waiter_tls, NULL);
-      CloseHandle (waiter->event);
-      free (waiter);
-    }
-}
-
-/* {{{2 SRWLock emulation */
-typedef struct
-{
-  CRITICAL_SECTION  writer_lock;
-  gboolean          ever_shared;    /* protected by writer_lock */
-  gboolean          writer_locked;  /* protected by writer_lock */
-
-  /* below is only ever touched if ever_shared becomes true */
-  CRITICAL_SECTION  atomicity;
-  GThreadXpWaiter  *queued_writer; /* protected by atomicity lock */
-  gint              num_readers;   /* protected by atomicity lock */
-} GThreadSRWLock;
-
-static void __stdcall
-g_thread_xp_InitializeSRWLock (gpointer mutex)
-{
-  *(GThreadSRWLock * volatile *) mutex = NULL;
-}
-
-static void __stdcall
-g_thread_xp_DeleteSRWLock (gpointer mutex)
-{
-  GThreadSRWLock *lock = *(GThreadSRWLock * volatile *) mutex;
-
-  if (lock)
-    {
-      if (lock->ever_shared)
-        DeleteCriticalSection (&lock->atomicity);
-
-      DeleteCriticalSection (&lock->writer_lock);
-      free (lock);
-    }
-}
-
-static GThreadSRWLock * __stdcall
-g_thread_xp_get_srwlock (GThreadSRWLock * volatile *lock)
-{
-  GThreadSRWLock *result;
-
-  /* It looks like we're missing some barriers here, but this code only
-   * ever runs on Windows XP, which in turn only ever runs on hardware
-   * with a relatively rigid memory model.  The 'volatile' will take
-   * care of the compiler.
-   */
-  result = *lock;
-
-  if G_UNLIKELY (result == NULL)
-    {
-      EnterCriticalSection (&g_thread_xp_lock);
-
-      /* Check again */
-      result = *lock;
-      if (result == NULL)
-        {
-          result = malloc (sizeof (GThreadSRWLock));
-
-          if (result == NULL)
-            g_thread_abort (errno, "malloc");
-
-          InitializeCriticalSection (&result->writer_lock);
-          result->writer_locked = FALSE;
-          result->ever_shared = FALSE;
-          *lock = result;
-        }
-
-      LeaveCriticalSection (&g_thread_xp_lock);
-    }
-
-  return result;
-}
-
-static void __stdcall
-g_thread_xp_AcquireSRWLockExclusive (gpointer mutex)
-{
-  GThreadSRWLock *lock = g_thread_xp_get_srwlock (mutex);
-
-  EnterCriticalSection (&lock->writer_lock);
-
-  /* CRITICAL_SECTION is reentrant, but SRWLock is not.
-   * Detect the deadlock that would occur on later Windows version.
-   */
-  g_assert (!lock->writer_locked);
-  lock->writer_locked = TRUE;
-
-  if (lock->ever_shared)
-    {
-      GThreadXpWaiter *waiter = NULL;
-
-      EnterCriticalSection (&lock->atomicity);
-      if (lock->num_readers > 0)
-        lock->queued_writer = waiter = g_thread_xp_waiter_get ();
-      LeaveCriticalSection (&lock->atomicity);
-
-      if (waiter != NULL)
-        WaitForSingleObject (waiter->event, INFINITE);
-
-      lock->queued_writer = NULL;
-    }
-}
-
-static BOOLEAN __stdcall
-g_thread_xp_TryAcquireSRWLockExclusive (gpointer mutex)
-{
-  GThreadSRWLock *lock = g_thread_xp_get_srwlock (mutex);
-
-  if (!TryEnterCriticalSection (&lock->writer_lock))
-    return FALSE;
-
-  /* CRITICAL_SECTION is reentrant, but SRWLock is not.
-   * Ensure that this properly returns FALSE (as SRWLock would).
-   */
-  if G_UNLIKELY (lock->writer_locked)
-    {
-      LeaveCriticalSection (&lock->writer_lock);
-      return FALSE;
-    }
-
-  lock->writer_locked = TRUE;
-
-  if (lock->ever_shared)
-    {
-      gboolean available;
-
-      EnterCriticalSection (&lock->atomicity);
-      available = lock->num_readers == 0;
-      LeaveCriticalSection (&lock->atomicity);
-
-      if (!available)
-        {
-          LeaveCriticalSection (&lock->writer_lock);
-          return FALSE;
-        }
-    }
-
-  return TRUE;
-}
-
-static void __stdcall
-g_thread_xp_ReleaseSRWLockExclusive (gpointer mutex)
-{
-  GThreadSRWLock *lock = *(GThreadSRWLock * volatile *) mutex;
-
-  lock->writer_locked = FALSE;
-
-  /* We need this until we fix some weird parts of GLib that try to
-   * unlock freshly-allocated mutexes.
-   */
-  if (lock != NULL)
-    LeaveCriticalSection (&lock->writer_lock);
-}
-
-static void
-g_thread_xp_srwlock_become_reader (GThreadSRWLock *lock)
-{
-  if G_UNLIKELY (!lock->ever_shared)
-    {
-      InitializeCriticalSection (&lock->atomicity);
-      lock->queued_writer = NULL;
-      lock->num_readers = 0;
-
-      lock->ever_shared = TRUE;
-    }
-
-  EnterCriticalSection (&lock->atomicity);
-  lock->num_readers++;
-  LeaveCriticalSection (&lock->atomicity);
-}
-
-static void __stdcall
-g_thread_xp_AcquireSRWLockShared (gpointer mutex)
-{
-  GThreadSRWLock *lock = g_thread_xp_get_srwlock (mutex);
-
-  EnterCriticalSection (&lock->writer_lock);
-
-  /* See g_thread_xp_AcquireSRWLockExclusive */
-  g_assert (!lock->writer_locked);
-
-  g_thread_xp_srwlock_become_reader (lock);
-
-  LeaveCriticalSection (&lock->writer_lock);
-}
-
-static BOOLEAN __stdcall
-g_thread_xp_TryAcquireSRWLockShared (gpointer mutex)
-{
-  GThreadSRWLock *lock = g_thread_xp_get_srwlock (mutex);
-
-  if (!TryEnterCriticalSection (&lock->writer_lock))
-    return FALSE;
-
-  /* See g_thread_xp_AcquireSRWLockExclusive */
-  if G_UNLIKELY (lock->writer_locked)
-    {
-      LeaveCriticalSection (&lock->writer_lock);
-      return FALSE;
-    }
-
-  g_thread_xp_srwlock_become_reader (lock);
-
-  LeaveCriticalSection (&lock->writer_lock);
-
-  return TRUE;
-}
-
-static void __stdcall
-g_thread_xp_ReleaseSRWLockShared (gpointer mutex)
-{
-  GThreadSRWLock *lock = g_thread_xp_get_srwlock (mutex);
-
-  EnterCriticalSection (&lock->atomicity);
-
-  lock->num_readers--;
-
-  if (lock->num_readers == 0 && lock->queued_writer)
-    SetEvent (lock->queued_writer->event);
-
-  LeaveCriticalSection (&lock->atomicity);
-}
-
-/* {{{2 CONDITION_VARIABLE emulation */
-typedef struct
-{
-  volatile GThreadXpWaiter  *first;
-  volatile GThreadXpWaiter **last_ptr;
-} GThreadXpCONDITION_VARIABLE;
-
-static void __stdcall
-g_thread_xp_InitializeConditionVariable (gpointer cond)
-{
-  *(GThreadXpCONDITION_VARIABLE * volatile *) cond = NULL;
-}
-
-static void __stdcall
-g_thread_xp_DeleteConditionVariable (gpointer cond)
-{
-  GThreadXpCONDITION_VARIABLE *cv = *(GThreadXpCONDITION_VARIABLE * volatile *) cond;
-
-  if (cv)
-    free (cv);
-}
-
-static GThreadXpCONDITION_VARIABLE * __stdcall
-g_thread_xp_get_condition_variable (GThreadXpCONDITION_VARIABLE * volatile *cond)
-{
-  GThreadXpCONDITION_VARIABLE *result;
-
-  /* It looks like we're missing some barriers here, but this code only
-   * ever runs on Windows XP, which in turn only ever runs on hardware
-   * with a relatively rigid memory model.  The 'volatile' will take
-   * care of the compiler.
-   */
-  result = *cond;
-
-  if G_UNLIKELY (result == NULL)
-    {
-      result = malloc (sizeof (GThreadXpCONDITION_VARIABLE));
-
-      if (result == NULL)
-        g_thread_abort (errno, "malloc");
-
-      result->first = NULL;
-      result->last_ptr = &result->first;
-
-      if (InterlockedCompareExchangePointer (cond, result, NULL) != NULL)
-        {
-          free (result);
-          result = *cond;
-        }
-    }
-
-  return result;
-}
-
-static BOOL __stdcall
-g_thread_xp_SleepConditionVariableSRW (gpointer cond,
-                                       gpointer mutex,
-                                       DWORD    timeout,
-                                       ULONG    flags)
-{
-  GThreadXpCONDITION_VARIABLE *cv = g_thread_xp_get_condition_variable (cond);
-  GThreadXpWaiter *waiter = g_thread_xp_waiter_get ();
-  DWORD status;
-
-  waiter->next = NULL;
-
-  EnterCriticalSection (&g_thread_xp_lock);
-  waiter->my_owner = cv->last_ptr;
-  *cv->last_ptr = waiter;
-  cv->last_ptr = &waiter->next;
-  LeaveCriticalSection (&g_thread_xp_lock);
-
-  g_mutex_unlock (mutex);
-  status = WaitForSingleObject (waiter->event, timeout);
-
-  if (status != WAIT_TIMEOUT && status != WAIT_OBJECT_0)
-    g_thread_abort (GetLastError (), "WaitForSingleObject");
-  g_mutex_lock (mutex);
-
-  if (status == WAIT_TIMEOUT)
-    {
-      EnterCriticalSection (&g_thread_xp_lock);
-      if (waiter->my_owner)
-        {
-          if (waiter->next)
-            waiter->next->my_owner = waiter->my_owner;
-          else
-            cv->last_ptr = waiter->my_owner;
-          *waiter->my_owner = waiter->next;
-          waiter->my_owner = NULL;
-        }
-      LeaveCriticalSection (&g_thread_xp_lock);
-    }
-
-  return status == WAIT_OBJECT_0;
-}
-
-static void __stdcall
-g_thread_xp_WakeConditionVariable (gpointer cond)
-{
-  GThreadXpCONDITION_VARIABLE *cv = g_thread_xp_get_condition_variable (cond);
-  volatile GThreadXpWaiter *waiter;
-
-  EnterCriticalSection (&g_thread_xp_lock);
-
-  waiter = cv->first;
-  if (waiter != NULL)
-    {
-      waiter->my_owner = NULL;
-      cv->first = waiter->next;
-      if (cv->first != NULL)
-        cv->first->my_owner = &cv->first;
-      else
-        cv->last_ptr = &cv->first;
-    }
-
-  if (waiter != NULL)
-    SetEvent (waiter->event);
-
-  LeaveCriticalSection (&g_thread_xp_lock);
-}
-
-static void __stdcall
-g_thread_xp_WakeAllConditionVariable (gpointer cond)
-{
-  GThreadXpCONDITION_VARIABLE *cv = g_thread_xp_get_condition_variable (cond);
-  volatile GThreadXpWaiter *waiter;
-
-  EnterCriticalSection (&g_thread_xp_lock);
-
-  waiter = cv->first;
-  cv->first = NULL;
-  cv->last_ptr = &cv->first;
-
-  while (waiter != NULL)
-    {
-      volatile GThreadXpWaiter *next;
-
-      next = waiter->next;
-      SetEvent (waiter->event);
-      waiter->my_owner = NULL;
-      waiter = next;
-    }
-
-  LeaveCriticalSection (&g_thread_xp_lock);
-}
-
-/* {{{2 XP Setup */
-static void
-g_thread_xp_init (void)
-{
-  static const GThreadImplVtable g_thread_xp_impl_vtable = {
-    g_thread_xp_CallThisOnThreadExit,
-    g_thread_xp_InitializeSRWLock,
-    g_thread_xp_DeleteSRWLock,
-    g_thread_xp_AcquireSRWLockExclusive,
-    g_thread_xp_TryAcquireSRWLockExclusive,
-    g_thread_xp_ReleaseSRWLockExclusive,
-    g_thread_xp_AcquireSRWLockShared,
-    g_thread_xp_TryAcquireSRWLockShared,
-    g_thread_xp_ReleaseSRWLockShared,
-    g_thread_xp_InitializeConditionVariable,
-    g_thread_xp_DeleteConditionVariable,
-    g_thread_xp_SleepConditionVariableSRW,
-    g_thread_xp_WakeAllConditionVariable,
-    g_thread_xp_WakeConditionVariable
-  };
-
-  InitializeCriticalSection (&g_thread_xp_lock);
-  g_thread_xp_waiter_tls = TlsAlloc ();
-
-  g_thread_impl_vtable = g_thread_xp_impl_vtable;
+  /* FIXME: Not implemented yet */
+  g_assert (length >= 1);
+  buffer[0] = '\0';
 }
 
 /* {{{1 Epilogue */
 
-static gboolean
-g_thread_lookup_native_funcs (void)
-{
-  GThreadImplVtable native_vtable = { 0, };
-  HMODULE kernel32;
-
-  kernel32 = GetModuleHandle ("KERNEL32.DLL");
-
-  if (kernel32 == NULL)
-    return FALSE;
-
-#define GET_FUNC(name) if ((native_vtable.name = (void *) GetProcAddress (kernel32, #name)) == NULL) return FALSE
-  GET_FUNC(InitializeSRWLock);
-  GET_FUNC(AcquireSRWLockExclusive);
-  GET_FUNC(TryAcquireSRWLockExclusive);
-  GET_FUNC(ReleaseSRWLockExclusive);
-  GET_FUNC(AcquireSRWLockShared);
-  GET_FUNC(TryAcquireSRWLockShared);
-  GET_FUNC(ReleaseSRWLockShared);
-
-  GET_FUNC(InitializeConditionVariable);
-  GET_FUNC(SleepConditionVariableSRW);
-  GET_FUNC(WakeAllConditionVariable);
-  GET_FUNC(WakeConditionVariable);
-#undef GET_FUNC
-
-  g_thread_impl_vtable = native_vtable;
-
-  return TRUE;
-}
-
 void
 g_thread_win32_init (void)
 {
-  if (!g_thread_lookup_native_funcs ())
-    g_thread_xp_init ();
-
   InitializeCriticalSection (&g_private_lock);
 
 #ifndef _MSC_VER
-  SetThreadName_VEH_handle = AddVectoredExceptionHandler (1, &SetThreadName_VEH);
+  /* Set the handler as last to not interfere with ASAN runtimes.
+   * Many ASAN implementations (currently all three of GCC, CLANG
+   * and MSVC) install a Vectored Exception Handler that must be
+   * first in the sequence to work well
+   */
+  SetThreadName_VEH_handle = AddVectoredExceptionHandler (0, &SetThreadName_VEH);
   if (SetThreadName_VEH_handle == NULL)
-    {
-      /* This is bad, but what can we do? */
-    }
+    g_critical ("%s failed with error code %u",
+                "AddVectoredExceptionHandler", (unsigned int) GetLastError ());
 #endif
 }
 
@@ -1073,7 +700,7 @@ g_thread_win32_thread_detach (void)
        */
       dtors_called = FALSE;
 
-      for (dtor = g_private_destructors; dtor; dtor = dtor->next)
+      for (dtor = g_atomic_pointer_get (&g_private_destructors); dtor; dtor = dtor->next)
         {
           gpointer value;
 
@@ -1088,9 +715,6 @@ g_thread_win32_thread_detach (void)
         }
     }
   while (dtors_called);
-
-  if (g_thread_impl_vtable.CallThisOnThreadExit)
-    g_thread_impl_vtable.CallThisOnThreadExit ();
 }
 
 void

@@ -15,3 +15,6 @@ msgstr "\"Unbenannt\""
 msgctxt "keyboard label"
 msgid "\"BackSpace\""
 msgstr "\"Löschen\""
+
+msgid "\"12:00 AM\""
+msgstr "\"00:00\""

@@ -1,0 +1,96 @@
+# These are the people responsible for subsystems in GLib; if you're opening
+# a merge request for files listed here, please add the following people to
+# the list of reviewers
+
+# The syntax of this file is defined by GitLab:
+#   https://docs.gitlab.com/ee/user/project/codeowners/reference.html
+# Which, in turn, is similar to the .gitignore and .gitattributes files:
+#
+#  - comments start with `#`
+#  - the first column contains paths and globs
+#  - the second column contains GitLab user names or email addresses,
+#    separated by spaces
+#
+# The last matching glob (rather than the union of *all* matching globs) gives
+# the owners of a piece of code.
+#
+# If you want to be responsible for code reviews in specific sections of
+# the GLib code base, add yourself here.
+#
+# Everyone listed in this file is a co-maintainer of GLib, even if they only
+# concern themselves with one section of the code base. All usernames listed
+# here should therefore also be listed in glib.doap, so that GitLab access
+# control is correct.
+
+# Overall maintainers
+*	@pwithnall @ebassi @3v1n0
+
+# Build system
+meson.build		@xclaesse @nirbheek @pwithnall
+meson.options		@xclaesse @nirbheek @pwithnall
+subprojects/		@xclaesse @nirbheek @pwithnall
+
+# CI integration
+#  - @pwithnall and @xclaesse maintain the CI configuration overall
+#  - @creiter maintains the Windows CI runners (tagged `win32-ps`)
+#  - @sthibaul maintains the Hurd runner (tagged `hurd`)
+#  - @lantw maintains the FreeBSD runner (tagged `freebsd-13`)
+#  - @dehesselle maintains the macOS runner (tagged `macosarm`)
+.gitlab-ci*	@pwithnall @xclaesse @creiter @sthibaul @lantw @dehesselle
+
+# macOS support
+*osx*	@jralls @pwithnall
+*.m	@jralls @pwithnall
+
+# Windows support
+*win32*	@lrn @creiter @fanc999 @pwithnall @nirbheek @lb90
+
+# Windows support (MSVC-specific)
+*msvc*	@fanc999 @creiter @pwithnall @nirbheek @lb90
+
+# Windows support (UWP-specific)
+*uwp*   @nirbheek @lb90
+
+# Android support
+*android*	@xclaesse @pwithnall
+
+# BSD support
+*bsd*		@ajacoutot @lantw @pwithnall
+*kqueue*	@ajacoutot @lantw @pwithnall
+
+# GNU Hurd support
+*hurd*	@bugaevc @sthibaul
+
+# flatpak portals
+gio/*portal*	@matthiasc @alexl @pwithnall
+
+# Networking
+gio/g*{tcp,udp,tls,socket,resolver,proxy,network,inet,datagram}*	@mcatanzaro @pgriffis @pwithnall
+
+# D-Bus
+gio/g*bus*	@smcv @pwithnall
+
+# I/O
+gio/g*{file,vfs,mount,drive,volume}*	@oholy @alexl @pwithnall
+gio/g*stream*				@alexl @pwithnall
+gio/gio-tool*				@oholy @alexl @pwithnall
+
+# Generic bits of GLib
+glib/	@ebassi @pwithnall
+
+# GObject type system
+gobject/	@ebassi @pwithnall @thaller
+
+# GVariant
+glib/gvariant*	@pwithnall
+
+# grefcount, GRcBox and GRefString
+glib/gref{count,string}.[ch]	@ebassi @pwithnall
+glib/grc*.[ch]			@ebassi @pwithnall
+glib/garc*.[ch]			@ebassi @pwithnall
+
+# Logging
+glib/gmessages.[ch]	@pwithnall
+
+# Google clusterfuzz support
+fuzzing/	@pwithnall

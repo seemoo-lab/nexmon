@@ -2,19 +2,20 @@
  *
  *  Copyright 2000 Red Hat, Inc.
  *
- * GLib is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
  *
- * GLib is distributed in the hope that it will be useful,
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with GLib; see the file COPYING.LIB.  If not,
- * see <http://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "config.h"
@@ -24,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -47,44 +49,16 @@
 #define O_BINARY 0
 #endif
 
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+
 #include "gfileutils.h"
 
 #include "gstdio.h"
+#include "gstdioprivate.h"
 #include "glibintl.h"
 
-#ifdef HAVE_LINUX_MAGIC_H /* for btrfs check */
-#include <linux/magic.h>
-#include <sys/vfs.h>
-#endif
-
-
-/**
- * SECTION:fileutils
- * @title: File Utilities
- * @short_description: various file-related functions
- *
- * There is a group of functions which wrap the common POSIX functions
- * dealing with filenames (g_open(), g_rename(), g_mkdir(), g_stat(),
- * g_unlink(), g_remove(), g_fopen(), g_freopen()). The point of these
- * wrappers is to make it possible to handle file names with any Unicode
- * characters in them on Windows without having to use ifdefs and the
- * wide character API in the application code.
- *
- * The pathname argument should be in the GLib file name encoding.
- * On POSIX this is the actual on-disk encoding which might correspond
- * to the locale settings of the process (or the `G_FILENAME_ENCODING`
- * environment variable), or not.
- *
- * On Windows the GLib file name encoding is UTF-8. Note that the
- * Microsoft C library does not use UTF-8, but has separate APIs for
- * current system code page and wide characters (UTF-16). The GLib
- * wrappers call the wide character API if present (on modern Windows
- * systems), otherwise convert to/from the system code page.
- *
- * Another group of functions allows to open and read directories
- * in the GLib file name encoding. These are g_dir_open(),
- * g_dir_read_name(), g_dir_rewind(), g_dir_close().
- */
 
 /**
  * GFileError:
@@ -194,7 +168,7 @@
 
 /**
  * g_mkdir_with_parents:
- * @pathname: a pathname in the GLib file name encoding
+ * @pathname: (type filename): a pathname in the GLib file name encoding
  * @mode: permissions to use for newly created directories
  *
  * Create a directory if it doesn't already exist. Create intermediate
@@ -217,6 +191,20 @@ g_mkdir_with_parents (const gchar *pathname,
       return -1;
     }
 
+  /* try to create the full path first */
+  if (g_mkdir (pathname, mode) == 0)
+    return 0;
+  else if (errno == EEXIST)
+    {
+      if (!g_file_test (pathname, G_FILE_TEST_IS_DIR))
+        {
+          errno = ENOTDIR;
+          return -1;
+        }
+      return 0;
+    }
+
+  /* walk the full path and try creating each element */
   fn = g_strdup (pathname);
 
   if (g_path_is_absolute (fn))
@@ -239,9 +227,12 @@ g_mkdir_with_parents (const gchar *pathname,
 	  if (g_mkdir (fn, mode) == -1 && errno != EEXIST)
 	    {
 	      int errno_save = errno;
-	      g_free (fn);
-	      errno = errno_save;
-	      return -1;
+	      if (errno != ENOENT || !p)
+                {
+	          g_free (fn);
+	          errno = errno_save;
+	          return -1;
+		}
 	    }
 	}
       else if (!g_file_test (fn, G_FILE_TEST_IS_DIR))
@@ -266,16 +257,17 @@ g_mkdir_with_parents (const gchar *pathname,
 
 /**
  * g_file_test:
- * @filename: a filename to test in the GLib file name encoding
+ * @filename: (type filename): a filename to test in the
+ *     GLib file name encoding
  * @test: bitfield of #GFileTest flags
- * 
+ *
  * Returns %TRUE if any of the tests in the bitfield @test are
  * %TRUE. For example, `(G_FILE_TEST_EXISTS | G_FILE_TEST_IS_DIR)`
  * will return %TRUE if the file exists; the check whether it's a
  * directory doesn't matter since the existence test is %TRUE. With
  * the current set of available tests, there's no point passing in
  * more than one test at a time.
- * 
+ *
  * Apart from %G_FILE_TEST_IS_SYMLINK all tests follow symbolic links,
  * so for a symbolic link to a regular file g_file_test() will return
  * %TRUE for both %G_FILE_TEST_IS_SYMLINK and %G_FILE_TEST_IS_REGULAR.
@@ -285,15 +277,33 @@ g_mkdir_with_parents (const gchar *pathname,
  *
  * You should never use g_file_test() to test whether it is safe
  * to perform an operation, because there is always the possibility
- * of the condition changing before you actually perform the operation.
+ * of the condition changing before you actually perform the operation,
+ * see [TOCTOU](https://en.wikipedia.org/wiki/Time-of-check_to_time-of-use).
+ *
  * For example, you might think you could use %G_FILE_TEST_IS_SYMLINK
  * to know whether it is safe to write to a file without being
  * tricked into writing into a different location. It doesn't work!
+ *
  * |[<!-- language="C" -->
  *  // DON'T DO THIS
  *  if (!g_file_test (filename, G_FILE_TEST_IS_SYMLINK)) 
  *    {
  *      fd = g_open (filename, O_WRONLY);
+ *      // write to fd
+ *    }
+ *
+ *  // DO THIS INSTEAD
+ *  fd = g_open (filename, O_WRONLY | O_NOFOLLOW | O_CLOEXEC);
+ *  if (fd == -1)
+ *    {
+ *      // check error
+ *      if (errno == ELOOP)
+ *        // file is a symlink and can be ignored
+ *      else
+ *        // handle errors as before
+ *    }
+ *  else
+ *    {
  *      // write to fd
  *    }
  * ]|
@@ -318,6 +328,13 @@ g_file_test (const gchar *filename,
              GFileTest    test)
 {
 #ifdef G_OS_WIN32
+  DWORD attributes;
+  wchar_t *wfilename;
+#endif
+
+  g_return_val_if_fail (filename != NULL, FALSE);
+
+#ifdef G_OS_WIN32
 /* stuff missing in std vc6 api */
 #  ifndef INVALID_FILE_ATTRIBUTES
 #    define INVALID_FILE_ATTRIBUTES -1
@@ -325,8 +342,7 @@ g_file_test (const gchar *filename,
 #  ifndef FILE_ATTRIBUTE_DEVICE
 #    define FILE_ATTRIBUTE_DEVICE 64
 #  endif
-  int attributes;
-  wchar_t *wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
+  wfilename = g_utf8_to_utf16 (filename, -1, NULL, NULL, NULL);
 
   if (wfilename == NULL)
     return FALSE;
@@ -358,7 +374,7 @@ g_file_test (const gchar *filename,
     {
       const gchar *lastdot = strrchr (filename, '.');
       const gchar *pathext = NULL, *p;
-      int extlen;
+      size_t extlen;
 
       if (lastdot == NULL)
         break;
@@ -386,7 +402,7 @@ g_file_test (const gchar *filename,
 	  const gchar *q = strchr (p, ';');
 	  if (q == NULL)
 	    q = p + strlen (p);
-	  if (extlen == q - p &&
+	  if (extlen == (size_t) (q - p) &&
 	      memcmp (lastdot, p, extlen) == 0)
 	    {
 	      g_free ((gchar *) pathext);
@@ -463,17 +479,18 @@ G_DEFINE_QUARK (g-file-error-quark, g_file_error)
 /**
  * g_file_error_from_errno:
  * @err_no: an "errno" value
- * 
+ *
  * Gets a #GFileError constant based on the passed-in @err_no.
+ *
  * For example, if you pass in `EEXIST` this function returns
- * #G_FILE_ERROR_EXIST. Unlike `errno` values, you can portably
+ * %G_FILE_ERROR_EXIST. Unlike `errno` values, you can portably
  * assume that all #GFileError values will exist.
  *
  * Normally a #GFileError value goes into a #GError returned
  * from a function that manipulates files. So you would use
  * g_file_error_from_errno() when constructing a #GError.
- * 
- * Returns: #GFileError corresponding to the given @errno
+ *
+ * Returns: #GFileError corresponding to the given @err_no
  **/
 GFileError
 g_file_error_from_errno (gint err_no)
@@ -693,14 +710,19 @@ get_contents_stdio (const gchar  *filename,
 
           if (tmp == NULL)
             {
+              char *display_size = g_format_size_full (total_allocated, G_FORMAT_SIZE_LONG_FORMAT);
               display_filename = g_filename_display_name (filename);
               g_set_error (error,
                            G_FILE_ERROR,
                            G_FILE_ERROR_NOMEM,
-                           g_dngettext (GETTEXT_PACKAGE, "Could not allocate %lu byte to read file \"%s\"", "Could not allocate %lu bytes to read file \"%s\"", (gulong)total_allocated),
-                           (gulong) total_allocated,
-			   display_filename);
+                           /* Translators: the first %s contains the file size
+                            * (already formatted with units), and the second %s
+                            * contains the file name */
+                           _("Could not allocate %s to read file “%s”"),
+                           display_size,
+                           display_filename);
               g_free (display_filename);
+              g_free (display_size);
 
               goto error;
             }
@@ -714,7 +736,7 @@ get_contents_stdio (const gchar  *filename,
           g_set_error (error,
                        G_FILE_ERROR,
                        g_file_error_from_errno (save_errno),
-                       _("Error reading file '%s': %s"),
+                       _("Error reading file “%s”: %s"),
                        display_filename,
 		       g_strerror (save_errno));
           g_free (display_filename);
@@ -750,7 +772,7 @@ get_contents_stdio (const gchar  *filename,
   g_set_error (error,
                G_FILE_ERROR,
                G_FILE_ERROR_FAILED,
-               _("File \"%s\" is too large"),
+               _("File “%s” is too large"),
                display_filename);
   g_free (display_filename);
 
@@ -777,7 +799,19 @@ get_contents_regfile (const gchar  *filename,
   gsize size;
   gsize alloc_size;
   gchar *display_filename;
-  
+
+  if ((G_MAXOFFSET >= G_MAXSIZE) && (stat_buf->st_size > (goffset) (G_MAXSIZE - 1)))
+    {
+      display_filename = g_filename_display_name (filename);
+      g_set_error (error,
+                   G_FILE_ERROR,
+                   G_FILE_ERROR_FAILED,
+                   _("File “%s” is too large"),
+                   display_filename);
+      g_free (display_filename);
+      goto error;
+    }
+
   size = stat_buf->st_size;
 
   alloc_size = size + 1;
@@ -785,14 +819,19 @@ get_contents_regfile (const gchar  *filename,
 
   if (buf == NULL)
     {
+      char *display_size = g_format_size_full (alloc_size, G_FORMAT_SIZE_LONG_FORMAT);
       display_filename = g_filename_display_name (filename);
       g_set_error (error,
                    G_FILE_ERROR,
                    G_FILE_ERROR_NOMEM,
-                           g_dngettext (GETTEXT_PACKAGE, "Could not allocate %lu byte to read file \"%s\"", "Could not allocate %lu bytes to read file \"%s\"", (gulong)alloc_size),
-                   (gulong) alloc_size, 
-		   display_filename);
+                   /* Translators: the first %s contains the file size
+                    * (already formatted with units), and the second %s
+                    * contains the file name */
+                   _("Could not allocate %s to read file “%s”"),
+                   display_size,
+                   display_filename);
       g_free (display_filename);
+      g_free (display_size);
       goto error;
     }
   
@@ -814,7 +853,7 @@ get_contents_regfile (const gchar  *filename,
               g_set_error (error,
                            G_FILE_ERROR,
                            g_file_error_from_errno (save_errno),
-                           _("Failed to read from file '%s': %s"),
+                           _("Failed to read from file “%s”: %s"),
                            display_filename, 
 			   g_strerror (save_errno));
               g_free (display_filename);
@@ -838,7 +877,7 @@ get_contents_regfile (const gchar  *filename,
 
   return TRUE;
 
- error:
+error:
 
   close (fd);
   
@@ -855,15 +894,17 @@ get_contents_posix (const gchar  *filename,
   gint fd;
 
   /* O_BINARY useful on Cygwin */
-  fd = open (filename, O_RDONLY|O_BINARY);
+  fd = open (filename, O_RDONLY | O_BINARY | O_CLOEXEC);
 
   if (fd < 0)
     {
       int saved_errno = errno;
-      set_file_error (error,
-                      filename,
-                      _("Failed to open file '%s': %s"),
-                      saved_errno);
+
+      if (error)
+        set_file_error (error,
+                        filename,
+                        _("Failed to open file “%s”: %s"),
+                        saved_errno);
 
       return FALSE;
     }
@@ -872,10 +913,11 @@ get_contents_posix (const gchar  *filename,
   if (fstat (fd, &stat_buf) < 0)
     {
       int saved_errno = errno;
-      set_file_error (error,
-                      filename,
-                      _("Failed to get attributes of file '%s': fstat() failed: %s"),
-                      saved_errno);
+      if (error)
+        set_file_error (error,
+                        filename,
+                        _("Failed to get attributes of file “%s”: fstat() failed: %s"),
+                        saved_errno);
       close (fd);
 
       return FALSE;
@@ -897,15 +939,16 @@ get_contents_posix (const gchar  *filename,
       FILE *f;
       gboolean retval;
 
-      f = fdopen (fd, "r");
+      f = fdopen (fd, "re");
       
       if (f == NULL)
         {
           int saved_errno = errno;
-          set_file_error (error,
-                          filename,
-                          _("Failed to open file '%s': fdopen() failed: %s"),
-                          saved_errno);
+          if (error)
+            set_file_error (error,
+                            filename,
+                            _("Failed to open file “%s”: fdopen() failed: %s"),
+                            saved_errno);
 
           return FALSE;
         }
@@ -927,15 +970,16 @@ get_contents_win32 (const gchar  *filename,
   FILE *f;
   gboolean retval;
   
-  f = g_fopen (filename, "rb");
+  f = g_fopen (filename, "rbe");
 
   if (f == NULL)
     {
       int saved_errno = errno;
-      set_file_error (error,
-                      filename,
-                      _("Failed to open file '%s': %s"),
-                      saved_errno);
+      if (error)
+        set_file_error (error,
+                        filename,
+                        _("Failed to open file “%s”: %s"),
+                        saved_errno);
 
       return FALSE;
     }
@@ -952,7 +996,7 @@ get_contents_win32 (const gchar  *filename,
  * @filename: (type filename): name of a file to read contents from, in the GLib file name encoding
  * @contents: (out) (array length=length) (element-type guint8): location to store an allocated string, use g_free() to free
  *     the returned string
- * @length: (allow-none): location to store length in bytes of the contents, or %NULL
+ * @length: (nullable): location to store length in bytes of the contents, or %NULL
  * @error: return location for a #GError, or %NULL
  *
  * Reads an entire file into allocated memory, with good error
@@ -962,7 +1006,7 @@ get_contents_win32 (const gchar  *filename,
  * contents and @length to the length of the file contents in bytes. The string
  * stored in @contents will be nul-terminated, so for text files you can pass
  * %NULL for the @length argument. If the call was not successful, it returns
- * %FALSE and sets @error. The error domain is #G_FILE_ERROR. Possible error
+ * %FALSE and sets @error. The error domain is %G_FILE_ERROR. Possible error
  * codes are those in the #GFileError enumeration. In the error case,
  * @contents is set to %NULL and @length is set to zero.
  *
@@ -990,8 +1034,9 @@ g_file_get_contents (const gchar  *filename,
 
 static gboolean
 rename_file (const char  *old_name,
-	     const char  *new_name,
-	     GError     **err)
+             const char  *new_name,
+             gboolean     do_fsync,
+             GError     **err)
 {
   errno = 0;
   if (g_rename (old_name, new_name) == -1)
@@ -1003,7 +1048,7 @@ rename_file (const char  *old_name,
       g_set_error (err,
 		   G_FILE_ERROR,
 		   g_file_error_from_errno (save_errno),
-		   _("Failed to rename file '%s' to '%s': g_rename() failed: %s"),
+		   _("Failed to rename file “%s” to “%s”: g_rename() failed: %s"),
 		   display_old_name,
 		   display_new_name,
 		   g_strerror (save_errno));
@@ -1013,36 +1058,112 @@ rename_file (const char  *old_name,
       
       return FALSE;
     }
-  
+
+  /* In order to guarantee that the *new* contents of the file are seen in
+   * future, fsync() the directory containing the file. Otherwise if the file
+   * system was unmounted cleanly now, it would be undefined whether the old
+   * or new contents of the file were visible after recovery.
+   *
+   * This assumes the @old_name and @new_name are in the same directory. */
+#ifdef HAVE_FSYNC
+  if (do_fsync)
+    {
+      gchar *dir = g_path_get_dirname (new_name);
+      int dir_fd = g_open (dir, O_RDONLY | O_CLOEXEC, 0);
+
+      if (dir_fd >= 0)
+        {
+          g_fsync (dir_fd);
+          g_close (dir_fd, NULL);
+        }
+
+      g_free (dir);
+    }
+#endif  /* HAVE_FSYNC */
+
   return TRUE;
 }
 
-static gchar *
-write_to_temp_file (const gchar  *contents,
-		    gssize        length,
-		    const gchar  *dest_file,
-		    GError      **err)
+static gboolean
+fd_should_be_fsynced (int                    fd,
+                      const gchar           *test_file,
+                      GFileSetContentsFlags  flags)
 {
-  gchar *tmp_name;
-  gchar *retval;
-  gint fd;
+#ifdef HAVE_FSYNC
+  struct stat statbuf;
 
-  retval = NULL;
+  /* If the final destination exists and is > 0 bytes, we want to sync the
+   * newly written file to ensure the data is on disk when we rename over
+   * the destination. Otherwise if we get a system crash we can lose both
+   * the new and the old file on some filesystems. (I.E. those that don't
+   * guarantee the data is written to the disk before the metadata.)
+   *
+   * There is no difference (in file system terms) if the old file doesn’t
+   * already exist, apart from the fact that if the system crashes and the new
+   * data hasn’t been fsync()ed, there is only one bit of old data to lose (that
+   * the file didn’t exist in the first place). In some situations, such as
+   * trashing files, the old file never exists, so it seems reasonable to avoid
+   * the fsync(). This is not a widely applicable optimisation though.
+   */
+  if ((flags & (G_FILE_SET_CONTENTS_CONSISTENT | G_FILE_SET_CONTENTS_DURABLE)) &&
+      (flags & G_FILE_SET_CONTENTS_ONLY_EXISTING))
+    {
+      errno = 0;
+      if (g_lstat (test_file, &statbuf) == 0)
+        return (statbuf.st_size > 0);
+      else if (errno == ENOENT)
+        return FALSE;
+      else
+        return TRUE;  /* lstat() failed; be cautious */
+    }
+  else
+    {
+      return (flags & (G_FILE_SET_CONTENTS_CONSISTENT | G_FILE_SET_CONTENTS_DURABLE));
+    }
+#else  /* if !HAVE_FSYNC */
+  return FALSE;
+#endif  /* !HAVE_FSYNC */
+}
 
-  tmp_name = g_strdup_printf ("%s.XXXXXX", dest_file);
-
-  errno = 0;
-  fd = g_mkstemp_full (tmp_name, O_RDWR | O_BINARY, 0666);
-
-  if (fd == -1)
+static gboolean
+truncate_file (int          fd,
+               off_t        length,
+               const char  *dest_file,
+               GError     **error)
+{
+  while (
+#ifdef G_OS_WIN32
+    g_win32_ftruncate (fd, length) < 0
+#else
+    ftruncate (fd, length) < 0
+#endif
+    )
     {
       int saved_errno = errno;
-      set_file_error (err,
-                      tmp_name, _("Failed to create file '%s': %s"),
-                      saved_errno);
-      goto out;
+
+      if (saved_errno == EINTR)
+        continue;
+
+      if (error != NULL)
+        set_file_error (error,
+                        dest_file,
+                        _("Failed to write file “%s”: ftruncate() failed: %s"),
+                        saved_errno);
+      return FALSE;
     }
 
+  return TRUE;
+}
+
+/* closes @fd once it’s finished (on success or error) */
+static gboolean
+write_to_file (const gchar  *contents,
+               gsize         length,
+               int           fd,
+               const gchar  *dest_file,
+               gboolean      do_fsync,
+               GError      **err)
+{
 #ifdef HAVE_FALLOCATE
   if (length > 0)
     {
@@ -1056,86 +1177,55 @@ write_to_temp_file (const gchar  *contents,
     {
       gssize s;
 
-      s = write (fd, contents, length);
-
+#ifdef G_OS_WIN32
+      /* 'write' on windows uses int types, so limit count to G_MAXINT */
+      s = write (fd, contents, MIN (length, (gsize) G_MAXINT));
+#else
+      /* Limit count to G_MAXSSIZE to fit into the return value. */
+      s = write (fd, contents, MIN (length, (gsize) G_MAXSSIZE));
+#endif
       if (s < 0)
         {
           int saved_errno = errno;
           if (saved_errno == EINTR)
             continue;
 
-          set_file_error (err,
-                          tmp_name, _("Failed to write file '%s': write() failed: %s"),
-                          saved_errno);
+          if (err)
+            set_file_error (err,
+                            dest_file, _("Failed to write file “%s”: write() failed: %s"),
+                            saved_errno);
           close (fd);
-          g_unlink (tmp_name);
 
-          goto out;
+          return FALSE;
         }
 
-      g_assert (s <= length);
+      g_assert ((gsize) s <= length);
 
       contents += s;
       length -= s;
     }
 
-#ifdef BTRFS_SUPER_MAGIC
-  {
-    struct statfs buf;
-
-    /* On Linux, on btrfs, skip the fsync since rename-over-existing is
-     * guaranteed to be atomic and this is the only case in which we
-     * would fsync() anyway.
-     */
-
-    if (fstatfs (fd, &buf) == 0 && buf.f_type == BTRFS_SUPER_MAGIC)
-      goto no_fsync;
-  }
-#endif
 
 #ifdef HAVE_FSYNC
-  {
-    struct stat statbuf;
-
-    errno = 0;
-    /* If the final destination exists and is > 0 bytes, we want to sync the
-     * newly written file to ensure the data is on disk when we rename over
-     * the destination. Otherwise if we get a system crash we can lose both
-     * the new and the old file on some filesystems. (I.E. those that don't
-     * guarantee the data is written to the disk before the metadata.)
-     */
-    if (g_lstat (dest_file, &statbuf) == 0 && statbuf.st_size > 0 && fsync (fd) != 0)
-      {
-        int saved_errno = errno;
+  errno = 0;
+  if (do_fsync && g_fsync (fd) != 0)
+    {
+      int saved_errno = errno;
+      if (err)
         set_file_error (err,
-                        tmp_name, _("Failed to write file '%s': fsync() failed: %s"),
+                        dest_file, _("Failed to write file “%s”: fsync() failed: %s"),
                         saved_errno);
-        close (fd);
-        g_unlink (tmp_name);
+      close (fd);
 
-        goto out;
-      }
-  }
-#endif
-
-#ifdef BTRFS_SUPER_MAGIC
- no_fsync:
+      return FALSE;
+    }
 #endif
 
   errno = 0;
   if (!g_close (fd, err))
-    {
-      g_unlink (tmp_name);
+    return FALSE;
 
-      goto out;
-    }
-
-  retval = g_strdup (tmp_name);
-
- out:
-  g_free (tmp_name);
-
-  return retval;
+  return TRUE;
 }
 
 /**
@@ -1146,16 +1236,72 @@ write_to_temp_file (const gchar  *contents,
  * @length: length of @contents, or -1 if @contents is a nul-terminated string
  * @error: return location for a #GError, or %NULL
  *
+ * Writes all of @contents to a file named @filename. This is a convenience
+ * wrapper around calling g_file_set_contents_full() with `flags` set to
+ * `G_FILE_SET_CONTENTS_CONSISTENT | G_FILE_SET_CONTENTS_ONLY_EXISTING` and
+ * `mode` set to `0666`.
+ *
+ * Returns: %TRUE on success, %FALSE if an error occurred
+ *
+ * Since: 2.8
+ */
+gboolean
+g_file_set_contents (const gchar  *filename,
+                     const gchar  *contents,
+                     gssize        length,
+                     GError      **error)
+{
+  return g_file_set_contents_full (filename, contents, length,
+                                   G_FILE_SET_CONTENTS_CONSISTENT |
+                                   G_FILE_SET_CONTENTS_ONLY_EXISTING,
+                                   0666, error);
+}
+
+/**
+ * g_file_set_contents_full:
+ * @filename: (type filename): name of a file to write @contents to, in the GLib file name
+ *   encoding
+ * @contents: (array length=length) (element-type guint8): string to write to the file
+ * @length: length of @contents, or -1 if @contents is a nul-terminated string
+ * @flags: flags controlling the safety vs speed of the operation
+ * @mode: file mode, as passed to `open()`; typically this will be `0666`
+ * @error: return location for a #GError, or %NULL
+ *
  * Writes all of @contents to a file named @filename, with good error checking.
  * If a file called @filename already exists it will be overwritten.
  *
- * This write is atomic in the sense that it is first written to a temporary
- * file which is then renamed to the final name. Notes:
+ * @flags control the properties of the write operation: whether it’s atomic,
+ * and what the tradeoff is between returning quickly or being resilient to
+ * system crashes.
+ *
+ * As this function performs file I/O, it is recommended to not call it anywhere
+ * where blocking would cause problems, such as in the main loop of a graphical
+ * application. In particular, if @flags has any value other than
+ * %G_FILE_SET_CONTENTS_NONE then this function may call `fsync()`.
+ *
+ * If %G_FILE_SET_CONTENTS_CONSISTENT is set in @flags, the operation is atomic
+ * in the sense that it is first written to a temporary file which is then
+ * renamed to the final name.
+ *
+ * Notes:
  *
  * - On UNIX, if @filename already exists hard links to @filename will break.
  *   Also since the file is recreated, existing permissions, access control
  *   lists, metadata etc. may be lost. If @filename is a symbolic link,
  *   the link itself will be replaced, not the linked file.
+ *
+ * - On UNIX, if @filename already exists and is non-empty, and if the system
+ *   supports it (via a journalling filesystem or equivalent), and if
+ *   %G_FILE_SET_CONTENTS_CONSISTENT is set in @flags, the `fsync()` call (or
+ *   equivalent) will be used to ensure atomic replacement: @filename
+ *   will contain either its old contents or @contents, even in the face of
+ *   system power loss, the disk being unsafely removed, etc.
+ *
+ * - On UNIX, if @filename does not already exist or is empty, there is a
+ *   possibility that system power loss etc. after calling this function will
+ *   leave @filename empty or full of NUL bytes, depending on the underlying
+ *   filesystem, unless %G_FILE_SET_CONTENTS_DURABLE and
+ *   %G_FILE_SET_CONTENTS_CONSISTENT are set in @flags.
  *
  * - On Windows renaming a file will not remove an existing file with the
  *   new name, so on Windows there is a race condition between the existing
@@ -1166,94 +1312,215 @@ write_to_temp_file (const gchar  *contents,
  *   @filename already exists and is open.
  *
  * If the call was successful, it returns %TRUE. If the call was not successful,
- * it returns %FALSE and sets @error. The error domain is #G_FILE_ERROR.
+ * it returns %FALSE and sets @error. The error domain is %G_FILE_ERROR.
  * Possible error codes are those in the #GFileError enumeration.
  *
  * Note that the name for the temporary file is constructed by appending up
  * to 7 characters to @filename.
  *
+ * If the file didn’t exist before and is created, it will be given the
+ * permissions from @mode. Otherwise, the permissions of the existing file will
+ * remain unchanged.
+ *
  * Returns: %TRUE on success, %FALSE if an error occurred
  *
- * Since: 2.8
+ * Since: 2.66
  */
 gboolean
-g_file_set_contents (const gchar  *filename,
-		     const gchar  *contents,
-		     gssize	   length,
-		     GError	 **error)
+g_file_set_contents_full (const gchar            *filename,
+                          const gchar            *contents,
+                          gssize                  length,
+                          GFileSetContentsFlags   flags,
+                          int                     mode,
+                          GError                **error)
 {
-  gchar *tmp_filename;
-  gboolean retval;
-  GError *rename_error = NULL;
-  
   g_return_val_if_fail (filename != NULL, FALSE);
   g_return_val_if_fail (error == NULL || *error == NULL, FALSE);
   g_return_val_if_fail (contents != NULL || length == 0, FALSE);
   g_return_val_if_fail (length >= -1, FALSE);
-  
-  if (length == -1)
+
+  /* @flags are handled as follows:
+   *  - %G_FILE_SET_CONTENTS_NONE: write directly to @filename, no fsync()s
+   *  - %G_FILE_SET_CONTENTS_CONSISTENT: write to temp file, fsync() it, rename()
+   *  - %G_FILE_SET_CONTENTS_CONSISTENT | ONLY_EXISTING: as above, but skip the
+   *    fsync() if @filename doesn’t exist or is empty
+   *  - %G_FILE_SET_CONTENTS_DURABLE: write directly to @filename, fsync() it
+   *  - %G_FILE_SET_CONTENTS_DURABLE | ONLY_EXISTING: as above, but skip the
+   *    fsync() if @filename doesn’t exist or is empty
+   *  - %G_FILE_SET_CONTENTS_CONSISTENT | DURABLE: write to temp file, fsync()
+   *    it, rename(), fsync() containing directory
+   *  - %G_FILE_SET_CONTENTS_CONSISTENT | DURABLE | ONLY_EXISTING: as above, but
+   *    skip both fsync()s if @filename doesn’t exist or is empty
+   */
+
+  if (length < 0)
     length = strlen (contents);
 
-  tmp_filename = write_to_temp_file (contents, length, filename, error);
-  
-  if (!tmp_filename)
+  if (flags & G_FILE_SET_CONTENTS_CONSISTENT)
     {
-      retval = FALSE;
-      goto out;
-    }
+      gchar *tmp_filename = NULL;
+      GError *rename_error = NULL;
+      gboolean retval;
+      int fd;
+      gboolean do_fsync;
+      GStatBuf old_stat;
 
-  if (!rename_file (tmp_filename, filename, &rename_error))
-    {
+      tmp_filename = g_strdup_printf ("%s.XXXXXX", filename);
+
+      errno = 0;
+      fd = g_mkstemp_full (tmp_filename, O_RDWR | O_BINARY | O_CLOEXEC, mode);
+
+      if (fd == -1)
+        {
+          int saved_errno = errno;
+          if (error)
+            set_file_error (error,
+                            tmp_filename, _("Failed to create file “%s”: %s"),
+                            saved_errno);
+          retval = FALSE;
+          goto consistent_out;
+        }
+
+      /* Maintain the permissions of the file if it exists */
+      if (!g_stat (filename, &old_stat))
+        {
+#ifndef G_OS_WIN32
+          if (fchmod (fd, old_stat.st_mode))
+#else  /* G_OS_WIN32 */
+          if (g_chmod (tmp_filename, old_stat.st_mode))
+#endif /* G_OS_WIN32 */
+            {
+              int saved_errno = errno;
+              if (error)
+                set_file_error (error,
+                                tmp_filename, _ ("Failed to set permissions of “%s”: %s"),
+                                saved_errno);
+              close (fd);
+              g_unlink (tmp_filename);
+              retval = FALSE;
+              goto consistent_out;
+            }
+        }
+
+      do_fsync = fd_should_be_fsynced (fd, filename, flags);
+      if (!write_to_file (contents, length, g_steal_fd (&fd), tmp_filename, do_fsync, error))
+        {
+          g_unlink (tmp_filename);
+          retval = FALSE;
+          goto consistent_out;
+        }
+
+      if (!rename_file (tmp_filename, filename, do_fsync, &rename_error))
+        {
 #ifndef G_OS_WIN32
 
-      g_unlink (tmp_filename);
-      g_propagate_error (error, rename_error);
-      retval = FALSE;
-      goto out;
+          g_unlink (tmp_filename);
+          g_propagate_error (error, rename_error);
+          retval = FALSE;
+          goto consistent_out;
 
 #else /* G_OS_WIN32 */
-      
-      /* Renaming failed, but on Windows this may just mean
-       * the file already exists. So if the target file
-       * exists, try deleting it and do the rename again.
-       */
-      if (!g_file_test (filename, G_FILE_TEST_EXISTS))
-	{
-	  g_unlink (tmp_filename);
-	  g_propagate_error (error, rename_error);
-	  retval = FALSE;
-	  goto out;
-	}
 
-      g_error_free (rename_error);
-      
-      if (g_unlink (filename) == -1)
-	{
-          int saved_errno = errno;
-          set_file_error (error,
-                          filename,
-		          _("Existing file '%s' could not be removed: g_unlink() failed: %s"),
-                          saved_errno);
-	  g_unlink (tmp_filename);
-	  retval = FALSE;
-	  goto out;
-	}
-      
-      if (!rename_file (tmp_filename, filename, error))
-	{
-	  g_unlink (tmp_filename);
-	  retval = FALSE;
-	  goto out;
-	}
+          /* Renaming failed, but on Windows this may just mean
+           * the file already exists. So if the target file
+           * exists, try deleting it and do the rename again.
+           */
+          if (!g_file_test (filename, G_FILE_TEST_EXISTS))
+            {
+              g_unlink (tmp_filename);
+              g_propagate_error (error, rename_error);
+              retval = FALSE;
+              goto consistent_out;
+            }
 
+          g_error_free (rename_error);
+
+          if (g_unlink (filename) == -1)
+            {
+              int saved_errno = errno;
+              if (error)
+                set_file_error (error,
+                                filename,
+                                _("Existing file “%s” could not be removed: g_unlink() failed: %s"),
+                                saved_errno);
+              g_unlink (tmp_filename);
+              retval = FALSE;
+              goto consistent_out;
+            }
+
+          if (!rename_file (tmp_filename, filename, flags, error))
+            {
+              g_unlink (tmp_filename);
+              retval = FALSE;
+              goto consistent_out;
+            }
+
+#endif  /* G_OS_WIN32 */
+        }
+
+      retval = TRUE;
+
+consistent_out:
+      g_free (tmp_filename);
+      return retval;
+    }
+  else
+    {
+      int direct_fd;
+      int open_flags;
+      gboolean do_fsync;
+
+      open_flags = O_RDWR | O_BINARY | O_CREAT | O_CLOEXEC;
+#ifdef O_NOFOLLOW
+      /* Windows doesn’t have symlinks, so O_NOFOLLOW is unnecessary there. */
+      open_flags |= O_NOFOLLOW;
 #endif
+
+      errno = 0;
+      direct_fd = g_open (filename, open_flags, mode);
+
+      if (direct_fd < 0)
+        {
+          int saved_errno = errno;
+
+#ifdef O_NOFOLLOW
+          /* ELOOP indicates that @filename is a symlink, since we used
+           * O_NOFOLLOW (alternately it could indicate that @filename contains
+           * looping or too many symlinks). In either case, try again on the
+           * %G_FILE_SET_CONTENTS_CONSISTENT code path.
+           *
+           * FreeBSD uses EMLINK instead of ELOOP
+           * (https://www.freebsd.org/cgi/man.cgi?query=open&sektion=2#STANDARDS),
+           * and NetBSD uses EFTYPE
+           * (https://netbsd.gw.com/cgi-bin/man-cgi?open+2+NetBSD-current). */
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__DragonFly__)
+          if (saved_errno == EMLINK)
+#elif defined(__NetBSD__)
+          if (saved_errno == EFTYPE)
+#else
+          if (saved_errno == ELOOP)
+#endif
+            return g_file_set_contents_full (filename, contents, length,
+                                             flags | G_FILE_SET_CONTENTS_CONSISTENT,
+                                             mode, error);
+#endif  /* O_NOFOLLOW */
+
+          if (error)
+            set_file_error (error,
+                            filename, _("Failed to open file “%s”: %s"),
+                            saved_errno);
+          return FALSE;
+        }
+
+      do_fsync = fd_should_be_fsynced (direct_fd, filename, flags);
+      if (!truncate_file (direct_fd, 0, filename, error))
+        return FALSE;
+      if (!write_to_file (contents, length, g_steal_fd (&direct_fd), filename,
+                          do_fsync, error))
+        return FALSE;
     }
 
-  retval = TRUE;
-  
- out:
-  g_free (tmp_filename);
-  return retval;
+  return TRUE;
 }
 
 /*
@@ -1273,9 +1540,9 @@ get_tmp_file (gchar            *tmpl,
   static const char letters[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   static const int NLETTERS = sizeof (letters) - 1;
-  glong value;
-  GTimeVal tv;
-  static int counter = 0;
+  guint64 value;
+  guint64 now_us;
+  static guint counter = 0;
 
   g_return_val_if_fail (tmpl != NULL, -1);
 
@@ -1289,12 +1556,12 @@ get_tmp_file (gchar            *tmpl,
     }
 
   /* Get some more or less random data.  */
-  g_get_current_time (&tv);
-  value = (tv.tv_usec ^ tv.tv_sec) + counter++;
+  now_us = g_get_real_time ();
+  value = ((now_us % G_USEC_PER_SEC) ^ (now_us / G_USEC_PER_SEC)) + counter++;
 
   for (count = 0; count < 100; value += 7777, ++count)
     {
-      glong v = value;
+      guint64 v = value;
 
       /* Fill in the random bits.  */
       XXXXXX[0] = letters[v % NLETTERS];
@@ -1349,25 +1616,30 @@ wrap_g_open (const gchar *filename,
 }
 
 /**
- * g_mkdtemp_full:
+ * g_mkdtemp_full: (skip)
  * @tmpl: (type filename): template directory name
  * @mode: permissions to create the temporary directory with
  *
- * Creates a temporary directory. See the mkdtemp() documentation
- * on most UNIX-like systems.
+ * Creates a temporary directory in the current directory.
+ *
+ * See the [`mkdtemp()`](man:mkdtemp(3)) documentation on most UNIX-like systems.
  *
  * The parameter is a string that should follow the rules for
  * mkdtemp() templates, i.e. contain the string "XXXXXX".
- * g_mkdtemp() is slightly more flexible than mkdtemp() in that the
+ * g_mkdtemp_full() is slightly more flexible than mkdtemp() in that the
  * sequence does not have to occur at the very end of the template
  * and you can pass a @mode. The X string will be modified to form
  * the name of a directory that didn't exist. The string should be
  * in the GLib file name encoding. Most importantly, on Windows it
  * should be in UTF-8.
  *
- * Returns: A pointer to @tmpl, which has been modified
- *     to hold the directory name. In case of errors, %NULL is
- *     returned, and %errno will be set.
+ * If you are going to be creating a temporary directory inside the
+ * directory returned by g_get_tmp_dir(), you might want to use
+ * g_dir_make_tmp() instead.
+ *
+ * Returns: (nullable) (type filename): A pointer to @tmpl, which has been
+ *   modified to hold the directory name. In case of errors, %NULL is
+ *   returned, and %errno will be set.
  *
  * Since: 2.30
  */
@@ -1382,24 +1654,29 @@ g_mkdtemp_full (gchar *tmpl,
 }
 
 /**
- * g_mkdtemp:
+ * g_mkdtemp: (skip)
  * @tmpl: (type filename): template directory name
  *
- * Creates a temporary directory. See the mkdtemp() documentation
- * on most UNIX-like systems.
+ * Creates a temporary directory in the current directory.
+ *
+ * See the [`mkdtemp()`](man:mkdtemp(3)) documentation on most UNIX-like systems.
  *
  * The parameter is a string that should follow the rules for
  * mkdtemp() templates, i.e. contain the string "XXXXXX".
  * g_mkdtemp() is slightly more flexible than mkdtemp() in that the
- * sequence does not have to occur at the very end of the template
- * and you can pass a @mode and additional @flags. The X string will
- * be modified to form the name of a directory that didn't exist.
+ * sequence does not have to occur at the very end of the template.
+ * The X string will be modified to form the name of a directory that
+ * didn't exist.
  * The string should be in the GLib file name encoding. Most importantly,
  * on Windows it should be in UTF-8.
  *
- * Returns: A pointer to @tmpl, which has been modified
- *     to hold the directory name.  In case of errors, %NULL is
- *     returned and %errno will be set.
+ * If you are going to be creating a temporary directory inside the
+ * directory returned by g_get_tmp_dir(), you might want to use
+ * g_dir_make_tmp() instead.
+ *
+ * Returns: (nullable) (type filename): A pointer to @tmpl, which has been
+ *   modified to hold the directory name.  In case of errors, %NULL is
+ *   returned and %errno will be set.
  *
  * Since: 2.30
  */
@@ -1410,14 +1687,15 @@ g_mkdtemp (gchar *tmpl)
 }
 
 /**
- * g_mkstemp_full:
+ * g_mkstemp_full: (skip)
  * @tmpl: (type filename): template filename
  * @flags: flags to pass to an open() call in addition to O_EXCL
- *     and O_CREAT, which are passed automatically
+ *   and O_CREAT, which are passed automatically
  * @mode: permissions to create the temporary file with
  *
- * Opens a temporary file. See the mkstemp() documentation
- * on most UNIX-like systems.
+ * Opens a temporary file in the current directory.
+ *
+ * See the [`mkstemp()`](man:mkstemp(3)) documentation on most UNIX-like systems.
  *
  * The parameter is a string that should follow the rules for
  * mkstemp() templates, i.e. contain the string "XXXXXX".
@@ -1429,9 +1707,9 @@ g_mkdtemp (gchar *tmpl)
  * on Windows it should be in UTF-8.
  *
  * Returns: A file handle (as from open()) to the file
- *     opened for reading and writing. The file handle should be
- *     closed with close(). In case of errors, -1 is returned
- *     and %errno will be set.
+ *   opened for reading and writing. The file handle should be
+ *   closed with close(). In case of errors, -1 is returned
+ *   and %errno will be set.
  *
  * Since: 2.22
  */
@@ -1446,11 +1724,12 @@ g_mkstemp_full (gchar *tmpl,
 }
 
 /**
- * g_mkstemp:
+ * g_mkstemp: (skip)
  * @tmpl: (type filename): template filename
  *
- * Opens a temporary file. See the mkstemp() documentation
- * on most UNIX-like systems.
+ * Opens a temporary file in the current directory.
+ *
+ * See the [`mkstemp()`](man:mkstemp(3)) documentation on most UNIX-like systems.
  *
  * The parameter is a string that should follow the rules for
  * mkstemp() templates, i.e. contain the string "XXXXXX".
@@ -1461,15 +1740,15 @@ g_mkstemp_full (gchar *tmpl,
  * Most importantly, on Windows it should be in UTF-8.
  *
  * Returns: A file handle (as from open()) to the file
- *     opened for reading and writing. The file is opened in binary
- *     mode on platforms where there is a difference. The file handle
- *     should be closed with close(). In case of errors, -1 is
- *     returned and %errno will be set.
+ *   opened for reading and writing. The file is opened in binary
+ *   mode on platforms where there is a difference. The file handle
+ *   should be closed with close(). In case of errors, -1 is
+ *   returned and %errno will be set.
  */
 gint
 g_mkstemp (gchar *tmpl)
 {
-  return g_mkstemp_full (tmpl, O_RDWR | O_BINARY, 0600);
+  return g_mkstemp_full (tmpl, O_RDWR | O_BINARY | O_CLOEXEC, 0600);
 }
 
 static gint
@@ -1503,7 +1782,7 @@ g_get_tmp_name (const gchar      *tmpl,
       g_set_error (error,
                    G_FILE_ERROR,
                    G_FILE_ERROR_FAILED,
-                   _("Template '%s' invalid, should not contain a '%s'"),
+                   _("Template “%s” invalid, should not contain a “%s”"),
                    display_tmpl, c);
       g_free (display_tmpl);
 
@@ -1516,7 +1795,7 @@ g_get_tmp_name (const gchar      *tmpl,
       g_set_error (error,
                    G_FILE_ERROR,
                    G_FILE_ERROR_FAILED,
-                   _("Template '%s' doesn't contain XXXXXX"),
+                   _("Template “%s” doesn’t contain XXXXXX"),
                    display_tmpl);
       g_free (display_tmpl);
       return -1;
@@ -1535,10 +1814,11 @@ g_get_tmp_name (const gchar      *tmpl,
   if (retval == -1)
     {
       int saved_errno = errno;
-      set_file_error (error,
-                      fulltemplate,
-                      _("Failed to create file '%s': %s"),
-                      saved_errno);
+      if (error)
+        set_file_error (error,
+                        fulltemplate,
+                        _("Failed to create file “%s”: %s"),
+                        saved_errno);
       g_free (fulltemplate);
       return -1;
     }
@@ -1550,10 +1830,10 @@ g_get_tmp_name (const gchar      *tmpl,
 
 /**
  * g_file_open_tmp:
- * @tmpl: (type filename) (allow-none): Template for file name, as in
- *     g_mkstemp(), basename only, or %NULL for a default template
+ * @tmpl: (type filename) (nullable): Template for file name, as in
+ *   g_mkstemp(), basename only, or %NULL for a default template
  * @name_used: (out) (type filename): location to store actual name used,
- *     or %NULL
+ *   or %NULL
  * @error: return location for a #GError
  *
  * Opens a file for writing in the preferred directory for temporary
@@ -1574,9 +1854,9 @@ g_get_tmp_name (const gchar      *tmpl,
  * name encoding.
  *
  * Returns: A file handle (as from open()) to the file opened for
- *     reading and writing. The file is opened in binary mode on platforms
- *     where there is a difference. The file handle should be closed with
- *     close(). In case of errors, -1 is returned and @error will be set.
+ *   reading and writing. The file is opened in binary mode on platforms
+ *   where there is a difference. The file handle should be closed with
+ *   close(). In case of errors, -1 is returned and @error will be set.
  */
 gint
 g_file_open_tmp (const gchar  *tmpl,
@@ -1586,9 +1866,11 @@ g_file_open_tmp (const gchar  *tmpl,
   gchar *fulltemplate;
   gint result;
 
+  g_return_val_if_fail (error == NULL || *error == NULL, -1);
+
   result = g_get_tmp_name (tmpl, &fulltemplate,
                            wrap_g_open,
-                           O_CREAT | O_EXCL | O_RDWR | O_BINARY,
+                           O_CREAT | O_EXCL | O_RDWR | O_BINARY | O_CLOEXEC,
                            0600,
                            error);
   if (result != -1)
@@ -1604,8 +1886,8 @@ g_file_open_tmp (const gchar  *tmpl,
 
 /**
  * g_dir_make_tmp:
- * @tmpl: (type filename) (allow-none): Template for directory name,
- *     as in g_mkdtemp(), basename only, or %NULL for a default template
+ * @tmpl: (type filename) (nullable): Template for directory name,
+ *   as in g_mkdtemp(), basename only, or %NULL for a default template
  * @error: return location for a #GError
  *
  * Creates a subdirectory in the preferred directory for temporary
@@ -1620,10 +1902,10 @@ g_file_open_tmp (const gchar  *tmpl,
  * Note that in contrast to g_mkdtemp() (and mkdtemp()) @tmpl is not
  * modified, and might thus be a read-only literal string.
  *
- * Returns: (type filename): The actual name used. This string
- *     should be freed with g_free() when not needed any longer and is
- *     is in the GLib file name encoding. In case of errors, %NULL is
- *     returned and @error will be set.
+ * Returns: (type filename) (transfer full): The actual name used. This string
+ *   should be freed with g_free() when not needed any longer and is
+ *   is in the GLib file name encoding. In case of errors, %NULL is
+ *   returned and @error will be set.
  *
  * Since: 2.30
  */
@@ -1632,6 +1914,8 @@ g_dir_make_tmp (const gchar  *tmpl,
                 GError      **error)
 {
   gchar *fulltemplate;
+
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
 
   if (g_get_tmp_name (tmpl, &fulltemplate, wrap_g_mkdir, 0, 0700, error) == -1)
     return NULL;
@@ -1646,13 +1930,13 @@ g_build_path_va (const gchar  *separator,
 		 gchar       **str_array)
 {
   GString *result;
-  gint separator_len = strlen (separator);
+  size_t separator_len = strlen (separator);
   gboolean is_first = TRUE;
   gboolean have_leading = FALSE;
   const gchar *single_element = NULL;
   const gchar *next_element;
   const gchar *last_trailing = NULL;
-  gint i = 0;
+  size_t i = 0;
 
   result = g_string_new (NULL);
 
@@ -1744,14 +2028,17 @@ g_build_path_va (const gchar  *separator,
 
 /**
  * g_build_pathv:
- * @separator: a string used to separator the elements of the path.
- * @args: (array zero-terminated=1): %NULL-terminated array of strings containing the path elements.
+ * @separator: a string used to separate the elements of the path.
+ * @args: (array zero-terminated=1) (element-type filename): %NULL-terminated
+ *   array of strings containing the path elements.
  * 
- * Behaves exactly like g_build_path(), but takes the path elements 
- * as a string array, instead of varargs. This function is mainly
- * meant for language bindings.
+ * Behaves exactly like g_build_path(), but takes the path elements
+ * as a string array, instead of variadic arguments.
  *
- * Returns: a newly-allocated string that must be freed with g_free().
+ * This function is mainly meant for language bindings.
+ *
+ * Returns: (type filename) (transfer full): a newly-allocated string that
+ *     must be freed with g_free().
  *
  * Since: 2.8
  */
@@ -1768,15 +2055,17 @@ g_build_pathv (const gchar  *separator,
 
 /**
  * g_build_path:
- * @separator: a string used to separator the elements of the path.
- * @first_element: the first element in the path
+ * @separator: (type filename): a string used to separate the elements of the path.
+ * @first_element: (type filename): the first element in the path
  * @...: remaining elements in path, terminated by %NULL
  * 
  * Creates a path from a series of elements using @separator as the
- * separator between elements. At the boundary between two elements,
- * any trailing occurrences of separator in the first element, or
- * leading occurrences of separator in the second element are removed
- * and exactly one copy of the separator is inserted.
+ * separator between elements.
+ *
+ * At the boundary between two elements, any trailing occurrences of
+ * separator in the first element, or leading occurrences of separator
+ * in the second element are removed and exactly one copy of the
+ * separator is inserted.
  *
  * Empty elements are ignored.
  *
@@ -1798,8 +2087,8 @@ g_build_pathv (const gchar  *separator,
  * Other than for determination of the number of leading and trailing
  * copies of the separator, elements consisting only of copies
  * of the separator are ignored.
- * 
- * Returns: a newly-allocated string that must be freed with g_free().
+ *
+ * Returns: (type filename) (transfer full): the newly allocated path
  **/
 gchar *
 g_build_path (const gchar *separator,
@@ -1835,7 +2124,7 @@ g_build_pathname_va (const gchar  *first_element,
   const gchar *next_element;
   const gchar *last_trailing = NULL;
   gchar current_separator = '\\';
-  gint i = 0;
+  size_t i = 0;
 
   result = g_string_new (NULL);
 
@@ -1934,39 +2223,81 @@ g_build_pathname_va (const gchar  *first_element,
 
 #endif
 
-/**
- * g_build_filenamev:
- * @args: (array zero-terminated=1): %NULL-terminated array of strings containing the path elements.
- * 
- * Behaves exactly like g_build_filename(), but takes the path elements 
- * as a string array, instead of varargs. This function is mainly
- * meant for language bindings.
- *
- * Returns: a newly-allocated string that must be freed with g_free().
- * 
- * Since: 2.8
- */
-gchar *
-g_build_filenamev (gchar **args)
+static gchar *
+g_build_filename_va (const gchar  *first_argument,
+                     va_list      *args,
+                     gchar       **str_array)
 {
   gchar *str;
 
 #ifndef G_OS_WIN32
-  str = g_build_path_va (G_DIR_SEPARATOR_S, NULL, NULL, args);
+  str = g_build_path_va (G_DIR_SEPARATOR_S, first_argument, args, str_array);
 #else
-  str = g_build_pathname_va (NULL, NULL, args);
+  str = g_build_pathname_va (first_argument, args, str_array);
 #endif
 
   return str;
 }
 
 /**
+ * g_build_filename_valist:
+ * @first_element: (type filename): the first element in the path
+ * @args: va_list of remaining elements in path
+ *
+ * Creates a filename from a list of elements using the correct
+ * separator for the current platform.
+ *
+ * Behaves exactly like g_build_filename(), but takes the path elements
+ * as a va_list.
+ *
+ * This function is mainly meant for implementing other variadic arguments
+ * functions.
+ *
+ * Returns: (type filename) (transfer full): the newly allocated path
+ *
+ * Since: 2.56
+ */
+gchar *
+g_build_filename_valist (const gchar  *first_element,
+                         va_list      *args)
+{
+  g_return_val_if_fail (first_element != NULL, NULL);
+
+  return g_build_filename_va (first_element, args, NULL);
+}
+
+/**
+ * g_build_filenamev:
+ * @args: (array zero-terminated=1) (element-type filename): %NULL-terminated
+ *   array of strings containing the path elements.
+ * 
+ * Creates a filename from a vector of elements using the correct
+ * separator for the current platform.
+ *
+ * This function behaves exactly like g_build_filename(), but takes the path
+ * elements as a string array, instead of varargs. This function is mainly
+ * meant for language bindings.
+ *
+ * If you are building a path programmatically you may want to use
+ * #GPathBuf instead.
+ *
+ * Returns: (type filename) (transfer full): the newly allocated path
+ *
+ * Since: 2.8
+ */
+gchar *
+g_build_filenamev (gchar **args)
+{
+  return g_build_filename_va (NULL, NULL, args);
+}
+
+/**
  * g_build_filename:
- * @first_element: the first element in the path
+ * @first_element: (type filename): the first element in the path
  * @...: remaining elements in path, terminated by %NULL
  * 
  * Creates a filename from a series of elements using the correct
- * separator for filenames.
+ * separator for the current platform.
  *
  * On Unix, this function behaves identically to `g_build_path
  * (G_DIR_SEPARATOR_S, first_element, ....)`.
@@ -1979,10 +2310,13 @@ g_build_filenamev (gchar **args)
  *
  * No attempt is made to force the resulting filename to be an absolute
  * path. If the first element is a relative path, the result will
- * be a relative path. 
- * 
- * Returns: a newly-allocated string that must be freed with g_free().
- **/
+ * be a relative path.
+ *
+ * If you are building a path programmatically you may want to use
+ * #GPathBuf instead.
+ *
+ * Returns: (type filename) (transfer full): the newly allocated path
+ */
 gchar *
 g_build_filename (const gchar *first_element, 
 		  ...)
@@ -1991,11 +2325,7 @@ g_build_filename (const gchar *first_element,
   va_list args;
 
   va_start (args, first_element);
-#ifndef G_OS_WIN32
-  str = g_build_path_va (G_DIR_SEPARATOR_S, first_element, &args, NULL);
-#else
-  str = g_build_pathname_va (first_element, &args, NULL);
-#endif
+  str = g_build_filename_va (first_element, &args, NULL);
   va_end (args);
 
   return str;
@@ -2003,15 +2333,35 @@ g_build_filename (const gchar *first_element,
 
 /**
  * g_file_read_link:
- * @filename: the symbolic link
+ * @filename: (type filename): the symbolic link
  * @error: return location for a #GError
  *
  * Reads the contents of the symbolic link @filename like the POSIX
- * readlink() function.  The returned string is in the encoding used
- * for filenames. Use g_filename_to_utf8() to convert it to UTF-8.
+ * `readlink()` function.
  *
- * Returns: A newly-allocated string with the contents of the symbolic link, 
- *          or %NULL if an error occurred.
+ * The returned string is in the encoding used for filenames. Use
+ * g_filename_to_utf8() to convert it to UTF-8.
+ *
+ * The returned string may also be a relative path. Use g_build_filename()
+ * to convert it to an absolute path:
+ *
+ * |[<!-- language="C" -->
+ * g_autoptr(GError) local_error = NULL;
+ * g_autofree gchar *link_target = g_file_read_link ("/etc/localtime", &local_error);
+ *
+ * if (local_error != NULL)
+ *   g_error ("Error reading link: %s", local_error->message);
+ *
+ * if (!g_path_is_absolute (link_target))
+ *   {
+ *     g_autofree gchar *absolute_link_target = g_build_filename ("/etc", link_target, NULL);
+ *     g_free (link_target);
+ *     link_target = g_steal_pointer (&absolute_link_target);
+ *   }
+ * ]|
+ *
+ * Returns: (type filename) (transfer full): A newly-allocated string with
+ *   the contents of the symbolic link, or %NULL if an error occurred.
  *
  * Since: 2.4
  */
@@ -2019,12 +2369,15 @@ gchar *
 g_file_read_link (const gchar  *filename,
 	          GError      **error)
 {
-#ifdef HAVE_READLINK
+#if defined (HAVE_READLINK)
   gchar *buffer;
-  guint size;
-  gint read_size;    
+  size_t size;
+  gssize read_size;
   
-  size = 256; 
+  g_return_val_if_fail (filename != NULL, NULL);
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  size = 256;
   buffer = g_malloc (size);
   
   while (TRUE) 
@@ -2033,15 +2386,16 @@ g_file_read_link (const gchar  *filename,
       if (read_size < 0)
         {
           int saved_errno = errno;
-          set_file_error (error,
-                          filename,
-                          _("Failed to read the symbolic link '%s': %s"),
-                          saved_errno);
+          if (error)
+            set_file_error (error,
+                            filename,
+                            _("Failed to read the symbolic link “%s”: %s"),
+                            saved_errno);
           g_free (buffer);
           return NULL;
         }
     
-      if (read_size < size) 
+      if ((size_t) read_size < size)
         {
           buffer[read_size] = 0;
           return buffer;
@@ -2050,7 +2404,32 @@ g_file_read_link (const gchar  *filename,
       size *= 2;
       buffer = g_realloc (buffer, size);
     }
+#elif defined (G_OS_WIN32)
+  gchar *buffer;
+  gssize read_size;
+  
+  g_return_val_if_fail (filename != NULL, NULL);
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
+  read_size = g_win32_readlink_utf8 (filename, NULL, 0, &buffer, TRUE);
+  if (read_size < 0)
+    {
+      int saved_errno = errno;
+      if (error)
+        set_file_error (error,
+                        filename,
+                        _("Failed to read the symbolic link “%s”: %s"),
+                        saved_errno);
+      return NULL;
+    }
+  else if (read_size == 0)
+    return strdup ("");
+  else
+    return buffer;
 #else
+  g_return_val_if_fail (filename != NULL, NULL);
+  g_return_val_if_fail (error == NULL || *error == NULL, NULL);
+
   g_set_error_literal (error,
                        G_FILE_ERROR,
                        G_FILE_ERROR_INVAL,
@@ -2062,7 +2441,7 @@ g_file_read_link (const gchar  *filename,
 
 /**
  * g_path_is_absolute:
- * @file_name: a file name
+ * @file_name: (type filename): a file name
  *
  * Returns %TRUE if the given @file_name is an absolute file name.
  * Note that this is a somewhat vague concept on Windows.
@@ -2075,7 +2454,7 @@ g_file_read_link (const gchar  *filename,
  * an absolute file name one that either begins with a directory
  * separator such as "\Users\tml" or begins with the root on a drive,
  * for example "C:\Windows". The first case also includes UNC paths
- * such as "\\myserver\docs\foo". In all cases, either slashes or
+ * such as "\\\\myserver\docs\foo". In all cases, either slashes or
  * backslashes are accepted.
  *
  * Note that a file name relative to the current drive root does not
@@ -2111,13 +2490,14 @@ g_path_is_absolute (const gchar *file_name)
 
 /**
  * g_path_skip_root:
- * @file_name: a file name
+ * @file_name: (type filename): a file name
  *
  * Returns a pointer into @file_name after the root component,
  * i.e. after the "/" in UNIX or "C:\" under Windows. If @file_name
  * is not an absolute path it returns %NULL.
  *
- * Returns: (nullable): a pointer into @file_name after the root component
+ * Returns: (type filename) (nullable): a pointer into @file_name after the
+ *     root component
  */
 const gchar *
 g_path_skip_root (const gchar *file_name)
@@ -2181,24 +2561,24 @@ g_path_skip_root (const gchar *file_name)
 
 /**
  * g_basename:
- * @file_name: the name of the file
+ * @file_name: (type filename): the name of the file
  *
  * Gets the name of the file without any leading directory
  * components. It returns a pointer into the given file name
  * string.
  *
- * Returns: the name of the file without any leading
- *     directory components
+ * Returns: (type filename): the name of the file without any leading
+ *   directory components
  *
  * Deprecated:2.2: Use g_path_get_basename() instead, but notice
- *     that g_path_get_basename() allocates new memory for the
- *     returned string, unlike this function which returns a pointer
- *     into the argument.
+ *   that g_path_get_basename() allocates new memory for the
+ *   returned string, unlike this function which returns a pointer
+ *   into the argument.
  */
 const gchar *
 g_basename (const gchar *file_name)
 {
-  gchar *base;
+  const gchar *base;
 
   g_return_val_if_fail (file_name != NULL, NULL);
 
@@ -2206,7 +2586,7 @@ g_basename (const gchar *file_name)
 
 #ifdef G_OS_WIN32
   {
-    gchar *q;
+    const gchar *q;
     q = strrchr (file_name, '/');
     if (base == NULL || (q != NULL && q > base))
       base = q;
@@ -2226,7 +2606,7 @@ g_basename (const gchar *file_name)
 
 /**
  * g_path_get_basename:
- * @file_name: the name of the file
+ * @file_name: (type filename): the name of the file
  *
  * Gets the last component of the filename.
  *
@@ -2235,14 +2615,14 @@ g_basename (const gchar *file_name)
  * separators (and on Windows, possibly a drive letter), a single
  * separator is returned. If @file_name is empty, it gets ".".
  *
- * Returns: a newly allocated string containing the last
- *    component of the filename
+ * Returns: (type filename) (transfer full): a newly allocated string
+ *   containing the last component of the filename
  */
 gchar *
 g_path_get_basename (const gchar *file_name)
 {
-  gssize base;
-  gssize last_nonslash;
+  size_t base;
+  size_t last_nonslash;
   gsize len;
   gchar *retval;
 
@@ -2253,10 +2633,10 @@ g_path_get_basename (const gchar *file_name)
 
   last_nonslash = strlen (file_name) - 1;
 
-  while (last_nonslash >= 0 && G_IS_DIR_SEPARATOR (file_name [last_nonslash]))
+  while (last_nonslash > 0 && G_IS_DIR_SEPARATOR (file_name[last_nonslash]))
     last_nonslash--;
 
-  if (last_nonslash == -1)
+  if (last_nonslash == 0 && G_IS_DIR_SEPARATOR (file_name[0]))
     /* string only containing slashes */
     return g_strdup (G_DIR_SEPARATOR_S);
 
@@ -2269,53 +2649,72 @@ g_path_get_basename (const gchar *file_name)
 #endif
   base = last_nonslash;
 
-  while (base >=0 && !G_IS_DIR_SEPARATOR (file_name [base]))
+  while (base > 0 && !G_IS_DIR_SEPARATOR (file_name[base]))
     base--;
 
-#ifdef G_OS_WIN32
-  if (base == -1 &&
-      g_ascii_isalpha (file_name[0]) &&
-      file_name[1] == ':')
-    base = 1;
-#endif /* G_OS_WIN32 */
+  /* Does the file_name start without a directory separator, with the only
+   * directory separators being at the end of the string? e.g. `dir/` */
+  if (base == 0 && !G_IS_DIR_SEPARATOR (file_name[0]))
+    {
+      base = 0;
 
-  len = last_nonslash - base;
+#ifdef G_OS_WIN32
+      /* Does it start with a drive letter? e.g. `C:dir/`
+       * If so, skip that. */
+      if (g_ascii_isalpha (file_name[0]) &&
+          file_name[1] == ':')
+        base = 2;
+#endif /* G_OS_WIN32 */
+    }
+  else
+    {
+      /* Otherwise, `base` now points at the last directory separator character
+       * before the component we want as the basename, so increase the index
+       * again. */
+      base += 1;
+    }
+
+  len = last_nonslash - base + 1;
+  g_assert (len < SIZE_MAX);
   retval = g_malloc (len + 1);
-  memcpy (retval, file_name + base + 1, len);
-  retval [len] = '\0';
+  memcpy (retval, file_name + base, len);
+  retval[len] = '\0';
 
   return retval;
 }
 
 /**
  * g_dirname:
- * @file_name: the name of the file
+ * @file_name: (type filename): the name of the file
  *
  * Gets the directory components of a file name.
  *
  * If the file name has no directory components "." is returned.
  * The returned string should be freed when no longer needed.
  *
- * Returns: the directory components of the file
+ * Returns: (type filename) (transfer full): the directory components of the file
  *
  * Deprecated: use g_path_get_dirname() instead
  */
 
 /**
  * g_path_get_dirname:
- * @file_name: the name of the file
+ * @file_name: (type filename): the name of the file
  *
- * Gets the directory components of a file name.
+ * Gets the directory components of a file name. For example, the directory
+ * component of `/usr/bin/test` is `/usr/bin`. The directory component of `/`
+ * is `/`.
  *
  * If the file name has no directory components "." is returned.
  * The returned string should be freed when no longer needed.
  *
- * Returns: the directory components of the file
+ * Returns: (type filename) (transfer full): the directory components of the file
  */
 gchar *
 g_path_get_dirname (const gchar *file_name)
 {
-  gchar *base;
+  const gchar *base;
+  gchar *base_p;
   gsize len;
 
   g_return_val_if_fail (file_name != NULL, NULL);
@@ -2324,7 +2723,7 @@ g_path_get_dirname (const gchar *file_name)
 
 #ifdef G_OS_WIN32
   {
-    gchar *q;
+    const gchar *q;
     q = strrchr (file_name, '/');
     if (base == NULL || (q != NULL && q > base))
       base = q;
@@ -2381,11 +2780,11 @@ g_path_get_dirname (const gchar *file_name)
       if (p == base + 1)
         {
           len = (guint) strlen (file_name) + 1;
-          base = g_new (gchar, len + 1);
-          strcpy (base, file_name);
-          base[len-1] = G_DIR_SEPARATOR;
-          base[len] = 0;
-          return base;
+          base_p = g_new (gchar, len + 1);
+          strcpy (base_p, file_name);
+          base_p[len-1] = G_DIR_SEPARATOR;
+          base_p[len] = 0;
+          return base_p;
         }
       if (G_IS_DIR_SEPARATOR (*p))
         {
@@ -2399,11 +2798,155 @@ g_path_get_dirname (const gchar *file_name)
 #endif
 
   len = (guint) 1 + base - file_name;
-  base = g_new (gchar, len + 1);
-  memmove (base, file_name, len);
-  base[len] = 0;
+  base_p = g_new (gchar, len + 1);
+  memmove (base_p, file_name, len);
+  base_p[len] = 0;
 
-  return base;
+  return base_p;
+}
+
+/**
+ * g_canonicalize_filename:
+ * @filename: (type filename): the name of the file
+ * @relative_to: (type filename) (nullable): the relative directory, or %NULL
+ * to use the current working directory
+ *
+ * Gets the canonical file name from @filename. All triple slashes are turned into
+ * single slashes, and all `..` and `.`s resolved against @relative_to.
+ *
+ * Symlinks are not followed, and the returned path is guaranteed to be absolute.
+ *
+ * If @filename is an absolute path, @relative_to is ignored. Otherwise,
+ * @relative_to will be prepended to @filename to make it absolute. @relative_to
+ * must be an absolute path, or %NULL. If @relative_to is %NULL, it'll fallback
+ * to g_get_current_dir().
+ *
+ * This function never fails, and will canonicalize file paths even if they don't
+ * exist.
+ *
+ * No file system I/O is done.
+ *
+ * Returns: (type filename) (transfer full): a newly allocated string with the
+ *   canonical file path
+ *
+ * Since: 2.58
+ */
+gchar *
+g_canonicalize_filename (const gchar *filename,
+                         const gchar *relative_to)
+{
+  gchar *canon, *input, *output, *after_root, *output_start;
+
+  g_return_val_if_fail (relative_to == NULL || g_path_is_absolute (relative_to), NULL);
+
+  if (!g_path_is_absolute (filename))
+    {
+      gchar *cwd_allocated = NULL;
+      const gchar  *cwd;
+
+      if (relative_to != NULL)
+        cwd = relative_to;
+      else
+        cwd = cwd_allocated = g_get_current_dir ();
+
+      canon = g_build_filename (cwd, filename, NULL);
+      g_free (cwd_allocated);
+    }
+  else
+    {
+      canon = g_strdup (filename);
+    }
+
+  after_root = (char *)g_path_skip_root (canon);
+
+  if (after_root == NULL)
+    {
+      /* This shouldn't really happen, as g_get_current_dir() should
+         return an absolute pathname, but bug 573843 shows this is
+         not always happening */
+      g_free (canon);
+      return g_build_filename (G_DIR_SEPARATOR_S, filename, NULL);
+    }
+
+  /* Find the first dir separator and use the canonical dir separator. */
+  for (output = after_root - 1;
+       (output >= canon) && G_IS_DIR_SEPARATOR (*output);
+       output--)
+    *output = G_DIR_SEPARATOR;
+
+  /* 1 to re-increment after the final decrement above (so that output >= canon),
+   * and 1 to skip the first `/`. There might not be a first `/` if
+   * the @canon is a Windows `//server/share` style path with no
+   * trailing directories. @after_root will be '\0' in that case. */
+  output++;
+  if (*output == G_DIR_SEPARATOR)
+    output++;
+
+  /* POSIX allows double slashes at the start to mean something special
+   * (as does windows too). So, "//" != "/", but more than two slashes
+   * is treated as "/".
+   */
+  if (after_root - output == 1)
+    output++;
+
+  input = after_root;
+  output_start = output;
+  while (*input)
+    {
+      /* input points to the next non-separator to be processed. */
+      /* output points to the next location to write to. */
+      g_assert (input > canon && G_IS_DIR_SEPARATOR (input[-1]));
+      g_assert (output > canon && G_IS_DIR_SEPARATOR (output[-1]));
+      g_assert (input >= output);
+
+      /* Ignore repeated dir separators. */
+      while (G_IS_DIR_SEPARATOR (input[0]))
+       input++;
+
+      /* Ignore single dot directory components. */
+      if (input[0] == '.' && (input[1] == 0 || G_IS_DIR_SEPARATOR (input[1])))
+        {
+           if (input[1] == 0)
+             break;
+           input += 2;
+        }
+      /* Remove double-dot directory components along with the preceding
+       * path component. */
+      else if (input[0] == '.' && input[1] == '.' &&
+               (input[2] == 0 || G_IS_DIR_SEPARATOR (input[2])))
+        {
+          if (output > output_start)
+            {
+              do
+                {
+                  output--;
+                }
+              while (!G_IS_DIR_SEPARATOR (output[-1]) && output > output_start);
+            }
+          if (input[2] == 0)
+            break;
+          input += 3;
+        }
+      /* Copy the input to the output until the next separator,
+       * while converting it to canonical separator */
+      else
+        {
+          while (*input && !G_IS_DIR_SEPARATOR (*input))
+            *output++ = *input++;
+          if (input[0] == 0)
+            break;
+          input++;
+          *output++ = G_DIR_SEPARATOR;
+        }
+    }
+
+  /* Remove a potentially trailing dir separator */
+  if (output > output_start && G_IS_DIR_SEPARATOR (output[-1]))
+    output--;
+
+  *output = '\0';
+
+  return canon;
 }
 
 #if defined(MAXPATHLEN)
@@ -2430,7 +2973,7 @@ g_path_get_dirname (const gchar *file_name)
  * the current directory.  This can make a difference in the case that
  * the current directory is the target of a symbolic link.
  *
- * Returns: the current directory
+ * Returns: (type filename) (transfer full): the current directory
  */
 gchar *
 g_get_current_dir (void)
@@ -2439,7 +2982,7 @@ g_get_current_dir (void)
 
   gchar *dir = NULL;
   wchar_t dummy[2], *wdir;
-  int len;
+  DWORD len;
 
   len = GetCurrentDirectoryW (2, dummy);
   wdir = g_new (wchar_t, len);
@@ -2458,7 +3001,7 @@ g_get_current_dir (void)
   const gchar *pwd;
   gchar *buffer = NULL;
   gchar *dir = NULL;
-  static gulong max_len = 0;
+  static gsize buffer_size = 0;
   struct stat pwdbuf, dotbuf;
 
   pwd = g_getenv ("PWD");
@@ -2467,27 +3010,32 @@ g_get_current_dir (void)
       dotbuf.st_dev == pwdbuf.st_dev && dotbuf.st_ino == pwdbuf.st_ino)
     return g_strdup (pwd);
 
-  if (max_len == 0)
-    max_len = (G_PATH_LENGTH == -1) ? 2048 : G_PATH_LENGTH;
+  if (buffer_size == 0)
+    buffer_size = (G_PATH_LENGTH == -1) ? 2048 : G_PATH_LENGTH;
 
-  while (max_len < G_MAXULONG / 2)
+  while (buffer_size < G_MAXSIZE / 2)
     {
       g_free (buffer);
-      buffer = g_new (gchar, max_len + 1);
+      buffer = g_new (gchar, buffer_size);
       *buffer = 0;
-      dir = getcwd (buffer, max_len);
+      dir = getcwd (buffer, buffer_size);
 
       if (dir || errno != ERANGE)
         break;
 
-      max_len *= 2;
+      buffer_size *= 2;
     }
+
+  /* Check that getcwd() nul-terminated the string. It should do, but the specs
+   * don’t actually explicitly state that:
+   * https://pubs.opengroup.org/onlinepubs/9699919799/functions/getcwd.html */
+  g_assert (dir == NULL || strnlen (dir, buffer_size) < buffer_size);
 
   if (!dir || !*buffer)
     {
-      /* hm, should we g_error() out here?
-       * this can happen if e.g. "./" has mode \0000
-       */
+      /* Fallback return value */
+      g_assert (buffer_size >= 2);
+      g_assert (buffer != NULL);
       buffer[0] = G_DIR_SEPARATOR;
       buffer[1] = 0;
     }
@@ -2500,114 +3048,57 @@ g_get_current_dir (void)
 #endif /* !G_OS_WIN32 */
 }
 
+#ifdef G_OS_WIN32
 
-/* NOTE : Keep this part last to ensure nothing in this file uses thn
- * below binary compatibility versions.
- */
-#if defined (G_OS_WIN32) && !defined (_WIN64)
+/* Binary compatibility versions. Not for newly compiled code. */
 
-/* Binary compatibility versions. Will be called by code compiled
- * against quite old (pre-2.8, I think) headers only, not from more
- * recently compiled code.
- */
+_GLIB_EXTERN gboolean g_file_test_utf8         (const gchar  *filename,
+                                                GFileTest     test);
+_GLIB_EXTERN gboolean g_file_get_contents_utf8 (const gchar  *filename,
+                                                gchar       **contents,
+                                                gsize        *length,
+                                                GError      **error);
+_GLIB_EXTERN gint     g_mkstemp_utf8           (gchar        *tmpl);
+_GLIB_EXTERN gint     g_file_open_tmp_utf8     (const gchar  *tmpl,
+                                                gchar       **name_used,
+                                                GError      **error);
+_GLIB_EXTERN gchar   *g_get_current_dir_utf8   (void);
 
-#undef g_file_test
-
-gboolean
-g_file_test (const gchar *filename,
-             GFileTest    test)
-{
-  gchar *utf8_filename = g_locale_to_utf8 (filename, -1, NULL, NULL, NULL);
-  gboolean retval;
-
-  if (utf8_filename == NULL)
-    return FALSE;
-
-  retval = g_file_test_utf8 (utf8_filename, test);
-
-  g_free (utf8_filename);
-
-  return retval;
-}
-
-#undef g_file_get_contents
 
 gboolean
-g_file_get_contents (const gchar  *filename,
-                     gchar       **contents,
-                     gsize        *length,
-                     GError      **error)
+g_file_test_utf8 (const gchar *filename,
+                  GFileTest    test)
 {
-  gchar *utf8_filename = g_locale_to_utf8 (filename, -1, NULL, NULL, error);
-  gboolean retval;
-
-  if (utf8_filename == NULL)
-    return FALSE;
-
-  retval = g_file_get_contents_utf8 (utf8_filename, contents, length, error);
-
-  g_free (utf8_filename);
-
-  return retval;
+  return g_file_test (filename, test);
 }
 
-#undef g_mkstemp
-
-static gint
-wrap_libc_open (const gchar *filename,
-                int          flags,
-                int          mode)
+gboolean
+g_file_get_contents_utf8 (const gchar  *filename,
+                          gchar       **contents,
+                          gsize        *length,
+                          GError      **error)
 {
-  return open (filename, flags, mode);
+  return g_file_get_contents (filename, contents, length, error);
 }
 
 gint
-g_mkstemp (gchar *tmpl)
+g_mkstemp_utf8 (gchar *tmpl)
 {
-  /* This is the backward compatibility system codepage version,
-   * thus use normal open().
-   */
-  return get_tmp_file (tmpl, wrap_libc_open,
-		       O_RDWR | O_CREAT | O_EXCL, 0600);
+  return g_mkstemp (tmpl);
 }
-
-#undef g_file_open_tmp
 
 gint
-g_file_open_tmp (const gchar  *tmpl,
-		 gchar       **name_used,
-		 GError      **error)
+g_file_open_tmp_utf8 (const gchar  *tmpl,
+                      gchar       **name_used,
+                      GError      **error)
 {
-  gchar *utf8_tmpl = g_locale_to_utf8 (tmpl, -1, NULL, NULL, error);
-  gchar *utf8_name_used;
-  gint retval;
-
-  if (utf8_tmpl == NULL)
-    return -1;
-
-  retval = g_file_open_tmp_utf8 (utf8_tmpl, &utf8_name_used, error);
-  
-  if (retval == -1)
-    return -1;
-
-  if (name_used)
-    *name_used = g_locale_from_utf8 (utf8_name_used, -1, NULL, NULL, NULL);
-
-  g_free (utf8_name_used);
-
-  return retval;
+  return g_file_open_tmp (tmpl, name_used, error);
 }
-
-#undef g_get_current_dir
 
 gchar *
-g_get_current_dir (void)
+g_get_current_dir_utf8 (void)
 {
-  gchar *utf8_dir = g_get_current_dir_utf8 ();
-  gchar *dir = g_locale_from_utf8 (utf8_dir, -1, NULL, NULL, NULL);
-  g_free (utf8_dir);
-  return dir;
+  return g_get_current_dir ();
 }
 
 #endif
-

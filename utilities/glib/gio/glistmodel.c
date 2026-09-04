@@ -2,10 +2,12 @@
  * Copyright 2015 Lars Uebernickel
  * Copyright 2015 Ryan Lortie
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,63 +26,77 @@
 
 #include "glistmodel.h"
 #include "glibintl.h"
+#include "gmarshal-internal.h"
 
-G_DEFINE_INTERFACE (GListModel, g_list_model, G_TYPE_OBJECT);
+G_DEFINE_INTERFACE (GListModel, g_list_model, G_TYPE_OBJECT)
 
 /**
- * SECTION:glistmodel
- * @title: GListModel
- * @short_description: An interface describing a dynamic list of objects
- * @include: gio/gio.h
- * @see_also: #GListStore
+ * GListModel:
  *
- * #GListModel is an interface that represents a mutable list of
- * #GObjects. Its main intention is as a model for various widgets in
- * user interfaces, such as list views, but it can also be used as a
+ * `GListModel` is an interface that represents a mutable list of
+ * [class@GObject.Object]. Its main intention is as a model for various widgets
+ * in user interfaces, such as list views, but it can also be used as a
  * convenient method of returning lists of data, with support for
  * updates.
  *
  * Each object in the list may also report changes in itself via some
- * mechanism (normally the #GObject::notify signal).  Taken together
- * with the #GListModel::items-changed signal, this provides for a list
- * that can change its membership, and in which the members can change
- * their individual properties.
+ * mechanism (normally the [signal@GObject.Object::notify] signal).  Taken
+ * together with the [signal@Gio.ListModel::items-changed] signal, this provides
+ * for a list that can change its membership, and in which the members can
+ * change their individual properties.
  *
  * A good example would be the list of visible wireless network access
  * points, where each access point can report dynamic properties such as
  * signal strength.
  *
- * It is important to note that the #GListModel itself does not report
+ * It is important to note that the `GListModel` itself does not report
  * changes to the individual items.  It only reports changes to the list
  * membership.  If you want to observe changes to the objects themselves
  * then you need to connect signals to the objects that you are
  * interested in.
  *
- * All items in a #GListModel are of (or derived from) the same type.
- * g_list_model_get_item_type() returns that type.  The type may be an
+ * All items in a `GListModel` are of (or derived from) the same type.
+ * [method@Gio.ListModel.get_item_type] returns that type.  The type may be an
  * interface, in which case all objects in the list must implement it.
  *
  * The semantics are close to that of an array:
- * g_list_model_get_n_items() returns the number of items in the list and
- * g_list_model_get_item() returns an item at a (0-based) position. In
- * order to allow implementations to calculate the list length lazily,
+ * [method@Gio.ListModel.get_n_items] returns the number of items in the list
+ * and [method@Gio.ListModel.get_item] returns an item at a (0-based) position.
+ * In order to allow implementations to calculate the list length lazily,
  * you can also iterate over items: starting from 0, repeatedly call
- * g_list_model_get_item() until it returns %NULL.
+ * [method@Gio.ListModel.get_item] until it returns `NULL`.
  *
  * An implementation may create objects lazily, but must take care to
  * return the same object for a given position until all references to
  * it are gone.
  *
  * On the other side, a consumer is expected only to hold references on
- * objects that are currently "user visible", in order to faciliate the
+ * objects that are currently ‘user visible’, in order to facilitate the
  * maximum level of laziness in the implementation of the list and to
  * reduce the required number of signal connections at a given time.
  *
  * This interface is intended only to be used from a single thread.  The
  * thread in which it is appropriate to use it depends on the particular
  * implementation, but typically it will be from the thread that owns
- * the [thread-default main context][g-main-context-push-thread-default]
- * in effect at the time that the model was created.
+ * the thread-default main context (see
+ * [method@GLib.MainContext.push_thread_default]) in effect at the time that the
+ * model was created.
+ *
+ * Over time, it has established itself as good practice for list model
+ * implementations to provide properties `item-type` and `n-items` to
+ * ease working with them. While it is not required, it is recommended
+ * that implementations provide these two properties. They should return
+ * the values of [method@Gio.ListModel.get_item_type] and
+ * [method@Gio.ListModel.get_n_items] respectively and be defined as such:
+ *
+ * ```c
+ * properties[PROP_ITEM_TYPE] =
+ *   g_param_spec_gtype ("item-type", NULL, NULL, G_TYPE_OBJECT,
+ *                       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+ * properties[PROP_N_ITEMS] =
+ *   g_param_spec_uint ("n-items", NULL, NULL, 0, G_MAXUINT, 0,
+ *                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+ * ```
  */
 
 /**
@@ -96,11 +112,22 @@ G_DEFINE_INTERFACE (GListModel, g_list_model, G_TYPE_OBJECT);
  */
 
 /**
- * GListModel:
+ * GListModelInterface::get_item:
+ * @list: a #GListModel
+ * @position: the position of the item to fetch
  *
- * #GListModel is an opaque data structure and can only be accessed
- * using the following functions.
- **/
+ * Get the item at @position. If @position is greater than the number of
+ * items in @list, %NULL is returned.
+ *
+ * %NULL is never returned for an index that is smaller than the length
+ * of the list.  See g_list_model_get_n_items().
+ *
+ * The same #GObject instance may not appear more than once in a #GListModel.
+ *
+ * Returns: (type GObject) (transfer full) (nullable): the object at @position.
+ *
+ * Since: 2.44
+ */
 
 static guint g_list_model_changed_signal;
 
@@ -114,9 +141,12 @@ g_list_model_default_init (GListModelInterface *iface)
    * @removed: the number of items removed
    * @added: the number of items added
    *
-   * This signal is emitted whenever items were added or removed to
-   * @list. At @position, @removed items were removed and @added items
-   * were added in their place.
+   * This signal is emitted whenever items were added to or removed
+   * from @list. At @position, @removed items were removed and @added
+   * items were added in their place.
+   *
+   * Note: If `removed != added`, the positions of all later items
+   * in the model change.
    *
    * Since: 2.44
    */
@@ -125,18 +155,23 @@ g_list_model_default_init (GListModelInterface *iface)
                                               G_SIGNAL_RUN_LAST,
                                               0,
                                               NULL, NULL,
-                                              g_cclosure_marshal_generic,
+                                              _g_cclosure_marshal_VOID__UINT_UINT_UINT,
                                               G_TYPE_NONE,
                                               3, G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
+  g_signal_set_va_marshaller (g_list_model_changed_signal,
+                              G_TYPE_FROM_INTERFACE (iface),
+                              _g_cclosure_marshal_VOID__UINT_UINT_UINTv);
 }
 
 /**
  * g_list_model_get_item_type:
  * @list: a #GListModel
  *
- * Gets the type of the items in @list. All items returned from
- * g_list_model_get_type() are of that type or a subtype, or are an
- * implementation of that interface.
+ * Gets the type of the items in @list.
+ *
+ * All items returned from g_list_model_get_item() are of the type
+ * returned by this function, or a subtype, or if the type is an
+ * interface, they are an implementation of that interface.
  *
  * The item type of a #GListModel can not change during the life of the
  * model.
@@ -180,13 +215,17 @@ g_list_model_get_n_items (GListModel *list)
  * @list: a #GListModel
  * @position: the position of the item to fetch
  *
- * Get the item at @position. If @position is greater than the number of
- * items in @list, %NULL is returned.
+ * Get the item at @position.
+ *
+ * If @position is greater than the number of items in @list, %NULL is
+ * returned.
  *
  * %NULL is never returned for an index that is smaller than the length
- * of the list.  See g_list_model_get_n_items().
+ * of the list.
  *
- * Returns: (transfer full) (nullable) (type GObject): the item at @position.
+ * See also: g_list_model_get_n_items()
+ *
+ * Returns: (transfer full) (nullable): the item at @position.
  *
  * Since: 2.44
  */
@@ -204,11 +243,18 @@ g_list_model_get_item (GListModel *list,
  * @list: a #GListModel
  * @position: the position of the item to fetch
  *
- * Get the item at @position. If @position is greater than the number of
- * items in @list, %NULL is returned.
+ * Get the item at @position.
+ *
+ * If @position is greater than the number of items in @list, %NULL is
+ * returned.
  *
  * %NULL is never returned for an index that is smaller than the length
- * of the list.  See g_list_model_get_n_items().
+ * of the list.
+ *
+ * This function is meant to be used by language bindings in place
+ * of g_list_model_get_item().
+ *
+ * See also: g_list_model_get_n_items()
  *
  * Returns: (transfer full) (nullable): the object at @position.
  *

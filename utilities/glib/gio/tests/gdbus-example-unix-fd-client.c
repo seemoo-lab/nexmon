@@ -74,16 +74,14 @@ on_name_appeared (GDBusConnection *connection,
     }
   else
     {
-      gchar now_buf[256];
-      time_t now;
+      gchar *now_buf = NULL;
       gssize len;
       gchar *str;
+      GDateTime *now = g_date_time_new_now_local ();
 
-      now = time (NULL);
-      strftime (now_buf,
-                sizeof now_buf,
-                "%c",
-                localtime (&now));
+      g_assert_nonnull (now);
+      now_buf = g_date_time_format (now, "%Y-%m-%d %H:%M:%S");
+      g_date_time_unref (now);
 
       str = g_strdup_printf ("On %s, gdbus-example-unix-fd-client with pid %d was here!\n",
                              now_buf,
@@ -95,6 +93,7 @@ on_name_appeared (GDBusConnection *connection,
       g_print ("Wrote the following on server's stdout:\n%s", str);
 
       g_free (str);
+      g_free (now_buf);
       exit (0);
     }
 }

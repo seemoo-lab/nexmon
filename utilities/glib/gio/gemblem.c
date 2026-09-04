@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008 Clemens N. Buss <cebuzz@gmail.com>
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,19 +26,17 @@
 #include "gioenums.h"
 #include "gioenumtypes.h"
 #include "gioerror.h"
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 
 /**
- * SECTION:gemblem
- * @short_description: An object for emblems
- * @include: gio/gio.h
- * @see_also: #GIcon, #GEmblemedIcon, #GLoadableIcon, #GThemedIcon
+ * GEmblem:
  *
- * #GEmblem is an implementation of #GIcon that supports
+ * `GEmblem` is an implementation of [iface@Gio.Icon] that supports
  * having an emblem, which is an icon with additional properties.
- * It can than be added to a #GEmblemedIcon.
+ * It can than be added to a [class@Gio.EmblemedIcon].
  *
  * Currently, only metainformation about the emblem's origin is
  * supported. More may be added in the future.
@@ -50,11 +50,6 @@ struct _GEmblem
 
   GIcon *icon;
   GEmblemOrigin origin;
-};
-
-struct _GEmblemClass
-{
-  GObjectClass parent_class;
 };
 
 enum
@@ -82,7 +77,7 @@ g_emblem_get_property (GObject    *object,
 	break;
 
       case PROP_ORIGIN:
-        g_value_set_enum (value, emblem->origin);
+        g_value_set_enum (value, (int) emblem->origin);
         break;
 
       default:
@@ -106,7 +101,7 @@ g_emblem_set_property (GObject      *object,
         break;
 
       case PROP_ORIGIN:
-        emblem->origin = g_value_get_enum (value);
+        emblem->origin = (GEmblemOrigin) g_value_get_enum (value);
         break;
 
       default:
@@ -135,20 +130,30 @@ g_emblem_class_init (GEmblemClass *klass)
   gobject_class->set_property = g_emblem_set_property;
   gobject_class->get_property = g_emblem_get_property;
 
+  /**
+   * GEmblem:origin:
+   *
+   * The origin the emblem is derived from.
+   *
+   * Since: 2.18
+   */
   g_object_class_install_property (gobject_class,
                                    PROP_ORIGIN,
-                                   g_param_spec_enum ("origin",
-                                                      P_("GEmblem's origin"),
-                                                      P_("Tells which origin the emblem is derived from"),
+                                   g_param_spec_enum ("origin", NULL, NULL,
                                                       G_TYPE_EMBLEM_ORIGIN,
                                                       G_EMBLEM_ORIGIN_UNKNOWN,
                                                       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GEmblem:icon:
+   *
+   * The actual icon of the emblem.
+   *
+   * Since: 2.18
+   */
   g_object_class_install_property (gobject_class,
                                    PROP_ICON,
-                                   g_param_spec_object ("icon",
-                                                      P_("The icon of the emblem"),
-                                                      P_("The actual icon of the emblem"),
+                                   g_param_spec_object ("icon", NULL, NULL,
                                                       G_TYPE_OBJECT,
                                                       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 
@@ -312,6 +317,10 @@ g_emblem_from_tokens (gchar  **tokens,
   GEmblem *emblem;
   GIcon *icon;
   GEmblemOrigin origin;
+  uint64_t origin_parsed;
+
+  /* This is guaranteed by the GIcon interface */
+  g_assert (num_tokens >= 0);
 
   emblem = NULL;
 
@@ -320,7 +329,7 @@ g_emblem_from_tokens (gchar  **tokens,
       g_set_error (error,
                    G_IO_ERROR,
                    G_IO_ERROR_INVALID_ARGUMENT,
-                   _("Can't handle version %d of GEmblem encoding"),
+                   _("Can’t handle version %d of GEmblem encoding"),
                    version);
       return NULL;
     }
@@ -340,7 +349,23 @@ g_emblem_from_tokens (gchar  **tokens,
   if (icon == NULL)
     return NULL;
 
-  origin = atoi (tokens[1]);
+  if (!g_ascii_string_to_unsigned (tokens[1], 10, G_EMBLEM_ORIGIN_UNKNOWN, G_EMBLEM_ORIGIN_TAG,
+                                   &origin_parsed, NULL) ||
+      (origin_parsed != G_EMBLEM_ORIGIN_UNKNOWN &&
+       origin_parsed != G_EMBLEM_ORIGIN_DEVICE &&
+       origin_parsed != G_EMBLEM_ORIGIN_LIVEMETADATA &&
+       origin_parsed != G_EMBLEM_ORIGIN_TAG))
+    {
+      g_object_unref (icon);
+      g_set_error (error,
+                   G_IO_ERROR,
+                   G_IO_ERROR_INVALID_ARGUMENT,
+                   _("Malformed origin (%s) in GEmblem encoding"),
+                   tokens[1]);
+      return NULL;
+    }
+
+  origin = (GEmblemOrigin) origin_parsed;
 
   emblem = g_emblem_new_with_origin (icon, origin);
   g_object_unref (icon);
@@ -360,7 +385,7 @@ g_emblem_serialize (GIcon *icon)
   if (!icon_data)
     return NULL;
 
-  origin = g_enum_get_value (g_type_class_peek (G_TYPE_EMBLEM_ORIGIN), emblem->origin);
+  origin = g_enum_get_value (g_type_class_peek (G_TYPE_EMBLEM_ORIGIN), (int) emblem->origin);
   result = g_variant_new_parsed ("('emblem', <(%v, {'origin': <%s>})>)",
                                  icon_data, origin ? origin->value_nick : "unknown");
   g_variant_unref (icon_data);

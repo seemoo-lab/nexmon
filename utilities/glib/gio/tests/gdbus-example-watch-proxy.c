@@ -15,7 +15,7 @@ static GOptionEntry opt_entries[] =
   { "system-bus", 's', 0, G_OPTION_ARG_NONE, &opt_system_bus, "Use the system-bus instead of the session-bus", NULL },
   { "no-auto-start", 'a', 0, G_OPTION_ARG_NONE, &opt_no_auto_start, "Don't instruct the bus to launch an owner for the name", NULL},
   { "no-properties", 'p', 0, G_OPTION_ARG_NONE, &opt_no_properties, "Do not load properties", NULL},
-  { NULL}
+  G_OPTION_ENTRY_NULL
 };
 
 static GMainLoop *loop = NULL;

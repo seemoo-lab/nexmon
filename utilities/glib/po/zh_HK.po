@@ -15,7 +15,7 @@ msgstr ""
 "PO-Revision-Date: 2014-08-21 17:05+0800\n"
 "Last-Translator: Chao-Hsiung Liao <j_h_liau@yahoo.com.tw>\n"
 "Language-Team: Chinese (Hong Kong) <community@linuxhall.org>\n"
-"Language: zh_TW\n"
+"Language: zh_HK\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -4429,3 +4429,99 @@ msgstr[0] "%s 位元組"
 #, c-format
 msgid "%.1f KB"
 msgstr "%.1f KB"
+
+msgctxt "full month name with day"
+msgid "January"
+msgstr "一月"
+
+msgctxt "full month name with day"
+msgid "February"
+msgstr "二月"
+
+msgctxt "full month name with day"
+msgid "March"
+msgstr "三月"
+
+msgctxt "full month name with day"
+msgid "April"
+msgstr "四月"
+
+msgctxt "full month name with day"
+msgid "May"
+msgstr "五月"
+
+msgctxt "full month name with day"
+msgid "June"
+msgstr "六月"
+
+msgctxt "full month name with day"
+msgid "July"
+msgstr "七月"
+
+msgctxt "full month name with day"
+msgid "August"
+msgstr "八月"
+
+msgctxt "full month name with day"
+msgid "September"
+msgstr "九月"
+
+msgctxt "full month name with day"
+msgid "October"
+msgstr "十月"
+
+msgctxt "full month name with day"
+msgid "November"
+msgstr "十一月"
+
+msgctxt "full month name with day"
+msgid "December"
+msgstr "十二月"
+
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "一月"
+
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "二月"
+
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "三月"
+
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "四月"
+
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "五月"
+
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "六月"
+
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "七月"
+
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "八月"
+
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "九月"
+
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "十月"
+
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "十一月"
+
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "十二月"

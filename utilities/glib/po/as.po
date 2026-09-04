@@ -4539,6 +4539,102 @@ msgid_plural "%s bytes"
 msgstr[0] "%s বাইট"
 msgstr[1] "%s বাইটসমূহ"
 
+msgctxt "full month name with day"
+msgid "January"
+msgstr "জানুৱাৰী"
+
+msgctxt "full month name with day"
+msgid "February"
+msgstr "ফেব্ৰুৱাৰী"
+
+msgctxt "full month name with day"
+msgid "March"
+msgstr "মাৰ্চ"
+
+msgctxt "full month name with day"
+msgid "April"
+msgstr "এপ্ৰিল"
+
+msgctxt "full month name with day"
+msgid "May"
+msgstr "মে"
+
+msgctxt "full month name with day"
+msgid "June"
+msgstr "জুন"
+
+msgctxt "full month name with day"
+msgid "July"
+msgstr "জুলাই"
+
+msgctxt "full month name with day"
+msgid "August"
+msgstr "আগষ্ট"
+
+msgctxt "full month name with day"
+msgid "September"
+msgstr "চেপ্তেম্বৰ"
+
+msgctxt "full month name with day"
+msgid "October"
+msgstr "অক্টোবৰ"
+
+msgctxt "full month name with day"
+msgid "November"
+msgstr "নভেম্বৰ"
+
+msgctxt "full month name with day"
+msgid "December"
+msgstr "ডিচেম্বৰ"
+
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "জান"
+
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "ফেব্ৰু"
+
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "মাৰ্চ"
+
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "এপ্ৰি"
+
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "মে"
+
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "জুন"
+
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "জুল"
+
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "আগ"
+
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "চেপ"
+
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "অক্ট"
+
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "নভ"
+
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "ডিচ"
+
 #. Translators: this is from the deprecated function g_format_size_for_display() which uses 'KB' to
 #. * mean 1024 bytes.  I am aware that 'KB' is not correct, but it has been preserved for reasons of
 #. * compatibility.  Users will not see this string unless a program is using this deprecated function.
