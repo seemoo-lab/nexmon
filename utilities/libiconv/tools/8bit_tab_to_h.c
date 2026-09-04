@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2002 Free Software Foundation, Inc.
+/* Copyright (C) 1999-2002, 2011-2012, 2016, 2018, 2022 Free Software Foundation, Inc.
    This file is part of the GNU LIBICONV Tools.
 
    This program is free software: you can redistribute it and/or modify
@@ -12,8 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software Foundation,
-   Inc., along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program; if not, see <https://www.gnu.org/licenses/>.  */
 
 /*
  * Generates an 8-bit character set table from a .TXT table as found on
@@ -59,6 +58,9 @@
  *   ./8bit_tab_to_h ISO-8859-15 iso8859_15 < 8859-15.TXT
  *   ./8bit_tab_to_h JISX0201.1976-0 jisx0201 < JIS0201.TXT
  *   ./8bit_tab_to_h KOI8-R koi8_r < KOI8-R.TXT
+ *
+ *   ./8bit_tab_to_h 'CP50221 JISX0208 extensions' cp50221_0208_ext < CP50221-0208-EXT.TXT
+ *   ./8bit_tab_to_h 'CP50221 JISX0212 extensions' cp50221_0212_ext < CP50221-0212-EXT.TXT
  */
 
 #include <stdio.h>
@@ -144,23 +146,22 @@ int main (int argc, char *argv[])
     }
 
     fprintf(f, "/*\n");
-    fprintf(f, " * Copyright (C) 1999-2002 Free Software Foundation, Inc.\n");
+    fprintf(f, " * Copyright (C) 1999-2022 Free Software Foundation, Inc.\n");
     fprintf(f, " * This file is part of the GNU LIBICONV Library.\n");
     fprintf(f, " *\n");
     fprintf(f, " * The GNU LIBICONV Library is free software; you can redistribute it\n");
-    fprintf(f, " * and/or modify it under the terms of the GNU Library General Public\n");
+    fprintf(f, " * and/or modify it under the terms of the GNU Lesser General Public\n");
     fprintf(f, " * License as published by the Free Software Foundation; either version 2\n");
     fprintf(f, " * of the License, or (at your option) any later version.\n");
     fprintf(f, " *\n");
     fprintf(f, " * The GNU LIBICONV Library is distributed in the hope that it will be\n");
     fprintf(f, " * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of\n");
     fprintf(f, " * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n");
-    fprintf(f, " * Library General Public License for more details.\n");
+    fprintf(f, " * Lesser General Public License for more details.\n");
     fprintf(f, " *\n");
-    fprintf(f, " * You should have received a copy of the GNU Library General Public\n");
+    fprintf(f, " * You should have received a copy of the GNU Lesser General Public\n");
     fprintf(f, " * License along with the GNU LIBICONV Library; see the file COPYING.LIB.\n");
-    fprintf(f, " * If not, write to the Free Software Foundation, Inc., 51 Franklin Street,\n");
-    fprintf(f, " * Fifth Floor, Boston, MA 02110-1301, USA.\n");
+    fprintf(f, " * If not, see <https://www.gnu.org/licenses/>.\n");
     fprintf(f, " */\n");
     fprintf(f, "\n");
     fprintf(f, "/*\n");
@@ -233,7 +234,7 @@ int main (int argc, char *argv[])
         fprintf(f, "\n");
       }
       final_ret_reached = false;
-      fprintf(f, "static int\n%s_mbtowc (conv_t conv, ucs4_t *pwc, const unsigned char *s, int n)\n", c_charsetname);
+      fprintf(f, "static int\n%s_mbtowc (conv_t conv, ucs4_t *pwc, const unsigned char *s, size_t n)\n", c_charsetname);
       fprintf(f, "{\n");
       fprintf(f, "  unsigned char c = *s;\n");
       if (some_invalid) {
@@ -439,7 +440,7 @@ int main (int argc, char *argv[])
         j1 = j2;
       }
       fix_0000 = false;
-      fprintf(f, "static int\n%s_wctomb (conv_t conv, unsigned char *r, ucs4_t wc, int n)\n", c_charsetname);
+      fprintf(f, "static int\n%s_wctomb (conv_t conv, unsigned char *r, ucs4_t wc, size_t n)\n", c_charsetname);
       fprintf(f, "{\n");
       if (need_c)
         fprintf(f, "  unsigned char c = 0;\n");

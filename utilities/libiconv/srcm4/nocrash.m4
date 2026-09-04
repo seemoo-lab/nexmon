@@ -1,8 +1,10 @@
-# nocrash.m4 serial 2
-dnl Copyright (C) 2005, 2009-2011 Free Software Foundation, Inc.
+# nocrash.m4
+# serial 5
+dnl Copyright (C) 2005, 2009-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 dnl Based on libsigsegv, from Bruno Haible and Paolo Bonzini.
 
@@ -18,7 +20,7 @@ dnl          int main() { nocrash_init(); ... }
 AC_DEFUN([GL_NOCRASH],[[
 #include <stdlib.h>
 #if defined __MACH__ && defined __APPLE__
-/* Avoid a crash on MacOS X.  */
+/* Avoid a crash on Mac OS X.  */
 #include <mach/mach.h>
 #include <mach/mach_error.h>
 #include <mach/thread_status.h>
@@ -53,7 +55,7 @@ nocrash_init (void)
   /* Allocate a port on which the thread shall listen for exceptions.  */
   if (mach_port_allocate (self, MACH_PORT_RIGHT_RECEIVE, &our_exception_port)
       == KERN_SUCCESS) {
-    /* See http://web.mit.edu/darwin/src/modules/xnu/osfmk/man/mach_port_insert_right.html.  */
+    /* See https://web.mit.edu/darwin/src/modules/xnu/osfmk/man/mach_port_insert_right.html.  */
     if (mach_port_insert_right (self, our_exception_port, our_exception_port,
                                 MACH_MSG_TYPE_MAKE_SEND)
         == KERN_SUCCESS) {
@@ -72,21 +74,50 @@ nocrash_init (void)
            for a particular thread.  This has the effect that when our exception
            port gets the message, the thread specific exception port has already
            been asked, and we don't need to bother about it.
-           See http://web.mit.edu/darwin/src/modules/xnu/osfmk/man/task_set_exception_ports.html.  */
+           See https://web.mit.edu/darwin/src/modules/xnu/osfmk/man/task_set_exception_ports.html.  */
         task_set_exception_ports (self, mask, our_exception_port,
                                   EXCEPTION_DEFAULT, MACHINE_THREAD_STATE);
       }
     }
   }
 }
+#elif defined _WIN32 && ! defined __CYGWIN__
+/* Avoid a crash on native Windows.  */
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <winerror.h>
+static LONG WINAPI
+exception_filter (EXCEPTION_POINTERS *ExceptionInfo)
+{
+  switch (ExceptionInfo->ExceptionRecord->ExceptionCode)
+    {
+    case EXCEPTION_ACCESS_VIOLATION:
+    case EXCEPTION_IN_PAGE_ERROR:
+    case EXCEPTION_STACK_OVERFLOW:
+    case EXCEPTION_GUARD_PAGE:
+    case EXCEPTION_PRIV_INSTRUCTION:
+    case EXCEPTION_ILLEGAL_INSTRUCTION:
+    case EXCEPTION_DATATYPE_MISALIGNMENT:
+    case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+    case EXCEPTION_NONCONTINUABLE_EXCEPTION:
+      exit (1);
+    }
+  return EXCEPTION_CONTINUE_SEARCH;
+}
+static void
+nocrash_init (void)
+{
+  SetUnhandledExceptionFilter ((LPTOP_LEVEL_EXCEPTION_FILTER) exception_filter);
+}
 #else
 /* Avoid a crash on POSIX systems.  */
 #include <signal.h>
+#include <unistd.h>
 /* A POSIX signal handler.  */
 static void
 exception_handler (int sig)
 {
-  exit (1);
+  _exit (1);
 }
 static void
 nocrash_init (void)

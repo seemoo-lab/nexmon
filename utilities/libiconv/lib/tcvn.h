@@ -1,21 +1,20 @@
 /*
- * Copyright (C) 1999-2002, 2004 Free Software Foundation, Inc.
+ * Copyright (C) 1999-2002, 2004, 2016, 2019 Free Software Foundation, Inc.
  * This file is part of the GNU LIBICONV Library.
  *
  * The GNU LIBICONV Library is free software; you can redistribute it
- * and/or modify it under the terms of the GNU Library General Public
- * License as published by the Free Software Foundation; either version 2
+ * and/or modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either version 2.1
  * of the License, or (at your option) any later version.
  *
  * The GNU LIBICONV Library is distributed in the hope that it will be
  * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Library General Public License for more details.
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Library General Public
+ * You should have received a copy of the GNU Lesser General Public
  * License along with the GNU LIBICONV Library; see the file COPYING.LIB.
- * If not, write to the Free Software Foundation, Inc., 51 Franklin Street,
- * Fifth Floor, Boston, MA 02110-1301, USA.
+ * If not, see <https://www.gnu.org/licenses/>.
  */
 
 /*
@@ -78,7 +77,7 @@ static const unsigned short tcvn_2uni_2[128] = {
    character, or 0 if none. */
 
 static int
-tcvn_mbtowc (conv_t conv, ucs4_t *pwc, const unsigned char *s, int n)
+tcvn_mbtowc (conv_t conv, ucs4_t *pwc, const unsigned char *s, size_t n)
 {
   unsigned char c = *s;
   unsigned short wc;
@@ -215,10 +214,10 @@ static const unsigned char tcvn_page1e[96] = {
 };
 
 static int
-tcvn_wctomb (conv_t conv, unsigned char *r, ucs4_t wc, int n)
+tcvn_wctomb (conv_t conv, unsigned char *r, ucs4_t wc, size_t n)
 {
   unsigned char c = 0;
-  if (wc < 0x0080 && (wc >= 0x0020 || (0x00fe0076 & (1 << wc)) == 0)) {
+  if (wc < 0x0080 && (wc >= 0x0020 || (0x00fe0076U & (1U << wc)) == 0)) {
     *r = wc;
     return 1;
   }

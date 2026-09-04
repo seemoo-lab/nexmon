@@ -1,20 +1,19 @@
-/* Copyright (C) 1999-2003, 2005, 2008 Free Software Foundation, Inc.
+/* Copyright (C) 1999-2026 Free Software Foundation, Inc.
    This file is part of the GNU LIBICONV Library.
 
    The GNU LIBICONV Library is free software; you can redistribute it
-   and/or modify it under the terms of the GNU Library General Public
-   License as published by the Free Software Foundation; either version 2
+   and/or modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either version 2.1
    of the License, or (at your option) any later version.
 
    The GNU LIBICONV Library is distributed in the hope that it will be
    useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Library General Public
+   You should have received a copy of the GNU Lesser General Public
    License along with the GNU LIBICONV Library; see the file COPYING.LIB.
-   If not, write to the Free Software Foundation, Inc., 51 Franklin Street,
-   Fifth Floor, Boston, MA 02110-1301, USA.  */
+   If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Creates the aliases2.h table. */
 
@@ -51,17 +50,40 @@ static void emit_encoding (FILE* out1, FILE* out2, const char* tag, const char* 
 
 int main (int argc, char* argv[])
 {
-  const char * tag = (argc > 1 ? argv[1] : "xxx");
-  FILE * stdout2 = fdopen(3, "w");
-  if (stdout2 == NULL)
+  const char* tag;
+  char* aliases_file_name;
+  char* canonical_file_name;
+  FILE* aliases_file;
+  FILE* canonical_file;
+
+  if (argc != 4) {
+    fprintf(stderr, "Usage: genaliases2 tag aliases.h canonical.h\n");
     exit(1);
+  }
+
+  tag = argv[1];
+  aliases_file_name = argv[2];
+  canonical_file_name = argv[3];
+
+  aliases_file = fopen(aliases_file_name, "w");
+  if (aliases_file == NULL) {
+    fprintf(stderr, "Could not open '%s' for writing\n", aliases_file_name);
+    exit(1);
+  }
+
+  canonical_file = fopen(canonical_file_name, "w");
+  if (canonical_file == NULL) {
+    fprintf(stderr, "Could not open '%s' for writing\n", canonical_file_name);
+    exit(1);
+  }
+
 #define DEFENCODING(xxx_names,xxx,xxx_ifuncs1,xxx_ifuncs2,xxx_ofuncs1,xxx_ofuncs2) \
   {                                                           \
     static const char* const names[] = BRACIFY xxx_names;     \
-    emit_encoding(stdout,stdout2,tag,names,sizeof(names)/sizeof(names[0]),#xxx); \
+    emit_encoding(aliases_file,canonical_file,tag,names,sizeof(names)/sizeof(names[0]),#xxx); \
   }
 #define BRACIFY(...) { __VA_ARGS__ }
-#define DEFALIAS(xxx_alias,xxx) emit_alias(stdout,tag,xxx_alias,#xxx);
+#define DEFALIAS(xxx_alias,xxx) emit_alias(aliases_file,tag,xxx_alias,#xxx);
 #ifdef USE_AIX
 #include "encodings_aix.def"
 #endif
@@ -71,13 +93,22 @@ int main (int argc, char* argv[])
 #ifdef USE_DOS
 #include "encodings_dos.def"
 #endif
+#ifdef USE_OS2
+#include "encodings_aix.def"
+#include "encodings_dos.def"
+#endif
+#ifdef USE_ZOS
+#include "encodings_zos.def"
+#endif
 #ifdef USE_EXTRA
 #include "encodings_extra.def"
 #endif
 #undef DEFALIAS
 #undef BRACIFY
 #undef DEFENCODING
-  if (ferror(stdout) || fclose(stdout) || ferror(stdout2) || fclose(stdout2))
+  if (ferror(aliases_file) || fclose(aliases_file))
+    exit(1);
+  if (ferror(canonical_file) || fclose(canonical_file))
     exit(1);
   exit(0);
 }

@@ -1,27 +1,26 @@
 /* Define PATH_MAX somehow.  Requires sys/types.h.
-   Copyright (C) 1992, 1999, 2001, 2003, 2005, 2009-2011 Free Software
+   Copyright (C) 1992, 1999, 2001, 2003, 2005, 2009-2026 Free Software
    Foundation, Inc.
 
-   This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
-   any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software Foundation,
-   Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef _PATHMAX_H
 # define _PATHMAX_H
 
 /* POSIX:2008 defines PATH_MAX to be the maximum number of bytes in a filename,
    including the terminating NUL byte.
-   <http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html>
+   <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/limits.h.html>
    PATH_MAX is not defined on systems which have no limit on filename length,
    such as GNU/Hurd.
 
@@ -39,6 +38,11 @@
          # define PATH_MAX pathconf ("/", _PC_PATH_MAX)
          #endif
  */
+
+/* This file uses HAVE_SYS_PARAM_H.  */
+# if !_GL_CONFIG_H_INCLUDED
+#  error "Please include config.h first."
+# endif
 
 # include <unistd.h>
 
@@ -64,6 +68,21 @@
    not defined at all any more.  */
 #  undef PATH_MAX
 #  define PATH_MAX 1024
+# endif
+
+# if defined _WIN32 && ! defined __CYGWIN__
+/* The page "Naming Files, Paths, and Namespaces" on msdn.microsoft.com,
+   section "Maximum Path Length Limitation",
+   <https://docs.microsoft.com/en-us/windows/desktop/FileIO/naming-a-file#maximum-path-length-limitation>
+   explains that the maximum size of a filename, including the terminating
+   NUL byte, is 260 = 3 + 256 + 1.
+   This is the same value as
+     - FILENAME_MAX in <stdio.h>,
+     - _MAX_PATH in <stdlib.h>,
+     - MAX_PATH in <windef.h>.
+   Undefine the original value, because mingw's <limits.h> gets it wrong.  */
+#  undef PATH_MAX
+#  define PATH_MAX 260
 # endif
 
 #endif /* _PATHMAX_H */

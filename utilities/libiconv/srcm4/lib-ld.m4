@@ -1,33 +1,41 @@
-# lib-ld.m4 serial 5 (gettext-0.18.2)
-dnl Copyright (C) 1996-2003, 2009-2011 Free Software Foundation, Inc.
+# lib-ld.m4
+# serial 13
+dnl Copyright (C) 1996-2003, 2009-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 dnl Subroutines of libtool.m4,
-dnl with replacements s/AC_/AC_LIB/ and s/lt_cv/acl_cv/ to avoid collision
-dnl with libtool.m4.
+dnl with replacements s/_*LT_PATH/AC_LIB_PROG/ and s/lt_/acl_/ to avoid
+dnl collision with libtool.m4.
 
-dnl From libtool-1.4. Sets the variable with_gnu_ld to yes or no.
+dnl From libtool-2.4. Sets the variable with_gnu_ld to yes or no.
 AC_DEFUN([AC_LIB_PROG_LD_GNU],
 [AC_CACHE_CHECK([if the linker ($LD) is GNU ld], [acl_cv_prog_gnu_ld],
-[# I'd rather use --version here, but apparently some GNU ld's only accept -v.
+[# I'd rather use --version here, but apparently some GNU lds only accept -v.
 case `$LD -v 2>&1 </dev/null` in
 *GNU* | *'with BFD'*)
-  acl_cv_prog_gnu_ld=yes ;;
+  acl_cv_prog_gnu_ld=yes
+  ;;
 *)
-  acl_cv_prog_gnu_ld=no ;;
+  acl_cv_prog_gnu_ld=no
+  ;;
 esac])
 with_gnu_ld=$acl_cv_prog_gnu_ld
 ])
 
-dnl From libtool-1.4. Sets the variable LD.
+dnl From libtool-2.4. Sets the variable LD.
 AC_DEFUN([AC_LIB_PROG_LD],
-[AC_ARG_WITH([gnu-ld],
-[  --with-gnu-ld           assume the C compiler uses GNU ld [default=no]],
-test "$withval" = no || with_gnu_ld=yes, with_gnu_ld=no)
-AC_REQUIRE([AC_PROG_CC])dnl
+[AC_REQUIRE([AC_PROG_CC])dnl
 AC_REQUIRE([AC_CANONICAL_HOST])dnl
+
+AC_ARG_WITH([gnu-ld],
+    [AS_HELP_STRING([[--with-gnu-ld]],
+        [assume the C compiler uses GNU ld [default=no]])],
+    [test "$withval" = no || with_gnu_ld=yes],
+    [with_gnu_ld=no])dnl
+
 # Prepare PATH_SEPARATOR.
 # The user is always right.
 if test "${PATH_SEPARATOR+set}" != set; then
@@ -40,70 +48,123 @@ if test "${PATH_SEPARATOR+set}" != set; then
            || PATH_SEPARATOR=';'
        }
 fi
-ac_prog=ld
-if test "$GCC" = yes; then
-  # Check if gcc -print-prog-name=ld gives a path.
-  AC_MSG_CHECKING([for ld used by GCC])
-  case $host in
-  *-*-mingw*)
-    # gcc leaves a trailing carriage return which upsets mingw
-    ac_prog=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
-  *)
-    ac_prog=`($CC -print-prog-name=ld) 2>&5` ;;
-  esac
-  case $ac_prog in
-    # Accept absolute paths.
-    [[\\/]* | [A-Za-z]:[\\/]*)]
-      [re_direlt='/[^/][^/]*/\.\./']
-      # Canonicalize the path of ld
-      ac_prog=`echo $ac_prog| sed 's%\\\\%/%g'`
-      while echo $ac_prog | grep "$re_direlt" > /dev/null 2>&1; do
-        ac_prog=`echo $ac_prog| sed "s%$re_direlt%/%"`
-      done
-      test -z "$LD" && LD="$ac_prog"
-      ;;
-  "")
-    # If it fails, then pretend we aren't using GCC.
-    ac_prog=ld
-    ;;
-  *)
-    # If it is relative, then search for the first ld in PATH.
-    with_gnu_ld=unknown
-    ;;
-  esac
+
+if test -n "$LD"; then
+  AC_MSG_CHECKING([for ld])
+elif test "$GCC" = yes; then
+  AC_MSG_CHECKING([for ld used by $CC])
 elif test "$with_gnu_ld" = yes; then
   AC_MSG_CHECKING([for GNU ld])
 else
   AC_MSG_CHECKING([for non-GNU ld])
 fi
-AC_CACHE_VAL([acl_cv_path_LD],
-[if test -z "$LD"; then
-  IFS="${IFS= 	}"; ac_save_ifs="$IFS"; IFS="${IFS}${PATH_SEPARATOR-:}"
-  for ac_dir in $PATH; do
-    test -z "$ac_dir" && ac_dir=.
-    if test -f "$ac_dir/$ac_prog" || test -f "$ac_dir/$ac_prog$ac_exeext"; then
-      acl_cv_path_LD="$ac_dir/$ac_prog"
-      # Check to see if the program is GNU ld.  I'd rather use --version,
-      # but apparently some GNU ld's only accept -v.
-      # Break only if it was the GNU/non-GNU ld that we prefer.
-      case `"$acl_cv_path_LD" -v 2>&1 < /dev/null` in
-      *GNU* | *'with BFD'*)
-        test "$with_gnu_ld" != no && break ;;
-      *)
-        test "$with_gnu_ld" != yes && break ;;
+if test -n "$LD"; then
+  # Let the user override the test with a path.
+  :
+else
+  AC_CACHE_VAL([acl_cv_path_LD],
+  [
+    acl_cv_path_LD= # Final result of this test
+    ac_prog=ld # Program to search in $PATH
+    if test "$GCC" = yes; then
+      # Check if gcc -print-prog-name=ld gives a path.
+      case $host in
+        *-*-mingw* | windows*)
+          # gcc leaves a trailing carriage return which upsets mingw
+          acl_output=`($CC -print-prog-name=ld) 2>&5 | tr -d '\015'` ;;
+        *)
+          acl_output=`($CC -print-prog-name=ld) 2>&5` ;;
+      esac
+      case $acl_output in
+        # Accept absolute paths.
+        [[\\/]]* | ?:[[\\/]]*)
+          re_direlt='/[[^/]][[^/]]*/\.\./'
+          # Canonicalize the pathname of ld
+          acl_output=`echo "$acl_output" | sed 's%\\\\%/%g'`
+          while echo "$acl_output" | grep "$re_direlt" > /dev/null 2>&1; do
+            acl_output=`echo $acl_output | sed "s%$re_direlt%/%"`
+          done
+          # Got the pathname. No search in PATH is needed.
+          acl_cv_path_LD="$acl_output"
+          ac_prog=
+          ;;
+        "")
+          # If it fails, then pretend we aren't using GCC.
+          ;;
+        *)
+          # If it is relative, then search for the first ld in PATH.
+          with_gnu_ld=unknown
+          ;;
       esac
     fi
-  done
-  IFS="$ac_save_ifs"
-else
-  acl_cv_path_LD="$LD" # Let the user override the test with a path.
-fi])
-LD="$acl_cv_path_LD"
+    if test -n "$ac_prog"; then
+      # Search for $ac_prog in $PATH.
+      acl_saved_IFS="$IFS"; IFS=$PATH_SEPARATOR
+      for ac_dir in $PATH; do
+        IFS="$acl_saved_IFS"
+        test -z "$ac_dir" && ac_dir=.
+        if test -f "$ac_dir/$ac_prog" || test -f "$ac_dir/$ac_prog$ac_exeext"; then
+          acl_cv_path_LD="$ac_dir/$ac_prog"
+          # Check to see if the program is GNU ld.  I'd rather use --version,
+          # but apparently some variants of GNU ld only accept -v.
+          # Break only if it was the GNU/non-GNU ld that we prefer.
+          case `"$acl_cv_path_LD" -v 2>&1 </dev/null` in
+            *GNU* | *'with BFD'*)
+              test "$with_gnu_ld" != no && break
+              ;;
+            *)
+              test "$with_gnu_ld" != yes && break
+              ;;
+          esac
+        fi
+      done
+      IFS="$acl_saved_IFS"
+    fi
+    case $host in
+      *-*-aix*)
+        AC_COMPILE_IFELSE(
+          [AC_LANG_SOURCE(
+             [[#if defined __powerpc64__ || defined __LP64__
+                int ok;
+               #else
+                error fail
+               #endif
+             ]])],
+          [# The compiler produces 64-bit code. Add option '-b64' so that the
+           # linker groks 64-bit object files.
+           case "$acl_cv_path_LD " in
+             *" -b64 "*) ;;
+             *) acl_cv_path_LD="$acl_cv_path_LD -b64" ;;
+           esac
+          ], [])
+        ;;
+      sparc64-*-netbsd*)
+        AC_COMPILE_IFELSE(
+          [AC_LANG_SOURCE(
+             [[#if defined __sparcv9 || defined __arch64__
+                int ok;
+               #else
+                error fail
+               #endif
+             ]])],
+          [],
+          [# The compiler produces 32-bit code. Add option '-m elf32_sparc'
+           # so that the linker groks 32-bit object files.
+           case "$acl_cv_path_LD " in
+             *" -m elf32_sparc "*) ;;
+             *) acl_cv_path_LD="$acl_cv_path_LD -m elf32_sparc" ;;
+           esac
+          ])
+        ;;
+    esac
+  ])
+  LD="$acl_cv_path_LD"
+fi
 if test -n "$LD"; then
   AC_MSG_RESULT([$LD])
 else
   AC_MSG_RESULT([no])
+  AC_MSG_ERROR([no acceptable ld found in \$PATH])
 fi
-test -z "$LD" && AC_MSG_ERROR([no acceptable ld found in \$PATH])
 AC_LIB_PROG_LD_GNU
 ])
