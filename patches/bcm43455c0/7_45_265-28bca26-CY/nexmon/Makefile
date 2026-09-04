@@ -9,6 +9,12 @@ FW_SRCS=$(wildcard $(FW_PATH)/*.c)
 
 OBJS=$(addprefix obj/,$(notdir $(LOCAL_SRCS:.c=.o)) $(notdir $(COMMON_SRCS:.c=.o)) $(notdir $(FW_SRCS:.c=.o)))
 
+# Auto-generated header dependencies (-MMD/-MP below). Without these a change to
+# a shared header (patches/include, ./include, or the firmware headers) would
+# not rebuild the affected objects and stale .o files would be silently reused.
+DEPS=$(OBJS:.o=.d)
+-include $(DEPS)
+
 KERNEL_VERSION = $(shell uname -r | sed 's/\([0-9]\+\.[0-9]\+\)\..*/\1/')
 DRIVER_FOLDER_NAME = $(NEXMON_ROOT)/patches/driver/brcmfmac_$(KERNEL_VERSION).y-nexmon
 
@@ -35,6 +41,7 @@ CFLAGS= \
 	-DBUILD_NUMBER=\"$$(cat BUILD_NUMBER)\" \
 	-Wall -Werror -Wno-unused-variable -Wno-unused-function -Wno-address-of-packed-member -O2 -nostdlib -nostartfiles -ffreestanding -mthumb -fno-align-functions -march=$(NEXMON_ARCH) \
 	-ffunction-sections -fdata-sections \
+	-MMD -MP \
 	-I$(NEXMON_ROOT)/patches/include \
 	-Iinclude \
 	-I$(FW_PATH)
@@ -44,11 +51,17 @@ all: $(RAM_FILE) brcmfmac.ko
 firmware-only: $(RAM_FILE)
 
 init: FORCE
+	$(Q)mkdir -p obj gen log
 	$(Q)if ! test -f BUILD_NUMBER; then echo 0 > BUILD_NUMBER; fi
+# By default every build increments BUILD_NUMBER and re-touches version.c, which
+# defeats no-op and reproducible builds (the artifact changes even when nothing
+# else did). Set NEXMON_FREEZE_BUILD_NUMBER=1 for a reproducible build that keeps
+# BUILD_NUMBER fixed and only rebuilds version.c when it actually changed.
+ifndef NEXMON_FREEZE_BUILD_NUMBER
 	$(Q)echo $$(($$(cat BUILD_NUMBER) + 1)) > BUILD_NUMBER
 	$(Q)touch src/version.c
+endif
 	$(Q)make -s -f $(NEXMON_ROOT)/patches/common/header.mk
-	$(Q)mkdir -p obj gen log
 
 brcmfmac.ko: check-nexmon-setup-env
 ifneq ("$(wildcard $(DRIVER_FOLDER_NAME))", "")
@@ -69,17 +82,17 @@ endif
 
 obj/%.o: src/%.c
 	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
-	$(Q)cat gen/nexmon.pre 2>>log/error.log | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
+	$(Q)touch gen/nexmon.pre && cat gen/nexmon.pre | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
 	$(Q)$(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
 
 obj/%.o: $(NEXMON_ROOT)/patches/common/%.c
 	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
-	$(Q)cat gen/nexmon.pre 2>>log/error.log | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
+	$(Q)touch gen/nexmon.pre && cat gen/nexmon.pre | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
 	$(Q)$(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
 
 obj/%.o: $(FW_PATH)/%.c
 	@printf "\033[0;31m  COMPILING\033[0m %s => %s (details: log/compiler.log)\n" $< $@
-	$(Q)cat gen/nexmon.pre 2>>log/error.log | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
+	$(Q)touch gen/nexmon.pre && cat gen/nexmon.pre | gawk '{ if ($$3 != "$@") print; }' > tmp && mv tmp gen/nexmon.pre
 	$(Q)$(CC)gcc $(CFLAGS) -c $< -o $@ >>log/compiler.log
 
 gen/nexmon.ld: $(OBJS)
@@ -125,7 +138,7 @@ gen/memory.ld: $(FW_PATH)/definitions.mk
 
 gen/patch.elf: patch.ld gen/nexmon.ld gen/flashpatches.ld gen/memory.ld $(OBJS)
 	@printf "\033[0;31m  LINKING OBJECTS\033[0m => %s (details: log/linker.log, log/linker.err)\n" $@
-	$(Q)$(CC)ld -T $< -o $@ --gc-sections --print-gc-sections --no-check-sections -M >>log/linker.log 2>>log/linker.err
+	$(Q)$(CC)ld -T $< -o $@ --gc-sections --print-gc-sections -M >>log/linker.log 2>>log/linker.err
 
 $(RAM_FILE): init gen/patch.elf $(FW_PATH)/$(RAM_FILE) gen/nexmon.mk gen/flashpatches.mk
 	$(Q)cp $(FW_PATH)/$(RAM_FILE) $@
