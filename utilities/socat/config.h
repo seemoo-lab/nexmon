@@ -218,7 +218,7 @@
 #define HAVE_SYS_UN_H 1
 
 /* Define if you have the <pty.h> header file.  */
-/* #undef HAVE_PTY_H */
+#define HAVE_PTY_H 1
 
 /* Define if you have the <netinet/in.h> header file.  */
 #define HAVE_NETINET_IN_H 1
@@ -278,7 +278,7 @@
 #define HAVE_SYS_FILE_H 1
 
 /* Define if you have the <util.h> header file. (NetBSD, OpenBSD: openpty()) */
-#define HAVE_UTIL_H 1
+/* #undef HAVE_UTIL_H */
  
 /* Define if you have the <bsd/libutil.h> header file. */
 /* #undef HAVE_BSD_LIBUTIL_H */
@@ -530,7 +530,7 @@
 #endif
 
 /* 1..short, 3..int, 5..long; 2,4,6..unsigned */
-#define HAVE_BASIC_SIZE_T 4 /* unsigned int */
+#define HAVE_BASIC_SIZE_T 6 /* unsigned long (aarch64/bionic LP64) */
 #define HAVE_BASIC_MODE_T 2 /* unsigned short */
 #define HAVE_BASIC_PID_T 3 /* int */
 #define HAVE_BASIC_UID_T 4 /* unsigned int */
@@ -538,22 +538,22 @@
 #define HAVE_BASIC_TIME_T 5 /* long */
 #define HAVE_BASIC_OFF_T 5 /* long */
 #define HAVE_BASIC_OFF64_T 7 /* long long */
-#define HAVE_BASIC_DEV_T 4 /* unsigned int */
+#define HAVE_BASIC_DEV_T 6 /* unsigned long (aarch64/bionic LP64) */
 
 #define HAVE_BASIC_SOCKLEN_T 3 /* int */
 
-#define HAVE_TYPEOF_ST_INO 8 /* unsigned long long */
+#define HAVE_TYPEOF_ST_INO 6 /* unsigned long (aarch64/bionic LP64) */
 #define HAVE_TYPEOF_ST_NLINK 4 /* unsigned int */
-#define HAVE_TYPEOF_ST_SIZE 7 /* long long */
-#define HAVE_TYPEOF_ST_BLKSIZE 6 /* unsigned long */
-#define HAVE_TYPEOF_ST_BLOCKS 8 /* unsigned long long */
+#define HAVE_TYPEOF_ST_SIZE 5 /* long (aarch64/bionic LP64) */
+#define HAVE_TYPEOF_ST_BLKSIZE 3 /* int (aarch64/bionic LP64) */
+#define HAVE_TYPEOF_ST_BLOCKS 5 /* long (aarch64/bionic LP64) */
 
-#define HAVE_TYPEOF_ST64_DEV 8 /* unsigned long long */
-#define HAVE_TYPEOF_ST64_INO 8 /* unsigned long long */
+#define HAVE_TYPEOF_ST64_DEV 6 /* unsigned long (aarch64/bionic LP64) */
+#define HAVE_TYPEOF_ST64_INO 6 /* unsigned long (aarch64/bionic LP64) */
 #define HAVE_TYPEOF_ST64_NLINK 4 /* unsigned int */
-#define HAVE_TYPEOF_ST64_SIZE 7 /* long long */
-#define HAVE_TYPEOF_ST64_BLKSIZE 6 /* unsigned long */
-#define HAVE_TYPEOF_ST64_BLOCKS 8 /* unsigned long long */
+#define HAVE_TYPEOF_ST64_SIZE 5 /* long (aarch64/bionic LP64) */
+#define HAVE_TYPEOF_ST64_BLKSIZE 3 /* int (aarch64/bionic LP64) */
+#define HAVE_TYPEOF_ST64_BLOCKS 5 /* long (aarch64/bionic LP64) */
 
 #define HAVE_TYPEOF_STRUCT_TIMEVAL_TV_USEC 5 /* long */
 
