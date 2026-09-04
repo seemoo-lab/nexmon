@@ -1,0 +1,22 @@
+--- po-fetch.1.orig	2025-12-30 23:52:39.868363668 +0100
++++ po-fetch.1	2025-12-31 00:01:17.154943411 +0100
+@@ -4,12 +4,15 @@
+ po\-fetch \- fetches a set of PO files from a translation project's site
+ .SH SYNOPSIS
+ .B po-fetch
+-[\fI\,OPTION\/\fR...] \fI\,TP DOMAIN\/\fR
++[\fI\,OPTION\/\fR...] TP \fI\,DOMAIN\/\fR
++.PP
++.B po-fetch
++[\fI\,OPTION\/\fR...] Weblate \fI\,BASE\-URL\/\fR \fI\,PROJECT\/\fR \fI\,COMPONENT\/\fR
++.PP
++.B po-fetch
++[\fI\,OPTION\/\fR...] git \fI\,BASE\-URL\/\fR \fI\,BRANCH\/\fR \fI\,SUBDIR\/\fR
+ .SH DESCRIPTION
+ .\" Add any additional description here
+-.IP
+-po\-fetch [OPTION...] Weblate BASE\-URL PROJECT COMPONENT
+-po\-fetch [OPTION...] git BASE\-URL BRANCH SUBDIR
+ .PP
+ Fetches a set of PO files, produced by translators, from a translation
+ project's site on the internet, and updates the LINGUAS file accordingly.

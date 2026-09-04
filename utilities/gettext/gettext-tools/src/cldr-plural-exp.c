@@ -1,7 +1,5 @@
-/* Unicode CLDR plural rule parser and converter
-   Copyright (C) 2015-2016 Free Software Foundation, Inc.
-
-   This file was written by Daiki Ueno <ueno@gnu.org>, 2015.
+/* Unicode CLDR plural rule parser and converter.
+   Copyright (C) 2015-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,24 +12,21 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Daiki Ueno and Bruno Haible.  */
+
+#include <config.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
-#include "unistr.h"
 #include "xalloc.h"
 
 #include "cldr-plural-exp.h"
-#include "cldr-plural.h"
 
 /* The grammar of Unicode CLDR plural rules is defined at:
-   http://unicode.org/reports/tr35/tr35-numbers.html#Plural_rules_syntax
+   https://unicode.org/reports/tr35/tr35-numbers.html#Plural_rules_syntax
 
    This implementation only supports the "preferred" form, which
    doesn't support obsolete keywords "in", "is", "not", and "within".
@@ -63,6 +58,14 @@ cldr_plural_range_list_free (struct cldr_plural_range_list_ty *ranges)
 }
 
 void
+cldr_plural_relation_free (struct cldr_plural_relation_ty *relation)
+{
+  free (relation->expression);
+  cldr_plural_range_list_free (relation->ranges);
+  free (relation);
+}
+
+void
 cldr_plural_condition_free (struct cldr_plural_condition_ty *condition)
 {
   if (condition->type == CLDR_PLURAL_CONDITION_AND
@@ -74,14 +77,6 @@ cldr_plural_condition_free (struct cldr_plural_condition_ty *condition)
   else if (condition->type == CLDR_PLURAL_CONDITION_RELATION)
     cldr_plural_relation_free (condition->value.relation);
   free (condition);
-}
-
-void
-cldr_plural_relation_free (struct cldr_plural_relation_ty *relation)
-{
-  free (relation->expression);
-  cldr_plural_range_list_free (relation->ranges);
-  free (relation);
 }
 
 static void
@@ -101,28 +96,11 @@ cldr_plural_rule_list_free (struct cldr_plural_rule_list_ty *rules)
   free (rules);
 }
 
-struct cldr_plural_rule_list_ty *
-cldr_plural_parse (const char *input)
-{
-  struct cldr_plural_parse_args arg;
-
-  memset (&arg, 0, sizeof (struct cldr_plural_parse_args));
-  arg.cp = input;
-  arg.cp_end = input + strlen (input);
-  arg.result = XMALLOC (struct cldr_plural_rule_list_ty);
-  memset (arg.result, 0, sizeof (struct cldr_plural_rule_list_ty));
-
-  if (yyparse (&arg) != 0)
-    return NULL;
-
-  return arg.result;
-}
-
 #define OPERAND_ZERO_P(o)                               \
-    (((o)->type == CLDR_PLURAL_OPERAND_INTEGER          \
-      && (o)->value.ival == 0)                          \
-    || ((o)->type == CLDR_PLURAL_OPERAND_DECIMAL        \
-        && (o)->value.dval.d == 0))
+  (((o)->type == CLDR_PLURAL_OPERAND_INTEGER            \
+    && (o)->value.ival == 0)                            \
+   || ((o)->type == CLDR_PLURAL_OPERAND_DECIMAL         \
+       && (o)->value.dval.d == 0))
 
 static enum cldr_plural_condition
 eval_relation (struct cldr_plural_relation_ty *relation)
@@ -132,22 +110,22 @@ eval_relation (struct cldr_plural_relation_ty *relation)
     case 'n': case 'i':
       {
         /* Coerce decimal values in ranges into integers.  */
-        size_t i;
-        for (i = 0; i < relation->ranges->nitems; i++)
+        for (size_t i = 0; i < relation->ranges->nitems; i++)
           {
             struct cldr_plural_range_ty *range = relation->ranges->items[i];
             if (range->start->type == CLDR_PLURAL_OPERAND_DECIMAL)
               {
                 int truncated = (int) range->start->value.dval.d;
                 range->start->type = CLDR_PLURAL_OPERAND_INTEGER;
-                range->start->value.ival
-                  = range->start->value.dval.d == truncated
-                  ? truncated : truncated + 1;
+                range->start->value.ival =
+                  (range->start->value.dval.d == truncated
+                   ? truncated
+                   : truncated + 1);
               }
             if (range->end->type == CLDR_PLURAL_OPERAND_DECIMAL)
               {
                 range->end->type = CLDR_PLURAL_OPERAND_INTEGER;
-                range->end->value.ival = (int) (range->end->value.dval.d);
+                range->end->value.ival = (int) range->end->value.dval.d;
               }
           }
         relation->expression->operand = 'i';
@@ -155,13 +133,13 @@ eval_relation (struct cldr_plural_relation_ty *relation)
       break;
     case 'f': case 't':
     case 'v': case 'w':
+    case 'c': case 'e':
       {
         /* Since plural expression in gettext only supports unsigned
            integer, turn relations whose operand is either 'f', 't',
-           'v', or 'w' into a constant truth value.  */
+           'v', 'w', 'c', or 'e' into a constant truth value.  */
         /* FIXME: check mod?  */
-        size_t i;
-        for (i = 0; i < relation->ranges->nitems; i++)
+        for (size_t i = 0; i < relation->ranges->nitems; i++)
           {
             struct cldr_plural_range_ty *range = relation->ranges->items[i];
             if ((relation->type == CLDR_PLURAL_RELATION_EQUAL
@@ -187,19 +165,19 @@ eval_condition (struct cldr_plural_condition_ty *condition)
       eval_condition (condition->value.conditions[0]);
       eval_condition (condition->value.conditions[1]);
 
-      if (condition->value.conditions[0]->type
-          == CLDR_PLURAL_CONDITION_FALSE
-          || condition->value.conditions[1]->type
-          == CLDR_PLURAL_CONDITION_FALSE)
+      if ((condition->value.conditions[0]->type
+           == CLDR_PLURAL_CONDITION_FALSE)
+          || (condition->value.conditions[1]->type
+              == CLDR_PLURAL_CONDITION_FALSE))
         {
           cldr_plural_condition_free (condition->value.conditions[0]);
           cldr_plural_condition_free (condition->value.conditions[1]);
           condition->type = CLDR_PLURAL_CONDITION_FALSE;
         }
-      else if (condition->value.conditions[0]->type
-               == CLDR_PLURAL_CONDITION_TRUE
-               && condition->value.conditions[1]->type
-               == CLDR_PLURAL_CONDITION_TRUE)
+      else if ((condition->value.conditions[0]->type
+                == CLDR_PLURAL_CONDITION_TRUE)
+               && (condition->value.conditions[1]->type
+                   == CLDR_PLURAL_CONDITION_TRUE))
         {
           cldr_plural_condition_free (condition->value.conditions[0]);
           cldr_plural_condition_free (condition->value.conditions[1]);
@@ -208,8 +186,8 @@ eval_condition (struct cldr_plural_condition_ty *condition)
       else if (condition->value.conditions[0]->type
                == CLDR_PLURAL_CONDITION_TRUE)
         {
-          struct cldr_plural_condition_ty *original
-            = condition->value.conditions[1];
+          struct cldr_plural_condition_ty *original =
+            condition->value.conditions[1];
           cldr_plural_condition_free (condition->value.conditions[0]);
           condition->type = condition->value.conditions[1]->type;
           condition->value = condition->value.conditions[1]->value;
@@ -218,8 +196,8 @@ eval_condition (struct cldr_plural_condition_ty *condition)
       else if (condition->value.conditions[1]->type
                == CLDR_PLURAL_CONDITION_TRUE)
         {
-          struct cldr_plural_condition_ty *original
-            = condition->value.conditions[0];
+          struct cldr_plural_condition_ty *original =
+            condition->value.conditions[0];
           cldr_plural_condition_free (condition->value.conditions[1]);
           condition->type = condition->value.conditions[0]->type;
           condition->value = condition->value.conditions[0]->value;
@@ -231,19 +209,19 @@ eval_condition (struct cldr_plural_condition_ty *condition)
       eval_condition (condition->value.conditions[0]);
       eval_condition (condition->value.conditions[1]);
 
-      if (condition->value.conditions[0]->type
-          == CLDR_PLURAL_CONDITION_TRUE
-          || condition->value.conditions[1]->type
-          == CLDR_PLURAL_CONDITION_TRUE)
+      if ((condition->value.conditions[0]->type
+           == CLDR_PLURAL_CONDITION_TRUE)
+          || (condition->value.conditions[1]->type
+              == CLDR_PLURAL_CONDITION_TRUE))
         {
           cldr_plural_condition_free (condition->value.conditions[0]);
           cldr_plural_condition_free (condition->value.conditions[1]);
           condition->type = CLDR_PLURAL_CONDITION_TRUE;
         }
-      else if (condition->value.conditions[0]->type
-               == CLDR_PLURAL_CONDITION_FALSE
-               && condition->value.conditions[1]->type
-               == CLDR_PLURAL_CONDITION_FALSE)
+      else if ((condition->value.conditions[0]->type
+                == CLDR_PLURAL_CONDITION_FALSE)
+               && (condition->value.conditions[1]->type
+                   == CLDR_PLURAL_CONDITION_FALSE))
         {
           cldr_plural_condition_free (condition->value.conditions[0]);
           cldr_plural_condition_free (condition->value.conditions[1]);
@@ -252,8 +230,8 @@ eval_condition (struct cldr_plural_condition_ty *condition)
       else if (condition->value.conditions[0]->type
                == CLDR_PLURAL_CONDITION_FALSE)
         {
-          struct cldr_plural_condition_ty *original
-            = condition->value.conditions[1];
+          struct cldr_plural_condition_ty *original =
+            condition->value.conditions[1];
           cldr_plural_condition_free (condition->value.conditions[0]);
           condition->type = condition->value.conditions[1]->type;
           condition->value = condition->value.conditions[1]->value;
@@ -262,8 +240,8 @@ eval_condition (struct cldr_plural_condition_ty *condition)
       else if (condition->value.conditions[1]->type
                == CLDR_PLURAL_CONDITION_FALSE)
         {
-          struct cldr_plural_condition_ty *original
-            = condition->value.conditions[0];
+          struct cldr_plural_condition_ty *original =
+            condition->value.conditions[0];
           cldr_plural_condition_free (condition->value.conditions[1]);
           condition->type = condition->value.conditions[0]->type;
           condition->value = condition->value.conditions[0]->value;
@@ -318,8 +296,7 @@ find_largest_number (struct cldr_plural_condition_ty *condition)
   else if (condition->type == CLDR_PLURAL_CONDITION_RELATION)
     {
       int number = 0;
-      size_t i;
-      for (i = 0; i < condition->value.relation->ranges->nitems; i++)
+      for (size_t i = 0; i < condition->value.relation->ranges->nitems; i++)
         {
           struct cldr_plural_operand_ty *operand;
 
@@ -342,20 +319,19 @@ apply_condition (struct cldr_plural_condition_ty *condition, int value)
 {
   if (condition->type == CLDR_PLURAL_CONDITION_AND)
     return apply_condition (condition->value.conditions[0], value)
-      && apply_condition (condition->value.conditions[1], value);
+           && apply_condition (condition->value.conditions[1], value);
   else if (condition->type == CLDR_PLURAL_CONDITION_OR)
     return apply_condition (condition->value.conditions[0], value)
-      || apply_condition (condition->value.conditions[1], value);
+           || apply_condition (condition->value.conditions[1], value);
   else if (condition->type == CLDR_PLURAL_CONDITION_RELATION)
     {
-      struct cldr_plural_relation_ty *relation
-        = condition->value.relation;
-      int number = value;
-      size_t i;
+      struct cldr_plural_relation_ty *relation = condition->value.relation;
 
+      int number = value;
       if (relation->expression->mod > 0)
         number %= relation->expression->mod;
-      for (i = 0; i < relation->ranges->nitems; i++)
+
+      for (size_t i = 0; i < relation->ranges->nitems; i++)
         {
           struct cldr_plural_range_ty *range = relation->ranges->items[i];
           if (range->start->value.ival <= number
@@ -384,11 +360,10 @@ print_relation (struct cldr_plural_relation_ty *relation,
 {
   if (relation->type == CLDR_PLURAL_RELATION_EQUAL)
     {
-      size_t i;
       if (parent == CLDR_PLURAL_CONDITION_AND
           && relation->ranges->nitems > 1)
         fputc ('(', fp);
-      for (i = 0; i < relation->ranges->nitems; i++)
+      for (size_t i = 0; i < relation->ranges->nitems; i++)
         {
           struct cldr_plural_range_ty *range = relation->ranges->items[i];
           if (i > 0)
@@ -397,8 +372,8 @@ print_relation (struct cldr_plural_relation_ty *relation,
             {
               print_expression (relation->expression, space, fp);
               fprintf (fp,
-                       space && relation->ranges->nitems == 1
-                       ? " == %d" : "==%d",
+                       (space && relation->ranges->nitems == 1
+                        ? " == %d" : "==%d"),
                        range->start->value.ival);
             }
           else if (range->start->value.ival == 0)
@@ -427,40 +402,39 @@ print_relation (struct cldr_plural_relation_ty *relation,
     }
   else
     {
-      size_t i;
       if (parent == CLDR_PLURAL_CONDITION_OR
           && relation->ranges->nitems > 1)
         fputc ('(', fp);
-      for (i = 0; i < relation->ranges->nitems; i++)
+      for (size_t i = 0; i < relation->ranges->nitems; i++)
         {
           struct cldr_plural_range_ty *range = relation->ranges->items[i];
-         if (i > 0)
-           fprintf (fp," && ");
-         if (range->start->value.ival == range->end->value.ival)
-           {
-             print_expression (relation->expression, space, fp);
-             fprintf (fp, space && relation->ranges->nitems == 1
-                      ? " != %d" : "!=%d", range->start->value.ival);
-           }
-         else if (range->start->value.ival == 0)
-           {
-             print_expression (relation->expression, false, fp);
-             fprintf (fp, ">%d", range->end->value.ival);
-           }
-         else
-           {
-             if (parent == CLDR_PLURAL_CONDITION_AND
-                 || relation->ranges->nitems > 1)
-               fputc ('(', fp);
-             print_expression (relation->expression, false, fp);
-             fprintf (fp, "<%d", range->start->value.ival);
-             fprintf (fp, " || ");
-             print_expression (relation->expression, false, fp);
-             fprintf (fp, ">%d", range->end->value.ival);
-             if (parent == CLDR_PLURAL_CONDITION_AND
-                 || relation->ranges->nitems > 1)
-               fputc (')', fp);
-           }
+          if (i > 0)
+            fprintf (fp," && ");
+          if (range->start->value.ival == range->end->value.ival)
+            {
+              print_expression (relation->expression, space, fp);
+              fprintf (fp, space && relation->ranges->nitems == 1
+                       ? " != %d" : "!=%d", range->start->value.ival);
+            }
+          else if (range->start->value.ival == 0)
+            {
+              print_expression (relation->expression, false, fp);
+              fprintf (fp, ">%d", range->end->value.ival);
+            }
+          else
+            {
+              if (parent == CLDR_PLURAL_CONDITION_AND
+                  || relation->ranges->nitems > 1)
+                fputc ('(', fp);
+              print_expression (relation->expression, false, fp);
+              fprintf (fp, "<%d", range->start->value.ival);
+              fprintf (fp, " || ");
+              print_expression (relation->expression, false, fp);
+              fprintf (fp, ">%d", range->end->value.ival);
+              if (parent == CLDR_PLURAL_CONDITION_AND
+                  || relation->ranges->nitems > 1)
+                fputc (')', fp);
+            }
         }
       if (parent == CLDR_PLURAL_CONDITION_OR
           && relation->ranges->nitems > 1)
@@ -576,13 +550,8 @@ static print_condition_function_ty print_condition_functions[] =
 void
 cldr_plural_rule_list_print (struct cldr_plural_rule_list_ty *rules, FILE *fp)
 {
-  size_t i;
-  size_t count;
-  size_t nplurals;
-  int modulus_max = 0;
-
   /* Prune trivial conditions.  */
-  for (i = 0; i < rules->nitems; i++)
+  for (size_t i = 0; i < rules->nitems; i++)
     {
       struct cldr_plural_rule_ty *rule = rules->items[i];
       eval_condition (rule->condition);
@@ -597,7 +566,8 @@ cldr_plural_rule_list_print (struct cldr_plural_rule_list_ty *rules, FILE *fp)
         corresponding bit if it evaluates true  */
 
   /* Find the largest modulus.  */
-  for (i = 0; i < rules->nitems; i++)
+  int modulus_max = 0;
+  for (size_t i = 0; i < rules->nitems; i++)
     {
       struct cldr_plural_rule_ty *rule = rules->items[i];
       int modulus = find_largest_modulus (rule->condition);
@@ -612,14 +582,14 @@ cldr_plural_rule_list_print (struct cldr_plural_rule_list_ty *rules, FILE *fp)
   if (modulus_max > 0)
     {
       bool *values = XNMALLOC (modulus_max, bool);
-
       memset (values, 0, sizeof (bool) * modulus_max);
+
+      size_t i;
       for (i = 0; i < rules->nitems; i++)
         {
           struct cldr_plural_rule_ty *rule = rules->items[i];
-          int j;
 
-          for (j = 0; j < modulus_max; j++)
+          for (int j = 0; j < modulus_max; j++)
             {
               bool result = apply_condition (rule->condition, j + 1);
               if (result)
@@ -627,6 +597,7 @@ cldr_plural_rule_list_print (struct cldr_plural_rule_list_ty *rules, FILE *fp)
             }
 
           /* Check if all bits are set.  Then we can omit one more rule.  */
+          int j;
           for (j = 0; j < modulus_max; j++)
             if (values[j] == false)
               break;
@@ -640,7 +611,8 @@ cldr_plural_rule_list_print (struct cldr_plural_rule_list_ty *rules, FILE *fp)
         cldr_plural_rule_free (rules->items[--rules->nitems]);
     }
 
-  for (i = 0, nplurals = 1; i < rules->nitems; i++)
+  size_t nplurals = 1;
+  for (size_t i = 0; i < rules->nitems; i++)
     if (RULE_PRINTABLE_P (rules->items[i]))
       nplurals++;
 
@@ -654,22 +626,21 @@ cldr_plural_rule_list_print (struct cldr_plural_rule_list_ty *rules, FILE *fp)
   /* If we have only one printable rule, apply some heuristics.  */
   if (nplurals == 2)
     {
-      struct cldr_plural_condition_ty *condition;
-      size_t j;
-
-      for (j = 0; j < rules->nitems; j++)
-        if (RULE_PRINTABLE_P (rules->items[j]))
+      size_t i;
+      for (i = 0; i < rules->nitems; i++)
+        if (RULE_PRINTABLE_P (rules->items[i]))
           break;
 
-      condition = rules->items[j]->condition;
-      for (j = 0; j < SIZEOF (print_condition_functions); j++)
+      struct cldr_plural_condition_ty *condition = rules->items[i]->condition;
+      for (size_t j = 0; j < SIZEOF (print_condition_functions); j++)
         if (print_condition_functions[j] (condition, fp))
           return;
     }
 
   /* If there are more printable rules, build a ternary operator.  */
-  fprintf (fp, "nplurals=%zu; plural=(", nplurals);
-  for (i = 0, count = 0; i < rules->nitems; i++)
+  fprintf (fp, "nplurals=%lu; plural=(", (unsigned long) nplurals);
+  size_t count = 0;
+  for (size_t i = 0; i < rules->nitems; i++)
     {
       struct cldr_plural_rule_ty *rule = rules->items[i];
       if (print_condition (rule->condition,
@@ -679,17 +650,16 @@ cldr_plural_rule_list_print (struct cldr_plural_rule_list_ty *rules, FILE *fp)
           && rules->nitems > 1)
         {
           bool printable_left = false;
-          size_t j;
-
-          for (j = i + 1; j < rules->nitems; j++)
+          for (size_t j = i + 1; j < rules->nitems; j++)
             if (RULE_PRINTABLE_P (rules->items[j]))
               printable_left = true;
 
           if (i < rules->nitems - 1 && printable_left)
-            fprintf (fp, " ? %zu : ", count++);
+            fprintf (fp, " ? %lu : ", (unsigned long) count++);
         }
     }
   if (rules->nitems > 1)
-    fprintf (fp, " ? %zu : %zu", count, count + 1);
+    fprintf (fp, " ? %lu : %lu",
+             (unsigned long) count, (unsigned long) (count + 1));
   fprintf (fp, ");\n");
 }

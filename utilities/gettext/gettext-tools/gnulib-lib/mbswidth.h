@@ -1,9 +1,9 @@
 /* Determine the number of screen columns needed for a string.
-   Copyright (C) 2000-2004, 2007, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2000-2004, 2007, 2009-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,18 +12,18 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* This file uses HAVE_DECL_MBSWIDTH_IN_WCHAR_H.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
 
 #include <stddef.h>
 
 /* Avoid a clash of our mbswidth() with a function of the same name defined
    in UnixWare 7.1.1 <wchar.h>.  We need this #include before the #define
-   below.
-   However, we don't want to #include <wchar.h> on all platforms because
-   - Tru64 with Desktop Toolkit C has a bug: <stdio.h> must be included before
-     <wchar.h>.
-   - BSD/OS 4.1 has a bug: <stdio.h> and <time.h> must be included before
-     <wchar.h>.  */
+   below.  */
 #if HAVE_DECL_MBSWIDTH_IN_WCHAR_H
 # include <wchar.h>
 #endif

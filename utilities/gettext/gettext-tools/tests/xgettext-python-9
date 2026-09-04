@@ -1,0 +1,28 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Python support:
+# warning "format string with unnamed arguments cannot be properly localized"
+
+cat <<\EOF > xg-py-9-1.py
+gettext ("foo %s bar") % ('a');
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-py-9-1 xg-py-9-1.py 2>xg-py-9-1.tmp || Exit 1
+grep -v '^==' xg-py-9-1.tmp > xg-py-9-1.err
+# Expect no warning here (because the format string has only one placeholder).
+if test -s xg-py-9-1.err; then
+  cat xg-py-9-1.err
+  Exit 1
+fi
+
+cat <<\EOF > xg-py-9-2.py
+gettext ("foo %s and %s bar") % ('a', 'b');
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-py-9-2 xg-py-9-2.py 2>xg-py-9-2.tmp || Exit 1
+grep -v '^==' xg-py-9-2.tmp > xg-py-9-2.err
+# Expect a warning here (because the format string has two placeholders).
+test -s xg-py-9-2.err || Exit 1

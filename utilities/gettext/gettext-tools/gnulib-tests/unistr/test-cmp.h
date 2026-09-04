@@ -1,9 +1,9 @@
 /* Test of uN_cmp() functions.
-   Copyright (C) 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Simon Josefsson and Bruno Haible <bruno@clisp.org>, 2010.  */
 
@@ -20,7 +20,10 @@ static void
 test_cmp (void)
 {
   /* Test equal / not equal distinction.  */
-  ASSERT (U_CMP (zerosize_ptr (), zerosize_ptr (), 0) == 0);
+  void *page_boundary1 = zerosize_ptr ();
+  void *page_boundary2 = zerosize_ptr ();
+  if (page_boundary1 && page_boundary2)
+    ASSERT (U_CMP (page_boundary1, page_boundary2, 0) == 0);
   {
     static const UNIT input1[] = { 'f', 'o', 'o', 0 };
     static const UNIT input2[] = { 'f', 'o', 'o', 'b', 'a', 'r', 0 };
@@ -75,21 +78,19 @@ test_cmp (void)
   {
     UNIT foo[21];
     UNIT bar[21];
-    int i;
-    for (i = 0; i < 4; i++)
+    for (int i = 0; i < 4; i++)
       {
         UNIT *a = foo + i;
         UNIT *b = bar + i;
-        int j;
-        for (j = 0; j < 8; j++)
+        for (int j = 0; j < 8; j++)
           a[j] = '-';
         a[8] = '0';
-        for (j = 9; j < 16; j++)
+        for (int j = 9; j < 16; j++)
           a[j] = '1';
-        for (j = 0; j < 8; j++)
+        for (int j = 0; j < 8; j++)
           b[j] = '-';
         b[8] = '1';
-        for (j = 9; j < 16; j++)
+        for (int j = 9; j < 16; j++)
           b[j] = '0';
         ASSERT (U_CMP (a, b, 16) < 0);
       }

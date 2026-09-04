@@ -1,95 +1,96 @@
 # Irish translations for gettext-runtime.
 # Copyright (C) 2004 Free Software Foundation, Inc.
-# This file is distributed under the same license as the gettext-runtime package.
-# Kevin Patrick Scannell <scannell@SLU.EDU>, 2005, 2006, 2007.
+# This file is distributed under the same license as the gettext package.
+# Kevin Patrick Scannell <kscanne@gmail.com>, 2005, 2006, 2007, 2017.
 msgid ""
 msgstr ""
-"Project-Id-Version: gettext-runtime 0.16.2-pre5\n"
+"Project-Id-Version: gettext-runtime 0.19.4.73\n"
 "Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"POT-Creation-Date: 2016-06-11 22:08+0900\n"
-"PO-Revision-Date: 2007-10-14 12:15-0500\n"
+"POT-Creation-Date: 2015-06-23 15:18+0900\n"
+"PO-Revision-Date: 2017-01-10 12:15-0500\n"
 "Last-Translator: Kevin Patrick Scannell <kscanne@gmail.com>\n"
 "Language-Team: Irish <gaeilge-gnulinux@lists.sourceforge.net>\n"
 "Language: ga\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ISO-8859-1\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
 
 #: gnulib-lib/closeout.c:66
 msgid "write error"
-msgstr "earr·id sa scrÌobh"
+msgstr "earr√°id sa scr√≠obh"
 
 #: gnulib-lib/error.c:191
 msgid "Unknown system error"
-msgstr "Earr·id chÛrais anaithnid"
+msgstr "Earr√°id ch√≥rais anaithnid"
 
 #: gnulib-lib/getopt.c:575 gnulib-lib/getopt.c:604
-#, fuzzy, c-format
+#, c-format
 msgid "%s: option '%s' is ambiguous; possibilities:"
-msgstr "%s: T· an rogha `%s' dÈbhrÌoch\n"
+msgstr "%s: T√° an rogha '%s' d√©bhr√≠och: f√©idearthachta√≠:"
 
 #: gnulib-lib/getopt.c:619
-#, fuzzy, c-format
+#, c-format
 msgid "%s: option '%s' is ambiguous\n"
-msgstr "%s: T· an rogha `%s' dÈbhrÌoch\n"
+msgstr "%s: T√° an rogha '%s' d√©bhr√≠och\n"
 
 #: gnulib-lib/getopt.c:654 gnulib-lib/getopt.c:658
-#, fuzzy, c-format
+#, c-format
 msgid "%s: option '--%s' doesn't allow an argument\n"
-msgstr "%s: nÌ cheadaÌtear argÛint i ndiaidh na rogha `--%s'\n"
+msgstr "%s: n√≠ cheada√≠tear arg√≥int i ndiaidh na rogha '--%s'\n"
 
 #: gnulib-lib/getopt.c:667 gnulib-lib/getopt.c:672
-#, fuzzy, c-format
+#, c-format
 msgid "%s: option '%c%s' doesn't allow an argument\n"
-msgstr "%s: nÌ cheadaÌtear argÛint i ndiaidh na rogha `%c%s'\n"
+msgstr "%s: n√≠ cheada√≠tear arg√≥int i ndiaidh na rogha '%c%s'\n"
 
 #: gnulib-lib/getopt.c:715 gnulib-lib/getopt.c:734
-#, fuzzy, c-format
+#, c-format
 msgid "%s: option '--%s' requires an argument\n"
-msgstr "%s: t· argÛint de dhÌth i ndiaidh na rogha `%s'\n"
+msgstr "%s: t√° arg√≥int de dh√≠th i ndiaidh na rogha '--%s'\n"
 
 #: gnulib-lib/getopt.c:772 gnulib-lib/getopt.c:775
-#, fuzzy, c-format
+#, c-format
 msgid "%s: unrecognized option '--%s'\n"
-msgstr "%s: rogha anaithnid `--%s'\n"
+msgstr "%s: rogha anaithnid '--%s'\n"
 
 #: gnulib-lib/getopt.c:783 gnulib-lib/getopt.c:786
-#, fuzzy, c-format
+#, c-format
 msgid "%s: unrecognized option '%c%s'\n"
-msgstr "%s: rogha anaithnid `%c%s'\n"
+msgstr "%s: rogha anaithnid '%c%s'\n"
 
 #: gnulib-lib/getopt.c:835 gnulib-lib/getopt.c:838
-#, fuzzy, c-format
+#, c-format
 msgid "%s: invalid option -- '%c'\n"
-msgstr "%s: rogha neamhbhailÌ -- %c\n"
+msgstr "%s: rogha neamhbhail√≠ -- '%c'\n"
 
 #: gnulib-lib/getopt.c:891 gnulib-lib/getopt.c:908 gnulib-lib/getopt.c:1118
 #: gnulib-lib/getopt.c:1136
-#, fuzzy, c-format
+#, c-format
 msgid "%s: option requires an argument -- '%c'\n"
-msgstr "%s: t· argÛint de dhÌth i ndiaidh na rogha -- %c\n"
+msgstr "%s: t√° arg√≥int de dh√≠th i ndiaidh na rogha -- '%c'\n"
 
 #: gnulib-lib/getopt.c:964 gnulib-lib/getopt.c:980
-#, fuzzy, c-format
+#, c-format
 msgid "%s: option '-W %s' is ambiguous\n"
-msgstr "%s: T· an rogha `-W %s' dÈbhrÌoch\n"
+msgstr "%s: T√° an rogha '-W %s' d√©bhr√≠och\n"
 
 #: gnulib-lib/getopt.c:1004 gnulib-lib/getopt.c:1022
-#, fuzzy, c-format
+#, c-format
 msgid "%s: option '-W %s' doesn't allow an argument\n"
-msgstr "%s: nÌ cheadaÌtear argÛint i ndiaidh na rogha `-W %s'\n"
+msgstr "%s: n√≠ cheada√≠tear arg√≥int i ndiaidh na rogha '-W %s'\n"
 
 #: gnulib-lib/getopt.c:1043 gnulib-lib/getopt.c:1061
-#, fuzzy, c-format
+#, c-format
 msgid "%s: option '-W %s' requires an argument\n"
-msgstr "%s: t· argÛint de dhÌth i ndiaidh na rogha `%s'\n"
+msgstr "%s: t√° arg√≥int de dh√≠th i ndiaidh na rogha '-W %s'\n"
 
 #: gnulib-lib/xmalloc.c:38
 #, c-format
 msgid "memory exhausted"
-msgstr "cuimhne Ìdithe"
+msgstr "cuimhne √≠dithe"
 
-#: src/envsubst.c:112 src/gettext.c:134 src/ngettext.c:123
+#: src/envsubst.c:112 src/gettext.c:134 src/ngettext.c:124
 #, c-format, no-wrap
 msgid ""
 "Copyright (C) %s Free Software Foundation, Inc.\n"
@@ -97,12 +98,12 @@ msgid ""
 "This is free software: you are free to change and redistribute it.\n"
 "There is NO WARRANTY, to the extent permitted by law.\n"
 msgstr ""
-"Copyright © %s Free Software Foundation, Inc.\n"
-"Cead˙nas GPLv3+: GNU GPL, leagan 3 nÛ nÌos nuaÌ <http://gnu.org/licenses/gpl.html>\n"
-"Is saorbhogearra È seo: ceadaÌtear duit È a athr˙ agus a athdh·ileadh.\n"
-"NÌl bar·nta AR BITH ann, an oiread at· ceadaithe de rÈir dlÌ.\n"
+"Copyright ¬© %s Free Software Foundation, Inc.\n"
+"Cead√∫nas GPLv3+: GNU GPL, leagan 3 n√≥ n√≠os nua√≠ <http://gnu.org/licenses/gpl.html>\n"
+"Is saorbhogearra √© seo: ceada√≠tear duit √© a athr√∫ agus a athdh√°ileadh.\n"
+"N√≠l bar√°nta AR BITH ann, an oiread at√° ceadaithe de r√©ir dl√≠.\n"
 
-#: src/envsubst.c:118 src/gettext.c:140 src/ngettext.c:129
+#: src/envsubst.c:118 src/gettext.c:140 src/ngettext.c:130
 #, c-format
 msgid "Written by %s.\n"
 msgstr "Le %s.\n"
@@ -112,55 +113,55 @@ msgstr "Le %s.\n"
 msgid "Bruno Haible"
 msgstr "Bruno Haible"
 
-#: src/envsubst.c:127 src/gettext.c:158 src/ngettext.c:141
+#: src/envsubst.c:127 src/gettext.c:158 src/ngettext.c:142
 #, c-format
 msgid "too many arguments"
-msgstr "an iomarca argÛintÌ"
+msgstr "an iomarca arg√≥int√≠"
 
-#: src/envsubst.c:138 src/gettext.c:168 src/ngettext.c:153
+#: src/envsubst.c:138 src/gettext.c:168 src/ngettext.c:154
 #, c-format
 msgid "missing arguments"
-msgstr "argÛintÌ ar iarraidh"
+msgstr "arg√≥int√≠ ar iarraidh"
 
-#: src/envsubst.c:171 src/gettext.c:239 src/ngettext.c:207
-#, fuzzy, c-format
+#: src/envsubst.c:171 src/gettext.c:239 src/ngettext.c:208
+#, c-format
 msgid "Try '%s --help' for more information.\n"
-msgstr "Bain triail as `%s --help' chun tuilleadh eolais a fh·il.\n"
+msgstr "Bain triail as '%s --help' chun tuilleadh eolais a fh√°il.\n"
 
 #: src/envsubst.c:176
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION] [SHELL-FORMAT]\n"
-msgstr "⁄s·id: %s [ROGHA] [FORM¡ID-BHLAOISCE]\n"
+msgstr "√ös√°id: %s [ROGHA] [FORM√ÅID-BHLAOISCE]\n"
 
 #: src/envsubst.c:181
 #, c-format, no-wrap
 msgid "Substitutes the values of environment variables.\n"
-msgstr "Ionadaigh na luachanna d'athrÛga timpeallachta.\n"
+msgstr "Ionadaigh na luachanna d'athr√≥ga timpeallachta.\n"
 
 #: src/envsubst.c:185
 #, c-format, no-wrap
 msgid "Operation mode:\n"
-msgstr "MÛd oibre:\n"
+msgstr "M√≥d oibre:\n"
 
 #: src/envsubst.c:188
 #, c-format, no-wrap
 msgid "  -v, --variables             output the variables occurring in SHELL-FORMAT\n"
-msgstr "  -v, --variables             aschuir na hathrÛga at· san FHORM¡ID-BHLAOISCE\n"
+msgstr "  -v, --variables             aschuir na hathr√≥ga at√° san FHORM√ÅID-BHLAOISCE\n"
 
 #: src/envsubst.c:192
 #, c-format, no-wrap
 msgid "Informative output:\n"
-msgstr "Aschur faisnÈiseach:\n"
+msgstr "Aschur faisn√©iseach:\n"
 
 #: src/envsubst.c:195
 #, c-format, no-wrap
 msgid "  -h, --help                  display this help and exit\n"
-msgstr "  -h, --help                  taispe·in an chabhair seo agus scoir\n"
+msgstr "  -h, --help                  taispe√°in an chabhair seo agus scoir\n"
 
 #: src/envsubst.c:198
 #, c-format, no-wrap
 msgid "  -V, --version               output version information and exit\n"
-msgstr "  -V, --version               taispe·in eolas faoin leagan agus scoir\n"
+msgstr "  -V, --version               taispe√°in eolas faoin leagan agus scoir\n"
 
 #: src/envsubst.c:202
 #, c-format, no-wrap
@@ -172,12 +173,12 @@ msgid ""
 "substituted; otherwise all environment variables references occurring in\n"
 "standard input are substituted.\n"
 msgstr ""
-"Sa ghn·thmhÛd, cÛipe·il ionchur caighde·nach go haschur caighde·nach, le\n"
-"tagairtÌ d'athrÛga timpeallachta san fhoirm $ATHR”G nÛ ${ATHR”G}\n"
-"ionadaithe lena luachanna.  M· t· FORM¡ID-BHLAOISCE sonraithe,\n"
-"n· hionadaigh ach na hathrÛga timpeallachta at· san FHORM¡ID-BHLAOISCE;\n"
-"i ngach c·s eile, ionadaigh gach uile athrÛg thimpeallachta san ionchur\n"
-"caighde·nach.\n"
+"Sa ghn√°thmh√≥d, c√≥ipe√°il ionchur caighde√°nach go haschur caighde√°nach, le\n"
+"tagairt√≠ d'athr√≥ga timpeallachta san fhoirm $ATHR√ìG n√≥ ${ATHR√ìG}\n"
+"ionadaithe lena luachanna.  M√° t√° FORM√ÅID-BHLAOISCE sonraithe,\n"
+"n√° hionadaigh ach na hathr√≥ga timpeallachta at√° san FHORM√ÅID-BHLAOISCE;\n"
+"i ngach c√°s eile, ionadaigh gach uile athr√≥g thimpeallachta san ionchur\n"
+"caighde√°nach.\n"
 
 #: src/envsubst.c:211
 #, c-format, no-wrap
@@ -185,28 +186,28 @@ msgid ""
 "When --variables is used, standard input is ignored, and the output consists\n"
 "of the environment variables that are referenced in SHELL-FORMAT, one per line.\n"
 msgstr ""
-"Le --variables, dÈan neamhaird den ionchur caighde·nach, agus taispe·in na\n"
-"hathrÛga timpeallachta at· san FHORM¡ID-BHLAOISCE, ceann sa lÌne.\n"
+"Le --variables, d√©an neamhaird den ionchur caighde√°nach, agus taispe√°in na\n"
+"hathr√≥ga timpeallachta at√° san FHORM√ÅID-BHLAOISCE, ceann sa l√≠ne.\n"
 
 #. TRANSLATORS: The placeholder indicates the bug-reporting address
 #. for this package.  Please add _another line_ saying
 #. "Report translation bugs to <...>\n" with the address for translation
 #. bugs (typically your translation team's web or email address).
-#: src/envsubst.c:219 src/gettext.c:280 src/ngettext.c:245
+#: src/envsubst.c:219 src/gettext.c:280 src/ngettext.c:246
 msgid "Report bugs to <bug-gnu-gettext@gnu.org>.\n"
-msgstr "Seol tuairiscÌ fabhtanna chuig <bug-gnu-gettext@gnu.org>.\n"
+msgstr "Seol tuairisc√≠ fabhtanna chuig <bug-gnu-gettext@gnu.org>.\n"
 
 #: src/envsubst.c:442
 #, c-format
 msgid "error while reading \"%s\""
-msgstr "earr·id agus \"%s\" · lÈamh"
+msgstr "earr√°id agus \"%s\" √° l√©amh"
 
 #: src/envsubst.c:443
 msgid "standard input"
-msgstr "ionchur caighde·nach"
+msgstr "ionchur caighde√°nach"
 
 #. This is a proper name. See the gettext manual, section Names.
-#: src/gettext.c:140 src/ngettext.c:129
+#: src/gettext.c:140 src/ngettext.c:130
 msgid "Ulrich Drepper"
 msgstr "Ulrich Drepper"
 
@@ -216,13 +217,13 @@ msgid ""
 "Usage: %s [OPTION] [[TEXTDOMAIN] MSGID]\n"
 "or:    %s [OPTION] -s [MSGID]...\n"
 msgstr ""
-"⁄s·id: %s [ROGHA] [[FEARANN] MSGID]\n"
-"nÛ:    %s [ROGHA] -s [MSGID]...\n"
+"√ös√°id: %s [ROGHA] [[FEARANN] MSGID]\n"
+"n√≥:    %s [ROGHA] -s [MSGID]...\n"
 
 #: src/gettext.c:250
 #, c-format, no-wrap
 msgid "Display native language translation of a textual message.\n"
-msgstr "Taispe·in an t-aistri˙ch·n de theachtaireacht sa teanga dh˙chais.\n"
+msgstr "Taispe√°in an t-aistri√∫ch√°n de theachtaireacht sa teanga dh√∫chais.\n"
 
 #: src/gettext.c:254
 #, c-format, no-wrap
@@ -236,17 +237,17 @@ msgid ""
 "  [TEXTDOMAIN] MSGID        retrieve translated message corresponding\n"
 "                            to MSGID from TEXTDOMAIN\n"
 msgstr ""
-"  -d, --domain=FEARANN      faigh teachtaireachtaÌ aistrithe Ûn FHEARANN\n"
-"  -e                        fairsing roinnt seichimh Èal˙ch·in\n"
-"  -E                        (gan feidhm, comhoiri˙nacht)\n"
-"  -h, --help                taispe·in an chabhair seo agus scoir\n"
-"  -n                        n· taispe·in lÌne nua foirceanta\n"
-"  -V, --version             taispe·in eolas faoin leagan agus scoir\n"
+"  -d, --domain=FEARANN      faigh teachtaireachta√≠ aistrithe √≥n FHEARANN\n"
+"  -e                        fairsing roinnt seichimh √©al√∫ch√°in\n"
+"  -E                        (gan feidhm, comhoiri√∫nacht)\n"
+"  -h, --help                taispe√°in an chabhair seo agus scoir\n"
+"  -n                        n√° taispe√°in l√≠ne nua foirceanta\n"
+"  -V, --version             taispe√°in eolas faoin leagan agus scoir\n"
 "  [TEXTDOMAIN] MSGID        faigh an teachtaireacht aistrithe comhfhreagrach\n"
-"                            leis an MSGID Ûn FHEARANN\n"
+"                            leis an MSGID √≥n FHEARANN\n"
 
 #: src/gettext.c:265
-#, fuzzy, c-format, no-wrap
+#, c-format, no-wrap
 msgid ""
 "If the TEXTDOMAIN parameter is not given, the domain is determined from the\n"
 "environment variable TEXTDOMAIN.  If the message catalog is not found in the\n"
@@ -257,30 +258,30 @@ msgid ""
 "found in the selected catalog are translated.\n"
 "Standard search directory: %s\n"
 msgstr ""
-"Mura bhfuil an paraimÈadar FEARANN sonraithe, cinntear an fearann de rÈir na\n"
-"hathrÛige timpeallachta TEXTDOMAIN.  Mura n-aimsÌtear catalÛg na\n"
-"dteachtaireachtaÌ sa ghn·thchomhadlann, is fÈidir comhadlann eile a shocr˙\n"
-"trÌ ˙s·id na hathrÛige timpeallachta TEXTDOMAINDIR.\n"
-"Leis an rogha -s, is cos˙il leis an ord˙ `echo',\n"
-"ach in ionad na hargÛintÌ a chÛipe·il go stdout gan athr˙, aistrÌonn sÈ na\n"
-"teachtaireachtaÌ at· aimsithe sa chatalÛg roghnaithe.\n"
-"Gn·thchomhadlann chuardaigh: %s\n"
+"Mura bhfuil an paraim√©adar FEARANN ann, faightear an fearann √≥n\n"
+"athr√≥g timpeallachta TEXTDOMAIN.  Mura n-aims√≠tear catal√≥g na\n"
+"dteachtaireachta√≠ sa ghn√°thchomhadlann, is f√©idir comhadlann eile a shocr√∫\n"
+"tr√≠ √∫s√°id na hathr√≥ige timpeallachta TEXTDOMAINDIR.\n"
+"Leis an rogha -s, feidhm√≠onn s√© cos√∫il leis an ord√∫ 'echo',\n"
+"ach in ionad na harg√≥int√≠ a ch√≥ipe√°il go stdout gan athr√∫, aistr√≠onn s√© na\n"
+"teachtaireachta√≠ a aims√≠onn s√© sa chatal√≥g roghnaithe.\n"
+"Gn√°thchomhadlann chuardaigh: %s\n"
 
-#: src/ngettext.c:212
+#: src/ngettext.c:213
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION] [TEXTDOMAIN] MSGID MSGID-PLURAL COUNT\n"
-msgstr "⁄s·id: %s [ROGHA] [FEARANN] MSGID MSGID-PLURAL LÕON\n"
+msgstr "√ös√°id: %s [ROGHA] [FEARANN] MSGID MSGID-PLURAL L√çON\n"
 
-#: src/ngettext.c:217
+#: src/ngettext.c:218
 #, c-format, no-wrap
 msgid ""
 "Display native language translation of a textual message whose grammatical\n"
 "form depends on a number.\n"
 msgstr ""
-"Taispe·in an t-aistri˙ch·n sa teanga dh˙chais de theachtaireacht\n"
-"a bhfuil a foirm ghramadach sple·ch ar uimhir.\n"
+"Taispe√°in an t-aistri√∫ch√°n sa teanga dh√∫chais de theachtaireacht\n"
+"a bhfuil a foirm ghramadach sple√°ch ar uimhir.\n"
 
-#: src/ngettext.c:222
+#: src/ngettext.c:223
 #, c-format, no-wrap
 msgid ""
 "  -d, --domain=TEXTDOMAIN   retrieve translated message from TEXTDOMAIN\n"
@@ -292,16 +293,16 @@ msgid ""
 "  MSGID MSGID-PLURAL        translate MSGID (singular) / MSGID-PLURAL (plural)\n"
 "  COUNT                     choose singular/plural form based on this value\n"
 msgstr ""
-"  -d, --domain=FEARANN      faigh teachtaireachtaÌ aistrithe Ûn FHEARANN\n"
-"  -e                        fairsing roinnt seichimh Èal˙ch·in\n"
-"  -E                        (gan feidhm, comhoiri˙nacht)\n"
-"  -h, --help                taispe·in an chabhair seo agus scoir\n"
-"  -V, --version             taispe·in eolas faoin leagan agus scoir\n"
-"  [FEARANN]                 faigh teachtaireachtaÌ aistrithe Ûn FHEARANN\n"
+"  -d, --domain=FEARANN      faigh teachtaireachta√≠ aistrithe √≥n FHEARANN\n"
+"  -e                        fairsing roinnt seichimh √©al√∫ch√°in\n"
+"  -E                        (gan feidhm, comhoiri√∫nacht)\n"
+"  -h, --help                taispe√°in an chabhair seo agus scoir\n"
+"  -V, --version             taispe√°in eolas faoin leagan agus scoir\n"
+"  [FEARANN]                 faigh teachtaireachta√≠ aistrithe √≥n FHEARANN\n"
 "  MSGID MSGID-PLURAL        aistrigh MSGID (uatha) / MSGID-PLURAL (iolra)\n"
-"  LÕON                      roghnaigh uatha/iolra de rÈir an luacha seo\n"
+"  L√çON                      roghnaigh uatha/iolra de r√©ir an luacha seo\n"
 
-#: src/ngettext.c:233
+#: src/ngettext.c:234
 #, c-format, no-wrap
 msgid ""
 "If the TEXTDOMAIN parameter is not given, the domain is determined from the\n"
@@ -310,23 +311,21 @@ msgid ""
 "variable TEXTDOMAINDIR.\n"
 "Standard search directory: %s\n"
 msgstr ""
-"Mura bhfuil an paraimÈadar FEARANN sonraithe, cinntear an fearann de rÈir na\n"
-"hathrÛige timpeallachta TEXTDOMAIN.  Mura n-aimsÌtear catalÛg na\n"
-"dteachtaireachtaÌ sa ghn·thchomhadlann, is fÈidir comhadlann eile a shocr˙\n"
-"trÌ ˙s·id na hathrÛige timpeallachta TEXTDOMAINDIR.\n"
-"Gn·thchomhadlann chuardaigh: %s\n"
+"Mura bhfuil an paraim√©adar FEARANN sonraithe, cinntear an fearann de r√©ir na\n"
+"hathr√≥ige timpeallachta TEXTDOMAIN.  Mura n-aims√≠tear catal√≥g na\n"
+"dteachtaireachta√≠ sa ghn√°thchomhadlann, is f√©idir comhadlann eile a shocr√∫\n"
+"tr√≠ √∫s√°id na hathr√≥ige timpeallachta TEXTDOMAINDIR.\n"
+"Gn√°thchomhadlann chuardaigh: %s\n"
 
 #~ msgid "%s: illegal option -- %c\n"
 #~ msgstr "%s: rogha neamhcheadaithe -- %c\n"
 
 #~ msgid ""
 #~ "Copyright (C) %s Free Software Foundation, Inc.\n"
-#~ "This is free software; see the source for copying conditions.  There is "
-#~ "NO\n"
-#~ "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR "
-#~ "PURPOSE.\n"
+#~ "This is free software; see the source for copying conditions.  There is NO\n"
+#~ "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
 #~ msgstr ""
-#~ "Copyright © %s Free Software Foundation, Inc.\n"
-#~ "Is saorbhogearra an rÌomhchl·r seo; fÈach ar an bhunchÛd le haghaidh\n"
-#~ "coinnÌollacha cÛipe·la.  NÌl bar·nta ar bith ann; go fi˙ nÌl bar·nta ann\n"
-#~ "d'INDÕOLTACHT nÛ FEILI⁄NACHT D'FHEIDHM AR LEITH.\n"
+#~ "Copyright ¬© %s Free Software Foundation, Inc.\n"
+#~ "Is saorbhogearra an r√≠omhchl√°r seo; f√©ach ar an bhunch√≥d le haghaidh\n"
+#~ "coinn√≠ollacha c√≥ipe√°la.  N√≠l bar√°nta ar bith ann; go fi√∫ n√≠l bar√°nta ann\n"
+#~ "d'IND√çOLTACHT n√≥ FEILI√öNACHT D'FHEIDHM AR LEITH.\n"

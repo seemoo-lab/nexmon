@@ -1,3 +1,34 @@
+/* libxml2 - Library for parsing XML documents
+ * Copyright (C) 2006-2019 Free Software Foundation, Inc.
+ *
+ * This file is not part of the GNU gettext program, but is used with
+ * GNU gettext.
+ *
+ * The original copyright notice is as follows:
+ */
+
+/*
+ * Copyright (C) 1998-2012 Daniel Veillard.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is fur-
+ * nished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+ * NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 /*
  * nanoftp.c: basic FTP client support
  *
@@ -12,8 +43,6 @@
 #define HAVE_NETINET_IN_H
 #define HAVE_NETDB_H
 #define HAVE_SYS_TIME_H
-#else /* TESTING */
-#define NEED_SOCKETS
 #endif /* TESTING */
 
 #define IN_LIBXML
@@ -77,14 +106,8 @@
 #endif
 
 
-#if defined(__MINGW32__) || defined(_WIN32_WCE)
-#ifndef _WINSOCKAPI_
-#define _WINSOCKAPI_
-#endif
+#if defined(_WIN32) && !defined(__CYGWIN__)
 #include <wsockcompat.h>
-#include <winsock2.h>
-#undef XML_SOCKLEN_T
-#define XML_SOCKLEN_T unsigned int
 #endif
 
 /**
@@ -511,6 +534,8 @@ xmlNanoFTPFreeCtxt(void * ctx) {
     if (ctxt->hostname != NULL) xmlFree(ctxt->hostname);
     if (ctxt->protocol != NULL) xmlFree(ctxt->protocol);
     if (ctxt->path != NULL) xmlFree(ctxt->path);
+    if (ctxt->user != NULL) xmlFree(ctxt->user);
+    if (ctxt->passwd != NULL) xmlFree(ctxt->passwd);
     ctxt->passive = 1;
     if (ctxt->controlFd != INVALID_SOCKET) closesocket(ctxt->controlFd);
     ctxt->controlFd = INVALID_SOCKET;
@@ -907,7 +932,7 @@ xmlNanoFTPConnect(void *ctx) {
 	    __xmlIOErr(XML_FROM_FTP, 0, "getaddrinfo failed");
 	    return (-1);
 	}
-	if (tmp->ai_addrlen > sizeof(ctxt->ftpAddr)) {
+	if ((size_t)tmp->ai_addrlen > sizeof(ctxt->ftpAddr)) {
 	    if (result)
 		freeaddrinfo (result);
 	    __xmlIOErr(XML_FROM_FTP, 0, "gethostbyname address mismatch");
@@ -1042,6 +1067,7 @@ xmlNanoFTPConnect(void *ctx) {
 		case 2:
 		    if (proxyPasswd == NULL)
 			break;
+                    /* Falls through. */
 		case 3:
 		    if (proxyPasswd != NULL)
 			snprintf(buf, sizeof(buf), "PASS %s\r\n", proxyPasswd);
@@ -1111,6 +1137,7 @@ xmlNanoFTPConnect(void *ctx) {
 		    ctxt->controlFd = INVALID_SOCKET;
 		    return(-1);
 		}
+                /* Falls through. */
 	    case 2:
 		/* USER user@host command */
 		if (ctxt->user == NULL)
@@ -1164,6 +1191,7 @@ xmlNanoFTPConnect(void *ctx) {
 		    ctxt->controlFd = INVALID_SOCKET;
 		    return(-1);
 		}
+                /* Falls through. */
 	    case 3:
 		/*
 		 * If you need support for other Proxy authentication scheme
@@ -1212,6 +1240,7 @@ xmlNanoFTPConnect(void *ctx) {
 	case 3:
 	    __xmlIOErr(XML_FROM_FTP, XML_FTP_ACCNT,
 		       "FTP server asking for ACCNT on anonymous\n");
+           /* Falls through. */
 	case 1:
 	case 4:
 	case 5:

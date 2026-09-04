@@ -3,7 +3,7 @@
 
 # Test of general operation with Java .properties syntax.
 
-cat <<EOF > mu-p-1.in
+cat <<\EOF > mu-p-1.in
 eight=eighth
 
 five=fifth

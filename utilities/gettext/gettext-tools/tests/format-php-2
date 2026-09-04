@@ -60,7 +60,43 @@ msgid  "abc%X"
 msgstr "xyz%d"
 # Valid: type compatibility
 msgid  "abc%e"
+msgstr "xyz%E"
+# Valid: type compatibility
+msgid  "abc%e"
 msgstr "xyz%f"
+# Valid: type compatibility
+msgid  "abc%e"
+msgstr "xyz%F"
+# Valid: type compatibility
+msgid  "abc%e"
+msgstr "xyz%g"
+# Valid: type compatibility
+msgid  "abc%e"
+msgstr "xyz%G"
+# Valid: type compatibility
+msgid  "abc%e"
+msgstr "xyz%h"
+# Valid: type compatibility
+msgid  "abc%e"
+msgstr "xyz%H"
+# Valid: type compatibility
+msgid  "abc%E"
+msgstr "xyz%f"
+# Valid: type compatibility
+msgid  "abc%E"
+msgstr "xyz%F"
+# Valid: type compatibility
+msgid  "abc%E"
+msgstr "xyz%g"
+# Valid: type compatibility
+msgid  "abc%E"
+msgstr "xyz%G"
+# Valid: type compatibility
+msgid  "abc%E"
+msgstr "xyz%h"
+# Valid: type compatibility
+msgid  "abc%E"
+msgstr "xyz%H"
 # Invalid: type incompatibility
 msgid  "abc%s"
 msgstr "xyz%d"

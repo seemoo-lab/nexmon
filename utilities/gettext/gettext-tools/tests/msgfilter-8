@@ -76,7 +76,10 @@ fi
 EOF
 
 : ${MSGFILTER=msgfilter}
-: ${CONFIG_SHELL=${SHELL-/bin/sh}}
+case "$host_os" in
+  mingw* | windows*) CONFIG_SHELL='sh' ;;
+  *) : ${CONFIG_SHELL=${SHELL-/bin/sh}} ;;
+esac
 LC_ALL=C ${MSGFILTER} --newline -i mfi-test8.po -o mfi-test8.out \
       ${CONFIG_SHELL} filter.sh >mfi-test8.err 2>&1
 result=$?

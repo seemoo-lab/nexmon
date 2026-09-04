@@ -1,9 +1,9 @@
 /* Test of quotearg family of functions.
-   Copyright (C) 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
+   the Free Software Foundation, either version 3, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   along with this program; if not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Eric Blake <ebb9@byu.net>, 2008.  */
 
@@ -21,11 +21,13 @@ struct result_strings {
   char const *str2; /* Translation of "\0""1\0".  */
   size_t len2; /* Length of str2.  */
   char const *str3; /* Translation of "simple".  */
+  char const *str4q; /* Translation of "\t'\t".  */
   char const *str4; /* Translation of " \t\n'\"\033?""?/\\".  */
   char const *str5; /* Translation of "a:b".  */
   char const *str6; /* Translation of "a\\b".  */
-  char const *str7a; /* Translation of LQ RQ, in ASCII charset.  */
-  char const *str7b; /* Translation of LQ RQ, in Latin1 or UTF-8 charset.  */
+  char const *str7; /* Translation of "a' b".  */
+  char const *str8a; /* Translation of LQ RQ, in ASCII charset.  */
+  char const *str8b; /* Translation of LQ RQ, in Latin1 or UTF-8 charset.  */
 };
 
 struct result_groups {
@@ -42,8 +44,8 @@ struct result_groups {
 # define RQ_ESC "\\\302\273"
 
 static struct result_strings inputs = {
-  "", "\0001\0", 3, "simple", " \t\n'\"\033?""?/\\", "a:b", "a\\b",
-  LQ RQ, NULL
+  "", "\0001\0", 3, "simple", "\t'\t", " \t\n'\"\033?""?/\\", "a:b", "a\\b",
+  "a' b", LQ RQ, NULL
 };
 
 static void
@@ -73,6 +75,10 @@ compare_strings (char *(func) (char const *, size_t *),
   p = func (inputs.str3, &len);
   compare (results->str3, strlen (results->str3), p, len);
 
+  len = strlen (inputs.str4q);
+  p = func (inputs.str4q, &len);
+  compare (results->str4q, strlen (results->str4q), p, len);
+
   len = strlen (inputs.str4);
   p = func (inputs.str4, &len);
   compare (results->str4, strlen (results->str4), p, len);
@@ -85,12 +91,16 @@ compare_strings (char *(func) (char const *, size_t *),
   p = func (inputs.str6, &len);
   compare (results->str6, strlen (results->str6), p, len);
 
-  len = strlen (inputs.str7a);
-  p = func (inputs.str7a, &len);
+  len = strlen (inputs.str7);
+  p = func (inputs.str7, &len);
+  compare (results->str7, strlen (results->str7), p, len);
+
+  len = strlen (inputs.str8a);
+  p = func (inputs.str8a, &len);
   if (ascii_only)
-    compare (results->str7a, strlen (results->str7a), p, len);
+    compare (results->str8a, strlen (results->str8a), p, len);
   else
-    compare (results->str7b, strlen (results->str7b), p, len);
+    compare (results->str8b, strlen (results->str8b), p, len);
 }
 
 static char *
@@ -109,15 +119,6 @@ static char *
 use_quotearg (const char *str, size_t *len)
 {
   char *p = *len == SIZE_MAX ? quotearg (str) : quotearg_mem (str, *len);
-  *len = strlen (p);
-  return p;
-}
-
-static char *
-use_quote_double_quotes (const char *str, size_t *len)
-{
-  char *p = *len == SIZE_MAX ? quotearg_char (str, '"')
-                               : quotearg_char_mem (str, *len, '"');
   *len = strlen (p);
   return p;
 }

@@ -1,0 +1,8 @@
+[package]
+name = "hello"
+version = "0.0.0"
+edition = "2021"
+
+[dependencies]
+gettext-rs = "0.7.2"
+formatx = "0.2.3"

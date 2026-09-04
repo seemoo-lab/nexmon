@@ -1,0 +1,19 @@
+*** gl_hash_set.h.orig
+--- gl_hash_set.h
+***************
+*** 24,30 ****
+  extern "C" {
+  #endif
+
+! extern const struct gl_set_implementation gl_hash_set_implementation;
+  #define GL_HASH_SET &gl_hash_set_implementation
+
+  #ifdef __cplusplus
+--- 24,30 ----
+  extern "C" {
+  #endif
+
+! extern DLL_VARIABLE const struct gl_set_implementation gl_hash_set_implementation;
+  #define GL_HASH_SET &gl_hash_set_implementation
+
+  #ifdef __cplusplus

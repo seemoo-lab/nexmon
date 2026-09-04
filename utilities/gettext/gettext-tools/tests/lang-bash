@@ -1,5 +1,5 @@
 #! /bin/sh
-. "${srcdir=.}/init.sh"; path_prepend_ . ../src ${top_srcdir=..}/../gettext-runtime/src
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src ../../gettext-runtime/src
 
 # Test of gettext facilities in the bash language.
 # Assumes an fr_FR locale is installed.
@@ -9,6 +9,10 @@
 # an included intl directory without iconv support; hence it produces wrong
 # output when accessing any .mo file not generated from a .po file in UTF-8
 # encoding.
+
+# This test fails if the gettext package was configured with --disable-nls,
+# because in this case the gettext-runtime/src/gettext program does not do
+# any message catalog lookups.
 
 cat <<\EOF > prog.bash
 #! /bin/bash
@@ -78,7 +82,7 @@ test -d fr || mkdir fr
 test -d fr/LC_MESSAGES || mkdir fr/LC_MESSAGES
 
 : ${MSGFMT=msgfmt}
-${MSGFMT} -o fr/LC_MESSAGES/prog.mo fr.po
+${MSGFMT} -c -o fr/LC_MESSAGES/prog.mo fr.po
 
 # Test for presence of bash version 2.0 or newer.
 (bash -c :) >/dev/null 2>/dev/null \
@@ -91,6 +95,10 @@ esac
 # Test which of the fr_FR locales are installed.
 : ${LOCALE_FR=fr_FR}
 : ${LOCALE_FR_UTF8=fr_FR.UTF-8}
+# bash on macOS supports only UTF-8 locales.
+case "$host_os" in
+  darwin*) LOCALE_FR=none ;;
+esac
 if test $LOCALE_FR != none; then
   LC_ALL=$LOCALE_FR ../testlocale
   case $? in
@@ -116,19 +124,6 @@ if test $LOCALE_FR = none && test $LOCALE_FR_UTF8 = none; then
   Exit 77
 fi
 
-case "$host_os" in
-  darwin*)
-    if test $LOCALE_FR != none; then
-      LC_ALL=$LOCALE_FR bash --help \
-        | grep '^Utilisation' > /dev/null 2>&1 || Exit 77
-    fi
-    if test $LOCALE_FR_UTF8 != none; then
-      LC_ALL=$LOCALE_FR_UTF8 bash --help \
-        | grep '^Utilisation' > /dev/null 2>&1 || Exit 77
-    fi
-  ;;
-esac
-
 # Expected result when bash is built without i18n support.
 cat <<\EOF > prog.nok
 'Your command, please?', asked the waiter.
@@ -147,7 +142,6 @@ EOF
 : ${LOCALE_FR=fr_FR}
 : ${LOCALE_FR_UTF8=fr_FR.UTF-8}
 if test $LOCALE_FR != none; then
-  prepare_locale_ fr $LOCALE_FR
   LANGUAGE= LC_ALL=$LOCALE_FR bash ./prog.bash 2 > prog.out || Exit 1
   : ${DIFF=diff}
   ${DIFF} prog.nok prog.out > /dev/null && {
@@ -157,7 +151,6 @@ if test $LOCALE_FR != none; then
   ${DIFF} prog.ok prog.out || Exit 1
 fi
 if test $LOCALE_FR_UTF8 != none; then
-  prepare_locale_ fr $LOCALE_FR_UTF8
   LANGUAGE= LC_ALL=$LOCALE_FR_UTF8 bash ./prog.bash 2 > prog.out || Exit 1
   : ${DIFF=diff}
   ${DIFF} prog.nok prog.out > /dev/null && {

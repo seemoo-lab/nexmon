@@ -1,7 +1,5 @@
 /* Writing C# .resources files.
-   Copyright (C) 2003, 2005, 2007-2009, 2011, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2003.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "write-resources.h"
@@ -29,7 +27,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "error.h"
+#include <error.h>
 #include "xerror.h"
 #include "relocatable.h"
 #include "csharpexec.h"
@@ -38,10 +36,13 @@
 #include "message.h"
 #include "msgfmt.h"
 #include "msgl-iconv.h"
+#include "xerror-handler.h"
+#include "msgl-header.h"
 #include "po-charset.h"
 #include "xalloc.h"
 #include "concat-filename.h"
 #include "fwriteerror.h"
+#include "cygpath.h"
 #include "gettext.h"
 
 #define _(str) gettext (str)
@@ -60,29 +61,25 @@ struct locals
 
 static bool
 execute_writing_input (const char *progname,
-                       const char *prog_path, char **prog_argv,
+                       const char *prog_path, const char * const *prog_argv,
                        void *private_data)
 {
   struct locals *l = (struct locals *) private_data;
-  pid_t child;
-  int fd[1];
-  FILE *fp;
-  int exitstatus;
 
   /* Open a pipe to the C# execution engine.  */
-  child = create_pipe_out (progname, prog_path, prog_argv, NULL, false,
-                           true, true, fd);
+  int fd[1];
+  pid_t child = create_pipe_out (progname, prog_path, prog_argv, NULL, NULL,
+                                 NULL, false, true, true, fd);
 
-  fp = fdopen (fd[0], "wb");
+  FILE *fp = fdopen (fd[0], "wb");
   if (fp == NULL)
     error (EXIT_FAILURE, errno, _("fdopen() failed"));
 
   /* Write the message list.  */
   {
     message_list_ty *mlp = l->mlp;
-    size_t j;
 
-    for (j = 0; j < mlp->nitems; j++)
+    for (size_t j = 0; j < mlp->nitems; j++)
       {
         message_ty *mp = mlp->item[j];
 
@@ -99,7 +96,7 @@ execute_writing_input (const char *progname,
   /* He we can ignore SIGPIPE because WriteResource either writes to a file
      - then it never gets SIGPIPE - or to standard output, and in the latter
      case it has no side effects other than writing to standard output.  */
-  exitstatus =
+  int exitstatus =
     wait_subprocess (child, progname, true, false, true, true, NULL);
   if (exitstatus != 0)
     error (EXIT_FAILURE, 0, _("%s subprocess failed with exit code %d"),
@@ -119,13 +116,11 @@ msgdomain_write_csharp_resources (message_list_ty *mlp,
     {
       /* Determine whether mlp has entries with context.  */
       {
-        bool has_context;
-        size_t j;
-
-        has_context = false;
-        for (j = 0; j < mlp->nitems; j++)
+        bool has_context = false;
+        for (size_t j = 0; j < mlp->nitems; j++)
           if (mlp->item[j]->msgctxt != NULL)
             has_context = true;
+
         if (has_context)
           {
             multiline_error (xstrdup (""),
@@ -138,13 +133,11 @@ but the C# .resources format doesn't support contexts\n")));
 
       /* Determine whether mlp has plural entries.  */
       {
-        bool has_plural;
-        size_t j;
-
-        has_plural = false;
-        for (j = 0; j < mlp->nitems; j++)
+        bool has_plural = false;
+        for (size_t j = 0; j < mlp->nitems; j++)
           if (mlp->item[j]->msgid_plural != NULL)
             has_plural = true;
+
         if (has_plural)
           {
             multiline_error (xstrdup (""),
@@ -156,28 +149,33 @@ but the C# .resources format doesn't support plural handling\n")));
       }
 
       /* Convert the messages to Unicode.  */
-      iconv_message_list (mlp, canon_encoding, po_charset_utf8, NULL);
+      iconv_message_list (mlp, canon_encoding, po_charset_utf8, NULL,
+                          textmode_xerror_handler);
+
+      /* Support for "reproducible builds": Delete information that may vary
+         between builds in the same conditions.  */
+      message_list_delete_header_field (mlp, "POT-Creation-Date:");
+
+      /* On Windows, assume a native Windows implementation of C#.  */
+      char *file_name_converted = cygpath_w (file_name);
 
       /* Execute the WriteResource program.  */
       {
-        const char *args[2];
-        const char *gettextexedir;
-        char *assembly_path;
-        struct locals locals;
-
         /* Prepare arguments.  */
-        args[0] = file_name;
+        const char *args[2];
+        args[0] = file_name_converted;
         args[1] = NULL;
 
         /* Make it possible to override the .exe location.  This is
            necessary for running the testsuite before "make install".  */
-        gettextexedir = getenv ("GETTEXTCSHARPEXEDIR");
+        const char *gettextexedir = getenv ("GETTEXTCSHARPEXEDIR");
         if (gettextexedir == NULL || gettextexedir[0] == '\0')
           gettextexedir = relocate (LIBDIR "/gettext");
 
-        assembly_path =
+        char *assembly_path =
           xconcatenated_filename (gettextexedir, "msgfmt.net", ".exe");
 
+        struct locals locals;
         locals.mlp = mlp;
 
         if (execute_csharp_program (assembly_path, NULL, 0,
@@ -189,6 +187,8 @@ but the C# .resources format doesn't support plural handling\n")));
 
         free (assembly_path);
       }
+
+      free (file_name_converted);
     }
 
   return 0;

@@ -1,7 +1,5 @@
 /* C format strings.
-   Copyright (C) 2001-2004, 2006-2007, 2009, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -34,13 +32,16 @@
 #include "format-invalid.h"
 
 #define INVALID_C99_MACRO(directive_number) \
-  xasprintf (_("In the directive number %u, the token after '<' is not the name of a format specifier macro. The valid macro names are listed in ISO C 99 section 7.8.1."), directive_number)
+  xasprintf (_("In the directive number %zu, the token after '<' is not the name of a format specifier macro. The valid macro names are listed in ISO C 99 section 7.8.1."), directive_number)
 
 #define INVALID_ANGLE_BRACKET(directive_number) \
-  xasprintf (_("In the directive number %u, the token after '<' is not followed by '>'."), directive_number)
+  xasprintf (_("In the directive number %zu, the token after '<' is not followed by '>'."), directive_number)
+
+#define INVALID_SIZE_SPECIFIER(directive_number) \
+  xasprintf (_("In the directive number %zu, the argument size specifier is invalid."), directive_number)
 
 #define INVALID_IGNORED_ARGUMENT(referenced_arg, ignored_arg) \
-  xasprintf (_("The string refers to argument number %u but ignores argument number %u."), referenced_arg, ignored_arg)
+  xasprintf (_("The string refers to argument number %zu but ignores argument number %zu."), referenced_arg, ignored_arg)
 
 /* Execute statement if memory allocation function returned NULL.  */
 #define IF_OOM(allocated_ptr, statement)  /* nothing, since we use xalloc.h */
@@ -63,9 +64,8 @@ format_parse (const char *format, bool translated, bool objc_extensions,
               char *fdi, char **invalid_reason)
 {
   struct spec result_buf;
-  struct spec *result;
-
-  result = format_parse_entrails (format, translated, objc_extensions, fdi, invalid_reason, &result_buf);
+  struct spec *result =
+    format_parse_entrails (format, translated, objc_extensions, fdi, invalid_reason, &result_buf);
 
   if (result != NULL)
     {
@@ -103,14 +103,6 @@ format_free (void *descr)
   free (spec);
 }
 
-static bool
-format_is_unlikely_intentional (void *descr)
-{
-  struct spec *spec = (struct spec *) descr;
-
-  return spec->unlikely_intentional;
-}
-
 static int
 format_get_number_of_directives (void *descr)
 {
@@ -120,14 +112,21 @@ format_get_number_of_directives (void *descr)
 }
 
 static bool
+format_is_unlikely_intentional (void *descr)
+{
+  struct spec *spec = (struct spec *) descr;
+
+  return spec->likely_intentional_directives == 0 || spec->unlikely_intentional;
+}
+
+static bool
 format_check (void *msgid_descr, void *msgstr_descr, bool equality,
-              formatstring_error_logger_t error_logger,
+              formatstring_error_logger_t error_logger, void *error_logger_data,
               const char *pretty_msgid, const char *pretty_msgstr)
 {
   struct spec *spec1 = (struct spec *) msgid_descr;
   struct spec *spec2 = (struct spec *) msgstr_descr;
   bool err = false;
-  unsigned int i;
 
   /* Check the argument types are the same.  */
   if (equality
@@ -135,16 +134,18 @@ format_check (void *msgid_descr, void *msgstr_descr, bool equality,
       : spec1->unnumbered_arg_count < spec2->unnumbered_arg_count)
     {
       if (error_logger)
-        error_logger (_("number of format specifications in '%s' and '%s' does not match"),
+        error_logger (error_logger_data,
+                      _("number of format specifications in '%s' and '%s' does not match"),
                       pretty_msgid, pretty_msgstr);
       err = true;
     }
   else
-    for (i = 0; i < spec2->unnumbered_arg_count; i++)
+    for (size_t i = 0; i < spec2->unnumbered_arg_count; i++)
       if (spec1->unnumbered[i].type != spec2->unnumbered[i].type)
         {
           if (error_logger)
-            error_logger (_("format specifications in '%s' and '%s' for argument %u are not the same"),
+            error_logger (error_logger_data,
+                          _("format specifications in '%s' and '%s' for argument %zu are not the same"),
                           pretty_msgid, pretty_msgstr, i + 1);
           err = true;
         }
@@ -187,11 +188,10 @@ get_sysdep_c_format_directives (const char *string, bool translated,
 
   if (descr != NULL && descr->sysdep_directives_count > 0)
     {
-      unsigned int n = descr->sysdep_directives_count;
+      size_t n = descr->sysdep_directives_count;
       struct interval *intervals = XNMALLOC (n, struct interval);
-      unsigned int i;
 
-      for (i = 0; i < n; i++)
+      for (size_t i = 0; i < n; i++)
         {
           intervals[i].startpos = descr->sysdep_directives[2 * i] - string;
           intervals[i].endpos = descr->sysdep_directives[2 * i + 1] - string;
@@ -223,7 +223,6 @@ static void
 format_print (void *descr)
 {
   struct spec *spec = (struct spec *) descr;
-  unsigned int i;
 
   if (spec == NULL)
     {
@@ -232,7 +231,7 @@ format_print (void *descr)
     }
 
   printf ("(");
-  for (i = 0; i < spec->unnumbered_arg_count; i++)
+  for (size_t i = 0; i < spec->unnumbered_arg_count; i++)
     {
       if (i > 0)
         printf (" ");
@@ -342,18 +341,14 @@ main ()
     {
       char *line = NULL;
       size_t line_size = 0;
-      int line_len;
-      char *invalid_reason;
-      void *descr;
-
-      line_len = getline (&line, &line_size, stdin);
+      int line_len = getline (&line, &line_size, stdin);
       if (line_len < 0)
         break;
       if (line_len > 0 && line[line_len - 1] == '\n')
         line[--line_len] = '\0';
 
-      invalid_reason = NULL;
-      descr = format_c_parse (line, false, NULL, &invalid_reason);
+      char *invalid_reason = NULL;
+      void *descr = format_c_parse (line, false, NULL, &invalid_reason);
 
       format_print (descr);
       printf ("\n");
@@ -370,7 +365,7 @@ main ()
 /*
  * For Emacs M-x compile
  * Local Variables:
- * compile-command: "/bin/sh ../libtool --tag=CC --mode=link gcc -o a.out -static -O -g -Wall -I.. -I../gnulib-lib -I../intl -DHAVE_CONFIG_H -DTEST format-c.c ../gnulib-lib/libgettextlib.la"
+ * compile-command: "/bin/sh ../libtool --tag=CC --mode=link gcc -o a.out -static -O -g -Wall -I.. -I../gnulib-lib -I../../gettext-runtime/intl -DTEST format-c.c ../gnulib-lib/libgettextlib.la"
  * End:
  */
 

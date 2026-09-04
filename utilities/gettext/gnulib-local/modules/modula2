@@ -1,0 +1,20 @@
+Description:
+Find user preferences regarding the use of Modula-2.
+
+Files:
+m4/modula2.m4
+
+Depends-on:
+
+configure.ac:
+gt_MODULA2_CHOICE
+
+Makefile.am:
+
+Include:
+
+License:
+GPL
+
+Maintainer:
+Bruno Haible

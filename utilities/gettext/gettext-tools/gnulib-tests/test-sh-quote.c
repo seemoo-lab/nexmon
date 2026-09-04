@@ -1,9 +1,9 @@
 /* Test of sh-quote module.
-   Copyright (C) 2012-2016 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2012.  */
 
@@ -57,8 +57,6 @@ main (void)
 {
   /* Check the shell_quote_length, shell_quote_copy, shell_quote functions.  */
   {
-    int c;
-
     /* Empty argument.  */
     check_one ("", "''");
 
@@ -91,7 +89,7 @@ main (void)
     check_one ("&", "'&'");
 
     /* "'" would be interpreted as the start of a string.  */
-    check_one ("'foo'bar", "''\\''foo'\\''bar'"); /* or "\"'foo'bar\"" */
+    check_one ("'foo'bar", "\"'foo'bar\"");
 
     /* '(' at the beginning of argv[0] would introduce a subshell command.  */
     check_one ("(", "'('");
@@ -156,7 +154,7 @@ main (void)
     check_one ("foo'bar\"baz", "'foo'\\''bar\"baz'"); /* or "\"foo'bar\\\"baz\"" */
 
     /* All other characters don't need quoting.  */
-    for (c = 1; c <= UCHAR_MAX; c++)
+    for (int c = 1; c <= UCHAR_MAX; c++)
       if (strchr ("\t\n\r !\"#$&'()*;<=>?^[\\]`{|}~", c) == NULL)
         {
           char s[5];
@@ -172,7 +170,7 @@ main (void)
 
   /* Check the shell_quote_argv function.  */
   {
-    char *argv[1];
+    const char *argv[1];
     char *result;
     argv[0] = NULL;
     result = shell_quote_argv (argv);
@@ -180,24 +178,24 @@ main (void)
     free (result);
   }
   {
-    char *argv[2];
+    const char *argv[2];
     char *result;
-    argv[0] = (char *) "foo bar/baz";
+    argv[0] = "foo bar/baz";
     argv[1] = NULL;
     result = shell_quote_argv (argv);
     ASSERT (strcmp (result, "'foo bar/baz'") == 0); /* or "\"foo bar/baz\"" */
     free (result);
   }
   {
-    char *argv[3];
+    const char *argv[3];
     char *result;
-    argv[0] = (char *) "foo bar/baz";
-    argv[1] = (char *) "$";
+    argv[0] = "foo bar/baz";
+    argv[1] = "$";
     argv[2] = NULL;
     result = shell_quote_argv (argv);
     ASSERT (strcmp (result, "'foo bar/baz' '$'") == 0); /* or "\"foo bar/baz\" \"\\$\"" */
     free (result);
   }
 
-  return 0;
+  return test_exit_status;
 }

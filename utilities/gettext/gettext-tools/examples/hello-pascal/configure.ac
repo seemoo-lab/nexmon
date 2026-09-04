@@ -3,17 +3,17 @@ dnl This file is in the public domain.
 dnl
 dnl Configuration file - processed by autoconf.
 
-AC_INIT
-AC_CONFIG_SRCDIR(hello.pas)
-AM_INIT_AUTOMAKE(hello-pascal, 0)
+AC_INIT([hello-pascal], [0])
+AC_CONFIG_SRCDIR([hello.pas])
+AM_INIT_AUTOMAKE([1.11])
 
 dnl Check for availability of the Free Pascal Compiler.
-AC_PATH_PROG(PPC, ppc386)
+AC_PATH_PROGS([PPC], [ppc386 ppcx64])
 if test -z "$PPC"; then
-  echo "*** Essential program ppc386 not found" 1>&2
+  echo "*** Essential program ppc386 or ppcx64 not found" 1>&2
   exit 1
 fi
-AC_SUBST(PPC)
+AC_SUBST([PPC])
 
 dnl The installed program must know where to find its message catalogs.
 dnl Unfortunately, prefix gets only finally determined at the end of configure.
@@ -25,9 +25,9 @@ fi
 save_prefix="$prefix"
 prefix="$final_prefix"
 eval "datarootdir=\"${datarootdir}\""
-eval "localedir=\"${datadir}/locale\""
+eval "localedir=\"${datarootdir}/locale\""
 prefix="$save_prefix"
-AC_SUBST(localedir)
+AC_SUBST([localedir])
 
 dnl Support for the po directory.
 AM_PO_SUBDIRS

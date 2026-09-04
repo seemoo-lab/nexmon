@@ -1,11 +1,13 @@
 /* memmove.c -- copy memory.
-   Copy LENGTH bytes from SOURCE to DEST.  Does not null-terminate.
-   In the public domain.
-   By David MacKenzie <djm@gnu.ai.mit.edu>.  */
+   This file is in the public domain.  */
+
+/* Written by David MacKenzie <djm@gnu.ai.mit.edu>.  */
 
 #include <config.h>
 
 #include <stddef.h>
+
+/* Copy LENGTH bytes from SOURCE to DEST.  Does not null-terminate.  */
 
 void *
 memmove (void *dest0, void const *source0, size_t length)

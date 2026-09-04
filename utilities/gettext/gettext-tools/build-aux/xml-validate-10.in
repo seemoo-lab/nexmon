@@ -1,0 +1,104 @@
+#!/bin/sh
+# Validating an XML document against an XML Schema 1.0.
+
+# Copyright (C) 2024-2026 Free Software Foundation, Inc.
+#
+# This file is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published
+# by the Free Software Foundation, either version 3 of the License,
+# or (at your option) any later version.
+#
+# This file is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# Written by Bruno Haible.
+
+# func_usage
+# outputs to stdout the --help usage message.
+func_usage ()
+{
+  echo "\
+Usage: xml-validate-10 [OPTION]... SCHEMA DOCUMENT
+
+Invokes an XML Schema 1.0 validator, validating the given XML document
+against the given XML schema.
+
+The exit code is 0 for valid, 1 for invalid.
+
+Options:
+      --help           print this help and exit
+      --version        print version information and exit
+
+Send patches and bug reports to <bug-gettext@gnu.org>."
+}
+
+# func_version
+# outputs to stdout the --version message.
+func_version ()
+{
+  echo "xml-validate-10 (GNU gettext)"
+  echo "Copyright (C) 2024 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law."
+  echo
+  printf 'Written by %s.\n' "Bruno Haible"
+}
+
+# func_fatal_error message
+# outputs to stderr a fatal error message, and terminates the program.
+func_fatal_error ()
+{
+  echo "xml-validate-10: *** $1" 1>&2
+  echo "xml-validate-10: *** Stop." 1>&2
+  exit 1
+}
+
+# Outputs a command and runs it.
+func_verbose ()
+{
+  # Make it easy to copy&paste the printed command into a shell in most cases,
+  # by escaping '\\', '"', and '$'. This is not perfect, just good enough.
+  echo "$@" | sed -e 's/\([\\"$]\)/\\\1/g'
+  "$@"
+}
+
+# Command-line option processing.
+while test $# -gt 0; do
+  case "$1" in
+    --help | --hel | --he | --h )
+      func_usage
+      exit 0 ;;
+   --version | --versio | --versi | --vers | --ver | --ve | --v )
+      func_version
+      exit 0 ;;
+    -- )      # Stop option processing
+      shift; break ;;
+    -* )
+      func_fatal_error "unrecognized option: $1"
+      ;;
+    * )
+      break ;;
+  esac
+done
+
+if test $# -lt 2; then
+  func_fatal_error "too few arguments"
+fi
+if test $# -gt 2; then
+  func_fatal_error "too many arguments"
+fi
+
+schema="$1"
+document="$2"
+shift
+shift
+
+if test '@XMLLINT@' != ':'; then
+  func_verbose @XMLLINT@ --noout --schema "$schema" "$document" || exit 1
+fi

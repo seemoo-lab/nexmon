@@ -3,7 +3,7 @@
 
 # Test that --more-than=1 drops entries which occur only once.
 
-cat <<EOF > mcomm-test11.in1
+cat <<\EOF > mcomm-test11.in1
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"
@@ -24,7 +24,7 @@ msgid "2"
 msgstr "2x"
 EOF
 
-cat <<EOF > mcomm-test11.in2
+cat <<\EOF > mcomm-test11.in2
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"

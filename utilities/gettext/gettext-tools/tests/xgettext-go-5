@@ -1,0 +1,68 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: github.com/snapcore/go-gettext package,
+# with API suitable for single-locale and multi-locale cases.
+
+cat <<\EOF > xg-go-5.go
+package main
+
+import (
+	// Documentation: https://pkg.go.dev/fmt
+	"fmt"
+	// Documentation: https://pkg.go.dev/github.com/snapcore/go-gettext
+	"github.com/snapcore/go-gettext"
+	// Documentation: https://pkg.go.dev/os
+	"os"
+)
+
+// Alternatives:
+// - gettext.getUserLanguages()
+// - https://pkg.go.dev/github.com/Xuanwo/go-locale
+// - https://pkg.go.dev/github.com/jeandeaual/go-locale
+func getUserLanguage() string {
+	// Look at the POSIX environment variables.
+	for _, variable := range []string{"LC_ALL", "LC_MESSAGES", "LANG"} {
+		if value := os.Getenv(variable); value != "" {
+			return value
+		}
+	}
+	// The "C" locale is essentially the same as the en-US locale.
+	return "en-US"
+}
+
+func main () {
+	// Specify locale.
+	//locale := "fr_FR"
+	locale := getUserLanguage()
+
+	// Specify domain, localedir.
+	domain := &gettext.TextDomain{
+		Name: "hello",
+		LocaleDir: "@localedir@"
+	}
+	gettext := domain.Locale(locale)
+
+	fmt.Println(gettext.Gettext("Hello, world!"))
+	fmt.Println(fmt.Sprintf(gettext.Gettext("This program is running as process number %d."),
+	                        os.Getpid()))
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-go-5.tmp xg-go-5.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-5.tmp.po > xg-go-5.po || Exit 1
+
+cat <<\EOF > xg-go-5.ok
+msgid "Hello, world!"
+msgstr ""
+
+#, go-format
+msgid "This program is running as process number %d."
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-5.ok xg-go-5.po || Exit 1
+
+exit 0

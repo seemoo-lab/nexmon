@@ -19,6 +19,9 @@
 @c   ky = keystroke       @kindex
 @c   pg = program         @pindex
 @c   tp = type            @tindex
+@ifclear texi2html
+@firstparagraphindent insert
+@end ifclear
 @c %**end of header
 @set VERSION 1.0
 
@@ -33,7 +36,7 @@
 This file provides documentation for GNU @code{autosprintf} library.
 
 @copying
-Copyright (C) 2002-2003, 2006-2007, 2015-2016 Free Software Foundation, Inc.
+Copyright (C) 2002-2003, 2006-2007, 2018-2019, 2025 Free Software Foundation, Inc.
 
 This manual is free documentation.  It is dually licensed under the
 GNU FDL and the GNU GPL.  This means that you can redistribute this
@@ -41,17 +44,17 @@ manual under either of these two licenses, at your choice.
 
 This manual is covered by the GNU FDL.  Permission is granted to copy,
 distribute and/or modify this document under the terms of the
-GNU Free Documentation License (FDL), either version 1.2 of the
+GNU Free Documentation License (FDL), either version 1.3 of the
 License, or (at your option) any later version published by the
 Free Software Foundation (FSF); with no Invariant Sections, with no
 Front-Cover Text, and with no Back-Cover Texts.
-A copy of the license is at @url{http://www.gnu.org/licenses/fdl.html}.
+A copy of the license is at @url{https://www.gnu.org/licenses/fdl.html}.
 
 This manual is covered by the GNU GPL.  You can redistribute it and/or
 modify it under the terms of the GNU General Public License (GPL), either
 version 2 of the License, or (at your option) any later version published
 by the Free Software Foundation (FSF).
-A copy of the license is at @url{http://www.gnu.org/licenses/gpl.html}.
+A copy of the license is at @url{https://www.gnu.org/licenses/gpl.html}.
 @end copying
 @end ifinfo
 
@@ -60,10 +63,11 @@ A copy of the license is at @url{http://www.gnu.org/licenses/gpl.html}.
 @subtitle Formatted Output to Strings in C++
 @author Bruno Haible
 
+@ifnothtml
 @page
 @vskip 0pt plus 1filll
 @c @insertcopying
-Copyright (C) 2002-2003, 2006-2007 Free Software Foundation, Inc.
+Copyright (C) 2002-2003, 2006-2007, 2018-2019 Free Software Foundation, Inc.
 
 This manual is free documentation.  It is dually licensed under the
 GNU FDL and the GNU GPL.  This means that you can redistribute this
@@ -75,17 +79,21 @@ GNU Free Documentation License (FDL), either version 1.2 of the
 License, or (at your option) any later version published by the
 Free Software Foundation (FSF); with no Invariant Sections, with no
 Front-Cover Text, and with no Back-Cover Texts.
-A copy of the license is at @url{http://www.gnu.org/licenses/fdl.html}.
+A copy of the license is at @url{https://www.gnu.org/licenses/fdl.html}.
 
 This manual is covered by the GNU GPL.  You can redistribute it and/or
 modify it under the terms of the GNU General Public License (GPL), either
 version 2 of the License, or (at your option) any later version published
 by the Free Software Foundation (FSF).
-A copy of the license is at @url{http://www.gnu.org/licenses/gpl.html}.
+A copy of the license is at @url{https://www.gnu.org/licenses/gpl.html}.
+@end ifnothtml
 @end titlepage
 
-@ifset makeinfo
-@node Top, Introduction, (dir), (dir)
+@c Table of Contents
+@contents
+
+@ifnottex
+@node Top
 @top GNU autosprintf
 
 This manual documents the GNU autosprintf class, version @value{VERSION}.
@@ -94,11 +102,12 @@ This manual documents the GNU autosprintf class, version @value{VERSION}.
 * Introduction::                Introduction
 * Class autosprintf::           The @code{autosprintf} class
 * Using autosprintf::           Using @code{autosprintf} in own programs
+* Licenses::
 @end menu
 
-@end ifset
+@end ifnottex
 
-@node Introduction, Class autosprintf, Top, Top
+@node Introduction
 @chapter Introduction
 
 This package makes the C formatted output routines (@code{fprintf} et al.)
@@ -138,7 +147,7 @@ It reduces the risk of programming errors due to forgotten state in the
 output stream (e.g.@: @code{cout << hex;} not followed by @code{cout << dec;}).
 @end itemize
 
-@node Class autosprintf, Using autosprintf, Introduction, Top
+@node Class autosprintf
 @chapter The @code{autosprintf} class
 
 An instance of class @code{autosprintf} just contains a string with the
@@ -160,27 +169,112 @@ The destructor @code{~autosprintf ()} destroys the encapsulated string.
 An @code{operator <<} is provided that outputs the encapsulated string to the
 given @code{ostream}.
 
-@node Using autosprintf,  , Class autosprintf, Top
+@node Using autosprintf
 @chapter Using @code{autosprintf} in own programs
 
-To use the @code{autosprintf} class in your programs, you need to add
+To use the @code{autosprintf} class in your programs, you need to make
+changes in the source code and in the build system.
+
+@node Source code changes
+@section Source code changes
+
+In source code files that shall use @code{autosprintf}, add
 
 @smallexample
 #include "autosprintf.h"
 using gnu::autosprintf;
 @end smallexample
 
-@noindent
-to your source code.
 The include file defines the class @code{autosprintf}, in a namespace called
 @code{gnu}. The @samp{using} statement makes it possible to use the class
 without the (otherwise natural) @code{gnu::} prefix.
 
+@node Build system changes
+@section Build system changes
+
+When compiling your program with @code{g++}, use the warning option @code{-Wall}.
+@c g++ does not warn by default,
+@c see https://gcc.gnu.org/bugzilla/show_bug.cgi?id=64867
+This is needed so that you get a compiler warning when attempting to pass
+an @code{std::string} as argument.
+For example, if you accidentally write
+@smallexample
+std::string s = ...;
+cout << autosprintf ("Look at %s\n", s);
+@end smallexample
+@noindent
+you want to get a compiler warning about passing an @code{std::string} through
+a variadic argument list, so that you can correct your code to
+@smallexample
+std::string s = ...;
+cout << autosprintf ("Look at %s\n", s.c_str ());
+@end smallexample
+
 When linking your program, you need to link with @code{libasprintf}, because
-that's where the class is defined. In projects using GNU @code{autoconf},
+that's where the class is defined.  In projects that use GNU @code{autoconf},
 this means adding @samp{AC_LIB_LINKFLAGS([asprintf])} to @code{configure.in}
 or @code{configure.ac}, and using the @@LIBASPRINTF@@ Makefile variable that
 it provides.
+
+@node Licenses
+@appendix Licenses
+@cindex Licenses
+
+The files of this package are covered by the licenses indicated in each
+particular file or directory.  Here is a summary:
+
+@itemize @bullet
+@item
+The @code{libasprintf} library is covered by the
+GNU Lesser General Public License (LGPL), either version 2.1 of the
+License, or (at your option) any later version published by the
+Free Software Foundation (FSF).
+A copy of the license is included in @ref{GNU LGPL}.
+
+@item
+This manual is free documentation.  It is dually licensed under the
+GNU FDL and the GNU GPL.  This means that you can redistribute this
+manual under either of these two licenses, at your choice.
+@*
+This manual is covered by the GNU FDL.  Permission is granted to copy,
+distribute and/or modify this document under the terms of the
+GNU Free Documentation License (FDL), either version 1.2 of the
+License, or (at your option) any later version published by the
+Free Software Foundation (FSF); with no Invariant Sections, with no
+Front-Cover Text, and with no Back-Cover Texts.
+A copy of the license is included in @ref{GNU FDL}.
+@*
+This manual is covered by the GNU GPL.  You can redistribute it and/or
+modify it under the terms of the GNU General Public License (GPL), either
+version 2 of the License, or (at your option) any later version published
+by the Free Software Foundation (FSF).
+A copy of the license is included in @ref{GNU GPL}.
+@end itemize
+
+@menu
+* GNU LGPL::                    GNU Lesser General Public License
+* GNU GPL::                     GNU General Public License
+* GNU FDL::                     GNU Free Documentation License
+@end menu
+
+@page
+@node GNU LGPL
+@appendixsec GNU LESSER GENERAL PUBLIC LICENSE
+@cindex :GPL, GNU Lesser General Public License
+@cindex License, GNU LGPL
+@include lgpl.texi
+@page
+@node GNU GPL
+@appendixsec GNU GENERAL PUBLIC LICENSE
+@cindex GPL, GNU General Public License
+@cindex License, GNU GPL
+@include gpl.texi
+@page
+@node GNU FDL
+@appendixsec GNU Free Documentation License
+@cindex FDL, GNU Free Documentation License
+@cindex License, GNU FDL
+@include fdl.texi
 
 @bye
 

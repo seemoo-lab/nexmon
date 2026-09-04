@@ -30,7 +30,7 @@ msgstr "A bientôt"
 EOF
 
 : ${MSGFMT=msgfmt}
-${MSGFMT} foo.po || Exit 1
+${MSGFMT} --no-convert foo.po || Exit 1
 
 : ${MSGUNFMT=msgunfmt}
 ${MSGUNFMT} -o foo-de.tmp foo-de.mo || Exit 1

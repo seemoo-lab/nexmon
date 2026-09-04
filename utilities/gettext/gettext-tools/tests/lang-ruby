@@ -1,0 +1,119 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test of gettext facilities in the Ruby language.
+# Assumes an fr_FR locale is installed.
+# Assumes the following packages are installed: ruby, ruby-gettext.
+
+# Test for presence of rxgettext (needed by xgettext).
+(rxgettext --version) >/dev/null 2>/dev/null \
+  || { echo "Skipping test: rxgettext not found"; Exit 77; }
+
+cat <<\EOF > prog.rb
+require 'gettext'
+include GetText
+
+bindtextdomain("prog", :path => ".")
+
+puts _("'Your command, please?', asked the waiter.")
+puts _("%{old} is replaced by %{new}.") % { :old => "FF", :new => "EUR" }
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} -o prog.tmp --omit-header --no-location prog.rb || Exit 1
+LC_ALL=C tr -d '\r' < prog.tmp > prog.pot || Exit 1
+
+cat <<\EOF > prog.ok
+msgid "'Your command, please?', asked the waiter."
+msgstr ""
+
+#, ruby-format
+msgid "%{old} is replaced by %{new}."
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} prog.ok prog.pot || Exit 1
+
+cat <<\EOF > fr.po
+msgid ""
+msgstr "Content-Type: text/plain; charset=ISO-8859-1\n"
+
+msgid "'Your command, please?', asked the waiter."
+msgstr "«Votre commande, s'il vous plait», dit le garçon."
+
+# Reverse the arguments.
+#, ruby-format
+msgid "%{old} is replaced by %{new}."
+msgstr "%{new} remplace %{old}."
+EOF
+
+: ${MSGMERGE=msgmerge}
+${MSGMERGE} -q -o fr.po.tmp fr.po prog.pot || Exit 1
+LC_ALL=C tr -d '\r' < fr.po.tmp > fr.po.new || Exit 1
+
+: ${DIFF=diff}
+${DIFF} fr.po fr.po.new || Exit 1
+
+test -d fr || mkdir fr
+test -d fr/LC_MESSAGES || mkdir fr/LC_MESSAGES
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} -c -o fr/LC_MESSAGES/prog.mo fr.po
+
+# Test for presence of ruby with gettext support.
+(ruby --version) >/dev/null 2>/dev/null \
+  || { echo "Skipping test: ruby not found"; Exit 77; }
+(echo "require 'gettext'" | ruby -) >/dev/null 2>/dev/null \
+  || { echo "Skipping test: ruby's gettext support is not installed"; Exit 77; }
+
+# Test which of the fr_FR locales are installed.
+: ${LOCALE_FR=fr_FR}
+: ${LOCALE_FR_UTF8=fr_FR.UTF-8}
+if test $LOCALE_FR != none; then
+  LC_ALL=$LOCALE_FR ../testlocale
+  case $? in
+    0) ;;
+    77) LOCALE_FR=none;;
+    *) Exit 1;;
+  esac
+fi
+if test $LOCALE_FR_UTF8 != none; then
+  LC_ALL=$LOCALE_FR_UTF8 ../testlocale
+  case $? in
+    0) ;;
+    77) LOCALE_FR_UTF8=none;;
+    *) Exit 1;;
+  esac
+fi
+if test $LOCALE_FR = none && test $LOCALE_FR_UTF8 = none; then
+  if test -f /usr/bin/localedef; then
+    echo "Skipping test: no french locale is installed"
+  else
+    echo "Skipping test: no french locale is supported"
+  fi
+  Exit 77
+fi
+
+: ${DIFF=diff}
+cat <<\EOF > prog.ok
+«Votre commande, s'il vous plait», dit le garçon.
+EUR remplace FF.
+EOF
+cat <<\EOF > prog.oku
+Â«Votre commande, s'il vous plaitÂ», dit le garÃ§on.
+EUR remplace FF.
+EOF
+
+: ${LOCALE_FR=fr_FR}
+: ${LOCALE_FR_UTF8=fr_FR.UTF-8}
+if test $LOCALE_FR != none; then
+  LANGUAGE= LC_ALL=$LOCALE_FR ruby prog.rb > prog.out || Exit 1
+  ${DIFF} prog.ok prog.out || Exit 1
+fi
+if test $LOCALE_FR_UTF8 != none; then
+  LANGUAGE= LC_ALL=$LOCALE_FR_UTF8 ruby prog.rb > prog.out || Exit 1
+  ${DIFF} prog.oku prog.out || Exit 1
+fi
+
+Exit 0

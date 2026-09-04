@@ -3,12 +3,12 @@
 
 # Test --more-than=0 option with Java .properties syntax.
 
-cat <<EOF > mcomm-test24.in1
+cat <<\EOF > mcomm-test24.in1
 #: first.c:123
 1=1x
 EOF
 
-cat <<EOF > mcomm-test24.in2
+cat <<\EOF > mcomm-test24.in2
 #: hunt.c:759
 2=2x
 EOF

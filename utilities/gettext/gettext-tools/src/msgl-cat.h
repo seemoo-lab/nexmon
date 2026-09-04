@@ -1,6 +1,5 @@
 /* Message list concatenation and duplicate handling.
-   Copyright (C) 2001-2003, 2006, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,7 +12,9 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 #ifndef _MSGL_CAT_H
 #define _MSGL_CAT_H
@@ -31,20 +32,20 @@ extern "C" {
 
 
 /* These variables control which messages are selected.  */
-extern DLL_VARIABLE int more_than;
-extern DLL_VARIABLE int less_than;
+extern LIBGETTEXTSRC_DLL_VARIABLE int more_than;
+extern LIBGETTEXTSRC_DLL_VARIABLE int less_than;
 
 /* If true, use the first available translation.
    If false, merge all available translations into one and fuzzy it.  */
-extern DLL_VARIABLE bool use_first;
+extern LIBGETTEXTSRC_DLL_VARIABLE bool use_first;
 
 /* If true, merge like msgcomm.
    If false, merge like msgcat and msguniq.  */
-extern DLL_VARIABLE bool msgcomm_mode;
+extern LIBGETTEXTSRC_DLL_VARIABLE bool msgcomm_mode;
 
 /* If true, omit the header entry.
    If false, keep the header entry present in the input.  */
-extern DLL_VARIABLE bool omit_header;
+extern LIBGETTEXTSRC_DLL_VARIABLE bool omit_header;
 
 extern msgdomain_list_ty *
        catenate_msgdomain_list (string_list_ty *file_list,

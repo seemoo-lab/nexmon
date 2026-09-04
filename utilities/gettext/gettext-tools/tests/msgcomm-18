@@ -3,14 +3,14 @@
 
 # Test --more-than=0; identical message are wanted once only.
 
-cat <<EOF > mcomm-test18.in1
+cat <<\EOF > mcomm-test18.in1
 # Sure.
 #: first.c:123
 msgid "1"
 msgstr "1x"
 EOF
 
-cat <<EOF > mcomm-test18.in2
+cat <<\EOF > mcomm-test18.in2
 # Right.
 #: hunt.c:759
 msgid "1"

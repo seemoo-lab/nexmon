@@ -1,11 +1,13 @@
-# getline.m4 serial 27
+# getline.m4
+# serial 36
 
-dnl Copyright (C) 1998-2003, 2005-2007, 2009-2016 Free Software Foundation,
+dnl Copyright (C) 1998-2003, 2005-2007, 2009-2026 Free Software Foundation,
 dnl Inc.
 dnl
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_PREREQ([2.59])
 
@@ -16,27 +18,27 @@ dnl to do with the function we need.
 AC_DEFUN([gl_FUNC_GETLINE],
 [
   AC_REQUIRE([gl_STDIO_H_DEFAULTS])
+  AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
 
   dnl Persuade glibc <stdio.h> to declare getline().
   AC_REQUIRE([AC_USE_SYSTEM_EXTENSIONS])
 
   AC_CHECK_DECLS_ONCE([getline])
 
-  gl_getline_needs_run_time_check=no
-  AC_CHECK_FUNC([getline],
-                [dnl Found it in some library.  Verify that it works.
-                 gl_getline_needs_run_time_check=yes],
-                [am_cv_func_working_getline=no])
-  if test $gl_getline_needs_run_time_check = yes; then
-    AC_CACHE_CHECK([for working getline function], [am_cv_func_working_getline],
-    [echo fooNbarN | tr -d '\012' | tr N '\012' > conftest.data
-    AC_RUN_IFELSE([AC_LANG_SOURCE([[
+  gl_CHECK_FUNCS_ANDROID([getline], [[#include <stdio.h>]])
+  if test $ac_cv_func_getline = yes; then
+    dnl Found it in some library.  Verify that it works.
+    AC_CACHE_CHECK([for working getline function],
+      [am_cv_func_working_getline],
+      [echo fooNbarN | tr -d '\012' | tr N '\012' > conftest.data
+       AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #    include <stdio.h>
 #    include <stdlib.h>
 #    include <string.h>
     int main ()
     {
       FILE *in = fopen ("./conftest.data", "r");
+      int result = 0;
       if (!in)
         return 1;
       {
@@ -46,7 +48,7 @@ AC_DEFUN([gl_FUNC_GETLINE],
         size_t siz = 0;
         int len = getline (&line, &siz, in);
         if (!(len == 4 && line && strcmp (line, "foo\n") == 0))
-          return 2;
+          result |= 2;
         free (line);
       }
       {
@@ -55,27 +57,40 @@ AC_DEFUN([gl_FUNC_GETLINE],
         char *line = NULL;
         size_t siz = (size_t)(~0) / 4;
         if (getline (&line, &siz, in) == -1)
-          return 3;
+          result |= 4;
         free (line);
       }
       fclose (in);
-      return 0;
+      return result;
     }
-    ]])], [am_cv_func_working_getline=yes] dnl The library version works.
-    , [am_cv_func_working_getline=no] dnl The library version does NOT work.
-    , dnl We're cross compiling. Assume it works on glibc2 systems.
-      [AC_EGREP_CPP([Lucky GNU user],
-         [
+    ]])],
+         [am_cv_func_working_getline=yes],
+         [am_cv_func_working_getline=no],
+         [dnl We're cross compiling.
+          dnl Guess it works on glibc2 systems and musl systems.
+          AC_EGREP_CPP([Lucky GNU user],
+            [
 #include <features.h>
 #ifdef __GNU_LIBRARY__
  #if (__GLIBC__ >= 2) && !defined __UCLIBC__
   Lucky GNU user
  #endif
 #endif
-         ],
-         [am_cv_func_working_getline="guessing yes"],
-         [am_cv_func_working_getline="guessing no"])]
-    )])
+            ],
+            [am_cv_func_working_getline="guessing yes"],
+            [case "$host_os" in
+               *-musl* | midipix*) am_cv_func_working_getline="guessing yes" ;;
+               *)                  am_cv_func_working_getline="$gl_cross_guess_normal" ;;
+             esac
+            ])
+         ])
+       rm -f conftest.data
+      ])
+  else
+    am_cv_func_working_getline=no
+    case "$gl_cv_onwards_func_getline" in
+      future*) REPLACE_GETLINE=1 ;;
+    esac
   fi
 
   if test $ac_cv_have_decl_getline = no; then
@@ -83,7 +98,8 @@ AC_DEFUN([gl_FUNC_GETLINE],
   fi
 
   case "$am_cv_func_working_getline" in
-    *no)
+    *yes) ;;
+    *)
       dnl Set REPLACE_GETLINE always: Even if we have not found the broken
       dnl getline function among $LIBS, it may exist in libinet and the
       dnl executable may be linked with -linet.

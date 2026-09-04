@@ -35,7 +35,7 @@
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">msginit &minus;
+<p style="margin-left:11%; margin-top: 1em">msginit -
 initialize a message catalog</p>
 
 <h2>SYNOPSIS
@@ -61,8 +61,8 @@ too.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Input file
 location: <br>
-&minus;i</b>,
-<b>&minus;&minus;input</b>=<i>INPUTFILE</i></p>
+-i</b>,
+<b>--input</b>=<i>INPUTFILE</i></p>
 
 <p style="margin-left:22%;">input POT file</p>
 
@@ -72,50 +72,53 @@ file. If it is -, standard input is read.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Output file
 location: <br>
-&minus;o</b>,
-<b>&minus;&minus;output&minus;file</b>=<i>FILE</i></p>
+-o</b>,
+<b>--output-file</b>=<i>FILE</i></p>
 
 <p style="margin-left:22%;">write output to specified PO
 file</p>
 
 <p style="margin-left:11%; margin-top: 1em">If no output
-file is given, it depends on the <b>&minus;&minus;locale</b>
-option or the user&rsquo;s locale setting. If it is -, the
+file is given, it depends on the <b>--locale</b>
+option or the user&rsquo;s locale setting. If the output
+file already exists, it is merged with the input file, as if
+through &rsquo;msgmerge&rsquo;. If it is -, the
 results are written to standard output.</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Input file
 syntax: <br>
-&minus;P</b>,
-<b>&minus;&minus;properties&minus;input</b></p>
+-P</b>,
+<b>--properties-input</b></p>
 
 <p style="margin-left:22%;">input file is in Java
 .properties syntax</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;stringtable&minus;input</b></p>
+<p style="margin-left:11%;"><b>--stringtable-input</b></p>
 
 <p style="margin-left:22%;">input file is in
 NeXTstep/GNUstep .strings syntax</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Output
 details: <br>
-&minus;l</b>, <b>&minus;&minus;locale</b>=<i>LL_CC</i></p>
+-l</b>,
+<b>--locale</b>=<i>LL_CC[</i>.ENCODING]</p>
 
 <p style="margin-left:22%;">set target locale</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;no&minus;translator</b></p>
+<p style="margin-left:11%;"><b>--no-translator</b></p>
 
 <p style="margin-left:22%;">assume the PO file is
 automatically generated</p>
 
-<p style="margin-left:11%;"><b>&minus;&minus;color</b></p>
+<p style="margin-left:11%;"><b>--color</b></p>
 
 <p style="margin-left:22%;">use colors and other text
 attributes always</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;color</b>=<i>WHEN</i></p>
+<p style="margin-left:11%;"><b>--color</b>=<i>WHEN</i></p>
 
 <p style="margin-left:22%;">use colors and other text
 attributes if WHEN. WHEN may be &rsquo;always&rsquo;,
@@ -123,30 +126,30 @@ attributes if WHEN. WHEN may be &rsquo;always&rsquo;,
 &rsquo;html&rsquo;.</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;style</b>=<i>STYLEFILE</i></p>
+<p style="margin-left:11%;"><b>--style</b>=<i>STYLEFILE</i></p>
 
 <p style="margin-left:22%;">specify CSS style rule file for
-<b>&minus;&minus;color</b></p>
+<b>--color</b></p>
 
-<p style="margin-left:11%;"><b>&minus;p</b>,
-<b>&minus;&minus;properties&minus;output</b></p>
+<p style="margin-left:11%;"><b>-p</b>,
+<b>--properties-output</b></p>
 
 <p style="margin-left:22%;">write out a Java .properties
 file</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;stringtable&minus;output</b></p>
+<p style="margin-left:11%;"><b>--stringtable-output</b></p>
 
 <p style="margin-left:22%;">write out a NeXTstep/GNUstep
 .strings file</p>
 
-<p style="margin-left:11%;"><b>&minus;w</b>,
-<b>&minus;&minus;width</b>=<i>NUMBER</i></p>
+<p style="margin-left:11%;"><b>-w</b>,
+<b>--width</b>=<i>NUMBER</i></p>
 
 <p style="margin-left:22%;">set output page width</p>
 
 
-<p style="margin-left:11%;"><b>&minus;&minus;no&minus;wrap</b></p>
+<p style="margin-left:11%;"><b>--no-wrap</b></p>
 
 <p style="margin-left:22%;">do not break long message
 lines, longer than the output page width, into several
@@ -154,12 +157,12 @@ lines</p>
 
 <p style="margin-left:11%; margin-top: 1em"><b>Informative
 output: <br>
-&minus;h</b>, <b>&minus;&minus;help</b></p>
+-h</b>, <b>--help</b></p>
 
 <p style="margin-left:22%;">display this help and exit</p>
 
-<p style="margin-left:11%;"><b>&minus;V</b>,
-<b>&minus;&minus;version</b></p>
+<p style="margin-left:11%;"><b>-V</b>,
+<b>--version</b></p>
 
 <p style="margin-left:22%;">output version information and
 exit</p>
@@ -177,8 +180,10 @@ Bruno Haible.</p>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">Report bugs to
-&lt;bug-gnu-gettext@gnu.org&gt;.</p>
+<p style="margin-left:11%; margin-top: 1em">Report bugs in
+the bug tracker at
+&lt;https://savannah.gnu.org/projects/gettext&gt; or by
+email to &lt;bug-gettext@gnu.org&gt;.</p>
 
 <h2>COPYRIGHT
 <a name="COPYRIGHT"></a>
@@ -186,9 +191,9 @@ Bruno Haible.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em">Copyright
-&copy; 2001-2016 Free Software Foundation, Inc. License
-GPLv3+: GNU GPL version 3 or later
-&lt;http://gnu.org/licenses/gpl.html&gt; <br>
+&copy; 2001-2026 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later
+&lt;https://gnu.org/licenses/gpl.html&gt; <br>
 This is free software: you are free to change and
 redistribute it. There is NO WARRANTY, to the extent
 permitted by law.</p>

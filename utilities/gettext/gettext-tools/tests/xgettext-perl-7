@@ -1,7 +1,7 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test Perl support: --add-comments option.
+# Test Perl support: --add-comments option, string concatenation.
 
 cat <<\EOF > xg-pl-7.pl
 # a
@@ -19,7 +19,7 @@ ${XGETTEXT} --add-comments --omit-header --no-location --keyword=_ \
   -d xg-pl-7.tmp xg-pl-7.pl || Exit 1
 LC_ALL=C tr -d '\r' < xg-pl-7.tmp.po > xg-pl-7.po || Exit 1
 
-cat <<EOF > xg-pl-7.ok
+cat <<\EOF > xg-pl-7.ok
 #. a
 #. b
 #. c

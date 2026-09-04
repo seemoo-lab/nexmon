@@ -1,0 +1,13 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test output in Tcl .msg format with characters outside the BMP.
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} --tcl -l cs -d . "$wabs_srcdir"/testdata/tcltest_cs.po || Exit 1
+
+: ${DIFF=diff}
+${DIFF} "$abs_srcdir"/testdata/tcltest_cs.msg cs.msg
+result=$?
+
+exit $result

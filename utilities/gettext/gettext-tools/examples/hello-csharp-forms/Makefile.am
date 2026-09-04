@@ -35,7 +35,7 @@ CSHARPCOMP = $(SHELL) csharpcomp.sh
 CSHARPCOMPFLAGS = -O -g
 
 EXTRA_DIST += $(hello_SOURCES)
-CLEANFILES =
+CLEANFILES = hello.net.exe.mdb
 DISTCLEANFILES = csharpcomp.sh csharpexec.sh
 
 

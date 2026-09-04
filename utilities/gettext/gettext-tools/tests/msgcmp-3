@@ -3,14 +3,14 @@
 
 # Test a failing comparison with Java .properties syntax.
 
-cat <<EOF > mc-test3.in1
+cat <<\EOF > mc-test3.in1
 one=first
 two=second
 three=third
 four=fourth
 EOF
 
-cat <<EOF > mc-test3.in2
+cat <<\EOF > mc-test3.in2
 !thre=
 !one=
 !two=
@@ -18,9 +18,9 @@ EOF
 
 : ${MSGCMP=msgcmp}
 LC_MESSAGES=C LC_ALL= \
-${MSGCMP} --properties-input mc-test3.in1 mc-test3.in2 2>&1 | grep -v '^==' | sed -e 's|[^ ]*\\msgcmp\.exe|msgcmp|' -e 's|^msgcmp\.exe|msgcmp|' | LC_ALL=C tr -d '\r' > mc-test3.out
+${MSGCMP} --properties-input mc-test3.in1 mc-test3.in2 2>&1 | grep -v '^==' | sed -e 's|[^ ]*\\msgcmp\.exe|msgcmp|' -e 's|^msgcmp\.exe|msgcmp|' -e 's|^/cygdrive/[^ ]*/msgcmp|msgcmp|' | LC_ALL=C tr -d '\r' > mc-test3.out
 
-cat <<EOF > mc-test3.ok
+cat <<\EOF > mc-test3.ok
 mc-test3.in2:1: this message is used but not defined...
 mc-test3.in1:3: ...but this definition is similar
 mc-test3.in1:4: warning: this message is not used

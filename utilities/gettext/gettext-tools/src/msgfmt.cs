@@ -1,6 +1,5 @@
 /* GNU gettext for C#
- * Copyright (C) 2003, 2015-2016 Free Software Foundation, Inc.
- * Written by Bruno Haible <bruno@clisp.org>, 2003.
+ * Copyright (C) 2003-2026 Free Software Foundation, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -13,8 +12,10 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
+/* Written by Bruno Haible.  */
 
 /*
  * This program creates a .resources file from a set of key/value pairs given
@@ -68,41 +69,13 @@ namespace GNU.Gettext {
         MemoryStream tmpoutput = new MemoryStream();
         ResourceWriter rw = new ResourceWriter(tmpoutput);
         ReadAllInput(rw);
-#if __CSCC__
-        // Use the ResourceReader to check against pnet-0.6.0 ResourceWriter
-        // bug.
-        try {
-          ResourceReader rr = new ResourceReader(new MemoryStream(tmpoutput.ToArray()));
-          foreach (System.Collections.DictionaryEntry entry in rr);
-        } catch (IOException e) {
-          throw new Exception("class ResourceWriter is buggy", e);
-        }
-#endif
         tmpoutput.WriteTo(output);
         rw.Close();
         output.Close();
       } else {
-#if __CSCC__
-        MemoryStream tmpoutput = new MemoryStream();
-        ResourceWriter rw = new ResourceWriter(tmpoutput);
-        ReadAllInput(rw);
-        // Use the ResourceReader to check against pnet-0.6.0 ResourceWriter
-        // bug.
-        try {
-          ResourceReader rr = new ResourceReader(new MemoryStream(tmpoutput.ToArray()));
-          foreach (System.Collections.DictionaryEntry entry in rr);
-        } catch (IOException e) {
-          throw new Exception("class ResourceWriter is buggy", e);
-        }
-        BufferedStream output = new BufferedStream(new FileStream(filename, FileMode.Create, FileAccess.Write));
-        tmpoutput.WriteTo(output);
-        rw.Close();
-        output.Close();
-#else
         ResourceWriter rw = new ResourceWriter(filename);
         ReadAllInput(rw);
         rw.Close();
-#endif
       }
     }
     public static int Main (String[] args) {

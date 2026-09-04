@@ -1,0 +1,32 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test D support: extraction of contexts.
+
+cat <<\EOF > xg-d-5.d
+void main ()
+{
+  writeln(gettext("help"));
+  writeln(pgettext("Help", "about"));
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header -d xg-d-5.tmp xg-d-5.d || Exit 1
+LC_ALL=C tr -d '\r' < xg-d-5.tmp.po > xg-d-5.po || Exit 1
+
+cat <<\EOF > xg-d-5.ok
+#: xg-d-5.d:3
+msgid "help"
+msgstr ""
+
+#: xg-d-5.d:4
+msgctxt "Help"
+msgid "about"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-d-5.ok xg-d-5.po || Exit 1
+
+exit 0

@@ -1,25 +1,29 @@
 # Italian messages for hello-objc-gnustep.
 # Copyright (C) 2005, 2006 Yoyodyne, Inc. (msgids)
+# Copyright (C) 2024 Free Software Foundation, Inc.
 # This file is distributed under the same license as the gettext package.
 # Marco Colombo <m.colombo@ed.ac.uk>, 2005, 2006, 2015.
+# Michele Locati <michele@locati.it>, 2024, 2025.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: hello-objc-gnustep 0.19.4.73\n"
-"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"PO-Revision-Date: 2015-08-05 12:18+0100\n"
-"Last-Translator: Marco Colombo <m.colombo@ed.ac.uk>\n"
+"Project-Id-Version: GNU hello-objc-gnustep 0.26-pre1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2025-07-08 13:59+0200\n"
+"Last-Translator: Michele Locati <michele@locati.it>\n"
 "Language-Team: Italian <tp@lists.linux.it>\n"
 "Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
 
-#: Hello.m:49
+#: Hello.m:48
 msgid "Hello, world!"
-msgstr "Salve, mondo!"
+msgstr "Ciao, mondo!"
 
-#: Hello.m:58
+#: Hello.m:57
 #, objc-format
 msgid "This program is running as process number %d."
 msgstr "Questo programma è in esecuzione con numero di processo %d."

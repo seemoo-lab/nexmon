@@ -1,32 +1,32 @@
 /* Elementary Unicode string functions.
-   Copyright (C) 2001-2002, 2005-2016 Free Software Foundation, Inc.
+   Copyright (C) 2001-2002, 2005-2026 Free Software Foundation, Inc.
 
-   This program is free software: you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published
-   by the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef _UNISTR_H
 #define _UNISTR_H
 
 #include "unitypes.h"
 
-/* Get common macros for C.  */
-#include "unused-parameter.h"
-
 /* Get bool.  */
 #include <stdbool.h>
 
-/* Get size_t.  */
+/* Get size_t, ptrdiff_t.  */
 #include <stddef.h>
+
+/* Get free().  */
+#include <stdlib.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -80,6 +80,80 @@ extern const uint16_t *
 extern const uint32_t *
        u32_check (const uint32_t *s, size_t n)
        _UC_ATTRIBUTE_PURE;
+
+#ifndef _LIBUNISTRING_NO_CONST_GENERICS
+# ifdef __cplusplus
+}
+# endif
+/* Don't silently convert a 'const uintN_t *' to a 'uintN_t *'.  Programmers
+   want compiler warnings for 'const' related mistakes.  */
+# ifdef __cplusplus
+template <typename T>
+  T * u8_check_template (T* s, size_t n);
+template <>
+  inline uint8_t * u8_check_template (uint8_t *s, size_t n)
+  { return const_cast<uint8_t *>(u8_check (s, n)); }
+template <>
+  inline const uint8_t * u8_check_template (const uint8_t *s, size_t n)
+  { return u8_check (s, n); }
+#  undef u8_check
+#  define u8_check u8_check_template
+# elif !defined u8_check
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u8_check(s,n) \
+      _Generic ((s), \
+                uint8_t *: (uint8_t *) u8_check ((s), (n)), \
+                default  :             u8_check ((s), (n)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u16_check_template (T* s, size_t n);
+template <>
+  inline uint16_t * u16_check_template (uint16_t *s, size_t n)
+  { return const_cast<uint16_t *>(u16_check (s, n)); }
+template <>
+  inline const uint16_t * u16_check_template (const uint16_t *s, size_t n)
+  { return u16_check (s, n); }
+#  undef u16_check
+#  define u16_check u16_check_template
+# elif !defined u16_check
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u16_check(s,n) \
+      _Generic ((s), \
+                uint16_t *: (uint16_t *) u16_check ((s), (n)), \
+                default   :              u16_check ((s), (n)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u32_check_template (T* s, size_t n);
+template <>
+  inline uint32_t * u32_check_template (uint32_t *s, size_t n)
+  { return const_cast<uint32_t *>(u32_check (s, n)); }
+template <>
+  inline const uint32_t * u32_check_template (const uint32_t *s, size_t n)
+  { return u32_check (s, n); }
+#  undef u32_check
+#  define u32_check u32_check_template
+# elif !defined u32_check
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u32_check(s,n) \
+      _Generic ((s), \
+                uint32_t *: (uint32_t *) u32_check ((s), (n)), \
+                default   :              u32_check ((s), (n)))
+#  endif
+# endif
+# ifdef __cplusplus
+extern "C" {
+# endif
+#endif
 
 
 /* Elementary string conversions.  */
@@ -137,8 +211,8 @@ extern int
    The number of available units, N, must be > 0.  */
 /* Similar to mbtowc(), except that puc and s must not be NULL, n must be > 0,
    and the NUL character is not treated specially.  */
-/* The variants with _safe suffix are safe, even if the library is compiled
-   without --enable-safety.  */
+/* The variants with _unsafe suffix are for backward compatibility with
+   libunistring versions < 0.9.7.  */
 
 #if GNULIB_UNISTR_U8_MBTOUC_UNSAFE || HAVE_LIBUNISTRING
 # if !HAVE_INLINE
@@ -193,19 +267,15 @@ extern int
 # else
 static inline int
 u32_mbtouc_unsafe (ucs4_t *puc,
-                   const uint32_t *s, size_t n _GL_UNUSED_PARAMETER)
+                   const uint32_t *s, size_t _GL_UNNAMED (n))
 {
   uint32_t c = *s;
 
-#  if CONFIG_UNICODE_SAFETY
   if (c < 0xd800 || (c >= 0xe000 && c < 0x110000))
-#  endif
     *puc = c;
-#  if CONFIG_UNICODE_SAFETY
   else
     /* invalid multibyte character */
     *puc = 0xfffd;
-#  endif
   return 1;
 }
 # endif
@@ -263,7 +333,8 @@ extern int
        u32_mbtouc (ucs4_t *puc, const uint32_t *s, size_t n);
 # else
 static inline int
-u32_mbtouc (ucs4_t *puc, const uint32_t *s, size_t n _GL_UNUSED_PARAMETER)
+u32_mbtouc (ucs4_t *puc, const uint32_t *s,
+            size_t _GL_UNNAMED (n))
 {
   uint32_t c = *s;
 
@@ -309,13 +380,13 @@ extern int
 #if GNULIB_UNISTR_U8_UCTOMB || HAVE_LIBUNISTRING
 /* Auxiliary function, also used by u8_chr, u8_strchr, u8_strrchr.  */
 extern int
-       u8_uctomb_aux (uint8_t *s, ucs4_t uc, int n);
+       u8_uctomb_aux (uint8_t *s, ucs4_t uc, ptrdiff_t n);
 # if !HAVE_INLINE
 extern int
-       u8_uctomb (uint8_t *s, ucs4_t uc, int n);
+       u8_uctomb (uint8_t *s, ucs4_t uc, ptrdiff_t n);
 # else
 static inline int
-u8_uctomb (uint8_t *s, ucs4_t uc, int n)
+u8_uctomb (uint8_t *s, ucs4_t uc, ptrdiff_t n)
 {
   if (uc < 0x80 && n > 0)
     {
@@ -331,13 +402,13 @@ u8_uctomb (uint8_t *s, ucs4_t uc, int n)
 #if GNULIB_UNISTR_U16_UCTOMB || HAVE_LIBUNISTRING
 /* Auxiliary function, also used by u16_chr, u16_strchr, u16_strrchr.  */
 extern int
-       u16_uctomb_aux (uint16_t *s, ucs4_t uc, int n);
+       u16_uctomb_aux (uint16_t *s, ucs4_t uc, ptrdiff_t n);
 # if !HAVE_INLINE
 extern int
-       u16_uctomb (uint16_t *s, ucs4_t uc, int n);
+       u16_uctomb (uint16_t *s, ucs4_t uc, ptrdiff_t n);
 # else
 static inline int
-u16_uctomb (uint16_t *s, ucs4_t uc, int n)
+u16_uctomb (uint16_t *s, ucs4_t uc, ptrdiff_t n)
 {
   if (uc < 0xd800 && n > 0)
     {
@@ -353,10 +424,10 @@ u16_uctomb (uint16_t *s, ucs4_t uc, int n)
 #if GNULIB_UNISTR_U32_UCTOMB || HAVE_LIBUNISTRING
 # if !HAVE_INLINE
 extern int
-       u32_uctomb (uint32_t *s, ucs4_t uc, int n);
+       u32_uctomb (uint32_t *s, ucs4_t uc, ptrdiff_t n);
 # else
 static inline int
-u32_uctomb (uint32_t *s, ucs4_t uc, int n)
+u32_uctomb (uint32_t *s, ucs4_t uc, ptrdiff_t n)
 {
   if (uc < 0xd800 || (uc >= 0xe000 && uc < 0x110000))
     {
@@ -377,11 +448,20 @@ u32_uctomb (uint32_t *s, ucs4_t uc, int n)
 /* Copy N units from SRC to DEST.  */
 /* Similar to memcpy().  */
 extern uint8_t *
-       u8_cpy (uint8_t *dest, const uint8_t *src, size_t n);
+       u8_cpy (uint8_t *_UC_RESTRICT dest, const uint8_t *src, size_t n);
 extern uint16_t *
-       u16_cpy (uint16_t *dest, const uint16_t *src, size_t n);
+       u16_cpy (uint16_t *_UC_RESTRICT dest, const uint16_t *src, size_t n);
 extern uint32_t *
-       u32_cpy (uint32_t *dest, const uint32_t *src, size_t n);
+       u32_cpy (uint32_t *_UC_RESTRICT dest, const uint32_t *src, size_t n);
+
+/* Copy N units from SRC to DEST, returning pointer after last written unit.  */
+/* Similar to mempcpy().  */
+extern uint8_t *
+       u8_pcpy (uint8_t *_UC_RESTRICT dest, const uint8_t *src, size_t n);
+extern uint16_t *
+       u16_pcpy (uint16_t *_UC_RESTRICT dest, const uint16_t *src, size_t n);
+extern uint32_t *
+       u32_pcpy (uint32_t *_UC_RESTRICT dest, const uint32_t *src, size_t n);
 
 /* Copy N units from SRC to DEST, guaranteeing correct behavior for
    overlapping memory areas.  */
@@ -438,6 +518,79 @@ extern uint16_t *
 extern uint32_t *
        u32_chr (const uint32_t *s, size_t n, ucs4_t uc)
        _UC_ATTRIBUTE_PURE;
+#ifndef _LIBUNISTRING_NO_CONST_GENERICS
+# ifdef __cplusplus
+}
+# endif
+/* Don't silently convert a 'const uintN_t *' to a 'uintN_t *'.  Programmers
+   want compiler warnings for 'const' related mistakes.  */
+# ifdef __cplusplus
+template <typename T>
+  T * u8_chr_template (T* str, size_t n, ucs4_t uc);
+template <>
+  inline uint8_t * u8_chr_template (uint8_t *str, size_t n, ucs4_t uc)
+  { return u8_chr (str, n, uc); }
+template <>
+  inline const uint8_t * u8_chr_template (const uint8_t *str, size_t n, ucs4_t uc)
+  { return u8_chr (str, n, uc); }
+#  undef u8_chr
+#  define u8_chr u8_chr_template
+# elif !defined u8_chr
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u8_chr(s,n,u) \
+      _Generic ((s), \
+                uint8_t const *: (uint8_t const *) u8_chr ((s), (n), (u)), \
+                default        :                   u8_chr ((s), (n), (u)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u16_chr_template (T* str, size_t n, ucs4_t uc);
+template <>
+  inline uint16_t * u16_chr_template (uint16_t *str, size_t n, ucs4_t uc)
+  { return u16_chr (str, n, uc); }
+template <>
+  inline const uint16_t * u16_chr_template (const uint16_t *str, size_t n, ucs4_t uc)
+  { return u16_chr (str, n, uc); }
+#  undef u16_chr
+#  define u16_chr u16_chr_template
+# elif !defined u16_chr
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u16_chr(s,n,u) \
+      _Generic ((s), \
+                uint16_t const *: (uint16_t const *) u16_chr ((s), (n), (u)), \
+                default         :                    u16_chr ((s), (n), (u)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u32_chr_template (T* str, size_t n, ucs4_t uc);
+template <>
+  inline uint32_t * u32_chr_template (uint32_t *str, size_t n, ucs4_t uc)
+  { return u32_chr (str, n, uc); }
+template <>
+  inline const uint32_t * u32_chr_template (const uint32_t *str, size_t n, ucs4_t uc)
+  { return u32_chr (str, n, uc); }
+#  undef u32_chr
+#  define u32_chr u32_chr_template
+# elif !defined u32_chr
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u32_chr(s,n,u) \
+      _Generic ((s), \
+                uint32_t const *: (uint32_t const *) u32_chr ((s), (n), (u)), \
+                default         :                    u32_chr ((s), (n), (u)))
+#  endif
+# endif
+# ifdef __cplusplus
+extern "C" {
+# endif
+#endif
 
 /* Count the number of Unicode characters in the N units from S.  */
 /* Similar to mbsnlen().  */
@@ -494,6 +647,79 @@ extern const uint16_t *
        u16_next (ucs4_t *puc, const uint16_t *s);
 extern const uint32_t *
        u32_next (ucs4_t *puc, const uint32_t *s);
+#ifndef _LIBUNISTRING_NO_CONST_GENERICS
+# ifdef __cplusplus
+}
+# endif
+/* Don't silently convert a 'const uintN_t *' to a 'uintN_t *'.  Programmers
+   want compiler warnings for 'const' related mistakes.  */
+# ifdef __cplusplus
+template <typename T>
+  T * u8_next_template (ucs4_t *puc, T* s);
+template <>
+  inline uint8_t * u8_next_template (ucs4_t *puc, uint8_t *s)
+  { return const_cast<uint8_t *>(u8_next (puc, s)); }
+template <>
+  inline const uint8_t * u8_next_template (ucs4_t *puc, const uint8_t *s)
+  { return u8_next (puc, s); }
+#  undef u8_next
+#  define u8_next u8_next_template
+# elif !defined u8_next
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u8_next(p,s) \
+      _Generic ((s), \
+                uint8_t *: (uint8_t *) u8_next ((p), (s)), \
+                default  :             u8_next ((p), (s)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u16_next_template (ucs4_t *puc, T* s);
+template <>
+  inline uint16_t * u16_next_template (ucs4_t *puc, uint16_t *s)
+  { return const_cast<uint16_t *>(u16_next (puc, s)); }
+template <>
+  inline const uint16_t * u16_next_template (ucs4_t *puc, const uint16_t *s)
+  { return u16_next (puc, s); }
+#  undef u16_next
+#  define u16_next u16_next_template
+# elif !defined u16_next
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u16_next(p,s) \
+      _Generic ((s), \
+                uint16_t *: (uint16_t *) u16_next ((p), (s)), \
+                default   :              u16_next ((p), (s)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u32_next_template (ucs4_t *puc, T* s);
+template <>
+  inline uint32_t * u32_next_template (ucs4_t *puc, uint32_t *s)
+  { return const_cast<uint32_t *>(u32_next (puc, s)); }
+template <>
+  inline const uint32_t * u32_next_template (ucs4_t *puc, const uint32_t *s)
+  { return u32_next (puc, s); }
+#  undef u32_next
+#  define u32_next u32_next_template
+# elif !defined u32_next
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u32_next(p,s) \
+      _Generic ((s), \
+                uint32_t *: (uint32_t *) u32_next ((p), (s)), \
+                default   :              u32_next ((p), (s)))
+#  endif
+# endif
+# ifdef __cplusplus
+extern "C" {
+# endif
+#endif
 
 /* Backward iteration step.  Advances the pointer to point to the previous
    character, or returns NULL if the beginning of the string had been reached.
@@ -504,6 +730,79 @@ extern const uint16_t *
        u16_prev (ucs4_t *puc, const uint16_t *s, const uint16_t *start);
 extern const uint32_t *
        u32_prev (ucs4_t *puc, const uint32_t *s, const uint32_t *start);
+#ifndef _LIBUNISTRING_NO_CONST_GENERICS
+# ifdef __cplusplus
+}
+# endif
+/* Don't silently convert a 'const uintN_t *' to a 'uintN_t *'.  Programmers
+   want compiler warnings for 'const' related mistakes.  */
+# ifdef __cplusplus
+template <typename T>
+  T * u8_prev_template (ucs4_t *puc, T* s, const uint8_t *start);
+template <>
+  inline uint8_t * u8_prev_template (ucs4_t *puc, uint8_t *s, const uint8_t *start)
+  { return const_cast<uint8_t *>(u8_prev (puc, s, start)); }
+template <>
+  inline const uint8_t * u8_prev_template (ucs4_t *puc, const uint8_t *s, const uint8_t *start)
+  { return u8_prev (puc, s, start); }
+#  undef u8_prev
+#  define u8_prev u8_prev_template
+# elif !defined u8_prev
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u8_prev(p,s,start) \
+      _Generic ((s), \
+                uint8_t *: (uint8_t *) u8_prev ((p), (s), (start)), \
+                default  :             u8_prev ((p), (s), (start)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u16_prev_template (ucs4_t *puc, T* s, const uint16_t *start);
+template <>
+  inline uint16_t * u16_prev_template (ucs4_t *puc, uint16_t *s, const uint16_t *start)
+  { return const_cast<uint16_t *>(u16_prev (puc, s, start)); }
+template <>
+  inline const uint16_t * u16_prev_template (ucs4_t *puc, const uint16_t *s, const uint16_t *start)
+  { return u16_prev (puc, s, start); }
+#  undef u16_prev
+#  define u16_prev u16_prev_template
+# elif !defined u16_prev
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u16_prev(p,s,start) \
+      _Generic ((s), \
+                uint16_t *: (uint16_t *) u16_prev ((p), (s), (start)), \
+                default   :              u16_prev ((p), (s), (start)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u32_prev_template (ucs4_t *puc, T* s, const uint32_t *start);
+template <>
+  inline uint32_t * u32_prev_template (ucs4_t *puc, uint32_t *s, const uint32_t *start)
+  { return const_cast<uint32_t *>(u32_prev (puc, s, start)); }
+template <>
+  inline const uint32_t * u32_prev_template (ucs4_t *puc, const uint32_t *s, const uint32_t *start)
+  { return u32_prev (puc, s, start); }
+#  undef u32_prev
+#  define u32_prev u32_prev_template
+# elif !defined u32_prev
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u32_prev(p,s,start) \
+      _Generic ((s), \
+                uint32_t *: (uint32_t *) u32_prev ((p), (s), (start)), \
+                default   :              u32_prev ((p), (s), (start)))
+#  endif
+# endif
+# ifdef __cplusplus
+extern "C" {
+# endif
+#endif
 
 /* Return the number of units in S.  */
 /* Similar to strlen(), wcslen().  */
@@ -532,57 +831,57 @@ extern size_t
 /* Copy SRC to DEST.  */
 /* Similar to strcpy(), wcscpy().  */
 extern uint8_t *
-       u8_strcpy (uint8_t *dest, const uint8_t *src);
+       u8_strcpy (uint8_t *_UC_RESTRICT dest, const uint8_t *src);
 extern uint16_t *
-       u16_strcpy (uint16_t *dest, const uint16_t *src);
+       u16_strcpy (uint16_t *_UC_RESTRICT dest, const uint16_t *src);
 extern uint32_t *
-       u32_strcpy (uint32_t *dest, const uint32_t *src);
+       u32_strcpy (uint32_t *_UC_RESTRICT dest, const uint32_t *src);
 
 /* Copy SRC to DEST, returning the address of the terminating NUL in DEST.  */
 /* Similar to stpcpy().  */
 extern uint8_t *
-       u8_stpcpy (uint8_t *dest, const uint8_t *src);
+       u8_stpcpy (uint8_t *_UC_RESTRICT dest, const uint8_t *src);
 extern uint16_t *
-       u16_stpcpy (uint16_t *dest, const uint16_t *src);
+       u16_stpcpy (uint16_t *_UC_RESTRICT dest, const uint16_t *src);
 extern uint32_t *
-       u32_stpcpy (uint32_t *dest, const uint32_t *src);
+       u32_stpcpy (uint32_t *_UC_RESTRICT dest, const uint32_t *src);
 
 /* Copy no more than N units of SRC to DEST.  */
 /* Similar to strncpy(), wcsncpy().  */
 extern uint8_t *
-       u8_strncpy (uint8_t *dest, const uint8_t *src, size_t n);
+       u8_strncpy (uint8_t *_UC_RESTRICT dest, const uint8_t *src, size_t n);
 extern uint16_t *
-       u16_strncpy (uint16_t *dest, const uint16_t *src, size_t n);
+       u16_strncpy (uint16_t *_UC_RESTRICT dest, const uint16_t *src, size_t n);
 extern uint32_t *
-       u32_strncpy (uint32_t *dest, const uint32_t *src, size_t n);
+       u32_strncpy (uint32_t *_UC_RESTRICT dest, const uint32_t *src, size_t n);
 
 /* Copy no more than N units of SRC to DEST.  Return a pointer past the last
    non-NUL unit written into DEST.  */
 /* Similar to stpncpy().  */
 extern uint8_t *
-       u8_stpncpy (uint8_t *dest, const uint8_t *src, size_t n);
+       u8_stpncpy (uint8_t *_UC_RESTRICT dest, const uint8_t *src, size_t n);
 extern uint16_t *
-       u16_stpncpy (uint16_t *dest, const uint16_t *src, size_t n);
+       u16_stpncpy (uint16_t *_UC_RESTRICT dest, const uint16_t *src, size_t n);
 extern uint32_t *
-       u32_stpncpy (uint32_t *dest, const uint32_t *src, size_t n);
+       u32_stpncpy (uint32_t *_UC_RESTRICT dest, const uint32_t *src, size_t n);
 
 /* Append SRC onto DEST.  */
 /* Similar to strcat(), wcscat().  */
 extern uint8_t *
-       u8_strcat (uint8_t *dest, const uint8_t *src);
+       u8_strcat (uint8_t *_UC_RESTRICT dest, const uint8_t *src);
 extern uint16_t *
-       u16_strcat (uint16_t *dest, const uint16_t *src);
+       u16_strcat (uint16_t *_UC_RESTRICT dest, const uint16_t *src);
 extern uint32_t *
-       u32_strcat (uint32_t *dest, const uint32_t *src);
+       u32_strcat (uint32_t *_UC_RESTRICT dest, const uint32_t *src);
 
 /* Append no more than N units of SRC onto DEST.  */
 /* Similar to strncat(), wcsncat().  */
 extern uint8_t *
-       u8_strncat (uint8_t *dest, const uint8_t *src, size_t n);
+       u8_strncat (uint8_t *_UC_RESTRICT dest, const uint8_t *src, size_t n);
 extern uint16_t *
-       u16_strncat (uint16_t *dest, const uint16_t *src, size_t n);
+       u16_strncat (uint16_t *_UC_RESTRICT dest, const uint16_t *src, size_t n);
 extern uint32_t *
-       u32_strncat (uint32_t *dest, const uint32_t *src, size_t n);
+       u32_strncat (uint32_t *_UC_RESTRICT dest, const uint32_t *src, size_t n);
 
 /* Compare S1 and S2.  */
 /* Similar to strcmp(), wcscmp().  */
@@ -630,11 +929,14 @@ extern int
 /* Duplicate S, returning an identical malloc'd string.  */
 /* Similar to strdup(), wcsdup().  */
 extern uint8_t *
-       u8_strdup (const uint8_t *s);
+       u8_strdup (const uint8_t *s)
+       _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE;
 extern uint16_t *
-       u16_strdup (const uint16_t *s);
+       u16_strdup (const uint16_t *s)
+       _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE;
 extern uint32_t *
-       u32_strdup (const uint32_t *s);
+       u32_strdup (const uint32_t *s)
+       _GL_ATTRIBUTE_MALLOC _GL_ATTRIBUTE_DEALLOC_FREE;
 
 /* Find the first occurrence of UC in STR.  */
 /* Similar to strchr(), wcschr().  */
@@ -647,6 +949,79 @@ extern uint16_t *
 extern uint32_t *
        u32_strchr (const uint32_t *str, ucs4_t uc)
        _UC_ATTRIBUTE_PURE;
+#ifndef _LIBUNISTRING_NO_CONST_GENERICS
+# ifdef __cplusplus
+}
+# endif
+/* Don't silently convert a 'const uintN_t *' to a 'uintN_t *'.  Programmers
+   want compiler warnings for 'const' related mistakes.  */
+# ifdef __cplusplus
+template <typename T>
+  T * u8_strchr_template (T* str, ucs4_t uc);
+template <>
+  inline uint8_t * u8_strchr_template (uint8_t *str, ucs4_t uc)
+  { return u8_strchr (str, uc); }
+template <>
+  inline const uint8_t * u8_strchr_template (const uint8_t *str, ucs4_t uc)
+  { return u8_strchr (str, uc); }
+#  undef u8_strchr
+#  define u8_strchr u8_strchr_template
+# elif !defined u8_strchr
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u8_strchr(s,u) \
+      _Generic ((s), \
+                uint8_t const *: (uint8_t const *) u8_strchr ((s), (u)), \
+                default        :                   u8_strchr ((s), (u)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u16_strchr_template (T* str, ucs4_t uc);
+template <>
+  inline uint16_t * u16_strchr_template (uint16_t *str, ucs4_t uc)
+  { return u16_strchr (str, uc); }
+template <>
+  inline const uint16_t * u16_strchr_template (const uint16_t *str, ucs4_t uc)
+  { return u16_strchr (str, uc); }
+#  undef u16_strchr
+#  define u16_strchr u16_strchr_template
+# elif !defined u16_strchr
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u16_strchr(s,u) \
+      _Generic ((s), \
+                uint16_t const *: (uint16_t const *) u16_strchr ((s), (u)), \
+                default         :                    u16_strchr ((s), (u)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u32_strchr_template (T* str, ucs4_t uc);
+template <>
+  inline uint32_t * u32_strchr_template (uint32_t *str, ucs4_t uc)
+  { return u32_strchr (str, uc); }
+template <>
+  inline const uint32_t * u32_strchr_template (const uint32_t *str, ucs4_t uc)
+  { return u32_strchr (str, uc); }
+#  undef u32_strchr
+#  define u32_strchr u32_strchr_template
+# elif !defined u32_strchr
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u32_strchr(s,u) \
+      _Generic ((s), \
+                uint32_t const *: (uint32_t const *) u32_strchr ((s), (u)), \
+                default         :                    u32_strchr ((s), (u)))
+#  endif
+# endif
+# ifdef __cplusplus
+extern "C" {
+# endif
+#endif
 
 /* Find the last occurrence of UC in STR.  */
 /* Similar to strrchr(), wcsrchr().  */
@@ -659,6 +1034,79 @@ extern uint16_t *
 extern uint32_t *
        u32_strrchr (const uint32_t *str, ucs4_t uc)
        _UC_ATTRIBUTE_PURE;
+#ifndef _LIBUNISTRING_NO_CONST_GENERICS
+# ifdef __cplusplus
+}
+# endif
+/* Don't silently convert a 'const uintN_t *' to a 'uintN_t *'.  Programmers
+   want compiler warnings for 'const' related mistakes.  */
+# ifdef __cplusplus
+template <typename T>
+  T * u8_strrchr_template (T* str, ucs4_t uc);
+template <>
+  inline uint8_t * u8_strrchr_template (uint8_t *str, ucs4_t uc)
+  { return u8_strrchr (str, uc); }
+template <>
+  inline const uint8_t * u8_strrchr_template (const uint8_t *str, ucs4_t uc)
+  { return u8_strrchr (str, uc); }
+#  undef u8_strrchr
+#  define u8_strrchr u8_strrchr_template
+# elif !defined u8_strrchr
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u8_strrchr(s,u) \
+      _Generic ((s), \
+                uint8_t const *: (uint8_t const *) u8_strrchr ((s), (u)), \
+                default        :                   u8_strrchr ((s), (u)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u16_strrchr_template (T* str, ucs4_t uc);
+template <>
+  inline uint16_t * u16_strrchr_template (uint16_t *str, ucs4_t uc)
+  { return u16_strrchr (str, uc); }
+template <>
+  inline const uint16_t * u16_strrchr_template (const uint16_t *str, ucs4_t uc)
+  { return u16_strrchr (str, uc); }
+#  undef u16_strrchr
+#  define u16_strrchr u16_strrchr_template
+# elif !defined u16_strrchr
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u16_strrchr(s,u) \
+      _Generic ((s), \
+                uint16_t const *: (uint16_t const *) u16_strrchr ((s), (u)), \
+                default         :                    u16_strrchr ((s), (u)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u32_strrchr_template (T* str, ucs4_t uc);
+template <>
+  inline uint32_t * u32_strrchr_template (uint32_t *str, ucs4_t uc)
+  { return u32_strrchr (str, uc); }
+template <>
+  inline const uint32_t * u32_strrchr_template (const uint32_t *str, ucs4_t uc)
+  { return u32_strrchr (str, uc); }
+#  undef u32_strrchr
+#  define u32_strrchr u32_strrchr_template
+# elif !defined u32_strrchr
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u32_strrchr(s,u) \
+      _Generic ((s), \
+                uint32_t const *: (uint32_t const *) u32_strrchr ((s), (u)), \
+                default         :                    u32_strrchr ((s), (u)))
+#  endif
+# endif
+# ifdef __cplusplus
+extern "C" {
+# endif
+#endif
 
 /* Return the length of the initial segment of STR which consists entirely
    of Unicode characters not in REJECT.  */
@@ -697,6 +1145,79 @@ extern uint16_t *
 extern uint32_t *
        u32_strpbrk (const uint32_t *str, const uint32_t *accept)
        _UC_ATTRIBUTE_PURE;
+#ifndef _LIBUNISTRING_NO_CONST_GENERICS
+# ifdef __cplusplus
+}
+# endif
+/* Don't silently convert a 'const uintN_t *' to a 'uintN_t *'.  Programmers
+   want compiler warnings for 'const' related mistakes.  */
+# ifdef __cplusplus
+template <typename T>
+  T * u8_strpbrk_template (T* str, const uint8_t *accept);
+template <>
+  inline uint8_t * u8_strpbrk_template (uint8_t *str, const uint8_t *accept)
+  { return u8_strpbrk (str, accept); }
+template <>
+  inline const uint8_t * u8_strpbrk_template (const uint8_t *str, const uint8_t *accept)
+  { return u8_strpbrk (str, accept); }
+#  undef u8_strpbrk
+#  define u8_strpbrk u8_strpbrk_template
+# elif !defined u8_strpbrk
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u8_strpbrk(s,a) \
+      _Generic ((s), \
+                uint8_t const *: (uint8_t const *) u8_strpbrk ((s), (a)), \
+                default        :                   u8_strpbrk ((s), (a)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u16_strpbrk_template (T* str, const uint16_t *accept);
+template <>
+  inline uint16_t * u16_strpbrk_template (uint16_t *str, const uint16_t *accept)
+  { return u16_strpbrk (str, accept); }
+template <>
+  inline const uint16_t * u16_strpbrk_template (const uint16_t *str, const uint16_t *accept)
+  { return u16_strpbrk (str, accept); }
+#  undef u16_strpbrk
+#  define u16_strpbrk u16_strpbrk_template
+# elif !defined u16_strpbrk
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u16_strpbrk(s,a) \
+      _Generic ((s), \
+                uint16_t const *: (uint16_t const *) u16_strpbrk ((s), (a)), \
+                default         :                    u16_strpbrk ((s), (a)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u32_strpbrk_template (T* str, const uint32_t *accept);
+template <>
+  inline uint32_t * u32_strpbrk_template (uint32_t *str, const uint32_t *accept)
+  { return u32_strpbrk (str, accept); }
+template <>
+  inline const uint32_t * u32_strpbrk_template (const uint32_t *str, const uint32_t *accept)
+  { return u32_strpbrk (str, accept); }
+#  undef u32_strpbrk
+#  define u32_strpbrk u32_strpbrk_template
+# elif !defined u32_strpbrk
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u32_strpbrk(s,a) \
+      _Generic ((s), \
+                uint32_t const *: (uint32_t const *) u32_strpbrk ((s), (a)), \
+                default         :                    u32_strpbrk ((s), (a)))
+#  endif
+# endif
+# ifdef __cplusplus
+extern "C" {
+# endif
+#endif
 
 /* Find the first occurrence of NEEDLE in HAYSTACK.  */
 /* Similar to strstr(), wcsstr().  */
@@ -709,6 +1230,79 @@ extern uint16_t *
 extern uint32_t *
        u32_strstr (const uint32_t *haystack, const uint32_t *needle)
        _UC_ATTRIBUTE_PURE;
+#ifndef _LIBUNISTRING_NO_CONST_GENERICS
+# ifdef __cplusplus
+}
+# endif
+/* Don't silently convert a 'const uintN_t *' to a 'uintN_t *'.  Programmers
+   want compiler warnings for 'const' related mistakes.  */
+# ifdef __cplusplus
+template <typename T>
+  T * u8_strstr_template (T* haystack, const uint8_t *needle);
+template <>
+  inline uint8_t * u8_strstr_template (uint8_t *haystack, const uint8_t *needle)
+  { return u8_strstr (haystack, needle); }
+template <>
+  inline const uint8_t * u8_strstr_template (const uint8_t *haystack, const uint8_t *needle)
+  { return u8_strstr (haystack, needle); }
+#  undef u8_strstr
+#  define u8_strstr u8_strstr_template
+# elif !defined u8_strstr
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u8_strstr(h,n) \
+      _Generic ((h), \
+                uint8_t const *: (uint8_t const *) u8_strstr ((h), (n)), \
+                default        :                   u8_strstr ((h), (n)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u16_strstr_template (T* haystack, const uint16_t *needle);
+template <>
+  inline uint16_t * u16_strstr_template (uint16_t *haystack, const uint16_t *needle)
+  { return u16_strstr (haystack, needle); }
+template <>
+  inline const uint16_t * u16_strstr_template (const uint16_t *haystack, const uint16_t *needle)
+  { return u16_strstr (haystack, needle); }
+#  undef u16_strstr
+#  define u16_strstr u16_strstr_template
+# elif !defined u16_strstr
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u16_strstr(h,n) \
+      _Generic ((h), \
+                uint16_t const *: (uint16_t const *) u16_strstr ((h), (n)), \
+                default         :                    u16_strstr ((h), (n)))
+#  endif
+# endif
+# ifdef __cplusplus
+template <typename T>
+  T * u32_strstr_template (T* haystack, const uint32_t *needle);
+template <>
+  inline uint32_t * u32_strstr_template (uint32_t *haystack, const uint32_t *needle)
+  { return u32_strstr (haystack, needle); }
+template <>
+  inline const uint32_t * u32_strstr_template (const uint32_t *haystack, const uint32_t *needle)
+  { return u32_strstr (haystack, needle); }
+#  undef u32_strstr
+#  define u32_strstr u32_strstr_template
+# elif !defined u32_strstr
+#  if ((__GNUC__ + (__GNUC_MINOR__ >= 9) > 4) || (__clang_major__ >= 3) \
+       || defined __ICC  || defined __TINYC__ \
+       || (__STDC_VERSION__ >= 201112L && !(defined __GNUC__ || defined __clang__)))
+#   define u32_strstr(h,n) \
+      _Generic ((h), \
+                uint32_t const *: (uint32_t const *) u32_strstr ((h), (n)), \
+                default         :                    u32_strstr ((h), (n)))
+#  endif
+# endif
+# ifdef __cplusplus
+extern "C" {
+# endif
+#endif
 
 /* Test whether STR starts with PREFIX.  */
 extern bool
@@ -736,11 +1330,14 @@ extern bool
    This interface is actually more similar to wcstok than to strtok.  */
 /* Similar to strtok_r(), wcstok().  */
 extern uint8_t *
-       u8_strtok (uint8_t *str, const uint8_t *delim, uint8_t **ptr);
+       u8_strtok (uint8_t *_UC_RESTRICT str, const uint8_t *delim,
+                  uint8_t **ptr);
 extern uint16_t *
-       u16_strtok (uint16_t *str, const uint16_t *delim, uint16_t **ptr);
+       u16_strtok (uint16_t *_UC_RESTRICT str, const uint16_t *delim,
+                   uint16_t **ptr);
 extern uint32_t *
-       u32_strtok (uint32_t *str, const uint32_t *delim, uint32_t **ptr);
+       u32_strtok (uint32_t *_UC_RESTRICT str, const uint32_t *delim,
+                   uint32_t **ptr);
 
 
 #ifdef __cplusplus

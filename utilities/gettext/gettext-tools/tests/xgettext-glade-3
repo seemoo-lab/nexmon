@@ -3,7 +3,7 @@
 
 # Test of Glade 2 support.
 
-cat <<EOF > xg-gl-3-empty.glade
+cat <<\EOF > xg-gl-3-empty.glade
 <?xml version="1.0"?>
 <GTK-Interface/>
 EOF
@@ -15,7 +15,7 @@ test $? = 0 || {
   Exit 77
 }
 
-cat <<EOF > xg-gl-3-asciitable.glade2
+cat <<\EOF > xg-gl-3-asciitable.glade2
 <?xml version="1.0" standalone="no"?> <!--*- mode: xml -*-->
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd" >
 
@@ -163,9 +163,7 @@ EOF
 
 : ${XGETTEXT=xgettext}
 ${XGETTEXT} -o xg-gl-3.tmp xg-gl-3-asciitable.glade2  || Exit 1
-# Don't simplify this to "grep ... < xg-gl-3.tmp", otherwise OpenBSD 4.0 grep
-# only outputs "Binary file (standard input) matches".
-cat xg-gl-3.tmp | grep -v 'POT-Creation-Date' > xg-gl-3.pot
+func_filter_POT_Creation_Date xg-gl-3.tmp xg-gl-3.pot
 
 cat <<\EOF > xg-gl-3.ok
 # SOME DESCRIPTIVE TITLE.

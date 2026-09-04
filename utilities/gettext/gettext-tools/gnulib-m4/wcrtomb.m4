@@ -1,8 +1,10 @@
-# wcrtomb.m4 serial 11
-dnl Copyright (C) 2008-2016 Free Software Foundation, Inc.
+# wcrtomb.m4
+# serial 22
+dnl Copyright (C) 2008-2026 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
+dnl This file is offered as-is, without any warranty.
 
 AC_DEFUN([gl_FUNC_WCRTOMB],
 [
@@ -15,15 +17,8 @@ AC_DEFUN([gl_FUNC_WCRTOMB],
   if test $ac_cv_func_wcrtomb = no; then
     HAVE_WCRTOMB=0
     AC_CHECK_DECLS([wcrtomb],,, [[
-/* Tru64 with Desktop Toolkit C has a bug: <stdio.h> must be included before
-   <wchar.h>.
-   BSD/OS 4.0.1 has a bug: <stddef.h>, <stdio.h> and <time.h> must be
-   included before <wchar.h>.  */
-#include <stddef.h>
-#include <stdio.h>
-#include <time.h>
-#include <wchar.h>
-]])
+      #include <wchar.h>
+    ]])
     if test $ac_cv_have_decl_wcrtomb = yes; then
       dnl On Minix 3.1.8, the system's <wchar.h> declares wcrtomb() although
       dnl it does not have the function. Avoid a collision with gnulib's
@@ -31,17 +26,56 @@ AC_DEFUN([gl_FUNC_WCRTOMB],
       REPLACE_WCRTOMB=1
     fi
   else
-    if test $REPLACE_MBSTATE_T = 1; then
-      REPLACE_WCRTOMB=1
-    else
-      dnl On AIX 4.3, OSF/1 5.1 and Solaris 10, wcrtomb (NULL, 0, NULL) sometimes
-      dnl returns 0 instead of 1.
+    dnl We don't actually need to override wcrtomb when redefining the semantics
+    dnl of the mbstate_t type. Tested on 32-bit AIX.
+    dnl if test $REPLACE_MBSTATE_T = 1; then
+    dnl   REPLACE_WCRTOMB=1
+    dnl fi
+    if test $REPLACE_WCRTOMB = 0; then
+      dnl On Android 4.3, wcrtomb produces wrong characters in the C locale.
+      dnl On AIX 4.3 and Solaris <= 11.3, wcrtomb (NULL, 0, NULL)
+      dnl sometimes returns 0 instead of 1.
       AC_REQUIRE([AC_PROG_CC])
       AC_REQUIRE([gt_LOCALE_FR])
-      AC_REQUIRE([gt_LOCALE_FR_UTF8])
+      AC_REQUIRE([gt_LOCALE_EN_UTF8])
       AC_REQUIRE([gt_LOCALE_JA])
       AC_REQUIRE([gt_LOCALE_ZH_CN])
       AC_REQUIRE([AC_CANONICAL_HOST]) dnl for cross-compiles
+      AC_CACHE_CHECK([whether wcrtomb works in the C locale],
+        [gl_cv_func_wcrtomb_works],
+        [AC_RUN_IFELSE(
+           [AC_LANG_SOURCE([[
+#include <string.h>
+#include <stdlib.h>
+#include <wchar.h>
+int main ()
+{
+  mbstate_t state;
+  char out[64];
+  int count;
+  memset (&state, 0, sizeof (state));
+  out[0] = 'x';
+  count = wcrtomb (out, L'a', &state);
+  return !(count == 1 && out[0] == 'a');
+}]])],
+           [gl_cv_func_wcrtomb_works=yes],
+           [gl_cv_func_wcrtomb_works=no],
+           [case "$host_os" in
+                               # Guess no on Android.
+              linux*-android*) gl_cv_func_wcrtomb_works="guessing no";;
+                               # Guess yes otherwise.
+              *)               gl_cv_func_wcrtomb_works="guessing yes";;
+            esac
+           ])
+        ])
+      case "$gl_cv_func_wcrtomb_works" in
+        *yes) ;;
+        *) AC_DEFINE([WCRTOMB_C_LOCALE_BUG], [1],
+             [Define if the wcrtomb function does not work in the C locale.])
+           REPLACE_WCRTOMB=1 ;;
+      esac
+    fi
+    if test $REPLACE_WCRTOMB = 0; then
       AC_CACHE_CHECK([whether wcrtomb return value is correct],
         [gl_cv_func_wcrtomb_retval],
         [
@@ -49,44 +83,50 @@ AC_DEFUN([gl_FUNC_WCRTOMB],
           dnl is present.
 changequote(,)dnl
           case "$host_os" in
-                                     # Guess no on AIX 4, OSF/1 and Solaris.
-            aix4* | osf* | solaris*) gl_cv_func_wcrtomb_retval="guessing no" ;;
-                                     # Guess yes otherwise.
-            *)                       gl_cv_func_wcrtomb_retval="guessing yes" ;;
+            # Guess no on AIX 4, Solaris, native Windows.
+            aix4* | solaris* | mingw* | windows*)
+              gl_cv_func_wcrtomb_retval="guessing no" ;;
+            # Guess yes otherwise.
+            *)
+              gl_cv_func_wcrtomb_retval="guessing yes" ;;
           esac
 changequote([,])dnl
-          if test $LOCALE_FR != none || test $LOCALE_FR_UTF8 != none || test $LOCALE_JA != none || test $LOCALE_ZH_CN != none; then
+          if test $LOCALE_FR != none || test "$LOCALE_EN_UTF8" != none || test $LOCALE_JA != none || test $LOCALE_ZH_CN != none; then
             AC_RUN_IFELSE(
               [AC_LANG_SOURCE([[
 #include <locale.h>
 #include <string.h>
-/* Tru64 with Desktop Toolkit C has a bug: <stdio.h> must be included before
-   <wchar.h>.
-   BSD/OS 4.0.1 has a bug: <stddef.h>, <stdio.h> and <time.h> must be
-   included before <wchar.h>.  */
-#include <stddef.h>
-#include <stdio.h>
-#include <time.h>
 #include <wchar.h>
+#include <stdlib.h>
 int main ()
 {
   int result = 0;
-  if (setlocale (LC_ALL, "$LOCALE_FR") != NULL)
+  if (strcmp ("$LOCALE_FR", "none") != 0
+      && setlocale (LC_ALL, "$LOCALE_FR") != NULL)
     {
       if (wcrtomb (NULL, 0, NULL) != 1)
         result |= 1;
     }
-  if (setlocale (LC_ALL, "$LOCALE_FR_UTF8") != NULL)
+  if (strcmp ("$LOCALE_EN_UTF8", "none") != 0
+      && setlocale (LC_ALL, "$LOCALE_EN_UTF8") != NULL)
     {
       if (wcrtomb (NULL, 0, NULL) != 1)
         result |= 2;
+      {
+        wchar_t wc = (wchar_t) 0xBADFACE;
+        if (mbtowc (&wc, "\303\274", 2) == 2)
+          if (wcrtomb (NULL, wc, NULL) != 1)
+            result |= 2;
+      }
     }
-  if (setlocale (LC_ALL, "$LOCALE_JA") != NULL)
+  if (strcmp ("$LOCALE_JA", "none") != 0
+      && setlocale (LC_ALL, "$LOCALE_JA") != NULL)
     {
       if (wcrtomb (NULL, 0, NULL) != 1)
         result |= 4;
     }
-  if (setlocale (LC_ALL, "$LOCALE_ZH_CN") != NULL)
+  if (strcmp ("$LOCALE_ZH_CN", "none") != 0
+      && setlocale (LC_ALL, "$LOCALE_ZH_CN") != NULL)
     {
       if (wcrtomb (NULL, 0, NULL) != 1)
         result |= 8;
@@ -100,7 +140,9 @@ int main ()
         ])
       case "$gl_cv_func_wcrtomb_retval" in
         *yes) ;;
-        *) REPLACE_WCRTOMB=1 ;;
+        *) AC_DEFINE([WCRTOMB_RETVAL_BUG], [1],
+             [Define if the wcrtomb function has an incorrect return value.])
+           REPLACE_WCRTOMB=1 ;;
       esac
     fi
   fi

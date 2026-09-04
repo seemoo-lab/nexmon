@@ -1,8 +1,8 @@
-# Copyright (C) 2002-2016 Free Software Foundation, Inc.
+# Copyright (C) 2002-2026 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
 # This file is distributed in the hope that it will be useful,
@@ -11,7 +11,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this file.  If not, see <http://www.gnu.org/licenses/>.
+# along with this file.  If not, see <https://www.gnu.org/licenses/>.
 #
 # As a special exception to the GNU General Public License,
 # this file may be distributed as part of a program that
@@ -27,35 +27,111 @@
 
 
 # Specification in the form of a command-line invocation:
-#   gnulib-tool --import --local-dir=gnulib-local --lib=libgrt --source-base=gnulib-lib --m4-base=gnulib-m4 --doc-base=doc --tests-base=tests --aux-dir=../build-aux --no-conditional-dependencies --no-libtool --macro-prefix=gl ansi-c++-opt atexit basename closeout csharpcomp-script error getopt-gnu gettext-h gettext-runtime-misc havelib java javacomp-script memmove progname propername relocatable-prog setlocale sigpipe stdbool stdio stdlib strtoul unlocked-io xalloc
+# gnulib-tool --import \
+#  --local-dir=gnulib-local \
+#  --lib=libgrt \
+#  --source-base=gnulib-lib \
+#  --m4-base=gnulib-m4 \
+#  --doc-base=doc \
+#  --tests-base=tests \
+#  --aux-dir=../build-aux \
+#  --no-conditional-dependencies \
+#  --no-libtool \
+#  --macro-prefix=gl \
+#  ansi-c++-opt \
+#  atexit \
+#  attribute \
+#  basename-lgpl \
+#  binary-io \
+#  bool \
+#  c-ctype \
+#  c-strtold \
+#  closeout \
+#  csharpcomp-script \
+#  d \
+#  dcomp-script \
+#  error \
+#  fzprintf-posix \
+#  gettext-h \
+#  gettext-runtime-misc \
+#  havelib \
+#  java \
+#  javacomp-script \
+#  manywarnings \
+#  mbrtoc32 \
+#  mbszero \
+#  memmove \
+#  modula2 \
+#  modula2comp-script \
+#  noreturn \
+#  options \
+#  progname \
+#  propername \
+#  quote \
+#  relocatable-prog \
+#  setlocale \
+#  sigpipe \
+#  stdint-h \
+#  stdio-h \
+#  stdlib-h \
+#  strtoimax \
+#  strtold \
+#  strtoul \
+#  strtoumax \
+#  unistd-h \
+#  unlocked-io \
+#  xalloc \
+#  xstring-buffer \
+#  xstrtold
 
 # Specification in the form of a few gnulib-tool.m4 macro invocations:
 gl_LOCAL_DIR([../gnulib-local])
 gl_MODULES([
   ansi-c++-opt
   atexit
-  basename
+  attribute
+  basename-lgpl
+  binary-io
+  bool
+  c-ctype
+  c-strtold
   closeout
   csharpcomp-script
+  d
+  dcomp-script
   error
-  getopt-gnu
+  fzprintf-posix
   gettext-h
   gettext-runtime-misc
   havelib
   java
   javacomp-script
+  manywarnings
+  mbrtoc32
+  mbszero
   memmove
+  modula2
+  modula2comp-script
+  noreturn
+  options
   progname
   propername
+  quote
   relocatable-prog
   setlocale
   sigpipe
-  stdbool
-  stdio
-  stdlib
+  stdint-h
+  stdio-h
+  stdlib-h
+  strtoimax
+  strtold
   strtoul
+  strtoumax
+  unistd-h
   unlocked-io
   xalloc
+  xstring-buffer
+  xstrtold
 ])
 gl_AVOID([])
 gl_SOURCE_BASE([gnulib-lib])

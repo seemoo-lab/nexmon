@@ -3,13 +3,13 @@
 
 # Test --omit-header option when there is no header.
 
-cat <<EOF > mcomm-test3.in1
+cat <<\EOF > mcomm-test3.in1
 #: first.c:123
 msgid "1"
 msgstr "1x"
 EOF
 
-cat <<EOF > mcomm-test3.in2
+cat <<\EOF > mcomm-test3.in2
 #: hunt.c:759
 msgid "2"
 msgstr "2x"

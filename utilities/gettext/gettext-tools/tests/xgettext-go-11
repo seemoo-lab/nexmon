@@ -1,0 +1,42 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: import statements and package shortnames.
+
+cat <<\EOF > xg-go-11.go
+package main
+
+import "fmt"
+import foo "github.com/leonelquinteros/gotext"
+
+type S struct {
+}
+
+func (S) Get (s string) string {
+	return s
+}
+
+var gotext = new (S)
+
+func main () {
+	// Specify localedir, domain.
+	foo.Configure(".", "fr_FR", "hello")
+
+	fmt.Println(gotext.Get("Test 1"))
+	fmt.Println(foo.Get("Test 2"))
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-go-11.tmp xg-go-11.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-11.tmp.po > xg-go-11.po || Exit 1
+
+cat <<\EOF > xg-go-11.ok
+msgid "Test 2"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-11.ok xg-go-11.po || Exit 1
+
+exit 0

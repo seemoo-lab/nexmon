@@ -1,19 +1,19 @@
 /* Character set conversion with error handling and autodetection.
-   Copyright (C) 2002, 2005, 2007, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2005, 2007, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -84,15 +84,6 @@ int
 uniconv_register_autodetect (const char *name,
                              const char * const *try_in_order)
 {
-  size_t namelen;
-  size_t listlen;
-  size_t memneed;
-  size_t i;
-  char *memory;
-  struct autodetect_alias *new_alias;
-  char *new_name;
-  const char **new_try_in_order;
-
   /* The TRY_IN_ORDER list must not be empty.  */
   if (try_in_order[0] == NULL)
     {
@@ -102,33 +93,39 @@ uniconv_register_autodetect (const char *name,
 
   /* We must deep-copy NAME and TRY_IN_ORDER, because they may be allocated
      with dynamic extent.  */
-  namelen = strlen (name) + 1;
-  memneed = sizeof (struct autodetect_alias) + namelen + sizeof (char *);
-  for (i = 0; try_in_order[i] != NULL; i++)
-    memneed += sizeof (char *) + strlen (try_in_order[i]) + 1;
-  listlen = i;
+  size_t namelen = strlen (name) + 1;
+  size_t memneed = sizeof (struct autodetect_alias) + namelen + sizeof (char *);
+  size_t listlen;
+  {
+    size_t i;
+    for (i = 0; try_in_order[i] != NULL; i++)
+      memneed += sizeof (char *) + strlen (try_in_order[i]) + 1;
+    listlen = i;
+  }
 
-  memory = (char *) malloc (memneed);
+  void *memory = malloc (memneed);
   if (memory != NULL)
     {
-      new_alias = (struct autodetect_alias *) memory;
-      memory += sizeof (struct autodetect_alias);
+      struct autodetect_alias *new_alias = memory;
+      memory = new_alias + 1;
 
-      new_try_in_order = (const char **) memory;
-      memory += (listlen + 1) * sizeof (char *);
+      char const **new_try_in_order = memory;
+      memory = new_try_in_order + listlen + 1;
 
-      new_name = (char *) memory;
-      memcpy (new_name, name, namelen);
-      memory += namelen;
+      char *new_name = memcpy (memory, name, namelen);
+      memory = new_name + namelen;
 
-      for (i = 0; i < listlen; i++)
-        {
-          size_t len = strlen (try_in_order[i]) + 1;
-          memcpy (memory, try_in_order[i], len);
-          new_try_in_order[i] = (const char *) memory;
-          memory += len;
-        }
-      new_try_in_order[i] = NULL;
+      {
+        size_t i;
+        for (i = 0; i < listlen; i++)
+          {
+            size_t len = strlen (try_in_order[i]) + 1;
+            char *copy = memcpy (memory, try_in_order[i], len);
+            new_try_in_order[i] = copy;
+            memory = copy + len;
+          }
+        new_try_in_order[i] = NULL;
+      }
 
       /* Now insert the new alias.  */
       new_alias->name = new_name;
@@ -160,19 +157,17 @@ mem_iconveha_notranslit (const char *src, size_t srclen,
     return retval;
   else
     {
-      struct autodetect_alias *alias;
-
       /* Unsupported from_codeset or to_codeset. Check whether the caller
          requested autodetection.  */
-      for (alias = autodetect_list; alias != NULL; alias = alias->next)
-        if (strcmp (from_codeset, alias->name) == 0)
+      for (struct autodetect_alias *alias = autodetect_list;
+           alias != NULL;
+           alias = alias->next)
+        if (streq (from_codeset, alias->name))
           {
-            const char * const *encodings;
-
             if (handler != iconveh_error)
               {
                 /* First try all encodings without any forgiving.  */
-                encodings = alias->encodings_to_try;
+                const char * const *encodings = alias->encodings_to_try;
                 do
                   {
                     retval = mem_iconveha_notranslit (src, srclen,
@@ -186,7 +181,7 @@ mem_iconveha_notranslit (const char *src, size_t srclen,
                 while (*encodings != NULL);
               }
 
-            encodings = alias->encodings_to_try;
+            const char * const *encodings = alias->encodings_to_try;
             do
               {
                 retval = mem_iconveha_notranslit (src, srclen,
@@ -224,22 +219,27 @@ mem_iconveha (const char *src, size_t srclen,
       return 0;
     }
 
-  /* When using GNU libc >= 2.2 or GNU libiconv >= 1.5,
-     we want to use transliteration.  */
+  /* When using GNU libc >= 2.2 or GNU libiconv >= 1.5 or Citrus/FreeBSD/macOS
+     iconv, we want to use transliteration.  */
 #if (((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2) || __GLIBC__ > 2) \
      && !defined __UCLIBC__) \
-    || _LIBICONV_VERSION >= 0x0105
+    || _LIBICONV_VERSION >= 0x0105 \
+    || defined ICONV_SET_TRANSLITERATE
   if (transliterate)
     {
-      int retval;
       size_t len = strlen (to_codeset);
       char *to_codeset_suffixed = (char *) malloca (len + 10 + 1);
+      if (to_codeset_suffixed == NULL)
+        {
+          errno = ENOMEM;
+          return -1;
+        }
       memcpy (to_codeset_suffixed, to_codeset, len);
       memcpy (to_codeset_suffixed + len, "//TRANSLIT", 10 + 1);
 
-      retval = mem_iconveha_notranslit (src, srclen,
-                                        from_codeset, to_codeset_suffixed,
-                                        handler, offsets, resultp, lengthp);
+      int retval = mem_iconveha_notranslit (src, srclen,
+                                            from_codeset, to_codeset_suffixed,
+                                            handler, offsets, resultp, lengthp);
 
       freea (to_codeset_suffixed);
 
@@ -264,19 +264,17 @@ str_iconveha_notranslit (const char *src,
     return result;
   else
     {
-      struct autodetect_alias *alias;
-
       /* Unsupported from_codeset or to_codeset. Check whether the caller
          requested autodetection.  */
-      for (alias = autodetect_list; alias != NULL; alias = alias->next)
-        if (strcmp (from_codeset, alias->name) == 0)
+      for (struct autodetect_alias *alias = autodetect_list;
+           alias != NULL;
+           alias = alias->next)
+        if (streq (from_codeset, alias->name))
           {
-            const char * const *encodings;
-
             if (handler != iconveh_error)
               {
                 /* First try all encodings without any forgiving.  */
-                encodings = alias->encodings_to_try;
+                const char * const *encodings = alias->encodings_to_try;
                 do
                   {
                     result = str_iconveha_notranslit (src,
@@ -289,7 +287,7 @@ str_iconveha_notranslit (const char *src,
                 while (*encodings != NULL);
               }
 
-            encodings = alias->encodings_to_try;
+            const char * const *encodings = alias->encodings_to_try;
             do
               {
                 result = str_iconveha_notranslit (src,
@@ -326,21 +324,27 @@ str_iconveha (const char *src,
       return result;
     }
 
-  /* When using GNU libc >= 2.2 or GNU libiconv >= 1.5,
-     we want to use transliteration.  */
+  /* When using GNU libc >= 2.2 or GNU libiconv >= 1.5 or Citrus/FreeBSD/macOS
+     iconv, we want to use transliteration.  */
 #if (((__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2) || __GLIBC__ > 2) \
      && !defined __UCLIBC__) \
-    || _LIBICONV_VERSION >= 0x0105
+    || _LIBICONV_VERSION >= 0x0105 \
+    || defined ICONV_SET_TRANSLITERATE
   if (transliterate)
     {
-      char *result;
       size_t len = strlen (to_codeset);
       char *to_codeset_suffixed = (char *) malloca (len + 10 + 1);
+      if (to_codeset_suffixed == NULL)
+        {
+          errno = ENOMEM;
+          return NULL;
+        }
       memcpy (to_codeset_suffixed, to_codeset, len);
       memcpy (to_codeset_suffixed + len, "//TRANSLIT", 10 + 1);
 
-      result = str_iconveha_notranslit (src, from_codeset, to_codeset_suffixed,
-                                        handler);
+      char *result =
+        str_iconveha_notranslit (src, from_codeset, to_codeset_suffixed,
+                                 handler);
 
       freea (to_codeset_suffixed);
 

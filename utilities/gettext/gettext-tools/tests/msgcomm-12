@@ -6,7 +6,7 @@
 
 # unique msg in in3
 
-cat <<EOF > mcomm-test12.in1
+cat <<\EOF > mcomm-test12.in1
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"
@@ -24,7 +24,7 @@ msgid "1"
 msgstr "1x"
 EOF
 
-cat <<EOF > mcomm-test12.in2
+cat <<\EOF > mcomm-test12.in2
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"
@@ -42,7 +42,7 @@ msgid "1"
 msgstr ""
 EOF
 
-cat <<EOF > mcomm-test12.in3
+cat <<\EOF > mcomm-test12.in3
 msgid ""
 msgstr ""
 "Project-Id-Version: GNU one 1.2.3\n"

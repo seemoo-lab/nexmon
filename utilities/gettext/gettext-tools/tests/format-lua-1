@@ -50,6 +50,12 @@ cat <<\EOF > f-lu-1.data
 "abc%T"
 # Invalid: unknown modifier
 "abc%lf"
+# Invalid: width with more than two digits
+"abc%120f"
+# Valid: null precision
+"abc%.f"
+# Invalid: precision with more than two digits
+"abc%.120f"
 # Invalid: extra precision
 "abc%1.1.1f"
 # Invalid: unterminated

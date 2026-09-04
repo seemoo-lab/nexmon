@@ -1,7 +1,5 @@
 /* Get the contents of an URL.
-   Copyright (C) 2001-2003, 2005-2010, 2012, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,28 +12,29 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include <config.h>
 
 #include <errno.h>
 #include <fcntl.h>
-#include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <locale.h>
 #include <unistd.h>
 
+#include <error.h>
+#include "options.h"
+#include "noreturn.h"
 #include "closeout.h"
-#include "error.h"
 #include "error-progname.h"
 #include "progname.h"
 #include "relocatable.h"
-#include "basename.h"
+#include "basename-lgpl.h"
 #include "full-write.h"
 #include "execute.h"
 #include "javaexec.h"
@@ -69,84 +68,79 @@
    produces no output for more than 10 seconds for no apparent reason.  */
 static bool verbose = true;
 
-/* Long options.  */
-static const struct option long_options[] =
-{
-  { "help", no_argument, NULL, 'h' },
-  { "quiet", no_argument, NULL, 'q' },
-  { "silent", no_argument, NULL, 'q' },
-  { "version", no_argument, NULL, 'V' },
-  { NULL, 0, NULL, 0 }
-};
-
 
 /* Forward declaration of local functions.  */
-static void usage (int status)
-#if defined __GNUC__ && ((__GNUC__ == 2 && __GNUC_MINOR__ >= 5) || __GNUC__ > 2)
-     __attribute__ ((noreturn))
-#endif
-;
+_GL_NORETURN_FUNC static void usage (int status);
 static void fetch (const char *url, const char *file);
 
 
 int
 main (int argc, char *argv[])
 {
-  int optchar;
-  bool do_help;
-  bool do_version;
-
   /* Set program name for messages.  */
   set_program_name (argv[0]);
   error_print_progname = maybe_print_progname;
 
-#ifdef HAVE_SETLOCALE
   /* Set locale via LC_ALL.  */
   setlocale (LC_ALL, "");
-#endif
 
   /* Set the text message domain.  */
   bindtextdomain (PACKAGE, relocate (LOCALEDIR));
+  bindtextdomain ("gnulib", relocate (GNULIB_LOCALEDIR));
   textdomain (PACKAGE);
 
   /* Ensure that write errors on stdout are detected.  */
   atexit (close_stdout);
 
-  /* Set default values for variables.  */
-  do_help = false;
-  do_version = false;
+  /* Default values for command line options.  */
+  bool do_help = false;
+  bool do_version = false;
 
   /* Parse command line options.  */
-  while ((optchar = getopt_long (argc, argv, "hqV", long_options, NULL)) != EOF)
-    switch (optchar)
-    {
-    case '\0':          /* Long option.  */
-      break;
-    case 'h':           /* --help */
-      do_help = true;
-      break;
-    case 'q':           /* --quiet / --silent */
-      verbose = false;
-      break;
-    case 'V':           /* --version */
-      do_version = true;
-      break;
-    default:
-      usage (EXIT_FAILURE);
-      /* NOTREACHED */
-    }
+  BEGIN_ALLOW_OMITTING_FIELD_INITIALIZERS
+  static const struct program_option options[] =
+  {
+    { "help",    'h', no_argument },
+    { "quiet",   'q', no_argument },
+    { "silent",  'q', no_argument },
+    { "version", 'V', no_argument },
+  };
+  END_ALLOW_OMITTING_FIELD_INITIALIZERS
+  start_options (argc, argv, options, MOVE_OPTIONS_FIRST, 0);
+  {
+    int optchar;
+    while ((optchar = get_next_option ()) != -1)
+      switch (optchar)
+        {
+        case '\0':          /* Long option with key == 0.  */
+          break;
+        case 'h':           /* --help */
+          do_help = true;
+          break;
+        case 'q':           /* --quiet / --silent */
+          verbose = false;
+          break;
+        case 'V':           /* --version */
+          do_version = true;
+          break;
+        default:
+          usage (EXIT_FAILURE);
+          /* NOTREACHED */
+        }
+  }
 
   /* Version information requested.  */
   if (do_version)
     {
-      printf ("%s (GNU %s) %s\n", basename (program_name), PACKAGE, VERSION);
+      printf ("%s (GNU %s) %s\n", last_component (program_name),
+              PACKAGE, VERSION);
       /* xgettext: no-wrap */
       printf (_("Copyright (C) %s Free Software Foundation, Inc.\n\
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n\
+License GPLv3+: GNU GPL version 3 or later <%s>\n\
 This is free software: you are free to change and redistribute it.\n\
 There is NO WARRANTY, to the extent permitted by law.\n\
 "),
-              "2001-2003, 2005-2009");
+              "2001-2026", "https://gnu.org/licenses/gpl.html");
       printf (_("Written by %s.\n"), proper_name ("Bruno Haible"));
       exit (EXIT_SUCCESS);
     }
@@ -193,12 +187,16 @@ Informative output:\n"));
       printf (_("\
   -q, --quiet, --silent       suppress progress indicators\n"));
       printf ("\n");
-      /* TRANSLATORS: The placeholder indicates the bug-reporting address
-         for this package.  Please add _another line_ saying
+      /* TRANSLATORS: The first placeholder is the web address of the Savannah
+         project of this package.  The second placeholder is the bug-reporting
+         email address for this package.  Please add _another line_ saying
          "Report translation bugs to <...>\n" with the address for translation
          bugs (typically your translation team's web or email address).  */
-      fputs (_("Report bugs to <bug-gnu-gettext@gnu.org>.\n"),
-             stdout);
+      printf (_("\
+Report bugs in the bug tracker at <%s>\n\
+or by email to <%s>.\n"),
+             "https://savannah.gnu.org/projects/gettext",
+             "bug-gettext@gnu.org");
     }
 
   exit (status);
@@ -208,17 +206,16 @@ Informative output:\n"));
 static void
 cat_file (const char *src_filename)
 {
-  int src_fd;
-  char buf[4096];
-  const int buf_size = sizeof (buf);
-
-  src_fd = open (src_filename, O_RDONLY | O_BINARY);
+  int src_fd = open (src_filename, O_RDONLY | O_BINARY);
   if (src_fd < 0)
     error (EXIT_FAILURE, errno, _("error while opening \"%s\" for reading"),
            src_filename);
 
   for (;;)
     {
+      char buf[4096];
+      const int buf_size = sizeof (buf);
+
       ssize_t n_read = read (src_fd, buf, buf_size);
       if (n_read < 0)
         {
@@ -239,22 +236,26 @@ cat_file (const char *src_filename)
     error (EXIT_FAILURE, errno, _("error after reading \"%s\""), src_filename);
 }
 
+#if USEJAVA
+
 /* Exit code of the Java program.  */
 static int java_exitcode;
 
 static bool
 execute_it (const char *progname,
-            const char *prog_path, char **prog_argv,
+            const char *prog_path, const char * const *prog_argv,
             void *private_data)
 {
   (void) private_data;
 
   java_exitcode =
-    execute (progname, prog_path, prog_argv, true, true, false, false, true,
-             false, NULL);
+    execute (progname, prog_path, prog_argv, NULL, NULL,
+             true, true, false, false, true, false, NULL);
   /* Exit code 0 means success, 2 means timed out.  */
   return !(java_exitcode == 0 || java_exitcode == 2);
 }
+
+#endif
 
 /* Fetch the URL.  Upon error, use the FILE as fallback.  */
 static void
@@ -270,33 +271,21 @@ fetch (const char *url, const char *file)
   /* First try: using Java.  */
   {
     const char *class_name = "gnu.gettext.GetURL";
-    const char *gettextjexedir;
-    const char *gettextjar;
-    const char *args[2];
-
-# if USEJEXE
-    /* Make it possible to override the executable's location.  This is
-       necessary for running the testsuite before "make install".  */
-    gettextjexedir = getenv ("GETTEXTJEXEDIR");
-    if (gettextjexedir == NULL || gettextjexedir[0] == '\0')
-      gettextjexedir = relocate (GETTEXTJEXEDIR);
-# else
-    gettextjexedir = NULL;
-# endif
 
     /* Make it possible to override the gettext.jar location.  This is
        necessary for running the testsuite before "make install".  */
-    gettextjar = getenv ("GETTEXTJAR");
+    const char *gettextjar = getenv ("GETTEXTJAR");
     if (gettextjar == NULL || gettextjar[0] == '\0')
       gettextjar = relocate (GETTEXTJAR);
 
     /* Prepare arguments.  */
+    const char *args[2];
     args[0] = url;
     args[1] = NULL;
 
     /* Fetch the URL's contents.  */
     java_exitcode = 127;
-    if (!execute_java_class (class_name, &gettextjar, 1, true, gettextjexedir,
+    if (!execute_java_class (class_name, &gettextjar, 1, true, NULL,
                              args,
                              false, true,
                              execute_it, NULL))
@@ -321,31 +310,30 @@ fetch (const char *url, const char *file)
     if (!wget_tested)
       {
         /* Test for presence of wget: "wget --version > /dev/null"  */
-        char *argv[3];
-        int exitstatus;
-
+        const char *argv[3];
         argv[0] = "wget";
         argv[1] = "--version";
         argv[2] = NULL;
-        exitstatus = execute ("wget", "wget", argv, false, false, true, true,
-                              true, false, NULL);
+
+        int exitstatus = execute ("wget", "wget", argv, NULL, NULL,
+                                  false, false, true, true, true, false, NULL);
         wget_present = (exitstatus == 0);
         wget_tested = true;
       }
 
     if (wget_present)
       {
-        char *argv[8];
-        int exitstatus;
-
+        const char *argv[10];
         argv[0] = "wget";
-        argv[1] = "-q";
-        argv[2] = "-O"; argv[3] = "-";
-        argv[4] = "-T"; argv[5] = "30";
-        argv[6] = (char *) url;
-        argv[7] = NULL;
-        exitstatus = execute ("wget", "wget", argv, true, false, false, false,
-                              true, false, NULL);
+        argv[1] = "--quiet";
+        argv[2] = "--output-document"; argv[3] = "-";
+        argv[4] = "--timeout"; argv[5] = "30";
+        argv[6] = "--user-agent"; argv[7] = "urlget";
+        argv[8] = url;
+        argv[9] = NULL;
+
+        int exitstatus = execute ("wget", "wget", argv, NULL, NULL,
+                                  true, false, false, false, true, false, NULL);
         if (exitstatus != 127)
           {
             if (exitstatus != 0)
@@ -365,29 +353,28 @@ fetch (const char *url, const char *file)
     if (!lynx_tested)
       {
         /* Test for presence of lynx: "lynx --version > /dev/null"  */
-        char *argv[3];
-        int exitstatus;
-
+        const char *argv[3];
         argv[0] = "lynx";
         argv[1] = "--version";
         argv[2] = NULL;
-        exitstatus = execute ("lynx", "lynx", argv, false, false, true, true,
-                              true, false, NULL);
+
+        int exitstatus = execute ("lynx", "lynx", argv, NULL, NULL,
+                                  false, false, true, true, true, false, NULL);
         lynx_present = (exitstatus == 0);
         lynx_tested = true;
       }
 
     if (lynx_present)
       {
-        char *argv[4];
-        int exitstatus;
-
+        const char *argv[5];
         argv[0] = "lynx";
-        argv[1] = "-source";
-        argv[2] = (char *) url;
-        argv[3] = NULL;
-        exitstatus = execute ("lynx", "lynx", argv, true, false, false, false,
-                              true, false, NULL);
+        argv[1] = "-useragent=urlget";
+        argv[2] = "-source";
+        argv[3] = url;
+        argv[4] = NULL;
+
+        int exitstatus = execute ("lynx", "lynx", argv, NULL, NULL,
+                                  true, false, false, false, true, false, NULL);
         if (exitstatus != 127)
           {
             if (exitstatus != 0)
@@ -407,29 +394,28 @@ fetch (const char *url, const char *file)
     if (!curl_tested)
       {
         /* Test for presence of curl: "curl --version > /dev/null"  */
-        char *argv[3];
-        int exitstatus;
-
+        const char *argv[3];
         argv[0] = "curl";
         argv[1] = "--version";
         argv[2] = NULL;
-        exitstatus = execute ("curl", "curl", argv, false, false, true, true,
-                              true, false, NULL);
+
+        int exitstatus = execute ("curl", "curl", argv, NULL, NULL,
+                                  false, false, true, true, true, false, NULL);
         curl_present = (exitstatus == 0 || exitstatus == 2);
         curl_tested = true;
       }
 
     if (curl_present)
       {
-        char *argv[4];
-        int exitstatus;
-
+        const char *argv[6];
         argv[0] = "curl";
         argv[1] = "--silent";
-        argv[2] = (char *) url;
-        argv[3] = NULL;
-        exitstatus = execute ("curl", "curl", argv, true, false, false, false,
-                              true, false, NULL);
+        argv[2] = "--user-agent"; argv[3] = "urlget";
+        argv[4] = url;
+        argv[5] = NULL;
+
+        int exitstatus = execute ("curl", "curl", argv, NULL, NULL,
+                                  true, false, false, false, true, false, NULL);
         if (exitstatus != 127)
           {
             if (exitstatus != 0)

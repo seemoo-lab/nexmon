@@ -3,170 +3,102 @@
 # This file is distributed under the same license as the gettext package.
 #
 # Bang Jun-Young <bangjy@geocities.com>, 1995-1997.
-# Changwoo Ryu <cwryu@debian.org>, 2001-2006, 2009, 2010, 2013, 2015.
+# Changwoo Ryu <cwryu@debian.org>, 2001-2006, 2009, 2010, 2013, 2015, 2019-2020, 2025.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: GNU gettext-runtime 0.19.4.73\n"
-"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"POT-Creation-Date: 2016-06-11 22:08+0900\n"
-"PO-Revision-Date: 2015-06-28 05:22+0900\n"
+"Project-Id-Version: GNU gettext-runtime 0.26-pre1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2025-06-28 23:48+0200\n"
+"PO-Revision-Date: 2025-07-10 15:28+0200\n"
 "Last-Translator: Changwoo Ryu <cwryu@debian.org>\n"
 "Language-Team: Korean <translation-team-ko@googlegroups.com>\n"
 "Language: ko\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8-bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: gnulib-lib/closeout.c:66
-msgid "write error"
-msgstr "쓰기 오류"
-
-#: gnulib-lib/error.c:191
-msgid "Unknown system error"
-msgstr "알 수 없는 시스템 오류"
-
-#: gnulib-lib/getopt.c:575 gnulib-lib/getopt.c:604
-#, c-format
-msgid "%s: option '%s' is ambiguous; possibilities:"
-msgstr "%s: '%s' 옵션은 모호한 옵션입니다. 가능한 옵션은:"
-
-#: gnulib-lib/getopt.c:619
-#, c-format
-msgid "%s: option '%s' is ambiguous\n"
-msgstr "%s: '%s' 옵션은 모호한 옵션입니다\n"
-
-#: gnulib-lib/getopt.c:654 gnulib-lib/getopt.c:658
-#, c-format
-msgid "%s: option '--%s' doesn't allow an argument\n"
-msgstr "%s: '--%s' 옵션은 인수를 허용하지 않습니다\n"
-
-#: gnulib-lib/getopt.c:667 gnulib-lib/getopt.c:672
-#, c-format
-msgid "%s: option '%c%s' doesn't allow an argument\n"
-msgstr "%s: '%c%s' 옵션은 인수를 허용하지 않습니다\n"
-
-#: gnulib-lib/getopt.c:715 gnulib-lib/getopt.c:734
-#, c-format
-msgid "%s: option '--%s' requires an argument\n"
-msgstr "%s: '--%s' 옵션은 인수가 필요합니다\n"
-
-#: gnulib-lib/getopt.c:772 gnulib-lib/getopt.c:775
-#, c-format
-msgid "%s: unrecognized option '--%s'\n"
-msgstr "%s: 인식할 수 없는 옵션 '--%s'\n"
-
-#: gnulib-lib/getopt.c:783 gnulib-lib/getopt.c:786
-#, c-format
-msgid "%s: unrecognized option '%c%s'\n"
-msgstr "%s: 인식할 수 없는 옵션 '%c%s'\n"
-
-#: gnulib-lib/getopt.c:835 gnulib-lib/getopt.c:838
-#, c-format
-msgid "%s: invalid option -- '%c'\n"
-msgstr "%s: 잘못된 옵션 -- '%c'\n"
-
-#: gnulib-lib/getopt.c:891 gnulib-lib/getopt.c:908 gnulib-lib/getopt.c:1118
-#: gnulib-lib/getopt.c:1136
-#, c-format
-msgid "%s: option requires an argument -- '%c'\n"
-msgstr "%s: 이 옵션은 인수가 필요합니다 -- '%c'\n"
-
-#: gnulib-lib/getopt.c:964 gnulib-lib/getopt.c:980
-#, c-format
-msgid "%s: option '-W %s' is ambiguous\n"
-msgstr "%s: '-W %s' 옵션은 모호한 옵션입니다\n"
-
-#: gnulib-lib/getopt.c:1004 gnulib-lib/getopt.c:1022
-#, c-format
-msgid "%s: option '-W %s' doesn't allow an argument\n"
-msgstr "%s: '-W %s' 옵션은 인수를 허용하지 않습니다\n"
-
-#: gnulib-lib/getopt.c:1043 gnulib-lib/getopt.c:1061
-#, c-format
-msgid "%s: option '-W %s' requires an argument\n"
-msgstr "%s: '-W %s' 옵션은 인수가 필요합니다\n"
-
-#: gnulib-lib/xmalloc.c:38
-#, c-format
-msgid "memory exhausted"
-msgstr "메모리가 바닥났습니다"
-
-#: src/envsubst.c:112 src/gettext.c:134 src/ngettext.c:123
+#: src/envsubst.c:112 src/gettext.c:138 src/ngettext.c:128
+#: src/printf_gettext.c:111 src/printf_ngettext.c:116
 #, c-format, no-wrap
 msgid ""
 "Copyright (C) %s Free Software Foundation, Inc.\n"
-"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+"License GPLv3+: GNU GPL version 3 or later <%s>\n"
 "This is free software: you are free to change and redistribute it.\n"
 "There is NO WARRANTY, to the extent permitted by law.\n"
 msgstr ""
 "Copyright (C) %s Free Software Foundation, Inc.\n"
-"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+"License GPLv3+: GNU GPL version 3 or later <%s>\n"
 "This is free software: you are free to change and redistribute it.\n"
 "There is NO WARRANTY, to the extent permitted by law.\n"
 
-#: src/envsubst.c:118 src/gettext.c:140 src/ngettext.c:129
+#: src/envsubst.c:118 src/gettext.c:144 src/ngettext.c:134
+#: src/printf_gettext.c:117 src/printf_ngettext.c:122
 #, c-format
 msgid "Written by %s.\n"
 msgstr "%s이(가) 만들었습니다.\n"
 
 #. This is a proper name. See the gettext manual, section Names.
-#: src/envsubst.c:118
+#: src/envsubst.c:118 src/printf_gettext.c:117 src/printf_ngettext.c:122
 msgid "Bruno Haible"
 msgstr "Bruno Haible"
 
-#: src/envsubst.c:127 src/gettext.c:158 src/ngettext.c:141
+#: src/envsubst.c:127 src/gettext.c:162 src/ngettext.c:146
 #, c-format
 msgid "too many arguments"
 msgstr "인수가 너무 많음"
 
-#: src/envsubst.c:138 src/gettext.c:168 src/ngettext.c:153
+#: src/envsubst.c:138 src/gettext.c:172 src/ngettext.c:158
+#: src/printf_ngettext.c:133
 #, c-format
 msgid "missing arguments"
 msgstr "인수가 빠졌음"
 
-#: src/envsubst.c:171 src/gettext.c:239 src/ngettext.c:207
+#: src/envsubst.c:176 src/gettext.c:249 src/ngettext.c:216
+#: src/printf_gettext.c:165 src/printf_ngettext.c:197
 #, c-format
 msgid "Try '%s --help' for more information.\n"
 msgstr "더 많은 정보를 보려면 '%s --help' 하십시오.\n"
 
-#: src/envsubst.c:176
+#: src/envsubst.c:181
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION] [SHELL-FORMAT]\n"
 msgstr "사용법: %s [<옵션>] [<쉘-형식>]\n"
 
-#: src/envsubst.c:181
+#: src/envsubst.c:186
 #, c-format, no-wrap
 msgid "Substitutes the values of environment variables.\n"
 msgstr "환경 변수 값을 치환합니다.\n"
 
-#: src/envsubst.c:185
+#: src/envsubst.c:190
 #, c-format, no-wrap
 msgid "Operation mode:\n"
 msgstr "동작 모드:\n"
 
-#: src/envsubst.c:188
+#: src/envsubst.c:193
 #, c-format, no-wrap
 msgid "  -v, --variables             output the variables occurring in SHELL-FORMAT\n"
 msgstr "  -v, --variables             <쉘-형식>에 나오는 변수를 출력합니다\n"
 
-#: src/envsubst.c:192
+#: src/envsubst.c:197 src/gettext.c:280 src/ngettext.c:248
+#: src/printf_gettext.c:188 src/printf_ngettext.c:224
 #, c-format, no-wrap
 msgid "Informative output:\n"
 msgstr "정보 출력:\n"
 
-#: src/envsubst.c:195
+#: src/envsubst.c:200
 #, c-format, no-wrap
 msgid "  -h, --help                  display this help and exit\n"
 msgstr "  -h, --help                  이 도움말을 표시하고 끝납니다\n"
 
-#: src/envsubst.c:198
+#: src/envsubst.c:203
 #, c-format, no-wrap
 msgid "  -V, --version               output version information and exit\n"
 msgstr "  -V, --version               버전 정보를 표시하고 끝납니다\n"
 
-#: src/envsubst.c:202
+#: src/envsubst.c:207
 #, c-format, no-wrap
 msgid ""
 "In normal operation mode, standard input is copied to standard output,\n"
@@ -178,10 +110,10 @@ msgid ""
 msgstr ""
 "일반 동작 모드에서는, 표준 입력을 표준 출력으로 복사합니다. 이 때, $변수 혹은\n"
 "${변수} 형식의 환경 변수는 해당되는 환경 변수 값으로 치환합니다.  만약\n"
-"<쉘-형식>을 쓰면, <쉘-형식>에서 사용한 환경 변수만 치환합니다; <쉘-형식>을\n"
+"<쉘-형식>을 쓰면, <쉘-형식>에서 사용한 환경 변수만 치환합니다. <쉘-형식>을\n"
 "쓰지 않으면 표준 입력의 모든 환경 변수를 치환합니다.\n"
 
-#: src/envsubst.c:211
+#: src/envsubst.c:216
 #, c-format, no-wrap
 msgid ""
 "When --variables is used, standard input is ignored, and the output consists\n"
@@ -190,29 +122,36 @@ msgstr ""
 "--variables 옵션을 사용하면, 표준 입력을 무시하고, <쉘-형식>에 참조된 환경 변수를\n"
 "한 줄에 하나씩 출력합니다.\n"
 
-#. TRANSLATORS: The placeholder indicates the bug-reporting address
-#. for this package.  Please add _another line_ saying
+#. TRANSLATORS: The first placeholder is the web address of the Savannah
+#. project of this package.  The second placeholder is the bug-reporting
+#. email address for this package.  Please add _another line_ saying
 #. "Report translation bugs to <...>\n" with the address for translation
 #. bugs (typically your translation team's web or email address).
-#: src/envsubst.c:219 src/gettext.c:280 src/ngettext.c:245
-msgid "Report bugs to <bug-gnu-gettext@gnu.org>.\n"
-msgstr "<bug-gnu-gettext@gnu.org>로 문제점을 알려 주십시오.\n"
+#: src/envsubst.c:225 src/gettext.c:304 src/ngettext.c:269
+#: src/printf_gettext.c:277 src/printf_ngettext.c:313
+#, c-format
+msgid ""
+"Report bugs in the bug tracker at <%s>\n"
+"or by email to <%s>.\n"
+msgstr ""
+"문제점을 버그 추적 시스템 (<%s>) 또는\n"
+"전자메일로 (<%s>) 보내주십시오.\n"
 
-#: src/envsubst.c:442
+#: src/envsubst.c:453
 #, c-format
 msgid "error while reading \"%s\""
 msgstr "\"%s\"을(를) 읽는 동안 오류 발생"
 
-#: src/envsubst.c:443
+#: src/envsubst.c:453
 msgid "standard input"
 msgstr "표준 입력"
 
 #. This is a proper name. See the gettext manual, section Names.
-#: src/gettext.c:140 src/ngettext.c:129
+#: src/gettext.c:144 src/ngettext.c:134
 msgid "Ulrich Drepper"
 msgstr "Ulrich Drepper"
 
-#: src/gettext.c:244
+#: src/gettext.c:254
 #, c-format, no-wrap
 msgid ""
 "Usage: %s [OPTION] [[TEXTDOMAIN] MSGID]\n"
@@ -221,33 +160,64 @@ msgstr ""
 "사용법: %s [<옵션>] [[<TEXTDOMAIN>] <MSGID>]\n"
 "혹은:   %s [<옵션>] -s [<MSGID>]...\n"
 
-#: src/gettext.c:250
+#: src/gettext.c:260
 #, c-format, no-wrap
 msgid "Display native language translation of a textual message.\n"
 msgstr "주어진 메시지에 대한 고유어 번역문을 표시합니다.\n"
 
-#: src/gettext.c:254
+#: src/gettext.c:263 src/ngettext.c:230 src/printf_gettext.c:179
+#: src/printf_ngettext.c:211
+#, c-format
+msgid "Options and arguments:\n"
+msgstr "옵션 및 인자:\n"
+
+#: src/gettext.c:266
 #, c-format, no-wrap
+msgid "  -d, --domain=TEXTDOMAIN   retrieve translated messages from TEXTDOMAIN\n"
+msgstr "  -d, --domain=<TEXTDOMAIN> <TEXTDOMAIN>에서 번역 메시지를 가져옵니다\n"
+
+#: src/gettext.c:268 src/ngettext.c:235
+#, c-format
+msgid "  -c, --context=CONTEXT     specify context for MSGID\n"
+msgstr "  -c, --context=<문맥>      <MSGID>에 대한 문맥을 지정합니다\n"
+
+#: src/gettext.c:270 src/ngettext.c:237
+#, c-format
+msgid "  -e                        enable expansion of some escape sequences\n"
+msgstr "  -e                        이스케이프 시퀀스 확장을 사용합니다\n"
+
+#: src/gettext.c:272
+#, c-format
+msgid "  -n                        suppress trailing newline\n"
+msgstr "  -n                        끝에 줄 바꿈을 하지 않습니다\n"
+
+#: src/gettext.c:274 src/ngettext.c:239
+#, c-format
+msgid "  -E                        (ignored for compatibility)\n"
+msgstr "  -E                        (아무 효과 없음, 호환성 옵션)\n"
+
+#: src/gettext.c:276
+#, c-format
 msgid ""
-"  -d, --domain=TEXTDOMAIN   retrieve translated messages from TEXTDOMAIN\n"
-"  -e                        enable expansion of some escape sequences\n"
-"  -E                        (ignored for compatibility)\n"
-"  -h, --help                display this help and exit\n"
-"  -n                        suppress trailing newline\n"
-"  -V, --version             display version information and exit\n"
 "  [TEXTDOMAIN] MSGID        retrieve translated message corresponding\n"
 "                            to MSGID from TEXTDOMAIN\n"
 msgstr ""
-"  -d, --domain=<TEXTDOMAIN> 번역된 메시지를 <TEXTDOMAIN>에서 불러옵니다\n"
-"  -e                        몇몇 이스케이프 문자열의 확장을 가능케 합니다\n"
-"  -E                        (호환성을 위해 무시됨)\n"
-"  -h, --help                이 도움말을 보여주고 종료합니다\n"
-"  -n                        따라붙는 줄바꿈 문자를 제거합니다\n"
-"  -V, --version             버전 정보를 표시하고 종료합니다\n"
-"  [<TEXTDOMAIN>] <MSGID>    <MSGID>에 대응하는 번역된 메시지를 <TEXTDOMAIN>에서\n"
-"                            불러옵니다\n"
+"  [<TEXTDOMAIN>] <MSGID>    <MSGID>에 해당하는 번역 메시지를 <TEXTDOMAIN>에서\n"
+"                            가져옵니다\n"
 
-#: src/gettext.c:265
+#: src/gettext.c:282 src/ngettext.c:250 src/printf_gettext.c:190
+#: src/printf_ngettext.c:226
+#, c-format
+msgid "  -h, --help                display this help and exit\n"
+msgstr "  -h, --help                이 도움말을 표시하고 끝납니다\n"
+
+#: src/gettext.c:284 src/ngettext.c:252 src/printf_gettext.c:192
+#: src/printf_ngettext.c:228
+#, c-format
+msgid "  -V, --version             display version information and exit\n"
+msgstr "  -V, --version             버전 정보를 표시하고 끝납니다\n"
+
+#: src/gettext.c:288
 #, c-format, no-wrap
 msgid ""
 "If the TEXTDOMAIN parameter is not given, the domain is determined from the\n"
@@ -268,12 +238,12 @@ msgstr ""
 "목록에서 번역되어 있는 메시지만이 출력됩니다.\n"
 "기본 탐색 디렉터리: %s\n"
 
-#: src/ngettext.c:212
+#: src/ngettext.c:221
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION] [TEXTDOMAIN] MSGID MSGID-PLURAL COUNT\n"
 msgstr "사용법: %s [<옵션>] [<TEXTDOMAIN>] <MSGID> <MSGID-PLURAL> <개수>\n"
 
-#: src/ngettext.c:217
+#: src/ngettext.c:226
 #, c-format, no-wrap
 msgid ""
 "Display native language translation of a textual message whose grammatical\n"
@@ -282,28 +252,27 @@ msgstr ""
 "숫자에 따라 문법이 달라지는, 주어진 메시지에 대한 고유어 번역문을\n"
 "표시합니다.\n"
 
-#: src/ngettext.c:222
-#, c-format, no-wrap
-msgid ""
-"  -d, --domain=TEXTDOMAIN   retrieve translated message from TEXTDOMAIN\n"
-"  -e                        enable expansion of some escape sequences\n"
-"  -E                        (ignored for compatibility)\n"
-"  -h, --help                display this help and exit\n"
-"  -V, --version             display version information and exit\n"
-"  [TEXTDOMAIN]              retrieve translated message from TEXTDOMAIN\n"
-"  MSGID MSGID-PLURAL        translate MSGID (singular) / MSGID-PLURAL (plural)\n"
-"  COUNT                     choose singular/plural form based on this value\n"
-msgstr ""
-"  -d, --domain=TEXTDOMAIN   번역된 메시지를 TEXTDOMAIN에서 불러옵니다\n"
-"  -e                        몇몇 이스케이프 문자열의 확장을 가능케 합니다\n"
-"  -E                        (호환성을 위해 무시됨)\n"
-"  -h, --help                이 도움말을 보여주고 끝납니다\n"
-"  -V, --version             버전 정보를 표시하고 끝납니다\n"
-"  [TEXTDOMAIN]              번역된 메시지를 TEXTDOMAIN에서 불러옵니다\n"
-"  MSGID MSGID-복수형        MSGID(단수) / MSGID-복수형(복수)을 번역합니다\n"
-"  개수                      이 값에 따라 단수/복수를 결정합니다\n"
-
 #: src/ngettext.c:233
+#, c-format, no-wrap
+msgid "  -d, --domain=TEXTDOMAIN   retrieve translated message from TEXTDOMAIN\n"
+msgstr "  -d, --domain=<TEXTDOMAIN> <TEXTDOMAIN>에서 번역 메시지를 가져옵니다\n"
+
+#: src/ngettext.c:241
+#, c-format
+msgid "  [TEXTDOMAIN]              retrieve translated message from TEXTDOMAIN\n"
+msgstr "  [<TEXTDOMAIN>]            <도메인>에서 번역 메시지를 가져옵니다\n"
+
+#: src/ngettext.c:243
+#, c-format
+msgid "  MSGID MSGID-PLURAL        translate MSGID (singular) / MSGID-PLURAL (plural)\n"
+msgstr "  <MSGID> <MSGID-복수형>    <MSGID> (단수형) / <MSGID-복수형> (복수형) 번역\n"
+
+#: src/ngettext.c:245 src/printf_ngettext.c:219
+#, c-format
+msgid "  COUNT                     choose singular/plural form based on this value\n"
+msgstr "  <개수>                    이 값에 따라 단수형/복수형을 선택합니다\n"
+
+#: src/ngettext.c:256
 #, c-format, no-wrap
 msgid ""
 "If the TEXTDOMAIN parameter is not given, the domain is determined from the\n"
@@ -317,3 +286,262 @@ msgstr ""
 "TEXTDOMAINDIR로 다른 위치를 지정할 수 있습니다.\n"
 "\n"
 "표준 탐색 디렉터리: %s\n"
+
+#: src/printf-command.c:154
+#, c-format
+msgid "In the directive number %zu, the argument number 0 is not a positive integer."
+msgstr "지시어 %zu번에서, 인자 번호 0은 0보다 큰 정수가 아닙니다."
+
+#: src/printf-command.c:237
+#, c-format
+msgid "The string ends in the middle of a directive."
+msgstr "문자열이 지시어 중간에서 끝납니다."
+
+#: src/printf-command.c:242
+#, c-format
+msgid "In the directive number %zu, the character '%c' is not a valid conversion specifier."
+msgstr "지시어 %zu번에서, '%c' 문자는 올바른 변환 지정 문자가 아닙니다."
+
+#: src/printf-command.c:246
+#, c-format
+msgid "The character that terminates the directive number %zu is not a valid conversion specifier."
+msgstr "지시어 %zu번을 끝내는 문자가 올바른 변환 지정 문자가 아닙니다."
+
+#: src/printf-command.c:255 src/printf-command.c:259
+#, c-format
+msgid "In the directive number %zu, the flag '%c' is invalid for the conversion '%c'."
+msgstr "지시어 %zu번에서, '%c' 플래그는 '%c' 변환 형식에서 사용할 수 없습니다."
+
+#: src/printf-command.c:278 src/printf-command.c:292
+#, c-format
+msgid "The string refers to arguments both through absolute argument numbers and through unnumbered argument specifications."
+msgstr "문자열은 절대적 인자 번호에 따라, 또는 번호 없는 인자 지정에 따라 인자를 지정합니다."
+
+#: src/printf-command.c:394
+#, c-format
+msgid "The string ends in the middle of an escape sequence."
+msgstr "문자열이 이스케이프 시퀀스 중간에서 끝납니다."
+
+#: src/printf-command.c:402
+#, c-format
+msgid "The escape sequence '%c%c' is unsupported (not in POSIX)."
+msgstr "'%c%c' 이스케이프 시퀀스는 지원하지 않습니다 (POSIX에 들어있지 않음)."
+
+#: src/printf-command.c:403
+#, c-format
+msgid "The escape sequence '%c%c' is invalid."
+msgstr "'%c%c' 이스케이프 시퀀스는 올바르지 않습니다."
+
+#: src/printf-command.c:407
+#, c-format
+msgid "This escape sequence is invalid."
+msgstr "이 이스케이프 시퀀스는 올바르지 않습니다."
+
+#: src/printf-command.c:455 src/printf-command.c:501 src/printf-command.c:568
+#: src/printf-command.c:638 src/printf-command.c:691
+#, c-format
+msgid "write error"
+msgstr "쓰기 오류"
+
+#: src/printf-command.c:529 src/printf-command.c:556 src/printf-command.c:597
+#: src/printf-command.c:626 src/printf-command.c:679
+#, c-format
+msgid "%s: expected a numeric value"
+msgstr "%s: 숫자 값이 와야 합니다"
+
+#: src/printf-command.c:550 src/printf-command.c:620 src/printf-command.c:673
+#, c-format
+msgid "%s: value not completely converted"
+msgstr "%s: 값을 완전히 변환하지 못했습니다"
+
+#: src/printf-command.c:717
+#, c-format
+msgid "The translated format string consumes %zu arguments, whereas the original format string consumes only %zu arguments."
+msgstr "번역한 형식 문자열이 %zu개의 인자를 소모하지만, 원문 형식 문자열은 %zu개 인자만 소모합니다."
+
+#: src/printf-command.c:728
+#, c-format
+msgid "warning: ignoring excess arguments, starting with %s"
+msgstr "경고: 필요 이상의 인자는 무시합니다 (%s부터 시작)"
+
+#: src/printf_gettext.c:128
+#, c-format
+msgid "missing format string"
+msgstr "형식 문자열이 빠졌음"
+
+#: src/printf_gettext.c:170
+#, c-format, no-wrap
+msgid "Usage: %s [OPTION] FORMAT [ARGUMENT]...\n"
+msgstr "사용법: %s [<옵션>] <형식> [<인자>]...\n"
+
+#: src/printf_gettext.c:175
+#, c-format, no-wrap
+msgid ""
+"Produces formatted output, applying the native language translation of FORMAT\n"
+"to the ARGUMENTs.\n"
+msgstr "<형식>과 그에 대한 <인자>의 현지어 번역을 적용해 형식 적용한 출력을 만듭니다.\n"
+
+#: src/printf_gettext.c:181 src/printf_ngettext.c:213
+#, c-format
+msgid "  -c, --context=CONTEXT     specify context for FORMAT\n"
+msgstr "  -c, --context=<문맥>      <형식>에 대한 문맥을 지정합니다\n"
+
+#: src/printf_gettext.c:183
+#, c-format
+msgid "  FORMAT                    format string\n"
+msgstr "  <형식>                    형식 문자열\n"
+
+#: src/printf_gettext.c:185 src/printf_ngettext.c:221
+#, c-format
+msgid "  ARGUMENT                  string or numeric argument\n"
+msgstr "  <인자>                    문자열 또는 숫자 인자\n"
+
+#: src/printf_gettext.c:196
+#, c-format, no-wrap
+msgid ""
+"The format string consists of\n"
+"  - plain text,\n"
+"  - directives, that start with '%c',\n"
+"  - escape sequences, that start with a backslash.\n"
+msgstr ""
+"형식 문자열은 다음과 같이 구성되어 있습니다:\n"
+"  - 일반 텍스트,\n"
+"  - 지시어, '%c' 문자로 시작,\n"
+"  - 이스케이프 시퀀스, 백슬래시로 시작.\n"
+
+#: src/printf_gettext.c:204 src/printf_ngettext.c:240
+#, c-format, no-wrap
+msgid ""
+"A directive that consumes an argument\n"
+"  - starts with '%s' or '%s' where %s is a positive integer,\n"
+"  - is optionally followed by any of the characters '%c', '%c', '%c', '%c', '%c',\n"
+"    each of which acts as a flag,\n"
+"  - is optionally followed by a width specification (a nonnegative integer),\n"
+"  - is optionally followed by '%c' and a precision specification (an optional\n"
+"    nonnegative integer),\n"
+"  - is finished by a specifier\n"
+"      - '%c', that prints a character,\n"
+"      - '%c', that prints a string,\n"
+"      - '%c', '%c', that print an integer,\n"
+"      - '%c', '%c', '%c', '%c', that print an unsigned (nonnegative) integer,\n"
+"      - '%c', '%c', that print a floating-point number in scientific notation,\n"
+"      - '%c', '%c', that print a floating-point number without an exponent,\n"
+"      - '%c', '%c', that print a floating-point number in general notation,\n"
+"      - '%c', '%c', that print a floating-point number in hexadecimal notation.\n"
+"Additionally there is the directive '%s', that prints a single '%c'.\n"
+msgstr ""
+"인자를 소모하는 지시어는 다음과 같습니다:\n"
+"  - '%s' 또는 '%s'(으)로 시작, 여기서 %s(은)는 0보다 큰 정수.\n"
+"  - 선택적으로 다음중 하나의 문자가 따라올 수 있고: '%c', '%c', '%c', '%c', '%c',\n"
+"    각각은 플래그로 동작합니다.\n"
+"  - 선택적으로 너비 지정이 (0 이상의 정수) 따라올 수 있습니다.\n"
+"  - 선택적으로 '%c' 문자가 다음의 정밀도 지정이 (선택적으로 0 이상 정수)\n"
+"    따라올 수 있습니다.\n"
+"  - 다음 지정 문자로 끝납니다\n"
+"      - '%c', 문자를 표시,\n"
+"      - '%c', 문자열을 표시,\n"
+"      - '%c', '%c', 정수를 표시,\n"
+"      - '%c', '%c', '%c', '%c', 부호 없는 (0 이상) 정수를 표시,\n"
+"      - '%c', '%c', 부동소수점 수를 과학 표기 형식으로 표시,\n"
+"      - '%c', '%c', 부동소수점 수를 지수 없이 표시,\n"
+"      - '%c', '%c', 부동소수점 수를 일반 형식으로 표시,\n"
+"      - '%c', '%c', 부동소수점 수를 16진수 형식으로 표시,\n"
+"추가적으로 '%s' 지시자가 있고, 하나의 '%c' 문자를 표시합니다.\n"
+
+#: src/printf_gettext.c:233 src/printf_ngettext.c:269
+#, c-format, no-wrap
+msgid ""
+"If a directive specifies the argument by its number ('%s' notation),\n"
+"all directives that consume an argument must do so.\n"
+msgstr "하나의 지시어가 인자를 인자 번호로 지정하면 ('%s' 표기), 모든 지시어가 그렇게 해야 합니다.\n"
+
+#. TRANSLATORS: Most of the placeholders expand to 2 characters.
+#. The last placeholder expands to 4 characters.
+#: src/printf_gettext.c:240 src/printf_ngettext.c:276
+#, c-format
+msgid ""
+"The escape sequences are:\n"
+"\n"
+"  %s      backslash\n"
+"  %s      alert (BEL)\n"
+"  %s      backspace (BS)\n"
+"  %s      form feed (FF)\n"
+"  %s      new line (LF)\n"
+"  %s      carriage return (CR)\n"
+"  %s      horizontal tab (HT)\n"
+"  %s      vertical tab (VT)\n"
+"  %s    octal number with 1 to 3 octal digits\n"
+msgstr ""
+"이스케이프 시퀀스는 다음과 같습니다:\n"
+"\n"
+"  %s      백슬래시\n"
+"  %s      경보 (BEL)\n"
+"  %s      백스페이스 (BS)\n"
+"  %s      폼피드 (FF)\n"
+"  %s      새 줄 (LF)\n"
+"  %s      줄 원위치 (CR)\n"
+"  %s      가로 탭 (HT)\n"
+"  %s      세로 탭 (VT)\n"
+"  %s    8진수 수, 1개에서 3개까지 8진수 숫자로 구성\n"
+
+#: src/printf_gettext.c:255 src/printf_ngettext.c:291
+#, c-format
+msgid "Environment variables:\n"
+msgstr "환경 변수:\n"
+
+#: src/printf_gettext.c:259 src/printf_ngettext.c:295
+#, c-format, no-wrap
+msgid ""
+"The translation of the format string is looked up in the translation domain\n"
+"given by the environment variable %s.\n"
+msgstr "형식 문자열의 번역은 환경변수 %s에 따라 주어지는 번역 도메인에서 검색됩니다.\n"
+
+#: src/printf_gettext.c:264 src/printf_ngettext.c:300
+#, c-format, no-wrap
+msgid ""
+"It is looked up in the catalogs directory given by the environment variable\n"
+"%s or, if not present, in the default catalogs directory.\n"
+"This binary is configured to use the default catalogs directory:\n"
+"%s\n"
+msgstr ""
+"환경변수 %s 환경변수로 지정한 카탈로그 디렉터리에서, 또는 없는 경우 기본 카탈로그\n"
+"디렉터리에서 찾습니다. 이 바이너리는 기본 카탈로그 디렉터리를 사용하도록 설정되어\n"
+"있습니다:\n"
+"%s\n"
+
+#: src/printf_ngettext.c:202
+#, c-format, no-wrap
+msgid "Usage: %s [OPTION] FORMAT FORMAT-PLURAL COUNT [ARGUMENT]...\n"
+msgstr "사용법: %s [<옵션>] <형식> <형식-복수> <개수> [<인자>]...\n"
+
+#: src/printf_ngettext.c:207
+#, c-format, no-wrap
+msgid ""
+"Produces formatted output, applying the native language translation of FORMAT\n"
+"and FORMAT-PLURAL, depending on COUNT, to the ARGUMENTs.\n"
+msgstr ""
+"형식 적용된 출력을 만듭니다. <형식> 및 <형식-복수>에 대한 현지어 번역을\n"
+"<인자>의 <개수>에 따라 적용합니다.\n"
+
+#: src/printf_ngettext.c:215
+#, c-format
+msgid "  FORMAT                    English singular form of format string\n"
+msgstr "  <형식>                    형식 문자열의 영어 단수 형태\n"
+
+#: src/printf_ngettext.c:217
+#, c-format
+msgid "  FORMAT-PLURAL             English plural form of format string\n"
+msgstr "  <형식-북수>               형식 문자열의 영어 복수 형태\n"
+
+#: src/printf_ngettext.c:232
+#, c-format, no-wrap
+msgid ""
+"Each format string consists of\n"
+"  - plain text,\n"
+"  - directives, that start with '%c',\n"
+"  - escape sequences, that start with a backslash.\n"
+msgstr ""
+"각 형식 문자열은 다음과 같이 구성되어 있습니다:\n"
+"  - 일반 텍스트,\n"
+"  - 지시어, '%c' 문자로 시작,\n"
+"  - 이스케이프 시퀀스, 백슬래시로 시작.\n"

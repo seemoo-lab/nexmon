@@ -1,6 +1,5 @@
 /* GFC (GNU Fortran Compiler) internal format strings.
-   Copyright (C) 2003-2009, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2009.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -58,7 +57,10 @@
 
    When numbered argument specifications are used, specifying the Nth argument
    requires that all the leading arguments, from the first to the (N-1)th, are
-   specified in the format string.  */
+   specified in the format string.
+
+   These gfc-internal format strings were removed from GCC on 2024-10-11 (for
+   GCC 15.1.0).  */
 
 enum format_arg_type
 {
@@ -83,7 +85,7 @@ typedef enum format_arg_type format_arg_type_t;
 
 struct numbered_arg
 {
-  unsigned int number;
+  size_t number;
   format_arg_type_t type;
 };
 
@@ -94,24 +96,18 @@ struct unnumbered_arg
 
 struct spec
 {
-  unsigned int directives;
-  unsigned int unnumbered_arg_count;
+  size_t directives;
+  size_t unnumbered_arg_count;
   struct unnumbered_arg *unnumbered;
   bool uses_currentloc;
 };
-
-/* Locale independent test for a decimal digit.
-   Argument can be  'char' or 'unsigned char'.  (Whereas the argument of
-   <ctype.h> isdigit must be an 'unsigned char'.)  */
-#undef isdigit
-#define isdigit(c) ((unsigned int) ((c) - '0') < 10)
 
 
 static int
 numbered_arg_compare (const void *p1, const void *p2)
 {
-  unsigned int n1 = ((const struct numbered_arg *) p1)->number;
-  unsigned int n2 = ((const struct numbered_arg *) p2)->number;
+  size_t n1 = ((const struct numbered_arg *) p1)->number;
+  size_t n2 = ((const struct numbered_arg *) p2)->number;
 
   return (n1 > n2 ? 1 : n1 < n2 ? -1 : 0);
 }
@@ -121,19 +117,14 @@ format_parse (const char *format, bool translated, char *fdi,
               char **invalid_reason)
 {
   const char *const format_start = format;
-  struct spec spec;
-  unsigned int numbered_arg_count;
-  unsigned int allocated;
-  struct numbered_arg *numbered;
-  struct spec *result;
-  unsigned int number;
 
+  struct spec spec;
   spec.directives = 0;
-  numbered_arg_count = 0;
-  allocated = 0;
-  numbered = NULL;
+  size_t numbered_arg_count = 0;
+  size_t numbered_allocated = 0;
+  struct numbered_arg *numbered = NULL;
   spec.uses_currentloc = false;
-  number = 1;
+  size_t number = 1;
 
   for (; *format != '\0';)
     if (*format++ == '%')
@@ -144,19 +135,17 @@ format_parse (const char *format, bool translated, char *fdi,
 
         if (*format != '%')
           {
-            format_arg_type_t type;
-
-            if (isdigit (*format))
+            if (c_isdigit (*format))
               {
                 const char *f = format;
-                unsigned int m = 0;
+                size_t m = 0;
 
                 do
                   {
                     m = 10 * m + (*f - '0');
                     f++;
                   }
-                while (isdigit (*f));
+                while (c_isdigit (*f));
 
                 if (*f == '$')
                   {
@@ -171,6 +160,7 @@ format_parse (const char *format, bool translated, char *fdi,
                   }
               }
 
+            format_arg_type_t type;
             if (*format == 'C')
               {
                 type = FAT_VOID;
@@ -213,10 +203,10 @@ format_parse (const char *format, bool translated, char *fdi,
                   }
               }
 
-            if (allocated == numbered_arg_count)
+            if (numbered_allocated == numbered_arg_count)
               {
-                allocated = 2 * allocated + 1;
-                numbered = (struct numbered_arg *) xrealloc (numbered, allocated * sizeof (struct numbered_arg));
+                numbered_allocated = 2 * numbered_allocated + 1;
+                numbered = (struct numbered_arg *) xrealloc (numbered, numbered_allocated * sizeof (struct numbered_arg));
               }
             numbered[numbered_arg_count].number = number;
             numbered[numbered_arg_count].type = type;
@@ -233,21 +223,19 @@ format_parse (const char *format, bool translated, char *fdi,
   /* Sort the numbered argument array, and eliminate duplicates.  */
   if (numbered_arg_count > 1)
     {
-      unsigned int i, j;
-      bool err;
-
       qsort (numbered, numbered_arg_count,
              sizeof (struct numbered_arg), numbered_arg_compare);
 
       /* Remove duplicates: Copy from i to j, keeping 0 <= j <= i.  */
-      err = false;
+      bool err = false;
+      size_t i, j;
       for (i = j = 0; i < numbered_arg_count; i++)
         if (j > 0 && numbered[i].number == numbered[j-1].number)
           {
             format_arg_type_t type1 = numbered[i].type;
             format_arg_type_t type2 = numbered[j-1].type;
-            format_arg_type_t type_both;
 
+            format_arg_type_t type_both;
             if (type1 == type2)
               type_both = type1;
             else
@@ -277,37 +265,29 @@ format_parse (const char *format, bool translated, char *fdi,
         goto bad_format;
     }
 
-  /* Verify that the format strings uses all arguments up to the highest
+  /* Verify that the format string uses all arguments up to the highest
      numbered one.  */
-  {
-    unsigned int i;
-
-    for (i = 0; i < numbered_arg_count; i++)
-      if (numbered[i].number != i + 1)
-        {
-          *invalid_reason =
-            xasprintf (_("The string refers to argument number %u but ignores argument number %u."), numbered[i].number, i + 1);
-          goto bad_format;
-        }
-  }
+  for (size_t i = 0; i < numbered_arg_count; i++)
+    if (numbered[i].number != i + 1)
+      {
+        *invalid_reason =
+          xasprintf (_("The string refers to argument number %zu but ignores argument number %zu."), numbered[i].number, i + 1);
+        goto bad_format;
+      }
 
   /* So now the numbered arguments array is equivalent to a sequence
      of unnumbered arguments.  Eliminate the FAT_VOID placeholders.  */
   {
-    unsigned int i;
-
     spec.unnumbered_arg_count = 0;
-    for (i = 0; i < numbered_arg_count; i++)
+    for (size_t i = 0; i < numbered_arg_count; i++)
       if (numbered[i].type != FAT_VOID)
         spec.unnumbered_arg_count++;
 
     if (spec.unnumbered_arg_count > 0)
       {
-        unsigned int j;
-
         spec.unnumbered = XNMALLOC (spec.unnumbered_arg_count, struct unnumbered_arg);
-        j = 0;
-        for (i = 0; i < numbered_arg_count; i++)
+        size_t j = 0;
+        for (size_t i = 0; i < numbered_arg_count; i++)
           if (numbered[i].type != FAT_VOID)
             spec.unnumbered[j++].type = numbered[i].type;
       }
@@ -316,7 +296,7 @@ format_parse (const char *format, bool translated, char *fdi,
   }
   free (numbered);
 
-  result = XMALLOC (struct spec);
+  struct spec *result = XMALLOC (struct spec);
   *result = spec;
   return result;
 
@@ -346,13 +326,12 @@ format_get_number_of_directives (void *descr)
 
 static bool
 format_check (void *msgid_descr, void *msgstr_descr, bool equality,
-              formatstring_error_logger_t error_logger,
+              formatstring_error_logger_t error_logger, void *error_logger_data,
               const char *pretty_msgid, const char *pretty_msgstr)
 {
   struct spec *spec1 = (struct spec *) msgid_descr;
   struct spec *spec2 = (struct spec *) msgstr_descr;
   bool err = false;
-  unsigned int i;
 
   /* Check the argument types are the same.  */
   if (equality
@@ -360,16 +339,18 @@ format_check (void *msgid_descr, void *msgstr_descr, bool equality,
       : spec1->unnumbered_arg_count < spec2->unnumbered_arg_count)
     {
       if (error_logger)
-        error_logger (_("number of format specifications in '%s' and '%s' does not match"),
+        error_logger (error_logger_data,
+                      _("number of format specifications in '%s' and '%s' does not match"),
                       pretty_msgid, pretty_msgstr);
       err = true;
     }
   else
-    for (i = 0; i < spec2->unnumbered_arg_count; i++)
+    for (size_t i = 0; i < spec2->unnumbered_arg_count; i++)
       if (spec1->unnumbered[i].type != spec2->unnumbered[i].type)
         {
           if (error_logger)
-            error_logger (_("format specifications in '%s' and '%s' for argument %u are not the same"),
+            error_logger (error_logger_data,
+                          _("format specifications in '%s' and '%s' for argument %zu are not the same"),
                           pretty_msgid, pretty_msgstr, i + 1);
           err = true;
         }
@@ -380,10 +361,12 @@ format_check (void *msgid_descr, void *msgstr_descr, bool equality,
       if (error_logger)
         {
           if (spec1->uses_currentloc)
-            error_logger (_("'%s' uses %%C but '%s' doesn't"),
+            error_logger (error_logger_data,
+                          _("'%s' uses %%C but '%s' doesn't"),
                           pretty_msgid, pretty_msgstr);
           else
-            error_logger (_("'%s' does not use %%C but '%s' uses %%C"),
+            error_logger (error_logger_data,
+                          _("'%s' does not use %%C but '%s' uses %%C"),
                           pretty_msgid, pretty_msgstr);
         }
       err = true;
@@ -414,7 +397,6 @@ static void
 format_print (void *descr)
 {
   struct spec *spec = (struct spec *) descr;
-  unsigned int i;
 
   if (spec == NULL)
     {
@@ -423,7 +405,7 @@ format_print (void *descr)
     }
 
   printf ("(");
-  for (i = 0; i < spec->unnumbered_arg_count; i++)
+  for (size_t i = 0; i < spec->unnumbered_arg_count; i++)
     {
       if (i > 0)
         printf (" ");
@@ -469,18 +451,14 @@ main ()
     {
       char *line = NULL;
       size_t line_size = 0;
-      int line_len;
-      char *invalid_reason;
-      void *descr;
-
-      line_len = getline (&line, &line_size, stdin);
+      int line_len = getline (&line, &line_size, stdin);
       if (line_len < 0)
         break;
       if (line_len > 0 && line[line_len - 1] == '\n')
         line[--line_len] = '\0';
 
-      invalid_reason = NULL;
-      descr = format_parse (line, false, NULL, &invalid_reason);
+      char *invalid_reason = NULL;
+      void *descr = format_parse (line, false, NULL, &invalid_reason);
 
       format_print (descr);
       printf ("\n");
@@ -497,7 +475,7 @@ main ()
 /*
  * For Emacs M-x compile
  * Local Variables:
- * compile-command: "/bin/sh ../libtool --tag=CC --mode=link gcc -o a.out -static -O -g -Wall -I.. -I../gnulib-lib -I../intl -DHAVE_CONFIG_H -DTEST format-gfc-internal.c ../gnulib-lib/libgettextlib.la"
+ * compile-command: "/bin/sh ../libtool --tag=CC --mode=link gcc -o a.out -static -O -g -Wall -I.. -I../gnulib-lib -I../../gettext-runtime/intl -DTEST format-gfc-internal.c ../gnulib-lib/libgettextlib.la"
  * End:
  */
 

@@ -16,7 +16,7 @@ msgid "5"
 msgstr "fünf"
 EOF
 
-cat <<EOF > mm-c-4.pot
+cat <<\EOF > mm-c-4.pot
 #: file.c:123
 msgid "1"
 msgstr ""

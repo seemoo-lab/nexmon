@@ -6,7 +6,7 @@
 # Note: On AIX 3 with xlc, this test fails. To make it work, add "-qcheck"
 # to the CFLAGS, or use gcc.
 
-cat <<EOF > mf-6.po
+cat <<\EOF > mf-6.po
 msgid ""
 msgstr ""
 "Project-Id-Version: msgfmt test 4\n"

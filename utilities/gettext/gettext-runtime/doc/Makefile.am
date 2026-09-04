@@ -1,6 +1,5 @@
 ## Makefile for the gettext-runtime/doc subdirectory of GNU gettext
-## Copyright (C) 1995-1997, 2001-2003, 2006, 2015-2016 Free Software
-## Foundation, Inc.
+## Copyright (C) 1995-2025 Free Software Foundation, Inc.
 ##
 ## This program is free software: you can redistribute it and/or modify
 ## it under the terms of the GNU General Public License as published by
@@ -13,7 +12,7 @@
 ## GNU General Public License for more details.
 ##
 ## You should have received a copy of the GNU General Public License
-## along with this program.  If not, see <http://www.gnu.org/licenses/>.
+## along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ## Process this file with automake to produce Makefile.in.
 
@@ -22,4 +21,9 @@ EXTRA_DIST =
 
 EXTRA_DIST += nls.texi matrix.texi
 
-EXTRA_DIST += rt-gettext.texi rt-ngettext.texi rt-envsubst.texi
+EXTRA_DIST += \
+  rt-gettext.texi \
+  rt-ngettext.texi \
+  rt-printf_gettext.texi \
+  rt-printf_ngettext.texi \
+  rt-envsubst.texi

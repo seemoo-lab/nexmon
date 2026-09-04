@@ -1,9 +1,9 @@
 /* Test of quotearg family of functions.
-   Copyright (C) 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
+   the Free Software Foundation, either version 3, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   along with this program; if not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Eric Blake <ebb9@byu.net>, 2008.  */
 
@@ -21,13 +21,11 @@
 #include "quotearg.h"
 
 #include <ctype.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "localcharset.h"
-#include "progname.h"
 #include "macros.h"
 #include "zerosize-ptr.h"
 
@@ -35,125 +33,140 @@
 
 static struct result_groups results_g[] = {
   /* literal_quoting_style */
-  { { "", "\0""1\0", 3, "simple", " \t\n'\"\033?""?/\\", "a:b", "a\\b",
-      LQ RQ, LQ RQ },
-    { "", "1", 1, "simple", " \t\n'\"\033?""?/\\", "a:b", "a\\b",
-      LQ RQ, LQ RQ },
-    { "", "1", 1, "simple", " \t\n'\"\033?""?/\\", "a:b", "a\\b",
-      LQ RQ, LQ RQ } },
+  { { "", "\0""1\0", 3, "simple", "\t'\t", " \t\n'\"\033?""?/\\", "a:b", "a\\b",
+      "a' b", LQ RQ, LQ RQ },
+    { "", "1", 1, "simple", "\t'\t", " \t\n'\"\033?""?/\\", "a:b", "a\\b",
+      "a' b", LQ RQ, LQ RQ },
+    { "", "1", 1, "simple", "\t'\t", " \t\n'\"\033?""?/\\", "a:b", "a\\b",
+      "a' b", LQ RQ, LQ RQ } },
 
   /* shell_quoting_style */
-  { { "''", "\0""1\0", 3, "simple", "' \t\n'\\''\"\033?""?/\\'", "a:b",
-      "'a\\b'", LQ RQ, LQ RQ },
-    { "''", "1", 1, "simple", "' \t\n'\\''\"\033?""?/\\'", "a:b",
-      "'a\\b'", LQ RQ, LQ RQ },
-    { "''", "1", 1, "simple", "' \t\n'\\''\"\033?""?/\\'", "'a:b'",
-      "'a\\b'", LQ RQ, LQ RQ } },
+  { { "''", "\0""1\0", 3, "simple", "'\t'\\''\t'",
+      "' \t\n'\\''\"\033?""?/\\'", "a:b", "'a\\b'", "\"a' b\"",
+      LQ RQ, LQ RQ },
+    { "''", "1", 1, "simple", "'\t'\\''\t'",
+      "' \t\n'\\''\"\033?""?/\\'", "a:b", "'a\\b'", "\"a' b\"",
+      LQ RQ, LQ RQ },
+    { "''", "1", 1, "simple", "'\t'\\''\t'",
+      "' \t\n'\\''\"\033?""?/\\'", "'a:b'", "'a\\b'", "\"a' b\"",
+      LQ RQ, LQ RQ } },
 
   /* shell_always_quoting_style */
-  { { "''", "'\0""1\0'", 5, "'simple'", "' \t\n'\\''\"\033?""?/\\'", "'a:b'",
-      "'a\\b'", "'" LQ RQ "'", "'" LQ RQ "'" },
-    { "''", "'1'", 3, "'simple'", "' \t\n'\\''\"\033?""?/\\'", "'a:b'",
-      "'a\\b'", "'" LQ RQ "'", "'" LQ RQ "'" },
-    { "''", "'1'", 3, "'simple'", "' \t\n'\\''\"\033?""?/\\'", "'a:b'",
-      "'a\\b'", "'" LQ RQ "'", "'" LQ RQ "'" } },
+  { { "''", "'\0""1\0'", 5, "'simple'", "'\t'\\''\t'",
+      "' \t\n'\\''\"\033?""?/\\'", "'a:b'", "'a\\b'", "\"a' b\"",
+      "'" LQ RQ "'", "'" LQ RQ "'" },
+    { "''", "'1'", 3, "'simple'", "'\t'\\''\t'",
+      "' \t\n'\\''\"\033?""?/\\'", "'a:b'", "'a\\b'", "\"a' b\"",
+      "'" LQ RQ "'", "'" LQ RQ "'" },
+    { "''", "'1'", 3, "'simple'", "'\t'\\''\t'",
+      "' \t\n'\\''\"\033?""?/\\'", "'a:b'", "'a\\b'", "\"a' b\"",
+      "'" LQ RQ "'", "'" LQ RQ "'" } },
 
   /* shell_escape_quoting_style */
-  { { "''", "''$'\\0''1'$'\\0'", 15, "simple",
+  { { "''", "''$'\\0''1'$'\\0'", 15, "simple", "''$'\\t'\\'''$'\\t'",
       "' '$'\\t\\n'\\''\"'$'\\033''?""?/\\'", "a:b",
-      "'a\\b'", "''$'" LQ_ENC RQ_ENC "'", LQ RQ },
-    { "''", "''$'\\0''1'$'\\0'", 15, "simple",
+      "'a\\b'", "\"a' b\"", "''$'" LQ_ENC RQ_ENC "'", LQ RQ },
+    { "''", "''$'\\0''1'$'\\0'", 15, "simple", "''$'\\t'\\'''$'\\t'",
       "' '$'\\t\\n'\\''\"'$'\\033''?""?/\\'", "a:b",
-      "'a\\b'", "''$'" LQ_ENC RQ_ENC "'", LQ RQ },
-    { "''", "''$'\\0''1'$'\\0'", 15, "simple",
+      "'a\\b'", "\"a' b\"", "''$'" LQ_ENC RQ_ENC "'", LQ RQ },
+    { "''", "''$'\\0''1'$'\\0'", 15, "simple", "''$'\\t'\\'''$'\\t'",
       "' '$'\\t\\n'\\''\"'$'\\033''?""?/\\'", "'a:b'",
-      "'a\\b'", "''$'" LQ_ENC RQ_ENC "'", LQ RQ } },
+      "'a\\b'", "\"a' b\"", "''$'" LQ_ENC RQ_ENC "'", LQ RQ } },
 
   /* shell_escape_always_quoting_style */
-  { { "''", "''$'\\0''1'$'\\0'", 15, "'simple'",
+  { { "''", "''$'\\0''1'$'\\0'", 15, "'simple'", "''$'\\t'\\'''$'\\t'",
       "' '$'\\t\\n'\\''\"'$'\\033''?""?/\\'", "'a:b'",
-      "'a\\b'", "''$'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" },
-    { "''", "''$'\\0''1'$'\\0'", 15, "'simple'",
+      "'a\\b'", "\"a' b\"", "''$'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" },
+    { "''", "''$'\\0''1'$'\\0'", 15, "'simple'", "''$'\\t'\\'''$'\\t'",
       "' '$'\\t\\n'\\''\"'$'\\033''?""?/\\'", "'a:b'",
-      "'a\\b'", "''$'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" },
-    { "''", "''$'\\0''1'$'\\0'", 15, "'simple'",
+      "'a\\b'", "\"a' b\"", "''$'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" },
+    { "''", "''$'\\0''1'$'\\0'", 15, "'simple'", "''$'\\t'\\'''$'\\t'",
       "' '$'\\t\\n'\\''\"'$'\\033''?""?/\\'", "'a:b'",
-      "'a\\b'", "''$'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" } },
+      "'a\\b'", "\"a' b\"", "''$'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" } },
 
   /* c_quoting_style */
-  { { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"",
+  { { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"", "\"\\t'\\t\"",
       "\" \\t\\n'\\\"\\033?""?/\\\\\"", "\"a:b\"", "\"a\\\\b\"",
-      "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" },
-    { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"",
+      "\"a' b\"", "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" },
+    { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"", "\"\\t'\\t\"",
       "\" \\t\\n'\\\"\\033?""?/\\\\\"", "\"a:b\"", "\"a\\\\b\"",
-      "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" },
-    { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"",
+      "\"a' b\"", "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" },
+    { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"", "\"\\t'\\t\"",
       "\" \\t\\n'\\\"\\033?""?/\\\\\"", "\"a\\:b\"", "\"a\\\\b\"",
-      "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" } },
+      "\"a' b\"", "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" } },
 
   /* c_maybe_quoting_style */
-  { { "", "\"\\0001\\0\"", 9, "simple", "\" \\t\\n'\\\"\\033?""?/\\\\\"",
-      "a:b", "a\\b", "\"" LQ_ENC RQ_ENC "\"", LQ RQ },
-    { "", "\"\\0001\\0\"", 9, "simple", "\" \\t\\n'\\\"\\033?""?/\\\\\"",
-      "a:b", "a\\b", "\"" LQ_ENC RQ_ENC "\"", LQ RQ },
-    { "", "\"\\0001\\0\"", 9, "simple", "\" \\t\\n'\\\"\\033?""?/\\\\\"",
-      "\"a:b\"", "a\\b", "\"" LQ_ENC RQ_ENC "\"", LQ RQ } },
+  { { "", "\"\\0001\\0\"", 9, "simple", "\"\\t'\\t\"",
+      "\" \\t\\n'\\\"\\033?""?/\\\\\"", "a:b", "a\\b", "a' b",
+      "\"" LQ_ENC RQ_ENC "\"", LQ RQ },
+    { "", "\"\\0001\\0\"", 9, "simple", "\"\\t'\\t\"",
+      "\" \\t\\n'\\\"\\033?""?/\\\\\"", "a:b", "a\\b", "a' b",
+      "\"" LQ_ENC RQ_ENC "\"", LQ RQ },
+    { "", "\"\\0001\\0\"", 9, "simple", "\"\\t'\\t\"",
+      "\" \\t\\n'\\\"\\033?""?/\\\\\"", "\"a:b\"", "a\\b", "a' b",
+      "\"" LQ_ENC RQ_ENC "\"", LQ RQ } },
 
   /* escape_quoting_style */
-  { { "", "\\0001\\0", 7, "simple", " \\t\\n'\"\\033?""?/\\\\", "a:b",
-      "a\\\\b", LQ_ENC RQ_ENC, LQ RQ },
-    { "", "\\0001\\0", 7, "simple", " \\t\\n'\"\\033?""?/\\\\", "a:b",
-      "a\\\\b", LQ_ENC RQ_ENC, LQ RQ },
-    { "", "\\0001\\0", 7, "simple", " \\t\\n'\"\\033?""?/\\\\", "a\\:b",
-      "a\\\\b", LQ_ENC RQ_ENC, LQ RQ } },
+  { { "", "\\0001\\0", 7, "simple", "\\t'\\t", " \\t\\n'\"\\033?""?/\\\\",
+      "a:b", "a\\\\b", "a' b", LQ_ENC RQ_ENC, LQ RQ },
+    { "", "\\0001\\0", 7, "simple", "\\t'\\t", " \\t\\n'\"\\033?""?/\\\\",
+      "a:b", "a\\\\b", "a' b", LQ_ENC RQ_ENC, LQ RQ },
+    { "", "\\0001\\0", 7, "simple", "\\t'\\t", " \\t\\n'\"\\033?""?/\\\\",
+      "a\\:b", "a\\\\b", "a' b", LQ_ENC RQ_ENC, LQ RQ } },
 
   /* locale_quoting_style */
-  { { "''", "'\\0001\\0'", 9, "'simple'", "' \\t\\n\\'\"\\033?""?/\\\\'",
-      "'a:b'", "'a\\\\b'", "'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" },
-    { "''", "'\\0001\\0'", 9, "'simple'", "' \\t\\n\\'\"\\033?""?/\\\\'",
-      "'a:b'", "'a\\\\b'", "'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" },
-    { "''", "'\\0001\\0'", 9, "'simple'", "' \\t\\n\\'\"\\033?""?/\\\\'",
-      "'a\\:b'", "'a\\\\b'", "'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" } },
+  { { "''", "'\\0001\\0'", 9, "'simple'", "'\\t\\'\\t'",
+      "' \\t\\n\\'\"\\033?""?/\\\\'", "'a:b'", "'a\\\\b'", "'a\\' b'",
+      "'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" },
+    { "''", "'\\0001\\0'", 9, "'simple'", "'\\t\\'\\t'",
+      "' \\t\\n\\'\"\\033?""?/\\\\'", "'a:b'", "'a\\\\b'", "'a\\' b'",
+      "'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" },
+    { "''", "'\\0001\\0'", 9, "'simple'", "'\\t\\'\\t'",
+      "' \\t\\n\\'\"\\033?""?/\\\\'", "'a\\:b'", "'a\\\\b'", "'a\\' b'",
+      "'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" } },
 
   /* clocale_quoting_style */
-  { { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"",
+  { { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"", "\"\\t'\\t\"",
       "\" \\t\\n'\\\"\\033?""?/\\\\\"", "\"a:b\"", "\"a\\\\b\"",
-      "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" },
-    { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"",
+      "\"a' b\"", "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" },
+    { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"", "\"\\t'\\t\"",
       "\" \\t\\n'\\\"\\033?""?/\\\\\"", "\"a:b\"", "\"a\\\\b\"",
-      "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" },
-    { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"",
+      "\"a' b\"", "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" },
+    { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"", "\"\\t'\\t\"",
       "\" \\t\\n'\\\"\\033?""?/\\\\\"", "\"a\\:b\"", "\"a\\\\b\"",
-      "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" } }
+      "\"a' b\"", "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" } }
 };
 
 static struct result_groups flag_results[] = {
   /* literal_quoting_style and QA_ELIDE_NULL_BYTES */
-  { { "", "1", 1, "simple", " \t\n'\"\033?""?/\\", "a:b", "a\\b", LQ RQ,
-      LQ RQ },
-    { "", "1", 1, "simple", " \t\n'\"\033?""?/\\", "a:b", "a\\b", LQ RQ,
-      LQ RQ },
-    { "", "1", 1, "simple", " \t\n'\"\033?""?/\\", "a:b", "a\\b", LQ RQ,
-      LQ RQ } },
+  { { "", "1", 1, "simple", "\t'\t", " \t\n'\"\033?""?/\\",
+      "a:b", "a\\b", "a' b", LQ RQ, LQ RQ },
+    { "", "1", 1, "simple", "\t'\t", " \t\n'\"\033?""?/\\",
+      "a:b", "a\\b", "a' b", LQ RQ, LQ RQ },
+    { "", "1", 1, "simple", "\t'\t", " \t\n'\"\033?""?/\\",
+      "a:b", "a\\b", "a' b", LQ RQ, LQ RQ } },
 
   /* c_quoting_style and QA_ELIDE_OUTER_QUOTES */
-  { { "", "\"\\0001\\0\"", 9, "simple", "\" \\t\\n'\\\"\\033?""?/\\\\\"",
-      "a:b", "a\\b", "\"" LQ_ENC RQ_ENC "\"", LQ RQ },
-    { "", "\"\\0001\\0\"", 9, "simple", "\" \\t\\n'\\\"\\033?""?/\\\\\"",
-      "a:b", "a\\b", "\"" LQ_ENC RQ_ENC "\"", LQ RQ },
-    { "", "\"\\0001\\0\"", 9, "simple", "\" \\t\\n'\\\"\\033?""?/\\\\\"",
-      "\"a:b\"", "a\\b", "\"" LQ_ENC RQ_ENC "\"", LQ RQ } },
+  { { "", "\"\\0001\\0\"", 9, "simple", "\"\\t'\\t\"",
+      "\" \\t\\n'\\\"\\033?""?/\\\\\"", "a:b", "a\\b", "a' b",
+      "\"" LQ_ENC RQ_ENC "\"", LQ RQ },
+    { "", "\"\\0001\\0\"", 9, "simple", "\"\\t'\\t\"",
+      "\" \\t\\n'\\\"\\033?""?/\\\\\"", "a:b", "a\\b", "a' b",
+      "\"" LQ_ENC RQ_ENC "\"", LQ RQ },
+    { "", "\"\\0001\\0\"", 9, "simple", "\"\\t'\\t\"",
+      "\" \\t\\n'\\\"\\033?""?/\\\\\"", "\"a:b\"", "a\\b", "a' b",
+      "\"" LQ_ENC RQ_ENC "\"", LQ RQ } },
 
   /* c_quoting_style and QA_SPLIT_TRIGRAPHS */
-  { { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"",
+  { { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"", "\"\\t'\\t\"",
       "\" \\t\\n'\\\"\\033?\"\"?/\\\\\"", "\"a:b\"", "\"a\\\\b\"",
-      "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" },
-    { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"",
+      "\"a' b\"", "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" },
+    { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"", "\"\\t'\\t\"",
       "\" \\t\\n'\\\"\\033?\"\"?/\\\\\"", "\"a:b\"", "\"a\\\\b\"",
-      "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" },
-    { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"",
+      "\"a' b\"", "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" },
+    { "\"\"", "\"\\0001\\0\"", 9, "\"simple\"", "\"\\t'\\t\"",
       "\" \\t\\n'\\\"\\033?\"\"?/\\\\\"", "\"a\\:b\"", "\"a\\\\b\"",
-      "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" } }
+      "\"a' b\"", "\"" LQ_ENC RQ_ENC "\"", "\"" LQ RQ "\"" } }
 };
 
 static char const *custom_quotes[][2] = {
@@ -168,90 +181,96 @@ static char const *custom_quotes[][2] = {
 
 static struct result_groups custom_results[] = {
   /* left_quote = right_quote = "" */
-  { { "", "\\0001\\0", 7, "simple",
+  { { "", "\\0001\\0", 7, "simple", "\\t'\\t",
       " \\t\\n'\"\\033?""?/\\\\", "a:b", "a\\\\b",
-      LQ_ENC RQ_ENC, LQ RQ },
-    { "", "\\0001\\0", 7, "simple",
+      "a' b", LQ_ENC RQ_ENC, LQ RQ },
+    { "", "\\0001\\0", 7, "simple", "\\t'\\t",
       " \\t\\n'\"\\033?""?/\\\\", "a:b", "a\\\\b",
-      LQ_ENC RQ_ENC, LQ RQ },
-    { "", "\\0001\\0", 7, "simple",
+      "a' b", LQ_ENC RQ_ENC, LQ RQ },
+    { "", "\\0001\\0", 7, "simple", "\\t'\\t",
       " \\t\\n'\"\\033?""?/\\\\", "a\\:b", "a\\\\b",
-      LQ_ENC RQ_ENC, LQ RQ } },
+      "a' b", LQ_ENC RQ_ENC, LQ RQ } },
 
   /* left_quote = right_quote = "'" */
-  { { "''", "'\\0001\\0'", 9, "'simple'",
+  { { "''", "'\\0001\\0'", 9, "'simple'", "'\\t\\'\\t'",
       "' \\t\\n\\'\"\\033?""?/\\\\'", "'a:b'", "'a\\\\b'",
-      "'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" },
-    { "''", "'\\0001\\0'", 9, "'simple'",
+      "'a\\' b'", "'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" },
+    { "''", "'\\0001\\0'", 9, "'simple'", "'\\t\\'\\t'",
       "' \\t\\n\\'\"\\033?""?/\\\\'", "'a:b'", "'a\\\\b'",
-      "'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" },
-    { "''", "'\\0001\\0'", 9, "'simple'",
+      "'a\\' b'", "'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" },
+    { "''", "'\\0001\\0'", 9, "'simple'", "'\\t\\'\\t'",
       "' \\t\\n\\'\"\\033?""?/\\\\'", "'a\\:b'", "'a\\\\b'",
-      "'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" } },
+      "'a\\' b'", "'" LQ_ENC RQ_ENC "'", "'" LQ RQ "'" } },
 
   /* left_quote = "(" and right_quote = ")" */
-  { { "()", "(\\0001\\0)", 9, "(simple)",
+  { { "()", "(\\0001\\0)", 9, "(simple)", "(\\t'\\t)",
       "( \\t\\n'\"\\033?""?/\\\\)", "(a:b)", "(a\\\\b)",
-      "(" LQ_ENC RQ_ENC ")", "(" LQ RQ ")" },
-    { "()", "(\\0001\\0)", 9, "(simple)",
+      "(a' b)", "(" LQ_ENC RQ_ENC ")", "(" LQ RQ ")" },
+    { "()", "(\\0001\\0)", 9, "(simple)", "(\\t'\\t)",
       "( \\t\\n'\"\\033?""?/\\\\)", "(a:b)", "(a\\\\b)",
-      "(" LQ_ENC RQ_ENC ")", "(" LQ RQ ")" },
-    { "()", "(\\0001\\0)", 9, "(simple)",
+      "(a' b)", "(" LQ_ENC RQ_ENC ")", "(" LQ RQ ")" },
+    { "()", "(\\0001\\0)", 9, "(simple)", "(\\t'\\t)",
       "( \\t\\n'\"\\033?""?/\\\\)", "(a\\:b)", "(a\\\\b)",
-      "(" LQ_ENC RQ_ENC ")", "(" LQ RQ ")" } },
+      "(a' b)", "(" LQ_ENC RQ_ENC ")", "(" LQ RQ ")" } },
 
   /* left_quote = ":" and right_quote = " " */
-  { { ": ", ":\\0001\\0 ", 9, ":simple ",
+  { { ": ", ":\\0001\\0 ", 9, ":simple ", ":\\t'\\t ",
       ":\\ \\t\\n'\"\\033?""?/\\\\ ", ":a:b ", ":a\\\\b ",
-      ":" LQ_ENC RQ_ENC " ", ":" LQ RQ " " },
-    { ": ", ":\\0001\\0 ", 9, ":simple ",
+      ":a'\\ b ", ":" LQ_ENC RQ_ENC " ", ":" LQ RQ " " },
+    { ": ", ":\\0001\\0 ", 9, ":simple ", ":\\t'\\t ",
       ":\\ \\t\\n'\"\\033?""?/\\\\ ", ":a:b ", ":a\\\\b ",
-      ":" LQ_ENC RQ_ENC " ", ":" LQ RQ " " },
-    { ": ", ":\\0001\\0 ", 9, ":simple ",
+      ":a'\\ b ", ":" LQ_ENC RQ_ENC " ", ":" LQ RQ " " },
+    { ": ", ":\\0001\\0 ", 9, ":simple ", ":\\t'\\t ",
       ":\\ \\t\\n'\"\\033?""?/\\\\ ", ":a\\:b ", ":a\\\\b ",
-      ":" LQ_ENC RQ_ENC " ", ":" LQ RQ " " } },
+      ":a'\\ b ", ":" LQ_ENC RQ_ENC " ", ":" LQ RQ " " } },
 
   /* left_quote = " " and right_quote = ":" */
-  { { " :", " \\0001\\0:", 9, " simple:",
+  { { " :", " \\0001\\0:", 9, " simple:", " \\t'\\t:",
       "  \\t\\n'\"\\033?""?/\\\\:", " a\\:b:", " a\\\\b:",
-      " " LQ_ENC RQ_ENC ":", " " LQ RQ ":" },
-    { " :", " \\0001\\0:", 9, " simple:",
+      " a' b:", " " LQ_ENC RQ_ENC ":", " " LQ RQ ":" },
+    { " :", " \\0001\\0:", 9, " simple:", " \\t'\\t:",
       "  \\t\\n'\"\\033?""?/\\\\:", " a\\:b:", " a\\\\b:",
-      " " LQ_ENC RQ_ENC ":", " " LQ RQ ":" },
-    { " :", " \\0001\\0:", 9, " simple:",
+      " a' b:", " " LQ_ENC RQ_ENC ":", " " LQ RQ ":" },
+    { " :", " \\0001\\0:", 9, " simple:", " \\t'\\t:",
       "  \\t\\n'\"\\033?""?/\\\\:", " a\\:b:", " a\\\\b:",
-      " " LQ_ENC RQ_ENC ":", " " LQ RQ ":" } },
+      " a' b:", " " LQ_ENC RQ_ENC ":", " " LQ RQ ":" } },
 
   /* left_quote = "# " and right_quote = "\n" */
-  { { "# \n", "# \\0001\\0\n", 10, "# simple\n",
+  { { "# \n", "# \\0001\\0\n", 10, "# simple\n", "# \\t'\\t\n",
       "#  \\t\\n'\"\\033?""?/\\\\\n", "# a:b\n", "# a\\\\b\n",
-      "# " LQ_ENC RQ_ENC "\n", "# " LQ RQ "\n" },
-    { "# \n", "# \\0001\\0\n", 10, "# simple\n",
+      "# a' b\n", "# " LQ_ENC RQ_ENC "\n", "# " LQ RQ "\n" },
+    { "# \n", "# \\0001\\0\n", 10, "# simple\n", "# \\t'\\t\n",
       "#  \\t\\n'\"\\033?""?/\\\\\n", "# a:b\n", "# a\\\\b\n",
-      "# " LQ_ENC RQ_ENC "\n", "# " LQ RQ "\n" },
-    { "# \n", "# \\0001\\0\n", 10, "# simple\n",
+      "# a' b\n", "# " LQ_ENC RQ_ENC "\n", "# " LQ RQ "\n" },
+    { "# \n", "# \\0001\\0\n", 10, "# simple\n", "# \\t'\\t\n",
       "#  \\t\\n'\"\\033?""?/\\\\\n", "# a\\:b\n", "# a\\\\b\n",
-      "# " LQ_ENC RQ_ENC "\n", "# " LQ RQ "\n" } },
+      "# a' b\n", "# " LQ_ENC RQ_ENC "\n", "# " LQ RQ "\n" } },
 
   /* left_quote = "\"'" and right_quote = "'\"" */
-  { { "\"''\"", "\"'\\0001\\0'\"", 11, "\"'simple'\"",
+  { { "\"''\"", "\"'\\0001\\0'\"", 11, "\"'simple'\"", "\"'\\t'\\t'\"",
       "\"' \\t\\n\\'\"\\033?""?/\\\\'\"", "\"'a:b'\"", "\"'a\\\\b'\"",
-      "\"'" LQ_ENC RQ_ENC "'\"", "\"'" LQ RQ "'\"" },
-    { "\"''\"", "\"'\\0001\\0'\"", 11, "\"'simple'\"",
+      "\"'a' b'\"", "\"'" LQ_ENC RQ_ENC "'\"", "\"'" LQ RQ "'\"" },
+    { "\"''\"", "\"'\\0001\\0'\"", 11, "\"'simple'\"", "\"'\\t'\\t'\"",
       "\"' \\t\\n\\'\"\\033?""?/\\\\'\"", "\"'a:b'\"", "\"'a\\\\b'\"",
-      "\"'" LQ_ENC RQ_ENC "'\"", "\"'" LQ RQ "'\"" },
-    { "\"''\"", "\"'\\0001\\0'\"", 11, "\"'simple'\"",
+      "\"'a' b'\"", "\"'" LQ_ENC RQ_ENC "'\"", "\"'" LQ RQ "'\"" },
+    { "\"''\"", "\"'\\0001\\0'\"", 11, "\"'simple'\"", "\"'\\t'\\t'\"",
       "\"' \\t\\n\\'\"\\033?""?/\\\\'\"", "\"'a\\:b'\"", "\"'a\\\\b'\"",
-      "\"'" LQ_ENC RQ_ENC "'\"", "\"'" LQ RQ "'\"" } }
+      "\"'a' b'\"", "\"'" LQ_ENC RQ_ENC "'\"", "\"'" LQ RQ "'\"" } }
 };
 
-int
-main (int argc _GL_UNUSED, char *argv[])
+static char *
+use_quote_double_quotes (const char *str, size_t *len)
 {
-  int i;
-  bool ascii_only = MB_CUR_MAX == 1 && !isprint ((unsigned char) LQ[0]);
+  char *p = *len == SIZE_MAX ? quotearg_char (str, '"')
+                               : quotearg_char_mem (str, *len, '"');
+  *len = strlen (p);
+  return p;
+}
 
-  set_program_name (argv[0]);
+int
+main (_GL_UNUSED int argc, char *argv[])
+{
+  bool ascii_only = MB_CUR_MAX == 1 && !isprint ((unsigned char) LQ[0]);
 
   /* This part of the program is hard-wired to the C locale since it
      does not call setlocale.  However, according to POSIX, the use of
@@ -265,7 +284,7 @@ main (int argc _GL_UNUSED, char *argv[])
      testing for quoting of str7, use the ascii_only flag to decide
      what to expect for the 8-bit data being quoted.  */
   ASSERT (!isprint ('\033'));
-  for (i = literal_quoting_style; i <= clocale_quoting_style; i++)
+  for (int i = literal_quoting_style; i <= clocale_quoting_style; i++)
     {
       set_quoting_style (NULL, (enum quoting_style) i);
       if (!(i == locale_quoting_style || i == clocale_quoting_style)
@@ -309,7 +328,7 @@ main (int argc _GL_UNUSED, char *argv[])
 
   ASSERT (set_quoting_flags (NULL, 0) == QA_SPLIT_TRIGRAPHS);
 
-  for (i = 0; i < sizeof custom_quotes / sizeof *custom_quotes; ++i)
+  for (int i = 0; i < sizeof custom_quotes / sizeof *custom_quotes; ++i)
     {
       set_custom_quoting (NULL,
                           custom_quotes[i][0], custom_quotes[i][1]);
@@ -355,5 +374,5 @@ main (int argc _GL_UNUSED, char *argv[])
 
   quotearg_free ();
 
-  return 0;
+  return test_exit_status;
 }

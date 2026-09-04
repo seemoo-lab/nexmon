@@ -1,33 +1,9 @@
 # List of files which contain translatable strings.
-# Copyright (C) 1995, 1998, 2001-2006, 2011, 2016 Free Software Foundation,
-# Inc.
+# Copyright (C) 1995-2025 Free Software Foundation, Inc.
+# This file is free software, distributed under GNU GPL v3+.
 
 # For updating this file, look at the result of:
-#   $ LC_ALL=C grep -l '[^A-Za-z_]_(' {gnulib-lib,src,libgettextpo}/*.[chly]
-
-# Files from the portability library
-gnulib-lib/argmatch.c
-gnulib-lib/clean-temp.c
-gnulib-lib/closeout.c
-gnulib-lib/copy-acl.c
-gnulib-lib/copy-file.c
-gnulib-lib/csharpcomp.c
-gnulib-lib/csharpexec.c
-gnulib-lib/error.c
-gnulib-lib/execute.c
-gnulib-lib/getopt.c
-gnulib-lib/javacomp.c
-gnulib-lib/javaexec.c
-gnulib-lib/javaversion.c
-gnulib-lib/obstack.c
-gnulib-lib/pipe-filter-ii.c
-gnulib-lib/quotearg.c
-gnulib-lib/set-acl.c
-gnulib-lib/spawn-pipe.c
-gnulib-lib/w32spawn.h
-gnulib-lib/wait-process.c
-gnulib-lib/xmalloc.c
-gnulib-lib/xsetenv.c
+#   $ LC_ALL=C grep -l '[^A-Za-z_]_(' {src,libgettextpo}/*.[chly]
 
 # Package source files
 src/cldr-plurals.c
@@ -35,20 +11,26 @@ src/file-list.c
 src/format-awk.c
 src/format-boost.c
 src/format.c
+src/format-c++-brace.c
 src/format-c.c
 src/format-c-parse.h
 src/format-csharp.c
+src/format-d.c
 src/format-elisp.c
 src/format-gcc-internal.c
 src/format-gfc-internal.c
+src/format-go.c
 src/format-invalid.h
 src/format-java.c
+src/format-java-printf.c
 src/format-javascript.c
 src/format-kde.c
 src/format-kde-kuit.c
 src/format-librep.c
 src/format-lisp.c
 src/format-lua.c
+src/format-modula2.c
+src/format-ocaml.c
 src/format-pascal.c
 src/format-perl-brace.c
 src/format-perl.c
@@ -57,13 +39,17 @@ src/format-python-brace.c
 src/format-python.c
 src/format-qt.c
 src/format-qt-plural.c
+src/format-ruby.c
+src/format-rust.c
 src/format-scheme.c
 src/format-sh.c
+src/format-sh-printf.c
+src/format-smalltalk.c
 src/format-tcl.c
-src/format-ycp.c
 src/hostname.c
+src/if-error.c
 src/its.c
-src/locating-rule.c
+src/locating-rules.c
 src/msgattrib.c
 src/msgcat.c
 src/msgcmp.c
@@ -79,24 +65,26 @@ src/msgl-cat.c
 src/msgl-charset.c
 src/msgl-check.c
 src/msgl-iconv.c
+src/msgl-merge.c
 src/msgmerge.c
+src/msgpre.c
 src/msgunfmt.c
 src/msguniq.c
 src/open-catalog.c
 src/po-charset.c
-src/po-gram-gen.y
-src/po-lex.c
-src/po-xerror.c
 src/read-catalog.c
 src/read-csharp.c
 src/read-desktop.c
 src/read-java.c
 src/read-mo.c
+src/read-po-gram.y
+src/read-po-lex.c
 src/read-properties.c
 src/read-resources.c
 src/read-stringtable.c
 src/read-tcl.c
 src/recode-sr-latin.c
+src/spit.c
 src/urlget.c
 src/write-catalog.c
 src/write-csharp.c
@@ -111,23 +99,36 @@ src/write-xml.c
 src/x-awk.c
 src/x-c.c
 src/x-csharp.c
+src/x-d.c
 src/x-desktop.c
 src/x-elisp.c
+src/xerror-handler.c
+src/xg-arglist-parser.c
+src/xg-check.c
+src/xg-encoding.c
 src/xgettext.c
+src/xg-message.c
+src/xg-mixed-string.c
+src/x-go.c
 src/x-java.c
 src/x-javascript.c
 src/x-librep.c
 src/x-lisp.c
 src/x-lua.c
+src/x-modula2.c
+src/x-ocaml.c
 src/x-perl.c
 src/x-php.c
 src/x-po.c
 src/x-python.c
 src/x-rst.c
+src/x-ruby.c
+src/x-rust.c
 src/x-scheme.c
 src/x-sh.c
 src/x-smalltalk.c
 src/x-tcl.c
+src/x-typescript-impl.h
 src/x-vala.c
 src/x-ycp.c
 src/user-email.sh.in

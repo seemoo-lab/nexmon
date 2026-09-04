@@ -1,24 +1,30 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test of JavaScript support.
-# Playing with concatenation of string literals within the gettext function
+# Test of JavaScript support: string concatenation,
+# strings with embedded expressions.
 
 cat <<\EOF > xg-js-3.js
 // The usual way to concatenate strings is the plus '+' sign
+var s0;
 var s1 = _("Concatenation #1 " + "- String part added");
 var s2 = _('Concatenation #2 ' + '- String part added');
-var s3 = _("This" + " whole "
-          + "string" +
+// a
+var s3 = // b
+         _("This" + " whole " // c
+          + "string" + // d
          ' should' + " be " + 'extracted');
+// Strings with embedded expressions, a.k.a. template literals.
+var t = "";
+var e1 = _(`embedded_1_${foo}_bar`);
+var e2 = _(`embedded_2_${_("embedded_2_sub1")}_bar_${_('embedded_2_sub2')}_baz`);
+var e3 = _(`embedded_3`);
 EOF
 
 : ${XGETTEXT=xgettext}
-${XGETTEXT} --add-comments=TRANSLATORS: --no-location -o xg-js-3.tmp xg-js-3.js 2>xg-js-3.err
+${XGETTEXT} --add-comments --no-location -o xg-js-3.tmp xg-js-3.js 2>xg-js-3.err
 test $? = 0 || { cat xg-js-3.err; Exit 1; }
-# Don't simplify this to "grep ... < xg-js-3.tmp", otherwise OpenBSD 4.0 grep
-# only outputs "Binary file (standard input) matches".
-cat xg-js-3.tmp | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > xg-js-3.pot
+func_filter_POT_Creation_Date xg-js-3.tmp xg-js-3.pot
 
 cat <<\EOF > xg-js-3.ok
 # SOME DESCRIPTIVE TITLE.
@@ -45,7 +51,18 @@ msgstr ""
 msgid "Concatenation #2 - String part added"
 msgstr ""
 
+#. a
+#. b
 msgid "This whole string should be extracted"
+msgstr ""
+
+msgid "embedded_2_sub1"
+msgstr ""
+
+msgid "embedded_2_sub2"
+msgstr ""
+
+msgid "embedded_3"
 msgstr ""
 EOF
 

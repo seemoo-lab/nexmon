@@ -5,7 +5,7 @@
 # Checks that the extracted pot contains the right translatable
 # content, comments and context.
 
-cat <<EOF > xg-gl-6-empty.glade
+cat <<\EOF > xg-gl-6-empty.glade
 <?xml version="1.0"?>
 <GTK-Interface/>
 EOF
@@ -17,7 +17,7 @@ test $? = 0 || {
   Exit 77
 }
 
-cat <<EOF > xg-gl-6.ui
+cat <<\EOF > xg-gl-6.ui
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
@@ -32,9 +32,10 @@ cat <<EOF > xg-gl-6.ui
 EOF
 
 : ${XGETTEXT=xgettext}
-${XGETTEXT} -o - xg-gl-6.ui | grep -v 'POT-Creation-Date' > xg-gl-6.pot || Exit 1
+${XGETTEXT} -o xg-gl-6.tmp xg-gl-6.ui || Exit 1
+func_filter_POT_Creation_Date xg-gl-6.tmp xg-gl-6.pot
 
-cat <<EOF > xg-gl-6.ok
+cat <<\EOF > xg-gl-6.ok
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
@@ -69,7 +70,8 @@ test $result = 0 || {
 }
 
 # Check with --extract-all option.
-${XGETTEXT} -a -o - xg-gl-6.ui | grep -v 'POT-Creation-Date' > xg-gl-6.pot || Exit 1
+${XGETTEXT} -a -o xg-gl-6.tmp xg-gl-6.ui || Exit 1
+func_filter_POT_Creation_Date xg-gl-6.tmp xg-gl-6.pot
 
 # Must be ignored.
 ${DIFF} xg-gl-6.ok xg-gl-6.pot

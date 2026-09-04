@@ -1,0 +1,75 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Rust support: Simple things.
+
+cat <<\EOF > xg-rs-1.rs
+use gettextrs::gettext;
+
+pub trait TestCase {
+  fn TestCase() {
+    // standard usage
+    String test1 = gettext("Test String 1");
+    /* C style comment */
+    String test2 = gettext("Test String 2");
+    // Rust does not have string literal concatenation.
+    String test3 = gettext("Test " +
+    "String " +
+    "3");
+    // macro
+    String test2 = gettext!("Test String 4");
+    // empty string
+    String test4 = gettext("");
+    // byte string
+    String test2 = gettext(b"Test String 5");
+    // raw string
+    String test5 = gettext(r#"first line
+second line
+third line"#);
+    // scoped identifier
+    String test6 = gettextrs::gettext("Test String 6");
+  }
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -k'gettext!' -c -d xg-rs-1.tmp xg-rs-1.rs || Exit 1
+LC_ALL=C tr -d '\r' < xg-rs-1.tmp.po > xg-rs-1.po || Exit 1
+
+cat <<\EOF > xg-rs-1.ok
+#. standard usage
+msgid "Test String 1"
+msgstr ""
+
+#. C style comment
+msgid "Test String 2"
+msgstr ""
+
+#. macro
+msgid "Test String 4"
+msgstr ""
+
+#. empty string
+msgid ""
+msgstr ""
+
+#. byte string
+msgid "Test String 5"
+msgstr ""
+
+#. raw string
+msgid ""
+"first line\n"
+"second line\n"
+"third line"
+msgstr ""
+
+#. scoped identifier
+msgid "Test String 6"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-rs-1.ok xg-rs-1.po || Exit 1
+
+exit 0

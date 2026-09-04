@@ -1,5 +1,5 @@
 // Example for use of GNU gettext.
-// Copyright (C) 2003, 2015-2016 Free Software Foundation, Inc.
+// Copyright (C) 2003 Free Software Foundation, Inc.
 // This file is published under the GNU General Public License.
 
 /* Declare KMainWindow.  */

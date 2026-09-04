@@ -1,7 +1,5 @@
 /* Reading Desktop Entry files.
-   Copyright (C) 1995-1998, 2000-2003, 2005-2006, 2008-2009, 2014-2016 Free
-   Software Foundation, Inc.
-   This file was written by Daiki Ueno <ueno@gnu.org>.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,15 +12,17 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Daiki Ueno.  */
 
 #ifndef _READ_DESKTOP_H
 #define _READ_DESKTOP_H
 
 #include <sys/types.h>
 #include <stdio.h>
-#include "hash.h"
-#include "po-lex.h"
+#include "mem-hash-map.h"
+#include "pos.h"
 #include "str-list.h"
 
 #ifdef __cplusplus
@@ -45,27 +45,27 @@ struct desktop_reader_class_ty
   size_t size;
 
   /* what to do immediately after the instance is malloc()ed */
-  void (*constructor) (struct desktop_reader_ty *pop);
+  void (*constructor) (struct desktop_reader_ty *reader);
 
   /* what to do immediately before the instance is free()ed */
-  void (*destructor) (struct desktop_reader_ty *pop);
+  void (*destructor) (struct desktop_reader_ty *reader);
 
   /* what to do with a group header */
-  void (*handle_group) (struct desktop_reader_ty *pop,
+  void (*handle_group) (struct desktop_reader_ty *reader,
                         const char *group);
 
   /* what to do with a key/value pair */
-  void (*handle_pair) (struct desktop_reader_ty *pop,
+  void (*handle_pair) (struct desktop_reader_ty *reader,
                        lex_pos_ty *key_pos,
                        const char *key,
                        const char *locale,
                        const char *value);
 
   /* what to do with a comment */
-  void (*handle_comment) (struct desktop_reader_ty *pop, const char *s);
+  void (*handle_comment) (struct desktop_reader_ty *reader, const char *s);
 
   /* what to do with a blank line */
-  void (*handle_blank) (struct desktop_reader_ty *pop, const char *s);
+  void (*handle_blank) (struct desktop_reader_ty *reader, const char *s);
 };
 
 /* This next structure defines the base class passed to the methods.
@@ -94,9 +94,9 @@ extern void desktop_reader_handle_group (desktop_reader_ty *reader,
 
 extern void desktop_reader_handle_pair (desktop_reader_ty *reader,
                                         lex_pos_ty *key_pos,
-                                 const char *key,
-                                 const char *locale,
-                                 const char *value);
+                                        const char *key,
+                                        const char *locale,
+                                        const char *value);
 
 extern void desktop_reader_handle_comment (desktop_reader_ty *reader,
                                            const char *s);

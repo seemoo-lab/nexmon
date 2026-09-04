@@ -145,6 +145,14 @@ gettext "Before slash-slash";
 print $foo // 'undef';
 gettext "After slash-slash";
 
+pgettext "context", "message",
+dpgettext "my domain", "context", "message";
+dcpgettext "my domain", "context", "message", LC_MESSAGES;
+npgettext "context", "one message", "many messages";
+dnpgettext "my domain", "context", "one message", "many messages";
+dcnpgettext "my domain", "context", "one message", "many messages",
+            LC_MESSAGES;
+
 __END__
 gettext "Discarded!";
 EOF
@@ -324,6 +332,18 @@ msgstr ""
 #: xg-pl-1.pl:140
 msgid "After slash-slash"
 msgstr ""
+
+#: xg-pl-1.pl:142 xg-pl-1.pl:143 xg-pl-1.pl:144
+msgctxt "context"
+msgid "message"
+msgstr ""
+
+#: xg-pl-1.pl:145 xg-pl-1.pl:146 xg-pl-1.pl:147
+msgctxt "context"
+msgid "one message"
+msgid_plural "many messages"
+msgstr[0] ""
+msgstr[1] ""
 EOF
 
 : ${DIFF=diff}

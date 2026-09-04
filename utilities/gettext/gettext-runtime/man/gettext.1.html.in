@@ -35,7 +35,7 @@
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">gettext &minus;
+<p style="margin-left:11%; margin-top: 1em">gettext -
 translate message</p>
 
 <h2>SYNOPSIS
@@ -58,12 +58,20 @@ into the user&rsquo;s language, by looking up the
 translation in a message catalog.</p>
 
 <p style="margin-left:11%; margin-top: 1em">Display native
-language translation of a textual message. <b><br>
-&minus;d</b>,
-<b>&minus;&minus;domain</b>=<i>TEXTDOMAIN</i></p>
+language translation of a textual message.</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Options and
+arguments: <br>
+-d</b>,
+<b>--domain</b>=<i>TEXTDOMAIN</i></p>
 
 <p style="margin-left:22%;">retrieve translated messages
 from TEXTDOMAIN</p>
+
+<p style="margin-left:11%;"><b>-c</b>,
+<b>--context</b>=<i>CONTEXT</i></p>
+
+<p style="margin-left:22%;">specify context for MSGID</p>
 
 <table width="100%" border="0" rules="none" frame="void"
        cellspacing="0" cellpadding="0">
@@ -72,7 +80,7 @@ from TEXTDOMAIN</p>
 <td width="3%">
 
 
-<p><b>&minus;e</b></p></td>
+<p><b>-e</b></p></td>
 <td width="8%"></td>
 <td width="63%">
 
@@ -85,7 +93,20 @@ from TEXTDOMAIN</p>
 <td width="3%">
 
 
-<p><b>&minus;E</b></p></td>
+<p><b>-n</b></p></td>
+<td width="8%"></td>
+<td width="63%">
+
+
+<p>suppress trailing newline</p></td>
+<td width="15%">
+</td></tr>
+<tr valign="top" align="left">
+<td width="11%"></td>
+<td width="3%">
+
+
+<p><b>-E</b></p></td>
 <td width="8%"></td>
 <td width="63%">
 
@@ -95,45 +116,29 @@ from TEXTDOMAIN</p>
 </td></tr>
 </table>
 
-<p style="margin-left:11%;"><b>&minus;h</b>,
-<b>&minus;&minus;help</b></p>
-
-<p style="margin-left:22%;">display this help and exit</p>
-
-<table width="100%" border="0" rules="none" frame="void"
-       cellspacing="0" cellpadding="0">
-<tr valign="top" align="left">
-<td width="11%"></td>
-<td width="3%">
-
-
-<p><b>&minus;n</b></p></td>
-<td width="8%"></td>
-<td width="38%">
-
-
-<p>suppress trailing newline</p></td>
-<td width="40%">
-</td></tr>
-</table>
-
-<p style="margin-left:11%;"><b>&minus;V</b>,
-<b>&minus;&minus;version</b></p>
-
-<p style="margin-left:22%;">display version information and
-exit</p>
-
 <p style="margin-left:11%;">[TEXTDOMAIN] MSGID</p>
 
 <p style="margin-left:22%;">retrieve translated message
 corresponding to MSGID from TEXTDOMAIN</p>
+
+<p style="margin-left:11%; margin-top: 1em"><b>Informative
+output: <br>
+-h</b>, <b>--help</b></p>
+
+<p style="margin-left:22%;">display this help and exit</p>
+
+<p style="margin-left:11%;"><b>-V</b>,
+<b>--version</b></p>
+
+<p style="margin-left:22%;">display version information and
+exit</p>
 
 <p style="margin-left:11%; margin-top: 1em">If the
 TEXTDOMAIN parameter is not given, the domain is determined
 from the environment variable TEXTDOMAIN. If the message
 catalog is not found in the regular directory, another
 location can be specified with the environment variable
-TEXTDOMAINDIR. When used with the <b>&minus;s</b> option the
+TEXTDOMAINDIR. When used with the <b>-s</b> option the
 program behaves like the &rsquo;echo&rsquo; command. But it
 does not simply copy its arguments to stdout. Instead those
 messages found in the selected catalog are translated.
@@ -152,8 +157,10 @@ Ulrich Drepper.</p>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">Report bugs to
-&lt;bug-gnu-gettext@gnu.org&gt;.</p>
+<p style="margin-left:11%; margin-top: 1em">Report bugs in
+the bug tracker at
+&lt;https://savannah.gnu.org/projects/gettext&gt; or by
+email to &lt;bug-gettext@gnu.org&gt;.</p>
 
 <h2>COPYRIGHT
 <a name="COPYRIGHT"></a>
@@ -161,9 +168,9 @@ Ulrich Drepper.</p>
 
 
 <p style="margin-left:11%; margin-top: 1em">Copyright
-&copy; 1995-1997, 2000-2007 Free Software Foundation, Inc.
+&copy; 1995-2026 Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later
-&lt;http://gnu.org/licenses/gpl.html&gt; <br>
+&lt;https://gnu.org/licenses/gpl.html&gt; <br>
 This is free software: you are free to change and
 redistribute it. There is NO WARRANTY, to the extent
 permitted by law.</p>

@@ -1,0 +1,49 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: plurals.
+
+cat <<\EOF > xg-go-8.go
+package main
+
+import (
+	"fmt"
+	"strconv"
+	"github.com/leonelquinteros/gotext"
+)
+
+func main () {
+	// Specify localedir, domain.
+	gotext.Configure(".", "fr_FR", "hello")
+
+	n := 1
+	/* These two don't work: In the case n = 1, they print
+	   "a piece of cake%!(EXTRA int=1)"
+	   because fmt.Sprintf treats an unused argument as an error.
+	fmt.Println(gotext.GetN("a piece of cake", "%d pieces of cake", n, n));
+	fmt.Println(fmt.Sprintf(gotext.GetN("a piece of cake", "%d pieces of cake", n), n));
+	*/
+	/* These work: In the case n = 1, they consume the strconv.Itoa(n) argument,
+	   but don't print it. The trick is to print it as a string, with a precision of zero.  */
+	fmt.Println(gotext.GetN("%.0sa piece of cake", "%s pieces of cake", n, strconv.Itoa(n)));
+	fmt.Println(fmt.Sprintf(gotext.GetN("%.0sa piece of cake", "%s pieces of cake", n), strconv.Itoa(n)));
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header -d xg-go-8.tmp xg-go-8.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-8.tmp.po > xg-go-8.po || Exit 1
+
+cat <<\EOF > xg-go-8.ok
+#: xg-go-8.go:22 xg-go-8.go:23
+#, go-format
+msgid "%.0sa piece of cake"
+msgid_plural "%s pieces of cake"
+msgstr[0] ""
+msgstr[1] ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-8.ok xg-go-8.po || Exit 1
+
+exit 0

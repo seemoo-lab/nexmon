@@ -1,14 +1,14 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Yoyodyne, Inc.
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the hello-c++ package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"POT-Creation-Date: 2016-06-11 22:08+0900\n"
+"Project-Id-Version: hello-c++ 0\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2025-10-01 13:28+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,11 +17,11 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: hello-c++/hello.cc:39
+#: hello-c++/hello.cc:44
 msgid "Hello, world!"
 msgstr ""
 
-#: hello-c++/hello.cc:40
+#: hello-c++/hello.cc:45
 #, c-format
 msgid "This program is running as process number %d."
 msgstr ""

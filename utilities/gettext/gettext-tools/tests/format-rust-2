@@ -1,0 +1,88 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test checking of Rust format strings.
+
+cat <<\EOF > f-rs-2.data
+# Valid: permutation
+msgid  "abc{}{}{}def"
+msgstr "xyz{1}{0}{2}"
+# Valid: permutation
+msgid  "abc{2}{0}{1}def"
+msgstr "xyz{1}{0}{2}"
+# Valid: permutation
+msgid  "abc{w}{u}{v}def"
+msgstr "xyz{v}{u}{w}"
+# Valid: permutation
+msgid  "abc{1}{u}{0}def"
+msgstr "xyz{0}{u}{1}"
+# Invalid: missing argument
+msgid  "abc{1}def{0}"
+msgstr "xyz{0}"
+# Invalid: missing argument
+msgid  "abc{0}def{1}"
+msgstr "xyz{1}"
+# Invalid: missing argument
+msgid  "abc{y}def{x}"
+msgstr "xyz{x}"
+# Invalid: added argument
+msgid  "abc{}def"
+msgstr "xyz{}uvw{}"
+# Invalid: added argument
+msgid  "abc{0}def"
+msgstr "xyz{0}uvw{1}"
+# Invalid: added argument
+msgid  "abc{x}def"
+msgstr "xyz{x}uvw{y}"
+# Valid: multiple reuse of same argument
+msgid  "{2} {0} {1}"
+msgstr "{1} {0} {2} {0}"
+# Valid: multiple reuse of same argument
+msgid  "{w} {u} {v}"
+msgstr "{v} {u} {w} {u}"
+# Valid: single reuse of same argument
+msgid  "{1} {0} {2} {0}"
+msgstr "{2} {0} {1}"
+# Valid: single reuse of same argument
+msgid  "{v} {u} {w} {u}"
+msgstr "{w} {u} {v}"
+# Valid: "{{" is an escape of "{"
+msgid  "abc{{{1}{2}"
+msgstr "{2}abc{1}"
+EOF
+
+: ${MSGFMT=msgfmt}
+n=0
+while read comment; do
+  read msgid_line
+  read msgstr_line
+  n=`expr $n + 1`
+  cat <<EOF > f-rs-2-$n.po
+#, rust-format
+${msgid_line}
+${msgstr_line}
+EOF
+  fail=
+  if echo "$comment" | grep 'Valid:' > /dev/null; then
+    if ${MSGFMT} --check-format -o f-rs-2-$n.mo f-rs-2-$n.po; then
+      :
+    else
+      fail=yes
+    fi
+  else
+    ${MSGFMT} --check-format -o f-rs-2-$n.mo f-rs-2-$n.po 2> /dev/null
+    if test $? = 1; then
+      :
+    else
+      fail=yes
+    fi
+  fi
+  if test -n "$fail"; then
+    echo "Format string checking error:" 1>&2
+    cat f-rs-2-$n.po 1>&2
+    Exit 1
+  fi
+  rm -f f-rs-2-$n.po f-rs-2-$n.mo
+done < f-rs-2.data
+
+Exit 0

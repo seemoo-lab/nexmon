@@ -160,6 +160,10 @@ cat <<\EOF > f-bo-1.data
 "abc%*0g"
 # Invalid: flags after width
 "abc%|*0g|"
+# Valid: null precision
+"abc%.f"
+# Valid: null precision
+"abc%|.f|"
 # Invalid: twice precision
 "abc%.4.2g"
 # Invalid: twice precision

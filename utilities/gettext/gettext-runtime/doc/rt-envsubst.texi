@@ -1,3 +1,7 @@
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 1995-2019 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
+
 @pindex envsubst
 @cindex @code{envsubst} program, usage
 @example

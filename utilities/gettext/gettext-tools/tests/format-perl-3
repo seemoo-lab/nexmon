@@ -1,0 +1,47 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test heuristic recognition of Perl format strings like "100% complete".
+
+cat <<\EOF > f-pl-3.pl
+gettext("Test 1a is 100% complete");
+printf gettext("Test 1b is 100% complete"), 120;
+gettext("Test 2a from 0% complete to 100% complete");
+printf gettext("Test 2b from 0% complete to 100% complete"), 120, 121;
+gettext("Test 3a of %s is 100% complete");
+printf gettext("Test 3b of %s is 100% complete"), "foo", 120;
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d f-pl-3.tmp f-pl-3.pl || Exit 1
+LC_ALL=C tr -d '\r' < f-pl-3.tmp.po > f-pl-3.po || Exit 1
+
+cat <<\EOF > f-pl-3.ok
+msgid "Test 1a is 100% complete"
+msgstr ""
+
+#, perl-format
+msgid "Test 1b is 100% complete"
+msgstr ""
+
+msgid "Test 2a from 0% complete to 100% complete"
+msgstr ""
+
+#, perl-format
+msgid "Test 2b from 0% complete to 100% complete"
+msgstr ""
+
+#, perl-format
+msgid "Test 3a of %s is 100% complete"
+msgstr ""
+
+#, perl-format
+msgid "Test 3b of %s is 100% complete"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} f-pl-3.ok f-pl-3.po
+result=$?
+
+exit $result

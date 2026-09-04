@@ -1,8 +1,5 @@
 /* JavaScript format strings.
-   Copyright (C) 2001-2004, 2006-2009, 2013, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Andreas Stricker <andy@knitter.ch>, 2010.
-   It's based on python format module from Bruno Haible.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Bruno Haible, Andreas Stricker, and Daiki Ueno.  */
+
+#include <config.h>
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -67,30 +64,28 @@ enum format_arg_type
 
 struct numbered_arg
 {
-  unsigned int number;
+  size_t number;
   enum format_arg_type type;
 };
 
 struct spec
 {
-  unsigned int directives;
-  unsigned int numbered_arg_count;
-  unsigned int allocated;
+  size_t directives;
+  /* We consider a directive as "likely intentional" if it does not contain a
+     space.  This prevents xgettext from flagging strings like "100% complete"
+     as 'javascript-format' if they don't occur in a context that requires a format
+     string.  */
+  size_t likely_intentional_directives;
+  size_t numbered_arg_count;
   struct numbered_arg *numbered;
 };
-
-/* Locale independent test for a decimal digit.
-   Argument can be  'char' or 'unsigned char'.  (Whereas the argument of
-   <ctype.h> isdigit must be an 'unsigned char'.)  */
-#undef isdigit
-#define isdigit(c) ((unsigned int) ((c) - '0') < 10)
 
 
 static int
 numbered_arg_compare (const void *p1, const void *p2)
 {
-  unsigned int n1 = ((const struct numbered_arg *) p1)->number;
-  unsigned int n2 = ((const struct numbered_arg *) p2)->number;
+  size_t n1 = ((const struct numbered_arg *) p1)->number;
+  size_t n2 = ((const struct numbered_arg *) p2)->number;
 
   return (n1 > n2 ? 1 : n1 < n2 ? -1 : 0);
 }
@@ -100,37 +95,36 @@ format_parse (const char *format, bool translated, char *fdi,
               char **invalid_reason)
 {
   const char *const format_start = format;
-  struct spec spec;
-  unsigned int unnumbered_arg_count;
-  struct spec *result;
 
+  struct spec spec;
   spec.directives = 0;
+  spec.likely_intentional_directives = 0;
   spec.numbered_arg_count = 0;
-  spec.allocated = 0;
   spec.numbered = NULL;
-  unnumbered_arg_count = 0;
+  size_t numbered_allocated = 0;
+  size_t unnumbered_arg_count = 0;
 
   for (; *format != '\0';)
+    /* Invariant: spec.numbered_arg_count == 0 || unnumbered_arg_count == 0.  */
     if (*format++ == '%')
       {
         /* A directive.  */
-        unsigned int number = 0;
-        enum format_arg_type type;
-
         FDI_SET (format - 1, FMTDIR_START);
         spec.directives++;
+        bool likely_intentional = true;
 
-        if (isdigit (*format))
+        size_t number = 0;
+        if (c_isdigit (*format))
           {
             const char *f = format;
-            unsigned int m = 0;
+            size_t m = 0;
 
             do
               {
                 m = 10 * m + (*f - '0');
                 f++;
               }
-            while (isdigit (*f));
+            while (c_isdigit (*f));
 
             if (*f == '$')
               {
@@ -148,20 +142,40 @@ format_parse (const char *format, bool translated, char *fdi,
         /* Parse flags.  */
         while (*format == '-' || *format == '+' || *format == ' '
                || *format == '0' || *format == 'I')
-          format++;
+          {
+            if (*format == ' ')
+              likely_intentional = false;
+            format++;
+          }
 
         /* Parse width.  */
-        while (isdigit (*format))
+        while (c_isdigit (*format))
           format++;
 
+        /* Parse precision.  */
         if (*format == '.')
           {
             format++;
 
-            while (isdigit (*format))
-              format++;
+            if (!c_isdigit (*format))
+              {
+                if (*format == '\0')
+                  {
+                    *invalid_reason = INVALID_UNTERMINATED_DIRECTIVE ();
+                    FDI_SET (format - 1, FMTDIR_ERROR);
+                  }
+                else
+                  {
+                    *invalid_reason = INVALID_PRECISION_MISSING (spec.directives);
+                    FDI_SET (format, FMTDIR_ERROR);
+                  }
+                goto bad_format;
+              }
+
+            do format++; while (c_isdigit (*format));
           }
 
+        enum format_arg_type type;
         switch (*format)
           {
           case '%':
@@ -211,10 +225,10 @@ format_parse (const char *format, bool translated, char *fdi,
                     goto bad_format;
                   }
 
-                if (spec.allocated == spec.numbered_arg_count)
+                if (numbered_allocated == spec.numbered_arg_count)
                   {
-                    spec.allocated = 2 * spec.allocated + 1;
-                    spec.numbered = (struct numbered_arg *) xrealloc (spec.numbered, spec.allocated * sizeof (struct numbered_arg));
+                    numbered_allocated = 2 * numbered_allocated + 1;
+                    spec.numbered = (struct numbered_arg *) xrealloc (spec.numbered, numbered_allocated * sizeof (struct numbered_arg));
                   }
                 spec.numbered[spec.numbered_arg_count].number = number;
                 spec.numbered[spec.numbered_arg_count].type = type;
@@ -232,10 +246,10 @@ format_parse (const char *format, bool translated, char *fdi,
                     goto bad_format;
                   }
 
-                if (spec.allocated == unnumbered_arg_count)
+                if (numbered_allocated == unnumbered_arg_count)
                   {
-                    spec.allocated = 2 * spec.allocated + 1;
-                    spec.numbered = (struct numbered_arg *) xrealloc (spec.numbered, spec.allocated * sizeof (struct numbered_arg));
+                    numbered_allocated = 2 * numbered_allocated + 1;
+                    spec.numbered = (struct numbered_arg *) xrealloc (spec.numbered, numbered_allocated * sizeof (struct numbered_arg));
                   }
                 spec.numbered[unnumbered_arg_count].number = unnumbered_arg_count + 1;
                 spec.numbered[unnumbered_arg_count].type = type;
@@ -243,6 +257,8 @@ format_parse (const char *format, bool translated, char *fdi,
               }
           }
 
+        if (likely_intentional)
+          spec.likely_intentional_directives++;
         FDI_SET (format, FMTDIR_END);
 
         format++;
@@ -254,21 +270,19 @@ format_parse (const char *format, bool translated, char *fdi,
   /* Sort the numbered argument array, and eliminate duplicates.  */
   else if (spec.numbered_arg_count > 1)
     {
-      unsigned int i, j;
-      bool err;
-
       qsort (spec.numbered, spec.numbered_arg_count,
              sizeof (struct numbered_arg), numbered_arg_compare);
 
       /* Remove duplicates: Copy from i to j, keeping 0 <= j <= i.  */
-      err = false;
+      bool err = false;
+      size_t i, j;
       for (i = j = 0; i < spec.numbered_arg_count; i++)
         if (j > 0 && spec.numbered[i].number == spec.numbered[j-1].number)
           {
             enum format_arg_type type1 = spec.numbered[i].type;
             enum format_arg_type type2 = spec.numbered[j-1].type;
-            enum format_arg_type type_both;
 
+            enum format_arg_type type_both;
             if (type1 == type2)
               type_both = type1;
             else
@@ -298,7 +312,7 @@ format_parse (const char *format, bool translated, char *fdi,
         goto bad_format;
     }
 
-  result = XMALLOC (struct spec);
+  struct spec *result = XMALLOC (struct spec);
   *result = spec;
   return result;
 
@@ -327,8 +341,16 @@ format_get_number_of_directives (void *descr)
 }
 
 static bool
+format_is_unlikely_intentional (void *descr)
+{
+  struct spec *spec = (struct spec *) descr;
+
+  return spec->likely_intentional_directives == 0;
+}
+
+static bool
 format_check (void *msgid_descr, void *msgstr_descr, bool equality,
-              formatstring_error_logger_t error_logger,
+              formatstring_error_logger_t error_logger, void *error_logger_data,
               const char *pretty_msgid, const char *pretty_msgstr)
 {
   struct spec *spec1 = (struct spec *) msgid_descr;
@@ -337,67 +359,75 @@ format_check (void *msgid_descr, void *msgstr_descr, bool equality,
 
   if (spec1->numbered_arg_count + spec2->numbered_arg_count > 0)
     {
-      unsigned int i, j;
-      unsigned int n1 = spec1->numbered_arg_count;
-      unsigned int n2 = spec2->numbered_arg_count;
+      size_t n1 = spec1->numbered_arg_count;
+      size_t n2 = spec2->numbered_arg_count;
 
-      /* Check the argument names are the same.
+      /* Check that the argument numbers are the same.
          Both arrays are sorted.  We search for the first difference.  */
-      for (i = 0, j = 0; i < n1 || j < n2; )
+      {
+        size_t i, j;
+        for (i = 0, j = 0; i < n1 || j < n2; )
+          {
+            int cmp = (i >= n1 ? 1 :
+                       j >= n2 ? -1 :
+                       spec1->numbered[i].number > spec2->numbered[j].number ? 1 :
+                       spec1->numbered[i].number < spec2->numbered[j].number ? -1 :
+                       0);
+            if (cmp > 0)
+              {
+                if (error_logger)
+                  error_logger (error_logger_data,
+                                _("a format specification for argument %zu, as in '%s', doesn't exist in '%s'"),
+                                spec2->numbered[j].number, pretty_msgstr,
+                                pretty_msgid);
+                err = true;
+                break;
+              }
+            else if (cmp < 0)
+              {
+                if (equality)
+                  {
+                    if (error_logger)
+                      error_logger (error_logger_data,
+                                    _("a format specification for argument %zu doesn't exist in '%s'"),
+                                    spec1->numbered[i].number, pretty_msgstr);
+                    err = true;
+                    break;
+                  }
+                else
+                  i++;
+              }
+            else
+              j++, i++;
+          }
+      }
+      /* Check the argument types are the same.  */
+      if (!err)
         {
-          int cmp = (i >= n1 ? 1 :
-                     j >= n2 ? -1 :
-                     spec1->numbered[i].number > spec2->numbered[j].number ? 1 :
-                     spec1->numbered[i].number < spec2->numbered[j].number ? -1 :
-                     0);
-          if (cmp > 0)
+          size_t i, j;
+          for (i = 0, j = 0; j < n2; )
             {
-              if (error_logger)
-                error_logger (_("a format specification for argument %u, as in '%s', doesn't exist in '%s'"),
-                              spec2->numbered[j].number, pretty_msgstr,
-                              pretty_msgid);
-              err = true;
-              break;
-            }
-          else if (cmp < 0)
-            {
-              if (equality)
+              if (spec1->numbered[i].number == spec2->numbered[j].number)
                 {
-                  if (error_logger)
-                    error_logger (_("a format specification for argument %u doesn't exist in '%s'"),
-                                  spec1->numbered[i].number, pretty_msgstr);
-                  err = true;
-                  break;
+                  if (!(spec1->numbered[i].type == spec2->numbered[j].type
+                        || (!equality
+                            && (spec1->numbered[i].type == FAT_ANY
+                                || spec2->numbered[i].type == FAT_ANY))))
+                    {
+                      if (error_logger)
+                        error_logger (error_logger_data,
+                                      _("format specifications in '%s' and '%s' for argument %zu are not the same"),
+                                      pretty_msgid, pretty_msgstr,
+                                      spec2->numbered[j].number);
+                      err = true;
+                      break;
+                    }
+                  j++, i++;
                 }
               else
                 i++;
             }
-          else
-            j++, i++;
         }
-      /* Check the argument types are the same.  */
-      if (!err)
-        for (i = 0, j = 0; j < n2; )
-          {
-            if (spec1->numbered[i].number == spec2->numbered[j].number)
-              {
-                if (!(spec1->numbered[i].type == spec2->numbered[j].type
-                      || (!equality
-                          && (spec1->numbered[i].type == FAT_ANY
-                              || spec2->numbered[i].type == FAT_ANY))))
-                  {
-                    if (error_logger)
-                      error_logger (_("format specifications in '%s' and '%s' for argument %u are not the same"),
-                                    pretty_msgid, pretty_msgstr,
-                                    spec2->numbered[j].number);
-                    err = true;
-                    break;
-                  }
-                j++, i++;
-              }
-            else
-              i++;
-          }
     }
 
   return err;
@@ -409,7 +439,7 @@ struct formatstring_parser formatstring_javascript =
   format_parse,
   format_free,
   format_get_number_of_directives,
-  NULL,
+  format_is_unlikely_intentional,
   format_check
 };
 
@@ -425,7 +455,6 @@ static void
 format_print (void *descr)
 {
   struct spec *spec = (struct spec *) descr;
-  unsigned int i;
 
   if (spec == NULL)
     {
@@ -433,33 +462,33 @@ format_print (void *descr)
       return;
     }
 
-      printf ("(");
-      for (i = 0; i < spec->numbered_arg_count; i++)
+  printf ("(");
+  for (size_t i = 0; i < spec->numbered_arg_count; i++)
+    {
+      if (i > 0)
+        printf (" ");
+      switch (spec->numbered[i].type)
         {
-          if (i > 0)
-            printf (" ");
-          switch (spec->numbered[i].type)
-            {
-            case FAT_ANY:
-              printf ("*");
-              break;
-            case FAT_CHARACTER:
-              printf ("c");
-              break;
-            case FAT_STRING:
-              printf ("s");
-              break;
-            case FAT_INTEGER:
-              printf ("i");
-              break;
-            case FAT_FLOAT:
-              printf ("f");
-              break;
-            default:
-              abort ();
-            }
+        case FAT_ANY:
+          printf ("*");
+          break;
+        case FAT_CHARACTER:
+          printf ("c");
+          break;
+        case FAT_STRING:
+          printf ("s");
+          break;
+        case FAT_INTEGER:
+          printf ("i");
+          break;
+        case FAT_FLOAT:
+          printf ("f");
+          break;
+        default:
+          abort ();
         }
-      printf (")");
+    }
+  printf (")");
 }
 
 int
@@ -469,18 +498,14 @@ main ()
     {
       char *line = NULL;
       size_t line_size = 0;
-      int line_len;
-      char *invalid_reason;
-      void *descr;
-
-      line_len = getline (&line, &line_size, stdin);
+      int line_len = getline (&line, &line_size, stdin);
       if (line_len < 0)
         break;
       if (line_len > 0 && line[line_len - 1] == '\n')
         line[--line_len] = '\0';
 
-      invalid_reason = NULL;
-      descr = format_parse (line, false, NULL, &invalid_reason);
+      char *invalid_reason = NULL;
+      void *descr = format_parse (line, false, NULL, &invalid_reason);
 
       format_print (descr);
       printf ("\n");
@@ -497,7 +522,7 @@ main ()
 /*
  * For Emacs M-x compile
  * Local Variables:
- * compile-command: "/bin/sh ../libtool --tag=CC --mode=link gcc -o a.out -static -O -g -Wall -I.. -I../gnulib-lib -I../intl -DHAVE_CONFIG_H -DTEST format-javascript.c ../gnulib-lib/libgettextlib.la"
+ * compile-command: "/bin/sh ../libtool --tag=CC --mode=link gcc -o a.out -static -O -g -Wall -I.. -I../gnulib-lib -I../../gettext-runtime/intl -DTEST format-javascript.c ../gnulib-lib/libgettextlib.la"
  * End:
  */
 #endif /* TEST */

@@ -1,0 +1,160 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Rust support: string syntax and escapes.
+
+LC_ALL=C tr '%' '\015' <<\EOF > xg-rs-3.rs
+pub trait TestCase {
+  fn main () {
+    // Test recognition of \u escapes.
+    gettext("B\u{00f6}se B\u{00fc}bchen");
+    // \u escapes with more than one u are invalid.
+    gettext("Japanese: \uu{6585}\uuu{6723}\u{8A9e}");
+    gettext("embedded\nnewline");
+    // Two backslashes (unlike in Java, where this is just one backslash).
+    gettext("\u{005c}\u{005c}");
+    // A 6-character string (unlike in Java, where this is just one backslash).
+    gettext("\\u005c");
+    // A single backslash.
+    gettext("\\");
+    // Escape sequences in strings.
+    gettext("t -> \t, n -> \n, dquote -> \", squote -> \' ...");
+    // Hex escapes are recognized.
+    gettext("bel: \x07\n");
+    gettext // Recognized despite comments
+       ( /* Even across multiline
+comment! */ "this is a single long line");
+    // Byte string literals are extracted.
+    gettext(b"byte 1");
+    // In byte string literals, escape sequences are recognized.
+    gettext(b"byte 2 \u{005c} \\ \t \n");
+    // Raw string literals are extracted.
+    gettext(r"raw 1");
+    // In raw string literals, no escape sequences are recognized.
+    gettext(r"raw 2 \u{005c} \\ \t \n \'");
+    // In raw string literals, only delimiters without the proper number of
+    // hashes are recognized.
+    gettext (r##"raw 3 ""test"##);
+    // Rust does not have string literal concatenation.
+    gettext("left - \"quot" + r#"ation"" - right"#);
+    // Character literals are not extracted.
+    gettext('x');
+    // Rust does not have string literal concatenation.
+    gettext("fooba"+'r');
+    // In multiline strings, after backslash-newline, leading ASCII whitespace is ignored.
+    gettext("multiline\
+             with spaces\
+		with tabs\
+             with no-break spaces\
+　　　　　　　　with ideographic spaces");
+  }
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+# delete POT-Creation-Date: line because the date depends on local time.
+${XGETTEXT} --output xg-rs-3.tmp --add-location -c xg-rs-3.rs 2>/dev/null || Exit 1
+sed -e '/\"POT-Creation-Date:.*/d' < xg-rs-3.tmp | LC_ALL=C tr -d '\r' > xg-rs-3.po || Exit 1
+
+cat <<\EOF > xg-rs-3.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Test recognition of \u escapes.
+#: xg-rs-3.rs:4
+msgid "Böse Bübchen"
+msgstr ""
+
+#: xg-rs-3.rs:7
+msgid ""
+"embedded\n"
+"newline"
+msgstr ""
+
+#. Two backslashes (unlike in Java, where this is just one backslash).
+#: xg-rs-3.rs:9
+msgid "\\\\"
+msgstr ""
+
+#. A 6-character string (unlike in Java, where this is just one backslash).
+#: xg-rs-3.rs:11
+msgid "\\u005c"
+msgstr ""
+
+#. A single backslash.
+#: xg-rs-3.rs:13
+msgid "\\"
+msgstr ""
+
+#. Escape sequences in strings.
+#: xg-rs-3.rs:15
+msgid ""
+"t -> \t, n -> \n"
+", dquote -> \", squote -> ' ..."
+msgstr ""
+
+#. Hex escapes are recognized.
+#: xg-rs-3.rs:17
+msgid "bel: \a\n"
+msgstr ""
+
+#. Recognized despite comments
+#. Even across multiline
+#. comment!
+#: xg-rs-3.rs:20
+msgid "this is a single long line"
+msgstr ""
+
+#. Byte string literals are extracted.
+#: xg-rs-3.rs:22
+msgid "byte 1"
+msgstr ""
+
+#. In byte string literals, escape sequences are recognized.
+#: xg-rs-3.rs:24
+msgid "byte 2 \\ \\ \t \n"
+msgstr ""
+
+#. Raw string literals are extracted.
+#: xg-rs-3.rs:26
+msgid "raw 1"
+msgstr ""
+
+#. In raw string literals, no escape sequences are recognized.
+#: xg-rs-3.rs:28
+msgid "raw 2 \\u{005c} \\\\ \\t \\n \\'"
+msgstr ""
+
+#. In raw string literals, only delimiters without the proper number of
+#. hashes are recognized.
+#: xg-rs-3.rs:31
+msgid "raw 3 \"\"test"
+msgstr ""
+
+#. In multiline strings, after backslash-newline, leading ASCII whitespace is ignored.
+#: xg-rs-3.rs:39
+msgid ""
+"multilinewith spaceswith tabs             with no-break "
+"spaces　　　　　　　　with ideographic spaces"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-rs-3.ok xg-rs-3.po || Exit 1
+
+exit 0

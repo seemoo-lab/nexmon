@@ -1,9 +1,9 @@
 /* Test of fuzzy string comparison.
-   Copyright (C) 2007-2016 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2007.  */
 
@@ -20,9 +20,7 @@
 
 #include "fstrcmp.h"
 
-#include <stdbool.h>
 
-#include "progname.h"
 #include "macros.h"
 
 static bool
@@ -66,8 +64,6 @@ check_fstrcmp (const char *string1, const char *string2, double expected)
 int
 main (int argc, char *argv[])
 {
-  set_program_name (argv[0]);
-
   ASSERT (check_fstrcmp ("Langstrumpf", "Langstrumpf", 1.0));
   ASSERT (check_fstrcmp ("Levenshtein", "Levenstein", 20./21.));
   ASSERT (check_fstrcmp ("Levenstein", "Levenshtein", 20./21.));
@@ -75,5 +71,5 @@ main (int argc, char *argv[])
   ASSERT (check_fstrcmp ("George Bush", "Abraham Lincoln", 2./13.));
   ASSERT (check_fstrcmp ("George Bush", "George \"Bugs\" Moran", 2./3.));
 
-  return 0;
+  return test_exit_status;
 }

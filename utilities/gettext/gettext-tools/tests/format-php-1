@@ -23,7 +23,19 @@ cat <<\EOF > f-ph-1.data
 # Valid: one floating-point argument
 "abc%e"
 # Valid: one floating-point argument
+"abc%E"
+# Valid: one floating-point argument
 "abc%f"
+# Valid: one floating-point argument
+"abc%F"
+# Valid: one floating-point argument
+"abc%g"
+# Valid: one floating-point argument
+"abc%G"
+# Valid: one floating-point argument
+"abc%h"
+# Valid: one floating-point argument
+"abc%H"
 # Valid: one character argument
 "abc%c"
 # Valid: one argument with flags
@@ -40,10 +52,10 @@ cat <<\EOF > f-ph-1.data
 "abc%"
 # Invalid: unknown format specifier
 "abc%y"
-# Invalid: unknown format specifier
-"abc%F"
 # Invalid: flags after width
 "abc%5-f"
+# Invalid: null precision
+"abc%.f"
 # Invalid: twice precision
 "abc%.4.2f"
 # Valid: three arguments

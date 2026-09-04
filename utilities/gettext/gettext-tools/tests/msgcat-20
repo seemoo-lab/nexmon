@@ -3,7 +3,7 @@
 
 # Verify --sort-by-file.
 
-cat <<EOF > mcat-test20.in
+cat <<\EOF > mcat-test20.in
 #: clients/inst_language.ycp:119
 msgid "one"
 msgstr "1"

@@ -1,0 +1,63 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: global variable declarations.
+
+cat <<\EOF > xg-go-13.go
+package main
+
+import (
+	"fmt"
+	"github.com/leonelquinteros/gotext"
+)
+
+var L1 = gotext.NewLocale(".", "fr_FR")
+
+
+type NotLocale2 struct {
+	b int
+	Get func (s string) string
+}
+
+var L2 = NotLocale2{}
+
+
+var L3, L4 = NotLocale2{}, gotext.NewLocale(".", "fr_FR")
+
+
+var NL = func () (NotLocale2, *gotext.Locale) {
+	return NotLocale2{}, gotext.NewLocale(".", "fr_FR")
+}
+
+var L5, L6 = NL()
+
+
+func main () {
+	fmt.Println(L1.Get("Test 1"))
+	fmt.Println(L2.Get("Test 2"))
+	fmt.Println(L3.Get("Test 3"))
+	fmt.Println(L4.Get("Test 4"))
+	fmt.Println(L5.Get("Test 5"))
+	fmt.Println(L6.Get("Test 6"))
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-go-13.tmp xg-go-13.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-13.tmp.po > xg-go-13.po || Exit 1
+
+cat <<\EOF > xg-go-13.ok
+msgid "Test 1"
+msgstr ""
+
+msgid "Test 4"
+msgstr ""
+
+msgid "Test 6"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-13.ok xg-go-13.po || Exit 1
+
+exit 0

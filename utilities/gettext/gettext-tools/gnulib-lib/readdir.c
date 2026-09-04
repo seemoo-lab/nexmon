@@ -1,18 +1,18 @@
 /* Read the next entry of a directory.
-   Copyright (C) 2011-2016 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software: you can redistribute it and/or modify
+   it under the terms of the GNU Lesser General Public License as
+   published by the Free Software Foundation; either version 2.1 of the
+   License, or (at your option) any later version.
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -22,17 +22,24 @@
 #include <errno.h>
 #include <stddef.h>
 
-#include "dirent-private.h"
+#if GNULIB_defined_DIR
+# include "dirent-private.h"
+#endif
+
+/* Don't assume that UNICODE is not defined.  */
+#undef FindNextFile
+#define FindNextFile FindNextFileA
 
 struct dirent *
 readdir (DIR *dirp)
+#undef readdir
 {
-  char type;
-  struct dirent *result;
-
+#if HAVE_DIRENT_H                       /* equivalent to HAVE_READDIR */
+  return readdir (dirp->real_dirp);
+#else
   /* There is no need to add code to produce entries for "." and "..".
      According to the POSIX:2008 section "4.12 Pathname Resolution"
-     <http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html>
+     <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html>
      "." and ".." are syntactic entities.
      POSIX also says:
        "If entries for dot or dot-dot exist, one entry shall be returned
@@ -67,6 +74,7 @@ readdir (DIR *dirp)
 
   dirp->status = 0;
 
+  char type;
   if (dirp->entry.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
     type = DT_DIR;
   else if (dirp->entry.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)
@@ -89,10 +97,11 @@ readdir (DIR *dirp)
     type = DT_UNKNOWN;
 
   /* Reuse the memory of dirp->entry for the result.  */
-  result =
+  struct dirent *result =
     (struct dirent *)
     ((char *) dirp->entry.cFileName - offsetof (struct dirent, d_name[0]));
   result->d_type = type;
 
   return result;
+#endif
 }

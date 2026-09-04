@@ -3,17 +3,17 @@ dnl This file is in the public domain.
 dnl
 dnl Configuration file - processed by autoconf.
 
-AC_INIT
-AC_CONFIG_SRCDIR(hello-1.pl.in)
-AM_INIT_AUTOMAKE(hello-perl, 0)
+AC_INIT([hello-perl], [0])
+AC_CONFIG_SRCDIR([hello-1.pl.in])
+AM_INIT_AUTOMAKE([1.11])
 
 dnl Check for availability of the Perl interpreter.
-AC_PATH_PROG(PERL, perl)
+AC_PATH_PROG([PERL], [perl])
 if test -z "$PERL"; then
   echo "*** Essential program perl not found" 1>&2
   exit 1
 fi
-AC_SUBST(PERL)
+AC_SUBST([PERL])
 
 dnl The installed program must know where to find its message catalogs.
 dnl Unfortunately, prefix gets only finally determined at the end of configure.
@@ -25,9 +25,9 @@ fi
 save_prefix="$prefix"
 prefix="$final_prefix"
 eval "datarootdir=\"${datarootdir}\""
-eval "localedir=\"${datadir}/locale\""
+eval "localedir=\"${datarootdir}/locale\""
 prefix="$save_prefix"
-AC_SUBST(localedir)
+AC_SUBST([localedir])
 
 dnl Support for the po directory.
 AM_PO_SUBDIRS

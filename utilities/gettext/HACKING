@@ -9,69 +9,514 @@ You will need reasonably recent versions of the build tools:
 
   * A C compiler; on Cygwin or mingw also a C++ compiler. Such as GNU GCC.
     + Homepage:
-      http://gcc.gnu.org/
+      https://gcc.gnu.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: gcc, gcc-doc,
+      - On Red Hat distributions: gcc.
+      - Other: https://repology.org/project/gcc/versions
 
-  * GNU automake
+  * GNU automake 1.13 or newer
     + Homepage:
-      http://www.gnu.org/software/automake/
+      https://www.gnu.org/software/automake/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: automake,
+      - On Red Hat distributions: automake.
+      - Other: https://repology.org/project/automake/versions
 
   * GNU autoconf
     + Homepage:
-      http://www.gnu.org/software/autoconf/
+      https://www.gnu.org/software/autoconf/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: autoconf, autoconf-doc,
+      - On Red Hat distributions: autoconf.
+      - Other: https://repology.org/project/autoconf/versions
 
   * GNU m4
     + Homepage:
-      http://www.gnu.org/software/m4/
+      https://www.gnu.org/software/m4/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: m4, m4-doc,
+      - On Red Hat distributions: m4.
+      - Other: https://repology.org/project/m4/versions
 
-  * GNU bison
+  * GNU bison 3.0 or newer
     + Homepage:
-      http://www.gnu.org/software/bison/
+      https://www.gnu.org/software/bison/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: bison, bison-doc,
+      - On Red Hat distributions: bison.
+      - Other: https://repology.org/project/bison/versions
 
   * GNU gperf
     + Homepage:
-      http://www.gnu.org/software/gperf/
+      https://www.gnu.org/software/gperf/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: gperf,
+      - On Red Hat distributions: gperf.
+      - Other: https://repology.org/project/gperf/versions
 
   * GNU groff 1.17 or newer
     + Homepage:
-      http://www.gnu.org/software/groff/
+      https://www.gnu.org/software/groff/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: groff,
+      - On Red Hat distributions: groff.
+      - Other: https://repology.org/project/groff/versions
 
   * GNU texinfo
     + Homepage:
-      http://www.gnu.org/software/texinfo/
+      https://www.gnu.org/software/texinfo/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: texinfo,
+      - On Red Hat distributions: texinfo.
+      - Other: https://repology.org/project/texinfo/versions
 
-  * GNU emacs or XEmacs
+  * GNU emacs
     + Homepage:
-      http://www.gnu.org/software/emacs/
-      http://www.xemacs.org/
+      https://www.gnu.org/software/emacs/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: emacs,
+      - On Red Hat distributions: emacs.
+      - Other: https://repology.org/project/emacs/versions
 
   * Perl
     + Homepage:
-      http://www.perl.org/
+      https://www.perl.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: perl, perl-doc,
+      - On Red Hat distributions: perl.
+      - Other: https://repology.org/project/perl/versions
 
   * TeX (for making the doc in .dvi, .ps or .pdf format)
     + Homepage:
-      http://tug.org/teTeX/
+      https://tug.org/texlive/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: texlive-base, texlive-latex-base,
+      - On Red Hat distributions: texlive-base.
+      - Other: https://repology.org/project/texlive/versions
 
   * Either an internet connection or a recent copy of GNU gnulib.
     + Homepage:
-      http://www.gnu.org/software/gnulib/
+      https://www.gnu.org/software/gnulib/
 
   * GNU tar (for creating distributable tarballs)
     + Homepage:
-      http://www.gnu.org/software/tar/
+      https://www.gnu.org/software/tar/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: tar, tar-doc,
+      - On Red Hat distributions: tar.
+      - Other: https://repology.org/project/tar/versions
+
+  * GNU Wget
+    + Homepage:
+      https://www.gnu.org/software/wget/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: wget,
+      - On Red Hat distributions: wget.
+      - Other: https://repology.org/project/wget/versions
+
+  * XZ Utils
+    + Homepage:
+      https://tukaani.org/xz/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: xz-utils,
+      - On Red Hat distributions: xz.
+      - Other: https://repology.org/project/xz/versions
+
+  * Lzip
+    + Homepage:
+      https://www.nongnu.org/lzip/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: lzip,
+      - On Red Hat distributions: lzip (EPEL).
+      - Other: https://repology.org/project/lzip/versions
 
 And, of course, the packages listed in the DEPENDENCIES file.
 
 
-Building off the git repository
+Additional requirements for maintainers
+---------------------------------------
+
+If you are a maintainer, you will want to minimize the number of tests that
+are skipped. To this effect, you need to install also:
+
+  * The xmllint program
+    + Homepage: https://gitlab.gnome.org/GNOME/libxml2/-/wikis/home
+    + Pre-built package name:
+      - On Debian and Debian-based systems: libxml2-utils,
+      - On Red Hat distributions: libxml2.
+      - Other: https://repology.org/project/libxml2/versions
+  * The Xerces2 Java XML parser (binary distribution named 'xml-schema-1.1')
+    + Homepage: https://xerces.apache.org/xerces2-j/
+    + Pre-built package name: --
+    + See gettext-tools/build-aux/xml-validate-11.in for more details.
+
+  * A C++ compiler
+    + Homepage: https://gcc.gnu.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: g++,
+      - On Red Hat distributions: gcc-c++.
+      - Other: https://repology.org/project/gcc/versions
+  * An Objective C compiler
+    + Homepage: https://gcc.gnu.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: gobjc,
+      - On Red Hat distributions: gcc-objc.
+      - Other: https://repology.org/project/gcc/versions
+  * The Boost C++ library
+    + Homepage: https://www.boost.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: libboost1.83-dev,
+      - On Red Hat distributions: boost.
+      - Other: https://repology.org/project/boost/versions
+
+  * Python
+    + Homepage: https://www.python.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: python3, python3-doc,
+      - On Red Hat distributions: python3.
+      - Other: https://repology.org/project/python/versions
+
+  * A Java compiler
+    + Homepage: http://openjdk.java.net/
+    + Pre-built package name:
+      - On Debian and Debian-based systems:
+        openjdk-11-jdk or openjdk-8-jdk, default-jdk,
+      - On Red Hat distributions:
+        java-11-openjdk-devel or java-1.8.0-openjdk-devel.
+      - Other: https://repology.org/project/openjdk/versions
+
+  * A C# compiler
+    Either Mono or dotnet.
+    o Mono
+      + Wikipedia: https://en.wikipedia.org/wiki/Mono_(software)
+      + Homepage: https://www.mono-project.com/
+      + Pre-built package name:
+        - On Debian and Debian-based systems: mono-mcs,
+        - On Red Hat distributions: mono-devel (EPEL).
+        - Other: https://repology.org/project/mono/versions
+    o dotnet
+      + Wikipedia: https://en.wikipedia.org/wiki/.NET
+      + Homepage: https://dotnet.microsoft.com/
+      + Pre-built package name:
+        - On Debian and Debian-based systems: dotnet7 or dotnet8,
+        - On Red Hat distributions: dotnet7.0 or dotnet8.0.
+        - Other: https://repology.org/project/dotnet/versions
+
+  * The GNOME/Mozilla JavaScript interpreter
+    + Homepage: https://wiki.gnome.org/Projects/Gjs
+    + Pre-built package name:
+      - On Debian and Debian-based systems: gjs, gir1.2-gtk-3.0,
+      - On Red Hat distributions: gjs.
+      - Other: https://repology.org/project/gjs/versions
+
+  * GNU guile
+    + Homepage: https://www.gnu.org/software/guile/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: guile-2.2, guile-2.2-doc,
+        or:                                 guile-3.0, guile-3.0-doc,
+      - On Red Hat distributions: guile.
+      - Other: https://repology.org/project/guile/versions
+
+  * GNU clisp
+    + Homepage: http://clisp.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: clisp, clisp-doc,
+      - On Red Hat distributions: --.
+      - Other: https://repology.org/project/clisp/versions
+
+  * librep
+    + Homepage: http://librep.sourceforge.net/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: rep, rep-doc,
+      - On Red Hat distributions: --.
+      - Other: https://repology.org/project/librep/versions
+
+  * Rust
+    + Homepage: https://www.rust-lang.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: rustc, cargo,
+      - On Red Hat distributions: rust, rust-cargo.
+      - Other: https://repology.org/project/rust/versions
+               https://repology.org/project/cargo/versions
+
+  * Go
+    Either the golang Go implementation or the GCC Go implementation.
+    o golang Go implementation
+      + Recommended where available.
+      + Homepage: https://go.dev/
+      + Documentation: https://go.dev/doc/
+      + Pre-built package name:
+        - On Debian and Debian-based systems: golang-go,
+        - On Red Hat distributions: golang.
+        - Other: https://repology.org/project/go/versions
+    o GCC Go implementation
+      + Recommended on those platforms where the golang Go implementation
+        is not available. This includes in particular:
+        - Linux/alpha, Linux/hppa, Linux/m68k, Linux/sparc, Linux/powerpc (32-bit)
+        - GNU/Hurd
+        - Solaris/sparc
+        - Haiku
+      + Homepage: https://gcc.gnu.org/
+      + Documentation:
+        - https://go.dev/doc/install/gccgo
+        - https://gcc.gnu.org/onlinedocs/gccgo/index.html
+      + Pre-built package name:
+        - On Debian and Debian-based systems: gccgo,
+        - On Red Hat distributions: gcc-go.
+        - Other: https://repology.org/project/gcc/versions
+                 https://repology.org/project/gccgo/versions
+
+  * Ruby
+    + Homepage: https://www.ruby-lang.org/en/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: ruby,
+      - On Red Hat distributions: ruby.
+      - Other: https://repology.org/project/ruby/versions
+  * The ruby-gettext package
+    + Homepage: https://ruby-gettext.github.io/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: ruby-gettext,
+      - On Red Hat distributions: ruby-gettext.
+      - Other: https://repology.org/project/ruby:gettext/versions
+
+  * GNU awk
+    + Homepage: https://www.gnu.org/software/gawk/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: gawk, gawk-doc,
+      - On Red Hat distributions: gawk.
+      - Other: https://repology.org/project/gawk/versions
+
+  * lua
+    + Homepage: https://www.lua.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: lua5.4 or lua5.3 or lua5.2 or lua5.1,
+      - On Red Hat distributions: lua.
+      - Other: https://repology.org/project/lua/versions
+  * The lua-gettext package
+    + Homepage: https://gitlab.com/sukhichev/lua-gettext/blob/master/README.us.md
+    + Debian and Ubuntu packages:
+      Download (following the hyperlinks in the homepage), then install through
+      $ sudo dpkg -i lua-gettext_0.0+nmu1_amd64.deb
+    + Pre-built package name:
+      - On Debian and Debian-based systems: --,
+      - On Red Hat distributions: --.
+      - Other: https://repology.org/project/lua:gettext/versions
+
+  * The Free Pascal compiler ppc386 or ppcx64
+    + Homepage: https://www.freepascal.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: fp-compiler, fp-docs,
+      - On Red Hat distributions: fpc (EPEL).
+      - Other: https://repology.org/project/fpc/versions
+  * The Free Pascal Free Component Library
+    + Homepage: https://www.freepascal.org/fcl/fcl.var
+    + Pre-built package name:
+      - On Debian and Debian-based systems: fp-units-fcl,
+      - On Red Hat distributions: --.
+      - Other: https://repology.org/project/fpc/versions
+
+  * OCaml
+    + Homepage: https://ocaml.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: ocaml,
+      - On Red Hat distributions: ocaml.
+      - Other: https://repology.org/project/ocaml/versions
+  * The OCaml package manager
+    + Homepage: https://opam.ocaml.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: opam,
+      - On Red Hat distributions: --.
+      - Other: https://repology.org/project/opam/versions
+
+  * GNU smalltalk
+    + Homepage: http://smalltalk.gnu.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: gnu-smalltalk, gnu-smalltalk-doc
+        (only up to Debian 11),
+      - On Red Hat distributions: gnu-smalltalk (EPEL).
+      - Other: https://repology.org/project/smalltalk/versions
+
+  * The GNOME Vala compiler
+    + Homepage: https://wiki.gnome.org/Projects/Vala
+    + Pre-built package name:
+      - On Debian and Debian-based systems: valac,
+      - On Red Hat distributions: vala.
+      - Other: https://repology.org/project/vala/versions
+
+  * Tcl
+    + Homepage: https://www.tcl.tk/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: tcl, tcl-doc,
+      - On Red Hat distributions: tcl.
+      - Other: https://repology.org/project/tcl/versions
+
+  * Perl
+    + Homepage: https://www.perl.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: perl, perl-doc,
+      - On Red Hat distributions: perl.
+      - Other: https://repology.org/project/perl/versions
+  * The Perl packages Locale::Messages and libintl-perl
+    + Homepage: http://search.cpan.org/~guido/libintl-perl/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: libintl-perl,
+      - On Red Hat distributions: perl-libintl.
+      - Other: https://repology.org/project/perl:libintl-perl/versions
+
+  * php
+    + Homepage: http://www.php.net/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: php,
+      - On Red Hat distributions: php.
+      - Other: https://repology.org/project/php/versions
+
+If you want to exercise the sample programs in gettext-tools/examples/, you
+also need to install:
+
+  * The Gtk3 GUI toolkit library
+    + Homepage: https://www.gtk.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: libgtk-3-dev,
+      - On Red Hat distributions: gtk3-devel.
+      - Other: https://repology.org/project/gtk/versions
+  * Its C++ bindings
+    + Homepage: https://gtkmm.gnome.org/
+      and:      https://www.gtk.org/docs/language-bindings/cpp
+    + Pre-built package name:
+      - On Debian and Debian-based systems: libgtkmm-3.0-dev,
+      - On Red Hat distributions: gtkmm3.0-devel.
+      - Other: https://repology.org/project/gtkmm/versions
+
+  * The Qt GUI toolkit library
+    + Homepage: https://www.qt.io/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: libqt5gui5, qt5-doc-html,
+        or:                                 libqt4-dev,
+      - On Red Hat distributions: --.
+      - Other: https://repology.org/project/qt/versions
+
+  * The wxWidgets GUI toolkit library
+    + Homepage: https://www.wxwidgets.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: libwxgtk3.0-gtk3-dev, wx3.0-doc,
+        or:                                 libwxgtk3.0-dev,
+        or:                                 libwxgtk3.2-dev,
+      - On Red Hat distributions: --.
+      - Other: https://repology.org/project/wxwidgets/versions
+
+  * The GNUstep toolkit and development environment
+    + Homepage: http://www.gnustep.org/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: gnustep-devel,
+      - On Red Hat distributions: gnustep-base (EPEL).
+      - Other: https://repology.org/project/gnustep-base/versions
+
+  * The C# System.Windows.Forms implementation
+    + Homepage: https://www.mono-project.com/
+    + Pre-built package name:
+      - On Debian and Debian-based systems: libmono-system-windows-forms4.0-cil,
+      - On Red Hat distributions: mono-winforms (EPEL).
+      - Other: https://pkgs.org/search/?q=mono-winforms
+
+And you need to install a couple of locales, used by the tests.
+By default, only those enabled in /etc/locale.gen are preinstalled.
+
+$ sudo localedef -i ar_SA -f ISO-8859-6 ar_SA.ISO-8859-6
+$ sudo localedef -i de_DE -f ISO-8859-1 de_DE.ISO-8859-1
+$ sudo localedef -i de_DE -f UTF-8 de_DE.UTF-8
+$ sudo localedef -i es_ES -f UTF-8 es_ES.UTF-8
+$ sudo localedef -i fa_IR -f UTF-8 fa_IR
+$ sudo localedef -i fr_FR -f ISO-8859-1 fr_FR.ISO-8859-1
+$ sudo localedef -i fr_FR -f UTF-8 fr_FR.UTF-8
+$ sudo localedef -i ja_JP -f EUC-JP ja_JP.EUC-JP
+$ sudo localedef -i tr_TR -f UTF-8 tr_TR.UTF-8
+$ sudo localedef -i zh_CN -f GB18030 zh_CN.GB18030
+$ sudo localedef -i zh_HK -f BIG5-HKSCS zh_HK.BIG5-HKSCS
+
+
+Building off the Git repository
 ===============================
 
-Access to the git repository is described at
-  http://savannah.gnu.org/git/?group=gettext
+Access to the Git repository is described at
+https://savannah.gnu.org/git/?group=gettext .
 
-After fetching the sources from the repository, peek at the comments in
-autogen.sh, then run "./autogen.sh"; then you can proceed with "./configure"
-as usual.
+After fetching the sources from the Git repository, peek at the comments in
+autogen.sh, then run
+  ./autopull.sh
+  ./autogen.sh
+Then you can proceed with "./configure" as usual.
+
+Each time you want to update the source, do not only "git pull".  Instead do
+  git pull && ./autopull.sh
+  ./autogen.sh
+
+
+Continuous integration
+======================
+
+The package is built automatically, at regular intervals.  You find the latest
+build results here:
+  https://gitlab.com/gnu-gettext/ci-distcheck/pipelines
+  https://gitlab.com/gnu-gettext/ci-distcheck/-/jobs?scope=finished
+
+
+Coding Style
+============
+
+For C source code:
+
+* Follow the portability guidelines
+  https://www.gnu.org/software/gnulib/manual/html_node/Portability-guidelines.html
+
+* Use mixed declarations and statements, as appropriate. (This is supported
+  since C99.)
+
+* Note: You can't put a label before a declaration, such as in
+    retry:
+      int foo = ...;
+  This is supported only in C23 or newer. Instead, add an empty statement:
+    retry: ;
+      int foo = ...;
+  Similarly, you can't put a declaration immediately after a case label, such
+  as in
+    case 1:
+      int foo = ...;
+      ...
+      break;
+  Again, this is supported only in C23 or newer. Instead, use a sub-block:
+    case 1:
+      {
+        int foo = ...;
+        ...
+      }
+      break;
+
+* In function definitions and blocks, the pre-C99 style "declare all variables
+  upfront" is discouraged.
+  Instead, the following style elements are encouraged (for local non-static
+  variables):
+    - Move the declaration of a variable to its initialization.
+    - Reduce the scope of variables:
+      . If a variable is only used in a sub-block, declare it in that sub-block.
+      . If a variable is only used in several sub-blocks and has a separate
+        initialization in each of the sub-blocks, declare it in each of these
+        sub-blocks. It's actually several independent variables.
+      . If a variable is only used in a small part of a function definition or
+        block (say, 1/3 of it or less), you may surround that part (including
+        the variable's initialization) with braces, so that it becomes clear
+        that the variable is not used in the rest of the function / block.
+    - Usually, try to declare and initialize variables right when they are
+      needed for the first time, not several computation steps before.
+  The rationale is:
+    - It follows the general principle "Put related things close together."
+    - A function with 3 blocks that each has 4 variables is easier to
+      understand than a function that has 12 variables, and where the
+      reader has to find out which variable is used where.
+    - Variables may represent state, and it is the state and the control flow
+      that contribute to the complexity of a function.
+  Only static variables are better kept declared upfront in a function or block.
+
 
 Submitting patches
 ==================
@@ -79,10 +524,10 @@ Submitting patches
 Patches should be sent to bug-gettext@gnu.org, the bug/feature mailing
 list.  You can subscribe to the mailing list, or see the list
 archives, by following links from
-http://savannah.gnu.org/mail/?group=gettext .
+https://savannah.gnu.org/mail/?group=gettext .
 
-To email a patch you can use a shell command like 'git format-patch
--1' to create a file, and then attach the file to your email.  
+To email a patch you can use a shell command like 'git format-patch -1'
+to create a file, and then attach the file to your email.
 
 GNU gettext development no longer stores descriptions of new changes
 in ChangeLog files.  Instead, a single ChangeLog file is generated
@@ -93,4 +538,4 @@ but instead should contain the log entries in the commit message.
 For the style of a ChangeLog entry, see the "Change Logs" section of
 the GNU coding standards:
 
-  http://www.gnu.org/prep/standards/html_node/Change-Logs.html
+  https://www.gnu.org/prep/standards/html_node/Change-Logs.html

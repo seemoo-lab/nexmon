@@ -1,0 +1,139 @@
+#!/bin/sh
+# Compile a D program, library, or compilation unit.
+
+# Copyright (C) 2025-2026 Free Software Foundation, Inc.
+# Written by Bruno Haible <bruno@clisp.org>, 2025.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# Usage: /bin/sh dcomp.sh [OPTION] SOURCE.d ...
+# where the supported OPTIONs are:
+#   -I DIR
+#   -c
+#   -g
+#   -O          (mapped to -O or -O2, depending on implementation)
+#   -o FILE     (for libtool compatibility)
+#   -lLIBRARY   (for libtool compatibility)
+#   -LDIR       (for libtool compatibility)
+#   -pthread    (for libtool compatibility)
+#   -Wl,OPTION  (for libtool compatibility)
+
+# Find out which implementation we are using.
+case `@DC@ --version | sed -e 's/ .*//' -e 1q` in
+  gdc | *-gdc | egdc | *-egdc) flavor=gdc ;;
+  LDC*) flavor=ldc ;;
+  DMD*) flavor=dmd ;;
+  *)
+    echo "Warning: implementation flavor of '"'@DC@'"' not recognized." 1>&2
+    flavor=dmd ;;
+esac
+
+# In order to construct a command that invokes the D compiler, we need 'eval',
+# because some of the arguments may contain spaces.
+options_for_print=
+options_for_eval=
+# Protecting special characters, hiding them from 'eval':
+# Double each backslash.
+sed_protect_1='s/\\/\\\\/g'
+# Escape each dollar, backquote, double-quote.
+sed_protect_2a='s/\$/\\$/g'
+sed_protect_2b='s/`/\\`/g'
+sed_protect_2c='s/"/\\"/g'
+# Add double-quotes at the beginning and end of the word.
+sed_protect_3a='1s/^/"/'
+sed_protect_3b='$s/$/"/'
+func_add_word_to_options ()
+{
+  options_for_print="${options_for_print:+$options_for_print }$1"
+  word_protected=`echo "$1" | sed -e "$sed_protect_1" -e "$sed_protect_2a" -e "$sed_protect_2b" -e "$sed_protect_2c" -e "$sed_protect_3a" -e "$sed_protect_3b"`
+  options_for_eval="${options_for_eval:+$options_for_eval }$word_protected"
+}
+
+# Process the arguments.
+next_is_arg_of=
+for arg
+do
+  if test -z "$next_is_arg_of"; then
+    case "$arg" in
+      -I | -l | -L)
+        echo "dcomp: Unsupported option: $arg. Combine with next argument." 1>&2
+        exit 1
+        ;;
+      -I* | -c | -g)
+        func_add_word_to_options "$arg"
+        ;;
+      -O)
+        case "$flavor" in
+          gdc | ldc) func_add_word_to_options "-O2" ;;
+          dmd)       func_add_word_to_options "-O" ;;
+        esac
+        ;;
+      -o) next_is_arg_of='o' ;;
+      -l* | -L* | -pthread)
+        case "$arg" in
+          -pthread) arg='-lpthread' ;;
+        esac
+        case "$flavor" in
+          gdc) func_add_word_to_options "$arg" ;;
+          ldc) func_add_word_to_options '-L'; func_add_word_to_options "$arg" ;;
+          dmd) func_add_word_to_options "-L=$arg" ;;
+        esac
+        ;;
+      -Wl,*)
+        if test "$flavor" = gdc; then
+          func_add_word_to_options "$arg"
+        else
+          option=`echo "$arg" | sed -e 's/^-Wl,//'`
+          case "$flavor" in
+            ldc) func_add_word_to_options '-L'; func_add_word_to_options "$option" ;;
+            dmd) func_add_word_to_options "-L=$option" ;;
+          esac
+        fi
+        ;;
+      -*)
+        echo "dcomp: Unsupported option: $arg" 1>&2
+        exit 1
+        ;;
+      *)
+        # dmd rejects shared library file names such as libfoo.so.1.3:
+        # "Error: unrecognized file extension 3"
+        if test "$flavor" = dmd \
+           && case `basename "$arg"` in lib*.so.*) true ;; *) false ;; esac; then
+          func_add_word_to_options "-L=$arg"
+        else
+          func_add_word_to_options "$arg"
+        fi
+        ;;
+    esac
+  else
+    case "$next_is_arg_of" in
+      o)
+        case "$flavor" in
+          gdc) func_add_word_to_options '-o'; func_add_word_to_options "$arg" ;;
+          *)   func_add_word_to_options "-of=$arg" ;;
+        esac
+        ;;
+    esac
+    next_is_arg_of=
+  fi
+done
+if test -n "$next_is_arg_of"; then
+  echo "dcomp: missing argument to option -$next_is_arg_of" 1>&2
+  exit 1
+fi
+
+# Execute the command.
+test -z "$D_VERBOSE" || echo "@DC@ @DFLAGS@ $options_for_print" 1>&2
+eval "@DC@ @DFLAGS@ $options_for_eval"
+exit $?

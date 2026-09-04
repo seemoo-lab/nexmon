@@ -1,6 +1,5 @@
 /* Message translation initialization for English.
-   Copyright (C) 2001-2003, 2006, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,12 +12,12 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include <config.h>
 
 /* Specification.  */
 #include "msgl-english.h"
@@ -31,13 +30,11 @@
 msgdomain_list_ty *
 msgdomain_list_english (msgdomain_list_ty *mdlp)
 {
-  size_t j, k;
-
-  for (k = 0; k < mdlp->nitems; k++)
+  for (size_t k = 0; k < mdlp->nitems; k++)
     {
       message_list_ty *mlp = mdlp->item[k]->messages;
 
-      for (j = 0; j < mlp->nitems; j++)
+      for (size_t j = 0; j < mlp->nitems; j++)
         {
           message_ty *mp = mlp->item[j];
 
@@ -56,9 +53,11 @@ msgdomain_list_english (msgdomain_list_ty *mdlp)
                 {
                   size_t len0 = strlen (mp->msgid) + 1;
                   size_t len1 = strlen (mp->msgid_plural) + 1;
+
                   char *cp = XNMALLOC (len0 + len1, char);
                   memcpy (cp, mp->msgid, len0);
                   memcpy (cp + len0, mp->msgid_plural, len1);
+
                   mp->msgstr = cp;
                   mp->msgstr_len = len0 + len1;
                 }

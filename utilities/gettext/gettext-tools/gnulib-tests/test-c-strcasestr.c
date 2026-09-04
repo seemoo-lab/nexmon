@@ -1,9 +1,9 @@
 /* Test of case-insensitive searching in a string.
-   Copyright (C) 2007-2016 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2007.  */
 
@@ -60,18 +60,18 @@ main ()
 
   /* Check that a long periodic needle does not cause false positives.  */
   {
-    const char input[] = ("F_BD_CE_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD"
-                          "_C3_88_20_EF_BF_BD_EF_BF_BD_EF_BF_BD"
-                          "_C3_A7_20_EF_BF_BD");
+    const char input[] = "F_BD_CE_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD"
+                         "_C3_88_20_EF_BF_BD_EF_BF_BD_EF_BF_BD"
+                         "_C3_A7_20_EF_BF_BD";
     const char need[] = "_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD";
     const char *result = c_strcasestr (input, need);
     ASSERT (result == NULL);
   }
   {
-    const char input[] = ("F_BD_CE_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD"
-                          "_C3_88_20_EF_BF_BD_EF_BF_BD_EF_BF_BD"
-                          "_C3_A7_20_EF_BF_BD_DA_B5_C2_A6_20"
-                          "_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD");
+    const char input[] = "F_BD_CE_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD"
+                         "_C3_88_20_EF_BF_BD_EF_BF_BD_EF_BF_BD"
+                         "_C3_A7_20_EF_BF_BD_DA_B5_C2_A6_20"
+                         "_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD";
     const char need[] = "_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD_EF_BF_BD";
     const char *result = c_strcasestr (input, need);
     ASSERT (result == input + 115);
@@ -224,9 +224,8 @@ main ()
       "with_multilib_list\n";
     size_t h_len = strlen (h);
     char *haystack = malloc (h_len + 1);
-    size_t i;
     ASSERT (haystack);
-    for (i = 0; i < h_len - strlen (needle); i++)
+    for (size_t i = 0; i < h_len - strlen (needle); i++)
       {
         const char *p;
         memcpy (haystack, h, h_len + 1);
@@ -235,7 +234,38 @@ main ()
         ASSERT (p);
         ASSERT (p - haystack == i);
       }
+    free (haystack);
   }
 
-  return 0;
+  /* Test case from Yves Bastide.
+     <https://www.openwall.com/lists/musl/2014/04/18/2>  */
+  {
+    const char input[] = "playing PLAY play PLAY always";
+    const char *result = c_strcasestr (input, "play PLAY play");
+    ASSERT (result == input + 8);
+  }
+
+  /* Test long needles.  */
+  {
+    size_t m = 1024;
+    char *haystack = (char *) malloc (2 * m + 1);
+    char *needle = (char *) malloc (m + 1);
+    if (haystack != NULL && needle != NULL)
+      {
+        const char *p;
+        haystack[0] = 'x';
+        memset (haystack + 1, ' ', m - 1);
+        memset (haystack + m, 'x', m);
+        haystack[2 * m] = '\0';
+        memset (needle, 'X', m);
+        needle[m] = '\0';
+        p = c_strcasestr (haystack, needle);
+        ASSERT (p);
+        ASSERT (p - haystack == m);
+      }
+    free (needle);
+    free (haystack);
+  }
+
+  return test_exit_status;
 }

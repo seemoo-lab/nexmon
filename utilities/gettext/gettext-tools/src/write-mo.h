@@ -1,7 +1,5 @@
 /* Writing binary .mo files.
-   Copyright (C) 1995-1998, 2000-2003, 2005-2006, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>, April 1995.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,7 +12,9 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Ulrich Drepper and Bruno Haible.  */
 
 #ifndef _WRITE_MO_H
 #define _WRITE_MO_H
@@ -23,6 +23,13 @@
 #include <stdbool.h>
 
 #include "message.h"
+
+/* True if no conversion to UTF-8 is desired.  */
+extern bool no_convert_to_utf8;
+
+/* True if the redundant storage of instantiations of system-dependent strings
+   shall be avoided.  */
+extern bool no_redundancy;
 
 /* Alignment of strings in resulting .mo file.  */
 extern size_t alignment;
@@ -35,10 +42,12 @@ extern bool no_hash_table;
 
 /* Write a GNU mo file.  mlp is a list containing the messages to be output.
    domain_name is the domain name, file_name is the desired file name.
+   input_file is the name of the input file.
    Return 0 if ok, nonzero on error.  */
 extern int
        msgdomain_write_mo (message_list_ty *mlp,
                            const char *domain_name,
-                           const char *file_name);
+                           const char *file_name,
+                           const char *input_file);
 
 #endif /* _WRITE_MO_H */

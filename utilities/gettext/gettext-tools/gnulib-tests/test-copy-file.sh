@@ -12,7 +12,7 @@ func_tmpdir ()
   # Use the environment variable TMPDIR, falling back to /tmp. This allows
   # users to specify a different temporary directory, for example, if their
   # /tmp is filled up or too small.
-  : ${TMPDIR=/tmp}
+  : "${TMPDIR=/tmp}"
   {
     # Use the mktemp program if available. If not available, hide the error
     # message.
@@ -35,7 +35,12 @@ func_tmpdir ()
 }
 
 func_tmpdir
-builddir=`pwd`
+# builddir may already be set by the script that invokes this one.
+case "$builddir" in
+  '') builddir=`pwd` ;;
+  /* | ?:*) ;;
+  *) builddir=`pwd`/$builddir ;;
+esac
 cd "$builddir" ||
   {
     echo "$0: cannot determine build directory (unreadable parent dir?)" >&2
@@ -54,7 +59,7 @@ cd "$builddir" ||
   # Classification of the platform according to the programs available for
   # manipulating ACLs.
   # Possible values are:
-  #   linux, cygwin, freebsd, solaris, hpux, hpuxjfs, osf1, aix, macosx, irix, none.
+  #   linux, cygwin, freebsd, solaris, hpux, hpuxjfs, aix, macosx, none.
   # TODO: Support also native Windows platforms (mingw).
   acl_flavor=none
   if (getfacl tmpfile0 >/dev/null) 2>/dev/null; then
@@ -81,7 +86,7 @@ cd "$builddir" ||
   else
     if (lsacl / >/dev/null) 2>/dev/null; then
       # Platforms with the lsacl and chacl programs.
-      # HP-UX, sometimes also IRIX.
+      # HP-UX.
       if (getacl tmpfile0 >/dev/null) 2>/dev/null; then
         # HP-UX 11.11 or newer.
         acl_flavor=hpuxjfs
@@ -91,14 +96,8 @@ cd "$builddir" ||
       fi
     else
       if (getacl tmpfile0 >/dev/null) 2>/dev/null; then
-        # Tru64, NonStop Kernel.
-        if (getacl -m tmpfile0 >/dev/null) 2>/dev/null; then
-          # Tru64.
-          acl_flavor=osf1
-        else
-          # NonStop Kernel.
-          acl_flavor=nsk
-        fi
+        # NonStop Kernel.
+        acl_flavor=nsk
       else
         if (aclget tmpfile0 >/dev/null) 2>/dev/null; then
           # AIX.
@@ -107,11 +106,6 @@ cd "$builddir" ||
           if (fsaclctl -v >/dev/null) 2>/dev/null; then
             # Mac OS X.
             acl_flavor=macosx
-          else
-            if test -f /sbin/chacl; then
-              # IRIX.
-              acl_flavor=irix
-            fi
           fi
         fi
       fi
@@ -151,7 +145,7 @@ cd "$builddir" ||
         }
       }
       ;;
-    osf1 | nsk)
+    nsk)
       func_test_same_acls ()
       {
         getacl "$1" | sed -e "s/$1/FILENAME/g" > tmpaclout1
@@ -175,14 +169,6 @@ cd "$builddir" ||
         cmp tmpaclout1 tmpaclout2 > /dev/null
       }
       ;;
-    irix)
-      func_test_same_acls ()
-      {
-        /bin/ls -lD "$1" | sed -e "s/$1/FILENAME/g" > tmpaclout1
-        /bin/ls -lD "$2" | sed -e "s/$2/FILENAME/g" > tmpaclout2
-        cmp tmpaclout1 tmpaclout2 > /dev/null
-      }
-      ;;
     none)
       func_test_same_acls ()
       {
@@ -196,10 +182,10 @@ cd "$builddir" ||
   # on both.
   func_test_copy ()
   {
-    "$builddir"/test-copy-file${EXEEXT} "$1" "$2" || exit 1
+    ${CHECKER} "$builddir"/test-copy-file${EXEEXT} "$1" "$2" || exit 1
     if test "$USE_ACL" != 0; then
-      "$builddir"/test-sameacls${EXEEXT} "$1" "$2" || exit 1
-      func_test_same_acls                "$1" "$2" || exit 1
+      ${CHECKER} "$builddir"/test-sameacls${EXEEXT} "$1" "$2" || exit 1
+      func_test_same_acls                           "$1" "$2" || exit 1
     fi
   }
 
@@ -435,57 +421,6 @@ cd "$builddir" ||
 
         ;;
 
-      osf1)
-
-        # Set an ACL for a user.
-        setacl -u user:$auid:1 tmpfile0
-
-        func_test_copy tmpfile0 tmpfile2
-
-        # Set an ACL for a group.
-        setacl -u group:$agid:4 tmpfile0
-
-        func_test_copy tmpfile0 tmpfile3
-
-        # Set an ACL for other.
-        setacl -u other::4 tmpfile0
-
-        func_test_copy tmpfile0 tmpfile4
-
-        # Remove the ACL for the user.
-        setacl -x user:$auid:1 tmpfile0
-
-        func_test_copy tmpfile0 tmpfile5
-
-        if false; then # would give an error "can't set ACL: Invalid argument"
-          # Remove the ACL for other.
-          setacl -x other::4 tmpfile0
-
-          func_test_copy tmpfile0 tmpfile6
-        fi
-
-        # Remove the ACL for the group.
-        setacl -x group:$agid:4 tmpfile0
-
-        func_test_copy tmpfile0 tmpfile7
-
-        # Delete all optional ACLs.
-        setacl -u user:$auid:1 tmpfile0
-        setacl -b tmpfile0
-
-        func_test_copy tmpfile0 tmpfile8
-
-        # Copy ACLs from a file that has no ACLs.
-        echo > tmpfile9
-        chmod a+x tmpfile9
-        getacl tmpfile9 > tmpaclout0
-        setacl -b -U tmpaclout0 tmpfile0
-        rm -f tmpfile9
-
-        func_test_copy tmpfile0 tmpfile9
-
-        ;;
-
       nsk)
 
         # Set an ACL for a user.
@@ -611,35 +546,6 @@ cd "$builddir" ||
         rm -f tmpfile9
 
         func_test_copy tmpfile0 tmpfile9
-
-        ;;
-
-      irix)
-
-        # Set an ACL for a user.
-        /sbin/chacl user::rw-,group::---,other::---,user:$auid:--x tmpfile0
-
-        func_test_copy tmpfile0 tmpfile2
-
-        # Set an ACL for a group.
-        /sbin/chacl user::rw-,group::---,other::---,user:$auid:--x,group:$agid:r-- tmpfile0
-
-        func_test_copy tmpfile0 tmpfile3
-
-        # Set an ACL for other.
-        /sbin/chacl user::rw-,group::---,user:$auid:--x,group:$agid:r--,other::r-- tmpfile0
-
-        func_test_copy tmpfile0 tmpfile4
-
-        # Remove the ACL for the user.
-        /sbin/chacl user::rw-,group::---,group:$agid:r--,other::r-- tmpfile0
-
-        func_test_copy tmpfile0 tmpfile5
-
-        # Remove the ACL for the group.
-        /sbin/chacl user::rw-,group::---,other::r-- tmpfile0
-
-        func_test_copy tmpfile0 tmpfile7
 
         ;;
 

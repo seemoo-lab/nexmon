@@ -1,13 +1,42 @@
+/* libxml2 - Library for parsing XML documents
+ * Copyright (C) 2006-2019 Free Software Foundation, Inc.
+ *
+ * This file is not part of the GNU gettext program, but is used with
+ * GNU gettext.
+ *
+ * The original copyright notice is as follows:
+ */
+
+/*
+ * Copyright (C) 1998-2012 Daniel Veillard.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is fur-
+ * nished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+ * NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * daniel@veillard.com
+ */
+
 /*
  * xmlreader.c: implements the xmlTextReader streaming node API
  *
  * NOTE:
  *   XmlTextReader.Normalization Property won't be supported, since
  *     it makes the parser non compliant to the XML recommendation
- *
- * See Copyright for the status of this software.
- *
- * daniel@veillard.com
  */
 
 /*
@@ -142,7 +171,7 @@ struct _xmlTextReader {
     xmlNodePtr			faketext;/* fake xmlNs chld */
     int				preserve;/* preserve the resulting document */
     xmlBufPtr		        buffer; /* used to return const xmlChar * */
-    xmlDictPtr			dict;	/* the context dictionnary */
+    xmlDictPtr			dict;	/* the context dictionary */
 
     /* entity stack when traversing entities content */
     xmlNodePtr         ent;          /* Current Entity Ref Node */
@@ -210,7 +239,7 @@ static int xmlTextReaderNextTree(xmlTextReaderPtr reader);
  * DICT_FREE:
  * @str:  a string
  *
- * Free a string if it is not owned by the "dict" dictionnary in the
+ * Free a string if it is not owned by the "dict" dictionary in the
  * current scope
  */
 #define DICT_FREE(str)						\
@@ -491,6 +520,11 @@ xmlTextReaderFreeNode(xmlTextReaderPtr reader, xmlNodePtr cur) {
     }
 }
 
+static void
+xmlTextReaderFreeIDTableEntry(void *id, const xmlChar *name ATTRIBUTE_UNUSED) {
+    xmlFreeID((xmlIDPtr) id);
+}
+
 /**
  * xmlTextReaderFreeIDTable:
  * @table:  An id table
@@ -499,7 +533,7 @@ xmlTextReaderFreeNode(xmlTextReaderPtr reader, xmlNodePtr cur) {
  */
 static void
 xmlTextReaderFreeIDTable(xmlIDTablePtr table) {
-    xmlHashFree(table, (xmlHashDeallocator) xmlFreeID);
+    xmlHashFree(table, xmlTextReaderFreeIDTableEntry);
 }
 
 /**
@@ -1706,10 +1740,11 @@ xmlTextReaderReadInnerXml(xmlTextReaderPtr reader ATTRIBUTE_UNUSED)
     if (xmlTextReaderExpand(reader) == NULL) {
         return NULL;
     }
-    doc = reader->doc;
+    doc = reader->node->doc;
     buff = xmlBufferCreate();
     for (cur_node = reader->node->children; cur_node != NULL;
          cur_node = cur_node->next) {
+        /* XXX: Why is the node copied? */
         node = xmlDocCopyNode(cur_node, doc, 1);
         buff2 = xmlBufferCreate();
         if (xmlNodeDump(buff2, doc, node, 0, 0) == -1) {
@@ -1750,10 +1785,11 @@ xmlTextReaderReadOuterXml(xmlTextReaderPtr reader ATTRIBUTE_UNUSED)
     xmlDocPtr doc;
 
     node = reader->node;
-    doc = reader->doc;
+    doc = node->doc;
     if (xmlTextReaderExpand(reader) == NULL) {
         return NULL;
     }
+    /* XXX: Why is the node copied? */
 	if (node->type == XML_DTD_NODE) {
 		node = (xmlNodePtr) xmlCopyDtd((xmlDtdPtr) node);
 	} else {
@@ -1912,12 +1948,9 @@ xmlTextReaderNextTree(xmlTextReaderPtr reader)
 
 	/* if reader->node->next is NULL mean no subtree for current node,
 	so need to move to sibling of parent node if present */
-        if ((reader->node->type == XML_ELEMENT_NODE) ||
-            (reader->node->type == XML_ATTRIBUTE_NODE)) {
-            reader->state = XML_TEXTREADER_BACKTRACK;
-	    /* This will move to parent if present */
-            xmlTextReaderRead(reader);
-        }
+	reader->state = XML_TEXTREADER_BACKTRACK;
+	/* This will move to parent if present */
+	xmlTextReaderRead(reader);
     }
 
     if (reader->node->next != 0) {
@@ -2158,7 +2191,7 @@ xmlNewTextReader(xmlParserInputBufferPtr input, const char *URI) {
     ret->ctxt->dictNames = 1;
     ret->allocs = XML_TEXTREADER_CTXT;
     /*
-     * use the parser dictionnary to allocate all elements and attributes names
+     * use the parser dictionary to allocate all elements and attributes names
      */
     ret->ctxt->docdict = 1;
     ret->dict = ret->ctxt->dict;
@@ -2999,9 +3032,9 @@ xmlTextReaderAttributeCount(xmlTextReaderPtr reader) {
  *
  * Get the node type of the current node
  * Reference:
- * http://www.gnu.org/software/dotgnu/pnetlib-doc/System/Xml/XmlNodeType.html
+ * https://www.gnu.org/software/dotgnu/pnetlib-doc/System/Xml/XmlNodeType.html
  *
- * Returns the xmlNodeType of the current node or -1 in case of error
+ * Returns the xmlReaderTypes of the current node or -1 in case of error
  */
 int
 xmlTextReaderNodeType(xmlTextReaderPtr reader) {
@@ -3982,7 +4015,7 @@ xmlTextReaderPreserve(xmlTextReaderPtr reader) {
  * pattern. The caller must also use xmlTextReaderCurrentDoc() to
  * keep an handle on the resulting document once parsing has finished
  *
- * Returns a positive number in case of success and -1 in case of error
+ * Returns a non-negative number in case of success and -1 in case of error
  */
 int
 xmlTextReaderPreservePattern(xmlTextReaderPtr reader, const xmlChar *pattern,
@@ -4050,13 +4083,19 @@ xmlTextReaderCurrentDoc(xmlTextReaderPtr reader) {
 }
 
 #ifdef LIBXML_SCHEMAS_ENABLED
-static char *xmlTextReaderBuildMessage(const char *msg, va_list ap);
+static char *xmlTextReaderBuildMessage(const char *msg, va_list ap) LIBXML_ATTR_FORMAT(1,0);
 
 static void XMLCDECL
-xmlTextReaderValidityError(void *ctxt, const char *msg, ...);
+xmlTextReaderValidityError(void *ctxt, const char *msg, ...) LIBXML_ATTR_FORMAT(2,3);
 
 static void XMLCDECL
-xmlTextReaderValidityWarning(void *ctxt, const char *msg, ...);
+xmlTextReaderValidityWarning(void *ctxt, const char *msg, ...) LIBXML_ATTR_FORMAT(2,3);
+
+static void XMLCDECL
+xmlTextReaderValidityErrorRelay(void *ctx, const char *msg, ...) LIBXML_ATTR_FORMAT(2,3);
+
+static void XMLCDECL
+xmlTextReaderValidityWarningRelay(void *ctx, const char *msg, ...) LIBXML_ATTR_FORMAT(2,3);
 
 static void XMLCDECL
 xmlTextReaderValidityErrorRelay(void *ctx, const char *msg, ...)
@@ -4850,7 +4889,7 @@ xmlTextReaderStructuredError(void *ctxt, xmlErrorPtr error)
     }
 }
 
-static void XMLCDECL
+static void XMLCDECL LIBXML_ATTR_FORMAT(2,3)
 xmlTextReaderError(void *ctxt, const char *msg, ...)
 {
     va_list ap;
@@ -4863,7 +4902,7 @@ xmlTextReaderError(void *ctxt, const char *msg, ...)
 
 }
 
-static void XMLCDECL
+static void XMLCDECL LIBXML_ATTR_FORMAT(2,3)
 xmlTextReaderWarning(void *ctxt, const char *msg, ...)
 {
     va_list ap;
@@ -5249,7 +5288,7 @@ xmlTextReaderSetup(xmlTextReaderPtr reader,
     reader->ctxt->linenumbers = 1;
     reader->ctxt->dictNames = 1;
     /*
-     * use the parser dictionnary to allocate all elements and attributes names
+     * use the parser dictionary to allocate all elements and attributes names
      */
     reader->ctxt->docdict = 1;
     reader->ctxt->parseMode = XML_PARSE_READER;

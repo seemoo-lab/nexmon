@@ -1,3 +1,7 @@
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 1995-2025 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
+
 @pindex msginit
 @cindex @code{msginit} program, usage
 @example
@@ -41,7 +45,9 @@ The value is first looked up from the embedded table.
 
 As an experimental feature, you can instruct @code{msginit} to use the
 information from Unicode CLDR, by setting the @code{GETTEXTCLDRDIR}
-environment variable.
+environment variable.  The program will look for a file named
+@code{common/supplemental/plurals.xml} under that directory.  You can
+get the CLDR data from @url{http://cldr.unicode.org/}.
 
 @end table
 
@@ -71,8 +77,12 @@ Write output to specified PO file.
 @end table
 
 If no output file is given, it depends on the @samp{--locale} option or the
-user's locale setting.  If it is @samp{-}, the results are written to
-standard output.
+user's locale setting.
+
+If the output file already exists, it is merged with the input file,
+as if through @command{msgmerge}.
+
+If it is @samp{-}, the results are written to standard output.
 
 @subsection Input file syntax
 
@@ -94,12 +104,14 @@ Assume the input file is a NeXTstep/GNUstep localized resource file in
 @subsection Output details
 
 @table @samp
-@item -l @var{ll_CC}
-@itemx --locale=@var{ll_CC}
+@item -l @var{ll_CC[.encoding]}
+@itemx --locale=@var{ll_CC[.encoding]}
 @opindex -l@r{, @code{msginit} option}
 @opindex --locale@r{, @code{msginit} option}
 Set target locale.  @var{ll} should be a language code, and @var{CC} should
-be a country code.  The command @samp{locale -a} can be used to output a list
+be a country code.  The optional part @var{.encoding} specifies the encoding
+of the locale; most often this part is @code{.UTF-8}.
+The command @samp{locale -a} can be used to output a list
 of all installed locales.  The default is the user's locale setting.
 
 @item --no-translator

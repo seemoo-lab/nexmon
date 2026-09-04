@@ -1,0 +1,73 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test processing of PO files with '#=' flags lines.
+
+cat <<\EOF > mcat-test24.in1
+#, fuzzy
+#= c-format, no-wrap
+msgid "%d marbles in box 1"
+msgstr "%d Murmeln in der Schachtel 1"
+
+#, fuzzy, c-format
+#= no-wrap
+msgid "%d marbles in box 2"
+msgstr "%d Murmeln in der Schachtel 2"
+
+#, fuzzy, no-wrap
+#= c-format
+msgid "%d marbles in box 3"
+msgstr "%d Murmeln in der Schachtel 3"
+
+#, c-format, no-wrap
+#= fuzzy
+msgid "%d marbles in box 4"
+msgstr "%d Murmeln in der Schachtel 4"
+
+#, no-wrap
+#= fuzzy, c-format
+msgid "%d marbles in box 5"
+msgstr "%d Murmeln in der Schachtel 5"
+
+#, c-format
+#= fuzzy, no-wrap
+msgid "%d marbles in box 6"
+msgstr "%d Murmeln in der Schachtel 6"
+EOF
+
+rm -f mcat-test24.tmp
+: ${MSGCAT=msgcat}
+${MSGCAT} -o mcat-test24.tmp mcat-test24.in1 || Exit 1
+LC_ALL=C tr -d '\r' < mcat-test24.tmp > mcat-test24.out || Exit 1
+
+cat << EOF > mcat-test24.ok
+#, fuzzy, c-format, no-wrap
+msgid "%d marbles in box 1"
+msgstr "%d Murmeln in der Schachtel 1"
+
+#, fuzzy, c-format, no-wrap
+msgid "%d marbles in box 2"
+msgstr "%d Murmeln in der Schachtel 2"
+
+#, fuzzy, c-format, no-wrap
+msgid "%d marbles in box 3"
+msgstr "%d Murmeln in der Schachtel 3"
+
+#, fuzzy, c-format, no-wrap
+msgid "%d marbles in box 4"
+msgstr "%d Murmeln in der Schachtel 4"
+
+#, fuzzy, c-format, no-wrap
+msgid "%d marbles in box 5"
+msgstr "%d Murmeln in der Schachtel 5"
+
+#, fuzzy, c-format, no-wrap
+msgid "%d marbles in box 6"
+msgstr "%d Murmeln in der Schachtel 6"
+EOF
+
+: ${DIFF=diff}
+${DIFF} mcat-test24.ok mcat-test24.out
+result=$?
+
+exit $result

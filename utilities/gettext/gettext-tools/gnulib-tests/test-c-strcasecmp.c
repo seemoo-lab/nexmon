@@ -1,9 +1,9 @@
 /* Test of case-insensitive string comparison function.
-   Copyright (C) 2007-2016 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,13 +12,14 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2007.  */
 
 #include <config.h>
 
 #include "c-strcase.h"
+#include "c-ctype.h"
 
 #include <locale.h>
 #include <string.h>
@@ -57,9 +58,11 @@ main (int argc, char *argv[])
   ASSERT (c_strcasecmp ("\303\266zg\303\274r", "\303\226ZG\303\234R") > 0); /* özgür */
   ASSERT (c_strcasecmp ("\303\226ZG\303\234R", "\303\266zg\303\274r") < 0); /* özgür */
 
+#if C_CTYPE_ASCII
   /* This test shows how strings of different size cannot compare equal.  */
   ASSERT (c_strcasecmp ("turkish", "TURK\304\260SH") < 0);
   ASSERT (c_strcasecmp ("TURK\304\260SH", "turkish") > 0);
+#endif
 
-  return 0;
+  return test_exit_status;
 }

@@ -14,7 +14,7 @@
 #    the values returned by getenv() in the child process, when the parent
 #    process is a mingw program, are in the GetOEMCP() encoding (should be
 #    in the GetACP() encoding). This has been reported at
-#    <http://cygwin.com/ml/cygwin/2009-08/msg00430.html>.
+#    <https://cygwin.com/ml/cygwin/2009-08/msg00430.html>.
 
 cat <<\EOF > mex-test4.po
 msgid ""

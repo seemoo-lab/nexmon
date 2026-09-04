@@ -1,0 +1,10 @@
+This example relies on Ruby and ruby-gettext (not fast_xgettext).
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

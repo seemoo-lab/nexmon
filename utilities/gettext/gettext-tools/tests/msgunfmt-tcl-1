@@ -42,7 +42,7 @@ test -d mu-tcl-1-msgs || mkdir mu-tcl-1-msgs
 ${MSGFMT} --tcl -d mu-tcl-1-msgs -l fr mu-tcl-1-fr.po || Exit 1
 
 : ${MSGUNFMT=msgunfmt}
-GETTEXTDATADIR="$abs_top_srcdir"/src \
+GETTEXTTCLDIR="$wabs_top_srcdir"/src \
 ${MSGUNFMT} --tcl -d mu-tcl-1-msgs -l fr -o mu-tcl-1-prog.out || Exit 1
 
 cat <<\EOF > mu-tcl-1-prog.ok

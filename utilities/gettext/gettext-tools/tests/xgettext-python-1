@@ -1,24 +1,37 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test of Python support.
+# Test of Python support: escape sequences, string concatenation,
+# strings with embedded expressions.
 
 cat <<\EOF > xg-py-1.py
-# interpret_ansic = true, interpret_unicode = false
+# interpret_ansic = true, interpret_unicode = false, f_string = false
+_(b"abc\
+\\def\'ghi\"jkl\a\b\f\n\r\t\v x\040x\x7ey\u0142\U00010123\N{LATIN SMALL LETTER Z}");
+
+# interpret_ansic = false, interpret_unicode = false, f_string = false
+_(br"abc\
+\\def\'ghi\"jkl\a\b\f\n\r\t\v x\040x\x7ey\u0142\U00010123\N{LATIN SMALL LETTER Z}");
+
+# interpret_ansic = true, interpret_unicode = true, f_string = false
 _("abc\
 \\def\'ghi\"jkl\a\b\f\n\r\t\v x\040x\x7ey\u0142\U00010123\N{LATIN SMALL LETTER Z}");
 
-# interpret_ansic = false, interpret_unicode = false
+# interpret_ansic = false, interpret_unicode = true, f_string = false
 _(r"abc\
 \\def\'ghi\"jkl\a\b\f\n\r\t\v x\040x\x7ey\u0142\U00010123\N{LATIN SMALL LETTER Z}");
 
-# interpret_ansic = true, interpret_unicode = true
+# interpret_ansic = true, interpret_unicode = true, f_string = false
 _(u"abc\
 \\def\'ghi\"jkl\a\b\f\n\r\t\v x\040x\x7ey\u0142\U00010123\N{LATIN SMALL LETTER Z}");
 
-# interpret_ansic = false, interpret_unicode = true
-_(ur"abc\
-\\def\'ghi\"jkl\a\b\f\n\r\t\v x\040x\x7ey\u0142\U00010123\N{LATIN SMALL LETTER Z}");
+# interpret_ansic = true, interpret_unicode = true, f_string = true
+_(f"abc\
+\\def\'ghi\"jkl{{m\{{n\\{{o\\\{{p\\\\{{q\\\\\{{r}}s\}}t\\}}u\\\}}v\\\\}}w\\\\\}}x\a\b\f\n\r\t\v x\040x\x7ey\u0142\U00010123");
+
+# interpret_ansic = false, interpret_unicode = true, f_string = true
+_(fr"Abc\
+\\def\'ghi\"jkl{{m\{{n\\{{o\\\{{p\\\\{{q\\\\\{{r}}s\}}t\\}}u\\\}}v\\\\}}w\\\\\}}x\a\b\f\n\r\t\v x\040x\x7ey\u0142\U00010123");
 
 # This will not be extracted.
 _(CATEGORIES["default"]["name"]);
@@ -26,14 +39,17 @@ _(CATEGORIES["default"]["name"]);
 # string concatenation
 _("abc" "def" + "ghi"
 "jkl" + mno)
+
+# strings with embedded expressions
+_(f"embedded_1_{foo}_bar");
+_(f"embedded_2_{_('embedded_2_sub1')}_bar_{_('embedded_2_sub2')}_baz");
+_(f"embedded_3");
 EOF
 
 : ${XGETTEXT=xgettext}
 ${XGETTEXT} --add-comments --no-location -o xg-py-1.tmp xg-py-1.py 2>xg-py-1.err
 test $? = 0 || { cat xg-py-1.err; Exit 1; }
-# Don't simplify this to "grep ... < xg-py-1.tmp", otherwise OpenBSD 4.0 grep
-# only outputs "Binary file (standard input) matches".
-cat xg-py-1.tmp | grep -v 'POT-Creation-Date' | LC_ALL=C tr -d '\r' > xg-py-1.pot
+func_filter_POT_Creation_Date xg-py-1.tmp xg-py-1.pot
 
 cat <<\EOF > xg-py-1.ok
 # SOME DESCRIPTIVE TITLE.
@@ -54,34 +70,52 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#. interpret_ansic = true, interpret_unicode = false
+#. interpret_ansic = true, interpret_unicode = false, f_string = false
 msgid ""
 "abc\\def'ghi\"jkl\a\b\f\n"
 "\r\t\v x x~y\\u0142\\U00010123\\N{LATIN SMALL LETTER Z}"
 msgstr ""
 
-#. interpret_ansic = false, interpret_unicode = false
+#. interpret_ansic = false, interpret_unicode = false, f_string = false
+#. interpret_ansic = false, interpret_unicode = true, f_string = false
 msgid ""
 "abc\\\n"
-"\\\\def\\'ghi\\\"jkl\\a\\b\\f\\n\\r\\t\\v x\\040x\\x7ey"
-"\\u0142\\U00010123\\N{LATIN SMALL LETTER Z}"
+"\\\\def\\'ghi\\\"jkl\\a\\b\\f\\n\\r\\t\\v "
+"x\\040x\\x7ey\\u0142\\U00010123\\N{LATIN SMALL LETTER Z}"
 msgstr ""
 
-#. interpret_ansic = true, interpret_unicode = true
+#. interpret_ansic = true, interpret_unicode = true, f_string = false
 msgid ""
 "abc\\def'ghi\"jkl\a\b\f\n"
 "\r\t\v x x~ył𐄣z"
 msgstr ""
 
-#. interpret_ansic = false, interpret_unicode = true
+#. interpret_ansic = true, interpret_unicode = true, f_string = true
 msgid ""
-"abc\\\n"
-"\\\\def\\'ghi\\\"jkl\\a\\b\\f\\n\\r\\t\\v x\\040x\\x7eył\\U00010123\\N{LATIN "
-"SMALL LETTER Z}"
+"abc\\def'ghi\"jkl{m\\{n\\{o\\\\{p\\\\{q\\\\\\{r}s\\}t\\}u\\\\}v\\\\}w\\\\\\}"
+"x\a\b\f\n"
+"\r\t\v x x~ył𐄣"
+msgstr ""
+
+#. interpret_ansic = false, interpret_unicode = true, f_string = true
+msgid ""
+"Abc\\\n"
+"\\\\def\\'ghi\\\"jkl{m\\{n\\\\{o\\\\\\{p\\\\\\\\{q\\\\\\\\\\{r}s\\}t\\\\}u\\"
+"\\\\}v\\\\\\\\}w\\\\\\\\\\}x\\a\\b\\f\\n\\r\\t\\v "
+"x\\040x\\x7ey\\u0142\\U00010123"
 msgstr ""
 
 #. string concatenation
 msgid "abcdefghijkl"
+msgstr ""
+
+msgid "embedded_2_sub1"
+msgstr ""
+
+msgid "embedded_2_sub2"
+msgstr ""
+
+msgid "embedded_3"
 msgstr ""
 EOF
 

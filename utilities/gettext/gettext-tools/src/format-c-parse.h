@@ -1,7 +1,5 @@
 /* Parsing C format strings.
-   Copyright (C) 2001-2004, 2006-2007, 2009-2010, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +12,15 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 
-/* C format strings are described in POSIX (IEEE P1003.1 2001), section
-   XSH 3 fprintf().  See also Linux fprintf(3) manual page.
+/* C format strings are described in
+     * POSIX (IEEE P1003.1 2001), section XSH 3 fprintf().
+     * ISO C 23, section 7.23.6.1 fprintf and section 7.31.2.1 fwprintf.
+     * See also Linux fprintf(3) manual page.
    A directive
    - starts with '%' or '%m$' where m is a positive integer,
    - is optionally followed by any of the characters '#', '0', '-', ' ', '+',
@@ -27,16 +29,16 @@
    - is optionally followed by a width specification: '*' (reads an argument)
      or '*m$' or a nonempty digit sequence,
    - is optionally followed by '.' and a precision specification: '*' (reads
-     an argument) or '*m$' or a nonempty digit sequence,
+     an argument) or '*m$' or an optional nonempty digit sequence,
    - is either continued like this:
        - is optionally followed by a size specifier, one of 'hh' 'h' 'l' 'll'
-         'L' 'q' 'j' 'z' 't',
+         'L' 'q' 'j' 'z' 't' 'w8' 'w16' 'w32' 'w64' 'wf8' 'wf16' 'wf32' 'wf64',
        - is finished by a specifier
            - '%', that needs no argument,
            - 'c', 'C', that need a character argument,
            - 's', 'S', that need a string argument,
            - 'i', 'd', that need a signed integer argument,
-           - 'o', 'u', 'x', 'X', that need an unsigned integer argument,
+           - 'u', 'o', 'x', 'X', 'b', that need an unsigned integer argument,
            - 'e', 'E', 'f', 'F', 'g', 'G', 'a', 'A', that need a floating-point
              argument,
            - 'p', that needs a 'void *' argument,
@@ -129,7 +131,7 @@ typedef enum format_arg_type format_arg_type_t;
 
 struct numbered_arg
 {
-  unsigned int number;
+  size_t number;
   format_arg_type_t type;
 };
 
@@ -140,20 +142,18 @@ struct unnumbered_arg
 
 struct spec
 {
-  unsigned int directives;
-  unsigned int unnumbered_arg_count;
-  unsigned int allocated;
+  size_t directives;
+  /* We consider a directive as "likely intentional" if it does not contain a
+     space.  This prevents xgettext from flagging strings like "100% complete"
+     as 'c-format' if they don't occur in a context that requires a format
+     string.  */
+  size_t likely_intentional_directives;
+  size_t unnumbered_arg_count;
   struct unnumbered_arg *unnumbered;
   bool unlikely_intentional;
-  unsigned int sysdep_directives_count;
+  size_t sysdep_directives_count;
   const char **sysdep_directives;
 };
-
-/* Locale independent test for a decimal digit.
-   Argument can be  'char' or 'unsigned char'.  (Whereas the argument of
-   <ctype.h> isdigit must be an 'unsigned char'.)  */
-#undef isdigit
-#define isdigit(c) ((unsigned int) ((c) - '0') < 10)
 
 /* Whether to recognize the 'I' flag.  */
 #if SYSDEP_SEGMENTS_PROCESSED
@@ -170,8 +170,8 @@ struct spec
 static int
 numbered_arg_compare (const void *p1, const void *p2)
 {
-  unsigned int n1 = ((const struct numbered_arg *) p1)->number;
-  unsigned int n2 = ((const struct numbered_arg *) p2)->number;
+  size_t n1 = ((const struct numbered_arg *) p1)->number;
+  size_t n2 = ((const struct numbered_arg *) p2)->number;
 
   return (n1 > n2 ? 1 : n1 < n2 ? -1 : 0);
 }
@@ -182,42 +182,40 @@ format_parse_entrails (const char *format, bool translated,
                        struct spec *result)
 {
   const char *const format_start = format;
-  struct spec spec;
-  unsigned int numbered_arg_count;
-  struct numbered_arg *numbered;
 
+  struct spec spec;
   spec.directives = 0;
-  numbered_arg_count = 0;
+  spec.likely_intentional_directives = 0;
   spec.unnumbered_arg_count = 0;
-  spec.allocated = 0;
-  numbered = NULL;
   spec.unnumbered = NULL;
   spec.unlikely_intentional = false;
   spec.sysdep_directives_count = 0;
   spec.sysdep_directives = NULL;
+  size_t numbered_arg_count = 0;
+  struct numbered_arg *numbered = NULL;
+  size_t allocated = 0;
 
   for (; *format != '\0';)
+    /* Invariant: spec.unnumbered_arg_count == 0 || numbered_arg_count == 0.  */
     if (*format++ == '%')
       {
         /* A directive.  */
-        unsigned int number = 0;
-        format_arg_type_t type;
-        format_arg_type_t size;
-
         FDI_SET (format - 1, FMTDIR_START);
         spec.directives++;
+        bool likely_intentional = true;
 
-        if (isdigit (*format))
+        size_t number = 0;
+        if (c_isdigit (*format))
           {
             const char *f = format;
-            unsigned int m = 0;
+            size_t m = 0;
 
             do
               {
                 m = 10 * m + (*f - '0');
                 f++;
               }
-            while (isdigit (*f));
+            while (c_isdigit (*f));
 
             if (*f == '$')
               {
@@ -237,7 +235,11 @@ format_parse_entrails (const char *format, bool translated,
           {
             if (*format == ' ' || *format == '+' || *format == '-'
                 || *format == '#' || *format == '0' || *format == '\'')
-              format++;
+              {
+                if (*format == ' ')
+                  likely_intentional = false;
+                format++;
+              }
 #if HANDLE_I_FLAG
             else if (translated && *format == 'I')
               {
@@ -260,21 +262,21 @@ format_parse_entrails (const char *format, bool translated,
         /* Parse width.  */
         if (*format == '*')
           {
-            unsigned int width_number = 0;
+            size_t width_number = 0;
 
             format++;
 
-            if (isdigit (*format))
+            if (c_isdigit (*format))
               {
                 const char *f = format;
-                unsigned int m = 0;
+                size_t m = 0;
 
                 do
                   {
                     m = 10 * m + (*f - '0');
                     f++;
                   }
-                while (isdigit (*f));
+                while (c_isdigit (*f));
 
                 if (*f == '$')
                   {
@@ -302,10 +304,10 @@ format_parse_entrails (const char *format, bool translated,
                     goto bad_format;
                   }
 
-                if (spec.allocated == numbered_arg_count)
+                if (allocated == numbered_arg_count)
                   {
-                    spec.allocated = 2 * spec.allocated + 1;
-                    numbered = (struct numbered_arg *) xrealloc (numbered, spec.allocated * sizeof (struct numbered_arg));
+                    allocated = 2 * allocated + 1;
+                    numbered = (struct numbered_arg *) xrealloc (numbered, allocated * sizeof (struct numbered_arg));
                     IF_OOM (numbered, goto bad_format;)
                   }
                 numbered[numbered_arg_count].number = width_number;
@@ -324,19 +326,19 @@ format_parse_entrails (const char *format, bool translated,
                     goto bad_format;
                   }
 
-                if (spec.allocated == spec.unnumbered_arg_count)
+                if (allocated == spec.unnumbered_arg_count)
                   {
-                    spec.allocated = 2 * spec.allocated + 1;
-                    spec.unnumbered = (struct unnumbered_arg *) xrealloc (spec.unnumbered, spec.allocated * sizeof (struct unnumbered_arg));
+                    allocated = 2 * allocated + 1;
+                    spec.unnumbered = (struct unnumbered_arg *) xrealloc (spec.unnumbered, allocated * sizeof (struct unnumbered_arg));
                     IF_OOM (spec.unnumbered, goto bad_format;)
                   }
                 spec.unnumbered[spec.unnumbered_arg_count].type = FAT_INTEGER;
                 spec.unnumbered_arg_count++;
               }
           }
-        else if (isdigit (*format))
+        else if (c_isdigit (*format))
           {
-            do format++; while (isdigit (*format));
+            do format++; while (c_isdigit (*format));
           }
 
         /* Parse precision.  */
@@ -346,21 +348,21 @@ format_parse_entrails (const char *format, bool translated,
 
             if (*format == '*')
               {
-                unsigned int precision_number = 0;
+                size_t precision_number = 0;
 
                 format++;
 
-                if (isdigit (*format))
+                if (c_isdigit (*format))
                   {
                     const char *f = format;
-                    unsigned int m = 0;
+                    size_t m = 0;
 
                     do
                       {
                         m = 10 * m + (*f - '0');
                         f++;
                       }
-                    while (isdigit (*f));
+                    while (c_isdigit (*f));
 
                     if (*f == '$')
                       {
@@ -388,10 +390,10 @@ format_parse_entrails (const char *format, bool translated,
                         goto bad_format;
                       }
 
-                    if (spec.allocated == numbered_arg_count)
+                    if (allocated == numbered_arg_count)
                       {
-                        spec.allocated = 2 * spec.allocated + 1;
-                        numbered = (struct numbered_arg *) xrealloc (numbered, spec.allocated * sizeof (struct numbered_arg));
+                        allocated = 2 * allocated + 1;
+                        numbered = (struct numbered_arg *) xrealloc (numbered, allocated * sizeof (struct numbered_arg));
                         IF_OOM (numbered, goto bad_format;)
                       }
                     numbered[numbered_arg_count].number = precision_number;
@@ -410,21 +412,23 @@ format_parse_entrails (const char *format, bool translated,
                         goto bad_format;
                       }
 
-                    if (spec.allocated == spec.unnumbered_arg_count)
+                    if (allocated == spec.unnumbered_arg_count)
                       {
-                        spec.allocated = 2 * spec.allocated + 1;
-                        spec.unnumbered = (struct unnumbered_arg *) xrealloc (spec.unnumbered, spec.allocated * sizeof (struct unnumbered_arg));
+                        allocated = 2 * allocated + 1;
+                        spec.unnumbered = (struct unnumbered_arg *) xrealloc (spec.unnumbered, allocated * sizeof (struct unnumbered_arg));
                         IF_OOM (spec.unnumbered, goto bad_format;)
                       }
                     spec.unnumbered[spec.unnumbered_arg_count].type = FAT_INTEGER;
                     spec.unnumbered_arg_count++;
                   }
               }
-            else if (isdigit (*format))
+            else if (c_isdigit (*format))
               {
-                do format++; while (isdigit (*format));
+                do format++; while (c_isdigit (*format));
               }
           }
+
+        format_arg_type_t type;
 
         if (!SYSDEP_SEGMENTS_PROCESSED && *format == '<')
           {
@@ -598,51 +602,133 @@ format_parse_entrails (const char *format, bool translated,
           }
         else
           {
+            /* Relevant for the conversion characters d, i, b, o, u, x, X, n.  */
+            format_arg_type_t integer_size;
+            /* Relevant for the conversion characters a, A, e, E, f, F, g, G.  */
+            format_arg_type_t floatingpoint_size;
+
             /* Parse size.  */
-            size = 0;
-            for (;; format++)
+            integer_size = 0;
+            floatingpoint_size = 0;
+
+            if (*format == 'h')
               {
-                if (*format == 'h')
+                if (format[1] == 'h')
                   {
-                    if (size & (FAT_SIZE_SHORT | FAT_SIZE_CHAR))
-                      size = FAT_SIZE_CHAR;
-                    else
-                      size = FAT_SIZE_SHORT;
-                  }
-                else if (*format == 'l')
-                  {
-                    if (size & (FAT_SIZE_LONG | FAT_SIZE_LONGLONG))
-                      size = FAT_SIZE_LONGLONG;
-                    else
-                      size = FAT_SIZE_LONG;
-                  }
-                else if (*format == 'L')
-                  size = FAT_SIZE_LONGLONG;
-                else if (*format == 'q')
-                  /* Old BSD 4.4 convention.  */
-                  size = FAT_SIZE_LONGLONG;
-                else if (*format == 'j')
-                  size = FAT_SIZE_INTMAX_T;
-                else if (*format == 'z' || *format == 'Z')
-                  /* 'z' is standardized in ISO C 99, but glibc uses 'Z'
-                     because the warning facility in gcc-2.95.2 understands
-                     only 'Z' (see gcc-2.95.2/gcc/c-common.c:1784).  */
-                  size = FAT_SIZE_SIZE_T;
-                else if (*format == 't')
-                  size = FAT_SIZE_PTRDIFF_T;
-#if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
-                else if (SYSDEP_SEGMENTS_PROCESSED
-                         && *format == 'I'
-                         && format[1] == '6'
-                         && format[2] == '4')
-                  {
-                    size = FAT_SIZE_64_T;
+                    integer_size = FAT_SIZE_CHAR;
                     format += 2;
                   }
-#endif
                 else
-                  break;
+                  {
+                    integer_size = FAT_SIZE_SHORT;
+                    format++;
+                  }
               }
+            else if (*format == 'l')
+              {
+                if (format[1] == 'l')
+                  {
+                    integer_size = FAT_SIZE_LONGLONG;
+                    /* For backward compatibility only.  */
+                    floatingpoint_size = FAT_SIZE_LONGLONG;
+                    format += 2;
+                  }
+                else
+                  {
+                    integer_size = FAT_SIZE_LONG;
+                    format++;
+                  }
+              }
+            else if (*format == 'L'
+                     /* Old BSD 4.4 convention.  */
+                     || *format == 'q')
+              {
+                integer_size = FAT_SIZE_LONGLONG;
+                floatingpoint_size = FAT_SIZE_LONGLONG;
+                format++;
+              }
+            else if (*format == 'j')
+              {
+                integer_size = FAT_SIZE_INTMAX_T;
+                format++;
+              }
+            else if (*format == 'z' || *format == 'Z')
+              {
+                /* 'z' is standardized in ISO C 99, but glibc uses 'Z'
+                   because the warning facility in gcc-2.95.2 understands
+                   only 'Z' (see gcc-2.95.2/gcc/c-common.c:1784).  */
+                integer_size = FAT_SIZE_SIZE_T;
+                format++;
+              }
+            else if (*format == 't')
+              {
+                integer_size = FAT_SIZE_PTRDIFF_T;
+                format++;
+              }
+            else if (*format == 'w')
+              {
+                /* wN and wfN are standardized in ISO C 23.  */
+                if (format[1] == 'f')
+                  {
+                    if (format[2] == '8')
+                      {
+                        integer_size = FAT_SIZE_FAST8_T;
+                        format += 3;
+                      }
+                    else if (format[2] == '1' && format[3] == '6')
+                      {
+                        integer_size = FAT_SIZE_FAST16_T;
+                        format += 4;
+                      }
+                    else if (format[2] == '3' && format[3] == '2')
+                      {
+                        integer_size = FAT_SIZE_FAST32_T;
+                        format += 4;
+                      }
+                    else if (format[2] == '6' && format[3] == '4')
+                      {
+                        integer_size = FAT_SIZE_FAST64_T;
+                        format += 4;
+                      }
+                  }
+                else
+                  {
+                    if (format[1] == '8')
+                      {
+                        integer_size = FAT_SIZE_LEAST8_T;
+                        format += 2;
+                      }
+                    else if (format[1] == '1' && format[2] == '6')
+                      {
+                        integer_size = FAT_SIZE_LEAST16_T;
+                        format += 3;
+                      }
+                    else if (format[1] == '3' && format[2] == '2')
+                      {
+                        integer_size = FAT_SIZE_LEAST32_T;
+                        format += 3;
+                      }
+                    else if (format[1] == '6' && format[2] == '4')
+                      {
+                        integer_size = FAT_SIZE_LEAST64_T;
+                        format += 3;
+                      }
+                  }
+              }
+#if defined _WIN32 && ! defined __CYGWIN__
+            else if (SYSDEP_SEGMENTS_PROCESSED
+                     && *format == 'I'
+                     && format[1] == '6'
+                     && format[2] == '4')
+              {
+                integer_size = FAT_SIZE_64_T;
+                format += 3;
+              }
+#endif
+            if (!((integer_size & ~FAT_SIZE_MASK) == 0))
+              abort ();
+            if (!((floatingpoint_size & ~FAT_SIZE_LONGLONG) == 0))
+              abort ();
 
             switch (*format)
               {
@@ -659,32 +745,51 @@ format_parse_entrails (const char *format, bool translated,
                 break;
               case 'c':
                 type = FAT_CHAR;
-                type |= (size & (FAT_SIZE_LONG | FAT_SIZE_LONGLONG)
-                         ? FAT_WIDE : 0);
+                if (integer_size != 0)
+                  {
+                    if (integer_size != FAT_SIZE_LONG)
+                      {
+                        *invalid_reason = INVALID_SIZE_SPECIFIER (spec.directives);
+                        FDI_SET (format, FMTDIR_ERROR);
+                        goto bad_format;
+                      }
+                    type |= FAT_WIDE;
+                  }
                 break;
               case 'C': /* obsolete */
                 type = FAT_CHAR | FAT_WIDE;
                 break;
               case 's':
                 type = FAT_STRING;
-                type |= (size & (FAT_SIZE_LONG | FAT_SIZE_LONGLONG)
-                         ? FAT_WIDE : 0);
+                if (integer_size != 0)
+                  {
+                    if (integer_size != FAT_SIZE_LONG)
+                      {
+                        *invalid_reason = INVALID_SIZE_SPECIFIER (spec.directives);
+                        FDI_SET (format, FMTDIR_ERROR);
+                        goto bad_format;
+                      }
+                    type |= FAT_WIDE;
+                  }
                 break;
               case 'S': /* obsolete */
                 type = FAT_STRING | FAT_WIDE;
                 break;
               case 'i': case 'd':
-                type = FAT_INTEGER;
-                type |= (size & FAT_SIZE_MASK);
+                type = FAT_INTEGER | integer_size;
                 break;
-              case 'u': case 'o': case 'x': case 'X':
-                type = FAT_INTEGER | FAT_UNSIGNED;
-                type |= (size & FAT_SIZE_MASK);
+              case 'u': case 'o': case 'x': case 'X': case 'b':
+                type = FAT_INTEGER | FAT_UNSIGNED | integer_size;
                 break;
               case 'e': case 'E': case 'f': case 'F': case 'g': case 'G':
               case 'a': case 'A':
-                type = FAT_DOUBLE;
-                type |= (size & FAT_SIZE_LONGLONG);
+                if (integer_size != 0 && floatingpoint_size == 0)
+                  {
+                    *invalid_reason = INVALID_SIZE_SPECIFIER (spec.directives);
+                    FDI_SET (format, FMTDIR_ERROR);
+                    goto bad_format;
+                  }
+                type = FAT_DOUBLE | floatingpoint_size;
                 break;
               case '@':
                 if (objc_extensions)
@@ -697,8 +802,7 @@ format_parse_entrails (const char *format, bool translated,
                 type = FAT_POINTER;
                 break;
               case 'n':
-                type = FAT_COUNT_POINTER;
-                type |= (size & FAT_SIZE_MASK);
+                type = FAT_COUNT_POINTER | integer_size;
                 break;
               other:
               default:
@@ -731,10 +835,10 @@ format_parse_entrails (const char *format, bool translated,
                     goto bad_format;
                   }
 
-                if (spec.allocated == numbered_arg_count)
+                if (allocated == numbered_arg_count)
                   {
-                    spec.allocated = 2 * spec.allocated + 1;
-                    numbered = (struct numbered_arg *) xrealloc (numbered, spec.allocated * sizeof (struct numbered_arg));
+                    allocated = 2 * allocated + 1;
+                    numbered = (struct numbered_arg *) xrealloc (numbered, allocated * sizeof (struct numbered_arg));
                     IF_OOM (numbered, goto bad_format;)
                   }
                 numbered[numbered_arg_count].number = number;
@@ -753,10 +857,10 @@ format_parse_entrails (const char *format, bool translated,
                     goto bad_format;
                   }
 
-                if (spec.allocated == spec.unnumbered_arg_count)
+                if (allocated == spec.unnumbered_arg_count)
                   {
-                    spec.allocated = 2 * spec.allocated + 1;
-                    spec.unnumbered = (struct unnumbered_arg *) xrealloc (spec.unnumbered, spec.allocated * sizeof (struct unnumbered_arg));
+                    allocated = 2 * allocated + 1;
+                    spec.unnumbered = (struct unnumbered_arg *) xrealloc (spec.unnumbered, allocated * sizeof (struct unnumbered_arg));
                     IF_OOM (spec.unnumbered, goto bad_format;)
                   }
                 spec.unnumbered[spec.unnumbered_arg_count].type = type;
@@ -764,6 +868,8 @@ format_parse_entrails (const char *format, bool translated,
               }
           }
 
+        if (likely_intentional)
+          spec.likely_intentional_directives++;
         FDI_SET (format, FMTDIR_END);
 
         format++;
@@ -772,21 +878,19 @@ format_parse_entrails (const char *format, bool translated,
   /* Sort the numbered argument array, and eliminate duplicates.  */
   if (numbered_arg_count > 1)
     {
-      unsigned int i, j;
-      bool err;
-
       qsort (numbered, numbered_arg_count,
              sizeof (struct numbered_arg), numbered_arg_compare);
 
       /* Remove duplicates: Copy from i to j, keeping 0 <= j <= i.  */
-      err = false;
+      bool err = false;
+      size_t i, j;
       for (i = j = 0; i < numbered_arg_count; i++)
         if (j > 0 && numbered[i].number == numbered[j-1].number)
           {
             format_arg_type_t type1 = numbered[i].type;
             format_arg_type_t type2 = numbered[j-1].type;
-            format_arg_type_t type_both;
 
+            format_arg_type_t type_both;
             if (type1 == type2)
               type_both = type1;
             else
@@ -816,13 +920,11 @@ format_parse_entrails (const char *format, bool translated,
         goto bad_format;
     }
 
-  /* Verify that the format strings uses all arguments up to the highest
+  /* Verify that the format string uses all arguments up to the highest
      numbered one.  */
   if (numbered_arg_count > 0)
     {
-      unsigned int i;
-
-      for (i = 0; i < numbered_arg_count; i++)
+      for (size_t i = 0; i < numbered_arg_count; i++)
         if (numbered[i].number != i + 1)
           {
             *invalid_reason = INVALID_IGNORED_ARGUMENT (numbered[i].number, i + 1);
@@ -832,10 +934,10 @@ format_parse_entrails (const char *format, bool translated,
       /* So now the numbered arguments array is equivalent to a sequence
          of unnumbered arguments.  */
       spec.unnumbered_arg_count = numbered_arg_count;
-      spec.allocated = spec.unnumbered_arg_count;
-      spec.unnumbered = XNMALLOC (spec.allocated, struct unnumbered_arg);
+      allocated = spec.unnumbered_arg_count;
+      spec.unnumbered = XNMALLOC (allocated, struct unnumbered_arg);
       IF_OOM (spec.unnumbered, goto bad_format;)
-      for (i = 0; i < spec.unnumbered_arg_count; i++)
+      for (size_t i = 0; i < spec.unnumbered_arg_count; i++)
         spec.unnumbered[i].type = numbered[i].type;
       free (numbered);
       numbered_arg_count = 0;

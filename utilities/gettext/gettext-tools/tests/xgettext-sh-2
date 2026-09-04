@@ -3,7 +3,7 @@
 
 # Test Shell support: --add-comments option.
 
-cat <<EOF > xg-sh-2.sh
+cat <<\EOF > xg-sh-2.sh
 # This comment will not be extracted.
 gettext "help"
 #  TRANSLATORS: This is an extracted comment.
@@ -20,7 +20,7 @@ ${XGETTEXT} --omit-header --no-location --add-comments=TRANSLATORS: \
   -d xg-sh-2.tmp xg-sh-2.sh || Exit 1
 LC_ALL=C tr -d '\r' < xg-sh-2.tmp.po > xg-sh-2.po || Exit 1
 
-cat <<EOF > xg-sh-2.ok
+cat <<\EOF > xg-sh-2.ok
 msgid "help"
 msgstr ""
 

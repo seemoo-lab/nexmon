@@ -1,6 +1,13 @@
-/*
- * list.c: lists handling implementation
+/* libxml2 - Library for parsing XML documents
+ * Copyright (C) 2006-2019 Free Software Foundation, Inc.
  *
+ * This file is not part of the GNU gettext program, but is used with
+ * GNU gettext.
+ *
+ * The original copyright notice is as follows:
+ */
+
+/*
  * Copyright (C) 2000 Gary Pennington and Daniel Veillard.
  *
  * Permission to use, copy, modify, and distribute this software for any
@@ -13,6 +20,10 @@
  * CONTRIBUTORS ACCEPT NO RESPONSIBILITY IN ANY CONCEIVABLE MANNER.
  *
  * Author: Gary.Pennington@uk.sun.com
+ */
+
+/*
+ * list.c: lists handling implementation
  */
 
 #define IN_LIBXML
@@ -347,7 +358,7 @@ void xmlListDelete(xmlListPtr l)
  *
  * Remove the first instance associated to data in the list
  *
- * Returns 1 if a deallocation occured, or 0 if not found
+ * Returns 1 if a deallocation occurred, or 0 if not found
  */
 int
 xmlListRemoveFirst(xmlListPtr l, void *data)
@@ -372,7 +383,7 @@ xmlListRemoveFirst(xmlListPtr l, void *data)
  *
  * Remove the last instance associated to data in the list
  *
- * Returns 1 if a deallocation occured, or 0 if not found
+ * Returns 1 if a deallocation occurred, or 0 if not found
  */
 int
 xmlListRemoveLast(xmlListPtr l, void *data)
@@ -673,7 +684,7 @@ xmlListSort(xmlListPtr l)
  * apply the walker function to it
  */
 void
-xmlListWalk(xmlListPtr l, xmlListWalker walker, const void *user) {
+xmlListWalk(xmlListPtr l, xmlListWalker walker, void *user) {
     xmlLinkPtr lk;
 
     if ((l == NULL) || (walker == NULL))
@@ -694,7 +705,7 @@ xmlListWalk(xmlListPtr l, xmlListWalker walker, const void *user) {
  * apply the walker function to it
  */
 void
-xmlListReverseWalk(xmlListPtr l, xmlListWalker walker, const void *user) {
+xmlListReverseWalk(xmlListPtr l, xmlListWalker walker, void *user) {
     xmlLinkPtr lk;
 
     if ((l == NULL) || (walker == NULL))

@@ -64,6 +64,8 @@ cat <<\EOF > f-p-1.data
 "abc%y"
 # Invalid: flags after width
 "abc%*0g"
+# Valid: null precision
+"abc%.f"
 # Invalid: twice precision
 "abc%.4.2g"
 # Invalid: two size specifiers

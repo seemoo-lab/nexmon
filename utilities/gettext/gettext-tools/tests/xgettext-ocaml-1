@@ -1,0 +1,102 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test OCaml support: Simple things.
+
+cat <<\EOF > xg-oc-1.ml
+  (* A one-line comment. *)
+  let test1 = s_ "Test String 1" in
+  (* Two one-line *)
+  (* comments *)
+  let test2 = (s_ "Test String 2") in
+  (* A multi-line
+     comment.  *)
+  let test3 = s_("Test String 3") in
+  (* A (* nesting *) (* one-line *) comment. *)
+  let test4 = s_ "Test String 4" in
+  (* A (*
+     nesting
+     *)
+     (*
+     multi-line *)
+     comment. *)
+  let test5 = s_ "Test String 5" in
+  (*
+    s_("Not extracted");
+  *)
+  let dummy = 0 in
+  (* OCaml has string literal concatenation. *)
+  let test6 = s_("Test " ^
+  "String "
+  ^ "6") in
+  (* Empty string. *)
+  let test7 = s_ "" in
+
+  (* sprintf expects a format string. *)
+  sprintf (f_ "weight %u") w
+
+  print_string(s_ "Test string 11 %s")
+  let n = 2 in
+  let s = "2" in
+  print_string(sprintf(fn_ "%0s piece of cake" "%s pieces of cake" n) s)
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -c -d xg-oc-1.tmp xg-oc-1.ml || Exit 1
+LC_ALL=C tr -d '\r' < xg-oc-1.tmp.po > xg-oc-1.po || Exit 1
+
+cat <<\EOF > xg-oc-1.ok
+#. A one-line comment.
+msgid "Test String 1"
+msgstr ""
+
+#. Two one-line
+#. comments
+msgid "Test String 2"
+msgstr ""
+
+#. A multi-line
+#. comment.
+msgid "Test String 3"
+msgstr ""
+
+#. A (* nesting *) (* one-line *) comment.
+msgid "Test String 4"
+msgstr ""
+
+#. A (*
+#. nesting
+#. *)
+#. (*
+#. multi-line *)
+#. comment.
+msgid "Test String 5"
+msgstr ""
+
+#. OCaml has string literal concatenation.
+msgid "Test String 6"
+msgstr ""
+
+#. Empty string.
+msgid ""
+msgstr ""
+
+#. sprintf expects a format string.
+#, ocaml-format
+msgid "weight %u"
+msgstr ""
+
+msgid "Test string 11 %s"
+msgstr ""
+
+#, ocaml-format
+msgid "%0s piece of cake"
+msgid_plural "%s pieces of cake"
+msgstr[0] ""
+msgstr[1] ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-oc-1.ok xg-oc-1.po || Exit 1
+
+exit 0

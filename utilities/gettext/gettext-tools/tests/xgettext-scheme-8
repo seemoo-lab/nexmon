@@ -1,0 +1,84 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Scheme support: '-L Guile' syntax.
+
+cat <<\EOF > xg-sc-8.scm
+(display (gettext "Llanfairpwllgwyngyllgogerychwyrn\
+                   drobwllllantysiliogogogoch"))
+(display (gettext "The hotel has a  \
+                   pretty garden."))
+(display (gettext "abc\xa;def\x3BB;ghi\x20AC;jkl\x0001F603;mno"))
+(display (gettext "Abc\x0adef\u03BBghi\u20ACjkl\U01F603mno"))
+#!r6rs
+(display (gettext "Llanfairpwllgwyngyllgogerychwyrn\
+                   drobwllllantysiliogogogoch"))
+(display (gettext "The hotel has a  \
+                   pretty garden."))
+(display (gettext "abc\xa;def\x3BB;ghi\x20AC;jkl\x0001F603;mno"))
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} -L Guile -o xg-sc-8.tmp xg-sc-8.scm || Exit 1
+LC_ALL=C tr -d '\r' < xg-sc-8.tmp > xg-sc-8.po || Exit 1
+
+sed -e '/POT-Creation-Date/d' < xg-sc-8.po > xg-sc-8.pot
+
+cat <<\EOF > xg-sc-8.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: xg-sc-8.scm:1
+msgid ""
+"Llanfairpwllgwyngyllgogerychwyrn                   drobwllllantysiliogogogoch"
+msgstr ""
+
+#: xg-sc-8.scm:3
+msgid "The hotel has a                     pretty garden."
+msgstr ""
+
+#: xg-sc-8.scm:5
+msgid "abc�;def;B;ghi AC;jkl"
+msgstr ""
+
+#: xg-sc-8.scm:6
+msgid ""
+"Abc\n"
+"defλghi€jkl😃mno"
+msgstr ""
+
+#: xg-sc-8.scm:8
+msgid "Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch"
+msgstr ""
+
+#: xg-sc-8.scm:10
+msgid "The hotel has a  pretty garden."
+msgstr ""
+
+#: xg-sc-8.scm:12
+msgid ""
+"abc\n"
+"defλghi€jkl😃mno"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-sc-8.ok xg-sc-8.pot
+result=$?
+
+exit $result

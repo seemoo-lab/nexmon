@@ -1,3 +1,7 @@
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 1995-2023 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
+
 @pindex msgmerge
 @cindex @code{msgmerge} program, usage
 @example
@@ -120,6 +124,14 @@ The backup suffix is @samp{~}, unless set with @code{--suffix} or the
 @opindex --multi-domain@r{, @code{msgmerge} option}
 Apply @var{ref}.pot to each of the domains in @var{def}.po.
 
+@item --for-msgfmt
+@opindex --for-msgfmt@r{, @code{msgmerge} option}
+Produce a PO file meant for @code{msgfmt} only, not for a translator.
+This option omits untranslated messages, fuzzy messages (except the header
+entry), and obsolete messages from the output.  Also, it omits translator
+comments and @samp{#: @var{filename}:@var{line}} lines from the output.
+In particular, this option implies @samp{--no-fuzzy-matching}.
+
 @item -N
 @itemx --no-fuzzy-matching
 @opindex -N@r{, @code{msgmerge} option}
@@ -237,8 +249,8 @@ lines which are wider than the output page width will be split.
 @opindex -s@r{, @code{msgmerge} option}
 @opindex --sort-output@r{, @code{msgmerge} option}
 @cindex sorting @code{msgmerge} output
-Generate sorted output.  Note that using this option makes it much harder
-for the translator to understand each message's context.
+Generate sorted output (deprecated).  Note that using this option makes it
+much harder for the translator to understand each message's context.
 
 @item -F
 @itemx --sort-by-file

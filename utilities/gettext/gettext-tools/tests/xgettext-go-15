@@ -1,0 +1,46 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: local type definitions.
+
+cat <<\EOF > xg-go-15.go
+package main
+
+import (
+	"fmt"
+	. "github.com/leonelquinteros/gotext"
+)
+
+type L = Locale
+
+func main () {
+	fmt.Println(new (Locale).Get("Test 1"))
+	fmt.Println(new (L).Get("Test 2"))
+	type L struct {
+		b int
+		Get func (s string) string
+	}
+	fmt.Println(new (L).Get("Test 3"))
+	fmt.Println(new (Locale).Get("Test 4"))
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-go-15.tmp xg-go-15.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-15.tmp.po > xg-go-15.po || Exit 1
+
+cat <<\EOF > xg-go-15.ok
+msgid "Test 1"
+msgstr ""
+
+msgid "Test 2"
+msgstr ""
+
+msgid "Test 4"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-15.ok xg-go-15.po || Exit 1
+
+exit 0

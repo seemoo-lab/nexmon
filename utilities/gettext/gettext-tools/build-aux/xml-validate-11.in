@@ -1,0 +1,189 @@
+#!/bin/sh
+# Validating an XML document against an XML Schema 1.1.
+
+# Copyright (C) 2024-2026 Free Software Foundation, Inc.
+#
+# This file is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published
+# by the Free Software Foundation, either version 3 of the License,
+# or (at your option) any later version.
+#
+# This file is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+# Written by Bruno Haible.
+
+# The major advantages of XML Schema 1.1, compared to XML Schema 1.0, are:
+# * It fixes an ill-designed "Unique Particle Attribution" rule
+#   <https://en.wikipedia.org/wiki/Unique_Particle_Attribution>
+#   <https://www.xml.com/articles/2018/06/13/upa-xml-schema/>
+#   that makes
+#     <any namespace="##targetNamespace" processContents="skip"/>
+#   elements practically useless.  See
+#   <https://en.wikipedia.org/wiki/Unique_Particle_Attribution>
+#   <https://stackoverflow.com/questions/17580614/>.
+# * It allows to check that, for example, a specific child element and a
+#   specific attribute are not used together in the same XML element.
+#   This is a special case of <xsd:assert .../>.
+#
+# The major drawback of XML Schema 1.1, compared to XML Schema 1.0, are:
+# * (As of 2024) There is only one Free Software implementation of it:
+#   Apache Xerces in version 2.12 or newer, in the "xml-schema-1.1" variant.
+# * The error messages emitted by Apache Xerces are regularly mysterious /
+#   unintelligible.
+
+# func_usage
+# outputs to stdout the --help usage message.
+func_usage ()
+{
+  echo "\
+Usage: xml-validate-11 [OPTION]... SCHEMA DOCUMENT
+
+Invokes an XML Schema 1.1 validator, validating the given XML document
+against the given XML schema.
+
+The exit code is 0 for valid, 1 for invalid.
+
+Options:
+      --help           print this help and exit
+      --version        print version information and exit
+
+The environment variable XERCES_J_DIR should point to a directory that
+contains a binary distribution of Xerces-J version 2.12 (or newer),
+in xml-schema-1.1 variant.  Download location:
+https://dlcdn.apache.org//xerces/j/binaries/Xerces-J-bin.2.12.2-xml-schema-1.1.tar.gz
+
+Send patches and bug reports to <bug-gettext@gnu.org>."
+}
+
+# func_version
+# outputs to stdout the --version message.
+func_version ()
+{
+  echo "xml-validate-11 (GNU gettext)"
+  echo "Copyright (C) 2024 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law."
+  echo
+  printf 'Written by %s.\n' "Bruno Haible"
+}
+
+# func_fatal_error message
+# outputs to stderr a fatal error message, and terminates the program.
+func_fatal_error ()
+{
+  echo "xml-validate-11: *** $1" 1>&2
+  echo "xml-validate-11: *** Stop." 1>&2
+  exit 1
+}
+
+# Outputs a command and runs it.
+func_verbose ()
+{
+  # Make it easy to copy&paste the printed command into a shell in most cases,
+  # by escaping '\\', '"', and '$'. This is not perfect, just good enough.
+  echo "$@" | sed -e 's/\([\\"$]\)/\\\1/g'
+  "$@"
+}
+
+# func_tmpdir
+# creates a temporary directory.
+# Sets variable
+# - tmp             pathname of freshly created temporary directory
+func_tmpdir ()
+{
+  # Use the environment variable TMPDIR, falling back to /tmp. This allows
+  # users to specify a different temporary directory, for example, if their
+  # /tmp is filled up or too small.
+  : "${TMPDIR=/tmp}"
+  {
+    # Use the mktemp program if available. If not available, hide the error
+    # message.
+    tmp=`(umask 077 && mktemp -d -q "$TMPDIR/gtXXXXXX") 2>/dev/null` &&
+    test -n "$tmp" && test -d "$tmp"
+  } ||
+  {
+    # Use a simple mkdir command. It is guaranteed to fail if the directory
+    # already exists.  $RANDOM is bash specific and expands to empty in shells
+    # other than bash, ksh and zsh.  Its use does not increase security;
+    # rather, it minimizes the probability of failure in a very cluttered /tmp
+    # directory.
+    tmp=$TMPDIR/gt$$-$RANDOM
+    (umask 077 && mkdir "$tmp")
+  } ||
+  {
+    echo "$0: cannot create a temporary directory in $TMPDIR" >&2
+    { (exit 1); exit 1; }
+  }
+}
+
+# Command-line option processing.
+while test $# -gt 0; do
+  case "$1" in
+    --help | --hel | --he | --h )
+      func_usage
+      exit 0 ;;
+   --version | --versio | --versi | --vers | --ver | --ve | --v )
+      func_version
+      exit 0 ;;
+    -- )      # Stop option processing
+      shift; break ;;
+    -* )
+      func_fatal_error "unrecognized option: $1"
+      ;;
+    * )
+      break ;;
+  esac
+done
+
+if test $# -lt 2; then
+  func_fatal_error "too few arguments"
+fi
+if test $# -gt 2; then
+  func_fatal_error "too many arguments"
+fi
+
+schema="$1"
+document="$2"
+shift
+shift
+
+if test -n '@HAVE_JAVAEXEC@' \
+   && test -n "$XERCES_J_DIR" \
+   && test -d "$XERCES_J_DIR" \
+   && test -f "$XERCES_J_DIR/xercesSamples.jar" \
+   && test -f "$XERCES_J_DIR/xercesImpl.jar" \
+   && test -f "$XERCES_J_DIR/org.eclipse.wst.xml.xpath2.processor_1.2.1.jar" \
+   && test -f "$XERCES_J_DIR/cupv10k-runtime.jar"; then
+  # We don't need to write our own Java program that invokes the validator,
+  # like <https://stackoverflow.com/questions/20807066/>
+  # or <https://stackoverflow.com/questions/20819060/>,
+  # because the Xerces-J FAQ <https://xerces.apache.org/xerces2-j/faq-xs.html>
+  # says:
+  #   "You can also refer to the JAXP sample, SourceValidator, where you can
+  #    validate XML documents against 1.1 schemas by specifying an option
+  #    "-xsd11" when running the sample."
+  # Documentation of this sample:
+  # <https://xerces.apache.org/xerces2-j/samples-jaxp.html#SourceValidator>
+  func_tmpdir
+  echo "sh ../javaexec.sh jaxp.SourceValidator -xsd11 -f -a $schema -i $document"
+  CLASSPATH="$XERCES_J_DIR/xercesSamples.jar:$XERCES_J_DIR/xercesImpl.jar:$XERCES_J_DIR/org.eclipse.wst.xml.xpath2.processor_1.2.1.jar:$XERCES_J_DIR/cupv10k-runtime.jar" \
+    sh ../javaexec.sh jaxp.SourceValidator -xsd11 -f -a "$schema" -i "$document" \
+    > "$tmp"/out 2> "$tmp"/err
+  # The exit code is usually 0, even if there were errors.
+  if test $? != 0 || grep '\[Error\]' "$tmp"/err >/dev/null; then
+    exitcode=1
+  else
+    exitcode=0
+  fi
+  cat "$tmp"/err 1>&2
+  cat "$tmp"/out
+  rm -f "$tmp"/out "$tmp"/err
+  exit $exitcode
+fi

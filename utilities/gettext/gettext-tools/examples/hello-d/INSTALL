@@ -1,0 +1,10 @@
+This example relies on a D compiler (one of gdc, ldc2, dmd).
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

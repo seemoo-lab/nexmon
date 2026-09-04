@@ -1,3 +1,906 @@
+2026-01-29  Bruno Haible  <bruno@clisp.org>
+
+	Update translations from TP.
+
+2025-12-29  Bruno Haible  <bruno@clisp.org>
+
+	New program 'msgpre'.
+	* gettext-tools/src/msgpre.c: New file, based on gettext-tools/src/msgfilter.c.
+	* gettext-tools/src/FILES: Describe msgpre.c.
+	* gettext-tools/src/Makefile.am (bin_PROGRAMS): Add msgpre.
+	(msgpre_SOURCES, msgpre_LDADD, msgpre_DEPENDENCIES, msgpre_CPPFLAGS,
+	msgpre_LDFLAGS): New variables.
+	* gettext-tools/po/POTFILES.in: Add msgpre.c.
+	* gettext-tools/man/msgpre.x: New file.
+	* gettext-tools/man/Makefile.am (man_aux): Add msgpre.x.
+	(man_MAN1SRC): Add msgpre.1.
+	(man_HTML): Add msgpre.1.html.
+	(msgpre.1, msgpre.1.html): Add dependencies.
+	* gettext-tools/doc/gettext.texi (msgpre Invocation): New section.
+	* gettext-tools/doc/msgpre.texi: New file.
+	* gettext-tools/doc/Makefile.am (gettext_TEXINFOS): Add it.
+	* gettext-tools/Makefile.am (programs-for-distdir): Create msgpre.
+	(distdir1, gen-man1): Update for the msgpre.1 manual page.
+	* NEWS: Mention the new program.
+
+2025-12-28  Bruno Haible  <bruno@clisp.org>
+
+	New program 'spit'.
+	* gettext-tools/machine-translation/README: New file.
+	* gettext-tools/machine-translation/prototype/README: New file.
+	* gettext-tools/machine-translation/prototype/OllamaSpit.java: New file.
+	* gettext-tools/machine-translation/prototype/ollama-spit.c: New file.
+	* gettext-tools/machine-translation/prototype/ollama-spit.go: New file.
+	* gettext-tools/machine-translation/prototype/ollama-spit.py: New file.
+	* gettext-tools/machine-translation/prototype/ollama-spit.sh: New file.
+	* gettext-tools/configure.ac (INCJSON_C, LIBJSON_C, INCCURL, LIBCURL): New
+	variables.
+	(BUILD_SPIT_IN_C): New conditional.
+	(AC_CONFIG_FILES): Add src/spit.py.
+	* gettext-tools/src/country-table.h: New file.
+	* gettext-tools/src/country-table.c: New file.
+	* gettext-tools/src/spit.c: New file.
+	* gettext-tools/src/spit.py.in: New file.
+	* gettext-tools/src/FILES: Mention the new files.
+	* gettext-tools/src/Makefile.am (bin_PROGRAMS): Conditionally add 'spit'.
+	(noinst_SCRIPTS): New variable.
+	(noinst_HEADERS): Add country-table.h.
+	(spit_SOURCES, spit_CFLAGS, spit_LDADD, spit_DEPENDENCIES, spit_CPPFLAGS,
+	spit_LDFLAGS): New variables.
+	(install-exec-local): Conditionally install spit.py.
+	(installdirs-local, uninstall-local): Update accordingly.
+	(DISTCLEANFILES): Add spit.py.
+	* gettext-tools/po/POTFILES.in: Add spit.c.
+	* gettext-tools/man/spit.x: New file.
+	* gettext-tools/man/Makefile.am (man_aux): Add spit.x.
+	(man_MAN1SRC): Add spit.1.
+	(man_HTML): Add spit.1.html.
+	(spit.1, spit.1.html): Add dependencies.
+	* gettext-tools/doc/gettext.texi (Pretranslating): New chapter.
+	* gettext-tools/doc/spit.texi: New file.
+	* gettext-tools/doc/Makefile.am (gettext_TEXINFOS): Add it.
+	* DEPENDENCIES: Update URLs for libxml2. Add libjson-c, libcurl, Python, the
+	Python module 'requests'.
+	* PACKAGING: Mention the 'spit' program and its manual page.
+	* NEWS: Mention the change.
+
+2025-10-24  Bruno Haible  <bruno@clisp.org>
+
+	Update translations from TP.
+	* gettext-runtime/po/*.po: Update from TP.
+	* gettext-tools/po/*.po: Update from TP.
+	* gettext-tools/examples/po/*.po: Update from TP.
+
+2025-10-24  Bruno Haible  <bruno@clisp.org>
+
+	build: Add scripts for fetching the PO files.
+	* gettext-runtime/po/fetch-po: New file.
+	* gettext-tools/po/fetch-po: New file.
+	* gettext-tools/examples/po/fetch-po: New file.
+	* check-copyright-headers (func_check_file): Don't complain about the LINGUAS
+	files, that will now have more than 10 lines.
+
+2025-10-18  Bruno Haible  <bruno@clisp.org>
+
+	New directory gettext-tools/wizard/po-templates/traditional/.
+	* gettext-tools/wizard/po-templates/traditional/*: New files, moved here from
+	gettext-runtime/po/.
+	* gettext-tools/wizard/po-templates/traditional/Makefile.in.in (install-data,
+	installdirs-data, uninstall-data, dist2): Remove special code for the
+	'gettext-tools' package.
+	* gettext-tools/wizard/po-templates/traditional/Makevars.template: Moved here
+	from gettext-tools/po/.
+	* autogen.sh: Copy the contents of the gettext-runtime/po/ and gettext-tools/po/
+	directories from gettext-tools/wizard/po-templates/traditional/.
+	* gettext-tools/wizard/Makefile.am (pkgdatadir, podir): New variables.
+	(po_DATA): Add po-templates/traditional/*.
+	(EXTRA_DIST): Likewise.
+	(uninstall-sources): Also remove $(podir)/Makevars.
+	* Makefile.am (distcheck-hook): Update.
+
+2025-10-14  Bruno Haible  <bruno@clisp.org>
+
+	po: Don't msgmerge the PO files through Makefile.in.in.
+	* gettext-runtime/po/Makefile.in.in (MSGMERGE_UPDATE): Remove variable.
+	(UPDATEPOFILES): Remove variable.
+	(POFILESDEPS*): Remove variables.
+	(.SUFFIXES): Add '.gpo'. Remove '.po-update'.
+	(.po.gpo): New rule.
+	($(POFILES)): Remove dependencies. Don't invoke MSGMERGE_UPDATE.
+	(mostlyclean): Add *.gpo.
+	(update-po): Don't make $(UPDATEPOFILES).
+	(.nop.po-update): Remove rule.
+	* gettext-runtime/po/Makevars (PO_DEPENDS_ON_POT): Remove variable.
+	* gettext-tools/po/Makevars (PO_DEPENDS_ON_POT): Likewise.
+	* gettext-tools/po/Makevars.template (PO_DEPENDS_ON_POT): Likewise.
+	* gettext-tools/examples/hello-c/po/Makevars (PO_DEPENDS_ON_POT): Likewise.
+	* gettext-tools/examples/hello-c-gnome2/po/Makevars (PO_DEPENDS_ON_POT):
+	Likewise.
+	* gettext-tools/examples/hello-c-gnome3/po/Makevars (PO_DEPENDS_ON_POT):
+	Likewise.
+	* gettext-tools/examples/hello-c-http/po/Makevars (PO_DEPENDS_ON_POT): Likewise.
+	* gettext-tools/examples/hello-c++/po/Makevars (PO_DEPENDS_ON_POT): Likewise.
+	* gettext-tools/examples/hello-c++20/po/Makevars (PO_DEPENDS_ON_POT): Likewise.
+	* gettext-tools/examples/hello-c++-gnome2/po/Makevars (PO_DEPENDS_ON_POT):
+	Likewise.
+	* gettext-tools/examples/hello-c++-gnome3/po/Makevars (PO_DEPENDS_ON_POT):
+	Likewise.
+	* gettext-tools/examples/hello-c++-kde/po/Makevars (PO_DEPENDS_ON_POT):
+	Likewise.
+	* gettext-tools/examples/hello-objc/po/Makevars (PO_DEPENDS_ON_POT): Likewise.
+	* gettext-tools/examples/hello-objc-gnome2/po/Makevars (PO_DEPENDS_ON_POT):
+	Likewise.
+	* gettext-tools/examples/hello-c++-wxwidgets/po/Makefile.am (MSGMERGE_UPDATE):
+	Remove variable.
+	(UPDATEPOFILES): Remove variable.
+	(.SUFFIXES): Add '.gpo'. Remove '.po-update'.
+	(.po.gpo): New rule.
+	($(POFILES)): Remove dependencies. Don't invoke MSGMERGE_UPDATE.
+	(MOSTLYCLEANFILES): Add *.gpo.
+	(update-po): Don't make $(UPDATEPOFILES).
+	(.nop.po-update): Remove rule.
+	* gettext-tools/examples/hello-python/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-guile/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-clisp/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-librep/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-rust/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-go/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-go-http/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-ruby/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-sh/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-gawk/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-pascal/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-modula2/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-d/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-ocaml/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-smalltalk/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-perl/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-php/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-ycp/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-c++-qt/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-java/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-java-awt/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-java-swing/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-java-qtjambi/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-csharp/po/Makefile.am (MSGMERGE_UPDATE): Remove
+	variable.
+	(UPDATEPOFILES): Remove variable.
+	(RESOURCESDLLFILES): Change emitted commands to use an intermediate .gpo file.
+	(.SUFFIXES): Add '.gpo'. Remove '.po-update'.
+	(.po.gpo): New rule.
+	($(POFILES)): Remove dependencies. Don't invoke MSGMERGE_UPDATE.
+	(MOSTLYCLEANFILES): Add *.gpo.
+	(update-po): Don't make $(UPDATEPOFILES).
+	(.nop.po-update): Remove rule.
+	* gettext-tools/examples/hello-csharp-forms/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-tcl/po/Makefile.am (MSGMERGE_UPDATE): Remove
+	variable.
+	(UPDATEPOFILES): Remove variable.
+	(MSGFILES): Change emitted commands to use an intermediate .gpo file.
+	(.SUFFIXES): Add '.gpo'. Remove '.po-update'.
+	(.po.gpo): New rule.
+	($(POFILES)): Remove dependencies. Don't invoke MSGMERGE_UPDATE.
+	(MOSTLYCLEANFILES): Add *.gpo.
+	(update-po): Don't make $(UPDATEPOFILES).
+	(.nop.po-update): Remove rule.
+	* gettext-tools/examples/hello-tcl-tk/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile (MSGMERGE_UPDATE):
+	Remove variable.
+	(UPDATEPOFILES): Remove variable.
+	(.SUFFIXES): Add '.gpo'. Remove '.po-update'.
+	($(POFILES)): Remove dependencies. Don't invoke MSGMERGE_UPDATE.
+	(update-po): Don't make $(UPDATEPOFILES).
+	(.nop.po-update): Remove rule.
+	* gettext-tools/examples/po/Makefile.am (MSGMERGE_OPTIONS): Add
+	--no-fuzzy-matching --quiet.
+	(MSGMERGE_UPDATE): Remove variable.
+	(UPDATEPOFILES): Remove variable.
+	(GPOFILES): New variable.
+	(.SUFFIXES): Add '.gpo'. Remove '.nop', '.po-update'.
+	(.po.gpo): New rule.
+	($(POFILES)): Remove rule.
+	(DISTCLEANFILES): New variable.
+	(update-po): Don't make $(UPDATEPOFILES). Make the small PO files.
+	(.nop.po-update): Remove rule.
+	* gettext-tools/examples/po/mmsmallpo.sh: Use $language.gpo instead of
+	$language.po.
+	* gettext-tools/doc/gettext.texi (Translations under Version Control): Remove
+	documentation of PO_DEPENDS_ON_POT.
+	(Release Management): Update wording.
+	* Admin/release-steps: Don't msgmerge the PO files from translationproject.org.
+	* NEWS: Mention the change.
+
+2025-10-12  Bruno Haible  <bruno@clisp.org>
+
+	Refactor: Librarify the core of msgmerge.
+	* gettext-tools/src/msgl-merge.h: New file, based on
+	gettext-tools/src/msgmerge.c.
+	* gettext-tools/src/msgl-merge.c: New file, based on
+	gettext-tools/src/msgmerge.c.
+	* gettext-tools/src/msgmerge.c: Include msgl-merge.h. Simplify includes.
+	Remove definitions that are moved to msgl-merge.c.
+	* gettext-tools/src/FILES: Update.
+	* gettext-tools/src/Makefile.am (noinst_HEADERS): Add msgl-merge.h.
+	(msgmerge_SOURCES): Add msgl-merge.c.
+	* gettext-tools/po/POTFILES.in: Add src/msgl-merge.c.
+
+2025-07-28  Bruno Haible  <bruno@clisp.org>
+
+	OCaml support: Add OCaml support in the tools.
+	This implements several improvements, compared to
+	"ocaml-gettext --action extract ...":
+	  - Comments are extracted.
+	  - '#, ocaml-format' annotation on f_ arguments.
+	  - Recognizes concatenated strings, such as ("abc" ^ "def").
+	  - Supports (s_ "").
+
+	* autopull.sh: Check out tree-sitter-ocaml. Set TREE_SITTER_OCAML_VERSION.
+	* gettext-tools/build-aux/tree-sitter-ocaml-portability.diff: New file.
+	* gettext-tools/configure.ac: Set TREE_SITTER_OCAML_VERSION.
+	* gettext-tools/Makefile.am (EXTRA_DIST): Add the tree-sitter-ocaml source code
+	and patch.
+	* gettext-tools/doc/gettext.texi (PO Files): Mention ocaml-format.
+	(Translators for other Languages): New subsection "OCaml Format Strings".
+	* gettext-tools/doc/lang-ocaml.texi: Mention all the supported *gettext
+	functions. Mention format strings with positions.
+	* gettext-tools/doc/xgettext.texi: Document the OCaml support in more places.
+	* gettext-tools/src/message.h (format_ocaml): New enum value.
+	(NFORMATS): Increment.
+	* gettext-tools/src/message.c (format_language, format_language_pretty): Add an
+	entry for format_ocaml.
+	* gettext-tools/src/format-ocaml.c: New file, based on
+	gettext-tools/src/format-awk.c.
+	* gettext-tools/src/format.h (formatstring_ocaml): New declaration.
+	* gettext-tools/src/format.c (formatstring_parsers): Add formatstring_ocaml.
+	* gettext-tools/src/x-ocaml.h (SCANNERS_OCAML): Reference flag_table_ocaml and
+	formatstring_ocaml.
+	(extract_ocaml): Declare with first argument of type 'FILE *'.
+	* gettext-tools/src/x-ocaml.c: Completely rewritten.
+	* gettext-tools/src/xgettext.c (flag_table_ocaml): New variable.
+	(usage): Document the OCaml support in more places.
+	(xgettext_record_flag): Support format_ocaml.
+	* gettext-tools/src/FILES: Mention format-ocaml.c.
+	* gettext-tools/src/Makefile.am (FORMAT_SOURCE): Add format-ocaml.c.
+	(LIBXGETTEXTTS): Add libxgettextts5.a.
+	(libxgettextts5_a_*): New variables.
+	* gettext-tools/libgettextpo/Makefile.am (libgettextpo_la_AUXSOURCES): Add
+	format-ocaml.c.
+	* gettext-tools/po/POTFILES.in: Add src/format-ocaml.c.
+	* gettext-tools/tests/format-ocaml-1: New file.
+	* gettext-tools/tests/format-ocaml-2: New file.
+	* gettext-tools/tests/xgettext-ocaml-1: New file.
+	* gettext-tools/tests/xgettext-ocaml-2: New file.
+	* gettext-tools/tests/Makefile.am (TESTS): Add the new tests.
+	* NEWS: Mention the OCaml support.
+
+2025-07-23  Bruno Haible  <bruno@clisp.org>
+
+	OCaml support: Add OCaml support in xgettext.
+	* gettext-tools/doc/lang-ocaml.texi: New file.
+	* gettext-tools/doc/Makefile.am (gettext_TEXINFOS): Add it.
+	* gettext-tools/doc/gettext.texi (No string concatenation): Mention string
+	concatenation in OCaml.
+	(List of Programming Languages): Include lang-ocaml.texi.
+	* gettext-tools/doc/xgettext.texi: Document the -L OCaml option.
+	* gettext-tools/src/x-ocaml.h: New file.
+	* gettext-tools/src/x-ocaml.c: New file.
+	* gettext-tools/src/xgettext.c: Include x-ocaml.h.
+	(flag_table_ocaml): New variable.
+	(main): Invoke init_flag_table_ocaml, x_ocaml_extract_all, x_ocaml_keyword.
+	(usage): Document the -L OCaml option.
+	(language_to_extractor, extension_to_language): Support OCaml.
+	* gettext-tools/src/FILES: Mention x-ocaml.h, x-ocaml.c.
+	* gettext-tools/src/Makefile.am (noinst_HEADERS): Add x-ocaml.h.
+	(xgettext_SOURCES): Add x-ocaml.c.
+	* gettext-tools/po/POTFILES.in: Add src/x-ocaml.c.
+
+2025-07-19  Bruno Haible  <bruno@clisp.org>
+
+	Update translations from TP.
+	* gettext-runtime/po/*.po: Update from TP.
+	* gettext-tools/po/*.po: Update from TP.
+	* gettext-tools/examples/po/*.po: Update from TP.
+
+2025-07-04  Bruno Haible  <bruno@clisp.org>
+
+	Prepare for prerelease.
+	* gettext-tools/po/POTFILES.in: Update file list.
+
+2025-06-23  Bruno Haible  <bruno@clisp.org>
+
+	Add support for Shell printf format strings, part 2.
+	* gettext-tools/po/POTFILES.in: Add src/format-sh-printf.c.
+	* gettext-tools/tests/format-sh-printf-1: Use 'printf' instead of 'echo',
+	because 'echo' processes escape sequences on macOS, OpenBSD, Solaris.
+
+2025-05-07  Bruno Haible  <bruno@clisp.org>
+
+	Update translations from TP.
+	* gettext-runtime/po/*.po: Update from TP.
+	* gettext-tools/po/*.po: Update from TP.
+	* gettext-tools/examples/po/*.po: Update from TP.
+
+2025-04-25  Bruno Haible  <bruno@clisp.org>
+
+	Modula-2 support: Add Modula-2 support in the tools.
+	* gettext-tools/doc/lang-modula2.texi: New file.
+	* gettext-tools/doc/Makefile.am (gettext_TEXINFOS): Add it.
+	* gettext-tools/doc/gettext.texi (PO Files): Mention modula2-format.
+	(No string concatenation): Mention string concatenation in Modula-2.
+	(Translators for other Languages): New subsection "Modula-2 Format Strings".
+	(List of Programming Languages): Include lang-modula2.texi.
+	* gettext-tools/doc/xgettext.texi: Document the -L Modula-2 option.
+	* gettext-tools/src/message.h (format_modula2): New enum value.
+	(NFORMATS): Increment.
+	* gettext-tools/src/message.c (format_language, format_language_pretty): Add an
+	entry for format_modula2.
+	* gettext-tools/src/format-modula2.c: New file.
+	* gettext-tools/src/format.h (formatstring_modula2): New declaration.
+	* gettext-tools/src/format.c (formatstring_parsers): Add formatstring_modula2.
+	* gettext-tools/src/x-modula2.h: New file.
+	* gettext-tools/src/x-modula2.c: New file.
+	* gettext-tools/src/xgettext.c: Include x-modula2.h.
+	(flag_table_modula2): New variable.
+	(main): Invoke init_flag_table_modula2, x_modula2_extract_all,
+	x_modula2_keyword.
+	(usage): Document the -L Modula-2 option.
+	(xgettext_record_flag): Support format_modula2.
+	(language_to_extractor, extension_to_language): Support Modula-2.
+	* gettext-tools/src/FILES: Mention format-modula2.c, x-modula2.h, x-modula2.c.
+	* gettext-tools/src/Makefile.am (noinst_HEADERS): Add x-modula2.h.
+	(FORMAT_SOURCE): Add format-modula2.c.
+	(xgettext_SOURCES): Add x-modula2.c.
+	* gettext-tools/libgettextpo/Makefile.am (libgettextpo_la_AUXSOURCES): Add
+	format-modula2.c.
+	* gettext-tools/po/POTFILES.in: Add src/format-modula2.c, src/x-modula2.c.
+	* gettext-tools/woe32dll/gettextsrc-exports.c: Export formatstring_modula2.
+	* gettext-tools/tests/format-modula2-1: New file.
+	* gettext-tools/tests/format-modula2-2: New file.
+	* gettext-tools/tests/xgettext-modula2-1: New file.
+	* gettext-tools/tests/xgettext-modula2-2: New file.
+	* gettext-tools/tests/Makefile.am (TESTS): Add the new tests.
+	* NEWS: Mention the Modula-2 support.
+
+2025-04-01  Bruno Haible  <bruno@clisp.org>
+
+	D support: Add D support in the tools.
+	* autopull.sh: Check out tree-sitter-d. Set TREE_SITTER_D_VERSION.
+	* autogen.sh (GNULIB_MODULES_TOOLS_FOR_SRC): Add unistr/u16-check,
+	unistr/u16-to-u8, unistr/u32-check, unistr/u32-to-u8.
+	* gettext-tools/build-aux/tree-sitter-d-portability.diff: New file.
+	* gettext-tools/configure.ac: Set TREE_SITTER_D_VERSION.
+	* gettext-tools/Makefile.am (EXTRA_DIST): Add the tree-sitter-d source code and
+	patch.
+	* gettext-tools/doc/lang-d.texi: New file.
+	* gettext-tools/doc/Makefile.am (gettext_TEXINFOS): Add it.
+	* gettext-tools/doc/gettext.texi (PO Files): Mention d-format.
+	(No string concatenation): Mention string concatenation and string interpolation
+	in D.
+	(Translators for other Languages): New subsection "D Format Strings".
+	(List of Programming Languages): Include lang-d.texi.
+	* gettext-tools/doc/xgettext.texi: Document the -L D option.
+	* gettext-tools/src/message.h (format_d): New enum value.
+	(NFORMATS): Increment.
+	* gettext-tools/src/message.c (format_language, format_language_pretty): Add an
+	entry for format_d.
+	* gettext-tools/src/format-d.c: New file, based on
+	gettext-tools/src/format-lisp.c.
+	* gettext-tools/src/format.h (formatstring_d): New declaration.
+	* gettext-tools/src/format.c (formatstring_parsers): Add formatstring_d.
+	* gettext-tools/src/x-d.h: New file.
+	* gettext-tools/src/x-d.c: New file, based on gettext-tools/src/x-rust.c and
+	gettext-tools/src/x-go.c.
+	* gettext-tools/src/html5-entities.h: New file.
+	* gettext-tools/src/xgettext.c: Include x-d.h.
+	(flag_table_d): New variable.
+	(main): Invoke init_flag_table_d, x_d_extract_all, x_d_keyword.
+	(usage): Document the -L D option.
+	(xgettext_record_flag): Support format_d.
+	(language_to_extractor, extension_to_language): Support D.
+	* gettext-tools/src/xg-message.c (decide_is_format, remember_a_message_plural):
+	Add better heuristic for c-format and d-format.
+	* gettext-tools/src/FILES: Mention format-d.c, x-d.h, x-d.c, html5-entities.h.
+	* gettext-tools/src/Makefile.am (noinst_HEADERS): Add x-d.h, html5-entities.h.
+	(FORMAT_SOURCE): Add format-d.c.
+	(libxgettextts2_a_SOURCES): Add d-parser.c, d-scanner.c.
+	(xgettext_SOURCES): Add x-d.c.
+	* gettext-tools/libgettextpo/Makefile.am (libgettextpo_la_AUXSOURCES): Add
+	format-d.c.
+	* gettext-tools/po/POTFILES.in: Add src/format-d.c, src/x-d.c.
+	* gettext-tools/woe32dll/gettextsrc-exports.c: Export formatstring_d.
+	* gettext-tools/tests/format-d-1: New file.
+	* gettext-tools/tests/format-d-2: New file.
+	* gettext-tools/tests/xgettext-d-1: New file.
+	* gettext-tools/tests/xgettext-d-2: New file.
+	* gettext-tools/tests/xgettext-d-3: New file.
+	* gettext-tools/tests/xgettext-d-4: New file.
+	* gettext-tools/tests/xgettext-d-5: New file, based on
+	gettext-tools/tests/xgettext-rust-5.
+	* gettext-tools/tests/xgettext-d-6: New file, based on
+	gettext-tools/tests/xgettext-rust-7.
+	* gettext-tools/tests/testdata/dprog.utf-8.d: New file.
+	* gettext-tools/tests/testdata/dprog.utf-8+bom.d: New file, based on
+	gettext-tools/tests/testdata/dprog.utf-8.d.
+	* gettext-tools/tests/testdata/dprog.utf-16be.d: New file, based on
+	gettext-tools/tests/testdata/dprog.utf-8.d.
+	* gettext-tools/tests/testdata/dprog.utf-16le.d: New file, based on
+	gettext-tools/tests/testdata/dprog.utf-8.d.
+	* gettext-tools/tests/testdata/dprog.utf-32be.d: New file, based on
+	gettext-tools/tests/testdata/dprog.utf-8.d.
+	* gettext-tools/tests/testdata/dprog.utf-32le.d: New file, based on
+	gettext-tools/tests/testdata/dprog.utf-8.d.
+	* gettext-tools/tests/Makefile.am (TESTS): Add the new tests.
+	(EXTRA_DIST): Add the new testdata files.
+	* NEWS: Mention the D support.
+
+2025-03-20  Bruno Haible  <bruno@clisp.org>
+
+	Makevars template: Fix small mistake.
+	* gettext-tools/po/Makevars.template: Correct statement about copyright.
+	* gettext-runtime/po/Makevars: Likewise.
+	* gettext-tools/po/Makevars: Likewise.
+	* gettext-tools/examples/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-*/po/Makevars: Likewise.
+	* gettext-tools/examples/hello-*/po/Makefile.am: Likewise.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile: Likewise.
+
+2025-02-25  Bruno Haible  <bruno@clisp.org>
+
+	Update translations from TP.
+	* gettext-runtime/po/*.po: Update from TP.
+	* gettext-tools/po/*.po: Update from TP.
+	* gettext-tools/examples/po/*.po: Update from TP.
+
+2025-02-19  Bruno Haible  <bruno@clisp.org>
+
+	Prepare for prerelease.
+	* gettext-tools/po/POTFILES.in: Update file list.
+
+2024-12-09  Bruno Haible  <bruno@clisp.org>
+
+	Use new approach for gnulib localizations.
+	* gettext-runtime/po/POTFILES.in: Remove files that come from gnulib.
+	* gettext-tools/po/POTFILES.in: Likewise.
+	* gettext-runtime/src/envsubst.c (main): Invoke bindtextdomain for the domain
+	'gnulib'.
+	* gettext-runtime/src/gettext.c (main): Likewise.
+	* gettext-runtime/src/ngettext.c (main): Likewise.
+	* gettext-tools/src/cldr-plurals.c (main): Likewise.
+	* gettext-tools/src/hostname.c (main): Likewise.
+	* gettext-tools/src/msgattrib.c (main): Likewise.
+	* gettext-tools/src/msgcat.c (main): Likewise.
+	* gettext-tools/src/msgcmp.c (main): Likewise.
+	* gettext-tools/src/msgcomm.c (main): Likewise.
+	* gettext-tools/src/msgconv.c (main): Likewise.
+	* gettext-tools/src/msgen.c (main): Likewise.
+	* gettext-tools/src/msgexec.c (main): Likewise.
+	* gettext-tools/src/msgfilter.c (main): Likewise.
+	* gettext-tools/src/msgfmt.c (main): Likewise.
+	* gettext-tools/src/msggrep.c (main): Likewise.
+	* gettext-tools/src/msginit.c (main): Likewise.
+	* gettext-tools/src/msgmerge.c (main): Likewise.
+	* gettext-tools/src/msgunfmt.c (main): Likewise.
+	* gettext-tools/src/msguniq.c (main): Likewise.
+	* gettext-tools/src/recode-sr-latin.c (main): Likewise.
+	* gettext-tools/src/urlget.c (main): Likewise.
+	* gettext-tools/src/xgettext.c (main): Likewise.
+
+2024-12-01  Bruno Haible  <bruno@clisp.org>
+
+	Update translations from TP.
+	* gettext-runtime/po/*.po: Update from TP.
+	* gettext-tools/po/*.po: Update from TP.
+	* gettext-tools/po/LINGUAS: Add ka.
+	* gettext-tools/examples/po/*.po: Update from TP.
+
+2024-09-29  Bruno Haible  <bruno@clisp.org>
+
+	Refactor: Rename locating-rule.[hc].
+	* gettext-tools/src/locating-rules.h: Renamed from gettext-tools/src/locating-rule.h.
+	* gettext-tools/src/locating-rules.c: Renamed from gettext-tools/src/locating-rule.c.
+	* gettext-tools/src/FILES: Update.
+	* gettext-tools/src/Makefile.am (noinst_HEADERS, libgettextsrc_la_SOURCES): Update.
+	* gettext-tools/src/msgfmt.c: Update.
+	* gettext-tools/src/xgettext.c: Update.
+	* gettext-tools/po/POTFILES.in: Update.
+
+2024-08-05  Bruno Haible  <bruno@clisp.org>
+
+	Refactor: Remove code duplication.
+	* gettext-tools/src/po-xerror.h: Include xerror-handler.h. Remove all
+	declarations.
+	(PO_SEVERITY_*): Define as aliases of CAT_SEVERITY_*.
+	(po_xerror, po_xerror2): New macros.
+	* gettext-tools/src/po-xerror.c: Remove file.
+	* gettext-tools/src/Makefile.am (COMMON_SOURCE): Remove po-xerror.c.
+	* gettext-tools/src/msgmerge.c (silent_xerror2): New function.
+	(match_domain): Pass a stack-allocated xerror_handler to check_plural_eval.
+	* gettext-tools/woe32dll/gettextsrc-exports.c (po_xerror, po_xerror2): Remove
+	exports.
+	* gettext-tools/po/POTFILES.in: Add src/xerror-handler.c. Remove
+	src/po-xerror.c.
+
+2024-08-02  Bruno Haible  <bruno@clisp.org>
+
+	Rename some files.
+	* gettext-tools/src/read-po-internal.h: Renamed from
+	gettext-tools/src/po-gram.h.
+	* gettext-tools/src/read-po-lex.h: Renamed from gettext-tools/src/po-lex.h.
+	* gettext-tools/src/read-po-lex.c: Renamed from gettext-tools/src/po-lex.c.
+	* gettext-tools/src/read-po-gram.y: Renamed from
+	gettext-tools/src/po-gram-gen.y.
+	* gettext-tools/src/*.h: Update.
+	* gettext-tools/src/*.c: Update.
+	* gettext-tools/src/FILES: Update.
+	* gettext-tools/src/Makefile.am: Update.
+	* gettext-tools/libgettextpo/Makefile.am: Update.
+
+2023-11-11  Bruno Haible  <bruno@clisp.org>
+
+	libgettextpo: Remove static variable bullet_stack.
+	* gettext-tools/src/xg-check.h: New file, extracted from
+	gettext-tools/src/msgl-check.h.
+	* gettext-tools/src/xg-check.c: New file, extracted from
+	gettext-tools/src/msgl-check.c.
+	* gettext-tools/src/msgl-check.h (syntax_check_message_list): Remove
+	declaration.
+	* gettext-tools/src/msgl-check.c: Don't include quote.h, sentence.h, unictype.h,
+	unistr.h.
+	(struct callback_arg, struct bullet_ty, struct bullet_stack_ty,
+	syntax_check_function): Remove types.
+	(bullet_stack, sc_funcs): Remove variables.
+	(syntax_check_ellipsis_unicode, syntax_check_space_ellipsis,
+	syntax_check_quote_unicode_callback, syntax_check_quote_unicode,
+	syntax_check_bullet_unicode, syntax_check_message, syntax_check_message_list):
+	Remove functions.
+	* gettext-tools/src/xgettext.c: Include xg-check.h instead of msgl-check.h.
+	* gettext-tools/src/Makefile.am (noinst_HEADERS): Add xg-check.h.
+	(xgettext_SOURCES): Add xg-check.c.
+	* gettext-tools/src/FILES: Mention xg-check.h, xg-check.c.
+	* gettext-tools/po/POTFILES.in: Add src/xg-check.c.
+
+2023-10-07  Bruno Haible  <bruno@clisp.org>
+
+	xgettext: Simplify code that emits diagnostics.
+	Also, for Perl input, clarify some diagnostics as errors vs. warnings.
+
+	* gettext-tools/src/if-error.h: New file.
+	* gettext-tools/src/if-error.c: New file.
+	* gettext-tools/src/xg-mixed-string.c: Include if-error.h instead of
+	error-progname.h.
+	(mixed_string_buffer_append_lone_surrogate): Invoke 'if_error' instead of
+	'error'.
+	* gettext-tools/src/x-awk.c: Include if-error.h instead of error-progname.h.
+	(phase7_getc, x_awk_lex, extract_parenthesized): Invoke 'if_error' instead of
+	'error'.
+	* gettext-tools/src/x-c.c: Include if-error.h instead of error-progname.h.
+	(phase7_getc, phase5_get, extract_parenthesized): Invoke 'if_error' instead of
+	'error'.
+	* gettext-tools/src/x-csharp.c: Include if-error.h instead of error-progname.h.
+	(do_getc_unicode_escaped, accumulate_escaped, extract_parenthesized): Invoke
+	'if_error' instead of 'error'.
+	* gettext-tools/src/x-elisp.c: Include if-error.h instead of error-progname.h.
+	(do_getc_escaped, read_object): Invoke 'if_error' instead of 'error'.
+	* gettext-tools/src/x-java.c: Include if-error.h instead of error-progname.h.
+	(accumulate_escaped, phase5_get, extract_parenthesized): Invoke 'if_error'
+	instead of 'error'.
+	* gettext-tools/src/x-javascript.c: Include if-error.h instead of
+	error-progname.h.
+	(phase7_getuc, phase5_scan_regexp, phase5_scan_xml_markup, phase5_get,
+	extract_balanced): Invoke 'if_error' instead of 'error'.
+	* gettext-tools/src/x-librep.c: Include if-error.h instead of error-progname.h.
+	(read_object): Invoke 'if_error' instead of 'error'.
+	* gettext-tools/src/x-lisp.c: Include if-error.h instead of error-progname.h.
+	(read_object): Invoke 'if_error' instead of 'error'.
+	* gettext-tools/src/x-lua.c: Include if-error.h instead of error-progname.h.
+	(extract_balanced): Invoke 'if_error' instead of 'error'.
+	* gettext-tools/src/x-perl.c: Include if-error.h instead of error-progname.h.
+	(get_here_document, extract_quotelike_pass3, interpolate_keywords, x_perl_lex,
+	extract_balanced): Invoke 'if_error' instead of 'error'.
+	(interpolate_keywords): Update extract_quotelike_pass3 invocations.
+	(extract_balanced): Update collect_message invocations. Call fflush before
+	abort (needed for MSVC).
+	* gettext-tools/src/x-php.c: Include if-error.h instead of error-progname.h.
+	(extract_balanced): Invoke 'if_error' instead of 'error'.
+	* gettext-tools/src/x-python.c: Include if-error.h instead of error-progname.h.
+	(phase7_getuc, extract_balanced): Invoke 'if_error' instead of 'error'.
+	* gettext-tools/src/x-rst.c: Include if-error.h instead of error-progname.h.
+	(extract_rst, extract_rsj): Invoke 'if_error' instead of 'error'.
+	* gettext-tools/src/x-scheme.c: Include if-error.h instead of error-progname.h.
+	(read_object): Invoke 'if_error' instead of 'error'.
+	* gettext-tools/src/x-sh.c: Include if-error.h instead of error-progname.h.
+	(read_word, read_command_list): Invoke 'if_error' instead of 'error'.
+	* gettext-tools/src/x-tcl.c: Include if-error.h instead of error-progname.h.
+	(accumulate_word, read_word): Invoke 'if_error' instead of 'error'.
+	* gettext-tools/src/x-vala.c: Include if-error.h instead of error-progname.h.
+	(phase7_getc, phase3_scan_regex, phase3_get, extract_balanced): Invoke
+	'if_error' instead of 'error'.
+	* gettext-tools/src/x-ycp.c: Include if-error.h instead of error-progname.h.
+	(extract_parenthesized): Invoke 'if_error' instead of 'error'.
+	* gettext-tools/src/xg-arglist-parser.c: Include if-error.h instead of error.h,
+	error-progname.h.
+	(arglist_parser_done): Invoke 'if_error' instead of 'error_at_line'.
+	* gettext-tools/src/xg-message.c: Include if-error.h instead of
+	error-progname.h.
+	(set_format_flags_from_context, warn_format_string, remember_a_message): Invoke
+	'if_error' instead of 'multiline_warning'.
+	* gettext-tools/src/Makefile.am (noinst_HEADERS): Add if-error.h.
+	(xgettext_SOURCES): Add if-error.c.
+	* gettext-tools/src/FILES: Mention if-error.h, if-error.c.
+	* gettext-tools/po/Makevars (XGETTEXT_OPTIONS): Add option regarding the
+	'if_error' function.
+	* gettext-tools/po/POTFILES.in: Add src/if-error.c.
+
+2023-09-19  Bruno Haible  <bruno@clisp.org>
+
+	Merge from 0.22.x branch: Update translations from TP.
+
+2023-06-17  Bruno Haible  <bruno@clisp.org>
+
+	Update translations from TP.
+	* gettext-runtime/po/*.po: Update from TP.
+	* gettext-runtime/po/LINGUAS: Add ka.
+	* gettext-tools/po/*.po: Update from TP.
+	* gettext-tools/po/LINGUAS: Add hr.
+	* gettext-tools/examples/po/*.po: Update from TP.
+
+2023-06-17  Bruno Haible  <bruno@clisp.org>
+
+	Update POTFILES.in.
+	* gettext-runtime/po/POTFILES.in: Update.
+	* gettext-tools/po/POTFILES.in: Update.
+
+2023-03-14  Bruno Haible  <bruno@clisp.org>
+
+	po: In the Makefiles, enable --quiet by default when possible.
+	This is possible because msgmerge became faster
+	- through an index-based fuzzy search (msgl-fsearch.c) in 2006,
+	- through OpenMP parallelization in 2006,
+	- through processor speedups over the years.
+	The only case where msgmerge is still slow is when a compendium is in use.
+
+	Suggested by Marcus Müller <marcus_savannah@hostalia.de> in
+	<https://lists.gnu.org/archive/html/bug-gnulib/2023-03/msg00034.html>.
+
+	* gettext-runtime/po/Makefile.in.in ($(POFILES), update-po): If msgmerge has
+	version ≥ 0.11, pass option --quiet.
+	* gettext-runtime/po/Makevars (MSGMERGE_OPTIONS): Don't suggest --quiet any
+	more.
+	* gettext-tools/po/Makevars (MSGMERGE_OPTIONS): Likewise.
+	* gettext-tools/examples/hello-*/po/Makevars (MSGMERGE_OPTIONS): Likewise.
+	* gettext-tools/examples/hello-*/po/Makefile.am ($(POFILES), update-po): If
+	msgmerge has version ≥ 0.11, pass option --quiet.
+	(MSGMERGE_OPTIONS): Don't suggest --quiet any more.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile: Likewise.
+	* gettext-tools/examples/po/Makefile.am ($(POFILES), update-po): Pass option
+	--quiet to msgmerge.
+	(MSGMERGE_OPTIONS): Don't suggest --quiet any more.
+
+2022-10-10  Bruno Haible  <bruno@clisp.org>
+
+	Merge from 0.21.x branch: Prepare for 0.21.1 release: Update translations.
+	* gettext-runtime/po/*.po: Update from TP.
+	* gettext-tools/po/*.po: Likewise.
+	* gettext-tools/examples/po/*.po: Likewise.
+	* gettext-tools/examples/po/LINGUAS: Add 'ka'.
+	* gettext-tools/examples/hello-*/po/LINGUAS: Likewise.
+	* gettext-tools/examples/Makefile.am (EXAMPLESPOFILES): Add ka.po.
+
+2022-09-13  Bruno Haible  <bruno@clisp.org>
+
+	Update after gnulib changed.
+	* gettext-tools/po/POTFILES.in: Update.
+
+2020-12-04  Bruno Haible  <bruno@clisp.org>
+
+	Update after gnulib changed.
+	* gettext-tools/po/POTFILES.in: Update.
+
+2020-07-26  Bruno Haible  <bruno@clisp.org>
+
+	Update translations (from the TP).
+	* gettext-runtime/po/*.po: Update.
+	* gettext-tools/po/*.po: Update.
+	* gettext-tools/examples/po/*.po: Update.
+	* gettext-tools/examples/po/LINGUAS: Add 'nn'.
+	* gettext-tools/examples/hello-*/po/LINGUAS: Likewise.
+	* gettext-tools/examples/Makefile.am (EXAMPLESPOFILES): Add nn.po.
+
+2020-06-27  Bruno Haible  <bruno@clisp.org>
+
+	Update after gnulib changed.
+	* gnulib-local/modules/fnmatch.diff: Remove file.
+	* gnulib-local/lib/fnmatch.c.diff: Remove file.
+	* gnulib-local/lib/fnmatch_loop.c.diff: Remove file.
+	* gnulib-local/Makefile.am (EXTRA_DIST): Remove them.
+	* gettext-tools/src/read-properties.c (properties_parse): Update the fread_file
+	invocation.
+	* gettext-tools/po/POTFILES.in: Remove gnulib-lib/copy-acl.c,
+	gnulib-lib/set-acl.c.
+	* gettext-runtime/intl/localename.c: Update from gnulib.
+	* gettext-runtime/intl/relocatable.c: Likewise.
+	* gettext-runtime/intl/verify.h: Likewise.
+	* gettext-runtime/intl/windows-rwlock.c: Likewise.
+
+2020-05-10  Bruno Haible  <bruno@clisp.org>
+
+	Reorder list of programming languages.
+	* gettext-tools/src/format.h: Reorder declarations.
+	* gettext-tools/src/format.c (formatstring_parsers): Reorder entries.
+	* gettext-tools/src/message.h (enum format_type): Reorder items.
+	* gettext-tools/src/message.c (format_language, format_language_pretty): Reorder
+	entries.
+	* gettext-tools/src/xgettext.c: Reorder includes.
+	(flag_table_*): Reorder declarations.
+	(main): Reorder init_flag_table_* invocations.
+	(xgettext_record_flag): Reorder switch statement.
+	(language_to_extractor, extension_to_language): Reorder table entries.
+	* gettext-tools/src/format-smalltalk.c: Renamed from
+	gettext-tools/src/format-ycp.c.
+	* gettext-tools/src/FILES: Update.
+	* gettext-tools/src/Makefile.am (noinst_HEADERS, FORMAT_SOURCE,
+	xgettext_SOURCES): Update.
+	* gettext-tools/po/POTFILES.in: Update.
+	* gettext-tools/libgettextpo/Makefile.am (libgettextpo_la_AUXSOURCES): Update.
+	* gettext-tools/tests/Makefile.am (TESTS): Reorder.
+
+2020-05-10  Bruno Haible  <bruno@clisp.org>
+
+	i18n: Update list of files.
+	* gettext-tools/po/POTFILES.in: Add missing files.
+
+2020-04-14  Bruno Haible  <bruno@clisp.org>
+
+	Merge from 0.20.x branch: Update translations (from the TP).
+	* gettext-runtime/po/*.po: Update.
+	* gettext-tools/po/*.po: Update.
+	* gettext-tools/examples/po/*.po: Update.
+	* gettext-tools/examples/po/LINGUAS: Add 'sq'.
+	* gettext-tools/examples/hello-*/po/LINGUAS: Likewise.
+	* gettext-tools/examples/Makefile.am (EXAMPLESPOFILES): Add sq.po.
+
+2019-05-12  Bruno Haible  <bruno@clisp.org>
+
+	Update translations (from the TP).
+
+2019-05-12  Bruno Haible  <bruno@clisp.org>
+
+	Update bug reporting instructions.
+	* README: Tell users to report bugs in the bug tracker or by email. Use the
+	mailing list address, not the alias.
+	* gettext-runtime/libasprintf/README: Likewise.
+	* gettext-tools/doc/gettext.texi (Introduction): Likewise.
+	(Plural forms): Use the mailing list address, not the alias.
+	* configure.ac (AC_INIT): Use the mailing list address, not the alias.
+	* gettext-runtime/configure.ac (AC_INIT): Likewise.
+	* gettext-tools/configure.ac (AC_INIT): Likewise.
+	* gettext-tools/examples/configure.ac (AC_INIT): Likewise.
+	* gettext-runtime/po/Makevars (MSGID_BUGS_ADDRESS): Use the mailing list
+	address, not the alias.
+	* gettext-tools/po/Makevars (MSGID_BUGS_ADDRESS): Likewise.
+	* gettext-tools/examples/po/Makefile.am (MSGID_BUGS_ADDRESS): Likewise.
+	* gettext-tools/examples/hello-*/po/Makevars (MSGID_BUGS_ADDRESS): Likewise.
+	* gettext-tools/examples/hello-*/po/Makefile.am (MSGID_BUGS_ADDRESS): Likewise.
+	* gettext-tools/examples/hello-objc-gnustep/po/GNUmakefile (MSGID_BUGS_ADDRESS):
+	Likewise.
+	* gettext-tools/examples/hello-c++-kde/hello.cc (main): Likewise.
+	* gettext-runtime/src/envsubst.c (main): Move URL out of translatable string.
+	(usage): Tell users to report bugs in the bug tracker or by email. Use the
+	mailing list address, not the alias.
+	* gettext-runtime/src/gettext.c: Likewise.
+	* gettext-runtime/src/ngettext.c: Likewise.
+	* gettext-tools/src/cldr-plurals.c: Likewise.
+	* gettext-tools/src/hostname.c: Likewise.
+	* gettext-tools/src/msgattrib.c: Likewise.
+	* gettext-tools/src/msgcat.c: Likewise.
+	* gettext-tools/src/msgcmp.c: Likewise.
+	* gettext-tools/src/msgcomm.c: Likewise.
+	* gettext-tools/src/msgconv.c: Likewise.
+	* gettext-tools/src/msgen.c: Likewise.
+	* gettext-tools/src/msgexec.c: Likewise.
+	* gettext-tools/src/msgfilter.c: Likewise.
+	* gettext-tools/src/msgfmt.c: Likewise.
+	* gettext-tools/src/msggrep.c: Likewise.
+	* gettext-tools/src/msginit.c: Likewise.
+	* gettext-tools/src/msgmerge.c: Likewise.
+	* gettext-tools/src/msgunfmt.c: Likewise.
+	* gettext-tools/src/msguniq.c: Likewise.
+	* gettext-tools/src/recode-sr-latin.c: Likewise.
+	* gettext-tools/src/urlget.c: Likewise.
+	* gettext-tools/src/xgettext.c: Likewise.
+	* gettext-tools/tests/tstgettext.c: Likewise.
+	* gettext-tools/tests/tstngettext.c: Likewise.
+	* gettext-tools/misc/autopoint.in (func_usage): Tell users to report bugs in the
+	bug tracker or by email. Use the mailing list address, not the alias.
+	* gettext-tools/misc/convert-archive.in (func_usage): Likewise.
+	* gettext-tools/misc/gettextize.in (func_usage): Likewise.
+
+2019-05-08  Bruno Haible  <bruno@clisp.org>
+
+	Update translations (from the TP).
+
+2019-04-28  Bruno Haible  <bruno@clisp.org>
+
+	In the POT files, talk about the "GNU gettext package".
+	Reported by Benno Schulenberg <coordinator@translationproject.org>.
+
+	* gettext-runtime/po/Makevars (XGETTEXT_OPTIONS): Add --package-name option.
+	* gettext-tools/po/Makevars (XGETTEXT_OPTIONS): Likewise.
+	* gettext-tools/examples/po/Makefile.am (XGETTEXT_OPTIONS): New variable.
+
+2019-04-14  Bruno Haible  <bruno@clisp.org>
+
+	Update translations (from the TP).
+	* gettext-runtime/po/*.po: Update.
+	* gettext-runtime/po/LINGUAS: Add 'ast'.
+	* gettext-tools/po/*.po: Update.
+	* gettext-tools/examples/po/*.po: Update.
+	* gettext-tools/examples/po/LINGUAS: Add 'ta'.
+	* gettext-tools/examples/hello-*/po/LINGUAS: Likewise.
+	* gettext-tools/examples/Makefile.am (EXAMPLESPOFILES): Add ta.po.
+
+2019-04-07  Bruno Haible  <bruno@clisp.org>
+
+	Add copyright notices in several files.
+	Reported by <ineiev@gnu.org> in <https://savannah.gnu.org/bugs/?54809>.
+
+	* gettext-tools/doc/FAQ.html: Fix copyright notice added on 2019-04-04.
+	* gettext-tools/doc/tutorial.html: Add GFDL copyright notice. Permission given
+	by Gora Mohanty <gora_mohanty@yahoo.co.in> through private email on 2004-11-13.
+	* gettext-tools/po/Makevars.template: Don't mention the file name, since this
+	file is meant to be copied and renamed to 'Makevars'.
+	* gettext-tools/examples/hello-*/po/Makevars: Add all-permissive copyright
+	notice.
+	* gettext-tools/examples/hello-c-gnome3/hello.ui: Add public-domain notice.
+	* gettext-tools/examples/hello-c-gnome3/hello.gresource.xml: Likewise.
+	* gettext-tools/examples/hello-c-gnome3/hello.gschema.xml: Likewise.
+	* gettext-tools/examples/hello-java-awt/m4/TestAWT.java: Likewise.
+	* gettext-tools/examples/hello-java-swing/m4/TestAWT.java: Likewise.
+	* gettext-tools/examples/hello-java-qtjambi/m4/Test15.java: Likewise.
+	* gettext-tools/examples/check-examples: Add GPLv3+ copyright notice.
+	* gettext-tools/examples/installpaths.in: Likewise.
+	* gettext-tools/examples/po/mmsmallpo.sh: Likewise.
+	* gettext-tools/examples/po/xsmallpot.sh: Likewise.
+	* gettext-tools/its/glade.loc: Likewise.
+	* gettext-tools/its/gsettings.loc: Likewise.
+	* gettext-tools/its/metainfo.its: Likewise.
+	* gettext-tools/its/metainfo.loc: Likewise.
+	* gettext-tools/src/filters.h: Add missing copyright line.
+
+2018-11-25  Bruno Haible  <bruno@clisp.org>
+
+	build: Remove generated files from version control.
+	This creates a bootstrapping issue, but it can be mitigated:
+	If a user wants to build GNU gettext on a platform which does not have the
+	GNU gettext programs installed, they first need to build and install a tarball
+	of GNU gettext; then only they can build GNU gettext from the git repository.
+
+	* gettext-runtime/po/gettext-runtime.pot: Remove file.
+	* gettext-tools/po/gettext-tools.pot: Remove file.
+	* gettext-tools/examples/po/gettext-examples.pot: Remove file.
+
+2017-10-15  Bruno Haible  <bruno@clisp.org>
+
+	Clarify copyright and license of some files.
+	Reported by Joël Krähemann at <https://savannah.gnu.org/bugs/?52227>.
+
+	* gettext-runtime/po/Makefile.in.in: Correct copyright holder.
+	* gettext-runtime/po/remove-potcdate.sin: Use the same licensing terms as Makefile.in.in.
+	* gettext-runtime/po/Rules-quot: Use an all-permissive license.
+	* gettext-tools/po/Makevars.template: Likewise.
+	* gettext-runtime/po/Makevars: Likewise.
+	* gettext-tools/po/Makevars: Likewise.
+	* gettext-runtime/po/POTFILES.in: Use GPLv3+.
+	* gettext-tools/po/POTFILES.in: Likewise.
+
+2016-12-11  Bruno Haible  <bruno@clisp.org>
+
+	Merge all .gitignore files into a single .gitignore file.
+
+2016-12-11  Bruno Haible  <bruno@clisp.org>
+
+	Update and organize the .gitignore files.
+
 2016-06-09  Daiki Ueno  <ueno@gnu.org>
 
 	Update translations
@@ -25,7 +928,7 @@
 
 	maint: Update copyright year
 
-2015-12-28  Daiki Ueno  <ueno@gnu.org>
+2015-12-27  Daiki Ueno  <ueno@gnu.org>
 
 	Update translations
 	* gettext-runtime/po/fr.po: Update from Stéphane Aulery <lkppo@free.fr>.

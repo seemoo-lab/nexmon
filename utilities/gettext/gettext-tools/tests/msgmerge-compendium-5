@@ -5,8 +5,8 @@
 
 : ${MSGMERGE=msgmerge}
 ${MSGMERGE} -q -o mm-c-5.tmp \
-  --compendium "$abs_srcdir"/mm-viet.comp.po \
-  /dev/null "$abs_srcdir"/mm-viet.pot || Exit 1
+  --compendium "$wabs_srcdir"/mm-viet.comp.po \
+  /dev/null "$wabs_srcdir"/mm-viet.pot || Exit 1
 LC_ALL=C tr -d '\r' < mm-c-5.tmp > mm-c-5.out || Exit 1
 
 : ${DIFF=diff}

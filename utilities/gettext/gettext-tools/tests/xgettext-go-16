@@ -1,0 +1,106 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: local variable declarations.
+
+cat <<\EOF > xg-go-16.go
+package main
+
+import (
+	"fmt"
+	"github.com/leonelquinteros/gotext"
+)
+
+var L1 = gotext.NewLocale(".", "fr_FR")
+var L2 = L1
+var L3 = L1
+
+type NotLocale2 struct {
+	b int
+	Get func (s string) string
+}
+
+var L4 NotLocale2
+var L5 NotLocale2
+
+var NL = func () (*gotext.Locale, NotLocale2) {
+	return gotext.NewLocale(".", "fr_FR"), NotLocale2{}
+}
+
+func foo (a int, L gotext.Locale) {
+	fmt.Println(L.Get("Test 01"))
+	fmt.Println(L1.Get("Test 02"))
+	fmt.Println(L2.Get("Test 03"))
+	fmt.Println(L3.Get("Test 04"))
+
+	var L2 = NotLocale2{}
+	fmt.Println(L2.Get("Test 05"))
+
+	L3 := NotLocale2{}
+	fmt.Println(L3.Get("Test 06"))
+
+	var L4 = gotext.NewLocale(".", "fr_FR")
+	fmt.Println(L4.Get("Test 07"))
+
+	L5 := gotext.NewLocale(".", "fr_FR")
+	fmt.Println(L5.Get("Test 08"))
+
+	var L6, L7 = NotLocale2{}, gotext.NewLocale(".", "fr_FR")
+	fmt.Println(L6.Get("Test 09"))
+	fmt.Println(L7.Get("Test 10"))
+
+	{
+		var NL = func () (NotLocale2, *gotext.Locale) {
+			return NotLocale2{}, gotext.NewLocale(".", "fr_FR")
+		}
+		var L8, L9 = NL()
+		fmt.Println(L8.Get("Test 11"))
+		fmt.Println(L9.Get("Test 12"))
+	}
+	var L8, L9 = NL()
+	fmt.Println(L8.Get("Test 13"))
+	fmt.Println(L9.Get("Test 14"))
+}
+
+func main () {
+	foo(2, *L1)
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-go-16.tmp xg-go-16.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-16.tmp.po > xg-go-16.po || Exit 1
+
+cat <<\EOF > xg-go-16.ok
+msgid "Test 01"
+msgstr ""
+
+msgid "Test 02"
+msgstr ""
+
+msgid "Test 03"
+msgstr ""
+
+msgid "Test 04"
+msgstr ""
+
+msgid "Test 07"
+msgstr ""
+
+msgid "Test 08"
+msgstr ""
+
+msgid "Test 10"
+msgstr ""
+
+msgid "Test 12"
+msgstr ""
+
+msgid "Test 13"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-16.ok xg-go-16.po || Exit 1
+
+exit 0
