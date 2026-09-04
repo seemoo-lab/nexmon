@@ -68,7 +68,7 @@ public class ToolsFragment extends Fragment {
     private CheckBox chkNetcat;
     private CheckBox chkIw;
     private CheckBox chkWirelessTools;
-    private CheckBox chkMdk3;
+    private CheckBox chkMdk4;
     private CheckBox chkSocat;
     private Spinner spnBinInstallLocation;
     private Spinner spnLibInstallLocation;
@@ -146,7 +146,7 @@ public class ToolsFragment extends Fragment {
         chkNetcat = (CheckBox) view.findViewById(R.id.chkNetcat);
         chkIw = (CheckBox) view.findViewById(R.id.chkIw);
         chkWirelessTools = (CheckBox) view.findViewById(R.id.chkWirelessTools);
-        chkMdk3 = (CheckBox) view.findViewById(R.id.chkMdk3);
+        chkMdk4 = (CheckBox) view.findViewById(R.id.chkMdk4);
         chkSocat = (CheckBox) view.findViewById(R.id.chkSocat);
         spnBinInstallLocation = (Spinner) view.findViewById(R.id.spnBinInstallLocation);
         spnLibInstallLocation = (Spinner) view.findViewById(R.id.spnLibInstallLocation);
@@ -310,13 +310,13 @@ public class ToolsFragment extends Fragment {
                         copyExtractedAsset(binInstallLocation, "iwpriv");
                     }
 
-                    if (chkMdk3.isChecked()) {
-                        //toast("Installing mdk3 ...");
-                        copyExtractedAsset(binInstallLocation, "mdk3");
+                    if (chkMdk4.isChecked()) {
+                        //toast("Installing mdk4 ...");
+                        copyExtractedAsset(binInstallLocation, "mdk4");
                     }
 
                     if (chkSocat.isChecked()) {
-                        //toast("Installing mdk3 ...");
+                        //toast("Installing socat ...");
                         copyExtractedAsset(binInstallLocation, "socat");
                     }
 
