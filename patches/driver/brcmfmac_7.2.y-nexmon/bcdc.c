@@ -167,7 +167,7 @@ brcmf_proto_bcdc_query_dcmd(struct brcmf_pub *drvr, int ifidx, uint cmd,
 	*fwerr = 0;
 	ret = brcmf_proto_bcdc_msg(drvr, ifidx, cmd, buf, len, false);
 	if (ret < 0) {
-		bphy_err(drvr, "brcmf_proto_bcdc_msg failed w/status %d\n",
+		bphy_err_ratelimited(drvr, "brcmf_proto_bcdc_msg failed w/status %d\n",
 			 ret);
 		goto done;
 	}

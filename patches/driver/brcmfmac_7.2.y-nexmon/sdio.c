@@ -53,6 +53,14 @@
 #define DCMD_RESP_TIMEOUT	msecs_to_jiffies(2500)
 #define CTL_DONE_TIMEOUT	msecs_to_jiffies(2500)
 
+/* Number of back-to-back control-DCMD timeouts (each CTL_DONE_TIMEOUT /
+ * DCMD_RESP_TIMEOUT == 2.5s) that count as a wedged bus and force a reset.
+ * Under sustained monitor-mode channel hopping the BCDC/SDIO control path can
+ * stop responding and -ETIMEDOUT cascades until a manual driver reload; at 4
+ * this recovers automatically after ~10s of dead control traffic while staying
+ * well clear of the odd isolated timeout. */
+#define BRCMF_SDIO_CTL_TIMEOUT_CASCADE	4
+
 /* watermark expressed in number of words */
 #define DEFAULT_F2_WATERMARK    0x8
 #define CY_4373_F2_WATERMARK    0x40
@@ -516,6 +524,7 @@ struct brcmf_sdio {
 	u16 ctrl_frame_len;
 	bool ctrl_frame_stat;
 	int ctrl_frame_err;
+	uint ctl_err_count;	/* consecutive control-DCMD timeouts; watchdog */
 
 	spinlock_t txq_lock;		/* protect bus->txq */
 	wait_queue_head_t ctrl_wait;
@@ -1747,14 +1756,35 @@ static int brcmf_sdio_dcmd_resp_wait(struct brcmf_sdio *bus, uint *condition,
 	DECLARE_WAITQUEUE(wait, current);
 	int timeout = DCMD_RESP_TIMEOUT;
 
-	/* Wait until control frame is available */
+	/* Wait uninterruptibly for the response.
+	 *
+	 * This used to be TASK_INTERRUPTIBLE and bail out via *pending as soon
+	 * as a signal arrived, which made brcmf_sdio_bus_rxctl() return
+	 * -ERESTARTSYS and abandon a dcmd the firmware still owes a response
+	 * to. That desyncs the BCDC request/response stream: the orphaned
+	 * response is later handed to the *next* dcmd, whose id does not match,
+	 * so brcmf_proto_bcdc_cmplt() loops calling rxctl again for a response
+	 * nobody is going to send - burning a full DCMD_RESP_TIMEOUT (2.5s) per
+	 * iteration and turning one stray signal into a run of -ETIMEDOUTs.
+	 *
+	 * That is exactly the failure seen under monitor-mode channel hopping:
+	 * tools like airodump-ng drive their hop loop off SIGALRM, so signals
+	 * land on the dcmd wait constantly, and a "chanspec failed (-512)"
+	 * (-ERESTARTSYS) reliably precedes the -110 cascade that wedges the bus.
+	 *
+	 * So wait TASK_KILLABLE rather than TASK_INTERRUPTIBLE: an ordinary
+	 * signal (SIGALRM and friends) no longer tears down an in-flight dcmd,
+	 * but a fatal one still does, so a task here stays killable and cannot
+	 * become an unkillable D-state worker. The wait is bounded by
+	 * DCMD_RESP_TIMEOUT regardless.
+	 */
 	add_wait_queue(&bus->dcmd_resp_wait, &wait);
-	set_current_state(TASK_INTERRUPTIBLE);
+	set_current_state(TASK_KILLABLE);
 
-	while (!(*condition) && (!signal_pending(current) && timeout))
+	while (!(*condition) && (!fatal_signal_pending(current) && timeout))
 		timeout = schedule_timeout(timeout);
 
-	if (signal_pending(current))
+	if (fatal_signal_pending(current))
 		*pending = true;
 
 	set_current_state(TASK_RUNNING);
@@ -2950,6 +2980,36 @@ break2:
 }
 #endif				/* DEBUG */
 
+/* Control-DCMD timeout watchdog. Called on every txctl/rxctl completion with
+ * that transfer's result. A successful transfer clears the run; a run of
+ * BRCMF_SDIO_CTL_TIMEOUT_CASCADE consecutive -ETIMEDOUTs means the firmware/bus
+ * is wedged, so kick the driver's existing bus_reset work to re-download
+ * firmware and re-probe. Other error codes (e.g. -ERESTARTSYS from a signal,
+ * -EIO while the bus is already down) are neither the wedge signature nor a
+ * success, so they leave the run untouched.
+ *
+ * We schedule bus_reset directly rather than via brcmf_fw_crashed() on purpose:
+ * that path first takes a coredump, which reads firmware memory over the very
+ * SDIO bus that is wedged - so it would just pile on more failed transfers and
+ * delay recovery. Once the reset work flips sdiodev->state away from
+ * BRCMF_SDIOD_DATA, txctl/rxctl short-circuit to -EIO (not -ETIMEDOUT), so the
+ * counter cannot re-arm a second reset while one is already in flight. */
+static void brcmf_sdio_ctl_watchdog(struct brcmf_bus *bus_if,
+				    struct brcmf_sdio *bus, int ret)
+{
+	if (ret == -ETIMEDOUT) {
+		if (++bus->ctl_err_count >= BRCMF_SDIO_CTL_TIMEOUT_CASCADE) {
+			brcmf_err("control DCMD timed out %u times running - bus wedged, forcing reset\n",
+				  bus->ctl_err_count);
+			bus->ctl_err_count = 0;
+			if (bus_if && bus_if->drvr)
+				schedule_work(&bus_if->drvr->bus_reset);
+		}
+	} else if (ret >= 0) {
+		bus->ctl_err_count = 0;
+	}
+}
+
 static int
 brcmf_sdio_bus_txctl(struct device *dev, unsigned char *msg, uint msglen)
 {
@@ -2982,8 +3042,19 @@ brcmf_sdio_bus_txctl(struct device *dev, unsigned char *msg, uint msglen)
 	bus->ctrl_frame_stat = true;
 
 	brcmf_sdio_trigger_dpc(bus);
-	wait_event_interruptible_timeout(bus->ctrl_wait, !bus->ctrl_frame_stat,
-					 CTL_DONE_TIMEOUT);
+	/* Killable for the same reason as brcmf_sdio_dcmd_resp_wait():
+	 * wait_event_interruptible_timeout() returns early on any signal, but
+	 * the check below cannot tell that from a real timeout - it just sees
+	 * ctrl_frame_stat still set, cancels the queued control frame and
+	 * reports -ETIMEDOUT. That both drops a frame that was about to be sent
+	 * and manufactures a spurious timeout, which in turn feeds the
+	 * control-DCMD watchdog false positives (a signal-heavy hopper could
+	 * trip a bus reset when nothing was actually wrong). Killable ignores
+	 * benign signals but still honours fatal ones, so this stays bounded by
+	 * CTL_DONE_TIMEOUT and never becomes an unkillable wait.
+	 */
+	wait_event_killable_timeout(bus->ctrl_wait, !bus->ctrl_frame_stat,
+				    CTL_DONE_TIMEOUT);
 	ret = 0;
 	if (bus->ctrl_frame_stat) {
 		sdio_claim_host(bus->sdiodev->func1);
@@ -3006,6 +3077,7 @@ brcmf_sdio_bus_txctl(struct device *dev, unsigned char *msg, uint msglen)
 	else
 		bus->sdcnt.tx_ctlpkts++;
 
+	brcmf_sdio_ctl_watchdog(bus_if, bus, ret);
 	return ret;
 }
 
@@ -3277,6 +3349,7 @@ static int
 brcmf_sdio_bus_rxctl(struct device *dev, unsigned char *msg, uint msglen)
 {
 	int timeleft;
+	int ret;
 	uint rxlen = 0;
 	bool pending;
 	u8 *buf;
@@ -3320,7 +3393,9 @@ brcmf_sdio_bus_rxctl(struct device *dev, unsigned char *msg, uint msglen)
 	else
 		bus->sdcnt.rx_ctlerrs++;
 
-	return rxlen ? (int)rxlen : -ETIMEDOUT;
+	ret = rxlen ? (int)rxlen : -ETIMEDOUT;
+	brcmf_sdio_ctl_watchdog(bus_if, bus, ret);
+	return ret;
 }
 
 #ifdef DEBUG

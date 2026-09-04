@@ -974,9 +974,16 @@ exit:
  */
 /* Kernel 7.2 added the rx_addr argument to the remain_on_channel op (the
  * address to receive frames on for MLO); this driver has no per-link address
- * to honour, so it is accepted and ignored.
+ * to honour, so it is accepted and ignored. Kernel 7.3 additionally changed the
+ * cookie from an output pointer the driver fills in to a value cfg80211
+ * generates and hands us, which we just record for later matching.
  */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(7,2,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7,3,0)
+int brcmf_p2p_remain_on_channel(struct wiphy *wiphy, struct wireless_dev *wdev,
+				struct ieee80211_channel *channel,
+				unsigned int duration, u64 cookie,
+				const u8 *rx_addr)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(7,2,0)
 int brcmf_p2p_remain_on_channel(struct wiphy *wiphy, struct wireless_dev *wdev,
 				struct ieee80211_channel *channel,
 				unsigned int duration, u64 *cookie,
@@ -1004,8 +1011,13 @@ int brcmf_p2p_remain_on_channel(struct wiphy *wiphy, struct wireless_dev *wdev,
 		goto exit;
 
 	memcpy(&p2p->remain_on_channel, channel, sizeof(*channel));
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7,3,0)
+	p2p->remain_on_channel_cookie = cookie;
+	cfg80211_ready_on_channel(wdev, cookie, channel, duration, GFP_KERNEL);
+#else
 	*cookie = p2p->remain_on_channel_cookie;
 	cfg80211_ready_on_channel(wdev, *cookie, channel, duration, GFP_KERNEL);
+#endif
 
 exit:
 	return err;

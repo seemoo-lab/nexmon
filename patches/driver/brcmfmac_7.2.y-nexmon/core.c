@@ -83,7 +83,32 @@ struct wlc_d11rxhdr {
  /*NEXMON*/
 static struct netlink_kernel_cfg cfg = {0};
 static struct sock *nl_sock = NULL;
-static struct net_device *ndev_global = NULL;
+/* ifindex of the primary interface used by legacy requests.  Storing an
+ * ifindex rather than a net_device pointer lets the receive path acquire a
+ * real device reference while holding RTNL, and therefore prevents detach
+ * from racing a firmware command. */
+static int nexmon_default_ifindex;
+
+/* Primary-interface radio settings captured when monitor mode is enabled so
+ * brcmf_net_mon_stop() can put them back.  Monitor mode drives these
+ * chip-globally on iflist[0], so a single saved snapshot matches the driver's
+ * single-radio scope (the same scope as nexmon_default_ifindex above).
+ *
+ * The snapshot is per-field: a firmware that rejects one query must not stop
+ * the others from being restored.  TX power is stored as the raw "qtxpower"
+ * iovar value (quarter-dBm plus the WL_TXPWR_OVERRIDE bit), not a dBm
+ * conversion, so restore is byte-exact and keeps the override state.  The
+ * legacy BRCMF_C_{GET,SET}_TXPWR DCMDs (65/66) are not used here: current
+ * brcmfmac firmware answers them with -EBADE (-52). */
+static bool nexmon_saved_pm_valid;
+static bool nexmon_saved_txpwr_valid;
+static bool nexmon_saved_mpc_valid;
+static u32 nexmon_saved_pm;
+static u32 nexmon_saved_txpwr;
+static u32 nexmon_saved_mpc;
+
+static const struct net_device_ops brcmf_netdev_ops_pri;
+static const struct net_device_ops brcmf_netdev_ops_mon;
 
  struct nexudp_header {
     char nex[3];
@@ -98,69 +123,154 @@ static struct net_device *ndev_global = NULL;
     char payload[1];
 } __attribute__((packed));
 
+/*
+ * NEXMON netlink command handler (protocol NETLINK_USER == 31).
+ *
+ * Trust model / known limitations:
+ *  - Access is gated by a single blanket CAP_NET_ADMIN check
+ *    (netlink_capable below); any CAP_NET_ADMIN process may forward *any*
+ *    Broadcom DCMD to the firmware. There is intentionally no per-command
+ *    allowlist here -- callers with CAP_NET_ADMIN are already trusted to
+ *    reconfigure the device. If a tighter policy is ever needed, add a
+ *    static is_allowed_dcmd(frame->cmd) check before the
+ *    brcmf_fil_cmd_data_{set,get}() calls below.
+ *  - A single module-global socket (nl_sock) and one primary ifindex
+ *    (nexmon_default_ifindex) are used, so this interface is not
+ *    multi-radio / network-namespace aware. Reworking that would mean
+ *    moving to Generic Netlink or an nl80211 vendor command; out of scope
+ *    for the current single-radio target.
+ */
  static void
 nexmon_nl_ioctl_handler(struct sk_buff *skb)
 {
-    struct nlmsghdr *nlh = (struct nlmsghdr *) skb->data;
-    struct nexudp_ioctl_header *frame = (struct nexudp_ioctl_header *) nlmsg_data(nlh);
-    /* Local snapshot to avoid a TOCTOU race with brcmf_detach() clearing ndev_global */
-    struct net_device *ndev = ndev_global;
+    const size_t header_len = offsetof(struct nexudp_ioctl_header, payload);
+    struct nlmsghdr *nlh;
+    struct nexudp_ioctl_header *frame;
+    struct net_device *ndev;
     struct brcmf_if *ifp;
     struct sk_buff *skb_out;
     struct nlmsghdr *nlh_tx;
+    size_t payload_len;
+    size_t reply_len;
+    u32 portid;
+    u32 seq;
+    int ifindex;
+    int err;
 
-     brcmf_err("NEXMON: %s: Enter\n", __FUNCTION__);
-
-     brcmf_err("NEXMON: %s: %08x %d %d\n", __FUNCTION__, *(int *) frame->nexudphdr.nex, nlmsg_len(nlh), skb->len);
-
-     if (memcmp(frame->nexudphdr.nex, "NEX", 3)) {
-        brcmf_err("NEXMON: %s: invalid nexudp_ioctl_header\n", __FUNCTION__);
+    if (!netlink_capable(skb, CAP_NET_ADMIN)) {
+        pr_err_ratelimited("brcmfmac: NEXMON: netlink request without CAP_NET_ADMIN\n");
         return;
     }
 
-     if (frame->nexudphdr.type != NEXUDP_IOCTL) {
-        brcmf_err("NEXMON: %s: invalid frame type\n", __FUNCTION__);
+    if (skb->len < NLMSG_HDRLEN)
+        return;
+
+    nlh = nlmsg_hdr(skb);
+    if (!nlmsg_ok(nlh, skb->len)) {
+        pr_err_ratelimited("brcmfmac: NEXMON: malformed netlink header\n");
         return;
     }
 
-     if (ndev == NULL) {
-        brcmf_err("NEXMON: %s: ndev_global is NULL, bus not ready\n", __FUNCTION__);
+    if (nlmsg_len(nlh) < header_len ||
+        nlmsg_len(nlh) > header_len + BRCMF_DCMD_MAXLEN) {
+        pr_err_ratelimited("brcmfmac: NEXMON: invalid request length %u\n",
+                           nlmsg_len(nlh));
         return;
+    }
+
+    frame = nlmsg_data(nlh);
+    payload_len = nlmsg_len(nlh) - header_len;
+    portid = NETLINK_CB(skb).portid;
+    seq = nlh->nlmsg_seq;
+
+    if (memcmp(frame->nexudphdr.nex, "NEX", 3)) {
+        pr_err_ratelimited("brcmfmac: NEXMON: invalid nexudp_ioctl_header\n");
+        return;
+    }
+
+    if (frame->nexudphdr.type != NEXUDP_IOCTL || frame->set > 1) {
+        pr_err_ratelimited("brcmfmac: NEXMON: invalid frame type\n");
+        return;
+    }
+
+    /* Netlink does not use the UDP security cookie.  New clients put the
+     * target ifindex in that field; zero retains compatibility with older
+     * clients by selecting the primary interface. */
+    ifindex = frame->nexudphdr.securitycookie;
+    if (ifindex <= 0)
+        ifindex = READ_ONCE(nexmon_default_ifindex);
+    if (ifindex <= 0) {
+        pr_err_ratelimited("brcmfmac: NEXMON: no default interface, bus not ready\n");
+        return;
+    }
+
+    rtnl_lock();
+    ndev = dev_get_by_index(&init_net, ifindex);
+    if (!ndev) {
+        pr_err_ratelimited("brcmfmac: NEXMON: interface index %d not found\n",
+                           ifindex);
+        goto out_unlock;
+    }
+
+    if (ndev->netdev_ops != &brcmf_netdev_ops_pri &&
+        ndev->netdev_ops != &brcmf_netdev_ops_mon) {
+        pr_err_ratelimited("brcmfmac: NEXMON: interface index %d is not a brcmfmac device\n",
+                           ifindex);
+        goto out_put;
     }
 
     ifp = netdev_priv(ndev);
 
-     if (ifp == NULL || ifp->drvr == NULL) {
-        brcmf_err("NEXMON: %s: ifp or drvr is NULL, interface torn down\n", __FUNCTION__);
-        return;
+    if (ifp == NULL || ifp->drvr == NULL || ifp->drvr->bus_if == NULL) {
+        pr_err_ratelimited("brcmfmac: NEXMON: interface torn down\n");
+        goto out_put;
     }
 
-     if (ifp->drvr->bus_if->state != BRCMF_BUS_UP) {
-        brcmf_err("NEXMON: %s: bus not UP (state=%d), ignoring ioctl\n", __FUNCTION__, ifp->drvr->bus_if->state);
-        return;
+    if (ifp->drvr->bus_if->state != BRCMF_BUS_UP) {
+        pr_err_ratelimited("brcmfmac: NEXMON: bus not UP (state=%d), ignoring ioctl\n",
+                           ifp->drvr->bus_if->state);
+        goto out_put;
     }
 
-     if (frame->set) {
-        brcmf_err("NEXMON: %s: calling brcmf_fil_cmd_data_set, cmd: %d\n", __FUNCTION__, frame->cmd);
-        brcmf_fil_cmd_data_set(ifp, frame->cmd, frame->payload, nlmsg_len(nlh) - sizeof(struct nexudp_ioctl_header) + sizeof(char));
+    if (frame->set) {
+        err = brcmf_fil_cmd_data_set(ifp, frame->cmd, frame->payload,
+                                     payload_len);
+        if (err)
+            brcmf_err("NEXMON: DCMD set %u failed: %d\n", frame->cmd, err);
 
         skb_out = nlmsg_new(4, 0);
-        nlh_tx = nlmsg_put(skb_out, 0, 0, NLMSG_DONE, 4, 0);
-        NETLINK_CB(skb_out).dst_group = 0; /* not in mcast group */
+        if (!skb_out)
+            goto out_put;
+        nlh_tx = nlmsg_put(skb_out, 0, seq, NLMSG_DONE, 4, 0);
+        if (!nlh_tx) {
+            kfree_skb(skb_out);
+            goto out_put;
+        }
         memcpy(nlmsg_data(nlh_tx), "ACK", 4);
-        nlmsg_unicast(nl_sock, skb_out, nlh->nlmsg_pid);
+        nlmsg_unicast(nl_sock, skb_out, portid);
     } else {
-        brcmf_err("NEXMON: %s: calling brcmf_fil_cmd_data_get, cmd: %d\n", __FUNCTION__, frame->cmd);
-        brcmf_fil_cmd_data_get(ifp, frame->cmd, frame->payload, nlmsg_len(nlh) - sizeof(struct nexudp_ioctl_header) + sizeof(char));
+        err = brcmf_fil_cmd_data_get(ifp, frame->cmd, frame->payload,
+                                     payload_len);
+        if (err)
+            brcmf_err("NEXMON: DCMD get %u failed: %d\n", frame->cmd, err);
 
-         skb_out = nlmsg_new(nlmsg_len(nlh), 0);
-        nlh_tx = nlmsg_put(skb_out, 0, 0, NLMSG_DONE, nlmsg_len(nlh), 0);
-        NETLINK_CB(skb_out).dst_group = 0; /* not in mcast group */
-        memcpy(nlmsg_data(nlh_tx), frame, nlmsg_len(nlh));
-        nlmsg_unicast(nl_sock, skb_out, nlh->nlmsg_pid);
+        reply_len = nlmsg_len(nlh);
+        skb_out = nlmsg_new(reply_len, 0);
+        if (!skb_out)
+            goto out_put;
+        nlh_tx = nlmsg_put(skb_out, 0, seq, NLMSG_DONE, reply_len, 0);
+        if (!nlh_tx) {
+            kfree_skb(skb_out);
+            goto out_put;
+        }
+        memcpy(nlmsg_data(nlh_tx), frame, reply_len);
+        nlmsg_unicast(nl_sock, skb_out, portid);
     }
 
-     brcmf_err("NEXMON: %s: Exit\n", __FUNCTION__);
+out_put:
+    dev_put(ndev);
+out_unlock:
+    rtnl_unlock();
 }
 
 char *brcmf_ifname(struct brcmf_if *ifp)
@@ -528,10 +638,21 @@ void brcmf_netif_mon_rx(struct brcmf_if *ifp, struct sk_buff *skb)
 	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MONITOR_FMT_RADIOTAP)) {
 		/* Do nothing */
 	} else if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_MONITOR_FMT_HW_RX_HDR)) {
-		struct wlc_d11rxhdr *wlc_rxhdr = (struct wlc_d11rxhdr *)skb->data;
+		struct wlc_d11rxhdr *wlc_rxhdr;
 		struct ieee80211_radiotap_header *radiotap;
 		unsigned int offset;
 		u16 RxStatus1;
+
+		/* The firmware controls the length of this buffer, so validate
+		 * that the receive header is fully present before dereferencing
+		 * it.
+		 */
+		if (!pskb_may_pull(skb, sizeof(struct wlc_d11rxhdr))) {
+			brcmf_dbg(DATA, "mon rx: skb too short for rxhdr\n");
+			dev_kfree_skb_any(skb);
+			return;
+		}
+		wlc_rxhdr = (struct wlc_d11rxhdr *)skb->data;
 
 		RxStatus1 = le16_to_cpu(wlc_rxhdr->rxhdr.RxStatus1);
 
@@ -543,25 +664,43 @@ void brcmf_netif_mon_rx(struct brcmf_if *ifp, struct sk_buff *skb)
 			offset += 2;
 		offset += D11_PHY_HDR_LEN;
 
+		/* Ensure the whole header we are about to strip is present. */
+		if (!pskb_may_pull(skb, offset)) {
+			brcmf_dbg(DATA, "mon rx: skb too short for offset %u\n", offset);
+			dev_kfree_skb_any(skb);
+			return;
+		}
 		skb_pull(skb, offset);
 
 		/* TODO: use RX header to fill some radiotap data */
+		if (skb_headroom(skb) < sizeof(*radiotap)) {
+			dev_kfree_skb_any(skb);
+			return;
+		}
 		radiotap = skb_push(skb, sizeof(*radiotap));
 		memset(radiotap, 0, sizeof(*radiotap));
 		radiotap->it_len = cpu_to_le16(sizeof(*radiotap));
 
-		/* TODO: 4 bytes with receive status? */
-		skb->len -= 4;
+		/* TODO: 4 bytes with receive status? Trim them without letting
+		 * skb->len underflow if the frame is shorter than expected.
+		 */
+		if (skb->len >= 4)
+			skb_trim(skb, skb->len - 4);
 	} else {
 		struct ieee80211_radiotap_header *radiotap;
 
 		/* TODO: use RX status to fill some radiotap data */
+		if (skb_headroom(skb) < sizeof(*radiotap)) {
+			dev_kfree_skb_any(skb);
+			return;
+		}
 		radiotap = skb_push(skb, sizeof(*radiotap));
 		memset(radiotap, 0, sizeof(*radiotap));
 		radiotap->it_len = cpu_to_le16(sizeof(*radiotap));
 
-		/* TODO: 4 bytes with receive status? */
-		skb->len -= 4;
+		/* TODO: 4 bytes with receive status? Trim them safely. */
+		if (skb->len >= 4)
+			skb_trim(skb, skb->len - 4);
 	}
 
 	skb->dev = ifp->ndev;
@@ -700,8 +839,28 @@ static int brcmf_netdev_stop(struct net_device *ndev)
 	/* Taking the STA netdev down is what lets cfg80211 allow monitor
 	 * channel hops (has_monitors_only). Do not DISASSOC / clear READY
 	 * in firmware while a monitor vif is still running. */
-	if (!brcmf_nexmon_monitor_running(ifp->drvr))
+	if (!brcmf_nexmon_monitor_running(ifp->drvr)) {
 		brcmf_cfg80211_down(ndev);
+	} else {
+		/* Monitor fast-path: we skip brcmf_cfg80211_down() above to keep
+		 * the primary BSS up in firmware for injection. But that path is
+		 * also what aborts an in-flight scan (brcmf_abort_scanning()).
+		 * Without it, once this netdev goes down cfg80211's NETDEV_DOWN
+		 * notifier completes and frees the pending scan request, and the
+		 * later firmware escan-complete event then calls
+		 * cfg80211_scan_done() on the freed request -> BUG_ON(!wiphy) in
+		 * wiphy_to_rdev(). So abort a scan owned by this interface here,
+		 * exactly once, under the same lock brcmf_cfg80211_down() uses. */
+		struct brcmf_cfg80211_info *cfg = ifp->drvr->config;
+
+		if (cfg &&
+		    test_bit(BRCMF_SCAN_STATUS_BUSY, &cfg->scan_status) &&
+		    cfg->escan_info.ifp == ifp) {
+			mutex_lock(&cfg->usr_sync);
+			brcmf_abort_scanning(cfg);
+			mutex_unlock(&cfg->usr_sync);
+		}
+	}
 
 	brcmf_net_setcarrier(ifp, false);
 
@@ -760,9 +919,6 @@ int brcmf_net_attach(struct brcmf_if *ifp, bool locked)
 		  ifp->mac_addr);
 	ndev = ifp->ndev;
 
-	/* NEXMON */
-    ndev_global = ndev;
-
 	/* set appropriate operations */
 	ndev->netdev_ops = &brcmf_netdev_ops_pri;
 
@@ -784,6 +940,10 @@ int brcmf_net_attach(struct brcmf_if *ifp, bool locked)
 		bphy_err(drvr, "couldn't register the net device\n");
 		goto fail;
 	}
+
+	/* NEXMON: registration assigned a stable ifindex. */
+	if (!READ_ONCE(nexmon_default_ifindex))
+		WRITE_ONCE(nexmon_default_ifindex, ndev->ifindex);
 
 	netif_carrier_off(ndev);
 
@@ -854,13 +1014,47 @@ static int brcmf_net_mon_open(struct net_device *ndev)
 		bphy_err(drvr, "BRCMF_C_SET_PROMISC error (%d)\n", err);
 
 	/* Chip-global: leave the PHY clocks on so injected frames actually
-	 * key the radio (mpc/PM otherwise echo TX into monitor RX only). */
+	 * key the radio (mpc/PM otherwise echo TX into monitor RX only).
+	 * Snapshot the previous values first, per field, so brcmf_net_mon_stop()
+	 * restores whatever it managed to read instead of leaving the STA on
+	 * full TX power with PM and mpc disabled after monitor teardown. */
 	{
 		struct brcmf_if *prim = drvr->iflist[0] ? drvr->iflist[0] : ifp;
+		u32 qtxpwr_max = 127 | WL_TXPWR_OVERRIDE;
 
-		brcmf_fil_cmd_int_set(prim, BRCMF_C_SET_PM, 0);
-		brcmf_fil_cmd_int_set(prim, BRCMF_C_SET_TXPWR, 127);
-		brcmf_fil_iovar_int_set(prim, "mpc", 0);
+		nexmon_saved_pm_valid = false;
+		nexmon_saved_txpwr_valid = false;
+		nexmon_saved_mpc_valid = false;
+
+		if (!brcmf_fil_cmd_int_get(prim, BRCMF_C_GET_PM,
+					   &nexmon_saved_pm))
+			nexmon_saved_pm_valid = true;
+		else
+			brcmf_dbg(INFO, "NEXMON: PM snapshot unsupported\n");
+
+		/* Modern brcmfmac firmware exposes TX power through the
+		 * "qtxpower" iovar; the legacy BRCMF_C_{GET,SET}_TXPWR DCMDs
+		 * (65/66) return -EBADE (-52) on it. */
+		if (!brcmf_fil_iovar_int_get(prim, "qtxpower",
+					     &nexmon_saved_txpwr))
+			nexmon_saved_txpwr_valid = true;
+		else
+			brcmf_dbg(INFO, "NEXMON: qtxpower snapshot unsupported\n");
+
+		if (!brcmf_fil_iovar_int_get(prim, "mpc", &nexmon_saved_mpc))
+			nexmon_saved_mpc_valid = true;
+		else
+			brcmf_dbg(INFO, "NEXMON: mpc snapshot unsupported\n");
+
+		err = brcmf_fil_cmd_int_set(prim, BRCMF_C_SET_PM, 0);
+		if (err)
+			bphy_err(drvr, "BRCMF_C_SET_PM error (%d)\n", err);
+		err = brcmf_fil_iovar_int_set(prim, "qtxpower", qtxpwr_max);
+		if (err)
+			bphy_err(drvr, "qtxpower set error (%d)\n", err);
+		err = brcmf_fil_iovar_int_set(prim, "mpc", 0);
+		if (err)
+			bphy_err(drvr, "mpc set error (%d)\n", err);
 	}
 
 	return err;
@@ -881,6 +1075,33 @@ static int brcmf_net_mon_stop(struct net_device *ndev)
 	err = brcmf_fil_cmd_int_set(ifp, BRCMF_C_SET_MONITOR, monitor);
 	if (err)
 		bphy_err(drvr, "BRCMF_C_SET_MONITOR error (%d)\n", err);
+
+	/* Restore the chip-global radio settings that brcmf_net_mon_open()
+	 * changed, so PM/TXPWR/mpc do not stay overridden on the STA after
+	 * monitor mode is torn down.  Each field is put back only if its
+	 * snapshot succeeded. */
+	{
+		struct brcmf_if *prim = drvr->iflist[0] ? drvr->iflist[0] : ifp;
+
+		if (nexmon_saved_pm_valid) {
+			if (brcmf_fil_cmd_int_set(prim, BRCMF_C_SET_PM,
+						  nexmon_saved_pm))
+				bphy_err(drvr, "failed restoring PM\n");
+			nexmon_saved_pm_valid = false;
+		}
+		if (nexmon_saved_txpwr_valid) {
+			if (brcmf_fil_iovar_int_set(prim, "qtxpower",
+						    nexmon_saved_txpwr))
+				bphy_err(drvr, "failed restoring qtxpower\n");
+			nexmon_saved_txpwr_valid = false;
+		}
+		if (nexmon_saved_mpc_valid) {
+			if (brcmf_fil_iovar_int_set(prim, "mpc",
+						    nexmon_saved_mpc))
+				bphy_err(drvr, "failed restoring mpc\n");
+			nexmon_saved_mpc_valid = false;
+		}
+	}
 
 	return err;
 }
@@ -1090,8 +1311,8 @@ static void brcmf_del_if(struct brcmf_pub *drvr, s32 bsscfgidx,
 			cancel_work_sync(&ifp->ndoffload_work);
 		}
 
-		if (ifp->ndev == ndev_global)
-			ndev_global = NULL;
+		if (ifp->ndev->ifindex == READ_ONCE(nexmon_default_ifindex))
+			WRITE_ONCE(nexmon_default_ifindex, 0);
 
 		brcmf_net_detach(ifp->ndev, locked);
 	} else {
@@ -1586,10 +1807,7 @@ void brcmf_detach(struct device *dev)
 
 	brcmf_bus_change_state(bus_if, BRCMF_BUS_DOWN);
 
-	/* Clear the global pointer before removing interfaces so
-	 * nexmon_nl_ioctl_handler() cannot dereference freed memory during
-	 * the teardown/recovery window. */
-	ndev_global = NULL;
+	WRITE_ONCE(nexmon_default_ifindex, 0);
 
 	/* make sure primary interface removed last */
 	for (i = BRCMF_MAX_IFS - 1; i > -1; i--) {
@@ -1704,11 +1922,14 @@ int __init brcmf_core_init(void)
 	nl_sock = netlink_kernel_create(&init_net, NETLINK_USER, &cfg);
 	if (!nl_sock) {
 		brcmf_err("NEXMON: %s: Error creating netlink socket\n", __FUNCTION__);
-		return -1;
+		err = -ENOMEM;
+		goto error_netlink_create;
 	}
 
 	return 0;
 
+error_netlink_create:
+	brcmf_pcie_exit();
 error_pcie_register:
 	brcmf_usb_exit();
 error_usb_register:
@@ -1719,7 +1940,10 @@ error_usb_register:
 void __exit brcmf_core_exit(void)
 {
 	/* NEXMON */
-    netlink_kernel_release(nl_sock);
+	if (nl_sock) {
+		netlink_kernel_release(nl_sock);
+		nl_sock = NULL;
+	}
 
 	brcmf_sdio_exit();
 	brcmf_usb_exit();

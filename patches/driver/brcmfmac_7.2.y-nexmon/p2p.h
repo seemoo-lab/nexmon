@@ -156,7 +156,12 @@ void brcmf_p2p_stop_device(struct wiphy *wiphy, struct wireless_dev *wdev);
 int brcmf_p2p_scan_prep(struct wiphy *wiphy,
 			struct cfg80211_scan_request *request,
 			struct brcmf_cfg80211_vif *vif);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(7,2,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(7,3,0)
+int brcmf_p2p_remain_on_channel(struct wiphy *wiphy, struct wireless_dev *wdev,
+				struct ieee80211_channel *channel,
+				unsigned int duration, u64 cookie,
+				const u8 *rx_addr);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(7,2,0)
 int brcmf_p2p_remain_on_channel(struct wiphy *wiphy, struct wireless_dev *wdev,
 				struct ieee80211_channel *channel,
 				unsigned int duration, u64 *cookie,

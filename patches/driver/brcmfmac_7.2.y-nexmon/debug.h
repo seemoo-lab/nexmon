@@ -60,6 +60,19 @@ void __brcmf_err(struct brcmf_bus *bus, const char *func, const char *fmt, ...);
 				  ##__VA_ARGS__);			\
 	} while (0)
 
+/* Unconditionally rate-limited error. bphy_err() above skips net_ratelimit()
+ * whenever CONFIG_BRCMDBG / CONFIG_BRCM_TRACING is enabled (both are on in the
+ * usual nexmon build), which is fine for one-shot failures but floods the log
+ * for errors a caller can hit in a tight loop. The case that motivated this:
+ * once the SDIO bus is wedged/down, a dcmd fails *instantly* with -EIO instead
+ * of taking the 2.5s timeout, so a channel hopper such as airodump-ng spins and
+ * emits tens of identical lines per millisecond - burying the one message that
+ * matters (the watchdog's "bus wedged, forcing reset").
+ */
+#define bphy_err_ratelimited(drvr, fmt, ...)				\
+	wiphy_err_ratelimited((drvr)->wiphy, "%s: " fmt, __func__,	\
+			      ##__VA_ARGS__)
+
 #define bphy_info_once(drvr, fmt, ...)					\
 	wiphy_info_once((drvr)->wiphy, "%s: " fmt, __func__,		\
 			##__VA_ARGS__)
