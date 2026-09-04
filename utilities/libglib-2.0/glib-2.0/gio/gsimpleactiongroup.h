@@ -1,10 +1,12 @@
 /*
  * Copyright © 2010 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -44,13 +46,6 @@ G_BEGIN_DECLS
 typedef struct _GSimpleActionGroupPrivate                   GSimpleActionGroupPrivate;
 typedef struct _GSimpleActionGroupClass                     GSimpleActionGroupClass;
 
-/**
- * GSimpleActionGroup:
- *
- * The #GSimpleActionGroup structure contains private data and should only be accessed using the provided API.
- *
- * Since: 2.28
- */
 struct _GSimpleActionGroup
 {
   /*< private >*/
@@ -68,25 +63,25 @@ struct _GSimpleActionGroupClass
   gpointer padding[12];
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType                   g_simple_action_group_get_type                  (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType                   g_simple_action_group_get_type                  (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GSimpleActionGroup *    g_simple_action_group_new                       (void);
 
-GLIB_DEPRECATED_IN_2_38_FOR (g_action_map_lookup_action)
+GIO_DEPRECATED_IN_2_38_FOR (g_action_map_lookup_action)
 GAction *               g_simple_action_group_lookup                    (GSimpleActionGroup *simple,
                                                                          const gchar        *action_name);
 
-GLIB_DEPRECATED_IN_2_38_FOR (g_action_map_add_action)
+GIO_DEPRECATED_IN_2_38_FOR (g_action_map_add_action)
 void                    g_simple_action_group_insert                    (GSimpleActionGroup *simple,
                                                                          GAction            *action);
 
-GLIB_DEPRECATED_IN_2_38_FOR (g_action_map_remove_action)
+GIO_DEPRECATED_IN_2_38_FOR (g_action_map_remove_action)
 void                    g_simple_action_group_remove                    (GSimpleActionGroup *simple,
                                                                          const gchar        *action_name);
 
-GLIB_DEPRECATED_IN_2_38_FOR (g_action_map_add_action_entries)
+GIO_DEPRECATED_IN_2_38_FOR (g_action_map_add_action_entries)
 void                    g_simple_action_group_add_entries               (GSimpleActionGroup *simple,
                                                                          const GActionEntry *entries,
                                                                          gint                n_entries,

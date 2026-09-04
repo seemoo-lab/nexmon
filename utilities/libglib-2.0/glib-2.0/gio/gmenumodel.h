@@ -1,10 +1,12 @@
 /*
  * Copyright © 2011 Canonical Ltd.
  *
- * This library is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * licence, or (at your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -180,37 +182,37 @@ struct _GMenuModelClass
                                                              const gchar         *link);
 };
 
-GLIB_AVAILABLE_IN_2_32
-GType                   g_menu_model_get_type                           (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_2_32
+GType                   g_menu_model_get_type                           (void);
 
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 gboolean                g_menu_model_is_mutable                         (GMenuModel         *model);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 gint                    g_menu_model_get_n_items                        (GMenuModel         *model);
 
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GMenuAttributeIter *    g_menu_model_iterate_item_attributes            (GMenuModel         *model,
                                                                          gint                item_index);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GVariant *              g_menu_model_get_item_attribute_value           (GMenuModel         *model,
                                                                          gint                item_index,
                                                                          const gchar        *attribute,
                                                                          const GVariantType *expected_type);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 gboolean                g_menu_model_get_item_attribute                 (GMenuModel         *model,
                                                                          gint                item_index,
                                                                          const gchar        *attribute,
                                                                          const gchar        *format_string,
                                                                          ...);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GMenuLinkIter *         g_menu_model_iterate_item_links                 (GMenuModel         *model,
                                                                          gint                item_index);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GMenuModel *            g_menu_model_get_item_link                      (GMenuModel         *model,
                                                                          gint                item_index,
                                                                          const gchar        *link);
 
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 void                    g_menu_model_items_changed                      (GMenuModel         *model,
                                                                          gint                position,
                                                                          gint                removed,
@@ -244,18 +246,18 @@ struct _GMenuAttributeIterClass
                              GVariant           **value);
 };
 
-GLIB_AVAILABLE_IN_2_32
-GType                   g_menu_attribute_iter_get_type                  (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_2_32
+GType                   g_menu_attribute_iter_get_type                  (void);
 
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 gboolean                g_menu_attribute_iter_get_next                  (GMenuAttributeIter  *iter,
                                                                          const gchar        **out_name,
                                                                          GVariant           **value);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 gboolean                g_menu_attribute_iter_next                      (GMenuAttributeIter  *iter);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 const gchar *           g_menu_attribute_iter_get_name                  (GMenuAttributeIter  *iter);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GVariant *              g_menu_attribute_iter_get_value                 (GMenuAttributeIter  *iter);
 
 
@@ -286,18 +288,18 @@ struct _GMenuLinkIterClass
                              GMenuModel    **value);
 };
 
-GLIB_AVAILABLE_IN_2_32
-GType                   g_menu_link_iter_get_type                       (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_2_32
+GType                   g_menu_link_iter_get_type                       (void);
 
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 gboolean                g_menu_link_iter_get_next                       (GMenuLinkIter  *iter,
                                                                          const gchar   **out_link,
                                                                          GMenuModel    **value);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 gboolean                g_menu_link_iter_next                           (GMenuLinkIter  *iter);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 const gchar *           g_menu_link_iter_get_name                       (GMenuLinkIter  *iter);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GMenuModel *            g_menu_link_iter_get_value                      (GMenuLinkIter  *iter);
 
 G_END_DECLS

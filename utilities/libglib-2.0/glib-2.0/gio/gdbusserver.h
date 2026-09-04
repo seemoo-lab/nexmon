@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,26 +35,26 @@ G_BEGIN_DECLS
 #define G_DBUS_SERVER(o)           (G_TYPE_CHECK_INSTANCE_CAST ((o), G_TYPE_DBUS_SERVER, GDBusServer))
 #define G_IS_DBUS_SERVER(o)        (G_TYPE_CHECK_INSTANCE_TYPE ((o), G_TYPE_DBUS_SERVER))
 
-GLIB_AVAILABLE_IN_ALL
-GType             g_dbus_server_get_type           (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
+GType             g_dbus_server_get_type           (void);
+GIO_AVAILABLE_IN_ALL
 GDBusServer      *g_dbus_server_new_sync           (const gchar       *address,
                                                     GDBusServerFlags   flags,
                                                     const gchar       *guid,
                                                     GDBusAuthObserver *observer,
                                                     GCancellable      *cancellable,
                                                     GError           **error);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const gchar      *g_dbus_server_get_client_address (GDBusServer       *server);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const gchar      *g_dbus_server_get_guid           (GDBusServer       *server);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GDBusServerFlags  g_dbus_server_get_flags          (GDBusServer       *server);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void              g_dbus_server_start              (GDBusServer       *server);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void              g_dbus_server_stop               (GDBusServer       *server);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gboolean          g_dbus_server_is_active          (GDBusServer       *server);
 
 G_END_DECLS
