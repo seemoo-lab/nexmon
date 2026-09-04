@@ -1,0 +1,7 @@
+# Per-utility build outputs (ndk-build obj/lib dirs and the
+# libglib-2.0 meson cross-build scratch); regenerated on demand.
+local/
+libs/
+
+# wireshark cross-build dependency prefix (utilities/wireshark/build-android.sh)
+.wsdeps/
