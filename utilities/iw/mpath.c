@@ -38,6 +38,8 @@ static int print_mpath_handler(struct nl_msg *msg, void *arg)
 		[NL80211_MPATH_INFO_DISCOVERY_TIMEOUT] = { .type = NLA_U32 },
 		[NL80211_MPATH_INFO_DISCOVERY_RETRIES] = { .type = NLA_U8 },
 		[NL80211_MPATH_INFO_FLAGS] = { .type = NLA_U8 },
+		[NL80211_MPATH_INFO_HOP_COUNT] = { .type = NLA_U8 },
+		[NL80211_MPATH_INFO_PATH_CHANGE] = { .type = NLA_U32 },
 	};
 
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
@@ -85,13 +87,57 @@ static int print_mpath_handler(struct nl_msg *msg, void *arg)
 	if (pinfo[NL80211_MPATH_INFO_FLAGS])
 		printf("\t0x%x",
 			nla_get_u8(pinfo[NL80211_MPATH_INFO_FLAGS]));
+	if (pinfo[NL80211_MPATH_INFO_HOP_COUNT])
+		printf("\t%u",
+		       nla_get_u8(pinfo[NL80211_MPATH_INFO_HOP_COUNT]));
+	if (pinfo[NL80211_MPATH_INFO_PATH_CHANGE])
+		printf("\t%u",
+		       nla_get_u32(pinfo[NL80211_MPATH_INFO_PATH_CHANGE]));
 
 	printf("\n");
 	return NL_SKIP;
 }
 
+static int handle_mpath_probe(struct nl80211_state *state,
+			      struct nl_msg *msg,
+			      int argc, char **argv,
+			      enum id_input id)
+{
+	unsigned char dst[ETH_ALEN];
+	unsigned char *frame;
+	size_t frame_len;
+
+	if (argc < 3)
+		return 1;
+
+	if (mac_addr_a2n(dst, argv[0])) {
+		fprintf(stderr, "invalid mac address\n");
+		return 2;
+	}
+
+	if (strcmp("frame", argv[1]) != 0)
+		return 1;
+
+	frame = parse_hex(argv[2], &frame_len);
+	if (!frame) {
+		fprintf(stderr, "invalid frame pattern: %p\n", frame);
+		return 2;
+	}
+
+	NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN, dst);
+	NLA_PUT(msg, NL80211_ATTR_FRAME, frame_len, frame);
+
+	return 0;
+ nla_put_failure:
+	return -ENOBUFS;
+}
+COMMAND(mpath, probe, "<destination MAC address> frame <frame>",
+	NL80211_CMD_PROBE_MESH_LINK, 0, CIB_NETDEV, handle_mpath_probe,
+	"Inject ethernet frame to given peer overriding the next hop\n"
+	"lookup from mpath table.\n."
+	"Example: iw dev wlan0 mpath probe xx:xx:xx:xx:xx:xx frame 01:xx:xx:00\n");
+
 static int handle_mpath_get(struct nl80211_state *state,
-			    struct nl_cb *cb,
 			    struct nl_msg *msg,
 			    int argc, char **argv,
 			    enum id_input id)
@@ -113,7 +159,7 @@ static int handle_mpath_get(struct nl80211_state *state,
 
 	NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN, dst);
 
-	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_mpath_handler, NULL);
+	register_handler(print_mpath_handler, NULL);
 
 	return 0;
  nla_put_failure:
@@ -127,7 +173,6 @@ COMMAND(mpath, del, "<MAC address>",
 	"Remove the mesh path to the given node.");
 
 static int handle_mpath_set(struct nl80211_state *state,
-			    struct nl_cb *cb,
 			    struct nl_msg *msg,
 			    int argc, char **argv,
 			    enum id_input id)
@@ -163,7 +208,7 @@ static int handle_mpath_set(struct nl80211_state *state,
 	NLA_PUT(msg, NL80211_ATTR_MAC, ETH_ALEN, dst);
 	NLA_PUT(msg, NL80211_ATTR_MPATH_NEXT_HOP, ETH_ALEN, next_hop);
 
-	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_mpath_handler, NULL);
+	register_handler(print_mpath_handler, NULL);
 	return 0;
  nla_put_failure:
 	return -ENOBUFS;
@@ -176,14 +221,13 @@ COMMAND(mpath, set, "<destination MAC address> next_hop <next hop MAC address>",
 	"Set an existing mesh path's next hop.");
 
 static int handle_mpath_dump(struct nl80211_state *state,
-			     struct nl_cb *cb,
 			     struct nl_msg *msg,
 			     int argc, char **argv,
 			     enum id_input id)
 {
 	printf("DEST ADDR         NEXT HOP          IFACE\tSN\tMETRIC\tQLEN\t"
-	       "EXPTIME\t\tDTIM\tDRET\tFLAGS\n");
-	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, print_mpath_handler, NULL);
+	       "EXPTIME\tDTIM\tDRET\tFLAGS\tHOP_COUNT\tPATH_CHANGE\n");
+	register_handler(print_mpath_handler, NULL);
 	return 0;
 }
 COMMAND(mpath, dump, NULL,
