@@ -1,35 +1,27 @@
-LOCAL_PATH:= $(call my-dir)
+LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
+
+# argp-standalone 1.5.0 (https://github.com/argp-standalone/argp-standalone).
+# It ships its own option scanner, so no getopt sources are needed; the only
+# libc gap fillers required on bionic are strchrnul() and mempcpy().
 LOCAL_SRC_FILES := \
-	mempcpy.c \
-	strchrnul.c \
-	rawmemchr.c \
-	basename-lgpl.c \
-	argp-parse.c \
-	argp-help.c \
-	argp-pvh.c \
-	argp-fmtstream.c \
+	argp-ba.c \
 	argp-eexst.c \
-	getopt1.c \
-	getopt.c
+	argp-fmtstream.c \
+	argp-help.c \
+	argp-parse.c \
+	argp-pv.c \
+	argp-pvh.c \
+	strchrnul.c \
+	mempcpy.c
 
-LOCAL_CFLAGS := -std=c99
-LOCAL_CFLAGS += -D_GL_INLINE_HEADER_BEGIN=
-LOCAL_CFLAGS += -D_GL_INLINE_HEADER_END=
-LOCAL_CFLAGS += -DARGP_EI=inline
-LOCAL_CFLAGS += -D_GL_INLINE=inline
-LOCAL_CFLAGS += -D_GL_ATTRIBUTE_PURE=
-LOCAL_CFLAGS += -Dfwrite_unlocked=fwrite
-LOCAL_CFLAGS += -Dfputs_unlocked=fputs
-LOCAL_CFLAGS += -D__getopt_argv_const=
-LOCAL_CFLAGS += -D_GL_UNUSED=
-ifeq ($(TARGET_ARCH),arm)
-LOCAL_CFLAGS += -mabi=aapcs-linux
-endif
-
+# HAVE_CONFIG_H pulls in the hand-maintained config.h next to these sources;
+# -I$(LOCAL_PATH) lets the <config.h> / <argp.h> angle-bracket includes resolve.
+LOCAL_CFLAGS := -std=gnu99 -DHAVE_CONFIG_H=1 -Wno-unused-parameter -Wno-sign-compare
+LOCAL_C_INCLUDES := $(LOCAL_PATH)
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
 
-LOCAL_MODULE:= libargp
+LOCAL_MODULE := libargp
 
 include $(BUILD_STATIC_LIBRARY)
