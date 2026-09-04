@@ -1,0 +1,392 @@
+# The linker version script controls which symbols are exported.
+# Version tags that correspond to past releases group the symbols
+# that were part of that release. Hence, such a version tag is sealed
+# and MUST not be extended.
+# Any new symbols MUST only be added to the bottom of the file, in
+# the version tag for the next upcoming release.
+libnl_3 {
+global:
+	# these functions are in private header files and should have never
+	# been exported. We might hide them later.
+	nl_cache_parse;
+
+	# these functions are in private header files and should have never
+	# been exported. They are used by libnl internals
+	__flags2str;
+	__list_str2type;
+	__list_type2str;
+	__nl_read_num_str_file;
+	__str2flags;
+	__str2type;
+	__trans_list_add;
+	__trans_list_clear;
+	__type2str;
+
+	# internal symbols that are in public headers
+	__nl_cache_mngt_require;
+
+	# variables
+	nl_debug;
+	nl_debug_dp;
+
+	nl_addr2str;
+	nl_addr_alloc;
+	nl_addr_alloc_attr;
+	nl_addr_build;
+	nl_addr_clone;
+	nl_addr_cmp;
+	nl_addr_cmp_prefix;
+	nl_addr_fill_sockaddr;
+	nl_addr_get;
+	nl_addr_get_binary_addr;
+	nl_addr_get_family;
+	nl_addr_get_len;
+	nl_addr_get_prefixlen;
+	nl_addr_guess_family;
+	nl_addr_info;
+	nl_addr_iszero;
+	nl_addr_parse;
+	nl_addr_put;
+	nl_addr_resolve;
+	nl_addr_set_binary_addr;
+	nl_addr_set_family;
+	nl_addr_set_prefixlen;
+	nl_addr_shared;
+	nl_addr_valid;
+	nl_af2str;
+	nl_auto_complete;
+	nl_cache_add;
+	nl_cache_alloc;
+	nl_cache_alloc_and_fill;
+	nl_cache_alloc_name;
+	nl_cache_clear;
+	nl_cache_clone;
+	nl_cache_dump;
+	nl_cache_dump_filter;
+	nl_cache_find;
+	nl_cache_foreach;
+	nl_cache_foreach_filter;
+	nl_cache_free;
+	nl_cache_get;
+	nl_cache_get_first;
+	nl_cache_get_last;
+	nl_cache_get_next;
+	nl_cache_get_ops;
+	nl_cache_get_prev;
+	nl_cache_include;
+	nl_cache_is_empty;
+	nl_cache_mark_all;
+	nl_cache_mngr_add;
+	nl_cache_mngr_add_cache;
+	nl_cache_mngr_alloc;
+	nl_cache_mngr_data_ready;
+	nl_cache_mngr_free;
+	nl_cache_mngr_get_fd;
+	nl_cache_mngr_info;
+	nl_cache_mngr_poll;
+	nl_cache_mngt_provide;
+	nl_cache_mngt_register;
+	nl_cache_mngt_require;
+	nl_cache_mngt_require_safe;
+	nl_cache_mngt_unprovide;
+	nl_cache_mngt_unregister;
+	nl_cache_move;
+	nl_cache_nitems;
+	nl_cache_nitems_filter;
+	nl_cache_ops_associate;
+	nl_cache_ops_associate_safe;
+	nl_cache_ops_foreach;
+	nl_cache_ops_get;
+	nl_cache_ops_lookup;
+	nl_cache_ops_lookup_safe;
+	nl_cache_ops_put;
+	nl_cache_ops_set_flags;
+	nl_cache_parse_and_add;
+	nl_cache_pickup;
+	nl_cache_put;
+	nl_cache_refill;
+	nl_cache_remove;
+	nl_cache_resync;
+	nl_cache_search;
+	nl_cache_set_arg1;
+	nl_cache_set_arg2;
+	nl_cache_set_flags;
+	nl_cache_subset;
+	nl_cancel_down_bits;
+	nl_cancel_down_bytes;
+	nl_cancel_down_us;
+	nl_cb_active_type;
+	nl_cb_alloc;
+	nl_cb_clone;
+	nl_cb_err;
+	nl_cb_get;
+	nl_cb_overwrite_recv;
+	nl_cb_overwrite_recvmsgs;
+	nl_cb_overwrite_send;
+	nl_cb_put;
+	nl_cb_set;
+	nl_cb_set_all;
+	nl_close;
+	nl_complete_msg;
+	nl_connect;
+	nl_data_alloc;
+	nl_data_alloc_attr;
+	nl_data_append;
+	nl_data_clone;
+	nl_data_cmp;
+	nl_data_free;
+	nl_data_get;
+	nl_data_get_size;
+	nl_dump;
+	nl_dump_line;
+	nl_ether_proto2str;
+	nl_get_psched_hz;
+	nl_get_user_hz;
+	nl_geterror;
+	nl_has_capability;
+	nl_hash;
+	nl_hash_any;
+	nl_hash_table_add;
+	nl_hash_table_alloc;
+	nl_hash_table_del;
+	nl_hash_table_free;
+	nl_hash_table_lookup;
+	nl_ip_proto2str;
+	nl_join_groups;
+	nl_llproto2str;
+	nl_msec2str;
+	nl_msg_dump;
+	nl_msg_parse;
+	nl_msgtype_lookup;
+	nl_new_line;
+	nl_nlfamily2str;
+	nl_nlmsg_flags2str;
+	nl_nlmsgtype2str;
+	nl_object_alloc;
+	nl_object_alloc_name;
+	nl_object_attr_list;
+	nl_object_attrs2str;
+	nl_object_clone;
+	nl_object_diff;
+	nl_object_dump;
+	nl_object_dump_buf;
+	nl_object_free;
+	nl_object_get;
+	nl_object_get_cache;
+	nl_object_get_id_attrs;
+	nl_object_get_msgtype;
+	nl_object_get_ops;
+	nl_object_get_refcnt;
+	nl_object_get_type;
+	nl_object_identical;
+	nl_object_is_marked;
+	nl_object_keygen;
+	nl_object_mark;
+	nl_object_match_filter;
+	nl_object_put;
+	nl_object_shared;
+	nl_object_unmark;
+	nl_object_update;
+	nl_perror;
+	nl_pickup;
+	nl_prob2int;
+	nl_rate2str;
+	nl_recv;
+	nl_recvmsgs;
+	nl_recvmsgs_default;
+	nl_recvmsgs_report;
+	nl_send;
+	nl_send_auto;
+	nl_send_auto_complete;
+	nl_send_iovec;
+	nl_send_simple;
+	nl_send_sync;
+	nl_sendmsg;
+	nl_sendto;
+	nl_size2int;
+	nl_size2str;
+	nl_socket_add_membership;
+	nl_socket_add_memberships;
+	nl_socket_alloc;
+	nl_socket_alloc_cb;
+	nl_socket_disable_auto_ack;
+	nl_socket_disable_msg_peek;
+	nl_socket_disable_seq_check;
+	nl_socket_drop_membership;
+	nl_socket_drop_memberships;
+	nl_socket_enable_auto_ack;
+	nl_socket_enable_msg_peek;
+	nl_socket_free;
+	nl_socket_get_cb;
+	nl_socket_get_fd;
+	nl_socket_get_local_port;
+	nl_socket_get_msg_buf_size;
+	nl_socket_get_peer_groups;
+	nl_socket_get_peer_port;
+	nl_socket_modify_cb;
+	nl_socket_modify_err_cb;
+	nl_socket_recv_pktinfo;
+	nl_socket_set_buffer_size;
+	nl_socket_set_cb;
+	nl_socket_set_local_port;
+	nl_socket_set_msg_buf_size;
+	nl_socket_set_nonblocking;
+	nl_socket_set_passcred;
+	nl_socket_set_peer_groups;
+	nl_socket_set_peer_port;
+	nl_socket_use_seq;
+	nl_str2af;
+	nl_str2ether_proto;
+	nl_str2ip_proto;
+	nl_str2llproto;
+	nl_str2msec;
+	nl_str2nlfamily;
+	nl_str2nlmsgtype;
+	nl_syserr2nlerr;
+	nl_ticks2us;
+	nl_us2ticks;
+	nl_ver_maj;
+	nl_ver_mic;
+	nl_ver_min;
+	nl_ver_num;
+	nl_wait_for_ack;
+	nla_attr_size;
+	nla_data;
+	nla_find;
+	nla_get_flag;
+	nla_get_msecs;
+	nla_get_string;
+	nla_get_u16;
+	nla_get_u32;
+	nla_get_u64;
+	nla_get_u8;
+	nla_is_nested;
+	nla_len;
+	nla_memcmp;
+	nla_memcpy;
+	nla_nest_cancel;
+	nla_nest_end;
+	nla_nest_start;
+	nla_next;
+	nla_ok;
+	nla_padlen;
+	nla_parse;
+	nla_parse_nested;
+	nla_put;
+	nla_put_addr;
+	nla_put_data;
+	nla_put_flag;
+	nla_put_msecs;
+	nla_put_nested;
+	nla_put_string;
+	nla_put_u16;
+	nla_put_u32;
+	nla_put_u64;
+	nla_put_u8;
+	nla_reserve;
+	nla_strcmp;
+	nla_strdup;
+	nla_strlcpy;
+	nla_total_size;
+	nla_type;
+	nla_validate;
+	nlmsg_alloc;
+	nlmsg_alloc_simple;
+	nlmsg_alloc_size;
+	nlmsg_append;
+	nlmsg_attrdata;
+	nlmsg_attrlen;
+	nlmsg_convert;
+	nlmsg_data;
+	nlmsg_datalen;
+	nlmsg_expand;
+	nlmsg_find_attr;
+	nlmsg_free;
+	nlmsg_get;
+	nlmsg_get_creds;
+	nlmsg_get_dst;
+	nlmsg_get_max_size;
+	nlmsg_get_proto;
+	nlmsg_get_src;
+	nlmsg_hdr;
+	nlmsg_inherit;
+	nlmsg_next;
+	nlmsg_ok;
+	nlmsg_padlen;
+	nlmsg_parse;
+	nlmsg_put;
+	nlmsg_reserve;
+	nlmsg_set_creds;
+	nlmsg_set_default_size;
+	nlmsg_set_dst;
+	nlmsg_set_proto;
+	nlmsg_set_src;
+	nlmsg_size;
+	nlmsg_tail;
+	nlmsg_total_size;
+	nlmsg_valid_hdr;
+	nlmsg_validate;
+
+	# The following symbols were added during the development of 3.2.26.
+	# Keep them in libnl_3 to avoid breaking users.
+	nl_cache_pickup_checkdup;
+	nl_pickup_keep_syserr;
+
+local:
+	*;
+};
+
+libnl_3_2_26 {
+global:
+	nl_socket_set_fd;
+} libnl_3;
+
+libnl_3_2_27 {
+global:
+	nla_get_s8;
+	nla_put_s8;
+	nla_get_s16;
+	nla_put_s16;
+	nla_get_s32;
+	nla_put_s32;
+	nla_get_s64;
+	nla_put_s64;
+} libnl_3_2_26;
+
+libnl_3_2_28 {
+global:
+	nl_object_diff64;
+} libnl_3_2_27;
+
+libnl_3_2_29 {
+global:
+	nl_cache_include_v2;
+	nl_cache_mngr_add_cache_v2;
+	nl_strerror_l;
+} libnl_3_2_28;
+
+libnl_3_5 {
+global:
+	nla_nest_end_keep_empty;
+} libnl_3_2_29;
+
+libnl_3_6 {
+} libnl_3_5;
+
+libnl_3_10 {
+global:
+	nl_cache_mngr_alloc_ex;
+} libnl_3_6;
+
+libnl_3_11 {
+global:
+	nla_get_sint;
+	nla_put_sint;
+	nla_get_uint;
+	nla_put_uint;
+} libnl_3_10;
+
+libnl_3_12 {
+global:
+	nl_cache_resync_v2;
+} libnl_3_11;

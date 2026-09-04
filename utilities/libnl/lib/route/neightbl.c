@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/route/neightbl.c         neighbour tables
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -16,68 +10,186 @@
  * @{
  */
 
-#include <netlink-local.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/route/rtnl.h>
 #include <netlink/route/neightbl.h>
 #include <netlink/route/link.h>
 
-/** @cond SKIP */
-#define NEIGHTBL_ATTR_FAMILY       0x001
-#define NEIGHTBL_ATTR_STATS        0x002
-#define NEIGHTBL_ATTR_NAME	  0x004
-#define NEIGHTBL_ATTR_THRESH1	  0x008
-#define NEIGHTBL_ATTR_THRESH2	  0x010
-#define NEIGHTBL_ATTR_THRESH3	  0x020
-#define NEIGHTBL_ATTR_CONFIG	  0x040
-#define NEIGHTBL_ATTR_PARMS	  0x080
-#define NEIGHTBL_ATTR_GC_INTERVAL  0x100
+#include "nl-route.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
 
-#define NEIGHTBLPARM_ATTR_IFINDEX	0x0001
-#define NEIGHTBLPARM_ATTR_REFCNT		0x0002
-#define NEIGHTBLPARM_ATTR_QUEUE_LEN	0x0004
-#define NEIGHTBLPARM_ATTR_APP_PROBES	0x0008
-#define NEIGHTBLPARM_ATTR_UCAST_PROBES	0x0010
-#define NEIGHTBLPARM_ATTR_MCAST_PROBES	0x0020
-#define NEIGHTBLPARM_ATTR_PROXY_QLEN	0x0040
-#define NEIGHTBLPARM_ATTR_REACHABLE_TIME	0x0080
+struct rtnl_neightbl_parms {
+	/**
+	 * Interface index of the device this parameter set is assigned
+	 * to or 0 for the default set.
+	 */
+	uint32_t ntp_ifindex;
+
+	/**
+	 * Number of references to this parameter set.
+	 */
+	uint32_t ntp_refcnt;
+
+	/**
+	 * Queue length for pending arp requests, i.e. the number of
+	 * packets which are accepted from other layers while the
+	 * neighbour address is still being resolved
+	 */
+	uint32_t ntp_queue_len;
+
+	/**
+	 * Number of requests to send to the user level ARP daemon.
+	 * Specify 0 to disable.
+	 */
+	uint32_t ntp_app_probes;
+
+	/**
+	 * Maximum number of retries for unicast solicitation.
+	 */
+	uint32_t ntp_ucast_probes;
+
+	/**
+	 * Maximum number of retries for multicast solicitation.
+	 */
+	uint32_t ntp_mcast_probes;
+
+	/**
+	 * Base value in milliseconds to ompute reachable time, see RFC2461.
+	 */
+	uint64_t ntp_base_reachable_time;
+
+	/**
+	 * Actual reachable time (read-only)
+	 */
+	uint64_t ntp_reachable_time; /* secs */
+
+	/**
+	 * The time in milliseconds between retransmitted Neighbor
+	 * Solicitation messages.
+	 */
+	uint64_t ntp_retrans_time;
+
+	/**
+	 * Interval in milliseconds to check for stale neighbour
+	 * entries.
+	 */
+	uint64_t ntp_gc_stale_time; /* secs */
+
+	/**
+	 * Delay in milliseconds for the first time probe if
+	 * the neighbour is reachable.
+	 */
+	uint64_t ntp_probe_delay; /* secs */
+
+	/**
+	 * Maximum delay in milliseconds of an answer to a neighbour
+	 * solicitation message.
+	 */
+	uint64_t ntp_anycast_delay;
+
+	/**
+	 * Minimum age in milliseconds before a neighbour entry
+	 * may be replaced.
+	 */
+	uint64_t ntp_locktime;
+
+	/**
+	 * Delay in milliseconds before answering to an ARP request
+	 * for which a proxy ARP entry exists.
+	 */
+	uint64_t ntp_proxy_delay;
+
+	/**
+	 * Queue length for the delayed proxy arp requests.
+	 */
+	uint32_t ntp_proxy_qlen;
+
+	/**
+	 * Mask of available parameter attributes
+	 */
+	uint32_t ntp_mask;
+};
+
+#define NTBLNAMSIZ 32
+
+/**
+ * Neighbour table
+ * @ingroup neightbl
+ */
+struct rtnl_neightbl {
+	NLHDR_COMMON
+
+	char nt_name[NTBLNAMSIZ];
+	uint32_t nt_family;
+	uint32_t nt_gc_thresh1;
+	uint32_t nt_gc_thresh2;
+	uint32_t nt_gc_thresh3;
+	uint64_t nt_gc_interval;
+	struct ndt_config nt_config;
+	struct rtnl_neightbl_parms nt_parms;
+	struct ndt_stats nt_stats;
+};
+
+/** @cond SKIP */
+#define NEIGHTBL_ATTR_FAMILY 0x001
+#define NEIGHTBL_ATTR_STATS 0x002
+#define NEIGHTBL_ATTR_NAME 0x004
+#define NEIGHTBL_ATTR_THRESH1 0x008
+#define NEIGHTBL_ATTR_THRESH2 0x010
+#define NEIGHTBL_ATTR_THRESH3 0x020
+#define NEIGHTBL_ATTR_CONFIG 0x040
+#define NEIGHTBL_ATTR_PARMS 0x080
+#define NEIGHTBL_ATTR_GC_INTERVAL 0x100
+
+#define NEIGHTBLPARM_ATTR_IFINDEX 0x0001
+#define NEIGHTBLPARM_ATTR_REFCNT 0x0002
+#define NEIGHTBLPARM_ATTR_QUEUE_LEN 0x0004
+#define NEIGHTBLPARM_ATTR_APP_PROBES 0x0008
+#define NEIGHTBLPARM_ATTR_UCAST_PROBES 0x0010
+#define NEIGHTBLPARM_ATTR_MCAST_PROBES 0x0020
+#define NEIGHTBLPARM_ATTR_PROXY_QLEN 0x0040
+#define NEIGHTBLPARM_ATTR_REACHABLE_TIME 0x0080
 #define NEIGHTBLPARM_ATTR_BASE_REACHABLE_TIME 0x0100
-#define NEIGHTBLPARM_ATTR_RETRANS_TIME	0x0200
-#define NEIGHTBLPARM_ATTR_GC_STALETIME	0x0400
+#define NEIGHTBLPARM_ATTR_RETRANS_TIME 0x0200
+#define NEIGHTBLPARM_ATTR_GC_STALETIME 0x0400
 #define NEIGHTBLPARM_ATTR_DELAY_PROBE_TIME 0x0800
-#define NEIGHTBLPARM_ATTR_ANYCAST_DELAY	0x1000
-#define NEIGHTBLPARM_ATTR_PROXY_DELAY	0x2000
-#define NEIGHTBLPARM_ATTR_LOCKTIME	0x4000
+#define NEIGHTBLPARM_ATTR_ANYCAST_DELAY 0x1000
+#define NEIGHTBLPARM_ATTR_PROXY_DELAY 0x2000
+#define NEIGHTBLPARM_ATTR_LOCKTIME 0x4000
 
 static struct nl_cache_ops rtnl_neightbl_ops;
 static struct nl_object_ops neightbl_obj_ops;
 /** @endcond */
 
-static int neightbl_compare(struct nl_object *_a, struct nl_object *_b,
-			uint32_t attrs, int flags)
+static uint64_t neightbl_compare(struct nl_object *_a, struct nl_object *_b,
+				 uint64_t attrs, int flags)
 {
-	struct rtnl_neightbl *a = (struct rtnl_neightbl *) _a;
-	struct rtnl_neightbl *b = (struct rtnl_neightbl *) _b;
-	int diff = 0;
+	struct rtnl_neightbl *a = (struct rtnl_neightbl *)_a;
+	struct rtnl_neightbl *b = (struct rtnl_neightbl *)_b;
+	uint64_t diff = 0;
 
-#define NT_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, NEIGHTBL_ATTR_##ATTR, a, b, EXPR)
-
-	diff |= NT_DIFF(FAMILY,		a->nt_family != b->nt_family);
-	diff |= NT_DIFF(NAME,		strcmp(a->nt_name, b->nt_name));
-	diff |= NT_DIFF(THRESH1,	a->nt_gc_thresh1 != b->nt_gc_thresh1);
-	diff |= NT_DIFF(THRESH2,	a->nt_gc_thresh2 != b->nt_gc_thresh2);
-	diff |= NT_DIFF(THRESH3,	a->nt_gc_thresh3 != b->nt_gc_thresh3);
-	diff |= NT_DIFF(GC_INTERVAL,	a->nt_gc_interval != b->nt_gc_interval);
-
-#undef NT_DIFF
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(NEIGHTBL_ATTR_FAMILY, a->nt_family != b->nt_family);
+	diff |= _DIFF(NEIGHTBL_ATTR_NAME, strcmp(a->nt_name, b->nt_name));
+	diff |= _DIFF(NEIGHTBL_ATTR_THRESH1,
+		      a->nt_gc_thresh1 != b->nt_gc_thresh1);
+	diff |= _DIFF(NEIGHTBL_ATTR_THRESH2,
+		      a->nt_gc_thresh2 != b->nt_gc_thresh2);
+	diff |= _DIFF(NEIGHTBL_ATTR_THRESH3,
+		      a->nt_gc_thresh3 != b->nt_gc_thresh3);
+	diff |= _DIFF(NEIGHTBL_ATTR_GC_INTERVAL,
+		      a->nt_gc_interval != b->nt_gc_interval);
+#undef _DIFF
 
 	if (!(a->ce_mask & NEIGHTBL_ATTR_PARMS) &&
 	    !(b->ce_mask & NEIGHTBL_ATTR_PARMS))
 		return diff;
 
 	/* XXX: FIXME: Compare parameter table */
-
 
 #if 0
 #define REQ(F) (fp->ntp_mask & NEIGHTBLPARM_ATTR_##F)
@@ -105,17 +217,15 @@ static int neightbl_compare(struct nl_object *_a, struct nl_object *_b,
 	return diff;
 }
 
-
-static struct nla_policy neightbl_policy[NDTA_MAX+1] = {
-	[NDTA_NAME]		= { .type = NLA_STRING,
-				    .maxlen = NTBLNAMSIZ },
-	[NDTA_THRESH1]		= { .type = NLA_U32 },
-	[NDTA_THRESH2]		= { .type = NLA_U32 },
-	[NDTA_THRESH3]		= { .type = NLA_U32 },
-	[NDTA_GC_INTERVAL]	= { .type = NLA_U32 },
-	[NDTA_CONFIG]		= { .minlen = sizeof(struct ndt_config) },
-	[NDTA_STATS]		= { .minlen = sizeof(struct ndt_stats) },
-	[NDTA_PARMS]		= { .type = NLA_NESTED },
+static struct nla_policy neightbl_policy[NDTA_MAX + 1] = {
+	[NDTA_NAME] = { .type = NLA_STRING, .maxlen = NTBLNAMSIZ },
+	[NDTA_THRESH1] = { .type = NLA_U32 },
+	[NDTA_THRESH2] = { .type = NLA_U32 },
+	[NDTA_THRESH3] = { .type = NLA_U32 },
+	[NDTA_GC_INTERVAL] = { .type = NLA_U32 },
+	[NDTA_CONFIG] = { .minlen = sizeof(struct ndt_config) },
+	[NDTA_STATS] = { .minlen = sizeof(struct ndt_stats) },
+	[NDTA_PARMS] = { .type = NLA_NESTED },
 };
 
 static int neightbl_msg_parser(struct nl_cache_ops *ops,
@@ -135,7 +245,7 @@ static int neightbl_msg_parser(struct nl_cache_ops *ops,
 
 	ntbl->ce_msgtype = n->nlmsg_type;
 	rtmsg = nlmsg_data(n);
-	
+
 	err = nlmsg_parse(n, sizeof(*rtmsg), tb, NDTA_MAX, neightbl_policy);
 	if (err < 0)
 		goto errout;
@@ -143,7 +253,7 @@ static int neightbl_msg_parser(struct nl_cache_ops *ops,
 	ntbl->nt_family = rtmsg->rtgen_family;
 
 	if (tb[NDTA_NAME] == NULL) {
-		return -NLE_MISSING_ATTR;
+		err = -NLE_MISSING_ATTR;
 		goto errout;
 	}
 
@@ -190,11 +300,11 @@ static int neightbl_msg_parser(struct nl_cache_ops *ops,
 		if (err < 0)
 			goto errout;
 
-#define COPY_ENTRY(name, var) \
-		if (tbp[NDTPA_ ##name]) { \
-			p->ntp_ ##var = nla_get_u32(tbp[NDTPA_ ##name]); \
-			p->ntp_mask |= NEIGHTBLPARM_ATTR_ ##name; \
-		}
+#define COPY_ENTRY(name, var)                                  \
+	if (tbp[NDTPA_##name]) {                               \
+		p->ntp_##var = nla_get_u32(tbp[NDTPA_##name]); \
+		p->ntp_mask |= NEIGHTBLPARM_ATTR_##name;       \
+	}
 
 		COPY_ENTRY(IFINDEX, ifindex);
 		COPY_ENTRY(REFCNT, refcnt);
@@ -216,7 +326,7 @@ static int neightbl_msg_parser(struct nl_cache_ops *ops,
 		ntbl->ce_mask |= NEIGHTBL_ATTR_PARMS;
 	}
 
-	err = pp->pp_cb((struct nl_object *) ntbl, pp);
+	err = pp->pp_cb((struct nl_object *)ntbl, pp);
 errout:
 	rtnl_neightbl_put(ntbl);
 	return err;
@@ -227,17 +337,16 @@ static int neightbl_request_update(struct nl_cache *c, struct nl_sock *h)
 	return nl_rtgen_request(h, RTM_GETNEIGHTBL, AF_UNSPEC, NLM_F_DUMP);
 }
 
-
 static void neightbl_dump_line(struct nl_object *arg, struct nl_dump_params *p)
 {
-	struct rtnl_neightbl *ntbl = (struct rtnl_neightbl *) arg;
+	struct rtnl_neightbl *ntbl = (struct rtnl_neightbl *)arg;
 
 	nl_dump_line(p, "%s", ntbl->nt_name);
 
 	if (ntbl->nt_parms.ntp_mask & NEIGHTBLPARM_ATTR_IFINDEX) {
 		struct nl_cache *link_cache;
-		
-		link_cache = nl_cache_mngt_require("route/link");
+
+		link_cache = nl_cache_mngt_require_safe("route/link");
 
 		if (link_cache) {
 			char buf[32];
@@ -245,6 +354,7 @@ static void neightbl_dump_line(struct nl_object *arg, struct nl_dump_params *p)
 				rtnl_link_i2name(link_cache,
 						 ntbl->nt_parms.ntp_ifindex,
 						 buf, sizeof(buf)));
+			nl_cache_put(link_cache);
 		} else
 			nl_dump(p, "<%u> ", ntbl->nt_parms.ntp_ifindex);
 	} else
@@ -265,90 +375,102 @@ static void neightbl_dump_line(struct nl_object *arg, struct nl_dump_params *p)
 	nl_dump(p, "\n");
 }
 
-static void neightbl_dump_details(struct nl_object *arg, struct nl_dump_params *p)
+static void neightbl_dump_details(struct nl_object *arg,
+				  struct nl_dump_params *p)
 {
 	char x[32], y[32], z[32];
-	struct rtnl_neightbl *ntbl = (struct rtnl_neightbl *) arg;
+	struct rtnl_neightbl *ntbl = (struct rtnl_neightbl *)arg;
 
 	neightbl_dump_line(arg, p);
 
 	if (ntbl->ce_mask & NEIGHTBL_ATTR_CONFIG) {
 		nl_dump_line(p, "    key-len %u entry-size %u last-flush %s\n",
-			ntbl->nt_config.ndtc_key_len,
-			ntbl->nt_config.ndtc_entry_size,
-			nl_msec2str(ntbl->nt_config.ndtc_last_flush,
-				      x, sizeof(x)));
+			     ntbl->nt_config.ndtc_key_len,
+			     ntbl->nt_config.ndtc_entry_size,
+			     nl_msec2str(ntbl->nt_config.ndtc_last_flush, x,
+					 sizeof(x)));
 
-		nl_dump_line(p, "    gc threshold %u/%u/%u interval %s " \
-			    "chain-position %u\n",
-			ntbl->nt_gc_thresh1, ntbl->nt_gc_thresh2,
-			ntbl->nt_gc_thresh3,
-			nl_msec2str(ntbl->nt_gc_interval, x, sizeof(x)),
-			ntbl->nt_config.ndtc_hash_chain_gc);
+		nl_dump_line(p,
+			     "    gc threshold %u/%u/%u interval %s "
+			     "chain-position %u\n",
+			     ntbl->nt_gc_thresh1, ntbl->nt_gc_thresh2,
+			     ntbl->nt_gc_thresh3,
+			     nl_msec2str(ntbl->nt_gc_interval, x, sizeof(x)),
+			     ntbl->nt_config.ndtc_hash_chain_gc);
 
 		nl_dump_line(p, "    hash-rand 0x%08X/0x%08X last-rand %s\n",
-			ntbl->nt_config.ndtc_hash_rnd,
-			ntbl->nt_config.ndtc_hash_mask,
-			nl_msec2str(ntbl->nt_config.ndtc_last_rand,
-				      x, sizeof(x)));
+			     ntbl->nt_config.ndtc_hash_rnd,
+			     ntbl->nt_config.ndtc_hash_mask,
+			     nl_msec2str(ntbl->nt_config.ndtc_last_rand, x,
+					 sizeof(x)));
 	}
 
 	if (ntbl->ce_mask & NEIGHTBL_ATTR_PARMS) {
 		struct rtnl_neightbl_parms *pa = &ntbl->nt_parms;
 
-		nl_dump_line(p, "    refcnt %u pending-queue-limit %u " \
-			    "proxy-delayed-queue-limit %u\n",
-			pa->ntp_refcnt,
-			pa->ntp_queue_len,
-			pa->ntp_proxy_qlen);
+		nl_dump_line(p,
+			     "    refcnt %u pending-queue-limit %u "
+			     "proxy-delayed-queue-limit %u\n",
+			     pa->ntp_refcnt, pa->ntp_queue_len,
+			     pa->ntp_proxy_qlen);
 
-		nl_dump_line(p, "    num-userspace-probes %u num-unicast-probes " \
-			    "%u num-multicast-probes %u\n",
-			pa->ntp_app_probes,
-			pa->ntp_ucast_probes,
-			pa->ntp_mcast_probes);
+		nl_dump_line(p,
+			     "    num-userspace-probes %u num-unicast-probes "
+			     "%u num-multicast-probes %u\n",
+			     pa->ntp_app_probes, pa->ntp_ucast_probes,
+			     pa->ntp_mcast_probes);
 
-		nl_dump_line(p, "    min-age %s base-reachable-time %s " \
-			    "stale-check-interval %s\n",
-			nl_msec2str(pa->ntp_locktime, x, sizeof(x)),
-			nl_msec2str(pa->ntp_base_reachable_time,
-				      y, sizeof(y)),
-			nl_msec2str(pa->ntp_gc_stale_time, z, sizeof(z)));
+		nl_dump_line(p,
+			     "    min-age %s base-reachable-time %s "
+			     "stale-check-interval %s\n",
+			     nl_msec2str(pa->ntp_locktime, x, sizeof(x)),
+			     nl_msec2str(pa->ntp_base_reachable_time, y,
+					 sizeof(y)),
+			     nl_msec2str(pa->ntp_gc_stale_time, z, sizeof(z)));
 
-		nl_dump_line(p, "    initial-probe-delay %s answer-delay %s " \
-			    "proxy-answer-delay %s\n",
-			nl_msec2str(pa->ntp_probe_delay, x, sizeof(x)),
-			nl_msec2str(pa->ntp_anycast_delay, y, sizeof(y)),
-			nl_msec2str(pa->ntp_proxy_delay, z, sizeof(z)));
+		nl_dump_line(p,
+			     "    initial-probe-delay %s answer-delay %s "
+			     "proxy-answer-delay %s\n",
+			     nl_msec2str(pa->ntp_probe_delay, x, sizeof(x)),
+			     nl_msec2str(pa->ntp_anycast_delay, y, sizeof(y)),
+			     nl_msec2str(pa->ntp_proxy_delay, z, sizeof(z)));
 	}
 }
 
 static void neightbl_dump_stats(struct nl_object *arg, struct nl_dump_params *p)
 {
-	struct rtnl_neightbl *ntbl = (struct rtnl_neightbl *) arg;
+	struct rtnl_neightbl *ntbl = (struct rtnl_neightbl *)arg;
 
 	neightbl_dump_details(arg, p);
 
 	if (!(ntbl->ce_mask & NEIGHTBL_ATTR_STATS))
 		return;
 
-	nl_dump_line(p, "    lookups %lld hits %lld failed %lld " \
-		    "allocations %lld destroys %lld\n",
-		ntbl->nt_stats.ndts_lookups,
-		ntbl->nt_stats.ndts_hits,
-		ntbl->nt_stats.ndts_res_failed,
-		ntbl->nt_stats.ndts_allocs,
-		ntbl->nt_stats.ndts_destroys);
+	nl_dump_line(p,
+		     "   "
+		     " lookups %llu hits %llu failed %llu"
+		     " allocations %llu destroys %llu\n",
+		     (long long unsigned)ntbl->nt_stats.ndts_lookups,
+		     (long long unsigned)ntbl->nt_stats.ndts_hits,
+		     (long long unsigned)ntbl->nt_stats.ndts_res_failed,
+		     (long long unsigned)ntbl->nt_stats.ndts_allocs,
+		     (long long unsigned)ntbl->nt_stats.ndts_destroys);
 
-	nl_dump_line(p, "    hash-grows %lld forced-gc-runs %lld " \
-		    "periodic-gc-runs %lld\n",
-		ntbl->nt_stats.ndts_hash_grows,
-		ntbl->nt_stats.ndts_forced_gc_runs,
-		ntbl->nt_stats.ndts_periodic_gc_runs);
+	nl_dump_line(p,
+		     "   "
+		     " hash-grows %llu forced-gc-runs %llu"
+		     " periodic-gc-runs %llu\n",
+		     (long long unsigned)ntbl->nt_stats.ndts_hash_grows,
+		     (long long unsigned)ntbl->nt_stats.ndts_forced_gc_runs,
+		     (long long unsigned)ntbl->nt_stats.ndts_periodic_gc_runs);
 
-	nl_dump_line(p, "    rcv-unicast-probes %lld rcv-multicast-probes %lld\n",
-		ntbl->nt_stats.ndts_rcv_probes_ucast,
-		ntbl->nt_stats.ndts_rcv_probes_mcast);
+	nl_dump_line(p,
+		     "   "
+		     " rcv-unicast-probes %llu"
+		     " rcv-multicast-probes %llu"
+		     "\n",
+		     (long long unsigned)ntbl->nt_stats.ndts_rcv_probes_ucast,
+		     (long long unsigned)ntbl->nt_stats.ndts_rcv_probes_mcast);
 }
 
 /**
@@ -358,12 +480,12 @@ static void neightbl_dump_stats(struct nl_object *arg, struct nl_dump_params *p)
 
 struct rtnl_neightbl *rtnl_neightbl_alloc(void)
 {
-	return (struct rtnl_neightbl *) nl_object_alloc(&neightbl_obj_ops);
+	return (struct rtnl_neightbl *)nl_object_alloc(&neightbl_obj_ops);
 }
 
 void rtnl_neightbl_put(struct rtnl_neightbl *neightbl)
 {
-	nl_object_put((struct nl_object *) neightbl);
+	nl_object_put((struct nl_object *)neightbl);
 }
 
 /** @} */
@@ -412,9 +534,8 @@ struct rtnl_neightbl *rtnl_neightbl_get(struct nl_cache *cache,
 
 	nl_list_for_each_entry(nt, &cache->c_items, ce_list) {
 		if (!strcasecmp(nt->nt_name, name) &&
-		    ((!ifindex && !nt->nt_parms.ntp_ifindex) ||
-		     (ifindex && ifindex == nt->nt_parms.ntp_ifindex))) {
-			nl_object_get((struct nl_object *) nt);
+		    ((unsigned)ifindex) == nt->nt_parms.ntp_ifindex) {
+			nl_object_get((struct nl_object *)nt);
 			return nt;
 		}
 	}
@@ -473,8 +594,7 @@ int rtnl_neightbl_build_change_request(struct rtnl_neightbl *old,
 		NLA_PUT_U32(m, NDTA_THRESH2, tmpl->nt_gc_thresh2);
 
 	if (tmpl->ce_mask & NEIGHTBL_ATTR_GC_INTERVAL)
-		NLA_PUT_U64(m, NDTA_GC_INTERVAL,
-				      tmpl->nt_gc_interval);
+		NLA_PUT_U64(m, NDTA_GC_INTERVAL, tmpl->nt_gc_interval);
 
 	if (tmpl->ce_mask & NEIGHTBL_ATTR_PARMS) {
 		struct rtnl_neightbl_parms *p = &tmpl->nt_parms;
@@ -485,8 +605,7 @@ int rtnl_neightbl_build_change_request(struct rtnl_neightbl *old,
 
 		if (old->nt_parms.ntp_mask & NEIGHTBLPARM_ATTR_IFINDEX)
 			NLA_PUT_U32(parms, NDTPA_IFINDEX,
-					      old->nt_parms.ntp_ifindex);
-
+				    old->nt_parms.ntp_ifindex);
 
 		if (p->ntp_mask & NEIGHTBLPARM_ATTR_QUEUE_LEN)
 			NLA_PUT_U32(parms, NDTPA_QUEUE_LEN, p->ntp_queue_len);
@@ -503,8 +622,7 @@ int rtnl_neightbl_build_change_request(struct rtnl_neightbl *old,
 				    p->ntp_mcast_probes);
 
 		if (p->ntp_mask & NEIGHTBLPARM_ATTR_PROXY_QLEN)
-			NLA_PUT_U32(parms, NDTPA_PROXY_QLEN,
-				    p->ntp_proxy_qlen);
+			NLA_PUT_U32(parms, NDTPA_PROXY_QLEN, p->ntp_proxy_qlen);
 
 		if (p->ntp_mask & NEIGHTBLPARM_ATTR_BASE_REACHABLE_TIME)
 			NLA_PUT_U64(parms, NDTPA_BASE_REACHABLE_TIME,
@@ -528,7 +646,7 @@ int rtnl_neightbl_build_change_request(struct rtnl_neightbl *old,
 
 		if (p->ntp_mask & NEIGHTBLPARM_ATTR_PROXY_DELAY)
 			NLA_PUT_U64(parms, NDTPA_PROXY_DELAY,
-					      p->ntp_proxy_delay);
+				    p->ntp_proxy_delay);
 
 		if (p->ntp_mask & NEIGHTBLPARM_ATTR_LOCKTIME)
 			NLA_PUT_U64(parms, NDTPA_LOCKTIME, p->ntp_locktime);
@@ -567,7 +685,7 @@ int rtnl_neightbl_change(struct nl_sock *sk, struct rtnl_neightbl *old,
 {
 	struct nl_msg *msg;
 	int err;
-	
+
 	if ((err = rtnl_neightbl_build_change_request(old, tmpl, &msg)) < 0)
 		return err;
 
@@ -618,7 +736,7 @@ void rtnl_neightbl_set_gc_tresh3(struct rtnl_neightbl *ntbl, int thresh)
 
 void rtnl_neightbl_set_name(struct rtnl_neightbl *ntbl, const char *name)
 {
-	strncpy(ntbl->nt_name, name, sizeof(ntbl->nt_name) - 1);
+	_nl_strncpy_trunc(ntbl->nt_name, name, sizeof(ntbl->nt_name));
 	ntbl->ce_mask |= NEIGHTBL_ATTR_NAME;
 }
 
@@ -802,12 +920,12 @@ static struct nl_cache_ops rtnl_neightbl_ops = {
 	.co_obj_ops		= &neightbl_obj_ops,
 };
 
-static void __init neightbl_init(void)
+static void _nl_init neightbl_init(void)
 {
 	nl_cache_mngt_register(&rtnl_neightbl_ops);
 }
 
-static void __exit neightbl_exit(void)
+static void _nl_exit neightbl_exit(void)
 {
 	nl_cache_mngt_unregister(&rtnl_neightbl_ops);
 }

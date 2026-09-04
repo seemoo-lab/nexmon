@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/netfilter/log.c	Netfilter Log
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2007 Philip Craig <philipc@snapgear.com>
  * Copyright (c) 2007 Secure Computing Corporation
@@ -18,13 +12,18 @@
  * @{
  */
 
+#include "nl-default.h"
+
 #include <sys/types.h>
+
 #include <linux/netfilter/nfnetlink_log.h>
 
-#include <netlink-local.h>
 #include <netlink/attr.h>
 #include <netlink/netfilter/nfnl.h>
 #include <netlink/netfilter/log.h>
+
+#include "nl-priv-dynamic-core/nl-core.h"
+#include "nl-priv-dynamic-core/cache-api.h"
 
 /**
  * @name Log Commands
@@ -150,6 +149,11 @@ static int nfnl_log_build_request(const struct nfnl_log *log,
 			htonl(nfnl_log_get_queue_threshold(log))) < 0)
 		goto nla_put_failure;
 
+	if (nfnl_log_get_flags(log) &&
+	    nla_put_u16(msg, NFULA_CFG_FLAGS,
+			htons(nfnl_log_get_flags(log))) < 0)
+		goto nla_put_failure;
+
 	*result = msg;
 	return 0;
 
@@ -238,12 +242,12 @@ static struct nl_cache_ops nfnl_log_ops = {
 	},
 };
 
-static void __init log_init(void)
+static void _nl_init log_init(void)
 {
 	nl_cache_mngt_register(&nfnl_log_ops);
 }
 
-static void __exit log_exit(void)
+static void _nl_exit log_exit(void)
 {
 	nl_cache_mngt_unregister(&nfnl_log_ops);
 }

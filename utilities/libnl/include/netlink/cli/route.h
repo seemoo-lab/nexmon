@@ -1,11 +1,5 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/cli//route.h     CLI Route Helpers
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
  * Copyright (c) 2008-2009 Thomas Graf <tgraf@suug.ch>
  */
 
@@ -13,6 +7,10 @@
 #define __NETLINK_CLI_ROUTE_H_
 
 #include <netlink/route/route.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern struct rtnl_route *nl_cli_route_alloc(void);
 
@@ -30,5 +28,9 @@ extern void	nl_cli_route_parse_scope(struct rtnl_route *, char *);
 extern void	nl_cli_route_parse_protocol(struct rtnl_route *, char *);
 extern void	nl_cli_route_parse_type(struct rtnl_route *, char *);
 extern void	nl_cli_route_parse_iif(struct rtnl_route *, char *, struct nl_cache *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

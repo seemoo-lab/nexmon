@@ -1,29 +1,37 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/genl/family.c		Generic Netlink Family
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
- * Copyright (c) 2003-2006 Thomas Graf <tgraf@suug.ch>
+ * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
 /**
- * @ingroup genl
- * @defgroup genl_family Generic Netlink Family
- * @brief
+ * @ingroup genl_ctrl
+ * @defgroup genl_family Generic Netlink Family Object
+ *
+ * Object representing a kernel side registered Generic Netlink family
  *
  * @{
  */
 
-#include <netlink-generic.h>
+#include "nl-default.h"
+
 #include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/family.h>
 #include <netlink/utils.h>
 
+#include "nl-genl.h"
+#include "nl-priv-dynamic-core/object-api.h"
+#include "nl-priv-dynamic-core/nl-core.h"
+
 /** @cond SKIP */
+struct genl_family_op
+{
+	uint32_t		o_id;
+	uint32_t		o_flags;
+
+	struct nl_list_head	o_list;
+};
+
 #define FAMILY_ATTR_ID		0x01
 #define FAMILY_ATTR_NAME	0x02
 #define FAMILY_ATTR_VERSION	0x04
@@ -32,19 +40,20 @@
 #define FAMILY_ATTR_OPS		0x20
 
 struct nl_object_ops genl_family_ops;
-/** @endcond */
 
 static void family_constructor(struct nl_object *c)
 {
 	struct genl_family *family = (struct genl_family *) c;
 
 	nl_init_list_head(&family->gf_ops);
+	nl_init_list_head(&family->gf_mc_grps);
 }
 
 static void family_free_data(struct nl_object *c)
 {
 	struct genl_family *family = (struct genl_family *) c;
 	struct genl_family_op *ops, *tmp;
+	struct genl_family_grp *grp, *t_grp;
 
 	if (family == NULL)
 		return;
@@ -53,6 +62,12 @@ static void family_free_data(struct nl_object *c)
 		nl_list_del(&ops->o_list);
 		free(ops);
 	}
+
+	nl_list_for_each_entry_safe(grp, t_grp, &family->gf_mc_grps, list) {
+		nl_list_del(&grp->list);
+		free(grp);
+	}
+
 }
 
 static int family_clone(struct nl_object *_dst, struct nl_object *_src)
@@ -60,13 +75,24 @@ static int family_clone(struct nl_object *_dst, struct nl_object *_src)
 	struct genl_family *dst = nl_object_priv(_dst);
 	struct genl_family *src = nl_object_priv(_src);
 	struct genl_family_op *ops;
+	struct genl_family_grp *grp;
 	int err;
+
+	nl_init_list_head(&dst->gf_ops);
+	nl_init_list_head(&dst->gf_mc_grps);
 
 	nl_list_for_each_entry(ops, &src->gf_ops, o_list) {
 		err = genl_family_add_op(dst, ops->o_id, ops->o_flags);
 		if (err < 0)
 			return err;
 	}
+
+	nl_list_for_each_entry(grp, &src->gf_mc_grps, list) {
+		err = genl_family_add_grp(dst, grp->id, grp->name);
+		if (err < 0)
+			return err;
+	}
+
 	
 	return 0;
 }
@@ -79,11 +105,11 @@ static void family_dump_line(struct nl_object *obj, struct nl_dump_params *p)
 		family->gf_id, family->gf_name, family->gf_version);
 }
 
-static struct trans_tbl ops_flags[] = {
-	__ADD(GENL_ADMIN_PERM, admin-perm)
-	__ADD(GENL_CMD_CAP_DO, has-doit)
-	__ADD(GENL_CMD_CAP_DUMP, has-dump)
-	__ADD(GENL_CMD_CAP_HASPOL, has-policy)
+static const struct trans_tbl ops_flags[] = {
+	__ADD(GENL_ADMIN_PERM, admin_perm),
+	__ADD(GENL_CMD_CAP_DO, has_doit),
+	__ADD(GENL_CMD_CAP_DUMP, has_dump),
+	__ADD(GENL_CMD_CAP_HASPOL, has_policy),
 };
 
 static char *ops_flags2str(int flags, char *buf, size_t len)
@@ -93,6 +119,7 @@ static char *ops_flags2str(int flags, char *buf, size_t len)
 
 static void family_dump_details(struct nl_object *obj, struct nl_dump_params *p)
 {
+	struct genl_family_grp *grp;
 	struct genl_family *family = (struct genl_family *) obj;
 
 	family_dump_line(obj, p);
@@ -118,6 +145,11 @@ static void family_dump_details(struct nl_object *obj, struct nl_dump_params *p)
 			nl_dump(p, "\n");
 		}
 	}
+
+	nl_list_for_each_entry(grp, &family->gf_mc_grps, list) {
+		nl_dump_line(p, "      grp %s (0x%02x)\n", grp->name, grp->id);
+	}
+
 }
 
 static void family_dump_stats(struct nl_object *obj, struct nl_dump_params *p)
@@ -125,37 +157,49 @@ static void family_dump_stats(struct nl_object *obj, struct nl_dump_params *p)
 	family_dump_details(obj, p);
 }
 
-static int family_compare(struct nl_object *_a, struct nl_object *_b,
-			  uint32_t attrs, int flags)
+static uint64_t family_compare(struct nl_object *_a, struct nl_object *_b,
+			  uint64_t attrs, int flags)
 {
 	struct genl_family *a = (struct genl_family *) _a;
 	struct genl_family *b = (struct genl_family *) _b;
-	int diff = 0;
+	uint64_t diff = 0;
 
-#define FAM_DIFF(ATTR, EXPR) ATTR_DIFF(attrs, FAMILY_ATTR_##ATTR, a, b, EXPR)
-
-	diff |= FAM_DIFF(ID,		a->gf_id != b->gf_id);
-	diff |= FAM_DIFF(VERSION,	a->gf_version != b->gf_version);
-	diff |= FAM_DIFF(HDRSIZE,	a->gf_hdrsize != b->gf_hdrsize);
-	diff |= FAM_DIFF(MAXATTR,	a->gf_maxattr != b->gf_maxattr);
-	diff |= FAM_DIFF(NAME,		strcmp(a->gf_name, b->gf_name));
-
-#undef FAM_DIFF
+#define _DIFF(ATTR, EXPR) ATTR_DIFF(attrs, ATTR, a, b, EXPR)
+	diff |= _DIFF(FAMILY_ATTR_ID, a->gf_id != b->gf_id);
+	diff |= _DIFF(FAMILY_ATTR_VERSION, a->gf_version != b->gf_version);
+	diff |= _DIFF(FAMILY_ATTR_HDRSIZE, a->gf_hdrsize != b->gf_hdrsize);
+	diff |= _DIFF(FAMILY_ATTR_MAXATTR, a->gf_maxattr != b->gf_maxattr);
+	diff |= _DIFF(FAMILY_ATTR_NAME, strcmp(a->gf_name, b->gf_name));
+#undef _DIFF
 
 	return diff;
 }
-
+/** @endcond */
 
 /**
- * @name Family Object
+ * @name Object Allocation
  * @{
  */
 
+/**
+ * Allocate new Generic Netlink family object
+ * 
+ * @return Newly allocated Generic Netlink family object or NULL.
+ */
 struct genl_family *genl_family_alloc(void)
 {
 	return (struct genl_family *) nl_object_alloc(&genl_family_ops);
 }
 
+/**
+ * Release reference on Generic Netlink family object
+ * @arg family		Generic Netlink family object
+ *
+ * Reduces the reference counter of a Generic Netlink family object by one.
+ * The object is freed after the last user has returned its reference.
+ *
+ * @see nl_object_put()
+ */
 void genl_family_put(struct genl_family *family)
 {
 	nl_object_put((struct nl_object *) family);
@@ -164,24 +208,48 @@ void genl_family_put(struct genl_family *family)
 /** @} */
 
 /**
- * @name Attributes
+ * @name Numeric Identifier
  * @{
  */
 
+/**
+ * Return numeric identifier
+ * @arg family		Generic Netlink family object
+ *
+ * @return Numeric identifier or 0 if not available.
+ */
 unsigned int genl_family_get_id(struct genl_family *family)
 {
 	if (family->ce_mask & FAMILY_ATTR_ID)
 		return family->gf_id;
 	else
-		return GENL_ID_GENERATE;
+		return 0;
 }
 
+/**
+ * Set the numeric identifier
+ * @arg family		Generic Netlink family object
+ * @arg id		New numeric identifier
+ */
 void genl_family_set_id(struct genl_family *family, unsigned int id)
 {
 	family->gf_id = id;
 	family->ce_mask |= FAMILY_ATTR_ID;
 }
 
+/** @} */
+
+/**
+ * @name Human Readable Name
+ * @{
+ */
+
+/**
+ * Return human readable name
+ * @arg family		Generic Netlink family object
+ *
+ * @return Name of family or NULL if not available
+ */
 char *genl_family_get_name(struct genl_family *family)
 {
 	if (family->ce_mask & FAMILY_ATTR_NAME)
@@ -190,12 +258,28 @@ char *genl_family_get_name(struct genl_family *family)
 		return NULL;
 }
 
+/**
+ * Set human readable name
+ * @arg family		Generic Netlink family object
+ * @arg name		New human readable name
+ */
 void genl_family_set_name(struct genl_family *family, const char *name)
 {
-	strncpy(family->gf_name, name, GENL_NAMSIZ-1);
+	_nl_strncpy_trunc(family->gf_name, name, GENL_NAMSIZ);
 	family->ce_mask |= FAMILY_ATTR_NAME;
 }
 
+/**
+ * @name Interface Version
+ * @{
+ */
+
+/**
+ * Return interface version
+ * @arg family		Generic Netlink family object
+ *
+ * @return Interface version or 0 if not available.
+ */
 uint8_t genl_family_get_version(struct genl_family *family)
 {
 	if (family->ce_mask & FAMILY_ATTR_VERSION)
@@ -204,12 +288,30 @@ uint8_t genl_family_get_version(struct genl_family *family)
 		return 0;
 }
 
+/**
+ * Set interface version
+ * @arg family		Generic Netlink family object
+ * @arg version		New interface version
+ */
 void genl_family_set_version(struct genl_family *family, uint8_t version)
 {
 	family->gf_version = version;
 	family->ce_mask |= FAMILY_ATTR_VERSION;
 }
 
+/** @} */
+
+/**
+ * @name Header Size
+ * @{
+ */
+
+/**
+ * Return user header size expected by kernel component
+ * @arg family		Generic Netlink family object
+ *
+ * @return Expected header length or 0 if not available.
+ */
 uint32_t genl_family_get_hdrsize(struct genl_family *family)
 {
 	if (family->ce_mask & FAMILY_ATTR_HDRSIZE)
@@ -224,12 +326,19 @@ void genl_family_set_hdrsize(struct genl_family *family, uint32_t hdrsize)
 	family->ce_mask |= FAMILY_ATTR_HDRSIZE;
 }
 
+/** @} */
+
+/**
+ * @name Maximum Expected Attribute
+ * @{
+ */
+
 uint32_t genl_family_get_maxattr(struct genl_family *family)
 {
 	if (family->ce_mask & FAMILY_ATTR_MAXATTR)
 		return family->gf_maxattr;
 	else
-		return family->gf_maxattr;
+		return 0;
 }
 
 void genl_family_set_maxattr(struct genl_family *family, uint32_t maxattr)
@@ -237,6 +346,13 @@ void genl_family_set_maxattr(struct genl_family *family, uint32_t maxattr)
 	family->gf_maxattr = maxattr;
 	family->ce_mask |= FAMILY_ATTR_MAXATTR;
 }
+
+/** @} */
+
+/**
+ * @name Operations
+ * @{
+ */
 
 int genl_family_add_op(struct genl_family *family, int id, int flags)
 {
@@ -251,6 +367,27 @@ int genl_family_add_op(struct genl_family *family, int id, int flags)
 
 	nl_list_add_tail(&op->o_list, &family->gf_ops);
 	family->ce_mask |= FAMILY_ATTR_OPS;
+
+	return 0;
+}
+
+int genl_family_add_grp(struct genl_family *family, uint32_t id,
+                        const char *name)
+{
+	struct genl_family_grp *grp;
+
+	if (   !name
+	    || strlen (name) >= GENL_NAMSIZ)
+		return -NLE_INVAL;
+
+	grp = calloc(1, sizeof(*grp));
+	if (grp == NULL)
+		return -NLE_NOMEM;
+
+	grp->id = id;
+	_nl_strncpy_assert(grp->name, name, GENL_NAMSIZ);
+
+	nl_list_add_tail(&grp->list, &family->gf_mc_grps);
 
 	return 0;
 }
