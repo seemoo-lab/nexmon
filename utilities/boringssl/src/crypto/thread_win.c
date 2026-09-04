@@ -12,9 +12,9 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE. */
 
-#include "internal.h"
-
 #if defined(OPENSSL_WINDOWS) && !defined(OPENSSL_NO_THREADS)
+
+#include "internal.h"
 
 #pragma warning(push, 3)
 #include <windows.h>
