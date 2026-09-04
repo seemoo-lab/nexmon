@@ -16,6 +16,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <errno.h>
+#include <signal.h>
 
 #define AS_STR2(TEXT) #TEXT
 #define AS_STR(TEXT) AS_STR2(TEXT)
@@ -94,7 +96,7 @@ analyse_pcap_file(char *filename)
 	int offset = 0, sock;
 	struct iovec iov[2];
 
-	struct msghdr msg_hdr;
+	struct msghdr msg_hdr = { 0 };
 
 	struct sockaddr_in sin = {
 		.sin_family = AF_INET,
@@ -106,7 +108,7 @@ analyse_pcap_file(char *filename)
 
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-	if(!sock) {
+	if(sock < 0) {
 		printf("ERR: socket\n");
 		return;
 	}
@@ -127,32 +129,43 @@ analyse_pcap_file(char *filename)
 
 
 	int i = 0;
-	int p_len;
+	unsigned int p_len;
 	while ((packet = pcap_next(pcap, &header)) != NULL) {
-		
+
+		p_len = header.caplen;
+
 		if(discard_radiotap) {
-			int rtap_len = ((packet[3] & 0xff) << 8) | (packet[2] & 0xff);
+			int rtap_len;
+			/* need at least the 4-byte radiotap header (version, pad, len) */
+			if (header.caplen < 4)
+				continue;
+			rtap_len = ((packet[3] & 0xff) << 8) | (packet[2] & 0xff);
+			/* a firmware/attacker-controlled length must stay within the
+			 * captured bytes, otherwise packet would point past the buffer */
+			if (rtap_len < 0 || (unsigned int) rtap_len > header.caplen)
+				continue;
 			packet = packet + rtap_len;
+			p_len = header.caplen - rtap_len;
 		}
 
 
 		if(discard_pcap) {
 			iov[0].iov_base = (caddr_t) packet;
-			iov[0].iov_len = header.caplen;
+			iov[0].iov_len = p_len;
 			msg_hdr.msg_iovlen = 1;
 		} else {
 			iov[0].iov_base = (caddr_t) &header;
 			iov[0].iov_len = sizeof(struct pcap_pkthdr);
 			iov[1].iov_base = (caddr_t) packet;
-			iov[1].iov_len = header.caplen;
+			iov[1].iov_len = p_len;
 			msg_hdr.msg_iovlen = 2;
 		}
-		
+
 		msg_hdr.msg_name = (caddr_t) &sin;
 		msg_hdr.msg_namelen = sizeof(sin);
 		msg_hdr.msg_iov = iov;
 
-		if(!sendmsg(sock, &msg_hdr, 0))
+		if(sendmsg(sock, &msg_hdr, 0) < 0)
 			printf("ERR: %d\n", errno);
 	}
 }
