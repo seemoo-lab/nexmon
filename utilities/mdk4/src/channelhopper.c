@@ -45,7 +45,7 @@ int chans_in [MAX_CHAN_COUNT] = {0};
 int chans_out [MAX_CHAN_COUNT] = {0};
 
 pthread_t *hopper = NULL;
-pthread_t chan_sniffer = (int)NULL;
+pthread_t chan_sniffer = 0;
 int hopper_useconds = 0;
 volatile int sniff = 0;
 pthread_mutex_t chan_thread_mutex;
@@ -235,20 +235,6 @@ int ieee80211_frequency_to_channel(int freq)
 		return (freq - 56160) / 2160;
 	else
 		return 0;
-}
-
-static char *dfs_state_name(enum nl80211_dfs_state state)
-{
-	switch (state) {
-	case NL80211_DFS_USABLE:
-		return "usable";
-	case NL80211_DFS_AVAILABLE:
-		return "available";
-	case NL80211_DFS_UNAVAILABLE:
-		return "unavailable";
-	default:
-		return "unknown";
-	}
 }
 
 static int print_channels_handler(struct nl_msg *msg, void *arg)

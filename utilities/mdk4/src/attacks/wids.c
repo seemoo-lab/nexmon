@@ -311,7 +311,7 @@ void wids_print_stats(void *options) {
 
 void wids_perform_check(void *options) {
   //Nothing to check
-  options = options; //Avoid unused warning
+  (void) options;
 }
 
 struct attacks load_wids() {

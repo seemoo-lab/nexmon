@@ -235,14 +235,14 @@ struct packet fuzz_getpacket(void *options) {
 }
 
 void fuzz_print_stats(void *options) {
-  options = options;
+  (void) options;
 
   printf("\rSelected packet source: %10s  Used modifiers: %s\n", source, modifier);
 }
 
 void fuzz_perform_check(void *options) {
   //Nothing to check
-  options = options; //Avoid unused warning
+  (void) options;
 }
 
 struct attacks load_fuzz() {

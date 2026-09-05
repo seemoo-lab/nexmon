@@ -275,7 +275,7 @@ void beacon_flood_print_stats(void *options) {
 
 void beacon_flood_perform_check(void *options) {
   //Nothing to check for beacon flooding attacks
-  options = options; //Avoid unused warning
+  (void) options;
 }
 
 struct attacks load_beacon_flood() {

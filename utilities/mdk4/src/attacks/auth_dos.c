@@ -345,7 +345,7 @@ struct packet auth_dos_get_data(struct ether_addr client, struct ether_addr bssi
 
   hdr = (struct ieee_hdr *) retn.data;
 
-  if (hdr->flags | 0x01) { //ToDS set -> reinject with fake source
+  if (hdr->flags & 0x01) { //ToDS set -> reinject with fake source
     src = get_source(&retn);
     *src = client;
   } else { //FromDS -> set ToDS, and rebuild all MAC addresses
@@ -529,7 +529,7 @@ void auth_dos_print_stats(void *options) {
 
 void auth_dos_perform_check(void *options) {
   //unused
-  options = options; //prevent warning
+  (void) options;
 }
 
 struct attacks load_auth_dos() {

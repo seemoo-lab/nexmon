@@ -70,7 +70,7 @@ void main_loop(struct attacks *att, void *options) {
   while (1) {
     //Get packet
     inject = att->get_packet(options);
-    if ((inject.data == NULL) || (inject.len == 0)) 
+    if (inject.len == 0)
       continue;
 
     //Send packet

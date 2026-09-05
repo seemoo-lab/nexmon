@@ -44,12 +44,12 @@ void *dummy_parse(int argc, char *argv[]) {
 }
 
 void dummy_check(void *options) {
-  options = options;
+  (void) options;
   printf("Implement check here\n");
 }
 
 struct packet dummy_getpacket(void *options) {
-  options = options;
+  (void) options;
   struct packet pkt;
 
   printf("Build your packet here and return it. NULL data makes mdk4 exit\n");
@@ -60,7 +60,7 @@ struct packet dummy_getpacket(void *options) {
 }
 
 void dummy_stats(void *options) {
-  options = options;
+  (void) options;
 
   printf("This is called every second to display statistics\n");
 }

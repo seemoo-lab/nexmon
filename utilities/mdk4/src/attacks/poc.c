@@ -20,7 +20,7 @@ struct poc_packet *poc_pkts = NULL;
 int vendor_cnt = 0;
 
 int get_file_lines(char * filename);
-int str_to_hex(unsigned char *pascii, unsigned char *phex, unsigned int len);
+int str_to_hex(const char *pascii, unsigned char *phex, unsigned int len);
 
 void poc_shorthelp()
 {
@@ -60,7 +60,7 @@ void* poc_parse(int argc, char *argv[]) {
   int file_lines;
   char poc_path[256];
   char file_name[255];
-  unsigned char buf[8192];
+  char buf[8192];
   FILE *fp1;
   int i, j;
     
@@ -209,7 +209,6 @@ unsigned char get_target(struct poc_options *popt) {
     unsigned char ret = 0;
     struct ether_addr dmac, smac, bssid;
     uint16_t seq_ctrl;
-    uint16_t recv_seq_ctrl;
 
     if(popt == NULL)
         return ret;
@@ -229,6 +228,8 @@ unsigned char get_target(struct poc_options *popt) {
             ret = 1;
             break;
         }
+
+        dsflags = hdr->flags & 0x03;
             
 
         //if(hdr->type == IEEE80211_TYPE_BEACON || hdr->type == IEEE80211_TYPE_PROBEREQ || hdr->type == IEEE80211_TYPE_PROBERES)
@@ -471,7 +472,7 @@ struct packet poc_getpacket(void *options) {
 
 void poc_print_stats(void *options) {
   int chan = osdep_get_channel();
-  options = options; //Avoid unused warning
+    (void) options;
 
   if (chan) {
     printf(" on channel %d\n", chan);
@@ -482,16 +483,16 @@ void poc_print_stats(void *options) {
 
 void poc_perform_check(void *options) {
   //Nothing to check for beacon flooding attacks
-  options = options; //Avoid unused warning
+  (void) options;
 }
 
 int get_file_lines(char * filename)
 {
-    unsigned char buf[8192];
+    char buf[8192];
     FILE *fp;
     int lines = 0;
 
-    if(fp = fopen(filename, "r"))
+    if((fp = fopen(filename, "r")) != NULL)
     {
         while(!feof(fp))
         {
@@ -510,7 +511,7 @@ int get_file_lines(char * filename)
     return lines;
 }
 
-int str_to_hex(unsigned char *pascii, unsigned char *phex, unsigned int len)
+int str_to_hex(const char *pascii, unsigned char *phex, unsigned int len)
 {
 	int i = 0;
 	int str_len;
@@ -518,7 +519,7 @@ int str_to_hex(unsigned char *pascii, unsigned char *phex, unsigned int len)
 	unsigned char s1, s2;
 
 	if(pascii == NULL || phex == NULL || len == 0)
-		return (int)NULL;
+		return 0;
 
 	str_len = strlen(pascii)/4;
 	if(str_len)
@@ -536,7 +537,7 @@ int str_to_hex(unsigned char *pascii, unsigned char *phex, unsigned int len)
 			if(s2 > 9)
 				s2 -= 7;
 			
-			if(i < len)
+			if((unsigned int) i < len)
 				phex[i] = s1 * 16 + s2;
 		}
 	}

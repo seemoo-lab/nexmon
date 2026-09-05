@@ -184,13 +184,13 @@ struct packet countermeasures_getpacket(void *options) {
 
 void countermeasures_print_stats(void *options) {
   //Unused
-  options = options; //Avoid unused warning
+  (void) options;
 }
 
 
 void countermeasures_perform_check(void *options) {
   //Nothing to check
-  options = options; //Avoid unused warning
+  (void) options;
 }
 
 

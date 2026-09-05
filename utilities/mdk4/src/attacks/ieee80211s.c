@@ -132,7 +132,7 @@ void *ieee80211s_parse(int argc, char *argv[]) {
 }
 
 void ieee80211s_check(void *options) {
-  options = options;
+  (void) options;
   //No checks yet.
 }
 
@@ -337,7 +337,7 @@ struct packet do_flood(struct ieee80211s_options *dopt) {
 }
 
 struct packet create_loop(struct ieee80211s_options *dopt) {
-  dopt = dopt; //We dont care about options yet
+  (void) dopt; //We don't care about options yet
   struct packet sniff;
   struct ieee_hdr *hdr;
   struct action_fixed *act;

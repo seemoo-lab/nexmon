@@ -174,9 +174,6 @@ unsigned char accept_target(struct packet *pkt, struct deauth_options *dopt) {
 	struct ether_addr bssid = {0};
 	struct ether_addr tmac = {0};
 
-  struct ether_addr ap = {0};
-  struct ether_addr client = {0};
-
   uint8_t dsflags;
 
   struct ieee_hdr *hdr = (struct ieee_hdr *) pkt->data;
@@ -400,7 +397,7 @@ unsigned char get_new_target(struct ether_addr *client, struct ether_addr *ap, s
 struct packet deauth_getpacket(void *options) {
   struct deauth_options *dopt = (struct deauth_options *) options;
   static time_t t_prev = 0;
-  static unsigned char wds, state = 0;
+  static unsigned char state = 0;
   struct packet pkt= {0};
 
   /*if (dopt->greylist) {
@@ -477,7 +474,7 @@ struct packet deauth_getpacket(void *options) {
 
 void deauth_print_stats(void *options) {
   int chan = osdep_get_channel();
-  options = options; //Avoid unused warning
+  (void) options;
 
   if(!MAC_MATCHES(bssid, station))
   {
@@ -497,7 +494,7 @@ void deauth_print_stats(void *options) {
 
 void deauth_perform_check(void *options) {
   //Nothing to check for beacon flooding attacks
-  options = options; //Avoid unused warning
+  (void) options;
 }
 
 

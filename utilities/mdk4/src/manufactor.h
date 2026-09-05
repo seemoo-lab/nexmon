@@ -27,7 +27,7 @@
 #define HAVE_MANUF_H
 
 const int clients_count = 445;
-unsigned char clients[445][25] = {
+unsigned char clients[445][26] = {
 "000022220000/FFFFFFFF0000",
 "00008F8F0000/FFFFFFFF0000",
 "000103000000/FFFFFF000000",
@@ -476,7 +476,7 @@ unsigned char clients[445][25] = {
 };
 
 const int accesspoints_count = 227;
-unsigned char accesspoints[227][25] = {
+unsigned char accesspoints[227][26] = {
 "00000C000000/FFFFFF000000",
 "000074000000/FFFFFF000000",
 "000092000000/FFFFFF000000",

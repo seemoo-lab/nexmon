@@ -193,7 +193,7 @@ struct packet create_probe_req(struct probing_options *popt)
 {
   struct packet probe;
   unsigned char i,c,type;
-  unsigned char ssid[256] = {0};
+  char ssid[256] = {0};
   struct ether_addr apmac = *(popt->target);
   struct ether_addr stamac = generate_mac(MAC_KIND_RANDOM);
   struct ether_addr bcast = {.ether_addr_octet = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff }};
