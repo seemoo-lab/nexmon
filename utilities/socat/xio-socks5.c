@@ -215,7 +215,7 @@ int _xioopen_socks5_connect(struct single *xfd,
    struct socks5_select  *recvselect;
    struct socks5_request *sendrequest;
    struct socks5_reply   *recvreply;
-   size_t namelen;
+   size_t namelen = 0;
    size_t addrlen;
    size_t readpos;
    char *emsg;
@@ -502,4 +502,3 @@ int xio_socks5_dialog(int level, struct single *xfd,
 }
 
 #endif /* WITH_SOCKS5 */
-

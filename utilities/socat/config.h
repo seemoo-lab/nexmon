@@ -531,7 +531,7 @@
 
 /* 1..short, 3..int, 5..long; 2,4,6..unsigned */
 #define HAVE_BASIC_SIZE_T 6 /* unsigned long (aarch64/bionic LP64) */
-#define HAVE_BASIC_MODE_T 2 /* unsigned short */
+#define HAVE_BASIC_MODE_T 4 /* unsigned int */
 #define HAVE_BASIC_PID_T 3 /* int */
 #define HAVE_BASIC_UID_T 4 /* unsigned int */
 #define HAVE_BASIC_GID_T 4 /* unsigned int */

@@ -4146,6 +4146,7 @@ mc:addr
 	 case OPT_IPV6_JOIN_GROUP:
 	    {
 	       struct ipv6_mreq ip6_mreq = {{{{0}}}};
+	       unsigned int ifindex_value;
 	       union sockaddr_union sockaddr1;
 	       socklen_t socklen1 = sizeof(sockaddr1.ip6);
 
@@ -4158,11 +4159,13 @@ mc:addr
 			      &sockaddr1, &socklen1, 0, 0);
 	       ip6_mreq.ipv6mr_multiaddr = sockaddr1.ip6.sin6_addr;
 	       if (ifindex(opt->value.u_ip_mreq.param2,
-			   &ip6_mreq.ipv6mr_interface, -1)
+			   &ifindex_value, -1)
 		   < 0) {
 		  Error1("interface \"%s\" not found",
 			 opt->value.u_ip_mreq.param2);
 		  ip6_mreq.ipv6mr_interface = htonl(0);
+	       } else {
+		  ip6_mreq.ipv6mr_interface = ifindex_value;
 	       }
 
 	       if (Setsockopt(xfd->rfd, opt->desc->major, opt->desc->minor,
@@ -4282,4 +4285,3 @@ int dropopts2(struct opt *opts, unsigned int from, unsigned int to) {
    }
    return 0;
 }
-

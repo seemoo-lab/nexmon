@@ -22,7 +22,6 @@ int cv_newline(unsigned char **buff, ssize_t *bytes, int lineterm1, int lineterm
    should be at least MAXTIMESTAMPLEN bytes long.
    returns 0 on success or -1 if an error occurred */
 int gettimestamp(char *timestamp) {
-   size_t bytes;
 #if HAVE_GETTIMEOFDAY || 1
    struct timeval now;
    int result;
@@ -38,11 +37,10 @@ int gettimestamp(char *timestamp) {
    } else {
       nowt = now.tv_sec;
 #if HAVE_STRFTIME
-      bytes = strftime(timestamp, 20, "%Y/%m/%d %H:%M:%S", localtime(&nowt));
-      bytes += sprintf(timestamp+19, "."F_tv_usec" ", now.tv_usec);
+      strftime(timestamp, 20, "%Y/%m/%d %H:%M:%S", localtime(&nowt));
+      sprintf(timestamp+19, "."F_tv_usec" ", now.tv_usec);
 #else
       strcpy(timestamp, ctime(&nowt));
-      bytes = strlen(timestamp);
 #endif
    }
 #else /* !HAVE_GETTIMEOFDAY */
@@ -50,10 +48,9 @@ int gettimestamp(char *timestamp) {
       return -1;
    } else {
 #if HAVE_STRFTIME
-      bytes = strftime(timestamp, 21, "%Y/%m/%d %H:%M:%S ", localtime(&now));
+      strftime(timestamp, 21, "%Y/%m/%d %H:%M:%S ", localtime(&now));
 #else
       strcpy(timestamp, ctime(&now));
-      bytes = strlen(timestamp);
 #endif
    }
 #endif /* !HAVE_GETTIMEOFDAY */
