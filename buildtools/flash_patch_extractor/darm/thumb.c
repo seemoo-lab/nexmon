@@ -140,6 +140,7 @@ static int thumb_disasm(darm_t *d, uint16_t w)
             // fall-through as the mvn handler is almost the same, except
             // for parsing Rn
 
+        /* fall through */
         case I_MVN:
             d->Rd = w & b111;
             d->Rm = (w >> 3) & b111;
@@ -151,6 +152,7 @@ static int thumb_disasm(darm_t *d, uint16_t w)
             return 0;
         }
 
+        /* fall through */
     case T_THUMB_BRANCH_REG:
         d->instr = (w >> 7) & 1 ? I_BLX : I_BX;
         d->Rm = (w >> 3) & b1111;
@@ -185,6 +187,7 @@ static int thumb_disasm(darm_t *d, uint16_t w)
             d->imm <<= 2;
             // fall-through as adr also has to set Rd
 
+        /* fall through */
         case I_MOV:
             d->Rd = (w >> 8) & b111;
             return 0;
@@ -194,6 +197,7 @@ static int thumb_disasm(darm_t *d, uint16_t w)
             return 0;
         }
 
+        /* fall through */
     case T_THUMB_EXTEND:
         d->instr = type_extend_instr_lookup[(w >> 6) & b11];
         d->Rd = w & b111;
