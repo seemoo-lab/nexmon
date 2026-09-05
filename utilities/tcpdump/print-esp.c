@@ -246,7 +246,7 @@ int esp_print_decrypt_buffer_by_ikev2(netdissect_options *ndo,
 	 * XXX - of course this is wrong, because buf is a const buffer,
 	 * but changing this would require a more complicated fix.
 	 */
-	memcpy(buf, output_buffer, len);
+	memcpy((void *)buf, output_buffer, len);
 	free(output_buffer);
 
 	ndo->ndo_packetp = buf;
@@ -798,7 +798,7 @@ esp_print(netdissect_options *ndo,
 			 * const buffer, but changing this would require a
 			 * more complicated fix.
 			 */
-			memcpy(p + ivlen, output_buffer, len);
+			memcpy((void *)(p + ivlen), output_buffer, len);
 			free(output_buffer);
 			advance = ivoff - (const u_char *)esp + ivlen;
 		} else

@@ -427,6 +427,7 @@ char *nl_size2str(const size_t size, char *buf, const size_t len)
 	}
 
 	BUG();
+	return buf;
 }
 
 /**

@@ -84,7 +84,7 @@ strchrnul(const char* s, int c);
 #endif /* !_LIBC */
 
 /* can't use macro due to double evaluation */
-static char*
+static const char*
 dgettext_safe(const char* d, const char* m)
 {
     return m ? dgettext(d, m) : NULL;
@@ -1720,10 +1720,7 @@ __argp_short_program_name(const struct argp_state* state)
         /* FIXME: What now? Miles suggests that it is better to use NULL,
            but currently the value is passed on directly to fputs_unlocked,
            so that requires more changes. */
-#if __GNUC__
-#warning No reasonable value to return
-    return "";
-#endif /* __GNUC__ */
+	return "";
 #endif /* !HAVE_DECL_PROGRAM_INVOCATION_NAME */
 }
 
