@@ -248,12 +248,7 @@ char * getVersion(const char * progname,
 		exit(1);
 	}
 
-	// Calculate and allocate buffer
-	size_t len = 100 + strlen(progname);
-	if (rev)
-	{
-		len += strlen(rev);
-	}
+	// Build the version string incrementally with asprintf.
 	char *ret = NULL, *tmp = NULL;
 
 	// Major, minor version
