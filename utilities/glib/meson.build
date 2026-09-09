@@ -1,5 +1,5 @@
 project('glib', 'c',
-  version : '2.89.4',
+  version : '2.90.0',
   # NOTE: See the policy in docs/meson-version.md before changing the Meson dependency
   meson_version : '>= 1.4.0',
   default_options : [
@@ -612,6 +612,8 @@ if cc.get_id() == 'gcc' or cc.get_id() == 'clang'
     '-Werror=implicit-function-declaration',
     '-Werror=missing-prototypes',
     '-Werror=pointer-sign',
+    # Public headers must support C99, even though GLib itself requires C11.
+    '-Werror=typedef-redefinition',
     '-Wno-string-plus-int',
   ]
   warning_cxx_args = warning_common_args

@@ -1,3 +1,43 @@
+Overview of changes in GLib 2.90.0, 2026-09-09
+==============================================
+
+* Bugs fixed:
+  - #4038 G_DEFINE_TYPE parent_class variable trips clang 23's -Wunused-but-set-
+    global (Sunil Dora)
+  - #4040 `-Wtypedef-redefinition` warnings from `GDBusActionGroup` when
+    building 2.89.4 with clang (Hyunsik Parker)
+  - !5311 fix: handle long filenames in trash by truncating from front
+  - !5319 Update Norwegian Bokmål translation
+  - !5325 Update Polish translation
+  - !5326 Update Czech translation
+  - !5327 Update Hebrew translation
+  - !5328 tests: allocate an adequate alternate signal stack
+  - !5329 Update Turkish translation
+  - !5331 Update French translation
+  - !5333 Update Uighur translation
+  - !5334 Update Korean translation
+  - !5339 Update Russian translation
+  - !5342 Update Serbian translation
+  - !5343 Update Hungarian translation
+  - !5344 Update Danish translation
+  - !5346 gtestutils: Mark a TLS variable as not really a leak
+  - !5347 goutputstream: Fix an unused-variable warning with G_DISABLE_ASSERT
+
+* Translation updates:
+  - Czech (Daniel Rusek)
+  - Danish (Ask Hjorth Larsen)
+  - French (Guillaume Bernard)
+  - Hebrew (Yaron Shahrabani)
+  - Hungarian (Balázs Úr)
+  - Korean (Changwoo Ryu)
+  - Norwegian Bokmål (Kjartan Maraas)
+  - Polish (Victoria Niedzielska)
+  - Russian (Artur S0)
+  - Serbian (Марко Костић)
+  - Turkish (Emin Tufan Çetin)
+  - Uighur (Abduqadir Abliz)
+
+
 Overview of changes in GLib 2.89.4, 2026-08-23
 ==============================================
 

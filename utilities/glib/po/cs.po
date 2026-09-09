@@ -11,21 +11,22 @@
 # Petr Kovar <pknbe@volny.cz>, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015.
 # Marek Černocký <marek@manet.cz>, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023.
 # Vojtěch Perník <translations@pervoj.cz>, 2023-2024.
+# Patrik Sivek <patriksivek@gnome.org>, 2026.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: glib\n"
 "Report-Msgid-Bugs-To: https://gitlab.gnome.org/GNOME/glib/-/issues\n"
-"POT-Creation-Date: 2026-07-28 23:06+0000\n"
-"PO-Revision-Date: 2026-07-30 15:58+0200\n"
-"Last-Translator: Daniel Rusek <mail@asciiwolf.com>\n"
-"Language-Team: Czech <gnome-cs-list@gnome.org>\n"
+"POT-Creation-Date: 2026-08-26 09:06+0000\n"
+"PO-Revision-Date: 2026-08-25 15:11+0200\n"
+"Last-Translator: Patrik Sivek <patriksivek@gnome.org>\n"
+"Language-Team: Czech\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"X-Generator: Poedit 3.9\n"
+"X-Generator: Gtranslator 50.0\n"
 "X-Project-Style: gnome\n"
 
 #: gio/gappinfo.c:376
@@ -38,12 +39,17 @@ msgstr ""
 "Nastavení aplikace, jako poslední použité pro daný typ, není zatím "
 "podporováno"
 
-#: gio/gappinfo.c:996
+#: gio/gappinfo.c:595
+#, c-format
+msgid "Invalid file extension ‘%s’"
+msgstr "Neplatná přípona souboru „%s“"
+
+#: gio/gappinfo.c:1011
 #, c-format
 msgid "Failed to find default application for content type ‘%s’"
 msgstr "Selhalo vyhledání výchozí aplikace pro obsah typu „%s“"
 
-#: gio/gappinfo.c:1058
+#: gio/gappinfo.c:1073
 #, c-format
 msgid "Failed to find default application for URI Scheme ‘%s’"
 msgstr "Selhalo vyhledání výchozí aplikace pro schéma URI „%s“"
@@ -297,7 +303,7 @@ msgstr ""
 
 #: gio/gbufferedinputstream.c:422 gio/gbufferedinputstream.c:500
 #: gio/ginputstream.c:181 gio/ginputstream.c:381 gio/ginputstream.c:651
-#: gio/ginputstream.c:1056 gio/goutputstream.c:227 gio/goutputstream.c:1052
+#: gio/ginputstream.c:1056 gio/goutputstream.c:227 gio/goutputstream.c:1062
 #: gio/gpollableinputstream.c:217 gio/gpollableoutputstream.c:289
 #, c-format
 msgid "Too large count value passed to %s"
@@ -313,7 +319,7 @@ msgid "Cannot truncate GBufferedInputStream"
 msgstr "Nelze zkrátit GBufferedInputStream"
 
 #: gio/gbufferedinputstream.c:986 gio/ginputstream.c:1252 gio/giostream.c:321
-#: gio/goutputstream.c:2214
+#: gio/goutputstream.c:2224
 msgid "Stream is already closed"
 msgstr "Proud je již uzavřen"
 
@@ -380,7 +386,7 @@ msgstr "Neznámý typ"
 msgid "%s filetype"
 msgstr "typ souboru %s"
 
-#: gio/gconverteroutputstream.c:427
+#: gio/gconverteroutputstream.c:432
 msgid "Unexpected data after end of conversion"
 msgstr "Neočekávaná data po ukončení převodu"
 
@@ -564,11 +570,11 @@ msgstr "Neznámý typ sběrnice %d"
 
 #: gio/gdbusauth.c:321
 msgid "Unexpected lack of content trying to read a line"
-msgstr "Neočekávaně scházející obsah při pokusu o přečtení řádku"
+msgstr "Neočekávaně scházející obsah při pokusu o přečtení řádkug"
 
 #: gio/gdbusauth.c:359
 msgid "Malformed D-Bus authentication line"
-msgstr ""
+msgstr "Poškozený řádek ověření D-Bus"
 
 #: gio/gdbusauth.c:377
 msgid "Unexpected lack of content trying to (safely) read a line"
@@ -598,6 +604,8 @@ msgid ""
 "Error accessing D-Bus keyring: keyring-based authentication is not supported "
 "when running as setuid"
 msgstr ""
+"Chyba při přístupu ke klíčence D-Bus: ověřování pomocí klíčenky není "
+"podporováno během spouštění jako setuid"
 
 #: gio/gdbusauthmechanismsha1.c:321
 #, c-format
@@ -770,7 +778,7 @@ msgstr "V cestě „%s“ objekt neexistuje"
 #: gio/gdbusmessage.c:116
 #, c-format
 msgid "D-Bus signature exceeds maximum length of %u bytes"
-msgstr ""
+msgstr "Podpis D-Bus přesáhl maximální délku %u bajtů"
 
 #: gio/gdbusmessage.c:1320
 #, c-format
@@ -1340,7 +1348,7 @@ msgstr "Chyba: %s není platným oficiálně známým názvem sběrnice.\n"
 msgid "Not authorized to change debug settings"
 msgstr "Neautorizováno ke změnám ladicích nastavení"
 
-#: gio/gdesktopappinfo.c:2285 gio/gdesktopappinfo.c:5258
+#: gio/gdesktopappinfo.c:2285 gio/gdesktopappinfo.c:5275
 #: gio/gwin32appinfo.c:4257
 msgid "Unnamed"
 msgstr "Bez názvu"
@@ -1370,18 +1378,18 @@ msgstr "Nezdařilo se vytvořit složku %s s uživatelským nastavením MIME: %s
 
 #: gio/gdesktopappinfo.c:4080
 msgid "MIME apps information is too long"
-msgstr ""
+msgstr "Informace o výchozích aplikacích podle MIME je moc dlouhá"
 
 #: gio/gdesktopappinfo.c:4111 gio/gdesktopappinfo.c:4135
 msgid "Application information lacks an identifier"
 msgstr "Informace o aplikaci postrádá identifikátor"
 
-#: gio/gdesktopappinfo.c:4371
+#: gio/gdesktopappinfo.c:4388
 #, c-format
 msgid "Can’t create user desktop file %s"
 msgstr "Nezdařilo se vytvořit uživatelský soubor .desktop %s"
 
-#: gio/gdesktopappinfo.c:4491
+#: gio/gdesktopappinfo.c:4508
 #, c-format
 msgid "Custom definition for %s"
 msgstr "Vlastní definice %s"
@@ -1469,7 +1477,7 @@ msgstr "Operace není podporována"
 msgid "Containing mount does not exist"
 msgstr "Obsahující připojené neexistuje"
 
-#: gio/gfile.c:2677 gio/glocalfile.c:2727
+#: gio/gfile.c:2677 gio/glocalfile.c:2811
 msgid "Can’t copy over directory"
 msgstr "Nelze kopírovat nad složku"
 
@@ -1697,7 +1705,7 @@ msgstr "Vstupní datový proud neumí čtení"
 #. Translators: This is an error you get if there is
 #. * already an operation running against this stream when
 #. * you try to start one
-#: gio/ginputstream.c:1262 gio/giostream.c:331 gio/goutputstream.c:2224
+#: gio/ginputstream.c:1262 gio/giostream.c:331 gio/goutputstream.c:2234
 msgid "Stream has outstanding operation"
 msgstr "Proud má otevřenou operaci"
 
@@ -3174,8 +3182,8 @@ msgstr "Chyba při přejmenovávání souboru %s: %s"
 msgid "Can’t rename file, filename already exists"
 msgstr "Soubor nelze přejmenovat, název souboru již existuje"
 
-#: gio/glocalfile.c:1218 gio/glocalfile.c:2621 gio/glocalfile.c:2649
-#: gio/glocalfile.c:2788 gio/glocalfileoutputstream.c:658
+#: gio/glocalfile.c:1218 gio/glocalfile.c:2705 gio/glocalfile.c:2733
+#: gio/glocalfile.c:2872 gio/glocalfileoutputstream.c:658
 msgid "Invalid filename"
 msgstr "Neplatný název souboru"
 
@@ -3189,97 +3197,97 @@ msgstr "Chyba při otevírání souboru %s: %s"
 msgid "Error removing file %s: %s"
 msgstr "Chyba při odstraňování souboru %s: %s"
 
-#: gio/glocalfile.c:2078
+#: gio/glocalfile.c:2166
 #, c-format
 msgid "Unable to trash child file %s"
 msgstr "Nelze zahodit soubor potomka %s do koše"
 
-#: gio/glocalfile.c:2142 gio/glocalfile.c:2153 gio/glocalfile.c:2183
+#: gio/glocalfile.c:2230 gio/glocalfile.c:2241 gio/glocalfile.c:2271
 #, c-format
 msgid "Error trashing file %s: %s"
 msgstr "Chyba při zahazování souboru %s do koše: %s"
 
-#: gio/glocalfile.c:2204
+#: gio/glocalfile.c:2292
 #, c-format
 msgid "Unable to create trash directory %s: %s"
 msgstr "Nelze vytvořit složku koše %s: %s"
 
-#: gio/glocalfile.c:2225
+#: gio/glocalfile.c:2313
 #, c-format
 msgid "Unable to find toplevel directory to trash %s"
 msgstr "Nezdařilo se najít složku nejvyšší úrovně pro vyhození %s"
 
-#: gio/glocalfile.c:2233
+#: gio/glocalfile.c:2321
 #, c-format
 msgid "Trashing on system internal mounts is not supported"
 msgstr ""
 "Přesouvání do koše na svazku připojeném interně systémem není podporováno"
 
-#: gio/glocalfile.c:2319 gio/glocalfile.c:2347
+#: gio/glocalfile.c:2407 gio/glocalfile.c:2435
 #, c-format
 msgid "Unable to find or create trash directory %s to trash %s"
 msgstr "Nezdařilo se najít nebo vytvořit složku koše %s pro vyhození %s"
 
-#: gio/glocalfile.c:2444
+#: gio/glocalfile.c:2528
 #, c-format
 msgid "Unable to create trashing info file for %s: %s"
 msgstr "Nelze vytvořit informační soubor o koši pro %s: %s"
 
-#: gio/glocalfile.c:2532
+#: gio/glocalfile.c:2616
 #, c-format
 msgid "Unable to trash file %s across filesystem boundaries"
 msgstr "Nelze zahodit soubor %s do koše mimo hranice souborového systému"
 
-#: gio/glocalfile.c:2536 gio/glocalfile.c:2592
+#: gio/glocalfile.c:2620 gio/glocalfile.c:2676
 #, c-format
 msgid "Unable to trash file %s: %s"
 msgstr "Nelze zahodit soubor %s do koše: %s"
 
-#: gio/glocalfile.c:2598
+#: gio/glocalfile.c:2682
 #, c-format
 msgid "Unable to trash file %s"
 msgstr "Nelze zahodit soubor %s do koše"
 
-#: gio/glocalfile.c:2624
+#: gio/glocalfile.c:2708
 #, c-format
 msgid "Error creating directory %s: %s"
 msgstr "Chyba při vytváření složky %s: %s"
 
-#: gio/glocalfile.c:2653
+#: gio/glocalfile.c:2737
 #, c-format
 msgid "Filesystem does not support symbolic links"
 msgstr "Systém souborů nepodporuje symbolické odkazy"
 
-#: gio/glocalfile.c:2656
+#: gio/glocalfile.c:2740
 #, c-format
 msgid "Error making symbolic link %s: %s"
 msgstr "Chyba při vytváření symbolického odkazu %s: %s"
 
-#: gio/glocalfile.c:2699 gio/glocalfile.c:2734 gio/glocalfile.c:2791
+#: gio/glocalfile.c:2783 gio/glocalfile.c:2818 gio/glocalfile.c:2875
 #, c-format
 msgid "Error moving file %s: %s"
 msgstr "Chyba při přesunování souboru %s: %s"
 
-#: gio/glocalfile.c:2722
+#: gio/glocalfile.c:2806
 msgid "Can’t move directory over directory"
 msgstr "Složku nelze přesunout nad složku"
 
-#: gio/glocalfile.c:2748 gio/glocalfileoutputstream.c:1110
+#: gio/glocalfile.c:2832 gio/glocalfileoutputstream.c:1110
 #: gio/glocalfileoutputstream.c:1124 gio/glocalfileoutputstream.c:1139
 #: gio/glocalfileoutputstream.c:1156 gio/glocalfileoutputstream.c:1176
 msgid "Backup file creation failed"
 msgstr "Vytvoření záložního souboru selhalo"
 
-#: gio/glocalfile.c:2767
+#: gio/glocalfile.c:2851
 #, c-format
 msgid "Error removing target file: %s"
 msgstr "Chyba při odstraňování cílového souboru: %s"
 
-#: gio/glocalfile.c:2781
+#: gio/glocalfile.c:2865
 msgid "Move between mounts not supported"
 msgstr "Přesunování mezi připojeními není podporováno"
 
-#: gio/glocalfile.c:2957
+#: gio/glocalfile.c:3041
 #, c-format
 msgid "Could not determine the disk usage of %s: %s"
 msgstr "Nelze zjistit využití disku %s: %s"
@@ -3611,16 +3619,16 @@ msgstr "NetworkManager neběží"
 msgid "NetworkManager version too old"
 msgstr "NetworkManager je v příliš staré verzi"
 
-#: gio/goutputstream.c:236 gio/goutputstream.c:777
+#: gio/goutputstream.c:236 gio/goutputstream.c:784
 msgid "Output stream doesn’t implement write"
 msgstr "Výstupní datový proud neumí zápis"
 
-#: gio/goutputstream.c:474 gio/goutputstream.c:1539
+#: gio/goutputstream.c:474 gio/goutputstream.c:1549
 #, c-format
 msgid "Sum of vectors passed to %s too large"
 msgstr "Součet vektorů předaných do %s je příliš velký"
 
-#: gio/goutputstream.c:738 gio/goutputstream.c:1769
+#: gio/goutputstream.c:738 gio/goutputstream.c:1779
 msgid "Source stream is already closed"
 msgstr "Zdrojový proud je již ukončen"
 
@@ -4541,15 +4549,15 @@ msgid "volume doesn’t implement eject or eject_with_operation"
 msgstr "svazek neumí vysouvací operaci eject nebo eject_with_operation"
 
 #: gio/gwin32appinfo.c:5286
-#, c-format
+#, fuzzy, c-format
 msgid "The app ‘%s’ in the application object has no verbs"
-msgstr ""
+msgstr "Aplikace „%s“ v objektu aplikace nemá žádná slovesa"
 
 #: gio/gwin32appinfo.c:5290
-#, c-format
+#, fuzzy, c-format
 msgid ""
 "The app ‘%s’ and the handler ‘%s’ in the application object have no verbs"
-msgstr ""
+msgstr "Aplikace „%s“ a obsluha „%s“ v objektu aplikace nemá žádná slovesa"
 
 #: gio/gwin32inputstream.c:184
 #, c-format
@@ -4819,7 +4827,7 @@ msgstr "Žádná aplikace s názvem „%s“ nezaregistrovala záložku „%s“
 #: glib/gbookmarkfile.c:3826
 #, c-format
 msgid "Failed to expand exec line “%s” with URI “%s”"
-msgstr "Nelze rozšířit řádek exec „%s“ pomocí URI „%s“"
+msgstr "Nelze rozšířit řádek exec „%s“ pomocí URI „%s“g"
 
 #: glib/gconvert.c:377
 msgid "Unrepresentable character in conversion input"
@@ -5391,7 +5399,7 @@ msgstr "Nelze otevřít převodník z „%s“ do „%s“: %s"
 
 #: glib/giochannel.c:1728
 msgid "Can’t do a raw read in g_io_channel_read_line_string"
-msgstr "Nelze přímo číst v g_io_channel_read_line_string"
+msgstr "Nelze přímo číst v g_io_channel_read_line_stringg"
 
 #: glib/giochannel.c:1775 glib/giochannel.c:2034 glib/giochannel.c:2121
 msgid "Leftover unconverted data in read buffer"
@@ -5405,7 +5413,7 @@ msgstr "Kanál ukončen částí znaku"
 msgid "Can’t do a raw read in g_io_channel_read_to_end"
 msgstr "Nelze přímo číst v g_io_channel_read_to_end"
 
-#: glib/gkeyfile.c:810 glib/gkeyfile.c:1320
+#: glib/gkeyfile.c:810 glib/gkeyfile.c:1321
 msgid "Valid key file could not be found in search dirs"
 msgstr "V složkách hledání nelze najít platný soubor klíče"
 
@@ -5413,7 +5421,7 @@ msgstr "V složkách hledání nelze najít platný soubor klíče"
 msgid "Not a regular file"
 msgstr "Není obyčejným souborem"
 
-#: glib/gkeyfile.c:1642
+#: glib/gkeyfile.c:1643
 #, c-format
 msgid ""
 "Key file contains line “%s” which is not a key-value pair, group, or comment"
@@ -5421,50 +5429,50 @@ msgstr ""
 "Soubor klíče obsahuje „%s“, což není dvojice klíč-hodnota, skupina ani "
 "komentář"
 
-#: glib/gkeyfile.c:1699
+#: glib/gkeyfile.c:1700
 #, c-format
 msgid "Invalid group name: %s"
 msgstr "Neplatný název skupiny: %s"
 
-#: glib/gkeyfile.c:1724
+#: glib/gkeyfile.c:1725
 msgid "Key file does not start with a group"
 msgstr "Soubor klíče nezačíná skupinou"
 
-#: glib/gkeyfile.c:1748
+#: glib/gkeyfile.c:1749
 #, c-format
 msgid "Invalid key name: %.*s"
 msgstr "Neplatný název klíče: %.*s"
 
-#: glib/gkeyfile.c:1776
+#: glib/gkeyfile.c:1777
 #, c-format
 msgid "Key file contains unsupported encoding “%s”"
 msgstr "Soubor klíče obsahuje nepodporované kódování „%s“"
 
-#: glib/gkeyfile.c:2023 glib/gkeyfile.c:2197 glib/gkeyfile.c:3673
-#: glib/gkeyfile.c:3775 glib/gkeyfile.c:3885 glib/gkeyfile.c:4014
-#: glib/gkeyfile.c:4158 glib/gkeyfile.c:4408 glib/gkeyfile.c:4482
+#: glib/gkeyfile.c:2024 glib/gkeyfile.c:2198 glib/gkeyfile.c:3674
+#: glib/gkeyfile.c:3776 glib/gkeyfile.c:3886 glib/gkeyfile.c:4015
+#: glib/gkeyfile.c:4159 glib/gkeyfile.c:4409 glib/gkeyfile.c:4483
 #, c-format
 msgid "Key file does not have group “%s”"
 msgstr "Soubor klíče nemá skupinu „%s“"
 
-#: glib/gkeyfile.c:2153
+#: glib/gkeyfile.c:2154
 #, c-format
 msgid "Key file does not have key “%s” in group “%s”"
 msgstr "Soubor klíče nemá klíč „%s“ ve skupině „%s“"
 
-#: glib/gkeyfile.c:2314 glib/gkeyfile.c:2431
+#: glib/gkeyfile.c:2315 glib/gkeyfile.c:2432
 #, c-format
 msgid "Key file contains key “%s” with value “%s” which is not UTF-8"
 msgstr "Soubor klíče obsahuje klíč „%s“ s hodnotou „%s“, která není v UTF-8"
 
-#: glib/gkeyfile.c:2334 glib/gkeyfile.c:2451 glib/gkeyfile.c:2913
+#: glib/gkeyfile.c:2335 glib/gkeyfile.c:2452 glib/gkeyfile.c:2914
 #, c-format
 msgid ""
 "Key file contains key “%s” which has a value that cannot be interpreted."
 msgstr ""
 "Soubor klíče obsahuje klíč „%s“, který má neinterpretovatelnou hodnotu."
 
-#: glib/gkeyfile.c:3127 glib/gkeyfile.c:3501
+#: glib/gkeyfile.c:3128 glib/gkeyfile.c:3502
 #, c-format
 msgid ""
 "Key file contains key “%s” in group “%s” which has a value that cannot be "
@@ -5473,36 +5481,36 @@ msgstr ""
 "Soubor klíče obsahuje klíč „%s“ ve skupině „%s“, který má "
 "neinterpretovatelnou hodnotu."
 
-#: glib/gkeyfile.c:3208 glib/gkeyfile.c:3288
+#: glib/gkeyfile.c:3209 glib/gkeyfile.c:3289
 #, c-format
 msgid "Key “%s” in group “%s” has value “%s” where %s was expected"
 msgstr "Klíč „%s“ ve skupině „%s“ má hodnotu „%s“, když byla očekávána „%s“"
 
-#: glib/gkeyfile.c:4738
+#: glib/gkeyfile.c:4739
 msgid "Key file contains escape character at end of line"
 msgstr "Soubor klíče obsahuje na konci řádku znak změny"
 
-#: glib/gkeyfile.c:4760
+#: glib/gkeyfile.c:4761
 #, c-format
 msgid "Key file contains invalid escape sequence “%s”"
 msgstr "Soubor klíče obsahuje neplatnou únikovou sekvenci „%s“"
 
-#: glib/gkeyfile.c:4912
+#: glib/gkeyfile.c:4913
 #, c-format
 msgid "Value “%s” cannot be interpreted as a number."
 msgstr "Hodnotu „%s“ nelze interpretovat jako číslo."
 
-#: glib/gkeyfile.c:4926
+#: glib/gkeyfile.c:4927
 #, c-format
 msgid "Integer value “%s” out of range"
 msgstr "Celočíselná hodnota „%s“ je mimo rozsah"
 
-#: glib/gkeyfile.c:4959
+#: glib/gkeyfile.c:4960
 #, c-format
 msgid "Value “%s” cannot be interpreted as a float number."
 msgstr "Hodnotu „%s“ nelze interpretovat jako reálné (plovoucí) číslo."
 
-#: glib/gkeyfile.c:4998
+#: glib/gkeyfile.c:4999
 #, c-format
 msgid "Value “%s” cannot be interpreted as a boolean."
 msgstr "Hodnotu „%s“ nelze interpretovat jako pravdivostní hodnotu."
@@ -5587,7 +5595,7 @@ msgstr ""
 
 #: glib/gmarkup.c:1165 glib/gmarkup.c:1180
 msgid "Invalid byte order mark"
-msgstr ""
+msgstr "Neplatné označení pořadí bajtů"
 
 #: glib/gmarkup.c:1212
 msgid "Document must begin with an element (e.g. <book>)"
@@ -5982,7 +5990,7 @@ msgstr ""
 
 #: glib/gregex.c:781
 msgid "syntax error in subpattern number (missing terminator?)"
-msgstr ""
+msgstr "chyba syntaxe v čísle podvzoru (nechybí ukončení řádku?)"
 
 #: glib/gregex.c:786
 msgid "an argument is not allowed for (*ACCEPT), (*FAIL), or (*COMMIT)"

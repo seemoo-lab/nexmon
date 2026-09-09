@@ -2840,7 +2840,9 @@ real_splice_async_start_write (GTask        *task,
 {
   GOutputStream *stream = g_task_get_source_object (task);
   GOutputStreamClass *class = G_OUTPUT_STREAM_GET_CLASS (stream);
+#ifndef G_DISABLE_ASSERT
   SpliceData *op = g_task_get_task_data (task);
+#endif
 
   g_assert (buffer->state == SPLICE_BUFFER_READY);
   g_assert (real_splice_async_find_buffer (op, SPLICE_BUFFER_WRITING) == NULL);

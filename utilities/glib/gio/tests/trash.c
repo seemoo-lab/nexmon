@@ -255,16 +255,30 @@ test_trash_symlinks (void)
 #endif
 }
 
-/* Test that long filename are handled correctly */
-static void
-test_trash_long_filename (void)
+/* Build a base name of exactly @target_len bytes by repeating @unit (which may
+ * contain multi-byte UTF-8).  @target_len must be a whole multiple of the unit
+ * length so the result never ends mid-character. */
+static gchar *
+build_long_filename (const char *unit,
+                     gsize target_len)
 {
-  const gchar *long_filename = "test_trash_long_filename_aaaaaaaaaaaaaaaaaaaaaaaaa" \
-    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
-    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
-    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
-    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" \
-    "aaaaa"; /* 255 bytes */
+  gsize unit_len = strlen (unit);
+  GString *s = g_string_sized_new (target_len);
+  gsize i;
+
+  g_assert_cmpuint (target_len % unit_len, ==, 0);
+
+  for (i = 0; i < target_len / unit_len; i++)
+    g_string_append (s, unit);
+
+  return g_string_free (s, FALSE);
+}
+
+/* Create, trash and clean up a file named @long_filename, which is assumed to
+ * be long enough to trigger the front-truncation path. */
+static void
+trash_long_filename (const char *long_filename)
+{
   gchar *filepath;
   int fd;
   GFile *file;
@@ -333,6 +347,36 @@ test_trash_long_filename (void)
   g_free (filepath);
   g_object_unref (file);
   g_clear_error (&error);
+}
+
+/* Test that long filenames are handled correctly, including multi-byte UTF-8
+ * names whose truncation point may fall inside a character. */
+static void
+test_trash_long_filename (void)
+{
+  /* Each name is longer than NAME_MAX - strlen (".trashinfo") so that trashing
+   * exercises the front-truncation path.  The multi-byte entries check that the
+   * cut is aligned to a UTF-8 character boundary (split vs. not split). */
+  const struct
+    {
+      const char *unit;
+      size_t target_len;
+    }
+  cases[] =
+    {
+      { "a", 255 },                /* ASCII, exactly NAME_MAX */
+      { "a", 246 },                /* ASCII, just over the threshold */
+      { "\xe4\xb8\xad", 249 },     /* 3-byte UTF-8, cut splits a character */
+      { "\xe4\xb8\xad" "aa", 250 }, /* mixed, cut on a character boundary */
+    };
+
+  for (size_t i = 0; i < G_N_ELEMENTS (cases); i++)
+    {
+      gchar *long_filename = build_long_filename (cases[i].unit,
+                                                 cases[i].target_len);
+      trash_long_filename (long_filename);
+      g_free (long_filename);
+    }
 }
 
 int

@@ -588,19 +588,31 @@ test_signal_alternate_stack (int signal)
 #ifndef SA_ONSTACK
   g_test_skip ("alternate stack is not supported");
 #else
+  /* MINSIGSTKSZ is only the minimum stack accepted by sigaltstack().  It
+   * need not leave enough room for the signal frame and this test's handler.
+   * SIGSTKSZ is the implementation's conventional allocation size.  Some
+   * non-XSI systems expose SA_ONSTACK without SIGSTKSZ, so keep the standard
+   * minimum as a portable fallback. */
   size_t minsigstksz = MINSIGSTKSZ;
+#ifdef SIGSTKSZ
+  minsigstksz = MAX (minsigstksz, (size_t) SIGSTKSZ);
+#endif
   guint8 *stack_memory = NULL;
   guint8 *zero_mem = NULL;
   stack_t stack = { 0 };
   stack_t old_stack = { 0 };
 
 #ifdef _SC_MINSIGSTKSZ
-  /* Use the kernel-provided minimum stack size, if available. Otherwise default
-   * to MINSIGSTKSZ. Unfortunately that might not be big enough for huge
-   * register files for big CPU instruction set extensions. */
-  minsigstksz = sysconf (_SC_MINSIGSTKSZ);
-  if (minsigstksz == (size_t) -1 || minsigstksz < (size_t) MINSIGSTKSZ)
-    minsigstksz = MINSIGSTKSZ;
+  /* The kernel can require a larger stack for its signal frame.  Its value
+   * is a lower bound, therefore retain the larger conventional size chosen
+   * above if sysconf() fails or returns a smaller value. */
+  {
+    long runtime_minsigstksz = sysconf (_SC_MINSIGSTKSZ);
+
+    if (runtime_minsigstksz > 0 &&
+        (size_t) runtime_minsigstksz > minsigstksz)
+      minsigstksz = (size_t) runtime_minsigstksz;
+  }
 #endif
 
   stack_memory = g_malloc0 (minsigstksz);

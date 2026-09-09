@@ -791,6 +791,7 @@ g_test_print_handler_full (const gchar *string,
           last_had_final_newline = g_new0 (gboolean, 1);
           *last_had_final_newline = TRUE;
           g_private_set (&last_had_newline_key, last_had_final_newline);
+          g_ignore_leak (last_had_final_newline);
         }
 
       GString *output = g_string_new_len (NULL, strlen (string) + 2);

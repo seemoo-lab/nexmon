@@ -1797,6 +1797,61 @@ get_unique_filename (const char *basename,
   else
     return g_strdup_printf ("%s.%d", basename, id);
 }
+
+/*
+ * Truncate @basename from the front so that @suffix_len more bytes (e.g. the
+ * ".trashinfo" suffix) can still be appended without exceeding NAME_MAX, while
+ * keeping the trailing part of the original name (its extension, if any).
+ *
+ * When the filename encoding is UTF-8, g_utf8_next_char() is used to skip
+ * whole characters from the front so the cut never lands in the middle of a
+ * multi-byte sequence, which would yield invalid UTF-8 (a garbled name) in
+ * the trash.
+ *
+ * For other (typically single-byte) encodings the cut is performed on a plain
+ * byte boundary, which is always safe for fixed-width encodings.  Rare
+ * multi-byte non-UTF-8 encodings (e.g. Shift-JIS) are handled best-effort, in
+ * line with GLib's general treatment of filename encodings.
+ *
+ * Returns the new length (always > 0) on success, or 0 when the name is too
+ * short to be truncated safely (the caller should then fail with ENAMETOOLONG).
+ */
+static size_t
+truncate_basename_front (char   *basename,
+                         size_t  basename_len,
+                         size_t  suffix_len)
+{
+  const char *start, *end;
+
+  if (basename_len <= suffix_len)
+    return 0;
+
+  if (g_get_filename_charsets (NULL))
+    {
+      /* UTF-8: skip whole characters from the front so the cut never lands
+       * in the middle of a multi-byte sequence. */
+      start = basename;
+      end = basename + basename_len;
+
+      while ((gsize) (start - basename) < suffix_len)
+        start = g_utf8_next_char (start);
+
+      if (start >= end)
+        return 0;
+
+      basename_len = end - start;
+    }
+  else
+    {
+      /* Non-UTF-8 (single-byte or best-effort): plain front cut. */
+      basename_len -= suffix_len;
+      start = basename + suffix_len;
+    }
+
+  memmove (basename, start, basename_len);
+  basename[basename_len] = '\0';
+  return basename_len;
+}
 #endif /* HAVE_COCOA */
 
 static gboolean
@@ -2418,11 +2473,9 @@ g_local_file_trash (GFile         *file,
             continue;
           else if (errsv == ENAMETOOLONG)
             {
-              if (basename_len <= strlen (".trashinfo"))
+              basename_len = truncate_basename_front (basename, basename_len, strlen (".trashinfo"));
+              if (basename_len == 0)
                 break; /* fail with ENAMETOOLONG */
-              basename_len -= strlen (".trashinfo");
-              memmove (basename, basename + strlen (".trashinfo"), basename_len);
-              basename[basename_len] = '\0';
               i = 1;
               continue;
             }
@@ -2442,11 +2495,9 @@ g_local_file_trash (GFile         *file,
                                G_FILE_ERROR,
                                G_FILE_ERROR_NAMETOOLONG))
             {
-              if (basename_len <= strlen (".XXXXXX"))
+              basename_len = truncate_basename_front (basename, basename_len, strlen (".XXXXXX"));
+              if (basename_len == 0)
                 break; /* fail with ENAMETOOLONG */
-              basename_len -= strlen (".XXXXXX");
-              memmove (basename, basename + strlen (".XXXXXX"), basename_len);
-              basename[basename_len] = '\0';
               i = 1;
               g_clear_error (&my_error);
               continue;

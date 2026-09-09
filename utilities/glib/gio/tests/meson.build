@@ -105,7 +105,10 @@ gio_tests = {
     # FIXME: https://gitlab.gnome.org/GNOME/glib/-/issues/3906
     'can_fail' : host_system in ['freebsd'],
   },
-  'max-version' : {'install' : false},
+  'max-version' : {
+    'install' : false,
+    'c_args' : c_standards.has_key('99') ? [c_standards['99']] : [],
+  },
   'memory-input-stream' : {},
   'memory-monitor' : {},
   'memory-output-stream' : {},
