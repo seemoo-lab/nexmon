@@ -42,6 +42,9 @@
 #include <aircrack-ng/crypto/gcrypt-openssl-wrapper.h>
 #include <aircrack-ng/crypto/sha1-git.h>
 #else
+#ifndef OPENSSL_SUPPRESS_DEPRECATED
+#define OPENSSL_SUPPRESS_DEPRECATED
+#endif
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
 #include <openssl/rc4.h>
