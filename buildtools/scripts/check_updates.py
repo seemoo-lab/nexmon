@@ -371,7 +371,7 @@ COMPONENTS: List[Dict[str, Any]] = [
         "name": "libglib-2.0",
         "category": "Library (Wrapper)",
         "path": "utilities/libglib-2.0",
-        "extract_local": lambda root: "glib-2.89.4-wrapper",
+        "extract_local": lambda root: "glib-2.90.0-wrapper",
         "upstream_type": "local",
         "upstream_url": "utilities/glib wrapper",
         "website": "utilities/glib"

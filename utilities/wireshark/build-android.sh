@@ -4,7 +4,7 @@
 #
 #   libgpg-error 1.61 -> libgcrypt 1.12.3   (autotools, from ../libgpg-error, ../libgcrypt)
 #   c-ares 1.34.8, pcre2 10.48, libxml2 2.15.3 (autotools, from ../c-ares, ../pcre2, ../libxml2)
-#   glib 2.89.4 from the ../libglib-2.0 build (its prefix is consumed)
+#   glib 2.90.0 from the ../libglib-2.0 build (its prefix is consumed)
 #   wireshark itself via CMake with the NDK Android toolchain
 #
 # The resulting archives are published where the old ndk-build wrappers used
@@ -71,7 +71,7 @@ fi
 
 # --- NDK ---------------------------------------------------------------
 if [ -z "${NDK_ROOT:-}" ]; then
-    for cand in "$ANDROID_NDK_ROOT" "$ANDROID_NDK_HOME" "$ANDROID_NDK"; do
+    for cand in "${ANDROID_NDK_ROOT:-}" "${ANDROID_NDK_HOME:-}" "${ANDROID_NDK:-}"; do
         [ -n "${cand:-}" ] && [ -d "$cand" ] && NDK_ROOT="$cand" && break
     done
 fi

@@ -1,4 +1,4 @@
-# glib 2.89.4 is cross-compiled by build-android.sh (meson + NDK) rather
+# glib 2.90.0 is cross-compiled by build-android.sh (meson + NDK) rather
 # than ndk-build; the script refreshes the checked-in archives and the
 # glib-2.0/ headers consumed by libwsutil/libwiretap/libwireshark.
 APP_ABI ?= arm64-v8a

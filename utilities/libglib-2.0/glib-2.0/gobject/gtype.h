@@ -2295,7 +2295,7 @@ static void     type_name##_class_intern_init (gpointer klass) \
 static void     type_name##_init              (TypeName        *self); \
 static void     type_name##_class_init        (TypeName##Class *klass); \
 static GType    type_name##_get_type_once     (void); \
-static gpointer type_name##_parent_class = NULL; \
+G_GNUC_UNUSED static gpointer type_name##_parent_class = NULL; \
 static gint     TypeName##_private_offset; \
 \
 _G_DEFINE_TYPE_EXTENDED_CLASS_INIT(TypeName, type_name) \

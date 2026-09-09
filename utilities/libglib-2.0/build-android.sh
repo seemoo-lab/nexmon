@@ -1,5 +1,5 @@
 #!/bin/sh
-# Cross-build glib 2.89.4 and its dependencies for Android with the NDK,
+# Cross-build glib 2.90.0 and its dependencies for Android with the NDK,
 # producing the static archives checked into this directory:
 #
 #   libglib-2.0.a   glib core (PCRE2 for GRegex included)
@@ -7,7 +7,7 @@
 #   libgmodule-2.0.a libgio-2.0.a libgthread-2.0.a
 #   libintl.a       gettext stub (proxy-libintl, NLS disabled)
 #
-# Sources: ../glib (glib 2.89.4, meson), ../libffi (autotools), ../pcre2 (autotools).
+# Sources: ../glib (glib 2.90.0, meson), ../libffi (autotools), ../pcre2 (autotools).
 # The fresh headers are installed into ./glib-2.0/.
 #
 # Usage: ./build-android.sh [APP_ABI]        (default: arm64-v8a)
@@ -53,7 +53,7 @@ esac
 
 # --- NDK ---------------------------------------------------------------
 if [ -z "${NDK_ROOT:-}" ]; then
-    for cand in "$ANDROID_NDK_ROOT" "$ANDROID_NDK_HOME" "$ANDROID_NDK"; do
+    for cand in "${ANDROID_NDK_ROOT:-}" "${ANDROID_NDK_HOME:-}" "${ANDROID_NDK:-}"; do
         [ -n "${cand:-}" ] && [ -d "$cand" ] && NDK_ROOT="$cand" && break
     done
 fi
