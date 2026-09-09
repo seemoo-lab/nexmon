@@ -560,9 +560,10 @@ int SockAddr_Ifrname (struct thread_Settings *inSettings) {
             // Try to pull the interface from the destination
             if ((inSettings->mThreadMode == kMode_Client) && (IN6_IS_ADDR_LINKLOCAL(&addr->sin6_addr))) {
                 char *results;
+                char *saveptr;
                 char *copy = (char *)malloc(strlen(inSettings->mHost)+1);
                 strcpy(copy,(const char *)inSettings->mHost);
-                if (((results = strtok(copy, "%")) != NULL) && ((results = strtok(NULL, "%")) != NULL)) {
+                if (((results = strtok_r(copy, "%", &saveptr)) != NULL) && ((results = strtok_r(NULL, "%", &saveptr)) != NULL)) {
                     inSettings->mIfrname = calloc (strlen(results) + 1, sizeof(char));
                     strcpy(inSettings->mIfrname, results);
                 }

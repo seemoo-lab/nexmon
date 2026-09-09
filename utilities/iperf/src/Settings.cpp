@@ -587,17 +587,18 @@ void Settings_Interpret (char option, const char *optarg, struct thread_Settings
 
     case 'b': // UDP bandwidth
     {
+	char *saveptr;
 	char *tmp= new char [strlen(optarg) + 1];
 	strcpy(tmp, optarg);
 	// scan for PPS units, just look for 'p' as that's good enough
-	if ((((results = strtok(tmp, "p")) != NULL) && strcmp(results,optarg) != 0) \
-	    || (((results = strtok(tmp, "P")) != NULL)  && strcmp(results,optarg) != 0)) {
+	if ((((results = strtok_r(tmp, "p", &saveptr)) != NULL) && strcmp(results,optarg) != 0) \
+	    || (((results = strtok_r(tmp, "P", &saveptr)) != NULL)  && strcmp(results,optarg) != 0)) {
 	    mExtSettings->mAppRateUnits = kRate_PPS;
 	    mExtSettings->mAppRate = byte_atoi(results);
 	} else {
 	    mExtSettings->mAppRateUnits = kRate_BW;
 	    mExtSettings->mAppRate = byte_atoi(optarg);
-	    if (((results = strtok(tmp, ",")) != NULL) && strcmp(results,optarg) != 0) {
+	    if (((results = strtok_r(tmp, ",", &saveptr)) != NULL) && strcmp(results,optarg) != 0) {
 		setVaryLoad(mExtSettings);
 		mExtSettings->mVariance = byte_atoi(optarg);
 	    }
@@ -705,12 +706,13 @@ void Settings_Interpret (char option, const char *optarg, struct thread_Settings
 
     case 'p': // server port
     {
+	char *saveptr;
 	char *tmp= new char [strlen(optarg) + 1];
 	strcpy(tmp, optarg);
-	if ((results = strtok(tmp, "-")) != NULL) {
+	if ((results = strtok_r(tmp, "-", &saveptr)) != NULL) {
 	    mExtSettings->mPort = atoi(results);
 	    if (strcmp(results,optarg)) {
-		mExtSettings->mPortLast = atoi(strtok(NULL, "-"));
+		mExtSettings->mPortLast = atoi(strtok_r(NULL, "-", &saveptr));
 		setIncrDstPort(mExtSettings);
 	    }
 	}
@@ -1332,8 +1334,9 @@ void Settings_Interpret (char option, const char *optarg, struct thread_Settings
 	    if (optarg) {
 		char *tmp= new char [strlen(optarg) + 1];
 		if (tmp) {
+		    char *saveptr;
 		    strcpy(tmp, optarg);
-		    if ((results = strtok(tmp, ",")) != NULL) {
+		    if ((results = strtok_r(tmp, ",", &saveptr)) != NULL) {
 			if (strcasecmp(results, "up") == 0) {
 			    unsetWorkingLoadDown(mExtSettings);
 			} else if (strcasecmp(results, "down") == 0) {
@@ -1344,7 +1347,7 @@ void Settings_Interpret (char option, const char *optarg, struct thread_Settings
 			} else {
 			    fprintf(stderr, "Unrecoginized value of %s for --working-load, use 'up', 'down' or 'bidir'\n", results);
 			}
-			if ((results = strtok(NULL, ",")) != NULL) {
+			if ((results = strtok_r(NULL, ",", &saveptr)) != NULL) {
 			    mExtSettings->mWorkingLoadThreads = atoi(results);
 			}
 			delete [] tmp;
@@ -1539,7 +1542,8 @@ static void generate_permit_key (struct thread_Settings *mExtSettings) {
 
 static void strip_v6_brackets (char *v6addr) {
     char * results;
-    if (v6addr && (*v6addr ==  '[') && ((results = strtok(v6addr, "]")) != NULL)) {
+    char *saveptr;
+    if (v6addr && (*v6addr ==  '[') && ((results = strtok_r(v6addr, "]", &saveptr)) != NULL)) {
 	int len = strlen(v6addr);
 	for (int jx = 0; jx < len; jx++) {
 	    v6addr[jx]= v6addr[jx + 1];
@@ -1549,8 +1553,9 @@ static void strip_v6_brackets (char *v6addr) {
 
 static char * isv6_bracketed_port (char *v6addr) {
     char *results = NULL;
-    if (v6addr && (*v6addr ==  '[') && ((results = strtok(v6addr, "]")) != NULL)) {
-	results = strtok(NULL, ":");
+    char *saveptr;
+    if (v6addr && (*v6addr ==  '[') && ((results = strtok_r(v6addr, "]", &saveptr)) != NULL)) {
+	results = strtok_r(NULL, ":", &saveptr);
 	strip_v6_brackets(v6addr);
 	return results;
     }
@@ -1558,7 +1563,8 @@ static char * isv6_bracketed_port (char *v6addr) {
 }
 static char * isv4_port (char *v4addr) {
     char *results = NULL;
-    if (((results = strtok(v4addr, ":")) != NULL) && ((results = strtok(NULL, ":")) != NULL)) {
+    char *saveptr;
+    if (((results = strtok_r(v4addr, ":", &saveptr)) != NULL) && ((results = strtok_r(NULL, ":", &saveptr)) != NULL)) {
 	return results;
     }
     return NULL;
@@ -2105,15 +2111,17 @@ void Settings_ModalOptions (struct thread_Settings *mExtSettings) {
 	    }
 	} else {
 	    // check for optional arguments to change histogram settings
-	    if (((results = strtok(mExtSettings->mHistogramStr, ",")) != NULL) && !strcmp(results,mExtSettings->mHistogramStr)) {
+	    char *saveptr;
+	    char *subsaveptr;
+	    if (((results = strtok_r(mExtSettings->mHistogramStr, ",", &saveptr)) != NULL) && !strcmp(results,mExtSettings->mHistogramStr)) {
 		// scan for unit specifier
 		char *tmp = new char [strlen(results) + 1];
 		strcpy(tmp, results);
-		if ((strtok(tmp, "u") != NULL) && strcmp(results,tmp) != 0) {
+		if ((strtok_r(tmp, "u", &subsaveptr) != NULL) && strcmp(results,tmp) != 0) {
 		    mExtSettings->mHistUnits = 6;  // units is microseconds
 		} else {
 		    strcpy(tmp, results);
-		    if ((strtok(tmp, "m") != NULL) && strcmp(results,tmp) != 0) {
+		    if ((strtok_r(tmp, "m", &subsaveptr) != NULL) && strcmp(results,tmp) != 0) {
 			mExtSettings->mHistUnits = 3;  // units is milliseconds
 		    }
 		}
@@ -2121,11 +2129,11 @@ void Settings_ModalOptions (struct thread_Settings *mExtSettings) {
 		delete [] tmp;
 		mExtSettings->mHistci_lower = 5;
 		mExtSettings->mHistci_upper = 95;
-		if ((results = strtok(results+strlen(results)+1, ",")) != NULL) {
+		if ((results = strtok_r(results+strlen(results)+1, ",", &saveptr)) != NULL) {
 		    mExtSettings->mHistBins = byte_atoi(results);
-		    if ((results = strtok(NULL, ",")) != NULL) {
+		    if ((results = strtok_r(NULL, ",", &saveptr)) != NULL) {
 			mExtSettings->mHistci_lower = atof(results);
-			if ((results = strtok(NULL, ",")) != NULL) {
+			if ((results = strtok_r(NULL, ",", &saveptr)) != NULL) {
 			    mExtSettings->mHistci_upper = atof(results);
 			}
 		    }
@@ -2164,9 +2172,10 @@ void Settings_ModalOptions (struct thread_Settings *mExtSettings) {
 	// human suffixes, e.g. --isochronous 60:100m,5m
 	// which is frames per second, mean and variance
 	if (mExtSettings->mThreadMode == kMode_Client) {
-	    if (((results = strtok(mExtSettings->mIsochronousStr, ":")) != NULL) && !strcmp(results,mExtSettings->mIsochronousStr)) {
+	    char *saveptr;
+	    if (((results = strtok_r(mExtSettings->mIsochronousStr, ":", &saveptr)) != NULL) && !strcmp(results,mExtSettings->mIsochronousStr)) {
 		mExtSettings->mFPS = atof(results);
-		if ((results = strtok(NULL, ",")) != NULL) {
+		if ((results = strtok_r(NULL, ",", &saveptr)) != NULL) {
 		    mExtSettings->mMean = bitorbyte_atof(results);
 		    if (mExtSettings->mMean == 0.0) {
 		        fprintf(stderr, "ERROR: Invalid --isochronous mean value, must be greater than zero\n");
@@ -2182,7 +2191,7 @@ void Settings_ModalOptions (struct thread_Settings *mExtSettings) {
 			    mExtSettings->mMean *= -8 * mExtSettings->mBufLen * mExtSettings->mFPS;
 			}
 		    }
-		    if ((results = strtok(NULL, ",")) != NULL) {
+		    if ((results = strtok_r(NULL, ",", &saveptr)) != NULL) {
 		        mExtSettings->mVariance = bitorbyte_atof(results);
 		    }
 		} else {
@@ -2199,7 +2208,8 @@ void Settings_ModalOptions (struct thread_Settings *mExtSettings) {
     // full addresses look like 192.168.1.1:6001%eth0 or [2001:e30:1401:2:d46e:b891:3082:b939]:6001%eth0
     // Parse -B addresses
     if (mExtSettings->mLocalhost) {
-	if (((results = strtok(mExtSettings->mLocalhost, "%")) != NULL) && ((results = strtok(NULL, "%")) != NULL)) {
+	char *saveptr;
+	if (((results = strtok_r(mExtSettings->mLocalhost, "%", &saveptr)) != NULL) && ((results = strtok_r(NULL, "%", &saveptr)) != NULL)) {
 	    mExtSettings->mIfrname = static_cast<char *>(calloc(strlen(results) + 1, sizeof(char)));
 	    strcpy(mExtSettings->mIfrname, results);
 	    if (mExtSettings->mThreadMode == kMode_Client) {
@@ -2260,7 +2270,8 @@ void Settings_ModalOptions (struct thread_Settings *mExtSettings) {
 	    mExtSettings->mThreads = 1;
 
 	mExtSettings->mIfrnametx = NULL; // default off SO_BINDTODEVICE
-	if (((results = strtok(mExtSettings->mHost, "%")) != NULL) && ((results = strtok(NULL, "%")) != NULL)) {
+	char *saveptr;
+	if (((results = strtok_r(mExtSettings->mHost, "%", &saveptr)) != NULL) && ((results = strtok_r(NULL, "%", &saveptr)) != NULL)) {
 	    size_t len = strlen(results) + 1;
 	    mExtSettings->mIfrnametx = static_cast<char *>(calloc(len, sizeof(char)));
 	    strncpy(mExtSettings->mIfrnametx, results, len);
