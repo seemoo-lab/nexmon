@@ -10,7 +10,7 @@ libpcap_cflags := \
 
 include $(CLEAR_VARS)
 
-# Upstream libpcap 1.10.6 core (see Makefile.in PLATFORM_C_SRC / *.c) plus the
+# Upstream libpcap 1.10.7 core (see Makefile.in PLATFORM_C_SRC / *.c) plus the
 # AOSP-added pcap-netfilter-linux-android.c. pcap-util.c is new in 1.10 (byte
 # order / snapshot helpers moved out of pcap-common.c).
 LOCAL_SRC_FILES := \
