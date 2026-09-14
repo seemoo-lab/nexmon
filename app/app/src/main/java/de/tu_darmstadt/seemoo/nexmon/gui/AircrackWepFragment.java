@@ -18,7 +18,6 @@
 
 package de.tu_darmstadt.seemoo.nexmon.gui;
 
-
 import android.app.Fragment;
 import android.content.Intent;
 import android.os.Bundle;
@@ -61,7 +60,7 @@ import de.tu_darmstadt.seemoo.nexmon.stations.WepCrackAttack;
  * Use the {@link AircrackWepFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class AircrackWepFragment extends TrackingFragment implements Attack.IAttackInstanceUpdate{
+public class AircrackWepFragment extends Fragment implements Attack.IAttackInstanceUpdate{
 
 
     private static final int CHOOSE_FILE = 12;
@@ -224,11 +223,6 @@ public class AircrackWepFragment extends TrackingFragment implements Attack.IAtt
         Intent intent = new Intent("de.tu_darmstadt.seemoo.nexmon.ATTACK_SERVICE_INSTANCE_REQUEST");
         MyApplication.getAppContext().sendBroadcast(intent);
 
-    }
-
-    @Override
-    public String getTrackingName() {
-        return "Screen: Aircrack WEP";
     }
 
     @Override

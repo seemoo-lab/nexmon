@@ -42,6 +42,8 @@ static char *argprintf_arg = 0;
 static int argprintf_len = 0;
 static bool argprintf_first_call = 1;
 
+void _hexdump(char *desc, void *addr, int len, int (*_printf)(const char *, ...));
+
 int
 argprintf(const char *format, ...)
 {
@@ -58,6 +60,12 @@ argprintf(const char *format, ...)
     argprintf_written += rc;
     va_end(args);
     return (rc);
+}
+
+void
+arghexdump(char *desc, void *addr, int len)
+{
+    _hexdump(desc, addr, len, argprintf);
 }
 
 void

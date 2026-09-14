@@ -13,7 +13,7 @@ install: libs/armeabi/iwconfig libs/armeabi/iwlist libs/armeabi/iwpriv
 	adb push libs/armeabi/iwconfig /sdcard/
 	adb push libs/armeabi/iwlist /sdcard/
 	adb push libs/armeabi/iwpriv /sdcard/
-	adb shell 'su -c "mount -o remount,rw /system"'
+	adb shell 'su -c "mount -o rw,remount /system"'
 	adb shell 'su -c "cp /sdcard/iwconfig /system/bin/iwconfig"'
 	adb shell 'su -c "cp /sdcard/iwlist /system/bin/iwlist"'
 	adb shell 'su -c "cp /sdcard/iwpriv /system/bin/iwpriv"'

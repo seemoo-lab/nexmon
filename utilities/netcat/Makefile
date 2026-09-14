@@ -5,7 +5,7 @@ libs/armeabi/nc: netcat.c Android.mk
 
 install: libs/armeabi/nc
 	adb push $< /sdcard/
-	adb shell 'su -c "mount -o remount,rw /system"'
+	adb shell 'su -c "mount -o rw,remount /system"'
 	adb shell 'su -c "cp /sdcard/nc /system/bin/nc"'
 	adb shell 'su -c "chmod +x /system/bin/nc"'
 

@@ -6,10 +6,12 @@ libs/armeabi/libfakeioctl.so: Android.mk fakeioctl.c ../libnexio/local/armeabi/l
 ../libnexio/local/armeabi/libnexio.a: FORCE
 	cd ../libnexio && make
 
-install: libs/armeabi/libfakeioctl.so
-	adb push $< /sdcard/
-	adb shell 'su -c "mount -o remount,rw /system"'
+install: libs/armeabi/libfakeioctl.so libs/arm64-v8a/libfakeioctl.so
+	adb shell 'su -c "mount -o rw,remount /system"'
+	adb push libs/armeabi/libfakeioctl.so /sdcard/
 	adb shell 'su -c "cp /sdcard/libfakeioctl.so /system/lib/libfakeioctl.so"'
+	adb push libs/arm64-v8a/libfakeioctl.so /sdcard/
+	adb shell 'su -c "cp /sdcard/libfakeioctl.so /system/lib64/libfakeioctl.so"'
 
 clean:
 	rm -Rf libs
