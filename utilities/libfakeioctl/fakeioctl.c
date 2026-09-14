@@ -54,15 +54,7 @@
 #define WLC_GET_MONITOR                 107
 #define WLC_SET_MONITOR                 108
 
-struct nexio {
-    struct ifreq *ifr;
-    int sock_rx_ioctl;
-    int sock_rx_frame;
-    int sock_tx;
-};
-
-extern int nex_ioctl(struct nexio *nexio, int cmd, void *buf, int len, bool set);
-extern struct nexio *nex_init_ioctl(const char *ifname);
+#include <libnexio.h>
 
 #ifndef RTLD_NEXT
 #define RTLD_NEXT ((void *) -1l)

@@ -3,7 +3,7 @@
 
 # Test C, C++, PO extractors.
 
-cat <<EOF > xg-po-1.in.po
+cat <<\EOF > xg-po-1.in.po
 #: file1.c:199
 #, fuzzy
 msgid "extract me"
@@ -19,7 +19,7 @@ msgid "hello"
 msgstr "Again some text for fuzzy"
 EOF
 
-cat <<EOF > xg-po-1.c
+cat <<\EOF > xg-po-1.c
 #include <libintl.h>
 #include <stdio.h>
 int
@@ -30,7 +30,7 @@ main (int argc, char *argv[])
 }
 EOF
 
-cat <<EOF > xg-po-1.cc
+cat <<\EOF > xg-po-1.cc
 #include <iostream.h>
 #include <libintl.h>
 #include <locale.h>
@@ -47,7 +47,7 @@ ${XGETTEXT} --omit-header -n \
   -d xg-po-1.tmp xg-po-1.in.po xg-po-1.c xg-po-1.cc || Exit 1
 LC_ALL=C tr -d '\r' < xg-po-1.tmp.po > xg-po-1.po || Exit 1
 
-cat <<EOF > xg-po-1.ok
+cat <<\EOF > xg-po-1.ok
 #: file1.c:199
 #, fuzzy
 msgid "extract me"

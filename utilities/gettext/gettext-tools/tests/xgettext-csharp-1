@@ -3,7 +3,7 @@
 
 # Some tests for C# support
 
-cat <<EOF > xg-cs-1.cs
+cat <<\EOF > xg-cs-1.cs
 using GNU.Gettext;
 class TestCase {
   public TestCase() {
@@ -34,7 +34,7 @@ EOF
 ${XGETTEXT} --omit-header --no-location -c -d xg-cs-1.tmp xg-cs-1.cs || Exit 1
 LC_ALL=C tr -d '\r' < xg-cs-1.tmp.po > xg-cs-1.po || Exit 1
 
-cat <<EOF > xg-cs-1.ok
+cat <<\EOF > xg-cs-1.ok
 #. standard usage
 msgid "Test String 1"
 msgstr ""

@@ -1,0 +1,40 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test that ngettext() does not crash when the plural form rule leads to
+# a division by zero.
+
+test -d plural-4-dir || mkdir plural-4-dir
+test -d plural-4-dir/ll || mkdir plural-4-dir/ll
+test -d plural-4-dir/ll/LC_MESSAGES || mkdir plural-4-dir/ll/LC_MESSAGES
+
+cat > plural-4-ll.po <<EOF
+msgid ""
+msgstr ""
+"Project-Id-Version: dummy 0.0\n"
+"PO-Revision-Date: 2023-09-22 12:48:44 CEST\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: lalala\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=ASCII\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n!=1)+1/(n!=1666);\n"
+
+msgid "X"
+msgid_plural "Y"
+msgstr[0] "x"
+msgstr[1] "y"
+msgstr[2] "z"
+EOF
+
+: ${MSGFMT=msgfmt}
+# The option '-c' checks the evaluation only for 0 ≤ n ≤ 1000.
+${MSGFMT} -c -o plural-4-dir/ll/LC_MESSAGES/plural.mo plural-4-ll.po || Exit 1
+
+LANGUAGE= TEXTDOMAIN=plural TEXTDOMAINDIR=plural-4-dir \
+$NGETTEXT --env LC_ALL=ll X Y 1666 > dataout
+test $? = 0 || Exit 1
+test x = `cat dataout` || Exit 1
+
+Exit 0

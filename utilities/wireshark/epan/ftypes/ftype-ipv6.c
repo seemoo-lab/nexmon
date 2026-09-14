@@ -3,45 +3,26 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 2001 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
-#include <string.h>
-
 #include <ftypes-int.h>
-#include <epan/ipv6.h>
 #include <epan/addr_resolv.h>
 #include <epan/to_str.h>
+#include <wsutil/inet_cidr.h>
+#include <wsutil/strtoi.h>
+#include <wsutil/array.h>
 
-static void
-ipv6_fvalue_set(fvalue_t *fv, const guint8 *value)
-{
-	memcpy(fv->value.ipv6.addr.bytes, value, FT_IPv6_LEN);
-	fv->value.ipv6.prefix = 128;
-}
-
-static gboolean
-ipv6_from_unparsed(fvalue_t *fv, const char *s, gboolean allow_partial_value _U_, gchar **err_msg)
+static bool
+ipv6_from_literal(fvalue_t *fv, const char *s, bool allow_partial_value _U_, char **err_msg)
 {
 	const char *slash;
 	const char *addr_str;
 	char *addr_str_to_free = NULL;
-	unsigned int nmask_bits;
-	fvalue_t *nmask_fvalue;
+	uint32_t nmask_bits;
+	const char *endptr;
 
 	/* Look for prefix: Is there a single slash in the string? */
 	slash = strchr(s, '/');
@@ -56,10 +37,10 @@ ipv6_from_unparsed(fvalue_t *fv, const char *s, gboolean allow_partial_value _U_
 
 	if (!get_host_ipaddr6(addr_str, &(fv->value.ipv6.addr))) {
 		if (err_msg != NULL)
-			*err_msg = g_strdup_printf("\"%s\" is not a valid hostname or IPv6 address.", s);
+			*err_msg = ws_strdup_printf("\"%s\" is not a valid hostname or IPv6 address.", s);
 		if (addr_str_to_free)
 			wmem_free(NULL, addr_str_to_free);
-		return FALSE;
+		return false;
 	}
 
 	if (addr_str_to_free)
@@ -67,20 +48,18 @@ ipv6_from_unparsed(fvalue_t *fv, const char *s, gboolean allow_partial_value _U_
 
 	/* If prefix */
 	if (slash) {
-		/* XXX - this is inefficient */
-		nmask_fvalue = fvalue_from_unparsed(FT_UINT32, slash+1, FALSE, err_msg);
-		if (!nmask_fvalue) {
-			return FALSE;
+		if(!ws_strtou32(slash+1, &endptr, &nmask_bits) || *endptr != '\0') {
+			if (err_msg != NULL) {
+				*err_msg = ws_strdup_printf("%s in not a valid mask", slash+1);
+			}
+			return false;
 		}
-		nmask_bits = fvalue_get_uinteger(nmask_fvalue);
-		FVALUE_FREE(nmask_fvalue);
-
 		if (nmask_bits > 128) {
 			if (err_msg != NULL) {
-				*err_msg = g_strdup_printf("Prefix in a IPv6 address should be <= 128, not %u",
+				*err_msg = ws_strdup_printf("Prefix in a IPv6 address should be <= 128, not %u",
 						nmask_bits);
 			}
-			return FALSE;
+			return false;
 		}
 		fv->value.ipv6.prefix = nmask_bits;
 	} else {
@@ -88,191 +67,201 @@ ipv6_from_unparsed(fvalue_t *fv, const char *s, gboolean allow_partial_value _U_
 		fv->value.ipv6.prefix = 128;
 	}
 
-	return TRUE;
+	return true;
 }
 
-static int
-ipv6_repr_len(fvalue_t *fv _U_, ftrepr_t rtype _U_, int field_display _U_)
+static char *
+ipv6_to_repr(wmem_allocator_t *scope, const fvalue_t *fv, ftrepr_t rtype _U_, int field_display _U_)
 {
-	return MAX_IP6_STR_LEN;
+	char buf[WS_INET6_ADDRSTRLEN];
+	char *repr;
+
+	ip6_to_str_buf(&fv->value.ipv6.addr, buf, sizeof(buf));
+
+	if (fv->value.ipv6.prefix != 0 && fv->value.ipv6.prefix != 128)
+		repr = wmem_strdup_printf(scope, "%s/%"PRIu32, buf, fv->value.ipv6.prefix);
+	else
+		repr = wmem_strdup(scope, buf);
+
+	return repr;
 }
 
 static void
-ipv6_to_repr(fvalue_t *fv, ftrepr_t rtype _U_, int field_display _U_, char *buf, unsigned int size)
+ipv6_set(fvalue_t *fv, const ipv6_addr_and_prefix *value)
 {
-	ip6_to_str_buf(&(fv->value.ipv6.addr), buf, size);
+	fv->value.ipv6 = *value;
 }
 
-static gpointer
-value_get(fvalue_t *fv)
+static const ipv6_addr_and_prefix *
+ipv6_get(fvalue_t *fv)
 {
-	return fv->value.ipv6.addr.bytes;
+	return &fv->value.ipv6;
 }
 
-static const guint8 bitmasks[9] =
+static const uint8_t bitmasks[9] =
 	{ 0x00, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe, 0xff };
 
-static gint
-cmp_compare(const fvalue_t *fv_a, const fvalue_t *fv_b)
+static enum ft_result
+cmp_order(const fvalue_t *fv_a, const fvalue_t *fv_b, int *cmp)
 {
 	const ipv6_addr_and_prefix *a = &(fv_a->value.ipv6);
 	const ipv6_addr_and_prefix *b = &(fv_b->value.ipv6);
-	guint32	prefix;
+	uint32_t	prefix;
 	int pos = 0;
 
 	prefix = MIN(a->prefix, b->prefix);	/* MIN() like IPv4 */
-	prefix = MIN(prefix, 128);			/* sanitize, max prefix is 128 */
+	prefix = MIN(prefix, 128);		/* sanitize, max prefix is 128 */
 
 	while (prefix >= 8) {
-		gint byte_a = (gint) (a->addr.bytes[pos]);
-		gint byte_b = (gint) (b->addr.bytes[pos]);
+		int byte_a = (int) (a->addr.bytes[pos]);
+		int byte_b = (int) (b->addr.bytes[pos]);
 
-		if (byte_a != byte_b)
-			return byte_a - byte_b;
+		if (byte_a != byte_b) {
+			*cmp = byte_a - byte_b;
+			return FT_OK;
+		}
 
 		prefix -= 8;
 		pos++;
 	}
 
 	if (prefix != 0) {
-		gint byte_a = (gint) (a->addr.bytes[pos] & (bitmasks[prefix]));
-		gint byte_b = (gint) (b->addr.bytes[pos] & (bitmasks[prefix]));
+		int byte_a = (int) (a->addr.bytes[pos] & (bitmasks[prefix]));
+		int byte_b = (int) (b->addr.bytes[pos] & (bitmasks[prefix]));
 
-		if (byte_a != byte_b)
-			return byte_a - byte_b;
+		if (byte_a != byte_b) {
+			*cmp = byte_a - byte_b;
+			return FT_OK;
+		}
 	}
-	return 0;
+	*cmp = 0;
+	return FT_OK;
 }
 
-static gboolean
-cmp_eq(const fvalue_t *fv_a, const fvalue_t *fv_b)
-{
-	return (cmp_compare(fv_a, fv_b) == 0);
-}
-
-static gboolean
-cmp_ne(const fvalue_t *fv_a, const fvalue_t *fv_b)
-{
-	return (cmp_compare(fv_a, fv_b) != 0);
-}
-
-static gboolean
-cmp_gt(const fvalue_t *fv_a, const fvalue_t *fv_b)
-{
-	return (cmp_compare(fv_a, fv_b) > 0);
-}
-
-static gboolean
-cmp_ge(const fvalue_t *fv_a, const fvalue_t *fv_b)
-{
-	return (cmp_compare(fv_a, fv_b) >= 0);
-}
-
-static gboolean
-cmp_lt(const fvalue_t *fv_a, const fvalue_t *fv_b)
-{
-	return (cmp_compare(fv_a, fv_b) < 0);
-}
-
-static gboolean
-cmp_le(const fvalue_t *fv_a, const fvalue_t *fv_b)
-{
-	return (cmp_compare(fv_a, fv_b) <= 0);
-}
-
-static gboolean
-cmp_bitwise_and(const fvalue_t *fv_a, const fvalue_t *fv_b)
+static enum ft_result
+bitwise_and(fvalue_t *dst, const fvalue_t *fv_a, const fvalue_t *fv_b, char **err_ptr _U_)
 {
 	const ipv6_addr_and_prefix *a = &(fv_a->value.ipv6);
 	const ipv6_addr_and_prefix *b = &(fv_b->value.ipv6);
-	guint32	prefix;
+	uint32_t	prefix;
 	int pos = 0;
 
 	prefix = MIN(a->prefix, b->prefix);	/* MIN() like in IPv4 */
-	prefix = MIN(prefix, 128);			/* sanitize, max prefix is 128 */
+	prefix = MIN(prefix, 128);		/* sanitize, max prefix is 128 */
 
 	while (prefix >= 8) {
-		if (a->addr.bytes[pos] & b->addr.bytes[pos])
-			return TRUE;
+		dst->value.ipv6.addr.bytes[pos] =
+			a->addr.bytes[pos] & b->addr.bytes[pos];
 
 		prefix -= 8;
 		pos++;
 	}
 
 	if (prefix != 0) {
-		guint8 byte_a = (a->addr.bytes[pos] & (bitmasks[prefix]));
-		guint8 byte_b = (b->addr.bytes[pos] & (bitmasks[prefix]));
-
-		if (byte_a & byte_b)
-			return TRUE;
+		dst->value.ipv6.addr.bytes[pos] =
+			a->addr.bytes[pos] & b->addr.bytes[pos] & bitmasks[prefix];
 	}
-	return FALSE;
+	return FT_OK;
+}
+
+static unsigned
+len(fvalue_t *fv _U_)
+{
+	return FT_IPv6_LEN;
 }
 
 static void
-slice(fvalue_t *fv, GByteArray *bytes, guint offset, guint length)
+slice(fvalue_t *fv, GByteArray *bytes, unsigned offset, unsigned length)
 {
-	/* XXX needed? ipv4 doesn't support slice() */
-	guint8* data;
+	uint8_t* data;
 
 	data = fv->value.ipv6.addr.bytes + offset;
 
 	g_byte_array_append(bytes, data, length);
 }
 
+static unsigned
+ipv6_hash(const fvalue_t *fv)
+{
+	struct _ipv6 {
+		int64_t val[2];
+	} *addr = (struct _ipv6 *)&fv->value.ipv6.addr;
+	int64_t mask = fv->value.ipv6.prefix;
+
+	return g_int64_hash(&addr->val[0]) ^ g_int64_hash(&addr->val[1]) ^ g_int64_hash(&mask);
+}
+
+static bool
+is_zero(const fvalue_t *fv_a)
+{
+	ws_in6_addr zero = { 0 };
+	return memcmp(&fv_a->value.ipv6.addr, &zero, sizeof(ws_in6_addr)) == 0;
+}
+
 void
 ftype_register_ipv6(void)
 {
-	static ftype_t ipv6_type = {
+	static const ftype_t ipv6_type = {
 		FT_IPv6,			/* ftype */
-		"FT_IPv6",			/* name */
-		"IPv6 address",			/* pretty_name */
 		FT_IPv6_LEN,			/* wire_size */
-		NULL,		/* new_value */
-		NULL,		/* free_value */
-		ipv6_from_unparsed,		/* val_from_unparsed */
+		NULL,				/* new_value */
+		NULL,				/* copy_value */
+		NULL,				/* free_value */
+		ipv6_from_literal,		/* val_from_literal */
 		NULL,				/* val_from_string */
+		NULL,				/* val_from_charconst */
+		NULL,				/* val_from_uinteger64 */
+		NULL,				/* val_from_sinteger64 */
+		NULL,				/* val_from_double */
 		ipv6_to_repr,			/* val_to_string_repr */
-		ipv6_repr_len,			/* len_string_repr */
 
-		NULL,				/* set_value_byte_array */
-		ipv6_fvalue_set,		/* set_value_bytes */
-		NULL,				/* set_value_guid */
-		NULL,				/* set_value_time */
-		NULL,				/* set_value_string */
-		NULL,				/* set_value_protocol */
-		NULL,				/* set_value_uinteger */
-		NULL,				/* set_value_sinteger */
-		NULL,				/* set_value_uinteger64 */
-		NULL,				/* set_value_sinteger64 */
-		NULL,				/* set_value_floating */
+		NULL,				/* val_to_uinteger64 */
+		NULL,				/* val_to_sinteger64 */
+		NULL,				/* val_to_double */
 
-		value_get,			/* get_value */
-		NULL,				/* get_value_uinteger */
-		NULL,				/* get_value_sinteger */
-		NULL,				/* get_value_uinteger64 */
-		NULL,				/* get_value_sinteger64 */
-		NULL,				/* get_value_floating */
+		{ .set_value_ipv6 = ipv6_set },	/* union set_value */
+		{ .get_value_ipv6 = ipv6_get },	/* union get_value */
 
-		cmp_eq,
-		cmp_ne,
-		cmp_gt,
-		cmp_ge,
-		cmp_lt,
-		cmp_le,
-		cmp_bitwise_and,
+		cmp_order,
 		NULL, 				/* XXX, cmp_contains, needed? ipv4 doesn't support it */
 		NULL,				/* cmp_matches */
 
+		ipv6_hash,
+		is_zero,
 		NULL,
-		slice,
+		NULL,
+		len,
+		(FvalueSlice)slice,
+		bitwise_and,
+		NULL,				/* unary_minus */
+		NULL,				/* add */
+		NULL,				/* subtract */
+		NULL,				/* multiply */
+		NULL,				/* divide */
+		NULL,				/* modulo */
 	};
 
 	ftype_register(FT_IPv6, &ipv6_type);
 }
 
+void
+ftype_register_pseudofields_ipv6(int proto)
+{
+	static int hf_ft_ipv6;
+
+	static hf_register_info hf_ftypes[] = {
+		{ &hf_ft_ipv6,
+		    { "FT_IPv6", "_ws.ftypes.ipv6",
+			FT_IPv6, BASE_NONE, NULL, 0x00,
+			NULL, HFILL }
+		},
+	};
+
+	proto_register_field_array(proto, hf_ftypes, array_length(hf_ftypes));
+}
+
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

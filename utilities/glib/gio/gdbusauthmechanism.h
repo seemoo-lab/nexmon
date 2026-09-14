@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -91,12 +93,14 @@ struct _GDBusAuthMechanismClass
   /* functions for client-side authentication */
   GDBusAuthMechanismState   (*client_get_state)         (GDBusAuthMechanism   *mechanism);
   gchar                    *(*client_initiate)          (GDBusAuthMechanism   *mechanism,
+                                                         GDBusConnectionFlags  conn_flags,
                                                          gsize                *out_initial_response_len);
   void                      (*client_data_receive)      (GDBusAuthMechanism   *mechanism,
                                                          const gchar          *data,
                                                          gsize                 data_len);
   gchar                    *(*client_data_send)         (GDBusAuthMechanism   *mechanism,
                                                          gsize                *out_data_len);
+  gchar                    *(*client_get_reject_reason) (GDBusAuthMechanism   *mechanism);
   void                      (*client_shutdown)          (GDBusAuthMechanism   *mechanism);
 };
 
@@ -106,7 +110,7 @@ struct _GDBusAuthMechanism
   GDBusAuthMechanismPrivate *priv;
 };
 
-GType                     _g_dbus_auth_mechanism_get_type                 (void) G_GNUC_CONST;
+GType                     _g_dbus_auth_mechanism_get_type                 (void);
 
 gint                      _g_dbus_auth_mechanism_get_priority             (GType                 mechanism_type);
 const gchar              *_g_dbus_auth_mechanism_get_name                 (GType                 mechanism_type);
@@ -138,12 +142,14 @@ void                      _g_dbus_auth_mechanism_server_shutdown          (GDBus
 
 GDBusAuthMechanismState   _g_dbus_auth_mechanism_client_get_state         (GDBusAuthMechanism   *mechanism);
 gchar                    *_g_dbus_auth_mechanism_client_initiate          (GDBusAuthMechanism   *mechanism,
+                                                                           GDBusConnectionFlags  conn_flags,
                                                                            gsize                *out_initial_response_len);
 void                      _g_dbus_auth_mechanism_client_data_receive      (GDBusAuthMechanism   *mechanism,
                                                                            const gchar          *data,
                                                                            gsize                 data_len);
 gchar                    *_g_dbus_auth_mechanism_client_data_send         (GDBusAuthMechanism   *mechanism,
                                                                           gsize                *out_data_len);
+gchar                    *_g_dbus_auth_mechanism_client_get_reject_reason (GDBusAuthMechanism   *mechanism);
 void                      _g_dbus_auth_mechanism_client_shutdown          (GDBusAuthMechanism   *mechanism);
 
 

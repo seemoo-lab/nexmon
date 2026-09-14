@@ -1,0 +1,51 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test heuristic recognition of Go format strings like "100% complete".
+
+cat <<\EOF > f-go-3.go
+import "fmt"
+func main () {
+    Gettext("Test 1a is 100% complete");
+    fmt.Println(Gettext("Test 1b is 100% complete"), 120);
+    Gettext("Test 2a from 0% complete to 100% complete");
+    fmt.Println(Gettext("Test 2b from 0% complete to 100% complete"), 120, 121);
+    Gettext("Test 3a of %s is 100% complete");
+    fmt.Println(Gettext("Test 3b of %s is 100% complete"), "foo", 120);
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --flag=Println:1:go-format \
+            --omit-header --no-location -d f-go-3.tmp f-go-3.go || Exit 1
+LC_ALL=C tr -d '\r' < f-go-3.tmp.po > f-go-3.po || Exit 1
+
+cat <<\EOF > f-go-3.ok
+msgid "Test 1a is 100% complete"
+msgstr ""
+
+#, go-format
+msgid "Test 1b is 100% complete"
+msgstr ""
+
+msgid "Test 2a from 0% complete to 100% complete"
+msgstr ""
+
+#, go-format
+msgid "Test 2b from 0% complete to 100% complete"
+msgstr ""
+
+#, go-format
+msgid "Test 3a of %s is 100% complete"
+msgstr ""
+
+#, go-format
+msgid "Test 3b of %s is 100% complete"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} f-go-3.ok f-go-3.po
+result=$?
+
+exit $result

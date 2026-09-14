@@ -1,10 +1,10 @@
 /* Creation of autonomous subprocesses.
-   Copyright (C) 2001-2004, 2006-2016 Free Software Foundation, Inc.
+   Copyright (C) 2001-2004, 2006-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2001.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,7 +13,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 
 #include <config.h>
@@ -23,23 +23,48 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
 
-#include "error.h"
+#include <sys/types.h>
+#include <sys/wait.h>
+
+#include "canonicalize.h"
+#include <error.h>
 #include "fatal-signal.h"
+#include "filename.h"
+#include "findprog.h"
+#include "windows-path.h"
 #include "wait-process.h"
+#include "xalloc.h"
 #include "gettext.h"
 
-#define _(str) gettext (str)
+#define _(msgid) dgettext (GNULIB_TEXT_DOMAIN, msgid)
 
-#if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
+
+/* Choice of implementation for native Windows.
+   - Define to 0 to use the posix_spawn facility (modules 'posix_spawn' and
+     'posix_spawnp'), that is based on the module 'windows-spawn'.
+   - Define to 1 to use the older code, that uses the module 'windows-spawn'
+     directly.
+   You can set this macro from a Makefile or at configure time, from the
+   CPPFLAGS.  */
+#ifndef EXECUTE_IMPL_AVOID_POSIX_SPAWN
+# define EXECUTE_IMPL_AVOID_POSIX_SPAWN 0
+#endif
+
+
+#if (defined _WIN32 && !defined __CYGWIN__) && EXECUTE_IMPL_AVOID_POSIX_SPAWN
 
 /* Native Windows API.  */
+# if GNULIB_MSVC_NOTHROW
+#  include "msvc-nothrow.h"
+# else
+#  include <io.h>
+# endif
 # include <process.h>
-# include "w32spawn.h"
+# include "windows-spawn.h"
 
 #else
 
@@ -48,15 +73,8 @@
 
 #endif
 
-/* environ is the exported symbol referencing the internal
-   __cygwin_environ variable on cygwin64:
-   <https://cygwin.com/ml/cygwin/2013-06/msg00228.html>.  */
-#if defined __CYGWIN__ && defined __x86_64__
-extern DLL_VARIABLE char **environ;
-#endif
 
-
-#if defined EINTR && ((defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__)
+#if defined EINTR && (defined _WIN32 && !defined __CYGWIN__) && EXECUTE_IMPL_AVOID_POSIX_SPAWN
 
 /* EINTR handling for close(), open().
    These functions can return -1/EINTR even though we don't have any
@@ -73,6 +91,7 @@ nonintr_close (int fd)
 
   return retval;
 }
+#undef close /* avoid warning related to gnulib module unistd */
 #define close nonintr_close
 
 static int
@@ -92,104 +111,142 @@ nonintr_open (const char *pathname, int oflag, mode_t mode)
 #endif
 
 
-/* Execute a command, optionally redirecting any of the three standard file
-   descriptors to /dev/null.  Return its exit code.
-   If it didn't terminate correctly, exit if exit_on_error is true, otherwise
-   return 127.
-   If slave_process is true, the child process will be terminated when its
-   creator receives a catchable fatal signal.  */
 int
 execute (const char *progname,
-         const char *prog_path, char **prog_argv,
+         const char *prog_path, const char * const *prog_argv,
+         const char * const *dll_dirs,
+         const char *directory,
          bool ignore_sigpipe,
          bool null_stdin, bool null_stdout, bool null_stderr,
          bool slave_process, bool exit_on_error,
          int *termsigp)
 {
-#if (defined _WIN32 || defined __WIN32__) && ! defined __CYGWIN__
+  char *prog_path_to_free = NULL;
+
+  if (directory != NULL)
+    {
+      /* If a change of directory is requested, make sure PROG_PATH is absolute
+         before we do so.  This is needed because
+           - posix_spawn and posix_spawnp are required to resolve a relative
+             PROG_PATH *after* changing the directory.  See
+             <https://www.austingroupbugs.net/view.php?id=1208>:
+               "if this pathname does not start with a <slash> it shall be
+                interpreted relative to the working directory of the child
+                process _after_ all file_actions have been performed."
+             But this would be a surprising application behaviour, possibly
+             even security relevant.
+           - For the Windows CreateProcess() function, it is unspecified whether
+             a relative file name is interpreted to the parent's current
+             directory or to the specified directory.  See
+             <https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessa>  */
+      if (! IS_ABSOLUTE_FILE_NAME (prog_path))
+        {
+          const char *resolved_prog =
+            find_in_given_path (prog_path, getenv ("PATH"), NULL, false);
+          if (resolved_prog == NULL)
+            goto fail_with_errno;
+          if (resolved_prog != prog_path)
+            prog_path_to_free = (char *) resolved_prog;
+          prog_path = resolved_prog;
+
+          if (! IS_ABSOLUTE_FILE_NAME (prog_path))
+            {
+              char *absolute_prog =
+                canonicalize_filename_mode (prog_path,
+                                            CAN_MISSING | CAN_NOLINKS);
+              if (absolute_prog == NULL)
+                {
+                  free (prog_path_to_free);
+                  goto fail_with_errno;
+                }
+              free (prog_path_to_free);
+              prog_path_to_free = absolute_prog;
+              prog_path = absolute_prog;
+
+              if (! IS_ABSOLUTE_FILE_NAME (prog_path))
+                abort ();
+            }
+        }
+    }
+
+  int saved_errno;
+
+#if (defined _WIN32 && !defined __CYGWIN__) && EXECUTE_IMPL_AVOID_POSIX_SPAWN
 
   /* Native Windows API.  */
-  int orig_stdin;
-  int orig_stdout;
-  int orig_stderr;
-  int exitcode;
-  int nullinfd;
-  int nulloutfd;
 
-  /* FIXME: Need to free memory allocated by prepare_spawn.  */
-  prog_argv = prepare_spawn (prog_argv);
+  char *argv_mem_to_free;
 
-  /* Save standard file handles of parent process.  */
-  if (null_stdin)
-    orig_stdin = dup_safer_noinherit (STDIN_FILENO);
-  if (null_stdout)
-    orig_stdout = dup_safer_noinherit (STDOUT_FILENO);
-  if (null_stderr)
-    orig_stderr = dup_safer_noinherit (STDERR_FILENO);
-  exitcode = -1;
+  const char **argv = prepare_spawn (prog_argv, &argv_mem_to_free);
+  if (argv == NULL)
+    xalloc_die ();
+
+  int exitcode = -1;
 
   /* Create standard file handles of child process.  */
-  nullinfd = -1;
-  nulloutfd = -1;
+  int nullinfd = -1;
+  int nulloutfd = -1;
   if ((!null_stdin
-       || ((nullinfd = open ("NUL", O_RDONLY, 0)) >= 0
-           && (nullinfd == STDIN_FILENO
-               || (dup2 (nullinfd, STDIN_FILENO) >= 0
-                   && close (nullinfd) >= 0))))
+       || (nullinfd = open ("NUL", O_RDONLY, 0)) >= 0)
       && (!(null_stdout || null_stderr)
-          || ((nulloutfd = open ("NUL", O_RDWR, 0)) >= 0
-              && (!null_stdout
-                  || nulloutfd == STDOUT_FILENO
-                  || dup2 (nulloutfd, STDOUT_FILENO) >= 0)
-              && (!null_stderr
-                  || nulloutfd == STDERR_FILENO
-                  || dup2 (nulloutfd, STDERR_FILENO) >= 0)
-              && ((null_stdout && nulloutfd == STDOUT_FILENO)
-                  || (null_stderr && nulloutfd == STDERR_FILENO)
-                  || close (nulloutfd) >= 0))))
-    /* Use spawnvpe and pass the environment explicitly.  This is needed if
-       the program has modified the environment using putenv() or [un]setenv().
-       On Windows, programs have two environments, one in the "environment
-       block" of the process and managed through SetEnvironmentVariable(), and
-       one inside the process, in the location retrieved by the 'environ'
-       macro.  When using spawnvp() without 'e', the child process inherits a
-       copy of the environment block - ignoring the effects of putenv() and
-       [un]setenv().  */
+          || (nulloutfd = open ("NUL", O_RDWR, 0)) >= 0))
+    /* Pass the environment explicitly.  This is needed if the program has
+       modified the environment using putenv() or [un]setenv().  On Windows,
+       processes have two environments, one in the "environment block" of the
+       process and managed through SetEnvironmentVariable(), and one inside the
+       process, in the location retrieved by the 'environ' macro.  If we were
+       to pass NULL, the child process would inherit a copy of the environment
+       block - ignoring the effects of putenv() and [un]setenv().  */
     {
-      exitcode = spawnvpe (P_WAIT, prog_path, (const char **) prog_argv,
-                           (const char **) environ);
-      if (exitcode < 0 && errno == ENOEXEC)
+      HANDLE stdin_handle =
+        (HANDLE) _get_osfhandle (null_stdin ? nullinfd : STDIN_FILENO);
+      HANDLE stdout_handle =
+        (HANDLE) _get_osfhandle (null_stdout ? nulloutfd : STDOUT_FILENO);
+      HANDLE stderr_handle =
+        (HANDLE) _get_osfhandle (null_stderr ? nulloutfd : STDERR_FILENO);
+
+      exitcode = spawnpvech (P_WAIT, prog_path, argv + 1,
+                             (const char * const *) environ, dll_dirs,
+                             directory,
+                             stdin_handle, stdout_handle, stderr_handle);
+# if 0 /* Executing arbitrary files as shell scripts is unsecure.  */
+      if (exitcode == -1 && errno == ENOEXEC)
         {
           /* prog is not a native executable.  Try to execute it as a
              shell script.  Note that prepare_spawn() has already prepended
-             a hidden element "sh.exe" to prog_argv.  */
-          --prog_argv;
-          exitcode = spawnvpe (P_WAIT, prog_argv[0], (const char **) prog_argv,
-                               (const char **) environ);
+             a hidden element "sh.exe" to argv.  */
+          argv[1] = prog_path;
+          exitcode = spawnpvech (P_WAIT, argv[0], argv,
+                                 (const char * const *) environ, dll_dirs,
+                                 directory,
+                                 stdin_handle, stdout_handle, stderr_handle);
         }
+# endif
     }
+  if (exitcode == -1)
+    saved_errno = errno;
   if (nulloutfd >= 0)
     close (nulloutfd);
   if (nullinfd >= 0)
     close (nullinfd);
+  free (argv);
+  free (argv_mem_to_free);
+  free (prog_path_to_free);
 
-  /* Restore standard file handles of parent process.  */
-  if (null_stderr)
-    undup_safer_noinherit (orig_stderr, STDERR_FILENO);
-  if (null_stdout)
-    undup_safer_noinherit (orig_stdout, STDOUT_FILENO);
-  if (null_stdin)
-    undup_safer_noinherit (orig_stdin, STDIN_FILENO);
-
+  /* Treat failure and signalled child processes like wait_subprocess()
+     does.  */
   if (termsigp != NULL)
     *termsigp = 0;
 
   if (exitcode == -1)
+    goto fail_with_saved_errno;
+
+  if (WIFSIGNALED (exitcode))
     {
-      if (exit_on_error || !null_stderr)
-        error (exit_on_error ? EXIT_FAILURE : 0, errno,
-               _("%s subprocess failed"), progname);
-      return 127;
+      if (termsigp != NULL)
+        *termsigp = WTERMSIG (exitcode);
+      saved_errno = 0;
+      goto fail_with_saved_errno;
     }
 
   return exitcode;
@@ -202,6 +259,8 @@ execute (const char *progname,
      subprocess to exit with return code 127.  It is implementation
      dependent which error is reported which way.  We treat both cases as
      equivalent.  */
+  char **child_environ;
+  char **malloced_environ;
   sigset_t blocked_signals;
   posix_spawn_file_actions_t actions;
   bool actions_allocated;
@@ -209,6 +268,18 @@ execute (const char *progname,
   bool attrs_allocated;
   int err;
   pid_t child;
+
+  child_environ = environ;
+  malloced_environ = NULL;
+# if defined _WIN32 || defined __CYGWIN__
+  if (dll_dirs != NULL && dll_dirs[0] != NULL)
+    {
+      malloced_environ = extended_environ (dll_dirs);
+      if (malloced_environ == NULL)
+        goto fail_with_errno;
+      child_environ = malloced_environ;
+    }
+# endif
 
   if (slave_process)
     {
@@ -237,6 +308,10 @@ execute (const char *progname,
                                                           "/dev/null", O_RDWR,
                                                           0))
                  != 0)
+          || (directory != NULL
+              && (err = posix_spawn_file_actions_addchdir (&actions,
+                                                           directory)))
+# if !(defined _WIN32 && !defined __CYGWIN__)
           || (slave_process
               && ((err = posix_spawnattr_init (&attrs)) != 0
                   || (attrs_allocated = true,
@@ -244,11 +319,18 @@ execute (const char *progname,
                                                          &blocked_signals))
                       != 0
                       || (err = posix_spawnattr_setflags (&attrs,
-                                                        POSIX_SPAWN_SETSIGMASK))
+                                                          POSIX_SPAWN_SETSIGMASK))
                          != 0)))
-          || (err = posix_spawnp (&child, prog_path, &actions,
-                                  attrs_allocated ? &attrs : NULL, prog_argv,
-                                  environ))
+# endif
+          || (err = (directory != NULL
+                     ? posix_spawn (&child, prog_path, &actions,
+                                    attrs_allocated ? &attrs : NULL,
+                                    (char * const *) prog_argv,
+                                    child_environ)
+                     : posix_spawnp (&child, prog_path, &actions,
+                                     attrs_allocated ? &attrs : NULL,
+                                     (char * const *) prog_argv,
+                                     child_environ)))
              != 0))
     {
       if (actions_allocated)
@@ -257,12 +339,16 @@ execute (const char *progname,
         posix_spawnattr_destroy (&attrs);
       if (slave_process)
         unblock_fatal_signals ();
+      if (malloced_environ != NULL)
+        {
+          free (malloced_environ[0]);
+          free (malloced_environ);
+        }
+      free (prog_path_to_free);
       if (termsigp != NULL)
         *termsigp = 0;
-      if (exit_on_error || !null_stderr)
-        error (exit_on_error ? EXIT_FAILURE : 0, err,
-               _("%s subprocess failed"), progname);
-      return 127;
+      saved_errno = err;
+      goto fail_with_saved_errno;
     }
   posix_spawn_file_actions_destroy (&actions);
   if (attrs_allocated)
@@ -272,9 +358,23 @@ execute (const char *progname,
       register_slave_subprocess (child);
       unblock_fatal_signals ();
     }
+  if (malloced_environ != NULL)
+    {
+      free (malloced_environ[0]);
+      free (malloced_environ);
+    }
+  free (prog_path_to_free);
 
   return wait_subprocess (child, progname, ignore_sigpipe, null_stderr,
                           slave_process, exit_on_error, termsigp);
 
 #endif
+
+ fail_with_errno:
+  saved_errno = errno;
+ fail_with_saved_errno:
+  if (exit_on_error || !null_stderr)
+    error (exit_on_error ? EXIT_FAILURE : 0, saved_errno,
+           _("%s subprocess failed"), progname);
+  return 127;
 }

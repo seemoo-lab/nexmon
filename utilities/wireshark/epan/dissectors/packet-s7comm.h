@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #ifndef __PACKET_S7COMM_H__
 #define __PACKET_S7COMM_H__
@@ -58,18 +46,18 @@
 /**************************************************************************
  * Names of types in userdata parameter part
  */
-#define S7COMM_UD_TYPE_PUSH                 0x0
-#define S7COMM_UD_TYPE_REQ                  0x4
-#define S7COMM_UD_TYPE_RES                  0x8
+#define S7COMM_UD_TYPE_IND                  0x0
+#define S7COMM_UD_TYPE_REQ                  0x1
+#define S7COMM_UD_TYPE_RES                  0x2
 
 extern const value_string s7comm_item_return_valuenames[];
 
-guint32 s7comm_decode_ud_cpu_diagnostic_message(tvbuff_t *tvb, packet_info *pinfo, gboolean add_info_to_col, proto_tree *data_tree, guint32 offset);
+uint32_t s7comm_decode_ud_cpu_diagnostic_message(tvbuff_t *tvb, packet_info *pinfo, bool add_info_to_col, proto_tree *data_tree, uint32_t offset);
 
 #endif
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

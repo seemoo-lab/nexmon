@@ -1,23 +1,12 @@
-/* firewall_rules.h
+/** @file
+ *
  * Produce ACL rules for various products from a packet.
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 2006 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation,  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __UI_FIREWALL_RULES_H__
@@ -68,7 +57,7 @@ const char *firewall_product_rule_hint(size_t product_idx);
 const char *firewall_product_comment_prefix(size_t product_idx);
 
 /* Syntax function prototypes */
-typedef void (*syntax_func)(GString *rtxt, gchar *addr, guint32 port, port_type ptype, gboolean inbound, gboolean deny);
+typedef void (*syntax_func)(GString *rtxt, char *addr, uint32_t port, port_type ptype, bool inbound, bool deny);
 
 /** MAC filter function
  * @param product_idx Product index.
@@ -97,9 +86,9 @@ syntax_func firewall_product_ipv4_port_func(size_t product_idx);
 /** Product inbound support
  * Given an index, return the product's ability to support inbound rules.
  * @param product_idx Product index.
- * @return TRUE or FALSE.
+ * @return true or false.
  */
-gboolean firewall_product_does_inbound(size_t product_idx);
+bool firewall_product_does_inbound(size_t product_idx);
 
 #ifdef __cplusplus
 }

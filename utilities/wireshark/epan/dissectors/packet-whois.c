@@ -1,24 +1,12 @@
 /* packet-whois.c
- * Routines for whois dissection (see http://tools.ietf.org/html/rfc3912)
+ * Routines for whois dissection (see https://tools.ietf.org/html/rfc3912)
  * Copyright 2013, Christopher Maynard <Christopher.Maynard@gtech.com>
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -26,61 +14,81 @@
 #include <epan/conversation.h>
 #include <epan/expert.h>
 
+#include "packet-tcp.h"
+
 #define WHOIS_PORT      43  /* This is the registered IANA port (nicname) */
 
 void proto_register_whois(void);
 void proto_reg_handoff_whois(void);
 
-static int proto_whois = -1;
-static int hf_whois_query = -1;
-static int hf_whois_answer = -1;
-static int hf_whois_answer_in = -1;
-static int hf_whois_answer_to = -1;
-static int hf_whois_response_time = -1;
+static dissector_handle_t whois_handle;
 
-static expert_field ei_whois_nocrlf = EI_INIT;
+static int proto_whois;
+static int hf_whois_query;
+static int hf_whois_answer;
+static int hf_whois_answer_in;
+static int hf_whois_answer_to;
+static int hf_whois_response_time;
 
-static gint ett_whois = -1;
+static expert_field ei_whois_nocrlf;
+static expert_field ei_whois_encoding;
+
+static int ett_whois;
 
 typedef struct _whois_transaction_t {
-    guint32  req_frame;
-    guint32  rep_frame;
+    uint32_t req_frame;
+    uint32_t rep_frame;
     nstime_t req_time;
+    uint8_t*  query;
 } whois_transaction_t;
 
 static int
 dissect_whois(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-    void *data _U_)
+    void *data)
 {
     proto_item          *ti, *expert_ti;
     proto_tree          *whois_tree;
     conversation_t      *conversation;
     whois_transaction_t *whois_trans;
-    gboolean             is_query;
-    guint                len;
+    bool                 is_query;
+    unsigned             len;
+    struct tcpinfo      *tcpinfo = (struct tcpinfo*)data;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "WHOIS");
 
     if (pinfo->destport == WHOIS_PORT) {
-        is_query = TRUE;
+        is_query = true;
         col_set_str(pinfo->cinfo, COL_INFO, "Query");
     } else {
-        is_query = FALSE;
+        is_query = false;
         col_set_str(pinfo->cinfo, COL_INFO, "Answer");
     }
 
     conversation = find_or_create_conversation(pinfo);
     whois_trans = (whois_transaction_t *)conversation_get_proto_data(conversation, proto_whois);
     if (whois_trans == NULL) {
+        int linelen;
         whois_trans = wmem_new0(wmem_file_scope(), whois_transaction_t);
+
+        /*
+         * Find the end of the first line.
+         */
+        linelen = tvb_find_line_end(tvb, 0, -1, NULL, false);
+        if (linelen != -1)
+            whois_trans->query = tvb_get_string_enc(wmem_file_scope(), tvb, 0, linelen, ENC_ASCII|ENC_NA);
         conversation_add_proto_data(conversation, proto_whois, whois_trans);
+    }
+
+    if (whois_trans->query) {
+        col_append_str(pinfo->cinfo, COL_INFO, ": ");
+        col_append_str(pinfo->cinfo, COL_INFO, whois_trans->query);
     }
 
     len = tvb_reported_length(tvb);
     if (!PINFO_FD_VISITED(pinfo)) {
         if (pinfo->can_desegment) {
             if (is_query) {
-                if ((len < 2) || (tvb_memeql(tvb, len - 2, "\r\n", 2))) {
+                if ((len < 2) || (tvb_memeql(tvb, len - 2, (const uint8_t*)"\r\n", 2))) {
                     pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;
                     pinfo->desegment_offset = 0;
                     return -1;
@@ -88,7 +96,11 @@ dissect_whois(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
                     whois_trans->req_frame = pinfo->num;
                     whois_trans->req_time = pinfo->abs_ts;
                 }
-            } else {
+            } else if (!(tcpinfo && (IS_TH_FIN(tcpinfo->flags) || tcpinfo->is_reassembled))) {
+                /* If this is the FIN (or already desegmented, as with an out
+                 * of order segment received after FIN) go ahead and dissect
+                 * on the first pass.
+                 */
                 pinfo->desegment_len = DESEGMENT_UNTIL_FIN;
                 pinfo->desegment_offset = 0;
                 return -1;
@@ -115,9 +127,18 @@ dissect_whois(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         "WHOIS: %s", is_query ? "Query" : "Answer");
     whois_tree = proto_item_add_subtree(ti, ett_whois);
 
+    /*
+     * XXX - WHOIS, as RFC 3912 says, "has no mechanism for indicating
+     * the character set in use."  We assume UTF-8, which is backwards
+     * compatible with ASCII; if somebody wants to support WHOIS requests
+     * or responses in other encodings, they should add a preference.
+     * (Show Packet Bytes works well enough for many use cases.)
+     * Some servers do use other character encodings;
+     * e.g., in 2022 RIPE still uses ISO-8859-1.
+     */
     if (is_query) {
-        expert_ti = proto_tree_add_item(whois_tree, hf_whois_query, tvb, 0, -1, ENC_ASCII|ENC_NA);
-        if ((len < 2) || (tvb_memeql(tvb, len - 2, "\r\n", 2))) {
+        expert_ti = proto_tree_add_item(whois_tree, hf_whois_query, tvb, 0, -1, ENC_ASCII);
+        if ((len < 2) || (tvb_memeql(tvb, len - 2, (const uint8_t*)"\r\n", 2))) {
             /*
              * From RFC3912, section 2:
              * All requests are terminated with ASCII CR and then ASCII LF.
@@ -127,23 +148,45 @@ dissect_whois(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
         if (tree && whois_trans->rep_frame) {
             ti = proto_tree_add_uint(whois_tree, hf_whois_answer_in,
                 tvb, 0, 0, whois_trans->rep_frame);
-            PROTO_ITEM_SET_GENERATED(ti);
+            proto_item_set_generated(ti);
         }
     } else if (tree && whois_trans->rep_frame) {
-        proto_tree_add_item(whois_tree, hf_whois_answer, tvb, 0, -1, ENC_ASCII|ENC_NA);
+        /*
+         * If we know the request frame, show it and the time delta between
+         * the request and the response.
+         */
         if (whois_trans->req_frame) {
             nstime_t ns;
 
             ti = proto_tree_add_uint(whois_tree, hf_whois_answer_to,
                 tvb, 0, 0, whois_trans->req_frame);
-            PROTO_ITEM_SET_GENERATED(ti);
+            proto_item_set_generated(ti);
 
             if (pinfo->num == whois_trans->rep_frame) {
                 nstime_delta(&ns, &pinfo->abs_ts, &whois_trans->req_time);
                 ti = proto_tree_add_time(whois_tree, hf_whois_response_time, tvb, 0, 0, &ns);
-                PROTO_ITEM_SET_GENERATED(ti);
+                proto_item_set_generated(ti);
             }
         }
+
+        /*
+         * Show the response as text, a line at a time.
+         */
+	int offset = 0, next_offset;
+        while (tvb_offset_exists(tvb, offset)) {
+            /*
+             * Find the end of the line.
+             */
+            tvb_find_line_end(tvb, offset, -1, &next_offset, false);
+
+            /*
+             * Put this line.
+             */
+            proto_tree_add_item(whois_tree, hf_whois_answer, tvb, offset,
+                next_offset - offset, ENC_UTF_8);
+            offset = next_offset;
+        }
+        proto_tree_add_expert(whois_tree, pinfo, &ei_whois_encoding, tvb, 0, -1);
     }
 
     return tvb_captured_length(tvb);
@@ -164,12 +207,12 @@ proto_register_whois(void)
               NULL, HFILL }
         },
         { &hf_whois_answer_in,
-            { "Answer In", "whois.answer_in", FT_FRAMENUM, BASE_NONE, NULL,
+            { "Answer In", "whois.answer_in", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE),
               0x0, "The answer to this WHOIS query is in this frame",
               HFILL }
         },
         { &hf_whois_answer_to,
-            { "Query In", "whois.answer_to", FT_FRAMENUM, BASE_NONE, NULL,
+            { "Query In", "whois.answer_to", FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST),
               0x0, "This is the answer to the WHOIS query in this frame",
               HFILL }
         },
@@ -180,13 +223,16 @@ proto_register_whois(void)
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_whois
     };
 
     static ei_register_info ei[] = {
         { &ei_whois_nocrlf,
             { "whois.nocrlf", PI_MALFORMED, PI_WARN, "Missing <CR><LF>", EXPFILL}
+        },
+        { &ei_whois_encoding,
+            { "whois.encoding", PI_ASSUMPTION, PI_CHAT, "WHOIS has no mechanism to indicate encoding (RFC 3912), assuming UTF-8", EXPFILL}
         }
     };
 
@@ -195,19 +241,17 @@ proto_register_whois(void)
     proto_register_subtree_array(ett, array_length(ett));
     expert_whois = expert_register_protocol(proto_whois);
     expert_register_field_array(expert_whois, ei, array_length(ei));
+    whois_handle = register_dissector("whois", dissect_whois, proto_whois);
 }
 
 void
 proto_reg_handoff_whois(void)
 {
-    static dissector_handle_t whois_handle;
-
-    whois_handle = create_dissector_handle(dissect_whois, proto_whois);
-    dissector_add_uint("tcp.port", WHOIS_PORT, whois_handle);
+    dissector_add_uint_with_preference("tcp.port", WHOIS_PORT, whois_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

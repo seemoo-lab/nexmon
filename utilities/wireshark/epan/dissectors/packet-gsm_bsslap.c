@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * References: 3GPP TS 48.071 version 7.2.0 Release 7
  */
@@ -27,37 +15,39 @@
 
 #include <epan/packet.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 #include "packet-gsm_a_common.h"
 
 void proto_reg_handoff_gsm_bsslap(void);
 void proto_register_gsm_bsslap(void);
 
-static dissector_handle_t bsslap_rrlp_handle = NULL;
+static dissector_handle_t bsslap_rrlp_handle;
 
 /* Initialize the protocol and registered fields */
-static int proto_gsm_bsslap = -1;
-static int hf_gsm_bsslap_msg_type = -1;
-int hf_gsm_a_bsslap_elem_id = -1;
-static int hf_gsm_bsslap_ta = -1;
-static int hf_gsm_bsslap_timer_value = -1;
-static int hf_gsm_bsslap_ms_pow = -1;
-static int hf_gsm_bsslap_cause = -1;
-static int hf_gsm_bsslap_rrlp_flg = -1;
-static int hf_gsm_bsslap_tfi = -1;
-static int hf_gsm_bsslap_poll_rep = -1;
-static int hf_gsm_bsslap_lac = -1;
-static int hf_gsm_bsslap_cell_id_disc = -1;
-static int hf_gsm_bsslap_encryption_key = -1;
+static int proto_gsm_bsslap;
+static int hf_gsm_bsslap_msg_type;
+int hf_gsm_a_bsslap_elem_id;
+static int hf_gsm_bsslap_ta;
+static int hf_gsm_bsslap_timer_value;
+static int hf_gsm_bsslap_ms_pow;
+static int hf_gsm_bsslap_cause;
+static int hf_gsm_bsslap_rrlp_flg;
+static int hf_gsm_bsslap_tfi;
+static int hf_gsm_bsslap_poll_rep;
+static int hf_gsm_bsslap_lac;
+static int hf_gsm_bsslap_cell_id_disc;
+static int hf_gsm_bsslap_encryption_key;
 
 /* Initialize the subtree pointers */
-static int ett_gsm_bsslap = -1;
-static int ett_bsslap_cell_list = -1;
+static int ett_gsm_bsslap;
+static int ett_bsslap_cell_list;
 
-static expert_field ei_gsm_bsslap_missing_mandatory_element = EI_INIT;
-static expert_field ei_gsm_bsslap_not_decoded_yet = EI_INIT;
+static expert_field ei_gsm_bsslap_missing_mandatory_element;
+static expert_field ei_gsm_bsslap_not_decoded_yet;
 
-/* Table 5.1: Element Indentifier codes */
+/* Table 5.1: Element Identifier codes */
 #define BSSLAP_PARAM_TIMING_ADVANCE                  0x01
 #define BSSLAP_PARAM_RESERVED_01                     0x08
 #define BSSLAP_PARAM_CELL_IDENTITY                   0x09
@@ -162,37 +152,37 @@ static const value_string gsm_a_bsslap_msg_strings[] = {
     { 0,            NULL }
 };
 
-#define NUM_GSM_BSSLAP_ELEM (sizeof(gsm_bsslap_elem_strings)/sizeof(value_string))
-gint ett_gsm_bsslap_elem[NUM_GSM_BSSLAP_ELEM];
+#define NUM_GSM_BSSLAP_ELEM array_length(gsm_bsslap_elem_strings)
+int ett_gsm_bsslap_elem[NUM_GSM_BSSLAP_ELEM];
 
 /*
  * 5.2 Timing Advance IE
  */
-static guint16
-de_ta(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 offset, guint len _U_, gchar *add_string _U_, int string_len _U_)
+static uint16_t
+de_ta(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_)
 {
-    guint32 curr_offset;
+    uint32_t curr_offset;
 
     curr_offset = offset;
     proto_tree_add_item(tree, hf_gsm_bsslap_ta, tvb, curr_offset, 1, ENC_BIG_ENDIAN);
     curr_offset++;
 
-    return(curr_offset - offset);
+    return curr_offset - offset;
 }
 /*
  * 5.12 Measurement Report IE
  */
 #if 0
-static guint16
-de_meas_rep(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string _U_, int string_len _U_)
+static uint16_t
+de_meas_rep(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_)
 {
-    guint32 curr_offset;
+    uint32_t curr_offset;
 
     curr_offset = offset;
     proto_tree_add_expert(tree, pinfo, &ei_gsm_bsslap_not_decoded_yet, tvb, curr_offset, len);
 
 
-    return(len);
+    return len;
 }
 #endif
 /*
@@ -212,16 +202,16 @@ static const value_string gsm_bsslap_cause_vals[] = {
     { 0,    NULL }
 };
 
-static guint16
-de_bsslap_cause(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 offset, guint len _U_, gchar *add_string _U_, int string_len _U_)
+static uint16_t
+de_bsslap_cause(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_)
 {
-    guint32 curr_offset;
+    uint32_t curr_offset;
 
     curr_offset = offset;
     proto_tree_add_item(tree, hf_gsm_bsslap_cause, tvb, curr_offset, 1, ENC_BIG_ENDIAN);
     curr_offset++;
 
-    return(curr_offset - offset);
+    return curr_offset - offset;
 }
 /*
  * 5.15 RRLP Flag IE
@@ -230,23 +220,23 @@ static const true_false_string gsm_bsslap_rrlp_flg_vals = {
     "Not a Positioning Command or final response." ,
     "Position Command (SMLC to BSC) or final response (BSC to SMLC)"
 };
-static guint16
-de_rrlp_flg(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 offset, guint len _U_, gchar *add_string _U_, int string_len _U_)
+static uint16_t
+de_rrlp_flg(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_)
 {
-    guint32 curr_offset;
+    uint32_t curr_offset;
 
     curr_offset = offset;
     proto_tree_add_item(tree, hf_gsm_bsslap_rrlp_flg, tvb, curr_offset, 1, ENC_BIG_ENDIAN);
     curr_offset++;
 
-    return(curr_offset - offset);
+    return curr_offset - offset;
 }
-static guint16
-de_rrlp_ie(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len _U_, gchar *add_string _U_, int string_len _U_)
+static uint16_t
+de_rrlp_ie(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_)
 {
-    guint32 curr_offset;
+    uint32_t curr_offset;
     tvbuff_t *rrlp_tvb;
-    guint16 length;
+    uint16_t length;
 
     length = tvb_get_ntohs(tvb, offset);
 
@@ -259,7 +249,7 @@ de_rrlp_ie(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, 
     }
 
     curr_offset += length;
-    return(curr_offset - offset);
+    return curr_offset - offset;
 }
 /*
  * 5.17 Cell Identity List IE
@@ -277,18 +267,18 @@ static const value_string gsm_a_bsslap_cell_id_disc_vals[] = {
 
 
 
-static guint16
-de_cell_id_list(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string _U_, int string_len _U_)
+static uint16_t
+de_cell_id_list(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_)
 {
-    guint32 curr_offset;
-    guint8  consumed;
-    guint8 cell_id_disc;
-    guint8  num_cells;
+    uint32_t curr_offset;
+    uint8_t consumed;
+    uint8_t cell_id_disc;
+    uint8_t num_cells;
     proto_item  *item = NULL;
     proto_tree  *subtree = NULL;
 
     curr_offset = offset;
-    cell_id_disc = tvb_get_guint8(tvb,curr_offset);
+    cell_id_disc = tvb_get_uint8(tvb,curr_offset);
     num_cells = 0;
 
     while(len>0){
@@ -323,12 +313,12 @@ de_cell_id_list(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 off
         }
         curr_offset += consumed;
         len-=consumed;
-        /* lengt is "cell id" + discriminator */
+        /* length is "cell id" + discriminator */
         proto_item_set_len(item, consumed+1);
     }
 
 
-    return(curr_offset - offset);
+    return curr_offset - offset;
 }
 /*
  * 5.18 Enhanced Measurement Report IE
@@ -336,59 +326,59 @@ de_cell_id_list(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 off
  * ENHANCED MEASUREMENT REPORT message in 3GPP TS 44.018 (excluding the fields:
  * "RR short PD", "Message type" and "Short layer 2 header")...
  */
-static guint16
-de_enh_meas_rep(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string _U_, int string_len _U_)
+static uint16_t
+de_enh_meas_rep(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_)
 {
-    guint32 curr_offset;
+    uint32_t curr_offset;
 
     curr_offset = offset;
     proto_tree_add_expert(tree, pinfo, &ei_gsm_bsslap_not_decoded_yet, tvb, curr_offset, len);
 
 
-    return(len);
+    return len;
 }
 /*
  * 5.19 Location Area Code IE
  */
-static guint16
-de_lac(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 offset, guint len _U_, gchar *add_string _U_, int string_len _U_)
+static uint16_t
+de_lac(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_)
 {
-    guint32 curr_offset;
+    uint32_t curr_offset;
 
     curr_offset = offset;
     proto_tree_add_item(tree, hf_gsm_bsslap_lac, tvb, curr_offset, 1, ENC_BIG_ENDIAN);
     curr_offset++;
 
-    return(curr_offset - offset);
+    return curr_offset - offset;
 }
 /*
  * 5.21 MS Power IE
  */
-static guint16
-de_ms_pow(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 offset, guint len _U_, gchar *add_string _U_, int string_len _U_)
+static uint16_t
+de_ms_pow(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_)
 {
-    guint32 curr_offset;
+    uint32_t curr_offset;
 
     curr_offset = offset;
     proto_tree_add_item(tree, hf_gsm_bsslap_ms_pow, tvb, curr_offset, 1, ENC_BIG_ENDIAN);
     curr_offset++;
 
-    return(curr_offset - offset);
+    return curr_offset - offset;
 }
 
 /*
  * 5.22 Delta Timer IE
  */
-static guint16
-de_delta_time(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 offset, guint len _U_, gchar *add_string _U_, int string_len _U_)
+static uint16_t
+de_delta_time(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_)
 {
-    guint32 curr_offset;
+    uint32_t curr_offset;
 
     curr_offset = offset;
     proto_tree_add_item(tree, hf_gsm_bsslap_timer_value, tvb, curr_offset, 1, ENC_BIG_ENDIAN);
     curr_offset++;
 
-    return(curr_offset - offset);
+    return curr_offset - offset;
 }
 /*
  * 5.23 Serving Cell Identifier IE
@@ -397,16 +387,16 @@ de_delta_time(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 o
 /*
  * 5.24 Encryption Key
  */
-static guint16
-de_blap_enc_key(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 offset, guint len _U_, gchar *add_string _U_, int string_len _U_)
+static uint16_t
+de_blap_enc_key(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_)
 {
-    guint32 curr_offset;
+    uint32_t curr_offset;
 
     curr_offset = offset;
     proto_tree_add_item(tree, hf_gsm_bsslap_encryption_key, tvb, curr_offset, 8, ENC_NA);
     curr_offset = curr_offset + 8;
 
-    return(curr_offset - offset);
+    return curr_offset - offset;
 }
 /*
  * 5.25 Cipher Mode Setting IE
@@ -423,16 +413,16 @@ de_blap_enc_key(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32
 /*
  * 5.28 Polling Repetition IE
  */
-static guint16
-de_poll_rep(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 offset, guint len _U_, gchar *add_string _U_, int string_len _U_)
+static uint16_t
+de_poll_rep(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_)
 {
-    guint32 curr_offset;
+    uint32_t curr_offset;
 
     curr_offset = offset;
     proto_tree_add_item(tree, hf_gsm_bsslap_poll_rep, tvb, curr_offset, 1, ENC_BIG_ENDIAN);
     curr_offset++;
 
-    return(curr_offset - offset);
+    return curr_offset - offset;
 }
 /*
  * 5.29 Packet Channel Description IE
@@ -440,16 +430,16 @@ de_poll_rep(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 off
  * described in TS 44.018 (CCCH) or TS 44.060 (PCCCH) plus
  * padding bits (binary 0) as required to achieve 4 complete octets
  */
-static guint16
-de_pkt_ch_desc(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offset, guint len, gchar *add_string _U_, int string_len _U_)
+static uint16_t
+de_pkt_ch_desc(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, uint32_t offset, unsigned len, char *add_string _U_, int string_len _U_)
 {
-    guint32 curr_offset;
+    uint32_t curr_offset;
 
     curr_offset = offset;
     proto_tree_add_expert(tree, pinfo, &ei_gsm_bsslap_not_decoded_yet, tvb, curr_offset, len);
 
 
-    return(len);
+    return len;
 }
 /*
  * 5.31 TFI IE
@@ -459,16 +449,16 @@ de_pkt_ch_desc(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, guint32 offs
  * The Temporary Flow Identity field identifies an uplink Temporary Block Flow (TBF).
  * This field is encoded as a binary number. Range 0 to 31
  */
-static guint16
-de_tfi(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, guint32 offset, guint len _U_, gchar *add_string _U_, int string_len _U_)
+static uint16_t
+de_tfi(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo _U_, uint32_t offset, unsigned len _U_, char *add_string _U_, int string_len _U_)
 {
-    guint32 curr_offset;
+    uint32_t curr_offset;
 
     curr_offset = offset;
     proto_tree_add_item(tree, hf_gsm_bsslap_tfi, tvb, curr_offset, 1, ENC_BIG_ENDIAN);
     curr_offset++;
 
-    return(curr_offset - offset);
+    return curr_offset - offset;
 }
 
 /*
@@ -553,16 +543,16 @@ elem_fcn bsslap_elem_fcn[] = {
     NULL,            /* NONE */
 };
 
-#define NUM_GSM_BSSLAP_MSG (sizeof(gsm_a_bsslap_msg_strings)/sizeof(value_string))
-static gint ett_gsm_bsslap_msg[NUM_GSM_BSSLAP_MSG];
+#define NUM_GSM_BSSLAP_MSG array_length(gsm_a_bsslap_msg_strings)
+static int ett_gsm_bsslap_msg[NUM_GSM_BSSLAP_MSG];
 
 /* 4.2.2 TA Response ETSI TS 148 071 V7.2.0 (2007-06) */
 static void
 dissect_gsm_bsslap_ta_res(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int offset)
 {
-    guint32 curr_offset;
-    guint32 consumed;
-    guint   curr_len;
+    uint32_t curr_offset;
+    uint32_t consumed;
+    unsigned   curr_len;
 
     curr_offset = offset;
     curr_len = tvb_reported_length_remaining(tvb,offset);
@@ -589,9 +579,9 @@ dissect_gsm_bsslap_ta_res(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, i
 static void
 dissect_gsm_bsslap_reject(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int offset)
 {
-    guint32 curr_offset;
-    guint32 consumed;
-    guint   curr_len;
+    uint32_t curr_offset;
+    uint32_t consumed;
+    unsigned   curr_len;
 
     curr_offset = offset;
     curr_len = tvb_reported_length_remaining(tvb,offset);
@@ -606,9 +596,9 @@ dissect_gsm_bsslap_reject(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, i
 static void
 dissect_gsm_bsslap_reset(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int offset)
 {
-    guint32 curr_offset;
-    guint32 consumed;
-    guint   curr_len;
+    uint32_t curr_offset;
+    uint32_t consumed;
+    unsigned   curr_len;
 
     curr_offset = offset;
     curr_len = tvb_reported_length_remaining(tvb,offset);
@@ -654,9 +644,9 @@ dissect_gsm_bsslap_reset(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, in
 static void
 dissect_gsm_bsslap_abort(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int offset)
 {
-    guint32 curr_offset;
-    guint32 consumed;
-    guint   curr_len;
+    uint32_t curr_offset;
+    uint32_t consumed;
+    unsigned   curr_len;
 
     curr_offset = offset;
     curr_len = tvb_reported_length_remaining(tvb,offset);
@@ -670,9 +660,9 @@ dissect_gsm_bsslap_abort(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, in
 static void
 dissect_gsm_bsslap_ta_layer3(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int offset)
 {
-    guint32 curr_offset;
-    guint32 consumed;
-    guint   curr_len;
+    uint32_t curr_offset;
+    uint32_t consumed;
+    unsigned   curr_len;
 
     curr_offset = offset;
     curr_len = tvb_reported_length_remaining(tvb,offset);
@@ -691,9 +681,9 @@ dissect_gsm_bsslap_ta_layer3(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo
 static void
 dissect_gsm_bsslap_ms_pos_cmd(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int offset)
 {
-    guint32 curr_offset;
-    guint32 consumed;
-    guint   curr_len;
+    uint32_t curr_offset;
+    uint32_t consumed;
+    unsigned   curr_len;
 
     curr_offset = offset;
     curr_len = tvb_reported_length_remaining(tvb,offset);
@@ -708,9 +698,9 @@ dissect_gsm_bsslap_ms_pos_cmd(tvbuff_t *tvb, proto_tree *tree, packet_info *pinf
 static void
 dissect_gsm_bsslap_ms_pos_res(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int offset)
 {
-    guint32 curr_offset;
-    guint32 consumed;
-    guint   curr_len;
+    uint32_t curr_offset;
+    uint32_t consumed;
+    unsigned   curr_len;
 
     curr_offset = offset;
     curr_len = tvb_reported_length_remaining(tvb,offset);
@@ -733,16 +723,16 @@ dissect_gsm_bsslap_ms_pos_res(tvbuff_t *tvb, proto_tree *tree, packet_info *pinf
 static void
 dissect_gsm_bsslap_u_tdoa_req(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int offset)
 {
-    guint32 curr_offset;
-    guint32 consumed;
-    guint   curr_len;
+    uint32_t curr_offset;
+    uint32_t consumed;
+    unsigned   curr_len;
 
     curr_offset = offset;
     curr_len = tvb_reported_length_remaining(tvb,offset);
 
     /* Delta Timer IE 5.22 O (note 1) TV 2 */
     ELEM_OPT_TV(BSSLAP_PARAM_DELTA_TIMER, GSM_A_PDU_TYPE_BSSLAP, DE_BLAP_DELTA_TIME, NULL);
-    /*  Polling Repitition IE 5.28 (note) C (note 2) TV 2 */
+    /*  Polling Repetition IE 5.28 (note) C (note 2) TV 2 */
     ELEM_OPT_TV(BSSLAP_PARAM_POLLING_REPETITION, GSM_A_PDU_TYPE_BSSLAP, DE_BLAP_POLL_REP, NULL);
 
     return;
@@ -751,9 +741,9 @@ dissect_gsm_bsslap_u_tdoa_req(tvbuff_t *tvb, proto_tree *tree, packet_info *pinf
 static void
 dissect_gsm_bsslap_u_tdoa_res(tvbuff_t *tvb, proto_tree *tree, packet_info *pinfo, int offset)
 {
-    guint32 curr_offset;
-    guint32 consumed;
-    guint   curr_len;
+    uint32_t curr_offset;
+    uint32_t consumed;
+    unsigned   curr_len;
 
     curr_offset = offset;
     curr_len = tvb_reported_length_remaining(tvb,offset);
@@ -798,12 +788,12 @@ dissect_gsm_bsslap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
     proto_item *item;
     proto_tree *sub_tree;
     int offset=0;
-    guint8 octet;
+    uint8_t octet;
 
 /* Make entries in Protocol column and Info column on summary display */
     col_append_str(pinfo->cinfo, COL_PROTOCOL, "/BSSLAP");
     if (tree) {
-        octet = tvb_get_guint8(tvb, offset);
+        octet = tvb_get_uint8(tvb, offset);
         item = proto_tree_add_item(tree, proto_gsm_bsslap, tvb, 0, -1, ENC_NA);
         sub_tree = proto_item_add_subtree(item, ett_gsm_bsslap);
 
@@ -859,8 +849,8 @@ proto_reg_handoff_gsm_bsslap(void)
 void
 proto_register_gsm_bsslap(void)
 {
-    guint       i;
-    guint       last_offset;
+    unsigned    i;
+    unsigned    last_offset;
 
 
     /* Setup list of header fields */
@@ -937,7 +927,7 @@ proto_register_gsm_bsslap(void)
 
     /* Setup protocol subtree array */
 #define NUM_INDIVIDUAL_ELEMS    2
-    gint *ett[NUM_INDIVIDUAL_ELEMS + NUM_GSM_BSSLAP_MSG +
+    int *ett[NUM_INDIVIDUAL_ELEMS + NUM_GSM_BSSLAP_MSG +
           NUM_GSM_BSSLAP_ELEM];
 
     ett[0] = &ett_gsm_bsslap;
@@ -947,13 +937,11 @@ proto_register_gsm_bsslap(void)
 
     for (i=0; i < NUM_GSM_BSSLAP_MSG; i++, last_offset++)
     {
-        ett_gsm_bsslap_msg[i] = -1;
         ett[last_offset] = &ett_gsm_bsslap_msg[i];
     }
 
     for (i=0; i < NUM_GSM_BSSLAP_ELEM; i++, last_offset++)
     {
-        ett_gsm_bsslap_elem[i] = -1;
         ett[last_offset] = &ett_gsm_bsslap_elem[i];
     }
 
@@ -973,7 +961,7 @@ proto_register_gsm_bsslap(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

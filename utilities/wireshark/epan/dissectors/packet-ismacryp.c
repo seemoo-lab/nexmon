@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* 	TODO: get ISMACryp parameters automatically from SDP info,
@@ -32,21 +20,26 @@
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
+#include <epan/unit_strings.h>
 
 void proto_register_ismacryp(void);
 void proto_reg_handoff_ismacryp(void);
 
+static dissector_handle_t ismacryp_handle;
+static dissector_handle_t ismacryp_v11_handle;
+static dissector_handle_t ismacryp_v20_handle;
+
 /* keeps track of current position in buffer in terms of bit and byte offset */
 typedef struct Toffset_struct
 {
-	gint offset_bytes;
-	guint8 offset_bits;
+	int offset_bytes;
+	uint8_t offset_bits;
 
 } offset_struct;
 
-static void dissect_ismacryp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint ismacryp_version);
-static offset_struct* dissect_auheader( tvbuff_t *tvb, offset_struct *poffset, packet_info *pinfo, proto_tree *tree, guint set_version );
-static void add_bits(offset_struct* poffset, gint len_bits);
+static void dissect_ismacryp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned ismacryp_version);
+static offset_struct* dissect_auheader( tvbuff_t *tvb, offset_struct *poffset, packet_info *pinfo, proto_tree *tree, unsigned set_version );
+static void add_bits(offset_struct* poffset, int len_bits);
 
 #define PROTO_TAG_ISMACRYP	"ISMACRYP"
 #define PROTO_TAG_ISMACRYP_11	"ISMACryp_11"
@@ -57,56 +50,57 @@ static void add_bits(offset_struct* poffset, gint len_bits);
 #define MPEG4_VIDEO_MODE			1
 #define AVC_VIDEO_MODE				2
 /* #define USERMODE				3 */
-#define DEFAULT_SELECTIVE_ENCRYPTION		TRUE
-#define DEFAULT_SLICE_INDICATION		FALSE
-#define DEFAULT_PADDING_INDICATION		FALSE
+#define DEFAULT_SELECTIVE_ENCRYPTION		true
+#define DEFAULT_SLICE_INDICATION		false
+#define DEFAULT_PADDING_INDICATION		false
 #define DEFAULT_IV_LENGTH			4
 #define DEFAULT_DELTA_IV_LENGTH			0
 #define DEFAULT_KEY_INDICATOR_LENGTH		0
-#define DEFAULT_KEY_INDICATOR_PER_AU		FALSE
+#define DEFAULT_KEY_INDICATOR_PER_AU		false
 #define AU_HEADERS_LENGTH_SIZE			2 /* size in bytes */
 #define DEFAULT_AU_SIZE_LENGTH			0
 #define DEFAULT_AU_INDEX_LENGTH			0
 #define DEFAULT_AU_INDEX_DELTA_LENGTH		0
 #define DEFAULT_CTS_DELTA_LENGTH		0
 #define DEFAULT_DTS_DELTA_LENGTH		0
-#define DEFAULT_RANDOM_ACCESS_INDICATION	FALSE
+#define DEFAULT_RANDOM_ACCESS_INDICATION	false
 #define DEFAULT_STREAM_STATE_INDICATION		0
 
 /* Wireshark ID of the ISMACRYP protocol */
-static int proto_ismacryp = -1;
+static int proto_ismacryp;
+static int proto_ismacryp_v11;
+static int proto_ismacryp_v20;
 
 /* parameters set in preferences */
-static guint    pref_dynamic_payload_type     = 0; /* RTP dynamic payload type */
-static guint    pref_au_size_length           = DEFAULT_AU_SIZE_LENGTH;            /* default Au size length */
-static guint    pref_au_index_length          = DEFAULT_AU_INDEX_LENGTH;           /* default Au index length */
-static guint    pref_au_index_delta_length    = DEFAULT_AU_INDEX_DELTA_LENGTH;     /* default Au index delta length */
-static guint    pref_cts_delta_length         = DEFAULT_CTS_DELTA_LENGTH;          /* default CTS delta  length */
-static guint    pref_dts_delta_length         = DEFAULT_DTS_DELTA_LENGTH;          /* default DTS delta  length */
-static gboolean pref_random_access_indication = DEFAULT_RANDOM_ACCESS_INDICATION;  /* default random access indication */
-static guint    pref_stream_state_indication  = DEFAULT_STREAM_STATE_INDICATION;   /* default stream state indication */
-static guint    version_type                  = V11;                               /* default to ISMACryp 1.1 */
-static guint    mode                          = AVC_VIDEO_MODE;                    /* default codec mode */
-static gboolean selective_encryption          = DEFAULT_SELECTIVE_ENCRYPTION;      /* default selective encryption flag */
-static gboolean slice_indication              = DEFAULT_SLICE_INDICATION;          /* default slice indication */
-static gboolean padding_indication            = DEFAULT_PADDING_INDICATION;        /* default padding indication */
-static guint    key_indicator_length          = DEFAULT_KEY_INDICATOR_LENGTH;      /* default key indicator length */
-static gboolean key_indicator_per_au_flag     = DEFAULT_KEY_INDICATOR_PER_AU;      /* default key indicator per au */
-static guint    iv_length                     = DEFAULT_IV_LENGTH;                 /* default IV length */
-static guint    delta_iv_length               = DEFAULT_DELTA_IV_LENGTH;           /* default delta IV length */
-static gboolean pref_user_mode                = FALSE; /* preference user mode instead of RFC3640 mode? */
-static gboolean override_flag                 = FALSE; /* override use of RTP payload type to deduce ISMACryp version */
+static unsigned pref_au_size_length           = DEFAULT_AU_SIZE_LENGTH;            /* default Au size length */
+static unsigned pref_au_index_length          = DEFAULT_AU_INDEX_LENGTH;           /* default Au index length */
+static unsigned pref_au_index_delta_length    = DEFAULT_AU_INDEX_DELTA_LENGTH;     /* default Au index delta length */
+static unsigned pref_cts_delta_length         = DEFAULT_CTS_DELTA_LENGTH;          /* default CTS delta  length */
+static unsigned pref_dts_delta_length         = DEFAULT_DTS_DELTA_LENGTH;          /* default DTS delta  length */
+static bool     pref_random_access_indication = DEFAULT_RANDOM_ACCESS_INDICATION;  /* default random access indication */
+static unsigned pref_stream_state_indication  = DEFAULT_STREAM_STATE_INDICATION;   /* default stream state indication */
+static unsigned version_type                  = V11;                               /* default to ISMACryp 1.1 */
+static unsigned mode                          = AVC_VIDEO_MODE;                    /* default codec mode */
+static bool     selective_encryption          = DEFAULT_SELECTIVE_ENCRYPTION;      /* default selective encryption flag */
+static bool     slice_indication              = DEFAULT_SLICE_INDICATION;          /* default slice indication */
+static bool     padding_indication            = DEFAULT_PADDING_INDICATION;        /* default padding indication */
+static unsigned key_indicator_length          = DEFAULT_KEY_INDICATOR_LENGTH;      /* default key indicator length */
+static bool     key_indicator_per_au_flag     = DEFAULT_KEY_INDICATOR_PER_AU;      /* default key indicator per au */
+static unsigned iv_length                     = DEFAULT_IV_LENGTH;                 /* default IV length */
+static unsigned delta_iv_length               = DEFAULT_DELTA_IV_LENGTH;           /* default delta IV length */
+static bool     pref_user_mode; /* preference user mode instead of RFC3640 mode? */
+static bool     override_flag; /* override use of RTP payload type to deduce ISMACryp version */
 
 /* */
 
-static guint    au_size_length                = DEFAULT_AU_SIZE_LENGTH;            /* default Au size length */
-static guint    au_index_length               = DEFAULT_AU_INDEX_LENGTH;           /* default Au index length */
-static guint    au_index_delta_length         = DEFAULT_AU_INDEX_DELTA_LENGTH;     /* default Au index delta length */
-static guint    cts_delta_length              = DEFAULT_CTS_DELTA_LENGTH;          /* default CTS delta  length */
-static guint    dts_delta_length              = DEFAULT_DTS_DELTA_LENGTH;          /* default DTS delta  length */
-static gboolean random_access_indication      = DEFAULT_RANDOM_ACCESS_INDICATION;  /* default random access indication */
-static guint    stream_state_indication       = DEFAULT_STREAM_STATE_INDICATION;   /* default stream state indication */
-static gboolean user_mode                     = FALSE; /* selected user mode instead of RFC3640 mode? */
+static unsigned au_size_length                = DEFAULT_AU_SIZE_LENGTH;            /* default Au size length */
+static unsigned au_index_length               = DEFAULT_AU_INDEX_LENGTH;           /* default Au index length */
+static unsigned au_index_delta_length         = DEFAULT_AU_INDEX_DELTA_LENGTH;     /* default Au index delta length */
+static unsigned cts_delta_length              = DEFAULT_CTS_DELTA_LENGTH;          /* default CTS delta  length */
+static unsigned dts_delta_length              = DEFAULT_DTS_DELTA_LENGTH;          /* default DTS delta  length */
+static bool random_access_indication      = DEFAULT_RANDOM_ACCESS_INDICATION;  /* default random access indication */
+static unsigned stream_state_indication       = DEFAULT_STREAM_STATE_INDICATION;   /* default stream state indication */
+static bool user_mode; /* selected user mode instead of RFC3640 mode? */
 
 /*static const value_string messagetypenames[] = {};	*/
 
@@ -123,46 +117,46 @@ static const value_string modetypenames[] = {
 * proto_register_field_array() in proto_register_ismacryp()
 */
 /** Kts attempt at defining the protocol */
-/* static gint hf_ismacryp = -1; */
-static gint hf_ismacryp_header = -1;
-static gint hf_ismacryp_au_headers_length = -1;
-/* static gint hf_ismacryp_header_length = -1; */
-static gint hf_ismacryp_header_byte = -1;
-/* static gint hf_ismacryp_version = -1; */
-/* static gint hf_ismacryp_length = -1; */
-/* static gint hf_ismacryp_message_type = -1; */
-/* static gint hf_ismacryp_message_length = -1; */
-static gint hf_ismacryp_message = -1;
-/* static gint hf_ismacryp_parameter = -1; */
-/* static gint hf_ismacryp_parameter_type = -1; */
-/* static gint hf_ismacryp_parameter_length = -1; */
-/* static gint hf_ismacryp_parameter_value = -1; */
-static gint hf_ismacryp_iv = -1;
-static gint hf_ismacryp_delta_iv = -1;
-static gint hf_ismacryp_key_indicator = -1;
-/* static gint hf_ismacryp_delta_iv_length = -1; */
-static gint hf_ismacryp_au_size = -1;
-static gint hf_ismacryp_au_index = -1;
-static gint hf_ismacryp_au_index_delta = -1;
-static gint hf_ismacryp_cts_delta = -1;
-static gint hf_ismacryp_cts_flag = -1;
-static gint hf_ismacryp_dts_flag = -1;
-static gint hf_ismacryp_dts_delta = -1;
-static gint hf_ismacryp_rap_flag = -1;
-static gint hf_ismacryp_au_is_encrypted = -1;
-static gint hf_ismacryp_slice_start = -1;
-static gint hf_ismacryp_slice_end = -1;
-static gint hf_ismacryp_padding_bitcount = -1;
-static gint hf_ismacryp_padding = -1;
-static gint hf_ismacryp_reserved_bits = -1;
-static gint hf_ismacryp_unused_bits = -1;
-static gint hf_ismacryp_stream_state = -1;
+/* static int hf_ismacryp; */
+static int hf_ismacryp_header;
+static int hf_ismacryp_au_headers_length;
+/* static int hf_ismacryp_header_length; */
+static int hf_ismacryp_header_byte;
+/* static int hf_ismacryp_version; */
+/* static int hf_ismacryp_length; */
+/* static int hf_ismacryp_message_type; */
+/* static int hf_ismacryp_message_length; */
+static int hf_ismacryp_message;
+/* static int hf_ismacryp_parameter; */
+/* static int hf_ismacryp_parameter_type; */
+/* static int hf_ismacryp_parameter_length; */
+/* static int hf_ismacryp_parameter_value; */
+static int hf_ismacryp_iv;
+static int hf_ismacryp_delta_iv;
+static int hf_ismacryp_key_indicator;
+/* static int hf_ismacryp_delta_iv_length; */
+static int hf_ismacryp_au_size;
+static int hf_ismacryp_au_index;
+static int hf_ismacryp_au_index_delta;
+static int hf_ismacryp_cts_delta;
+static int hf_ismacryp_cts_flag;
+static int hf_ismacryp_dts_flag;
+static int hf_ismacryp_dts_delta;
+static int hf_ismacryp_rap_flag;
+static int hf_ismacryp_au_is_encrypted;
+static int hf_ismacryp_slice_start;
+static int hf_ismacryp_slice_end;
+static int hf_ismacryp_padding_bitcount;
+static int hf_ismacryp_padding;
+static int hf_ismacryp_reserved_bits;
+static int hf_ismacryp_unused_bits;
+static int hf_ismacryp_stream_state;
 
 /* These are the ids of the subtrees that we may be creating */
-static gint ett_ismacryp = -1;
-static gint ett_ismacryp_header = -1;
-static gint ett_ismacryp_header_byte = -1;
-static gint ett_ismacryp_message = -1;
+static int ett_ismacryp;
+static int ett_ismacryp_header;
+static int ett_ismacryp_header_byte;
+static int ett_ismacryp_message;
 
 /* Informative tree structure is shown here:
 * TREE 	-
@@ -242,9 +236,9 @@ static int dissect_ismacryp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 	return tvb_captured_length(tvb);
 }
 
-static void dissect_ismacryp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint ismacryp_version)
+static void dissect_ismacryp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned ismacryp_version)
 {
-	guint set_version;           /* ISMACryp version used during dissection */
+	unsigned set_version;           /* ISMACryp version used during dissection */
 	proto_item *ismacryp_item;
 	proto_tree *ismacryp_tree;
 	proto_tree *ismacryp_message_tree;
@@ -262,7 +256,7 @@ static void dissect_ismacryp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 	if (set_version == V11) {
 		col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_TAG_ISMACRYP_11);
 		/* display mode */
-		if (pref_user_mode == FALSE) {
+		if (pref_user_mode == false) {
 			col_append_fstr(pinfo->cinfo, COL_INFO, ", %s", val_to_str_const(mode, modetypenames, "user mode"));
 		} else {
 			col_append_str(pinfo->cinfo, COL_INFO, ", user mode");
@@ -271,12 +265,12 @@ static void dissect_ismacryp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 	}
 	if (set_version == V20) {
 		col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_TAG_ISMACRYP_20);
-		user_mode = TRUE;
+		user_mode = true;
 		/* display mode */
 		col_append_str(pinfo->cinfo, COL_INFO, ", user mode");
 	}
 	/* select correct AU values depending on version & selected mode in preferences menu if not in user_mode */
-	if (user_mode == TRUE) { /* use values set in preference menu */
+	if (user_mode == true) { /* use values set in preference menu */
 		au_size_length = pref_au_size_length;
 		au_index_length = pref_au_index_length;
 		au_index_delta_length = pref_au_index_delta_length;
@@ -284,8 +278,8 @@ static void dissect_ismacryp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 		dts_delta_length = pref_dts_delta_length;
 		random_access_indication = pref_random_access_indication;
 		stream_state_indication = pref_stream_state_indication;
-	} /* end if user_mode == TRUE */
-	if (user_mode == FALSE) {
+	} /* end if user_mode == true */
+	if (user_mode == false) {
 		switch (mode) {
 			case AAC_HBR_MODE:
 				au_size_length = 13;
@@ -293,7 +287,7 @@ static void dissect_ismacryp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 				au_index_delta_length = 3;
 				cts_delta_length = 0;
 				dts_delta_length = 0;
-				random_access_indication = FALSE;
+				random_access_indication = false;
 				stream_state_indication = 0;
 				break;
 			case MPEG4_VIDEO_MODE:
@@ -302,7 +296,7 @@ static void dissect_ismacryp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 				au_index_delta_length = 0;
 				cts_delta_length = 0;
 				dts_delta_length = 22;
-				random_access_indication = TRUE;
+				random_access_indication = true;
 				stream_state_indication = 0;
 				break;
 			case AVC_VIDEO_MODE:
@@ -311,23 +305,23 @@ static void dissect_ismacryp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 				au_index_delta_length = 0;
 				cts_delta_length = 0;
 				dts_delta_length = 22;
-				random_access_indication = TRUE;
+				random_access_indication = true;
 				stream_state_indication = 0;
 				break;
 			default:
 				DISSECTOR_ASSERT_NOT_REACHED();
 				break;
 		} /* end switch */
-	} /* end if user_mode == FALSE */
+	} /* end if user_mode == false */
 
 	/* navigate through buffer */
 	{
-		guint16 au_headers_length;     /* total length of AU headers */
-		guint16 totalbits;             /* keeps track of total number of AU header bits treated (used to determine end of AU headers) */
+		uint16_t au_headers_length;     /* total length of AU headers */
+		uint16_t totalbits;             /* keeps track of total number of AU header bits treated (used to determine end of AU headers) */
 		int deltabits;                 /* keeps track of extra bits per AU header treated (used to determine end of AU headers ) */
 		offset_struct s_offset;
 		offset_struct* poffset;
-		guint16 nbmessage_bytes;       /*nb of message data bytes */
+		uint16_t nbmessage_bytes;       /*nb of message data bytes */
 		s_offset.offset_bytes = 0;     /* initialise byte offset */
 		s_offset.offset_bits  = 0;     /* initialise bit offset */
 		poffset = &s_offset;
@@ -338,9 +332,8 @@ static void dissect_ismacryp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 
 		/* ismacryp_tree analysis */
 		/* get total length of AU headers (first 2 bytes) */
-		ismacryp_item = proto_tree_add_item(ismacryp_tree, hf_ismacryp_au_headers_length,
+		proto_tree_add_item(ismacryp_tree, hf_ismacryp_au_headers_length,
 						    tvb, poffset->offset_bytes, AU_HEADERS_LENGTH_SIZE, ENC_BIG_ENDIAN );
-		proto_item_append_text(ismacryp_item, " (bits)"); /* add text to AU Header tree indicating length */
 		au_headers_length = tvb_get_ntohs(tvb, poffset->offset_bytes); /* 2 byte au headers length */
 		poffset->offset_bytes += AU_HEADERS_LENGTH_SIZE;
 		/* ADD HEADER(S) BRANCH  */
@@ -367,7 +360,7 @@ static void dissect_ismacryp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 		/* add padding if need to byte align */
 		if (poffset->offset_bits != 0)
 		{
-			guint16 totalbit_offset;   /* total offset in bits*/
+			uint16_t totalbit_offset;   /* total offset in bits*/
 			int nbpadding_bits;        /* number of padding bits*/
 			totalbit_offset = (poffset->offset_bytes)*8 + poffset->offset_bits; /* offset in bits */
 			nbpadding_bits = (8 - poffset->offset_bits); /* number of padding bits for byte alignment */
@@ -392,18 +385,18 @@ static void dissect_ismacryp_common(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 	}
 }
 /* AU Header dissection */
-static offset_struct* dissect_auheader( tvbuff_t *tvb, offset_struct *poffset, packet_info *pinfo, proto_tree *ismacryp_tree, guint set_version )
+static offset_struct* dissect_auheader( tvbuff_t *tvb, offset_struct *poffset, packet_info *pinfo, proto_tree *ismacryp_tree, unsigned set_version )
 {
 	proto_item *ismacryp_item;
 	proto_tree *ismacryp_header_tree;
 	proto_tree *ismacryp_header_byte_tree;
 
-	guint16 header_len_bytes = 0; /* total length of non-first AU header in bytes (rounded up) */
-	gint header_len = 0; /* length of AU headers in bits */
-	gint cts_flag =0;
-	gint dts_flag =0;
-	gboolean first_au_flag = FALSE;
-	gint bit_offset = 0;
+	uint16_t header_len_bytes = 0; /* total length of non-first AU header in bytes (rounded up) */
+	int header_len = 0; /* length of AU headers in bits */
+	int cts_flag =0;
+	int dts_flag =0;
+	bool first_au_flag = false;
+	int bit_offset = 0;
 
 	/*first determine total AU header length */
 	/* calculate each AU header length in bits first */
@@ -426,30 +419,30 @@ static offset_struct* dissect_auheader( tvbuff_t *tvb, offset_struct *poffset, p
 		header_len += 8*(iv_length);                      /* add IV length */
 		header_len += 8*key_indicator_length;             /* add key indicator length */
 		header_len += au_index_length;                    /* add AU index length */
-		first_au_flag = TRUE;
+		first_au_flag = true;
 	}
 	else { /* not the first AU */
-		if (key_indicator_per_au_flag == TRUE)
+		if (key_indicator_per_au_flag == true)
 			header_len += 8*key_indicator_length; /* add key indicator length */
 		header_len += 8*(delta_iv_length);                /* add delta IV length */
 		header_len += au_index_delta_length;              /* add AU delta index length */
 	}
 	/* CTS flag is present? */
-	if (cts_delta_length != 0) {    /* need to test whether cts_delta_flag is TRUE or FALSE */
+	if (cts_delta_length != 0) {    /* need to test whether cts_delta_flag is true or false */
 		cts_flag = tvb_get_bits8(tvb, AU_HEADERS_LENGTH_SIZE*8 + header_len, 1); /*fetch 1 bit CTS flag  */
 		header_len += 1;         /* add CTS flag bit */
 		if (cts_flag == 1)
 			header_len += cts_delta_length; /* add CTS delta length bits if CTS flag SET */
 	}
 	/* DTS flag is present? */
-	if (dts_delta_length != 0) { /* need to test whether dts_delta_flag is TRUE or FALSE */
+	if (dts_delta_length != 0) { /* need to test whether dts_delta_flag is true or false */
 		dts_flag = tvb_get_bits8(tvb, AU_HEADERS_LENGTH_SIZE*8 + header_len, 1); /*fetch 1 bit DTS flag */
 		header_len += 1;      /* add DTS flag bit */
 		if (dts_flag == 1)
 			header_len += dts_delta_length; /* add DTS delta length bits if DTS flag SET */
 	}
 	/* RAP flag present? */
-	if (random_access_indication != FALSE)
+	if (random_access_indication != false)
 		header_len += 1;      /* add 1 bit RAP flag */
 
 	/* stream state indication present */
@@ -559,34 +552,34 @@ static offset_struct* dissect_auheader( tvbuff_t *tvb, offset_struct *poffset, p
 		} /* end switch set_version */
 	} /* end selective encryption */
 	/* IV */
-	if (first_au_flag == TRUE && iv_length != 0)
+	if (first_au_flag == true && iv_length != 0)
 	{
 		ismacryp_item = proto_tree_add_item(ismacryp_header_tree, hf_ismacryp_iv, tvb, poffset->offset_bytes, iv_length, ENC_NA);
 		proto_item_append_text(ismacryp_item, ": Length=%d bytes", iv_length); /* add IV info */
 		col_append_fstr( pinfo->cinfo, COL_INFO,
-			", IV=0x%s", tvb_bytes_to_str_punct(wmem_packet_scope(), tvb, poffset->offset_bytes, iv_length, ' '));
+			", IV=0x%s", tvb_bytes_to_str_punct(pinfo->pool, tvb, poffset->offset_bytes, iv_length, ' '));
 
 		poffset->offset_bytes += iv_length; /* add IV length to offset_bytes */
 	}
 	/*Delta  IV */
-	if (first_au_flag == FALSE && delta_iv_length != 0)
+	if (first_au_flag == false && delta_iv_length != 0)
 	{
 		ismacryp_item = proto_tree_add_item(ismacryp_header_tree, hf_ismacryp_delta_iv,
 						    tvb, poffset->offset_bytes, delta_iv_length, ENC_NA);
 		proto_item_append_text(ismacryp_item, ": Length=%d bytes", delta_iv_length); /* add delta IV info */
 		col_append_fstr( pinfo->cinfo, COL_INFO,
-			", Delta IV=0x%s", tvb_bytes_to_str_punct(wmem_packet_scope(), tvb, poffset->offset_bytes, delta_iv_length, ' '));
+			", Delta IV=0x%s", tvb_bytes_to_str_punct(pinfo->pool, tvb, poffset->offset_bytes, delta_iv_length, ' '));
 		poffset->offset_bytes += delta_iv_length; /* add IV length to offset_bytes */
 	}
 	/* Key Indicator */
-	if ( key_indicator_length != 0 && ( first_au_flag == TRUE || key_indicator_per_au_flag == TRUE) )
+	if ( key_indicator_length != 0 && ( first_au_flag == true || key_indicator_per_au_flag == true) )
 	{
 		/* (first AU or KI for each AU) and non-zero KeyIndicator size */
 		ismacryp_item = proto_tree_add_item(ismacryp_header_tree, hf_ismacryp_key_indicator,
 						    tvb, poffset->offset_bytes, key_indicator_length, ENC_NA);
 		proto_item_append_text(ismacryp_item, ": Length=%d bytes", key_indicator_length); /* add KI info */
 		col_append_fstr( pinfo->cinfo, COL_INFO,
-					 ", KI=0x%s", tvb_bytes_to_str_punct(wmem_packet_scope(), tvb, poffset->offset_bytes, key_indicator_length, ' '));
+					 ", KI=0x%s", tvb_bytes_to_str_punct(pinfo->pool, tvb, poffset->offset_bytes, key_indicator_length, ' '));
 		poffset->offset_bytes += key_indicator_length; /* add KI length to offset_bytes */
 	}
 	/* AU size */
@@ -600,7 +593,7 @@ static offset_struct* dissect_auheader( tvbuff_t *tvb, offset_struct *poffset, p
 		add_bits(poffset, au_size_length);
 	}
 	/* AU Index */
-	if (first_au_flag == TRUE && au_index_length != 0) /* first AU and non-zero AU size */
+	if (first_au_flag == true && au_index_length != 0) /* first AU and non-zero AU size */
 	{
 		bit_offset = (poffset->offset_bytes)*8 + poffset->offset_bits; /* offset in bits */
 		ismacryp_item = proto_tree_add_bits_item(ismacryp_header_tree, hf_ismacryp_au_index,
@@ -610,7 +603,7 @@ static offset_struct* dissect_auheader( tvbuff_t *tvb, offset_struct *poffset, p
 		add_bits(poffset, au_index_length);
 	}
 	/* AU index delta */
-	if (first_au_flag == FALSE && au_index_delta_length != 0) /* not first AU and non-zero AU delta size */
+	if (first_au_flag == false && au_index_delta_length != 0) /* not first AU and non-zero AU delta size */
 	{
 		bit_offset = (poffset->offset_bytes)*8 + poffset->offset_bits; /* offset in bits */
 		ismacryp_item = proto_tree_add_bits_item(ismacryp_header_tree, hf_ismacryp_au_index_delta,
@@ -655,7 +648,7 @@ static offset_struct* dissect_auheader( tvbuff_t *tvb, offset_struct *poffset, p
 		}
 	}
 	/* RAP */
-	if (random_access_indication != FALSE)
+	if (random_access_indication != false)
 	{
 		bit_offset = (poffset->offset_bytes)*8 + poffset->offset_bits; /* offset in bits */
 		proto_tree_add_bits_item(ismacryp_header_tree, hf_ismacryp_rap_flag,
@@ -674,9 +667,9 @@ return poffset;
 }
 
 /* add len_bits to offset bits and  bytes, handling bits overflow */
-static void add_bits(offset_struct* poffset, gint len_bits)
+static void add_bits(offset_struct* poffset, int len_bits)
 {
-	gint nbbitstotal;
+	int nbbitstotal;
 	nbbitstotal = poffset->offset_bytes*8 + (poffset->offset_bits) + len_bits; /* total offset in bits */
 	/* now calculate bytes and bit offsets */
 	poffset->offset_bytes = (nbbitstotal / 8); /* add integer no. of bytes */
@@ -715,7 +708,7 @@ void proto_register_ismacryp (void)
 #endif
 
 		{ &hf_ismacryp_au_headers_length,
-		  { "AU Headers Length", "ismacryp.au_headers.length", FT_UINT16, BASE_DEC, NULL, 0x0,
+		  { "AU Headers Length", "ismacryp.au_headers.length", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_bit_bits), 0x0,
 		    NULL, HFILL }},
 
 		{ &hf_ismacryp_header_byte,
@@ -833,7 +826,7 @@ void proto_register_ismacryp (void)
 		    NULL, HFILL }}
 	};
 
-	static gint *ett[] =
+	static int *ett[] =
 	{
 		&ett_ismacryp,
 		&ett_ismacryp_header,
@@ -857,23 +850,26 @@ void proto_register_ismacryp (void)
 	module_t *ismacryp_module;
 
 	proto_ismacryp = proto_register_protocol ("ISMACryp Protocol", "ISMACRYP", "ismacryp");
+	proto_ismacryp_v11 = proto_register_protocol_in_name_only ("ISMACryp Protocol v1.1",
+			"ISMACRYP 1.1", "ismacryp_v11", proto_ismacryp, FT_PROTOCOL);
+	proto_ismacryp_v20 = proto_register_protocol_in_name_only ("ISMACryp Protocol v2.0",
+			"ISMACRYP 2.0", "ismacryp_v20", proto_ismacryp, FT_PROTOCOL);
 	proto_register_field_array (proto_ismacryp, hf, array_length (hf));
 	proto_register_subtree_array (ett, array_length (ett));
 
-	/* Register our configuration options for ismacryp */
-	/* this registers our preferences, function proto_reg_handoff_ismacryp is called when preferences are applied */
-	ismacryp_module = prefs_register_protocol(proto_ismacryp, proto_reg_handoff_ismacryp);
+	ismacryp_handle = register_dissector("ismacryp", dissect_ismacryp, proto_ismacryp);
+	ismacryp_v11_handle = register_dissector("ismacryp_v11", dissect_ismacryp_v11, proto_ismacryp_v11);
+	ismacryp_v20_handle = register_dissector("ismacryp_v20", dissect_ismacryp_v20, proto_ismacryp_v20);
 
-	prefs_register_uint_preference(ismacryp_module, "dynamic.payload.type",
-							   "ISMACryp dynamic payload type",
-							   "The dynamic payload type which will be interpreted as ISMACryp",
-							   10,
-							   &pref_dynamic_payload_type);
+	/* Register our configuration options for ismacryp */
+	ismacryp_module = prefs_register_protocol(proto_ismacryp, NULL);
+
+	prefs_register_obsolete_preference(ismacryp_module, "dynamic.payload.type");
 
 	prefs_register_enum_preference(ismacryp_module, "version",
 					       "ISMACryp version",
 					       "ISMACryp version",
-					       &version_type, version_types, TRUE);
+					       &version_type, version_types, true);
 
 	prefs_register_static_text_preference(ismacryp_module, "text_override",
 					      "The following option allows the version to be set manually"
@@ -945,7 +941,7 @@ void proto_register_ismacryp (void)
 				       "rfc3640_mode",
 				       "RFC3640 mode",
 				       "RFC3640 mode",
-				       &mode, mode_types, TRUE);
+				       &mode, mode_types, true);
 
 	/* User defined mode */
 	prefs_register_bool_preference(ismacryp_module,
@@ -995,42 +991,19 @@ void proto_register_ismacryp (void)
 				       "Indicates the number of bits on which the stream state field is encoded"
 				       " in the AU Header (bits)",
 				       10, &pref_stream_state_indication);
-
 }
 
 void proto_reg_handoff_ismacryp(void)
 {
-	static gboolean ismacryp_prefs_initialized = FALSE;
-	static dissector_handle_t ismacryp_handle;
-	static guint dynamic_payload_type;
-
-	if (!ismacryp_prefs_initialized) {
-		dissector_handle_t ismacryp_v11_handle;
-		dissector_handle_t ismacryp_v20_handle;
-		ismacryp_handle = create_dissector_handle(dissect_ismacryp, proto_ismacryp);
-		ismacryp_v11_handle = create_dissector_handle(dissect_ismacryp_v11, proto_ismacryp);
-		ismacryp_v20_handle = create_dissector_handle(dissect_ismacryp_v20, proto_ismacryp);
-		ismacryp_prefs_initialized = TRUE;
-		dissector_add_string("rtp_dyn_payload_type", "ISMACRYP", ismacryp_handle);
-		dissector_add_string("rtp_dyn_payload_type", "enc-mpeg4-generic", ismacryp_v11_handle);
-		dissector_add_string("rtp_dyn_payload_type", "enc-isoff-generic", ismacryp_v20_handle);
-	  }
-	else { /* ismacryp_prefs_initialized = TRUE */
-		/* delete existing association of ismacryp with payload_type */
-		if ( dynamic_payload_type > 95 ) {
-			dissector_delete_uint("rtp.pt", dynamic_payload_type, ismacryp_handle);
-		}
-	}
-	/* always do the following */
-	dynamic_payload_type = pref_dynamic_payload_type; /*update payload_type to new value */
-	if ( dynamic_payload_type > 95 ) {
-		dissector_add_uint("rtp.pt", dynamic_payload_type, ismacryp_handle);
-	}
+	dissector_add_string("rtp_dyn_payload_type", "ISMACRYP", ismacryp_handle);
+	dissector_add_string("rtp_dyn_payload_type", "enc-mpeg4-generic", ismacryp_v11_handle);
+	dissector_add_string("rtp_dyn_payload_type", "enc-isoff-generic", ismacryp_v20_handle);
+	dissector_add_uint_range_with_preference("rtp.pt", "", ismacryp_handle);
 
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

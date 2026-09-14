@@ -7,24 +7,12 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
-#include <epan/value_string.h>
+#include <wsutil/value_string.h>
 #include "packet-dcerpc-dce122.h"
 
 static const value_string dce_error_vals[] = {
@@ -154,7 +142,7 @@ static const value_string dce_error_vals[] = {
     { 546545692, "No more dumps on this tape" },
     { 546586625, "interface incompatible" },
     { 546586626, "there is not a mounted tape" },
-    { 546586627, "multiple simulataneous mounts not permitted" },
+    { 546586627, "multiple simultaneous mounts not permitted" },
     { 546586628, "can't mount tape" },
     { 546586629, "error during tape dismount" },
     { 546586630, "tape I/O error" },
@@ -2365,7 +2353,7 @@ static const value_string dce_error_vals[] = {
     { 701247632, "dacl_From_SecAcl: error allocating extended entry array buffer" },
     { 701247633, "dacl_From_SecAcl: error incorrect ACL manager uuid in secAclP" },
     { 701247634, "dacl_To_SecAcl_ExtendedInfo: error allocating buffer for extended info for secAclEntryP" },
-    { 701247635, "dacl_To_SecAcl: unrecoginzed entry type, .d, found in daclP" },
+    { 701247635, "dacl_To_SecAcl: unrecognized entry type, .d, found in daclP" },
     { 701247636, "dacl_To_SecAcl: error allocating buffer for secAclP entries" },
     { 701247637, "dacl_InitPac: no passwd file entry found for .s" },
     { 701247638, "dacl_InitPac: no group file entry found for .s" },
@@ -3601,13 +3589,13 @@ static const value_string dce_error_vals[] = {
     { 703557645, ".s: .s" },
     { 703557646, "Interpreted vldb entry for .s .d reps, mySite=.d" },
     { 703557647, "NeedSetVol figuring VV" },
-    { 703557648, "NeedSetVol TRUE: no lvp" },
-    { 703557649, "NeedSetVol TRUE: lvp ID .lu,,.lu not .lu,,.lu" },
-    { 703557650, "NeedSetVol TRUE: don't have lv states" },
-    { 703557651, "NeedSetVol TRUE: need set bits .#lx -> .#lx" },
-    { 703557652, "NeedSetVol TRUE: new tknExp time .lu..06lu -> .lu..06lu" },
-    { 703557653, "NeedSetVol TRUE: new Curr time .lu..06lu -> .lu..06lu" },
-    { 703557654, "NeedSetVol TRUE: new PingCurr time .lu..06lu -> .lu..06lu" },
+    { 703557648, "NeedSetVol true: no lvp" },
+    { 703557649, "NeedSetVol true: lvp ID .lu,,.lu not .lu,,.lu" },
+    { 703557650, "NeedSetVol true: don't have lv states" },
+    { 703557651, "NeedSetVol true: need set bits .#lx -> .#lx" },
+    { 703557652, "NeedSetVol true: new tknExp time .lu..06lu -> .lu..06lu" },
+    { 703557653, "NeedSetVol true: new Curr time .lu..06lu -> .lu..06lu" },
+    { 703557654, "NeedSetVol true: new PingCurr time .lu..06lu -> .lu..06lu" },
     { 703557655, "NeedSetVol: no change needed" },
     { 703557656, "SetOpenVol calling SETVV" },
     { 703557657, "SetOpenVol calling SYNC" },
@@ -4427,12 +4415,10 @@ static const value_string dce_error_vals[] = {
     { 0, NULL }
 };
 
-#define array_length(x) (sizeof x / sizeof x[0])
-
 value_string_ext dce_error_vals_ext = VALUE_STRING_EXT_INIT(dce_error_vals);
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

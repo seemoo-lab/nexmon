@@ -2,6 +2,8 @@
  * Copyright (C) 2011 Red Hat, Inc
  * Author: Matthias Clasen
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -21,13 +23,15 @@
  */
 
 /* We are testing some deprecated APIs here */
+#ifndef GLIB_DISABLE_DEPRECATION_WARNINGS
 #define GLIB_DISABLE_DEPRECATION_WARNINGS
+#endif
 
 #include <glib.h>
 
 static GCond cond;
 static GMutex mutex;
-static volatile gint next;
+static gint next;  /* locked by @mutex */
 
 static void
 push_value (gint value)
@@ -237,7 +241,7 @@ test_wait_until (void)
 {
   gint64 until;
   GMutex lock;
-  GCond cond;
+  GCond local_cond;
 
   /* This test will make sure we don't wait too much or too little.
    *
@@ -247,13 +251,13 @@ test_wait_until (void)
    * should not wake up until the specified time has passed.
    */
   g_mutex_init (&lock);
-  g_cond_init (&cond);
+  g_cond_init (&local_cond);
 
   until = g_get_monotonic_time () + G_TIME_SPAN_SECOND;
 
   /* Could still have spurious wakeups, so we must loop... */
   g_mutex_lock (&lock);
-  while (g_cond_wait_until (&cond, &lock, until))
+  while (g_cond_wait_until (&local_cond, &lock, until))
     ;
   g_mutex_unlock (&lock);
 
@@ -263,12 +267,107 @@ test_wait_until (void)
   /* Make sure it returns FALSE on timeout */
   until = g_get_monotonic_time () + G_TIME_SPAN_SECOND / 50;
   g_mutex_lock (&lock);
-  g_assert (g_cond_wait_until (&cond, &lock, until) == FALSE);
+  g_assert (g_cond_wait_until (&local_cond, &lock, until) == FALSE);
   g_mutex_unlock (&lock);
 
   g_mutex_clear (&lock);
-  g_cond_clear (&cond);
+  g_cond_clear (&local_cond);
 }
+
+#ifdef __linux__
+
+#include <pthread.h>
+#include <signal.h>
+#include <unistd.h>
+
+static pthread_t main_thread;
+
+static void *
+mutex_holder (void *data)
+{
+  GMutex *lock = data;
+
+  g_mutex_lock (lock);
+
+  /* Let the lock become contended */
+  g_usleep (G_TIME_SPAN_SECOND);
+
+  /* Interrupt the wait on the other thread */
+  pthread_kill (main_thread, SIGHUP);
+
+  /* If we don't sleep here, then the g_mutex_unlock() below will clear
+   * the mutex, causing the interrupted futex call in the other thread
+   * to return success (which is not what we want).
+   *
+   * The other thread needs to have time to wake up and see that the
+   * lock is still contended.
+   */
+  g_usleep (G_TIME_SPAN_SECOND / 10);
+
+  g_mutex_unlock (lock);
+
+  return NULL;
+}
+
+static void
+signal_handler (int sig)
+{
+}
+
+static void
+test_wait_until_errno (void)
+{
+  gboolean result;
+  GMutex lock;
+  GCond cond;
+  struct sigaction act = { };
+
+  /* important: no SA_RESTART (we want EINTR) */
+  act.sa_handler = signal_handler;
+
+  g_test_summary ("Check proper handling of errno in g_cond_wait_until with a contended mutex");
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/merge_requests/957");
+
+  g_mutex_init (&lock);
+  g_cond_init (&cond);
+
+  main_thread = pthread_self ();
+  sigaction (SIGHUP, &act, NULL);
+
+  g_mutex_lock (&lock);
+
+  /* We create an annoying worker thread that will do two things:
+   *
+   *   1) hold the lock that we want to reacquire after returning from
+   *      the condition variable wait
+   *
+   *   2) send us a signal to cause our wait on the contended lock to
+   *      return EINTR, clobbering the errno return from the condition
+   *      variable
+   */
+  g_thread_unref (g_thread_new ("mutex-holder", mutex_holder, &lock));
+
+  result = g_cond_wait_until (&cond, &lock,
+                              g_get_monotonic_time () + G_TIME_SPAN_SECOND / 50);
+
+  /* Even after all that disruption, we should still successfully return
+   * 'timed out'.
+   */
+  g_assert_false (result);
+
+  g_mutex_unlock (&lock);
+
+  g_cond_clear (&cond);
+  g_mutex_clear (&lock);
+}
+
+#else
+static void
+test_wait_until_errno (void)
+{
+  g_test_skip ("We only test this on Linux");
+}
+#endif
 
 int
 main (int argc, char *argv[])
@@ -278,6 +377,7 @@ main (int argc, char *argv[])
   g_test_add_func ("/thread/cond1", test_cond1);
   g_test_add_func ("/thread/cond2", test_cond2);
   g_test_add_func ("/thread/cond/wait-until", test_wait_until);
+  g_test_add_func ("/thread/cond/wait-until/contended-and-interrupted", test_wait_until_errno);
 
   return g_test_run ();
 }

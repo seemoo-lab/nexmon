@@ -1,10 +1,12 @@
 /*
  * Copyright © 2013 Lars Uebernickel
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -39,7 +41,9 @@ struct _GNotificationBackend
 {
   GObject parent_instance;
 
-  GApplication    *application;
+  /* Avoid ref cycle by not taking a ref to the application at all. The
+   * backend only lives as long as the application does. */
+  GWeakRef         application;
   GDBusConnection *dbus_connection;
 };
 
@@ -67,6 +71,8 @@ void                    g_notification_backend_send_notification        (GNotifi
 
 void                    g_notification_backend_withdraw_notification    (GNotificationBackend *backend,
                                                                          const gchar          *id);
+
+GApplication         *  g_notification_backend_dup_application          (GNotificationBackend *backend);
 
 G_END_DECLS
 

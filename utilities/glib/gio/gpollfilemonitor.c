@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -50,7 +52,9 @@ g_poll_file_monitor_finalize (GObject* object)
   
   poll_monitor = G_POLL_FILE_MONITOR (object);
 
+  g_poll_file_monitor_cancel (G_FILE_MONITOR (poll_monitor));
   g_object_unref (poll_monitor->file);
+  g_clear_object (&poll_monitor->last_info);
 
   G_OBJECT_CLASS (g_poll_file_monitor_parent_class)->finalize (object);
 }
@@ -85,10 +89,14 @@ calc_event_type (GFileInfo *last,
   if (last != NULL && new == NULL)
     return G_FILE_MONITOR_EVENT_DELETED;
 
-  if (g_strcmp0 (g_file_info_get_etag (last), g_file_info_get_etag (new)))
+  if (g_file_info_has_attribute (last, G_FILE_ATTRIBUTE_ETAG_VALUE) &&
+      g_file_info_has_attribute (new, G_FILE_ATTRIBUTE_ETAG_VALUE) &&
+      g_strcmp0 (g_file_info_get_etag (last), g_file_info_get_etag (new)) != 0)
     return G_FILE_MONITOR_EVENT_CHANGED;
   
-  if (g_file_info_get_size (last) != g_file_info_get_size (new))
+  if (g_file_info_has_attribute (last, G_FILE_ATTRIBUTE_STANDARD_SIZE) &&
+      g_file_info_has_attribute (new, G_FILE_ATTRIBUTE_STANDARD_SIZE) &&
+      g_file_info_get_size (last) != g_file_info_get_size (new))
     return G_FILE_MONITOR_EVENT_CHANGED;
 
   return -1;
@@ -145,7 +153,8 @@ poll_file_timeout (gpointer data)
 {
   GPollFileMonitor* poll_monitor = data;
 
-  poll_monitor->timeout = FALSE;
+  g_source_unref (poll_monitor->timeout);
+  poll_monitor->timeout = NULL;
 
   g_file_query_info_async (poll_monitor->file, G_FILE_ATTRIBUTE_ETAG_VALUE "," G_FILE_ATTRIBUTE_STANDARD_SIZE,
 			 0, 0, NULL, got_new_info, g_object_ref (poll_monitor));

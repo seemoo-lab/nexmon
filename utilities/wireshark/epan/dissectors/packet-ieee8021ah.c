@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -35,42 +23,47 @@
 void proto_register_ieee8021ah(void);
 void proto_reg_handoff_ieee8021ah(void);
 
+static dissector_handle_t ieee8021ah_handle;
+static dissector_handle_t ieee8021ad_handle;
 static dissector_handle_t ethertype_handle;
 
-void dissect_ieee8021ah_common(tvbuff_t *tvb, packet_info *pinfo,
-                               proto_tree *tree, proto_tree *parent, int tree_index);
+static capture_dissector_handle_t ipx_cap_handle;
+static capture_dissector_handle_t llc_cap_handle;
+
+static void dissect_ieee8021ah_common(tvbuff_t *tvb, packet_info *pinfo,
+                                      proto_tree *tree, proto_tree *parent, int tree_index);
 
 /* GLOBALS ************************************************************/
 
 /* ethertype for 802.1ah tag - encapsulating an Ethernet packet */
 static unsigned int ieee8021ah_ethertype = ETHERTYPE_IEEE_802_1AH;
 
-static int proto_ieee8021ah = -1;
-static int proto_ieee8021ad = -1;
+static int proto_ieee8021ah;
+static int proto_ieee8021ad;
 
 /* dot1ad B-tag fields */
-static int hf_ieee8021ad_priority = -1;
-static int hf_ieee8021ad_cfi = -1;
-static int hf_ieee8021ad_id = -1;
-static int hf_ieee8021ad_svid = -1;
-static int hf_ieee8021ad_cvid = -1;
+static int hf_ieee8021ad_priority;
+static int hf_ieee8021ad_cfi;
+static int hf_ieee8021ad_id;
+static int hf_ieee8021ad_svid;
+static int hf_ieee8021ad_cvid;
 
 /* dot1ah C-tag fields */
-static int hf_ieee8021ah_priority = -1;
-static int hf_ieee8021ah_drop = -1;    /* drop eligibility */
-static int hf_ieee8021ah_nca = -1;     /* no customer addresses (c_daddr & c_saddr are 0) */
-static int hf_ieee8021ah_res1 = -1;    /* 2 bits reserved; ignored on receive */
-static int hf_ieee8021ah_res2 = -1;    /* 2 bits reserved; delete frame if non-zero */
-static int hf_ieee8021ah_isid = -1;    /* I-SID */
-static int hf_ieee8021ah_c_daddr = -1; /* encapsulated customer dest addr */
-static int hf_ieee8021ah_c_saddr = -1; /* encapsulated customer src addr */
+static int hf_ieee8021ah_priority;
+static int hf_ieee8021ah_drop;    /* drop eligibility */
+static int hf_ieee8021ah_nca;     /* no customer addresses (c_daddr & c_saddr are 0) */
+static int hf_ieee8021ah_res1;    /* 2 bits reserved; ignored on receive */
+static int hf_ieee8021ah_res2;    /* 2 bits reserved; delete frame if non-zero */
+static int hf_ieee8021ah_isid;    /* I-SID */
+static int hf_ieee8021ah_c_daddr; /* encapsulated customer dest addr */
+static int hf_ieee8021ah_c_saddr; /* encapsulated customer src addr */
 
-static int hf_ieee8021ah_etype = -1;
-/* static int hf_ieee8021ah_len = -1; */
-static int hf_ieee8021ah_trailer = -1;
+static int hf_ieee8021ah_etype;
+/* static int hf_ieee8021ah_len; */
+static int hf_ieee8021ah_trailer;
 
-static gint ett_ieee8021ah = -1;
-static gint ett_ieee8021ad = -1;
+static int ett_ieee8021ah;
+static int ett_ieee8021ad;
 
 #define IEEE8021AD_LEN 4
 #define IEEE8021AH_LEN 18
@@ -79,22 +72,22 @@ static gint ett_ieee8021ad = -1;
 /* FUNCTIONS ************************************************************/
 
 
-static gboolean
-capture_ieee8021ah(const guchar *pd, int offset, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header _U_)
+static bool
+capture_ieee8021ah(const unsigned char *pd, int offset, int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header _U_)
 {
-    guint16 encap_proto;
+    uint16_t encap_proto;
 
     if (!BYTES_ARE_IN_FRAME(offset, len, IEEE8021AH_LEN + 1))
-        return FALSE;
+        return false;
 
-    encap_proto = pntoh16( &pd[offset + IEEE8021AH_LEN - 2] );
+    encap_proto = pntohu16( &pd[offset + IEEE8021AH_LEN - 2] );
     if (encap_proto <= IEEE_802_3_MAX_LEN) {
         if ( pd[offset + IEEE8021AH_LEN] == 0xff
              && pd[offset + IEEE8021AH_LEN + 1] == 0xff ) {
-            return capture_ipx(pd, offset + IEEE8021AH_LEN, len, cpinfo, pseudo_header);
+            return call_capture_dissector(ipx_cap_handle, pd, offset + IEEE8021AH_LEN, len, cpinfo, pseudo_header);
         }
         else {
-            return capture_llc(pd, offset + IEEE8021AH_LEN, len, cpinfo, pseudo_header);
+            return call_capture_dissector(llc_cap_handle, pd, offset + IEEE8021AH_LEN, len, cpinfo, pseudo_header);
         }
     }
 
@@ -108,8 +101,8 @@ int dissect_ieee8021ad(tvbuff_t *tvb, packet_info *pinfo,
 {
     proto_tree       *ptree   = NULL;
     proto_tree       *tagtree = NULL;
-    guint32           tci, ctci;
-    guint16           encap_proto;
+    uint32_t          tci, ctci;
+    uint16_t          encap_proto;
     int               proto_tree_index;
     ethertype_data_t  ethertype_data;
 
@@ -136,7 +129,6 @@ int dissect_ieee8021ad(tvbuff_t *tvb, packet_info *pinfo,
 
     encap_proto = tvb_get_ntohs(tvb, IEEE8021AD_LEN - 2);
     ethertype_data.fh_tree = ieee8021ad_tree;
-    ethertype_data.etype_id = hf_ieee8021ah_etype;
     ethertype_data.trailer_id = hf_ieee8021ah_trailer;
     ethertype_data.fcs_len = 0;
 
@@ -191,7 +183,10 @@ int dissect_ieee8021ad(tvbuff_t *tvb, packet_info *pinfo,
                             ctci & 0x0FFF);
 
         ethertype_data.etype = tvb_get_ntohs(tvb, IEEE8021AD_LEN * 2 - 2);
-        ethertype_data.offset_after_ethertype = IEEE8021AD_LEN * 2;
+        proto_tree_add_uint(ieee8021ad_tree, hf_ieee8021ah_etype, tvb,
+                            IEEE8021AD_LEN * 2 - 2, 2, ethertype_data.etype);
+
+        ethertype_data.payload_offset = IEEE8021AD_LEN * 2;
 
         /* 802.1ad tags are always followed by an ethertype; call next
            dissector based on ethertype */
@@ -209,8 +204,12 @@ int dissect_ieee8021ad(tvbuff_t *tvb, packet_info *pinfo,
         /* label should be 802.1ad not .1ah */
         proto_item_set_text(ptree, "IEEE 802.1ad, ID: %d", tci & 0x0FFF);
 
+        /* Add the Ethernet type to the protocol tree */
+        proto_tree_add_uint(ieee8021ad_tree, hf_ieee8021ah_etype, tvb,
+                            IEEE8021AD_LEN - 2, 2, encap_proto);
+
         ethertype_data.etype = encap_proto;
-        ethertype_data.offset_after_ethertype = IEEE8021AD_LEN;
+        ethertype_data.payload_offset = IEEE8021AD_LEN;
 
         /* 802.1ad tags are always followed by an ethertype; call next
            dissector based on ethertype */
@@ -219,11 +218,11 @@ int dissect_ieee8021ad(tvbuff_t *tvb, packet_info *pinfo,
     return tvb_captured_length(tvb);
 }
 
-void
+static void
 dissect_ieee8021ah_common(tvbuff_t *tvb, packet_info *pinfo,
                           proto_tree *tree, proto_tree *parent, int tree_index) {
-    guint32           tci;
-    guint16           encap_proto;
+    uint32_t          tci;
+    uint16_t          encap_proto;
     proto_tree       *ptree;
     ethertype_data_t  ethertype_data;
 
@@ -264,12 +263,14 @@ dissect_ieee8021ah_common(tvbuff_t *tvb, packet_info *pinfo,
         if (parent) {
             proto_item_append_text(tree, ", I-SID: %d, C-Src: %s, C-Dst: %s",
                                    tci & IEEE8021AH_ISIDMASK,
-                                   tvb_address_with_resolution_to_str(wmem_packet_scope(), tvb, AT_ETHER, 10),
-                                   tvb_address_with_resolution_to_str(wmem_packet_scope(), tvb, AT_ETHER, 4));
+                                   tvb_address_with_resolution_to_str(pinfo->pool, tvb, AT_ETHER, 10),
+                                   tvb_address_with_resolution_to_str(pinfo->pool, tvb, AT_ETHER, 4));
         }
     }
 
     encap_proto = tvb_get_ntohs(tvb, IEEE8021AH_LEN - 2);
+    proto_tree_add_uint(tree, hf_ieee8021ah_etype, tvb,
+                        IEEE8021AD_LEN - 2, 2, encap_proto);
 
     /* 802.1ah I-tags are always followed by an ethertype; call next
        dissector based on ethertype */
@@ -278,8 +279,7 @@ dissect_ieee8021ah_common(tvbuff_t *tvb, packet_info *pinfo,
        to next dissector, not 802.1ad tree */
     ethertype_data.etype = encap_proto;
     ethertype_data.fh_tree = tree;
-    ethertype_data.offset_after_ethertype = IEEE8021AH_LEN;
-    ethertype_data.etype_id = hf_ieee8021ah_etype;
+    ethertype_data.payload_offset = IEEE8021AH_LEN;
     ethertype_data.trailer_id = hf_ieee8021ah_trailer;
     ethertype_data.fcs_len = 0;
 
@@ -296,7 +296,7 @@ int dissect_ieee8021ah(tvbuff_t *tvb, packet_info *pinfo,
                    proto_tree *tree, void* data _U_)
 {
     proto_item *pi;
-    guint32     tci;
+    uint32_t    tci;
     int         proto_tree_index;
     proto_tree *ieee8021ah_tree;
 
@@ -386,7 +386,7 @@ proto_register_ieee8021ah(void)
                 0, 0x0FFF, "C-Vlan ID", HFILL }},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_ieee8021ah,
         &ett_ieee8021ad
     };
@@ -398,10 +398,14 @@ proto_register_ieee8021ah(void)
     /* dot1ah */
     proto_ieee8021ah = proto_register_protocol("IEEE 802.1ah", "IEEE 802.1AH",
                                                "ieee8021ah");
+    ieee8021ah_handle = register_dissector("ieee8021ah", dissect_ieee8021ah,
+                                                proto_ieee8021ah);
     proto_register_field_array(proto_ieee8021ah, hf, array_length(hf));
 
     proto_ieee8021ad = proto_register_protocol("IEEE 802.1ad", "IEEE 802.1AD",
                                                "ieee8021ad");
+    ieee8021ad_handle = register_dissector("ieee8021ad", dissect_ieee8021ad,
+                                                proto_ieee8021ad);
     proto_register_field_array(proto_ieee8021ad, hf_1ad, array_length(hf_1ad));
 
     /* register subtree array for both */
@@ -419,23 +423,22 @@ proto_register_ieee8021ah(void)
 void
 proto_reg_handoff_ieee8021ah(void)
 {
-    static gboolean           prefs_initialized = FALSE;
-    static dissector_handle_t ieee8021ah_handle;
+    static bool               prefs_initialized = false;
     static unsigned int       old_ieee8021ah_ethertype;
+    static capture_dissector_handle_t ieee8021ah_cap_handle;
 
     if (!prefs_initialized){
-        dissector_handle_t ieee8021ad_handle;
-        ieee8021ah_handle = create_dissector_handle(dissect_ieee8021ah,
-                                                    proto_ieee8021ah);
-        ieee8021ad_handle = create_dissector_handle(dissect_ieee8021ad,
-                                                    proto_ieee8021ad);
         dissector_add_uint("ethertype", ETHERTYPE_IEEE_802_1AD, ieee8021ad_handle);
         ethertype_handle = find_dissector_add_dependency("ethertype", proto_ieee8021ah);
         find_dissector_add_dependency("ethertype", proto_ieee8021ad);
-        register_capture_dissector("ethertype", ETHERTYPE_IEEE_802_1AD, capture_ieee8021ah, proto_ieee8021ah);
-        register_capture_dissector("ethertype", ETHERTYPE_IEEE_802_1AH, capture_ieee8021ah, proto_ieee8021ah);
+        ieee8021ah_cap_handle = create_capture_dissector_handle(capture_ieee8021ah, proto_ieee8021ah);
+        capture_dissector_add_uint("ethertype", ETHERTYPE_IEEE_802_1AD, ieee8021ah_cap_handle);
+        capture_dissector_add_uint("ethertype", ETHERTYPE_IEEE_802_1AH, ieee8021ah_cap_handle);
 
-        prefs_initialized = TRUE;
+        ipx_cap_handle = find_capture_dissector("ipx");
+        llc_cap_handle = find_capture_dissector("llc");
+
+        prefs_initialized = true;
     }
     else {
         dissector_delete_uint("ethertype", old_ieee8021ah_ethertype, ieee8021ah_handle);
@@ -446,7 +449,7 @@ proto_reg_handoff_ieee8021ah(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

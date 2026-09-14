@@ -1,0 +1,2 @@
+./test/schemas/choice_3.xml:3: Schemas validity error : Element 'a': This element is not expected.
+./test/schemas/choice_3.xml fails to validate

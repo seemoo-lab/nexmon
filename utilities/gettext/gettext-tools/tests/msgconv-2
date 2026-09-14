@@ -4,6 +4,9 @@
 # Test conversion from UTF-8 to BIG5.
 # Test that encoding names are case insensitive.
 
+# Note: This test fails on Linux with musl libc versions that don't support
+# the BIG5 encoding in 'iconv'.
+
 cat <<\EOF > mco-test2.po
 # Chinese translation for GNU gettext messages.
 #

@@ -1,10 +1,10 @@
 /* Provide relocatable programs.
-   Copyright (C) 2003-2011 Free Software Foundation, Inc.
+   Copyright (C) 2003-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2003.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,7 +13,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 
 #define _GL_USE_STDLIB_ALLOC 1
@@ -22,7 +22,7 @@
 /* Specification.  */
 #include "progname.h"
 
-#include <stdbool.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,18 +30,23 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-/* Get declaration of _NSGetExecutablePath on MacOS X 10.2 or newer.  */
+/* Get declaration of _NSGetExecutablePath on Mac OS X 10.2 or newer.  */
 #if HAVE_MACH_O_DYLD_H
 # include <mach-o/dyld.h>
 #endif
 
-#if (defined _WIN32 || defined __WIN32__) && !defined __CYGWIN__
-# define WIN32_NATIVE
+#if defined _WIN32 && !defined __CYGWIN__
+# define WINDOWS_NATIVE
 #endif
 
-#ifdef WIN32_NATIVE
+#ifdef WINDOWS_NATIVE
 # define WIN32_LEAN_AND_MEAN
 # include <windows.h>
+#endif
+
+#ifdef __EMX__
+# define INCL_DOS
+# include <os2.h>
 #endif
 
 #include "relocatable.h"
@@ -64,35 +69,41 @@
 # define O_EXEC O_RDONLY /* This is often close enough in older systems.  */
 #endif
 
+#if defined IN_RELOCWRAPPER && (!defined O_CLOEXEC || GNULIB_defined_O_CLOEXEC)
+# undef O_CLOEXEC
+# define O_CLOEXEC 0
+#endif
+
 /* Declare canonicalize_file_name.
    The <stdlib.h> included above may be the system's one, not the gnulib
    one.  */
 extern char * canonicalize_file_name (const char *name);
 
+#if defined WINDOWS_NATIVE
+/* Don't assume that UNICODE is not defined.  */
+# undef GetModuleFileName
+# define GetModuleFileName GetModuleFileNameA
+#endif
+
 /* Pathname support.
-   ISSLASH(C)           tests whether C is a directory separator character.
-   IS_PATH_WITH_DIR(P)  tests whether P contains a directory specification.
+   ISSLASH(C)                tests whether C is a directory separator character.
+   IS_FILE_NAME_WITH_DIR(P)  tests whether P contains a directory specification.
  */
-#if ((defined _WIN32 || defined __WIN32__) && !defined __CYGWIN__) || defined __EMX__ || defined __DJGPP__
-  /* Win32, OS/2, DOS */
+#if (defined _WIN32 && !defined __CYGWIN__) || defined __EMX__ || defined __DJGPP__
+  /* Native Windows, OS/2, DOS */
 # define ISSLASH(C) ((C) == '/' || (C) == '\\')
 # define HAS_DEVICE(P) \
     ((((P)[0] >= 'A' && (P)[0] <= 'Z') || ((P)[0] >= 'a' && (P)[0] <= 'z')) \
      && (P)[1] == ':')
-# define IS_PATH_WITH_DIR(P) \
+# define IS_FILE_NAME_WITH_DIR(P) \
     (strchr (P, '/') != NULL || strchr (P, '\\') != NULL || HAS_DEVICE (P))
 # define FILE_SYSTEM_PREFIX_LEN(P) (HAS_DEVICE (P) ? 2 : 0)
 #else
   /* Unix */
 # define ISSLASH(C) ((C) == '/')
-# define IS_PATH_WITH_DIR(P) (strchr (P, '/') != NULL)
+# define IS_FILE_NAME_WITH_DIR(P) (strchr (P, '/') != NULL)
 # define FILE_SYSTEM_PREFIX_LEN(P) 0
 #endif
-
-/* The results of open() in this file are not used with fchdir,
-   therefore save some unnecessary work in fchdir.c.  */
-#undef open
-#undef close
 
 /* Use the system functions, not the gnulib overrides in this file.  */
 #undef sprintf
@@ -102,107 +113,219 @@ extern char * canonicalize_file_name (const char *name);
 
 #if ENABLE_RELOCATABLE
 
+#ifdef __sun
+
+/* Helper function, from gnulib module 'safe-read'.  */
+static size_t
+safe_read (int fd, void *buf, size_t count)
+{
+  for (;;)
+    {
+      ssize_t result = read (fd, buf, count);
+
+      if (0 <= result || errno != EINTR)
+        return result;
+    }
+}
+
+/* Helper function, from gnulib module 'full-read'.  */
+static size_t
+full_read (int fd, void *buf, size_t count)
+{
+  size_t total = 0;
+  char *ptr = (char *) buf;
+
+  while (count > 0)
+    {
+      size_t n = safe_read (fd, ptr, count);
+      if (n == (size_t) -1)
+        break;
+      if (n == 0)
+        {
+          errno = 0;
+          break;
+        }
+      total += n;
+      ptr += n;
+      count -= n;
+    }
+
+  return total;
+}
+
+#endif
+
 #if defined __linux__ || defined __CYGWIN__
 /* File descriptor of the executable.
    (Only used to verify that we find the correct executable.)  */
 static int executable_fd = -1;
 #endif
 
-/* Tests whether a given pathname may belong to the executable.  */
+/* Define this function only when it's needed.  */
+#if !(defined WINDOWS_NATIVE || defined __EMX__)
+
+/* Tests whether a given filename may belong to the executable.  */
 static bool
 maybe_executable (const char *filename)
 {
-  /* Woe32 lacks the access() function.  */
-#if !defined WIN32_NATIVE
+  /* The native Windows API lacks the access() function.  */
+# if !defined WINDOWS_NATIVE
   if (access (filename, X_OK) < 0)
     return false;
-#endif
+# endif
 
-#if defined __linux__ || defined __CYGWIN__
+# if defined __linux__ || defined __CYGWIN__
   if (executable_fd >= 0)
     {
       /* If we already have an executable_fd, check that filename points to
          the same inode.  */
       struct stat statexe;
-      struct stat statfile;
 
       if (fstat (executable_fd, &statexe) >= 0)
         {
-          if (stat (filename, &statfile) < 0)
-            return false;
-          if (!(statfile.st_dev
-                && statfile.st_dev == statexe.st_dev
-                && statfile.st_ino == statexe.st_ino))
-            return false;
+          struct stat statfile;
+          return (stat (filename, &statfile) >= 0
+                  && statfile.st_dev
+                  && statfile.st_dev == statexe.st_dev
+                  && statfile.st_ino == statexe.st_ino);
         }
     }
-#endif
+# endif
 
-  return true;
+  /* Check that the filename does not point to a directory.  */
+  {
+    struct stat statfile;
+
+    return (stat (filename, &statfile) >= 0
+            && ! S_ISDIR (statfile.st_mode));
+  }
 }
+
+#endif
 
 /* Determine the full pathname of the current executable, freshly allocated.
    Return NULL if unknown.
-   Guaranteed to work on Linux and Woe32.  Likely to work on the other
-   Unixes (maybe except BeOS), under most conditions.  */
+   Guaranteed to work on Linux and native Windows.  Likely to work on the
+   other Unixes (maybe except BeOS), under most conditions.  */
 static char *
 find_executable (const char *argv0)
 {
-#if defined WIN32_NATIVE
-  /* Native Win32 only.
+#if defined WINDOWS_NATIVE
+  /* Native Windows only.
      On Cygwin, it is better to use the Cygwin provided /proc interface, than
-     to use native Win32 API and cygwin_conv_to_posix_path, because it supports
-     longer file names
-     (see <http://cygwin.com/ml/cygwin/2011-01/msg00410.html>).  */
+     to use native Windows API and cygwin_conv_to_posix_path, because it
+     supports longer file names
+     (see <https://cygwin.com/ml/cygwin/2011-01/msg00410.html>).  */
   char location[MAX_PATH];
   int length = GetModuleFileName (NULL, location, sizeof (location));
   if (length < 0)
     return NULL;
-  if (!IS_PATH_WITH_DIR (location))
+  if (!IS_FILE_NAME_WITH_DIR (location))
     /* Shouldn't happen.  */
     return NULL;
   return xstrdup (location);
+#elif defined __EMX__
+  /* See http://cyberkinetica.homeunix.net/os2tk45/cp1/619_L2H_DosGetInfoBlocksSynt.html
+     for specification of DosGetInfoBlocks().  */
+  PPIB ppib;
+  if (DosGetInfoBlocks (NULL, &ppib))
+    return NULL;
+
+  /* See http://cyberkinetica.homeunix.net/os2tk45/cp1/1247_L2H_DosQueryModuleNameSy.html
+     for specification of DosQueryModuleName().  */
+  char location[CCHMAXPATH];
+  if (DosQueryModuleName (ppib->pib_hmte, sizeof (location), location))
+    return NULL;
+
+  _fnslashify (location);
+
+  return xstrdup (location);
 #else /* Unix */
-# ifdef __linux__
+# if defined __linux__
   /* The executable is accessible as /proc/<pid>/exe.  In newer Linux
      versions, also as /proc/self/exe.  Linux >= 2.1 provides a symlink
      to the true pathname; older Linux versions give only device and ino,
      enclosed in brackets, which we cannot use here.  */
   {
-    char *link;
-
-    link = xreadlink ("/proc/self/exe");
+    char *link = xreadlink ("/proc/self/exe");
     if (link != NULL && link[0] != '[')
       return link;
     if (executable_fd < 0)
-      executable_fd = open ("/proc/self/exe", O_EXEC, 0);
-
-    {
-      char buf[6+10+5];
-      sprintf (buf, "/proc/%d/exe", getpid ());
-      link = xreadlink (buf);
-      if (link != NULL && link[0] != '[')
-        return link;
-      if (executable_fd < 0)
-        executable_fd = open (buf, O_EXEC, 0);
-    }
+      executable_fd = open ("/proc/self/exe", O_EXEC | O_CLOEXEC, 0);
+  }
+  {
+    char buf[6+10+5];
+    sprintf (buf, "/proc/%d/exe", getpid ());
+    char *link = xreadlink (buf);
+    if (link != NULL && link[0] != '[')
+      return link;
+    if (executable_fd < 0)
+      executable_fd = open (buf, O_EXEC | O_CLOEXEC, 0);
   }
 # endif
-# ifdef __CYGWIN__
+# if defined __ANDROID__ || defined __FreeBSD_kernel__
+  /* On Android and GNU/kFreeBSD, the executable is accessible as
+     /proc/<pid>/exe and /proc/self/exe.  */
+  {
+    char *link = xreadlink ("/proc/self/exe");
+    if (link != NULL)
+      return link;
+  }
+# endif
+# if defined __FreeBSD__ || defined __DragonFly__
+  /* In FreeBSD >= 5.0, the executable is accessible as /proc/<pid>/file and
+     /proc/curproc/file.  */
+  {
+    char *link = xreadlink ("/proc/curproc/file");
+    if (link != NULL)
+      {
+        if (!streq (link, "unknown"))
+          return link;
+        free (link);
+      }
+  }
+# endif
+# if defined __NetBSD__
+  /* In NetBSD >= 4.0, the executable is accessible as /proc/<pid>/exe and
+     /proc/curproc/exe.  */
+  {
+    char *link = xreadlink ("/proc/curproc/exe");
+    if (link != NULL)
+      return link;
+  }
+# endif
+# if defined __sun
+  /* On Solaris >= 11.4, /proc/<pid>/execname and /proc/self/execname contains
+     the name of the executable, either as an absolute file name or relative to
+     the current directory.  */
+  {
+    char namebuf[4096];
+    int fd = open ("/proc/self/execname", O_RDONLY | O_CLOEXEC, 0);
+    if (fd >= 0)
+      {
+        size_t len = full_read (fd, namebuf, sizeof (namebuf));
+        close (fd);
+        if (len > 0 && len < sizeof (namebuf))
+          {
+            namebuf[len] = '\0';
+            return canonicalize_file_name (namebuf);
+          }
+      }
+  }
+# endif
+# if defined __CYGWIN__
   /* The executable is accessible as /proc/<pid>/exe, at least in
      Cygwin >= 1.5.  */
   {
-    char *link;
-
-    link = xreadlink ("/proc/self/exe");
+    char *link = xreadlink ("/proc/self/exe");
     if (link != NULL)
       return link;
     if (executable_fd < 0)
-      executable_fd = open ("/proc/self/exe", O_EXEC, 0);
+      executable_fd = open ("/proc/self/exe", O_EXEC | O_CLOEXEC, 0);
   }
 # endif
 # if HAVE_MACH_O_DYLD_H && HAVE__NSGETEXECUTABLEPATH
-  /* On MacOS X 10.2 or newer, the function
+  /* On Mac OS X 10.2 or newer, the function
        int _NSGetExecutablePath (char *buf, uint32_t *bufsize);
      can be used to retrieve the executable's full path.  */
   char location[4096];
@@ -216,15 +339,12 @@ find_executable (const char *argv0)
      login(1) convention to add a '-' prefix to argv[0] is not supported.  */
   {
     bool has_slash = false;
-    {
-      const char *p;
-      for (p = argv0; *p; p++)
-        if (*p == '/')
-          {
-            has_slash = true;
-            break;
-          }
-    }
+    for (const char *p = argv0; *p; p++)
+      if (*p == '/')
+        {
+          has_slash = true;
+          break;
+        }
     if (!has_slash)
       {
         /* exec searches paths without slashes in the directory list given
@@ -233,24 +353,25 @@ find_executable (const char *argv0)
 
         if (path != NULL)
           {
-            const char *p;
             const char *p_next;
 
-            for (p = path; *p; p = p_next)
+            for (const char *p = path; *p; p = p_next)
               {
-                const char *q;
                 size_t p_len;
-                char *concat_name;
 
-                for (q = p; *q; q++)
-                  if (*q == ':')
-                    break;
-                p_len = q - p;
-                p_next = (*q == '\0' ? q : q + 1);
+                {
+                  const char *q;
+                  for (q = p; *q; q++)
+                    if (*q == ':')
+                      break;
+                  p_len = q - p;
+                  p_next = (*q == '\0' ? q : q + 1);
+                }
 
                 /* We have a path item at p, of length p_len.
                    Now concatenate the path item and argv0.  */
-                concat_name = (char *) xmalloc (p_len + strlen (argv0) + 2);
+                char *concat_name =
+                  (char *) xmalloc (p_len + strlen (argv0) + 2);
 # ifdef NO_XMALLOC
                 if (concat_name == NULL)
                   return NULL;
@@ -288,14 +409,12 @@ static void
 prepare_relocate (const char *orig_installprefix, const char *orig_installdir,
                   const char *argv0)
 {
-  char *curr_prefix;
-
   /* Determine the full pathname of the current executable.  */
   executable_fullname = find_executable (argv0);
 
   /* Determine the current installation prefix from it.  */
-  curr_prefix = compute_curr_prefix (orig_installprefix, orig_installdir,
-                                     executable_fullname);
+  char *curr_prefix = compute_curr_prefix (orig_installprefix, orig_installdir,
+                                           executable_fullname);
   if (curr_prefix != NULL)
     {
       /* Now pass this prefix to all copies of the relocate.c source file.  */
@@ -321,7 +440,7 @@ set_program_name_and_installdir (const char *argv0,
     size_t argv0_len = strlen (argv0);
     const size_t exeext_len = sizeof (EXEEXT) - sizeof ("");
     if (argv0_len > 4 + exeext_len)
-      if (memcmp (argv0 + argv0_len - exeext_len - 4, ".bin", 4) == 0)
+      if (memeq (argv0 + argv0_len - exeext_len - 4, ".bin", 4))
         {
           if (sizeof (EXEEXT) > sizeof (""))
             {

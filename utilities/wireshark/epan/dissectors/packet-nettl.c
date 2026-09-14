@@ -10,19 +10,7 @@
  *
  * Copied from packet-pagp.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -36,14 +24,15 @@ void proto_reg_handoff_nettl(void);
 
 /* Initialize the protocol and registered fields */
 
-static int proto_nettl = -1;
+static int proto_nettl;
 
-static int hf_nettl_subsys = -1;
-static int hf_nettl_devid = -1;
-static int hf_nettl_kind = -1;
-static int hf_nettl_pid = -1;
-static int hf_nettl_uid = -1;
+static int hf_nettl_subsys;
+static int hf_nettl_devid;
+static int hf_nettl_kind;
+static int hf_nettl_pid;
+static int hf_nettl_uid;
 
+static dissector_handle_t nettl_handle;
 static dissector_handle_t eth_withoutfcs_handle;
 static dissector_handle_t tr_handle;
 static dissector_handle_t fddi_bitswapped_handle;
@@ -58,7 +47,7 @@ static dissector_table_t tcp_subdissector_table;
 
 /* Initialize the subtree pointers */
 
-static gint ett_nettl = -1;
+static int ett_nettl;
 
 /* General declarations and macros */
 
@@ -66,9 +55,7 @@ static const value_string trace_kind[] = {
     { 0x80000000, "Incoming Header" },
     { 0x40000000, "Outgoing Header" },
     { 0x20000000, "Incoming PDU - PDUIN" },
-    { 0x20000000, "PDUIN" },
     { 0x10000000, "Outgoing PDU - PDUOUT" },
-    { 0x10000000, "PDUOUT" },
     { 0x08000000, "Procedure Trace" },
     { 0x04000000, "State Trace" },
     { 0x02000000, "Error Trace" },
@@ -229,7 +216,7 @@ dissect_nettl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
                            0, 0, pinfo->pseudo_header->nettl.uid);
     }
 
-    switch (pinfo->pkt_encap) {
+    switch (pinfo->rec->rec_header.packet_header.pkt_encap) {
         case WTAP_ENCAP_NETTL_ETHERNET:
             call_dissector(eth_withoutfcs_handle, tvb, pinfo, tree);
             break;
@@ -275,7 +262,7 @@ dissect_nettl(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
             break;
         default:
             col_set_str(pinfo->cinfo, COL_PROTOCOL, "UNKNOWN");
-            col_add_fstr(pinfo->cinfo, COL_INFO, "Unsupported nettl subsytem: %d (%s)",
+            col_add_fstr(pinfo->cinfo, COL_INFO, "Unsupported nettl subsystem: %d (%s)",
                          pinfo->pseudo_header->nettl.subsys,
                          val_to_str_ext_const(pinfo->pseudo_header->nettl.subsys, &subsystem_ext, "Unknown"));
             call_data_dissector(tvb, pinfo, tree);
@@ -310,20 +297,21 @@ proto_register_nettl(void)
             "HP-UX Process/thread id", HFILL}},
 
         { &hf_nettl_uid,
-          { "User ID (uid)", "nettl.uid", FT_UINT16, BASE_DEC, NULL, 0x0,
+          { "User ID (uid)", "nettl.uid", FT_UINT32, BASE_DEC, NULL, 0x0,
             "HP-UX User ID", HFILL}}
 
     };
 
     /* Setup protocol subtree array */
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_nettl
     };
 
     /* Register the protocol name and description */
 
     proto_nettl = proto_register_protocol("HP-UX Network Tracing and Logging", "nettl", "nettl");
+    nettl_handle = register_dissector("nettl", dissect_nettl, proto_nettl);
 
     /* Required function calls to register the header fields and subtrees used */
 
@@ -336,8 +324,6 @@ proto_register_nettl(void)
 void
 proto_reg_handoff_nettl(void)
 {
-    dissector_handle_t nettl_handle;
-
     /*
      * Get handles for various dissectors and dissector tables.
      */
@@ -351,7 +337,6 @@ proto_reg_handoff_nettl(void)
     ip_proto_dissector_table = find_dissector_table("ip.proto");
     tcp_subdissector_table   = find_dissector_table("tcp.port");
 
-    nettl_handle = create_dissector_handle(dissect_nettl, proto_nettl);
     dissector_add_uint("wtap_encap", WTAP_ENCAP_NETTL_ETHERNET,   nettl_handle);
     dissector_add_uint("wtap_encap", WTAP_ENCAP_NETTL_TOKEN_RING, nettl_handle);
     dissector_add_uint("wtap_encap", WTAP_ENCAP_NETTL_FDDI,       nettl_handle);
@@ -365,7 +350,7 @@ proto_reg_handoff_nettl(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

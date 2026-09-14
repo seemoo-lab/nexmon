@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,6 +16,8 @@
 #include <epan/etypes.h>
 #include <epan/expert.h>
 #include <epan/prefs.h>
+#include <epan/addr_resolv.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-acse.h"
@@ -42,7 +32,8 @@
 
 /* see IEC61850-8-1 8.2 */
 #define Q_VALIDITY_GOOD			(0x0U << 0)
-#define Q_VALIDITY_INVALID		(0x1U << 0)
+#define Q_VALIDITY_INVALID_BW		(0x1U << 0)
+#define Q_VALIDITY_INVALID		(0x2U << 0)
 #define Q_VALIDITY_QUESTIONABLE		(0x3U << 0)
 #define Q_VALIDITY_MASK			(0x3U << 0)
 
@@ -65,54 +56,76 @@
 /* see UCA Implementation Guideline for IEC 61850-9-2 */
 #define Q_DERIVED			(1U << 13)
 
+/* Bit fields in the Reserved attributes */
+#define F_RESERVE1_S_BIT  0x8000
+
+
 void proto_register_sv(void);
 void proto_reg_handoff_sv(void);
 
 /* Data for SV tap */
-static int sv_tap = -1;
+static int sv_tap;
 static sv_frame_data sv_data;
 
 /* Initialize the protocol and registered fields */
-static int proto_sv = -1;
-static int hf_sv_appid = -1;
-static int hf_sv_length = -1;
-static int hf_sv_reserve1 = -1;
-static int hf_sv_reserve2 = -1;
-static int hf_sv_phmeas_instmag_i = -1;
-static int hf_sv_phsmeas_q = -1;
-static int hf_sv_phsmeas_q_validity = -1;
-static int hf_sv_phsmeas_q_overflow = -1;
-static int hf_sv_phsmeas_q_outofrange = -1;
-static int hf_sv_phsmeas_q_badreference = -1;
-static int hf_sv_phsmeas_q_oscillatory = -1;
-static int hf_sv_phsmeas_q_failure = -1;
-static int hf_sv_phsmeas_q_olddata = -1;
-static int hf_sv_phsmeas_q_inconsistent = -1;
-static int hf_sv_phsmeas_q_inaccurate = -1;
-static int hf_sv_phsmeas_q_source = -1;
-static int hf_sv_phsmeas_q_test = -1;
-static int hf_sv_phsmeas_q_operatorblocked = -1;
-static int hf_sv_phsmeas_q_derived = -1;
+static int proto_sv;
+static int hf_sv_appid;
+static int hf_sv_length;
+static int hf_sv_reserve1;
+static int hf_sv_reserve1_s_bit;
+static int hf_sv_reserve2;
+static int hf_sv_phmeas_instmag_i;
+static int hf_sv_phsmeas_q;
+static int hf_sv_phsmeas_q_validity;
+static int hf_sv_phsmeas_q_overflow;
+static int hf_sv_phsmeas_q_outofrange;
+static int hf_sv_phsmeas_q_badreference;
+static int hf_sv_phsmeas_q_oscillatory;
+static int hf_sv_phsmeas_q_failure;
+static int hf_sv_phsmeas_q_olddata;
+static int hf_sv_phsmeas_q_inconsistent;
+static int hf_sv_phsmeas_q_inaccurate;
+static int hf_sv_phsmeas_q_source;
+static int hf_sv_phsmeas_q_test;
+static int hf_sv_phsmeas_q_operatorblocked;
+static int hf_sv_phsmeas_q_derived;
+static int hf_sv_gmidentity;
+static int hf_sv_gmidentity_manuf;
 
 #include "packet-sv-hf.c"
 
 /* Initialize the subtree pointers */
-static int ett_sv = -1;
-static int ett_phsmeas = -1;
-static int ett_phsmeas_q = -1;
+static int ett_sv;
+static int ett_phsmeas;
+static int ett_phsmeas_q;
+static int ett_gmidentity;
+static int ett_reserve1;
+
 
 #include "packet-sv-ett.c"
 
-static expert_field ei_sv_mal_utctime = EI_INIT;
-static expert_field ei_sv_zero_pdu = EI_INIT;
+static expert_field ei_sv_mal_utctime;
+static expert_field ei_sv_zero_pdu;
+static expert_field ei_sv_mal_gmidentity;
 
-static gboolean sv_decode_data_as_phsmeas = FALSE;
+static bool sv_decode_data_as_phsmeas;
 
 static dissector_handle_t sv_handle;
 
+/*
+ * See
+ *   IEC 61850-9-2 Edition 2.1 2020-02,
+ *   Section 8.6 Definitions for basic data types – Presentation layer functionality,
+ *   Table 21
+ *
+ * Be aware that in the specification the bits are numbered in reverse (it
+ * specifies the least significant bit as bit 31 instead of as bit 0)!
+ */
+
 static const value_string sv_q_validity_vals[] = {
 	{ 0, "good" },
-	{ 1, "invalid" },
+	{ 1, "invalid (backwards compatible)" },
+	{ 2, "invalid" },
 	{ 3, "questionable" },
 	{ 0, NULL }
 };
@@ -124,18 +137,18 @@ static const value_string sv_q_source_vals[] = {
 };
 
 static int
-dissect_PhsMeas1(gboolean implicit_tag, packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, int hf_id _U_)
+dissect_PhsMeas1(bool implicit_tag, packet_info *pinfo, proto_tree *tree, tvbuff_t *tvb, int offset, int hf_id _U_)
 {
-	gint8 ber_class;
-	gboolean pc;
-	gint32 tag;
-	guint32 len;
+	int8_t ber_class;
+	bool pc;
+	int32_t tag;
+	uint32_t len;
 	proto_tree *subtree;
-	gint32 value;
-	guint32 qual;
-	guint32 i;
+	int32_t value;
+	uint32_t qual;
+	uint32_t i;
 
-	static const int *q_flags[] = {
+	static int * const q_flags[] = {
 		&hf_sv_phsmeas_q_validity,
 		&hf_sv_phsmeas_q_overflow,
 		&hf_sv_phsmeas_q_outofrange,
@@ -193,11 +206,18 @@ dissect_sv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* dat
 {
 	int offset = 0;
 	int old_offset;
+	unsigned sv_length = 0;
 	proto_item *item;
 	proto_tree *tree;
+
+	static int * const reserve1_flags[] = {
+		&hf_sv_reserve1_s_bit,
+		NULL
+	};
+
 	asn1_ctx_t asn1_ctx;
 
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
 	item = proto_tree_add_item(parent_tree, proto_sv, tvb, 0, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_sv);
@@ -209,18 +229,21 @@ dissect_sv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* dat
 	proto_tree_add_item(tree, hf_sv_appid, tvb, offset, 2, ENC_BIG_ENDIAN);
 
 	/* Length */
-	proto_tree_add_item(tree, hf_sv_length, tvb, offset + 2, 2, ENC_BIG_ENDIAN);
+	proto_tree_add_item_ret_uint(tree, hf_sv_length, tvb, offset + 2, 2, ENC_BIG_ENDIAN, &sv_length);
 
 	/* Reserved 1 */
-	proto_tree_add_item(tree, hf_sv_reserve1, tvb, offset + 4, 2, ENC_BIG_ENDIAN);
+	proto_tree_add_bitmask(tree, tvb, offset + 4, hf_sv_reserve1, ett_reserve1,
+						reserve1_flags, ENC_BIG_ENDIAN);
+
 
 	/* Reserved 2 */
 	proto_tree_add_item(tree, hf_sv_reserve2, tvb, offset + 6, 2, ENC_BIG_ENDIAN);
 
 	offset = 8;
-	while (tvb_reported_length_remaining(tvb, offset) > 0){
+	set_actual_length(tvb, sv_length);
+	while (tvb_reported_length_remaining(tvb, offset) > 0) {
 		old_offset = offset;
-		offset = dissect_sv_SampledValues(FALSE, tvb, offset, &asn1_ctx , tree, -1);
+		offset = dissect_sv_SampledValues(false, tvb, offset, &asn1_ctx , tree, -1);
 		if (offset == old_offset) {
 			proto_tree_add_expert(tree, pinfo, &ei_sv_zero_pdu, tvb, offset, -1);
 			break;
@@ -245,6 +268,10 @@ void proto_register_sv(void) {
 
 		{ &hf_sv_reserve1,
 		{ "Reserved 1",	"sv.reserve1", FT_UINT16, BASE_HEX_DEC, NULL, 0x0, NULL, HFILL }},
+
+		{ &hf_sv_reserve1_s_bit,
+		{ "Simulated",	"sv.reserve1.s_bit",
+		  FT_BOOLEAN, 16, NULL, F_RESERVE1_S_BIT, NULL, HFILL } },
 
 		{ &hf_sv_reserve2,
 		{ "Reserved 2",	"sv.reserve2", FT_UINT16, BASE_HEX_DEC, NULL, 0x0, NULL, HFILL }},
@@ -286,7 +313,7 @@ void proto_register_sv(void) {
 		{ "source", "sv.meas_quality.source", FT_UINT32, BASE_HEX, VALS(sv_q_source_vals), Q_SOURCE_MASK, NULL, HFILL}},
 
 		{ &hf_sv_phsmeas_q_test,
-		{ "test", "sv.meas_quality.teset", FT_BOOLEAN, 32, NULL, Q_TEST, NULL, HFILL}},
+		{ "test", "sv.meas_quality.test", FT_BOOLEAN, 32, NULL, Q_TEST, NULL, HFILL}},
 
 		{ &hf_sv_phsmeas_q_operatorblocked,
 		{ "operator blocked", "sv.meas_quality.operatorblocked", FT_BOOLEAN, 32, NULL, Q_OPERATORBLOCKED, NULL, HFILL}},
@@ -294,21 +321,30 @@ void proto_register_sv(void) {
 		{ &hf_sv_phsmeas_q_derived,
 		{ "derived", "sv.meas_quality.derived", FT_BOOLEAN, 32, NULL, Q_DERIVED, NULL, HFILL}},
 
+		{ &hf_sv_gmidentity,
+		{ "gmIdentity", "sv.gmidentity", FT_UINT64, BASE_HEX, NULL, 0x00, NULL, HFILL}},
+
+		{ &hf_sv_gmidentity_manuf,
+		{ "MAC Vendor", "sv.gmidentity_manuf", FT_BYTES, BASE_NONE, NULL, 0x00, NULL, HFILL}},
+
 
 #include "packet-sv-hfarr.c"
 	};
 
 	/* List of subtrees */
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_sv,
 		&ett_phsmeas,
 		&ett_phsmeas_q,
+		&ett_gmidentity,
+		&ett_reserve1,
 #include "packet-sv-ettarr.c"
 	};
 
 	static ei_register_info ei[] = {
 		{ &ei_sv_mal_utctime, { "sv.malformed.utctime", PI_MALFORMED, PI_WARN, "BER Error: malformed UTCTime encoding", EXPFILL }},
 		{ &ei_sv_zero_pdu, { "sv.zero_pdu", PI_PROTOCOL, PI_ERROR, "Internal error, zero-byte SV PDU", EXPFILL }},
+		{ &ei_sv_mal_gmidentity, { "sv.malformed.gmidentity", PI_MALFORMED, PI_WARN, "BER Error: malformed gmIdentity encoding", EXPFILL }},
 	};
 
 	expert_module_t* expert_sv;

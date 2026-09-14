@@ -1,80 +1,65 @@
 #! /bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test merging of a message which has plural forms in def.po but not
-# in ref.pot.
+# Test --add-location=file option.
 
-cat <<EOF > mm-test12.po
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR Free Software Foundation, Inc.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
-msgid ""
-msgstr ""
-"Project-Id-Version: cog_training 1.0\n"
-"POT-Creation-Date: 2001-04-29 22:40+0200\n"
-"PO-Revision-Date: 2001-04-29 21:19+02:00\n"
-"Last-Translator: Felix N. <xyz@zyx.uucp>\n"
-"Language-Team: German <de@li.org>\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ISO-8859-1\n"
-"Content-Transfer-Encoding: 8bit\n"
-
-#:foobar.c:29
-#, c-format
-msgid "%d error"
-msgid_plural "%d errors"
-msgstr[0] "%d erreur"
-msgstr[1] "%d erreurs"
+cat <<\EOF > mm-test12.in1
+# first
+#. this should be discarded
+msgid "1"
+msgstr "1x"
+# second
+#: bogus:1
+msgid "2"
+msgstr	"this is a really long msgstr "
+	"used to test the wrapping to "
+	"make sure it works after all "
+	"what is a test for if not to test things?"
+# third
+msgid "3"
+msgstr "3z"
 EOF
 
-cat <<EOF > mm-test12.pot
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR Free Software Foundation, Inc.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
-msgid ""
+cat <<\EOF > mm-test12.in2
+#. this is the first
+#: snark.c:345
+msgid "1"
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2001-04-30 18:51+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ISO-8859-1\n"
-"Content-Transfer-Encoding: 8bit\n"
-
-#:foobar.c:32
-#, c-format
-msgid "%d error"
+#. this is the second
+#: hunt.c:759
+msgid "2"
+msgstr ""
+#. this is the third
+#: boojum.c:300
+msgid "3"
 msgstr ""
 EOF
 
 : ${MSGMERGE=msgmerge}
-${MSGMERGE} -q -o mm-test12.tmp mm-test12.po mm-test12.pot || Exit 1
+${MSGMERGE} --add-location=file -q -o mm-test12.tmp mm-test12.in1 mm-test12.in2 \
+    || Exit 1
 LC_ALL=C tr -d '\r' < mm-test12.tmp > mm-test12.out || Exit 1
 
-cat <<EOF > mm-test12.ok
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR Free Software Foundation, Inc.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
-msgid ""
-msgstr ""
-"Project-Id-Version: cog_training 1.0\n"
-"POT-Creation-Date: 2001-04-30 18:51+0200\n"
-"PO-Revision-Date: 2001-04-29 21:19+02:00\n"
-"Last-Translator: Felix N. <xyz@zyx.uucp>\n"
-"Language-Team: German <de@li.org>\n"
-"Language: de\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ISO-8859-1\n"
-"Content-Transfer-Encoding: 8bit\n"
+cat << EOF > mm-test12.ok
+# first
+#. this is the first
+#: snark.c
+msgid "1"
+msgstr "1x"
 
-#: foobar.c:32
-#, fuzzy, c-format
-msgid "%d error"
-msgstr "%d erreur"
+# second
+#. this is the second
+#: hunt.c
+msgid "2"
+msgstr ""
+"this is a really long msgstr used to test the wrapping to make sure it works "
+"after all what is a test for if not to test things?"
+
+# third
+#. this is the third
+#: boojum.c
+msgid "3"
+msgstr "3z"
 EOF
 
 : ${DIFF=diff}

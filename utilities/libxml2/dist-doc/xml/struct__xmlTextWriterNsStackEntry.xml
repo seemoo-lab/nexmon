@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlTextWriterNsStackEntry" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlTextWriterNsStackEntry</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlTextWriterNsStackEntry_1aaf2e7266340a59816ed77e75c1687bf9" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* prefix</definition>
+        <argsstring></argsstring>
+        <name>prefix</name>
+        <qualifiedname>_xmlTextWriterNsStackEntry::prefix</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlwriter.c" line="75" column="13" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="75" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlTextWriterNsStackEntry_1acc40d5c78a0e7c2dfccb4828175258f9" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* uri</definition>
+        <argsstring></argsstring>
+        <name>uri</name>
+        <qualifiedname>_xmlTextWriterNsStackEntry::uri</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlwriter.c" line="76" column="13" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="76" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlTextWriterNsStackEntry_1aa38b0d324dbfebfdb9329497d4647fd2" prot="public" static="no" mutable="no">
+        <type>xmlLinkPtr</type>
+        <definition>xmlLinkPtr elem</definition>
+        <argsstring></argsstring>
+        <name>elem</name>
+        <qualifiedname>_xmlTextWriterNsStackEntry::elem</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlwriter.c" line="77" column="16" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="77" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="2">
+        <label>_xmlLink</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlTextWriterNsStackEntry</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>elem</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xmlwriter.c" line="74" column="1" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="74" bodyend="78"/>
+    <listofallmembers>
+      <member refid="struct__xmlTextWriterNsStackEntry_1aa38b0d324dbfebfdb9329497d4647fd2" prot="public" virt="non-virtual"><scope>_xmlTextWriterNsStackEntry</scope><name>elem</name></member>
+      <member refid="struct__xmlTextWriterNsStackEntry_1aaf2e7266340a59816ed77e75c1687bf9" prot="public" virt="non-virtual"><scope>_xmlTextWriterNsStackEntry</scope><name>prefix</name></member>
+      <member refid="struct__xmlTextWriterNsStackEntry_1acc40d5c78a0e7c2dfccb4828175258f9" prot="public" virt="non-virtual"><scope>_xmlTextWriterNsStackEntry</scope><name>uri</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

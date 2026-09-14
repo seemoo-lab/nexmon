@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -29,7 +17,6 @@
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 #include <epan/to_str.h>
 
 void proto_register_mactelnet(void);
@@ -38,34 +25,33 @@ void proto_reg_handoff_mactelnet(void);
 #define PROTO_TAG_MACTELNET "MAC-Telnet"
 
 /* Initialize the protocol and registered fields */
-static gint proto_mactelnet = -1;
-static gint hf_mactelnet_control_packet = -1;
-static gint hf_mactelnet_type = -1;
-static gint hf_mactelnet_protocolver = -1;
-static gint hf_mactelnet_source_mac = -1;
-static gint hf_mactelnet_destination_mac = -1;
-static gint hf_mactelnet_session_id = -1;
-static gint hf_mactelnet_client_type = -1;
-static gint hf_mactelnet_databytes = -1;
-static gint hf_mactelnet_datatype = -1;
-static gint hf_mactelnet_control = -1;
-static gint hf_mactelnet_control_length = -1;
-static gint hf_mactelnet_control_encryption_key = -1;
-static gint hf_mactelnet_control_password = -1;
-static gint hf_mactelnet_control_username = -1;
-static gint hf_mactelnet_control_terminal = -1;
-static gint hf_mactelnet_control_width = -1;
-static gint hf_mactelnet_control_height = -1;
+static int proto_mactelnet;
+static int hf_mactelnet_control_packet;
+static int hf_mactelnet_type;
+static int hf_mactelnet_protocolver;
+static int hf_mactelnet_source_mac;
+static int hf_mactelnet_destination_mac;
+static int hf_mactelnet_session_id;
+static int hf_mactelnet_client_type;
+static int hf_mactelnet_databytes;
+static int hf_mactelnet_datatype;
+static int hf_mactelnet_control;
+static int hf_mactelnet_control_length;
+static int hf_mactelnet_control_encryption_key;
+static int hf_mactelnet_control_password;
+static int hf_mactelnet_control_username;
+static int hf_mactelnet_control_terminal;
+static int hf_mactelnet_control_width;
+static int hf_mactelnet_control_height;
 
-/* Global port preference */
-static guint global_mactelnet_port = 20561;
+#define MACTELNET_UDP_PORT      20561 /* Not IANA registered */
 
 /* Control packet definition */
-static const guint32 control_packet = 0x563412FF;
+static const uint32_t control_packet = 0x563412FF;
 
 /* Initialize the subtree pointers */
-static gint ett_mactelnet = -1;
-static gint ett_mactelnet_control = -1;
+static int ett_mactelnet;
+static int ett_mactelnet_control;
 
 /* Packet types */
 static const value_string packettypenames[] = {
@@ -109,14 +95,14 @@ dissect_mactelnet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     int         foundping   = -1;
     int         foundclient = -1;
     int         foundserver = -1;
-    guint16     type;
+    uint16_t    type;
 
     /* Check that there's enough data */
     if (tvb_captured_length(tvb) < 18)
         return 0;
 
     /*  Get the type byte */
-    type = tvb_get_guint8(tvb, 1);
+    type = tvb_get_uint8(tvb, 1);
 
     if ((type == 4) || (type == 5)) { /* Ping */
         foundping = 1;
@@ -144,14 +130,14 @@ dissect_mactelnet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
     col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_TAG_MACTELNET);
 
     col_add_fstr(pinfo->cinfo, COL_INFO, "%s > %s Direction: %s Type: %s",
-                    tvb_ether_to_str(tvb, 2),
-                    tvb_ether_to_str(tvb, 8),
+                    tvb_ether_to_str(pinfo->pool, tvb, 2),
+                    tvb_ether_to_str(pinfo->pool, tvb, 8),
                     ((foundclient >= 0) || (type == 4) ? "Client->Server" : "Server->Client" ),
-                    val_to_str(type, packettypenames, "Unknown Type:0x%02x")
+                    val_to_str(pinfo->pool, type, packettypenames, "Unknown Type:0x%02x")
         );
 
     if (tree) {
-        guint32 offset = 0;
+        uint32_t offset = 0;
 
         /* create display subtree for the protocol */
         mactelnet_item = proto_tree_add_item(tree, proto_mactelnet, tvb, 0, -1, ENC_NA);
@@ -208,8 +194,8 @@ dissect_mactelnet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
         if (type == 1) {
             while(tvb_reported_length_remaining(tvb, offset) > 0) {
                 if ((tvb_reported_length_remaining(tvb, offset) > 4) && (tvb_get_ntohl(tvb, offset) == control_packet)) {
-                    guint8  datatype;
-                    guint32 datalength;
+                    uint8_t datatype;
+                    uint32_t datalength;
 
                     /* Add subtree for control packet */
                     mactelnet_control_item = proto_tree_add_item(mactelnet_tree, hf_mactelnet_control, tvb, offset, -1, ENC_NA);
@@ -219,7 +205,7 @@ dissect_mactelnet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
                     offset += 4;
 
                     /* Control packet type (1) */
-                    datatype = tvb_get_guint8(tvb, offset);
+                    datatype = tvb_get_uint8(tvb, offset);
                     proto_tree_add_item(mactelnet_control_tree, hf_mactelnet_datatype, tvb, offset, 1, ENC_NA);
                     offset += 1;
 
@@ -238,11 +224,11 @@ dissect_mactelnet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *dat
                             break;
 
                         case 3: /* Username */
-                            proto_tree_add_item(mactelnet_control_tree, hf_mactelnet_control_username, tvb, offset, datalength, ENC_ASCII|ENC_NA);
+                            proto_tree_add_item(mactelnet_control_tree, hf_mactelnet_control_username, tvb, offset, datalength, ENC_ASCII);
                             break;
 
                         case 4: /* Terminal type */
-                            proto_tree_add_item(mactelnet_control_tree, hf_mactelnet_control_terminal, tvb, offset, datalength, ENC_ASCII|ENC_NA);
+                            proto_tree_add_item(mactelnet_control_tree, hf_mactelnet_control_terminal, tvb, offset, datalength, ENC_ASCII);
                             break;
 
                         case 5: /* Terminal width */
@@ -368,47 +354,28 @@ proto_register_mactelnet(void)
     };
 
     /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_mactelnet,
         &ett_mactelnet_control,
     };
 
-    module_t *mactelnet_module;
-
     /* Register the protocol name and description */
     proto_mactelnet = proto_register_protocol ("MikroTik MAC-Telnet Protocol", PROTO_TAG_MACTELNET, "mactelnet");
+    register_dissector("mactelnet", dissect_mactelnet, proto_mactelnet);
 
     /* Required function calls to register the header fields and subtrees used */
     proto_register_field_array (proto_mactelnet, hf, array_length (hf));
     proto_register_subtree_array (ett, array_length (ett));
-
-    mactelnet_module = prefs_register_protocol(proto_mactelnet, proto_reg_handoff_mactelnet);
-
-    prefs_register_uint_preference(mactelnet_module, "port", "UDP Port",
-                       "MAC-Telnet UDP port if other than the default",
-                       10, &global_mactelnet_port);
 }
 
 void
 proto_reg_handoff_mactelnet(void)
 {
-    static gboolean           initialized = FALSE;
-    static guint              current_port;
-    static dissector_handle_t mactelnet_handle;
-
-    if (!initialized) {
-        mactelnet_handle = create_dissector_handle(dissect_mactelnet, proto_mactelnet);
-        initialized = TRUE;
-    } else {
-        dissector_delete_uint("udp.port", current_port, mactelnet_handle);
-    }
-
-    current_port = global_mactelnet_port;
-    dissector_add_uint("udp.port", current_port, mactelnet_handle);
+    dissector_add_uint_with_preference("udp.port", MACTELNET_UDP_PORT, find_dissector("mactelnet"));
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

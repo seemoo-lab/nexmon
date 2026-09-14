@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2002 Free Software Foundation, Inc.
+/* Copyright (C) 1999-2002, 2012, 2018 Free Software Foundation, Inc.
    This file is part of the GNU LIBICONV Tools.
 
    This program is free software: you can redistribute it and/or modify
@@ -12,8 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program; if not, write to the Free Software Foundation,
-   Inc., along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program; if not, see <https://www.gnu.org/licenses/>.  */
 
 /*
  * Generates Unicode variants table from Koichi Yasuoka's UniVariants file.
@@ -39,19 +38,18 @@ int main (int argc, char *argv[])
   printf(" * This file is part of the GNU LIBICONV Library.\n");
   printf(" *\n");
   printf(" * The GNU LIBICONV Library is free software; you can redistribute it\n");
-  printf(" * and/or modify it under the terms of the GNU Library General Public\n");
+  printf(" * and/or modify it under the terms of the GNU Lesser General Public\n");
   printf(" * License as published by the Free Software Foundation; either version 2\n");
   printf(" * of the License, or (at your option) any later version.\n");
   printf(" *\n");
   printf(" * The GNU LIBICONV Library is distributed in the hope that it will be\n");
   printf(" * useful, but WITHOUT ANY WARRANTY; without even the implied warranty of\n");
   printf(" * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU\n");
-  printf(" * Library General Public License for more details.\n");
+  printf(" * Lesser General Public License for more details.\n");
   printf(" *\n");
-  printf(" * You should have received a copy of the GNU Library General Public\n");
+  printf(" * You should have received a copy of the GNU Lesser General Public\n");
   printf(" * License along with the GNU LIBICONV Library; see the file COPYING.LIB.\n");
-  printf(" * If not, write to the Free Software Foundation, Inc., 51 Franklin Street,\n");
-  printf(" * Fifth Floor, Boston, MA 02110-1301, USA.\n");
+  printf(" * If not, see <https://www.gnu.org/licenses/>.\n");
   printf(" */\n");
   printf("\n");
   printf("/*\n");

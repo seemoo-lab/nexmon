@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -29,11 +17,11 @@
  * there are some Internet-Drafts for a protocol that looks like a
  * descendant or other variant of this:
  *
- *	http://tools.ietf.org/html/draft-taylor-ipdc-00
- *	http://tools.ietf.org/html/draft-dugan-ipdc-connection-00
- *	http://tools.ietf.org/html/draft-elliott-ipdc-media-00
- *	http://tools.ietf.org/html/draft-bell-ipdc-signaling-00
- *	http://tools.ietf.org/html/draft-pickett-ipdc-management-00
+ *	https://tools.ietf.org/html/draft-taylor-ipdc-00
+ *	https://tools.ietf.org/html/draft-dugan-ipdc-connection-00
+ *	https://tools.ietf.org/html/draft-elliott-ipdc-media-00
+ *	https://tools.ietf.org/html/draft-bell-ipdc-signaling-00
+ *	https://tools.ietf.org/html/draft-pickett-ipdc-management-00
  */
 
 #include "config.h"
@@ -49,7 +37,9 @@
 void proto_register_ipdc(void);
 void proto_reg_handoff_ipdc(void);
 
-#define	TCP_PORT_IPDC	6668
+static dissector_handle_t ipdc_tcp_handle;
+
+#define	TCP_PORT_IPDC	6668 /* Not IANA registered */
 #define	TRANS_ID_SIZE_IPDC	4
 
 #define	TEXT_UNDEFINED	"UNDEFINED"
@@ -109,67 +99,61 @@ static const value_string channel_status_vals[] = {
 /*      linear search will always match the first  */
 /*      of the dups.                               */
 static const value_string message_code_vals[] = {
-	{ 0x0082, "SS -> GW: ASUP: Acknowledgment to NSUP" },
-	{ 0x0084, "SS -> GW: LNK: Link Active" },
-	{ 0x0087, "SS -> GW: RCGST: Request Congestion Status" },
-	{ 0x00FF, "SS -> GW: MRJ: Message reject." },
-	{ 0x0041, "SS -> GW: RMS: Request module status" },
-	{ 0x0043, "SS -> GW: RLS: Request line status" },
-	{ 0x0045, "SS -> GW: RCS: Request channel status" },
-	{ 0x0051, "SS -> GW: SMS: Set a module to a given state" },
-	{ 0x0053, "SS -> GW: SLS: Set a line to a given state" },
-	{ 0x0055, "SS -> GW: SCS: Set a group of channels to a given state" },
-	{ 0x0047, "SS -> GW: RRS: Request RTP port Status" },
-	{ 0x0048, "SS -> GW: RARS: Request All RTP port Status" },
-	{ 0x0091, "SS -> GW: RSI: Request system information" },
 	{ 0x0001, "SS -> GW: RCSI: Request inbound call setup" },
-	{ 0x0009, "SS -> GW: RCST: Request pass-through call setup (TDM connection between two channels)" },
-	{ 0x0013, "SS -> GW: RCCP: Request packet call setup" },
-	{ 0x0015, "SS -> GW: RMPC: Modify/Query request packet call" },
-	{ 0x0011, "SS -> GW: RCR: Release channel request" },
-	{ 0x0012, "SS -> GW: ACR: Release channel complete" },
-	{ 0x0061, "SS -> GW: PCT: Prepare channel for continuity test" },
-	{ 0x0063, "SS -> GW: SCT: Start continuity test procedure with far end as loopback (Generate tone and check for received tone)" },
-	{ 0x0073, "SS -> GW: STN: Send tones" },
-	{ 0x0071, "SS -> GW: LTN: Listen for tones" },
-	{ 0x007D, "SS -> GW: RTE: Request Test Echo" },
-	{ 0x007E, "SS -> GW: ARTE: Response to Request Test Echo" },
-	{ 0x0079, "SS -> GW: NATV: Native Mode Q.931 Signaling Transport" },
-	{ 0x007A, "SS -> GW: TUNL: Tunneled Transport of signaling protocol data units" },
-	{ 0x0081, "GW -> SS: NSUP: Notify the soft switch that the GW is coming up" },
-	{ 0x0083, "GW -> SS: NSDN: Indication that the GW is going down" },
-	{ 0x0085, "GW -> SS: ALNK: Acknowledgement to Link Active" },
-	{ 0x0086, "GW -> SS: SLNK: Link Status" },
-	{ 0x0088, "GW -> SS: CGST: Congestion Status" },
-	{ 0x00FF, "GW -> SS: MRJ: Message reject." },
-	{ 0x0042, "GW -> SS: NMS: Notify module status" },
-	{ 0x0044, "GW -> SS: NLS: Notify line status" },
-	{ 0x0046, "GW -> SS: NCS: Notify channel status" },
-	{ 0x0056, "GW -> SS: RSCS: Response to SCS" },
-	{ 0x0049, "GW -> SS: NRS: Notify RTP port Status" },
-	{ 0x004A, "GW -> SS: NARS: Notify All RTP port Status" },
-	{ 0x0092, "GW -> SS: NSI: Notify System Information" },
 	{ 0x0002, "GW -> SS: ACSI: Accept inbound call setup" },
 	{ 0x0003, "GW -> SS: CONI: Connect inbound call (answer)" },
-	{ 0x0014, "GW -> SS: ACCP: Accept packet call setup" },
-	{ 0x0016, "GW -> SS: AMPC: Accept modify to packet call" },
-	{ 0x000A, "GW -> SS: ACST: Accept pass-through call" },
-	{ 0x0011, "GW -> SS: RCR: Release channel request" },
-	{ 0x0012, "GW -> SS: ACR: Release channel complete" },
-	{ 0x0062, "GW -> SS: APCT: Response to PCT" },
-	{ 0x0064, "GW -> SS: ASCT: Continuity test result" },
-	{ 0x0074, "GW -> SS: ASTN: Completion result of STN command" },
-	{ 0x0072, "GW -> SS: ALTN: Response to Listen for tones" },
-	{ 0x00F0, "GW -> SS: NTN: Notify ToNe" },
-	{ 0x007D, "GW -> SS: RTE: Request Test Echo" },
-	{ 0x007E, "GW -> SS: ARTE: Response to Request Test Echo" },
-	{ 0x0079, "GW -> SS: NATV: Native Mode Q.931 Signaling Transport" },
-	{ 0x007A, "GW -> SS: TUNL: Tunneled Transport of signaling protocol data units" },
 	{ 0x0005, "TD -> SS: RCSO: Request outbound call setup" },
 	{ 0x0006, "SS -> TD: ACSO: Accept outbound call setup" },
 	{ 0x0007, "SS -> TD: CONO: Outbound call connected" },
+	{ 0x0009, "SS -> GW: RCST: Request pass-through call setup (TDM connection between two channels)" },
+	{ 0x000A, "GW -> SS: ACST: Accept pass-through call" },
+	{ 0x0011, "RCR: Release channel request" },
+	{ 0x0012, "ACR: Release channel complete" },
+	{ 0x0013, "SS -> GW: RCCP: Request packet call setup" },
+	{ 0x0014, "GW -> SS: ACCP: Accept packet call setup" },
+	{ 0x0015, "SS -> GW: RMPC: Modify/Query request packet call" },
+	{ 0x0016, "GW -> SS: AMPC: Accept modify to packet call" },
+	{ 0x0041, "SS -> GW: RMS: Request module status" },
+	{ 0x0042, "GW -> SS: NMS: Notify module status" },
+	{ 0x0043, "SS -> GW: RLS: Request line status" },
+	{ 0x0044, "GW -> SS: NLS: Notify line status" },
+	{ 0x0045, "SS -> GW: RCS: Request channel status" },
+	{ 0x0046, "GW -> SS: NCS: Notify channel status" },
+	{ 0x0047, "SS -> GW: RRS: Request RTP port Status" },
+	{ 0x0048, "SS -> GW: RARS: Request All RTP port Status" },
+	{ 0x0049, "GW -> SS: NRS: Notify RTP port Status" },
+	{ 0x004A, "GW -> SS: NARS: Notify All RTP port Status" },
+	{ 0x0051, "SS -> GW: SMS: Set a module to a given state" },
+	{ 0x0053, "SS -> GW: SLS: Set a line to a given state" },
+	{ 0x0055, "SS -> GW: SCS: Set a group of channels to a given state" },
+	{ 0x0056, "GW -> SS: RSCS: Response to SCS" },
+	{ 0x0061, "SS -> GW: PCT: Prepare channel for continuity test" },
+	{ 0x0062, "GW -> SS: APCT: Response to PCT" },
+	{ 0x0063, "SS -> GW: SCT: Start continuity test procedure with far end as loopback (Generate tone and check for received tone)" },
+	{ 0x0064, "GW -> SS: ASCT: Continuity test result" },
+	{ 0x0071, "SS -> GW: LTN: Listen for tones" },
+	{ 0x0072, "GW -> SS: ALTN: Response to Listen for tones" },
+	{ 0x0073, "SS -> GW: STN: Send tones" },
+	{ 0x0074, "GW -> SS: ASTN: Completion result of STN command" },
+	{ 0x0079, "NATV: Native Mode Q.931 Signaling Transport" },
+	{ 0x007A, "TUNL: Tunneled Transport of signaling protocol data units" },
+	{ 0x007D, "RTE: Request Test Echo" },
+	{ 0x007E, "ARTE: Response to Request Test Echo" },
+	{ 0x0081, "GW -> SS: NSUP: Notify the soft switch that the GW is coming up" },
+	{ 0x0082, "SS -> GW: ASUP: Acknowledgment to NSUP" },
+	{ 0x0083, "GW -> SS: NSDN: Indication that the GW is going down" },
+	{ 0x0084, "SS -> GW: LNK: Link Active" },
+	{ 0x0085, "GW -> SS: ALNK: Acknowledgement to Link Active" },
+	{ 0x0086, "GW -> SS: SLNK: Link Status" },
+	{ 0x0087, "SS -> GW: RCGST: Request Congestion Status" },
+	{ 0x0088, "GW -> SS: CGST: Congestion Status" },
+	{ 0x0091, "SS -> GW: RSI: Request system information" },
+	{ 0x0092, "GW -> SS: NSI: Notify System Information" },
+	{ 0x00F0, "GW -> SS: NTN: Notify ToNe" },
+	{ 0x00FF, "MRJ: Message reject." },
 	{ 0, NULL }
 };
+static value_string_ext message_code_vals_ext = VALUE_STRING_EXT_INIT(message_code_vals);
 
 static const value_string tag_description[] = {
 	{ 0x01, "Protocol version" },
@@ -280,7 +264,7 @@ static const value_string tag_description[] = {
 static value_string_ext tag_description_ext = VALUE_STRING_EXT_INIT(tag_description);
 
 typedef struct _ipdc_tag_type_val {
-	gint	tag;
+	int	tag;
 	ipdc_tag_type	type;
 } ipdc_tag_type_val;
 
@@ -683,41 +667,40 @@ static const value_string tag_enum_type[] = {
 };
 static value_string_ext tag_enum_type_ext = VALUE_STRING_EXT_INIT(tag_enum_type);
 
-static int proto_ipdc = -1;
-static int hf_ipdc_nr = -1;
-static int hf_ipdc_ns = -1;
-static int hf_ipdc_payload_len = -1;
-static int hf_ipdc_protocol_id = -1;
-static int hf_ipdc_trans_id_size = -1;
-static int hf_ipdc_trans_id = -1;
-static int hf_ipdc_message_code = -1;
-static int hf_ipdc_ascii = -1;
-static int hf_ipdc_uint = -1;
-static int hf_ipdc_ipv4 = -1;
-static int hf_ipdc_line_status = -1;
-static int hf_ipdc_channel_status = -1;
-static int hf_ipdc_enctype = -1;
-static int hf_ipdc_end_of_tags = -1;
-static int hf_ipdc_data_trailing_end_of_tags = -1;
-static int hf_ipdc_type_unknown = -1;
+static int proto_ipdc;
+static int hf_ipdc_nr;
+static int hf_ipdc_ns;
+static int hf_ipdc_payload_len;
+static int hf_ipdc_protocol_id;
+static int hf_ipdc_trans_id_size;
+static int hf_ipdc_trans_id;
+static int hf_ipdc_message_code;
+static int hf_ipdc_ascii;
+static int hf_ipdc_uint;
+static int hf_ipdc_ipv4;
+static int hf_ipdc_line_status;
+static int hf_ipdc_channel_status;
+static int hf_ipdc_enctype;
+static int hf_ipdc_end_of_tags;
+static int hf_ipdc_data_trailing_end_of_tags;
+static int hf_ipdc_type_unknown;
 
-static gint ett_ipdc = -1;
-static gint ett_ipdc_tag = -1;
-static gint ett_ipdc_line_status = -1;
+static int ett_ipdc;
+static int ett_ipdc_tag;
+static int ett_ipdc_line_status;
 
-static expert_field ei_ipdc_ipv4 = EI_INIT;
+static expert_field ei_ipdc_ipv4;
 
-static gboolean ipdc_desegment = TRUE;
-static guint ipdc_port_pref = TCP_PORT_IPDC;
+static bool ipdc_desegment = true;
 
 static dissector_handle_t q931_handle;
 
 
-static guint
+static unsigned
 get_ipdc_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
 	/* lower 10 bits only */
-	guint raw_len = (tvb_get_ntohs(tvb,offset+2) & 0x03FF);
+	unsigned raw_len = (tvb_get_ntohs(tvb,offset+2) & 0x03FF);
 
 	return raw_len + 4;
 }
@@ -732,31 +715,28 @@ dissect_ipdc_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 
 	const char *des;
 	const char *enum_val = "";
-	char tmp_tag_text[IPDC_STR_LEN + 1];
+	char *tmp_tag_text;
 	const value_string *val_ptr;
-	gint hf_ptr;
-	guint32	type;
-	guint len;
-	guint i;
-	guint status;
-	gshort tag;
-	guint32 tmp_tag;
+	int hf_ptr;
+	uint32_t	type;
+	unsigned len;
+	unsigned i;
+	unsigned status;
+	uint8_t tag;
+	uint32_t tmp_tag;
 
-	gshort nr = tvb_get_guint8(tvb,0);
-	gshort ns = tvb_get_guint8(tvb,1);
-	guint payload_len = get_ipdc_pdu_len(pinfo,tvb,0,NULL);
+	uint8_t nr = tvb_get_uint8(tvb,0);
+	uint8_t ns = tvb_get_uint8(tvb,1);
+	unsigned payload_len = get_ipdc_pdu_len(pinfo,tvb,0,NULL);
+	/* payload_len will be at least 4 bytes... */
 
-	gshort trans_id_size;
-	guint32 trans_id;
-	guint16 message_code;
-	guint16 offset;
+	int trans_id_size;
+	uint32_t trans_id;
+	uint16_t message_code;
+	uint16_t offset;
 
 	/* display IPDC protocol ID */
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "IPDC");
-
-	/* short frame... */
-	if (payload_len < 4)
-		return 0;
 
 	/* clear info column and display send/receive sequence numbers */
 	col_append_fstr(pinfo->cinfo, COL_INFO, "r=%u s=%u ", nr, ns);
@@ -774,7 +754,7 @@ dissect_ipdc_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 	}
 
 	/* IPDC tags present - display message code and trans. ID */
-	trans_id_size = TRANS_ID_SIZE_IPDC; /* tvb_get_guint8(tvb,5); */
+	trans_id_size = TRANS_ID_SIZE_IPDC; /* tvb_get_uint8(tvb,5); */
 	trans_id = tvb_get_ntohl(tvb,6);
 	message_code = tvb_get_ntohs(tvb,6+trans_id_size);
 	offset = 6 + trans_id_size + 2; /* past message_code */
@@ -782,7 +762,7 @@ dissect_ipdc_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 	col_append_fstr(pinfo->cinfo, COL_INFO,
 				"TID=%x %s ",
 				trans_id,
-				val_to_str_const(message_code, message_code_vals,
+				val_to_str_ext_const(message_code, &message_code_vals_ext,
 					   TEXT_UNDEFINED));
 
 
@@ -810,7 +790,7 @@ dissect_ipdc_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 	   in bytes, following is tag data. tag of 0x0 should be
 	   end of tags. */
 	for (;;) {
-		tag = tvb_get_guint8(tvb, offset);
+		tag = tvb_get_uint8(tvb, offset);
 
 		if (tag == 0x0) {
 			if (offset == payload_len - 1) {
@@ -822,7 +802,7 @@ dissect_ipdc_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 			break;
 		}
 
-		len = tvb_get_guint8(tvb,offset+1);
+		len = tvb_get_uint8(tvb,offset+1);
 		des = val_to_str_ext_const(tag, &tag_description_ext, TEXT_UNDEFINED);
 		/* lookup tag type */
 		for (i = 0; (ipdc_tag_types[i].tag != tag &&
@@ -835,36 +815,38 @@ dissect_ipdc_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 		switch (type) {
 			/* simple IPDC_ASCII strings */
 			case IPDC_ASCII:
-				DISSECTOR_ASSERT(len<=IPDC_STR_LEN);
-				tvb_memcpy(tvb, tmp_tag_text, offset+2, len);
-				tmp_tag_text[len] = 0;
-				proto_tree_add_string_format(tag_tree, hf_ipdc_ascii, tvb, offset,
-						    len + 2, tmp_tag_text, "%s (0x%2.2x): %s", des, tag,
-						    tmp_tag_text);
+				if (len <= IPDC_STR_LEN) {
+					tmp_tag_text = (char *) tvb_get_string_enc(pinfo->pool, tvb, offset+2, len, ENC_ASCII|ENC_NA);
+					proto_tree_add_string_format(tag_tree, hf_ipdc_ascii, tvb, offset,
+								     len + 2, tmp_tag_text, "%s (0x%2.2x): %s", des, tag,
+								     tmp_tag_text);
+				}
 			break;
 
 			/* unsigned integers, or bytes */
 			case IPDC_UINT:
 			case IPDC_BYTE:
-				for (i = 0; i < len; i++)
-					tmp_tag += tvb_get_guint8(tvb,
-						offset + 2 + i) * (guint32)pow(256, len - (i + 1));
+				if (len <= 4) {
+					for (i = 0; i < len; i++)
+						tmp_tag += tvb_get_uint8(tvb,
+							offset + 2 + i) * (uint32_t)pow(256, len - (i + 1));
 
-				if (len == 1)
-					enum_val =
-						val_to_str_ext_const(IPDC_TAG(tag) + tmp_tag,
-								     &tag_enum_type_ext, TEXT_UNDEFINED);
+					if (len == 1)
+						enum_val =
+							val_to_str_ext_const(IPDC_TAG(tag) + tmp_tag,
+									     &tag_enum_type_ext, TEXT_UNDEFINED);
 
-				if (len == 1 && strcmp(enum_val, TEXT_UNDEFINED) != 0) {
-					proto_tree_add_uint_format(tag_tree, hf_ipdc_uint, tvb,
-							    offset, len + 2, tmp_tag,
-							    "%s (0x%2.2x): %s",
-							    des, tag, enum_val);
-				} else {
-					proto_tree_add_uint_format(tag_tree, hf_ipdc_uint, tvb,
-							    offset, len + 2, tmp_tag,
-							    "%s (0x%2.2x): %u",
-							    des, tag, tmp_tag);
+					if (len == 1 && strcmp(enum_val, TEXT_UNDEFINED) != 0) {
+						proto_tree_add_uint_format(tag_tree, hf_ipdc_uint, tvb,
+									   offset, len + 2, tmp_tag,
+									   "%s (0x%2.2x): %s",
+									   des, tag, enum_val);
+					} else {
+						proto_tree_add_uint_format(tag_tree, hf_ipdc_uint, tvb,
+									   offset, len + 2, tmp_tag,
+									   "%s (0x%2.2x): %u",
+									   des, tag, tmp_tag);
+					}
 				}
 			break;
 
@@ -875,13 +857,13 @@ dissect_ipdc_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 						proto_tree_add_ipv4_format(tag_tree, hf_ipdc_ipv4, tvb,
 							    offset, len + 2, tvb_get_ntohl(tvb, offset + 2),
 							    "%s (0x%2.2x): %s",
-							    des, tag, tvb_ip_to_str(tvb, offset + 2));
+							    des, tag, tvb_ip_to_str(pinfo->pool, tvb, offset + 2));
 						break;
 					case 6:
 						proto_tree_add_ipv4_format(tag_tree, hf_ipdc_ipv4, tvb,
 							    offset, len + 2, tvb_get_ntohl(tvb, offset + 2),
 							    "%s (0x%2.2x): %s:%u",
-							    des, tag, tvb_ip_to_str(tvb, offset + 2), tvb_get_ntohs(tvb, offset + 6));
+							    des, tag, tvb_ip_to_str(pinfo->pool, tvb, offset + 2), tvb_get_ntohs(tvb, offset + 6));
 						break;
 					default:
 						proto_tree_add_expert_format(tag_tree, pinfo, &ei_ipdc_ipv4, tvb, offset, len + 2, "%s (0x%2.2x): Invalid IP address length %u",
@@ -895,7 +877,7 @@ dissect_ipdc_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 				val_ptr = (type == IPDC_LINESTATUS) ? line_status_vals : channel_status_vals;
 				hf_ptr = (type == IPDC_LINESTATUS) ? hf_ipdc_line_status : hf_ipdc_channel_status;
 				for (i = 0; i < len; i++) {
-					status = tvb_get_guint8(tvb,offset+2+i);
+					status = tvb_get_uint8(tvb,offset+2+i);
 					proto_tree_add_uint_format(line_tree, hf_ptr, tvb,
 							    offset + 2 + i, 1, status,
 							    "%s (0x%2.2x) %.2u: %u (%s)",
@@ -912,18 +894,18 @@ dissect_ipdc_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 				break;
 			case IPDC_ENCTYPE:
 				proto_tree_add_uint_format(tag_tree, hf_ipdc_enctype, tvb,
-							offset, len + 2, tvb_get_guint8(tvb,offset+2),
+							offset, len + 2, tvb_get_uint8(tvb,offset+2),
 							"%s (0x%2.2x): %s",
 							des, tag, val_to_str_const(
-							    tvb_get_guint8(tvb,offset+2),
+							    tvb_get_uint8(tvb,offset+2),
 							    encoding_type_vals,
 							    TEXT_UNDEFINED));
 
 				if (len == 2) {
 					proto_tree_add_uint_format(tag_tree, hf_ipdc_enctype, tvb,
-							    offset, len + 2, tvb_get_guint8(tvb,offset+3),
+							    offset, len + 2, tvb_get_uint8(tvb,offset+3),
 							    "%s (0x%2.2x): %u",
-							    des, tag, tvb_get_guint8(tvb,offset+3));
+							    des, tag, tvb_get_uint8(tvb,offset+3));
 				}
 				break;
 				/* default */
@@ -994,7 +976,7 @@ proto_register_ipdc(void)
 
 		{ &hf_ipdc_message_code,
 		  { "Message code",	"ipdc.message_code",
-		    FT_UINT16, BASE_HEX, VALS(message_code_vals), 0x0,
+		    FT_UINT16, BASE_HEX|BASE_EXT_STRING, &message_code_vals_ext, 0x0,
 		    NULL, HFILL }
 		},
 
@@ -1053,7 +1035,7 @@ proto_register_ipdc(void)
 		},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ipdc,
 		&ett_ipdc_tag,
 		&ett_ipdc_line_status,
@@ -1073,39 +1055,26 @@ proto_register_ipdc(void)
 	expert_ipdc = expert_register_protocol(proto_ipdc);
 	expert_register_field_array(expert_ipdc, ei, array_length(ei));
 
-	ipdc_module = prefs_register_protocol(proto_ipdc, proto_reg_handoff_ipdc);
+	ipdc_module = prefs_register_protocol(proto_ipdc, NULL);
 	prefs_register_bool_preference(ipdc_module, "desegment_ipdc_messages",
 				       "Reassemble IPDC messages spanning multiple TCP segments",
 				       "Whether the IPDC dissector should reassemble messages spanning multiple TCP segments."
 				       " To use this option, you must also enable \"Allow subdissectors to reassemble TCP streams\" in the TCP protocol settings.",
 				       &ipdc_desegment);
-	prefs_register_uint_preference(ipdc_module, "tcp.port",
-				       "IPDC monitoring port",
-				       "Set the IPDC monitoring port", 10,
-				       &ipdc_port_pref);
+
+	ipdc_tcp_handle = register_dissector("ipdc", dissect_ipdc_tcp, proto_ipdc);
 }
 
 void
 proto_reg_handoff_ipdc(void)
 {
-	static guint last_ipdc_port_pref = 0;
-	static dissector_handle_t ipdc_tcp_handle = NULL;
+	q931_handle = find_dissector_add_dependency("q931", proto_ipdc);
 
-	if (ipdc_tcp_handle) {
-		dissector_delete_uint("tcp.port", last_ipdc_port_pref,
-			ipdc_tcp_handle);
-	} else {
-		ipdc_tcp_handle =
-			create_dissector_handle(dissect_ipdc_tcp, proto_ipdc);
-		q931_handle = find_dissector_add_dependency("q931", proto_ipdc);
-	}
-
-	last_ipdc_port_pref = ipdc_port_pref;
-	dissector_add_uint("tcp.port", ipdc_port_pref, ipdc_tcp_handle);
+	dissector_add_uint_with_preference("tcp.port", TCP_PORT_IPDC, ipdc_tcp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

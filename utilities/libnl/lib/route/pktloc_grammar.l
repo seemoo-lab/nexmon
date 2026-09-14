@@ -1,16 +1,24 @@
+%top{
+ #include "nl-default.h"
+}
 %{
- #include <netlink-local.h>
- #include <netlink-tc.h>
+ #include <linux/tc_ematch/tc_em_cmp.h>
+
  #include <netlink/netlink.h>
  #include <netlink/utils.h>
  #include <netlink/route/pktloc.h>
+
  #include "pktloc_syntax.h"
+
+ int pktloc_get_column(yyscan_t);
+ void pktloc_set_column(int, yyscan_t);
 %}
 
 %option 8bit
 %option reentrant
 %option warn
 %option noyywrap
+%option noinput
 %option nounput
 %option bison-bridge
 %option bison-locations
@@ -30,9 +38,17 @@
 
 "+"			{ return yylval->i = yytext[0]; }
 
-[lL][iI][nN][kK]	{ yylval->i = TCF_LAYER_LINK; return LAYER; }
-[nN][eE][tT]		{ yylval->i = TCF_LAYER_NETWORK; return LAYER; }
+[uU]8			{ yylval->i = TCF_EM_ALIGN_U8; return ALIGN; }
+[uU]16			{ yylval->i = TCF_EM_ALIGN_U16; return ALIGN; }
+[uU]32			{ yylval->i = TCF_EM_ALIGN_U32; return ALIGN; }
+
+[lL][iI][nN][kK]	|
+[eE][tT][hH]		{ yylval->i = TCF_LAYER_LINK; return LAYER; }
+[nN][eE][tT]		|
+[iI][pP]		{ yylval->i = TCF_LAYER_NETWORK; return LAYER; }
+[tT][rR][aA][nN][sS][pP][oO][rR][tT] |
 [tT][cC][pP]		{ yylval->i = TCF_LAYER_TRANSPORT; return LAYER; }
+
 
 [^ \t\r\n+]+		{
 				yylval->s = strdup(yytext);

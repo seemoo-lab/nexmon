@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,6 +19,7 @@
 #include <epan/rtd_table.h>
 #include <epan/timestamp.h>
 #include <epan/stat_tap_ui.h>
+#include <wsutil/cmdarg_err.h>
 #include <ui/cli/tshark-tap.h>
 
 typedef struct _rtd_t {
@@ -45,8 +34,8 @@ rtd_draw(void *arg)
 {
 	rtd_data_t* rtd_data = (rtd_data_t*)arg;
 	rtd_t* rtd = (rtd_t*)rtd_data->user_data;
-	gchar* tmp_str;
-	guint i, j;
+	char* tmp_str;
+	unsigned i, j;
 
 	/* printing results */
 	printf("\n");
@@ -62,7 +51,7 @@ rtd_draw(void *arg)
 		printf("Type    | Messages   |    Min RTD    |    Max RTD    |    Avg RTD    | Min in Frame | Max in Frame |\n");
 		for (i=0; i<rtd_data->stat_table.time_stats[0].num_timestat; i++) {
 			if (rtd_data->stat_table.time_stats[0].rtd[i].num) {
-				tmp_str = val_to_str_wmem(NULL, i, rtd->vs_type, "Other (%d)");
+				tmp_str = val_to_str(NULL, i, rtd->vs_type, "Other (%d)");
 				printf("%s | %7u    | %8.2f msec | %8.2f msec | %8.2f msec |  %10u  |  %10u  |\n",
 						tmp_str, rtd_data->stat_table.time_stats[0].rtd[i].num,
 						nstime_to_msec(&(rtd_data->stat_table.time_stats[0].rtd[i].min)), nstime_to_msec(&(rtd_data->stat_table.time_stats[0].rtd[i].max)),
@@ -79,7 +68,7 @@ rtd_draw(void *arg)
 		for (i=0; i<rtd_data->stat_table.num_rtds; i++) {
 			for (j=0; j<rtd_data->stat_table.time_stats[i].num_timestat; j++) {
 				if (rtd_data->stat_table.time_stats[i].rtd[j].num) {
-					tmp_str = val_to_str_wmem(NULL, i, rtd->vs_type, "Other (%d)");
+					tmp_str = val_to_str(NULL, i, rtd->vs_type, "Other (%d)");
 					printf("%s | %7u    | %8.2f msec | %8.2f msec | %8.2f msec |  %10u  |  %10u  |  %10u  |  %10u  | %4u (%4.2f%%) | %4u (%4.2f%%)  |\n",
 							tmp_str, rtd_data->stat_table.time_stats[i].rtd[j].num,
 							nstime_to_msec(&(rtd_data->stat_table.time_stats[i].rtd[j].min)), nstime_to_msec(&(rtd_data->stat_table.time_stats[i].rtd[j].max)),
@@ -99,7 +88,7 @@ rtd_draw(void *arg)
 	printf("=====================================================================================================\n");
 }
 
-static void
+static bool
 init_rtd_tables(register_rtd_t* rtd, const char *filter)
 {
 	GString *error_string;
@@ -113,16 +102,18 @@ init_rtd_tables(register_rtd_t* rtd, const char *filter)
 
 	rtd_table_dissector_init(rtd, &ui->rtd.stat_table, NULL, NULL);
 
-	error_string = register_tap_listener(get_rtd_tap_listener_name(rtd), &ui->rtd, filter, 0, NULL, get_rtd_packet_func(rtd), rtd_draw);
+	error_string = register_tap_listener(get_rtd_tap_listener_name(rtd), &ui->rtd, filter, 0, NULL, get_rtd_packet_func(rtd), rtd_draw, NULL);
 	if (error_string) {
-		free_rtd_table(&ui->rtd.stat_table, NULL, NULL);
-		fprintf(stderr, "tshark: Couldn't register srt tap: %s\n", error_string->str);
+		free_rtd_table(&ui->rtd.stat_table);
+		cmdarg_err("Couldn't register srt tap: %s", error_string->str);
 		g_string_free(error_string, TRUE);
-		exit(1);
+		return false;
 	}
+
+	return true;
 }
 
-static void
+static bool
 dissector_rtd_init(const char *opt_arg, void* userdata)
 {
 	register_rtd_t *rtd = (register_rtd_t*)userdata;
@@ -132,32 +123,36 @@ dissector_rtd_init(const char *opt_arg, void* userdata)
 	rtd_table_get_filter(rtd, opt_arg, &filter, &err);
 	if (err != NULL)
 	{
-		fprintf(stderr, "tshark: %s\n", err);
+		cmdarg_err("%s", err);
 		g_free(err);
-		exit(1);
+		return false;
 	}
 
-	init_rtd_tables(rtd, filter);
+	return init_rtd_tables(rtd, filter);
 }
 
 /* Set GUI fields for register_rtd list */
-void
-register_rtd_tables(gpointer data, gpointer user_data _U_)
+bool
+register_rtd_tables(const void *key _U_, void *value, void *userdata _U_)
 {
-	register_rtd_t *rtd = (register_rtd_t*)data;
+	register_rtd_t *rtd = (register_rtd_t*)value;
 	stat_tap_ui ui_info;
+	char *cli_string;
 
+	cli_string = rtd_table_get_tap_string(rtd);
 	ui_info.group = REGISTER_STAT_GROUP_RESPONSE_TIME;
 	ui_info.title = NULL;   /* construct this from the protocol info? */
-	ui_info.cli_string = rtd_table_get_tap_string(rtd);
+	ui_info.cli_string = cli_string;
 	ui_info.tap_init_cb = dissector_rtd_init;
 	ui_info.nparams = 0;
 	ui_info.params = NULL;
 	register_stat_tap_ui(&ui_info, rtd);
+	g_free(cli_string);
+	return false;
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,6 +19,11 @@
  *
  * Author: Alexander Larsson <alexl@redhat.com>
  */
+
+/* Needed for the statx() calls in inline functions in glocalfileinfo.h */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 
 #include "config.h"
 
@@ -38,7 +45,11 @@
 #ifdef G_OS_UNIX
 #include <unistd.h>
 #include "gfiledescriptorbased.h"
+#include <sys/uio.h>
 #endif
+
+#include "glib-private.h"
+#include "gioprivate.h"
 
 #ifdef G_OS_WIN32
 #include <io.h>
@@ -52,6 +63,12 @@
 
 #ifndef O_BINARY
 #define O_BINARY 0
+#endif
+
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#else
+#define HAVE_O_CLOEXEC 1
 #endif
 
 struct _GLocalFileOutputStreamPrivate {
@@ -91,6 +108,14 @@ static gssize     g_local_file_output_stream_write        (GOutputStream      *s
 							   gsize               count,
 							   GCancellable       *cancellable,
 							   GError            **error);
+#ifdef G_OS_UNIX
+static gboolean   g_local_file_output_stream_writev       (GOutputStream       *stream,
+							   const GOutputVector *vectors,
+							   gsize                n_vectors,
+							   gsize               *bytes_written,
+							   GCancellable        *cancellable,
+							   GError             **error);
+#endif
 static gboolean   g_local_file_output_stream_close        (GOutputStream      *stream,
 							   GCancellable       *cancellable,
 							   GError            **error);
@@ -140,6 +165,9 @@ g_local_file_output_stream_class_init (GLocalFileOutputStreamClass *klass)
   gobject_class->finalize = g_local_file_output_stream_finalize;
 
   stream_class->write_fn = g_local_file_output_stream_write;
+#ifdef G_OS_UNIX
+  stream_class->writev_fn = g_local_file_output_stream_writev;
+#endif
   stream_class->close_fn = g_local_file_output_stream_close;
   file_stream_class->query_info = g_local_file_output_stream_query_info;
   file_stream_class->get_etag = g_local_file_output_stream_get_etag;
@@ -201,6 +229,89 @@ g_local_file_output_stream_write (GOutputStream  *stream,
   return res;
 }
 
+/* On Windows there is no equivalent API for files. The closest API to that is
+ * WriteFileGather() but it is useless in general: it requires, among other
+ * things, that each chunk is the size of a whole page and in memory aligned
+ * to a page. We can't possibly guarantee that in GLib.
+ */
+#ifdef G_OS_UNIX
+/* Macro to check if struct iovec and GOutputVector have the same ABI */
+#define G_OUTPUT_VECTOR_IS_IOVEC (sizeof (struct iovec) == sizeof (GOutputVector) && \
+      G_SIZEOF_MEMBER (struct iovec, iov_base) == G_SIZEOF_MEMBER (GOutputVector, buffer) && \
+      G_STRUCT_OFFSET (struct iovec, iov_base) == G_STRUCT_OFFSET (GOutputVector, buffer) && \
+      G_SIZEOF_MEMBER (struct iovec, iov_len) == G_SIZEOF_MEMBER (GOutputVector, size) && \
+      G_STRUCT_OFFSET (struct iovec, iov_len) == G_STRUCT_OFFSET (GOutputVector, size))
+
+static gboolean
+g_local_file_output_stream_writev (GOutputStream        *stream,
+				   const GOutputVector  *vectors,
+				   gsize                 n_vectors,
+				   gsize                *bytes_written,
+				   GCancellable         *cancellable,
+				   GError              **error)
+{
+  GLocalFileOutputStream *file;
+  gssize res;
+  struct iovec *iov;
+
+  if (bytes_written)
+    *bytes_written = 0;
+
+  /* Clamp the number of vectors if more given than we can write in one go.
+   * The caller has to handle short writes anyway.
+   */
+  if (n_vectors > G_IOV_MAX)
+    n_vectors = G_IOV_MAX;
+
+  file = G_LOCAL_FILE_OUTPUT_STREAM (stream);
+
+  if (G_OUTPUT_VECTOR_IS_IOVEC)
+    {
+      /* ABI is compatible */
+      iov = (struct iovec *) vectors;
+    }
+  else
+    {
+      gsize i;
+
+      /* ABI is incompatible */
+      iov = g_newa (struct iovec, n_vectors);
+      for (i = 0; i < n_vectors; i++)
+        {
+          iov[i].iov_base = (void *)vectors[i].buffer;
+          iov[i].iov_len = vectors[i].size;
+        }
+    }
+
+  while (1)
+    {
+      if (g_cancellable_set_error_if_cancelled (cancellable, error))
+        return FALSE;
+      res = writev (file->priv->fd, iov, n_vectors);
+      if (res == -1)
+        {
+          int errsv = errno;
+
+          if (errsv == EINTR)
+            continue;
+
+          g_set_error (error, G_IO_ERROR,
+                       g_io_error_from_errno (errsv),
+                       _("Error writing to file: %s"),
+                       g_strerror (errsv));
+        }
+      else if (bytes_written)
+        {
+          *bytes_written = res;
+        }
+
+      break;
+    }
+
+  return res != -1;
+}
+#endif
+
 void
 _g_local_file_output_stream_set_do_close (GLocalFileOutputStream *out,
 					  gboolean do_close)
@@ -215,9 +326,8 @@ _g_local_file_output_stream_really_close (GLocalFileOutputStream *file,
 {
   GLocalFileStat final_stat;
 
-#ifdef HAVE_FSYNC
   if (file->priv->sync_on_close &&
-      fsync (file->priv->fd) != 0)
+      g_fsync (file->priv->fd) != 0)
     {
       int errsv = errno;
       
@@ -227,14 +337,13 @@ _g_local_file_output_stream_really_close (GLocalFileOutputStream *file,
 		   g_strerror (errsv));
       goto err_out;
     }
-#endif
- 
+
 #ifdef G_OS_WIN32
 
   /* Must close before renaming on Windows, so just do the close first
    * in all cases for now.
    */
-  if (_fstati64 (file->priv->fd, &final_stat) == 0)
+  if (GLIB_PRIVATE_CALL (g_win32_fstat) (file->priv->fd, &final_stat) == 0)
     file->priv->etag = _g_local_file_info_create_etag (&final_stat);
 
   if (!g_close (file->priv->fd, NULL))
@@ -328,7 +437,7 @@ _g_local_file_output_stream_really_close (GLocalFileOutputStream *file,
       
 #ifndef G_OS_WIN32		/* Already did the fstat() and close() above on Win32 */
 
-  if (fstat (file->priv->fd, &final_stat) == 0)
+  if (g_local_file_fstat (file->priv->fd, G_LOCAL_FILE_STAT_FIELD_MTIME, G_LOCAL_FILE_STAT_FIELD_ALL, &final_stat) == 0)
     file->priv->etag = _g_local_file_info_create_etag (&final_stat);
 
   if (!g_close (file->priv->fd, NULL))
@@ -349,7 +458,7 @@ _g_local_file_output_stream_really_close (GLocalFileOutputStream *file,
 
 #ifndef G_OS_WIN32
   /* A simple try to close the fd in case we fail before the actual close */
-  (void) g_close (file->priv->fd, NULL);
+  g_close (file->priv->fd, NULL);
 #endif
   if (file->priv->tmp_filename)
     g_unlink (file->priv->tmp_filename);
@@ -552,7 +661,7 @@ set_error_from_open_errno (const char *filename,
       char *display_name = g_filename_display_name (filename);
       g_set_error (error, G_IO_ERROR,
                    g_io_error_from_errno (errsv),
-                   _("Error opening file '%s': %s"),
+                   _("Error opening file “%s”: %s"),
 		       display_name, g_strerror (errsv));
       g_free (display_name);
     }
@@ -591,7 +700,7 @@ _g_local_file_output_stream_open  (const char        *filename,
   if (g_cancellable_set_error_if_cancelled (cancellable, error))
     return NULL;
 
-  open_flags = O_BINARY;
+  open_flags = O_BINARY | O_CLOEXEC;
   if (readable)
     open_flags |= O_RDWR;
   else
@@ -628,7 +737,7 @@ _g_local_file_output_stream_create  (const char        *filename,
 
   mode = mode_from_flags_or_info (flags, reference_info);
 
-  open_flags = O_CREAT | O_EXCL | O_BINARY;
+  open_flags = O_CREAT | O_EXCL | O_BINARY | O_CLOEXEC;
   if (readable)
     open_flags |= O_RDWR;
   else
@@ -653,7 +762,7 @@ _g_local_file_output_stream_append  (const char        *filename,
   else
     mode = 0666;
 
-  return output_stream_open (filename, O_CREAT | O_APPEND | O_WRONLY | O_BINARY, mode,
+  return output_stream_open (filename, O_CREAT | O_APPEND | O_WRONLY | O_BINARY | O_CLOEXEC, mode,
                              cancellable, error);
 }
 
@@ -748,83 +857,156 @@ handle_overwrite_open (const char    *filename,
   int open_flags;
   int res;
   int mode;
+  int errsv = 0;
+  gboolean replace_destination_set = (flags & G_FILE_CREATE_REPLACE_DESTINATION);
 
   mode = mode_from_flags_or_info (flags, reference_info);
 
   /* We only need read access to the original file if we are creating a backup.
-   * We also add O_CREATE to avoid a race if the file was just removed */
+   * We also add O_CREAT to avoid a race if the file was just removed */
   if (create_backup || readable)
-    open_flags = O_RDWR | O_CREAT | O_BINARY;
+    open_flags = O_RDWR | O_CREAT | O_BINARY | O_CLOEXEC;
   else
-    open_flags = O_WRONLY | O_CREAT | O_BINARY;
+    open_flags = O_WRONLY | O_CREAT | O_BINARY | O_CLOEXEC;
   
   /* Some systems have O_NOFOLLOW, which lets us avoid some races
    * when finding out if the file we opened was a symlink */
 #ifdef O_NOFOLLOW
   is_symlink = FALSE;
   fd = g_open (filename, open_flags | O_NOFOLLOW, mode);
-  if (fd == -1 && errno == ELOOP)
+  errsv = errno;
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__) || defined(__DragonFly__)
+  if (fd == -1 && errsv == EMLINK)
+#elif defined(__NetBSD__)
+  if (fd == -1 && errsv == EFTYPE)
+#else
+  if (fd == -1 && errsv == ELOOP)
+#endif
     {
       /* Could be a symlink, or it could be a regular ELOOP error,
        * but then the next open will fail too. */
       is_symlink = TRUE;
-      fd = g_open (filename, open_flags, mode);
+      if (!replace_destination_set)
+        fd = g_open (filename, open_flags, mode);
     }
-#else
-  fd = g_open (filename, open_flags, mode);
+#else  /* if !O_NOFOLLOW */
   /* This is racy, but we do it as soon as possible to minimize the race */
   is_symlink = g_file_test (filename, G_FILE_TEST_IS_SYMLINK);
-#endif
-    
-  if (fd == -1)
+
+  if (!is_symlink || !replace_destination_set)
     {
-      int errsv = errno;
+      fd = g_open (filename, open_flags, mode);
+      errsv = errno;
+    }
+#endif
+
+  if (fd == -1 &&
+      (!is_symlink || !replace_destination_set))
+    {
       char *display_name = g_filename_display_name (filename);
       g_set_error (error, G_IO_ERROR,
 		   g_io_error_from_errno (errsv),
-		   _("Error opening file '%s': %s"),
+		   _("Error opening file “%s”: %s"),
 		   display_name, g_strerror (errsv));
       g_free (display_name);
       return -1;
     }
-  
-#ifdef G_OS_WIN32
-  res = _fstati64 (fd, &original_stat);
-#else
-  res = fstat (fd, &original_stat);
-#endif
 
-  if (res != 0) 
+  if (!is_symlink)
     {
-      int errsv = errno;
+      res = g_local_file_fstat (fd,
+                                G_LOCAL_FILE_STAT_FIELD_TYPE |
+                                G_LOCAL_FILE_STAT_FIELD_MODE |
+                                G_LOCAL_FILE_STAT_FIELD_UID |
+                                G_LOCAL_FILE_STAT_FIELD_GID |
+                                G_LOCAL_FILE_STAT_FIELD_MTIME |
+                                G_LOCAL_FILE_STAT_FIELD_NLINK,
+                                G_LOCAL_FILE_STAT_FIELD_ALL, &original_stat);
+      errsv = errno;
+    }
+  else
+    {
+      res = g_local_file_lstat (filename,
+                                G_LOCAL_FILE_STAT_FIELD_TYPE |
+                                G_LOCAL_FILE_STAT_FIELD_MODE |
+                                G_LOCAL_FILE_STAT_FIELD_UID |
+                                G_LOCAL_FILE_STAT_FIELD_GID |
+                                G_LOCAL_FILE_STAT_FIELD_MTIME |
+                                G_LOCAL_FILE_STAT_FIELD_NLINK,
+                                G_LOCAL_FILE_STAT_FIELD_ALL, &original_stat);
+      errsv = errno;
+    }
+
+  if (res != 0)
+    {
       char *display_name = g_filename_display_name (filename);
       g_set_error (error, G_IO_ERROR,
 		   g_io_error_from_errno (errsv),
-		   _("Error when getting information for file '%s': %s"),
+		   _("Error when getting information for file “%s”: %s"),
 		   display_name, g_strerror (errsv));
       g_free (display_name);
-      goto err_out;
+      goto error;
     }
   
   /* not a regular file */
-  if (!S_ISREG (original_stat.st_mode))
+  if (!S_ISREG (_g_stat_mode (&original_stat)))
     {
-      if (S_ISDIR (original_stat.st_mode))
-	g_set_error_literal (error,
-                             G_IO_ERROR,
-                             G_IO_ERROR_IS_DIRECTORY,
-                             _("Target file is a directory"));
-      else
-	g_set_error_literal (error,
+      if (S_ISDIR (_g_stat_mode (&original_stat)))
+        {
+          g_set_error_literal (error,
+                               G_IO_ERROR,
+                               G_IO_ERROR_IS_DIRECTORY,
+                               _("Target file is a directory"));
+          goto error;
+        }
+      else if (!is_symlink ||
+#ifdef S_ISLNK
+               !S_ISLNK (_g_stat_mode (&original_stat))
+#else
+               FALSE
+#endif
+               )
+        {
+          g_set_error_literal (error,
                              G_IO_ERROR,
                              G_IO_ERROR_NOT_REGULAR_FILE,
                              _("Target file is not a regular file"));
-      goto err_out;
+          goto error;
+        }
     }
   
   if (etag != NULL)
     {
-      current_etag = _g_local_file_info_create_etag (&original_stat);
+      GLocalFileStat etag_stat;
+      GLocalFileStat *etag_stat_pointer;
+
+      /* The ETag is calculated on the details of the target file, for symlinks,
+       * so we might need to stat() again. */
+      if (is_symlink)
+        {
+          res = g_local_file_stat (filename,
+                                   G_LOCAL_FILE_STAT_FIELD_MTIME,
+                                   G_LOCAL_FILE_STAT_FIELD_ALL, &etag_stat);
+          errsv = errno;
+
+          if (res != 0)
+            {
+              char *display_name = g_filename_display_name (filename);
+              g_set_error (error, G_IO_ERROR,
+                           g_io_error_from_errno (errsv),
+                           _("Error when getting information for file “%s”: %s"),
+                           display_name, g_strerror (errsv));
+              g_free (display_name);
+              goto error;
+            }
+
+          etag_stat_pointer = &etag_stat;
+        }
+      else
+        etag_stat_pointer = &original_stat;
+
+      /* Compare the ETags */
+      current_etag = _g_local_file_info_create_etag (etag_stat_pointer);
       if (strcmp (etag, current_etag) != 0)
 	{
 	  g_set_error_literal (error,
@@ -832,7 +1014,7 @@ handle_overwrite_open (const char    *filename,
                                G_IO_ERROR_WRONG_ETAG,
                                _("The file was externally modified"));
 	  g_free (current_etag);
-	  goto err_out;
+          goto error;
 	}
       g_free (current_etag);
     }
@@ -848,8 +1030,8 @@ handle_overwrite_open (const char    *filename,
    * to a backup file and rewrite the contents of the file.
    */
   
-  if ((flags & G_FILE_CREATE_REPLACE_DESTINATION) ||
-      (!(original_stat.st_nlink > 1) && !is_symlink))
+  if (replace_destination_set ||
+      (!(_g_stat_nlink (&original_stat) > 1) && !is_symlink))
     {
       char *dirname, *tmp_filename;
       int tmpfd;
@@ -858,7 +1040,7 @@ handle_overwrite_open (const char    *filename,
       tmp_filename = g_build_filename (dirname, ".goutputstream-XXXXXX", NULL);
       g_free (dirname);
 
-      tmpfd = g_mkstemp_full (tmp_filename, (readable ? O_RDWR : O_WRONLY) | O_BINARY, mode);
+      tmpfd = g_mkstemp_full (tmp_filename, (readable ? O_RDWR : O_WRONLY) | O_BINARY | O_CLOEXEC, mode);
       if (tmpfd == -1)
 	{
 	  g_free (tmp_filename);
@@ -867,13 +1049,13 @@ handle_overwrite_open (const char    *filename,
       
       /* try to keep permissions (unless replacing) */
 
-      if ( ! (flags & G_FILE_CREATE_REPLACE_DESTINATION) &&
+      if (!replace_destination_set &&
 	   (
 #ifdef HAVE_FCHOWN
-	    fchown (tmpfd, original_stat.st_uid, original_stat.st_gid) == -1 ||
+	    fchown (tmpfd, _g_stat_uid (&original_stat), _g_stat_gid (&original_stat)) == -1 ||
 #endif
 #ifdef HAVE_FCHMOD
-	    fchmod (tmpfd, original_stat.st_mode) == -1 ||
+	    fchmod (tmpfd, _g_stat_mode (&original_stat) & ~S_IFMT) == -1 ||
 #endif
 	    0
 	    )
@@ -882,25 +1064,28 @@ handle_overwrite_open (const char    *filename,
           GLocalFileStat tmp_statbuf;
           int tres;
 
-#ifdef G_OS_WIN32
-          tres = _fstati64 (tmpfd, &tmp_statbuf);
-#else
-          tres = fstat (tmpfd, &tmp_statbuf);
-#endif
+          tres = g_local_file_fstat (tmpfd,
+                                     G_LOCAL_FILE_STAT_FIELD_TYPE |
+                                     G_LOCAL_FILE_STAT_FIELD_MODE |
+                                     G_LOCAL_FILE_STAT_FIELD_UID |
+                                     G_LOCAL_FILE_STAT_FIELD_GID,
+                                     G_LOCAL_FILE_STAT_FIELD_ALL, &tmp_statbuf);
+
 	  /* Check that we really needed to change something */
 	  if (tres != 0 ||
-	      original_stat.st_uid != tmp_statbuf.st_uid ||
-	      original_stat.st_gid != tmp_statbuf.st_gid ||
-	      original_stat.st_mode != tmp_statbuf.st_mode)
+	      _g_stat_uid (&original_stat) != _g_stat_uid (&tmp_statbuf) ||
+	      _g_stat_gid (&original_stat) != _g_stat_gid (&tmp_statbuf) ||
+	      _g_stat_mode (&original_stat) != _g_stat_mode (&tmp_statbuf))
 	    {
-	      (void) g_close (tmpfd, NULL);
+	      g_close (tmpfd, NULL);
 	      g_unlink (tmp_filename);
 	      g_free (tmp_filename);
 	      goto fallback_strategy;
 	    }
 	}
 
-      (void) g_close (fd, NULL);
+      if (fd >= 0)
+        g_close (fd, NULL);
       *temp_filename = tmp_filename;
       return tmpfd;
     }
@@ -910,7 +1095,7 @@ handle_overwrite_open (const char    *filename,
   if (create_backup)
     {
 #if defined(HAVE_FCHOWN) && defined(HAVE_FCHMOD)
-      struct stat tmp_statbuf;      
+      GLocalFileStat tmp_statbuf;
 #endif
       char *backup_filename;
       int bfd;
@@ -924,12 +1109,12 @@ handle_overwrite_open (const char    *filename,
                                G_IO_ERROR_CANT_CREATE_BACKUP,
                                _("Backup file creation failed"));
 	  g_free (backup_filename);
-	  goto err_out;
+          goto error;
 	}
 
       bfd = g_open (backup_filename,
-		    O_WRONLY | O_CREAT | O_EXCL | O_BINARY,
-		    original_stat.st_mode & 0777);
+		    O_WRONLY | O_CREAT | O_EXCL | O_BINARY | O_CLOEXEC,
+		    _g_stat_mode (&original_stat) & 0777);
 
       if (bfd == -1)
 	{
@@ -938,7 +1123,7 @@ handle_overwrite_open (const char    *filename,
                                G_IO_ERROR_CANT_CREATE_BACKUP,
                                _("Backup file creation failed"));
 	  g_free (backup_filename);
-	  goto err_out;
+          goto error;
 	}
 
       /* If needed, Try to set the group of the backup same as the
@@ -946,35 +1131,42 @@ handle_overwrite_open (const char    *filename,
        * bits for the group same as the protection bits for
        * others. */
 #if defined(HAVE_FCHOWN) && defined(HAVE_FCHMOD)
-      if (fstat (bfd, &tmp_statbuf) != 0)
+      if (g_local_file_fstat (bfd, G_LOCAL_FILE_STAT_FIELD_GID, G_LOCAL_FILE_STAT_FIELD_ALL, &tmp_statbuf) != 0)
 	{
 	  g_set_error_literal (error,
                                G_IO_ERROR,
                                G_IO_ERROR_CANT_CREATE_BACKUP,
                                _("Backup file creation failed"));
 	  g_unlink (backup_filename);
+	  g_close (bfd, NULL);
 	  g_free (backup_filename);
-	  goto err_out;
+          goto error;
 	}
       
-      if ((original_stat.st_gid != tmp_statbuf.st_gid)  &&
-	  fchown (bfd, (uid_t) -1, original_stat.st_gid) != 0)
+      if ((_g_stat_gid (&original_stat) != _g_stat_gid (&tmp_statbuf))  &&
+	  fchown (bfd, (uid_t) -1, _g_stat_gid (&original_stat)) != 0)
 	{
 	  if (fchmod (bfd,
-		      (original_stat.st_mode & 0707) |
-		      ((original_stat.st_mode & 07) << 3)) != 0)
+		      (_g_stat_mode (&original_stat) & 0707) |
+		      ((_g_stat_mode (&original_stat) & 07) << 3)) != 0)
 	    {
 	      g_set_error_literal (error,
                                    G_IO_ERROR,
                                    G_IO_ERROR_CANT_CREATE_BACKUP,
                                    _("Backup file creation failed"));
 	      g_unlink (backup_filename);
-	      (void) g_close (bfd, NULL);
+	      g_close (bfd, NULL);
 	      g_free (backup_filename);
-	      goto err_out;
+              goto error;
 	    }
 	}
 #endif
+
+      /* The FD could be invalid if the file is a symlink, a backup has been
+       * requested, and the source directory is read-only (as we won’t have
+       * errored out earlier), but in that case creating the backup file will
+       * have failed just above. */
+      g_assert (fd >= 0);
 
       if (!copy_file_data (fd, bfd, NULL))
 	{
@@ -983,58 +1175,60 @@ handle_overwrite_open (const char    *filename,
                                G_IO_ERROR_CANT_CREATE_BACKUP,
                                _("Backup file creation failed"));
 	  g_unlink (backup_filename);
-          (void) g_close (bfd, NULL);
+          g_close (bfd, NULL);
 	  g_free (backup_filename);
 	  
-	  goto err_out;
+          goto error;
 	}
       
-      (void) g_close (bfd, NULL);
+      g_close (bfd, NULL);
       g_free (backup_filename);
 
       /* Seek back to the start of the file after the backup copy */
       if (lseek (fd, 0, SEEK_SET) == -1)
 	{
-          int errsv = errno;
+          errsv = errno;
 
 	  g_set_error (error, G_IO_ERROR,
 		       g_io_error_from_errno (errsv),
 		       _("Error seeking in file: %s"),
 		       g_strerror (errsv));
-	  goto err_out;
+          goto error;
 	}
     }
 
-  if (flags & G_FILE_CREATE_REPLACE_DESTINATION)
+  if (replace_destination_set)
     {
-      (void) g_close (fd, NULL);
-      
+      g_clear_fd (&fd, NULL);
+
       if (g_unlink (filename) != 0)
 	{
-	  int errsv = errno;
+          errsv = errno;
 	  
 	  g_set_error (error, G_IO_ERROR,
 		       g_io_error_from_errno (errsv),
 		       _("Error removing old file: %s"),
 		       g_strerror (errsv));
-	  goto err_out2;
+          goto error;
 	}
 
       if (readable)
-	open_flags = O_RDWR | O_CREAT | O_BINARY;
+	open_flags = O_RDWR | O_CREAT | O_BINARY | O_CLOEXEC;
       else
-	open_flags = O_WRONLY | O_CREAT | O_BINARY;
+	open_flags = O_WRONLY | O_CREAT | O_BINARY | O_CLOEXEC;
       fd = g_open (filename, open_flags, mode);
       if (fd == -1)
 	{
-	  int errsv = errno;
-	  char *display_name = g_filename_display_name (filename);
+    char *display_name;
+    errsv = errno;
+    display_name = g_filename_display_name (filename);
+
 	  g_set_error (error, G_IO_ERROR,
 		       g_io_error_from_errno (errsv),
-		       _("Error opening file '%s': %s"),
+		       _("Error opening file “%s”: %s"),
 		       display_name, g_strerror (errsv));
 	  g_free (display_name);
-	  goto err_out2;
+          goto error;
 	}
     }
   else
@@ -1046,21 +1240,22 @@ handle_overwrite_open (const char    *filename,
 	if (ftruncate (fd, 0) == -1)
 #endif
 	  {
-	    int errsv = errno;
+	    errsv = errno;
 	    
 	    g_set_error (error, G_IO_ERROR,
 			 g_io_error_from_errno (errsv),
 			 _("Error truncating file: %s"),
 			 g_strerror (errsv));
-	    goto err_out;
+            goto error;
 	  }
     }
     
   return fd;
 
- err_out:
-  (void) g_close (fd, NULL);
- err_out2:
+error:
+  if (fd >= 0)
+    g_close (fd, NULL);
+
   return -1;
 }
 
@@ -1090,7 +1285,7 @@ _g_local_file_output_stream_replace (const char        *filename,
   sync_on_close = FALSE;
 
   /* If the file doesn't exist, create it */
-  open_flags = O_CREAT | O_EXCL | O_BINARY;
+  open_flags = O_CREAT | O_EXCL | O_BINARY | O_CLOEXEC;
   if (readable)
     open_flags |= O_RDWR;
   else
@@ -1120,8 +1315,11 @@ _g_local_file_output_stream_replace (const char        *filename,
       set_error_from_open_errno (filename, error);
       return NULL;
     }
-  
- 
+#if !defined(HAVE_O_CLOEXEC) && defined(F_SETFD)
+  else
+    fcntl (fd, F_SETFD, FD_CLOEXEC);
+#endif
+
   stream = g_object_new (G_TYPE_LOCAL_FILE_OUTPUT_STREAM, NULL);
   stream->priv->fd = fd;
   stream->priv->sync_on_close = sync_on_close;

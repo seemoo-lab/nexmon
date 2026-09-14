@@ -1,11 +1,40 @@
+/* libxml2 - Library for parsing XML documents
+ * Copyright (C) 2006-2019 Free Software Foundation, Inc.
+ *
+ * This file is not part of the GNU gettext program, but is used with
+ * GNU gettext.
+ *
+ * The original copyright notice is as follows:
+ */
+
+/*
+ * Copyright (C) 1998-2012 Daniel Veillard.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is fur-
+ * nished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FIT-
+ * NESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ *
+ * Author: Bjorn Reese <bjorn.reese@systematic.dk>
+ */
+
 /*
  * Summary: Chained hash tables
  * Description: This module implements the hash table support used in
  *		various places in the library.
- *
- * Copy: See Copyright for the status of this software.
- *
- * Author: Bjorn Reese <bjorn.reese@systematic.dk>
  */
 
 #ifndef __XML_HASH_H__
@@ -66,7 +95,7 @@ extern "C" {
  *
  * Callback to free data from a hash.
  */
-typedef void (*xmlHashDeallocator)(void *payload, xmlChar *name);
+typedef void (*xmlHashDeallocator)(void *payload, const xmlChar *name);
 /**
  * xmlHashCopier:
  * @payload:  the data in the hash
@@ -76,7 +105,7 @@ typedef void (*xmlHashDeallocator)(void *payload, xmlChar *name);
  *
  * Returns a copy of the data or NULL in case of error.
  */
-typedef void *(*xmlHashCopier)(void *payload, xmlChar *name);
+typedef void *(*xmlHashCopier)(void *payload, const xmlChar *name);
 /**
  * xmlHashScanner:
  * @payload:  the data in the hash
@@ -85,7 +114,7 @@ typedef void *(*xmlHashCopier)(void *payload, xmlChar *name);
  *
  * Callback when scanning data in a hash with the simple scanner.
  */
-typedef void (*xmlHashScanner)(void *payload, void *data, xmlChar *name);
+typedef void (*xmlHashScanner)(void *payload, void *data, const xmlChar *name);
 /**
  * xmlHashScannerFull:
  * @payload:  the data in the hash
@@ -111,6 +140,9 @@ XMLPUBFUN xmlHashTablePtr XMLCALL
 XMLPUBFUN void XMLCALL
 			xmlHashFree	(xmlHashTablePtr table,
 					 xmlHashDeallocator f);
+XMLPUBFUN void XMLCALL
+			xmlHashDefaultDeallocator(void *entry,
+					 const xmlChar *name);
 
 /*
  * Add a new entry to the hash table.

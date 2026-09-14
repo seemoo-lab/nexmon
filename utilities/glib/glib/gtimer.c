@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -55,21 +57,14 @@
 #include "gmain.h"
 
 /**
- * SECTION:timers
- * @title: Timers
- * @short_description: keep track of elapsed time
- *
- * #GTimer records a start time, and counts microseconds elapsed since
- * that time. This is done somewhat differently on different platforms,
- * and can be tricky to get exactly right, so #GTimer provides a
- * portable/convenient interface.
- **/
-
-/**
  * GTimer:
  *
- * Opaque datatype that records a start time.
- **/
+ * `GTimer` records a start time, and counts microseconds elapsed since
+ * that time.
+ *
+ * This is done somewhat differently on different platforms, and can be
+ * tricky to get exactly right, so `GTimer` provides a portable/convenient interface.
+ */
 struct _GTimer
 {
   guint64 start;
@@ -79,12 +74,12 @@ struct _GTimer
 };
 
 /**
- * g_timer_new:
+ * g_timer_new: (constructor)
  *
  * Creates a new timer, and starts timing (i.e. g_timer_start() is
  * implicitly called for you).
  *
- * Returns: a new #GTimer.
+ * Returns: (transfer full): a new #GTimer.
  **/
 GTimer*
 g_timer_new (void)
@@ -237,21 +232,42 @@ g_timer_elapsed (GTimer *timer,
 }
 
 /**
+ * g_timer_is_active:
+ * @timer: a #GTimer.
+ * 
+ * Exposes whether the timer is currently active.
+ *
+ * Returns: %TRUE if the timer is running, %FALSE otherwise
+ * Since: 2.62
+ **/
+gboolean
+g_timer_is_active (GTimer *timer)
+{
+  g_return_val_if_fail (timer != NULL, FALSE);
+
+  return timer->active;
+}
+
+/**
  * g_usleep:
  * @microseconds: number of microseconds to pause
  *
  * Pauses the current thread for the given number of microseconds.
  *
  * There are 1 million microseconds per second (represented by the
- * #G_USEC_PER_SEC macro). g_usleep() may have limited precision,
+ * %G_USEC_PER_SEC macro). g_usleep() may have limited precision,
  * depending on hardware and operating system; don't rely on the exact
  * length of the sleep.
  */
 void
 g_usleep (gulong microseconds)
 {
+  if G_UNLIKELY (microseconds == 0)
+    return;
+
 #ifdef G_OS_WIN32
-  Sleep (microseconds / 1000);
+  /* Round up to the next millisecond */
+  Sleep (microseconds ? (1 + (microseconds - 1) / 1000) : 0);
 #else
   struct timespec request, remaining;
   request.tv_sec = microseconds / G_USEC_PER_SEC;
@@ -268,11 +284,17 @@ g_usleep (gulong microseconds)
  *
  * Adds the given number of microseconds to @time_. @microseconds can
  * also be negative to decrease the value of @time_.
+ *
+ * Deprecated: 2.62: #GTimeVal is not year-2038-safe. Use `guint64` for
+ *    representing microseconds since the epoch, or use #GDateTime.
  **/
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 void 
 g_time_val_add (GTimeVal *time_, glong microseconds)
 {
-  g_return_if_fail (time_->tv_usec >= 0 && time_->tv_usec < G_USEC_PER_SEC);
+  g_return_if_fail (time_ != NULL &&
+                    time_->tv_usec >= 0 &&
+                    time_->tv_usec < G_USEC_PER_SEC);
 
   if (microseconds >= 0)
     {
@@ -296,6 +318,7 @@ g_time_val_add (GTimeVal *time_, glong microseconds)
        }      
     }
 }
+G_GNUC_END_IGNORE_DEPRECATIONS
 
 /* converts a broken down date representation, relative to UTC,
  * to a timestamp; it uses timegm() if it's available.
@@ -344,16 +367,31 @@ mktime_utc (struct tm *tm)
  * zone indicator. (In the absence of any time zone indication, the
  * timestamp is assumed to be in local time.)
  *
+ * Any leading or trailing space in @iso_date is ignored.
+ *
+ * This function was deprecated, along with #GTimeVal itself, in GLib 2.62.
+ * Equivalent functionality is available using code like:
+ * |[
+ * GDateTime *dt = g_date_time_new_from_iso8601 (iso8601_string, NULL);
+ * gint64 time_val = g_date_time_to_unix (dt);
+ * g_date_time_unref (dt);
+ * ]|
+ *
  * Returns: %TRUE if the conversion was successful.
  *
  * Since: 2.12
+ * Deprecated: 2.62: #GTimeVal is not year-2038-safe. Use
+ *    g_date_time_new_from_iso8601() instead.
  */
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 gboolean
 g_time_val_from_iso8601 (const gchar *iso_date,
 			 GTimeVal    *time_)
 {
   struct tm tm = {0};
   long val;
+  long mday, mon, year;
+  long hour, min, sec;
 
   g_return_val_if_fail (iso_date != NULL, FALSE);
   g_return_val_if_fail (time_ != NULL, FALSE);
@@ -367,29 +405,41 @@ g_time_val_from_iso8601 (const gchar *iso_date,
   if (*iso_date == '\0')
     return FALSE;
 
-  if (!g_ascii_isdigit (*iso_date) && *iso_date != '-' && *iso_date != '+')
+  if (!g_ascii_isdigit (*iso_date) && *iso_date != '+')
     return FALSE;
 
   val = strtoul (iso_date, (char **)&iso_date, 10);
   if (*iso_date == '-')
     {
       /* YYYY-MM-DD */
-      tm.tm_year = val - 1900;
+      year = val;
       iso_date++;
-      tm.tm_mon = strtoul (iso_date, (char **)&iso_date, 10) - 1;
-      
+
+      mon = strtoul (iso_date, (char **)&iso_date, 10);
       if (*iso_date++ != '-')
         return FALSE;
       
-      tm.tm_mday = strtoul (iso_date, (char **)&iso_date, 10);
+      mday = strtoul (iso_date, (char **)&iso_date, 10);
     }
   else
     {
       /* YYYYMMDD */
-      tm.tm_mday = val % 100;
-      tm.tm_mon = (val % 10000) / 100 - 1;
-      tm.tm_year = val / 10000 - 1900;
+      mday = val % 100;
+      mon = (val % 10000) / 100;
+      year = val / 10000;
     }
+
+  /* Validation. */
+  if (year < 1900 || year > G_MAXINT)
+    return FALSE;
+  if (mon < 1 || mon > 12)
+    return FALSE;
+  if (mday < 1 || mday > 31)
+    return FALSE;
+
+  tm.tm_mday = mday;
+  tm.tm_mon = mon - 1;
+  tm.tm_year = year - 1900;
 
   if (*iso_date != 'T')
     return FALSE;
@@ -404,22 +454,34 @@ g_time_val_from_iso8601 (const gchar *iso_date,
   if (*iso_date == ':')
     {
       /* hh:mm:ss */
-      tm.tm_hour = val;
+      hour = val;
       iso_date++;
-      tm.tm_min = strtoul (iso_date, (char **)&iso_date, 10);
+      min = strtoul (iso_date, (char **)&iso_date, 10);
       
       if (*iso_date++ != ':')
         return FALSE;
       
-      tm.tm_sec = strtoul (iso_date, (char **)&iso_date, 10);
+      sec = strtoul (iso_date, (char **)&iso_date, 10);
     }
   else
     {
       /* hhmmss */
-      tm.tm_sec = val % 100;
-      tm.tm_min = (val % 10000) / 100;
-      tm.tm_hour = val / 10000;
+      sec = val % 100;
+      min = (val % 10000) / 100;
+      hour = val / 10000;
     }
+
+  /* Validation. Allow up to 2 leap seconds when validating @sec. */
+  if (hour > 23)
+    return FALSE;
+  if (min > 59)
+    return FALSE;
+  if (sec > 61)
+    return FALSE;
+
+  tm.tm_hour = hour;
+  tm.tm_min = min;
+  tm.tm_sec = sec;
 
   time_->tv_usec = 0;
   
@@ -427,11 +489,15 @@ g_time_val_from_iso8601 (const gchar *iso_date,
     {
       glong mul = 100000;
 
-      while (g_ascii_isdigit (*++iso_date))
+      while (mul >= 1 && g_ascii_isdigit (*++iso_date))
         {
           time_->tv_usec += (*iso_date - '0') * mul;
           mul /= 10;
         }
+
+      /* Skip any remaining digits after we’ve reached our limit of precision. */
+      while (g_ascii_isdigit (*iso_date))
+        iso_date++;
     }
     
   /* Now parse the offset and convert tm to a time_t */
@@ -447,11 +513,24 @@ g_time_val_from_iso8601 (const gchar *iso_date,
       val = strtoul (iso_date + 1, (char **)&iso_date, 10);
       
       if (*iso_date == ':')
-        val = 60 * val + strtoul (iso_date + 1, (char **)&iso_date, 10);
+        {
+          /* hh:mm */
+          hour = val;
+          min = strtoul (iso_date + 1, (char **)&iso_date, 10);
+        }
       else
-        val = 60 * (val / 100) + (val % 100);
+        {
+          /* hhmm */
+          hour = val / 100;
+          min = val % 100;
+        }
 
-      time_->tv_sec = mktime_utc (&tm) + (time_t) (60 * val * sign);
+      if (hour > 99)
+        return FALSE;
+      if (min > 59)
+        return FALSE;
+
+      time_->tv_sec = mktime_utc (&tm) + (time_t) (60 * (gint64) (60 * hour + min) * sign);
     }
   else
     {
@@ -465,6 +544,7 @@ g_time_val_from_iso8601 (const gchar *iso_date,
 
   return *iso_date == '\0';
 }
+G_GNUC_END_IGNORE_DEPRECATIONS
 
 /**
  * g_time_val_to_iso8601:
@@ -491,10 +571,28 @@ g_time_val_from_iso8601 (const gchar *iso_date,
  * Use g_date_time_format() or g_strdup_printf() if a different
  * variation of ISO 8601 format is required.
  *
- * Returns: a newly allocated string containing an ISO 8601 date
+ * If @time_ represents a date which is too large to fit into a `struct tm`,
+ * %NULL will be returned. This is platform dependent. Note also that since
+ * `GTimeVal` stores the number of seconds as a `glong`, on 32-bit systems it
+ * is subject to the year 2038 problem. Accordingly, since GLib 2.62, this
+ * function has been deprecated. Equivalent functionality is available using:
+ * |[
+ * GDateTime *dt = g_date_time_new_from_unix_utc (time_val);
+ * iso8601_string = g_date_time_format_iso8601 (dt);
+ * g_date_time_unref (dt);
+ * ]|
+ *
+ * The return value of g_time_val_to_iso8601() has been nullable since GLib
+ * 2.54; before then, GLib would crash under the same conditions.
+ *
+ * Returns: (nullable): a newly allocated string containing an ISO 8601 date,
+ *    or %NULL if @time_ was too large
  *
  * Since: 2.12
+ * Deprecated: 2.62: #GTimeVal is not year-2038-safe. Use
+ *    g_date_time_format_iso8601(dt) instead.
  */
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 gchar *
 g_time_val_to_iso8601 (GTimeVal *time_)
 {
@@ -504,12 +602,14 @@ g_time_val_to_iso8601 (GTimeVal *time_)
   struct tm tm_;
 #endif
   time_t secs;
-  
-  g_return_val_if_fail (time_->tv_usec >= 0 && time_->tv_usec < G_USEC_PER_SEC, NULL);
 
- secs = time_->tv_sec;
+  g_return_val_if_fail (time_ != NULL &&
+                        time_->tv_usec >= 0 &&
+                        time_->tv_usec < G_USEC_PER_SEC, NULL);
+
+  secs = time_->tv_sec;
 #ifdef _WIN32
- tm = gmtime (&secs);
+  tm = gmtime (&secs);
 #else
 #ifdef HAVE_GMTIME_R
   tm = gmtime_r (&secs, &tm_);
@@ -517,6 +617,10 @@ g_time_val_to_iso8601 (GTimeVal *time_)
   tm = gmtime (&secs);
 #endif
 #endif
+
+  /* If the gmtime() call has failed, time_->tv_sec is too big. */
+  if (tm == NULL)
+    return NULL;
 
   if (time_->tv_usec != 0)
     {
@@ -548,3 +652,4 @@ g_time_val_to_iso8601 (GTimeVal *time_)
   
   return retval;
 }
+G_GNUC_END_IGNORE_DEPRECATIONS

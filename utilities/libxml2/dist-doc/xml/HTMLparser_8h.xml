@@ -1,0 +1,2909 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="HTMLparser_8h" kind="file" language="C++">
+    <compoundname>HTMLparser.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includedby refid="HTMLparser_8c" local="no">/builds/GNOME/libxml2/HTMLparser.c</includedby>
+    <includedby refid="HTMLtree_8c" local="no">/builds/GNOME/libxml2/HTMLtree.c</includedby>
+    <includedby refid="debugXML_8c" local="no">/builds/GNOME/libxml2/debugXML.c</includedby>
+    <includedby refid="encoding_8c" local="no">/builds/GNOME/libxml2/encoding.c</includedby>
+    <includedby refid="globals_8c" local="no">/builds/GNOME/libxml2/globals.c</includedby>
+    <includedby refid="parser_8c" local="no">/builds/GNOME/libxml2/parser.c</includedby>
+    <includedby refid="HTMLtree_8h" local="no">HTMLtree.h</includedby>
+    <includedby refid="parserInternals_8h" local="no">parserInternals.h</includedby>
+    <incdepgraph>
+      <node id="1">
+        <label>HTMLparser.h</label>
+        <link refid="HTMLparser_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="4">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="7">
+        <label>limits.h</label>
+      </node>
+      <node id="9">
+        <label>stdarg.h</label>
+      </node>
+      <node id="13">
+        <label>stddef.h</label>
+      </node>
+      <node id="6">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="1">
+        <label>HTMLparser.h</label>
+        <link refid="HTMLparser_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>HTMLtree.h</label>
+        <link refid="HTMLtree_8h"/>
+      </node>
+      <node id="3">
+        <label>parserInternals.h</label>
+        <link refid="parserInternals_8h"/>
+      </node>
+    </invincdepgraph>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="HTMLparser_8h_1a57b95a71b9c14533fb2e57740823168a" prot="public" static="no">
+        <name>UTF8ToHtml</name>
+        <initializer><ref refid="HTMLparser_8h_1acc1ff76760665c4acd8fcfacf61f09d8" kindref="member">htmlUTF8ToHtml</ref></initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="33" column="9" bodyfile="HTMLparser.h" bodystart="33" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="HTMLparser_8h_1a7404ccccf40168aebd6b5073f8d7c6a2" prot="public" static="no">
+        <name>htmlDefaultSubelement</name>
+        <param><defname>elt</defname></param>
+        <initializer>elt-&gt;defaultsubelt</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="34" column="9" bodyfile="HTMLparser.h" bodystart="34" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="HTMLparser_8h_1a60dee16b7006a9700dd164ce4ca9e6d7" prot="public" static="no">
+        <name>htmlElementAllowedHereDesc</name>
+        <param><defname>parent</defname></param>
+        <param><defname>elt</defname></param>
+        <initializer>    <ref refid="HTMLparser_8h_1a89a170dc46aa82d78b5161f988dc6298" kindref="member">htmlElementAllowedHere</ref>((parent), (elt)-&gt;name)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="35" column="9" bodyfile="HTMLparser.h" bodystart="35" bodyend="36"/>
+      </memberdef>
+      <memberdef kind="define" id="HTMLparser_8h_1a3e902c5abf6278e2e3405b1af897e71a" prot="public" static="no">
+        <name>htmlRequiredAttrs</name>
+        <param><defname>elt</defname></param>
+        <initializer>(elt)-&gt;attrs_req</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="37" column="9" bodyfile="HTMLparser.h" bodystart="37" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4" prot="public" static="no" strong="no">
+        <type></type>
+        <name>htmlParserOption</name>
+        <enumvalue id="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4a0e4cb1c0ee57f022d571acbee851fefc" prot="public">
+          <name>HTML_PARSE_RECOVER</name>
+          <initializer>= 1&lt;&lt;0</initializer>
+          <briefdescription>
+<para>No effect as of 2.14.0. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4a17bc345a2c4e163deed8f7eac790b1d6" prot="public">
+          <name>HTML_PARSE_NODEFDTD</name>
+          <initializer>= 1&lt;&lt;2</initializer>
+          <briefdescription>
+<para>Do not default to a doctype if none was found. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4a27db1c6f6909dafda425c1ef99d68f19" prot="public">
+          <name>HTML_PARSE_NOERROR</name>
+          <initializer>= 1&lt;&lt;5</initializer>
+          <briefdescription>
+<para>Disable error and warning reports to the error handlers. </para>
+          </briefdescription>
+          <detaileddescription>
+<para>Errors are still accessible with <ref refid="xmlerror_8h_1a5a94b4438df18110def1bcb42e642410" kindref="member">xmlCtxtGetLastError()</ref>. </para>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4a2705ffe19eb2d7dc70c9bc56a409ef4f" prot="public">
+          <name>HTML_PARSE_NOWARNING</name>
+          <initializer>= 1&lt;&lt;6</initializer>
+          <briefdescription>
+<para>Disable warning reports. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4a38c11bd7a54be63af9de5f1fbda46761" prot="public">
+          <name>HTML_PARSE_PEDANTIC</name>
+          <initializer>= 1&lt;&lt;7</initializer>
+          <briefdescription>
+<para>No effect. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4abd626832ceaded6f13e25965f965ba99" prot="public">
+          <name>HTML_PARSE_NOBLANKS</name>
+          <initializer>= 1&lt;&lt;8</initializer>
+          <briefdescription>
+<para>Remove some text nodes containing only whitespace from the result document. </para>
+          </briefdescription>
+          <detaileddescription>
+<para>Which nodes are removed depends on a conservative heuristic. The reindenting feature of the serialization code relies on this option to be set when parsing. Use of this option is DISCOURAGED. </para>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4a47ab98e43d7142d7f396b9593ed55b0b" prot="public">
+          <name>HTML_PARSE_NONET</name>
+          <initializer>= 1&lt;&lt;11</initializer>
+          <briefdescription>
+<para>No effect. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4a91fd231f2c65565eb5dd1d385c4e0e1e" prot="public">
+          <name>HTML_PARSE_NOIMPLIED</name>
+          <initializer>= 1&lt;&lt;13</initializer>
+          <briefdescription>
+<para>Do not add implied html, head or body elements. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4af8b1d3540aa40ff8dc5657b310262436" prot="public">
+          <name>HTML_PARSE_COMPACT</name>
+          <initializer>= 1&lt;&lt;16</initializer>
+          <briefdescription>
+<para>Store small strings directly in the node struct to save memory. </para>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4a118f3788caff9f51d22fead7d9ee2aca" prot="public">
+          <name>HTML_PARSE_HUGE</name>
+          <initializer>= 1&lt;&lt;19</initializer>
+          <briefdescription>
+<para>Relax some internal limits. </para>
+          </briefdescription>
+          <detaileddescription>
+<para>See XML_PARSE_HUGE in <ref refid="parser_8h_1a7d2daaf67df051ca5ef0b319b640442c" kindref="member">xmlParserOption</ref>.</para>
+<para><simplesect kind="since"><para>2.14.0</para>
+</simplesect>
+Use XML_PARSE_HUGE with older versions. </para>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4ac0a1f8cc4399e9cc9970854a5ebd4a1d" prot="public">
+          <name>HTML_PARSE_IGNORE_ENC</name>
+          <initializer>=1&lt;&lt;21</initializer>
+          <briefdescription>
+<para>Ignore the encoding in the HTML declaration. </para>
+          </briefdescription>
+          <detaileddescription>
+<para>This option is mostly unneeded these days. The only effect is to enforce ISO-8859-1 decoding of ASCII-like data. </para>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4a156763f8a039613106aa239b4f2af982" prot="public">
+          <name>HTML_PARSE_BIG_LINES</name>
+          <initializer>= 1&lt;&lt;22</initializer>
+          <briefdescription>
+<para>Enable reporting of line numbers larger than 65535. </para>
+          </briefdescription>
+          <detaileddescription>
+<para><simplesect kind="since"><para>2.14.0</para>
+</simplesect>
+Use XML_PARSE_BIG_LINES with older versions. </para>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4a8dc7931318831783d87b0964ae85d5d2" prot="public">
+          <name>HTML_PARSE_HTML5</name>
+          <initializer>= 1&lt;&lt;26</initializer>
+          <briefdescription>
+<para>Make the tokenizer emit a SAX callback for each token. </para>
+          </briefdescription>
+          <detaileddescription>
+<para>This results in unbalanced invocations of startElement and endElement.</para>
+<para>For now, this is only usable to tokenize HTML5 with custom SAX callbacks. A tree builder isn&apos;t implemented yet.</para>
+<para><simplesect kind="since"><para>2.14.0 </para>
+</simplesect>
+</para>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>This is the set of HTML parser options that can be passed to <ref refid="HTMLparser_8h_1a842a285bb09c1386db8bf36cc50e5868" kindref="member">htmlReadDoc</ref>, <ref refid="HTMLparser_8h_1aacb5d309a35c751ad5f652bab347ce95" kindref="member">htmlCtxtSetOptions</ref> and other functions. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="221" column="1" bodyfile="HTMLparser.h" bodystart="221" bodyend="296"/>
+      </memberdef>
+      <memberdef kind="enum" id="HTMLparser_8h_1a11cb64e621ed8381d7dfc7f87d0cec81" prot="public" static="no" strong="no">
+        <type></type>
+        <name>htmlStatus</name>
+        <enumvalue id="HTMLparser_8h_1a11cb64e621ed8381d7dfc7f87d0cec81a160b420448ed789617b225d5e2c2f1ed" prot="public">
+          <name>HTML_NA</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a11cb64e621ed8381d7dfc7f87d0cec81ac1da9e1a7355d7885fcd47b389f6bf22" prot="public">
+          <name>HTML_INVALID</name>
+          <initializer>= 0x1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a11cb64e621ed8381d7dfc7f87d0cec81af4d5e0cb11b568226896f71696c82e6b" prot="public">
+          <name>HTML_DEPRECATED</name>
+          <initializer>= 0x2</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a11cb64e621ed8381d7dfc7f87d0cec81a086d9be480b8dd7634336e907179d360" prot="public">
+          <name>HTML_VALID</name>
+          <initializer>= 0x4</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="HTMLparser_8h_1a11cb64e621ed8381d7dfc7f87d0cec81ae4534f3cb5d4bb3f656e33a0fa197f71" prot="public">
+          <name>HTML_REQUIRED</name>
+          <initializer>= 0xc</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>deprecated content model </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="372" column="1" bodyfile="HTMLparser.h" bodystart="372" bodyend="378"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" prot="public" static="no">
+        <type><ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref></type>
+        <definition>typedef xmlParserCtxt htmlParserCtxt</definition>
+        <argsstring></argsstring>
+        <name>htmlParserCtxt</name>
+        <briefdescription>
+<para>Same as <ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="43" column="23" bodyfile="HTMLparser.h" bodystart="43" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="HTMLparser_8h_1a2de31e73231a4d97db1c2fef4160ec7e" prot="public" static="no">
+        <type>xmlParserCtxtPtr</type>
+        <definition>typedef xmlParserCtxtPtr htmlParserCtxtPtr</definition>
+        <argsstring></argsstring>
+        <name>htmlParserCtxtPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="44" column="26" bodyfile="HTMLparser.h" bodystart="44" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="HTMLparser_8h_1a395ec3f0ee9f74eebdce624cf9f679a1" prot="public" static="no">
+        <type>xmlParserNodeInfo</type>
+        <definition>typedef xmlParserNodeInfo htmlParserNodeInfo</definition>
+        <argsstring></argsstring>
+        <name>htmlParserNodeInfo</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="45" column="27" bodyfile="HTMLparser.h" bodystart="45" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="HTMLparser_8h_1a4b14b551885f4613ba46fe1394141555" prot="public" static="no">
+        <type><ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref></type>
+        <definition>typedef xmlSAXHandler htmlSAXHandler</definition>
+        <argsstring></argsstring>
+        <name>htmlSAXHandler</name>
+        <briefdescription>
+<para>Same as <ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="47" column="23" bodyfile="HTMLparser.h" bodystart="47" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="HTMLparser_8h_1a31006f9f00a344faef876846426eb2fa" prot="public" static="no">
+        <type>xmlSAXHandlerPtr</type>
+        <definition>typedef xmlSAXHandlerPtr htmlSAXHandlerPtr</definition>
+        <argsstring></argsstring>
+        <name>htmlSAXHandlerPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="48" column="26" bodyfile="HTMLparser.h" bodystart="48" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="HTMLparser_8h_1a2181bef54bcb26f07e7f496abb8b972b" prot="public" static="no">
+        <type><ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref></type>
+        <definition>typedef xmlParserInput htmlParserInput</definition>
+        <argsstring></argsstring>
+        <name>htmlParserInput</name>
+        <briefdescription>
+<para>Same as <ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref>. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="50" column="24" bodyfile="HTMLparser.h" bodystart="50" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="HTMLparser_8h_1af80e6e4b07a7428dbc7daa2e11600be9" prot="public" static="no">
+        <type>xmlParserInputPtr</type>
+        <definition>typedef xmlParserInputPtr htmlParserInputPtr</definition>
+        <argsstring></argsstring>
+        <name>htmlParserInputPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="51" column="27" bodyfile="HTMLparser.h" bodystart="51" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="HTMLparser_8h_1a0912949ebdc15ce5781ee26872818cc7" prot="public" static="no">
+        <type>xmlDocPtr</type>
+        <definition>typedef xmlDocPtr htmlDocPtr</definition>
+        <argsstring></argsstring>
+        <name>htmlDocPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="52" column="19" bodyfile="HTMLparser.h" bodystart="52" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="HTMLparser_8h_1a6647815dc37341eb0528aa39af8fd066" prot="public" static="no">
+        <type>xmlNodePtr</type>
+        <definition>typedef xmlNodePtr htmlNodePtr</definition>
+        <argsstring></argsstring>
+        <name>htmlNodePtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="53" column="20" bodyfile="HTMLparser.h" bodystart="53" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="HTMLparser_8h_1a45200bac2c12417f70ec2f4e36560844" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void htmlInitAutoClose</definition>
+        <argsstring>(void)</argsstring>
+        <name>htmlInitAutoClose</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000159"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This is a no-op. </para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="109" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="1245" bodyend="1246" declfile="HTMLparser.h" declline="109" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a6306414b4ee5fc1b30bd4390b217b4a3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const htmlElemDesc *</type>
+        <definition>const htmlElemDesc * htmlTagLookup</definition>
+        <argsstring>(const xmlChar *tag)</argsstring>
+        <name>htmlTagLookup</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>tag</declname>
+        </param>
+        <briefdescription>
+<para>Lookup the HTML tag in the ElementTable. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000160"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Only supports HTML 4.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>tag</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The tag name in lowercase </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the related htmlElemDesc or NULL if not found. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="112" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="1265" bodyend="1272" declfile="HTMLparser.h" declline="112" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1adb263ee6885a8193aba8bff26ffe345d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const htmlEntityDesc *</type>
+        <definition>const htmlEntityDesc * htmlEntityLookup</definition>
+        <argsstring>(const xmlChar *name)</argsstring>
+        <name>htmlEntityLookup</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Lookup the given entity in EntitiesTable. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000164"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Only supports HTML 4.</para>
+</xrefdescription></xrefsect></para>
+<para>TODO: the linear scan is really ugly, an hash table is really needed.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the associated htmlEntityDesc if found, NULL otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="115" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="1894" bodyend="1904" declfile="HTMLparser.h" declline="115" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1aeec73b769f462919487c355f13ec10ae" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const htmlEntityDesc *</type>
+        <definition>const htmlEntityDesc * htmlEntityValueLookup</definition>
+        <argsstring>(unsigned int value)</argsstring>
+        <name>htmlEntityValueLookup</name>
+        <param>
+          <type>unsigned int</type>
+          <declname>value</declname>
+        </param>
+        <briefdescription>
+<para>Lookup the given entity in EntitiesTable. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000165"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Only supports HTML 4.</para>
+</xrefdescription></xrefsect></para>
+<para>TODO: the linear scan is really ugly, an hash table is really needed.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>value</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the entity&apos;s unicode value </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the associated htmlEntityDesc if found, NULL otherwise. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="118" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="1925" bodyend="1934" declfile="HTMLparser.h" declline="118" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a857c8be63f608a356ed3f73cce79f394" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlIsAutoClosed</definition>
+        <argsstring>(xmlDoc *doc, xmlNode *elem)</argsstring>
+        <name>htmlIsAutoClosed</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>elem</declname>
+        </param>
+        <briefdescription>
+<para>The HTML DTD allows a tag to implicitly close other tags. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The list is kept in htmlStartClose array. This function checks if a tag is autoclosed by one of it&apos;s child</para>
+<para><xrefsect id="deprecated_1_deprecated000162"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the HTML document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>elem</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the HTML element </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if autoclosed, 0 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="122" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="1464" bodyend="1474" declfile="HTMLparser.h" declline="122" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a1554945ef0f9d1775a35c699cb25fc37" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlAutoCloseTag</definition>
+        <argsstring>(xmlDoc *doc, const xmlChar *name, xmlNode *elem)</argsstring>
+        <name>htmlAutoCloseTag</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>elem</declname>
+        </param>
+        <briefdescription>
+<para>The HTML DTD allows a tag to implicitly close other tags. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The list is kept in htmlStartClose array. This function checks if the element or one of it&apos;s children would autoclose the given tag.</para>
+<para><xrefsect id="deprecated_1_deprecated000161"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the HTML document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The tag name </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>elem</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the HTML element </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if autoclose, 0 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="126" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="1438" bodyend="1450" declfile="HTMLparser.h" declline="126" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a6611f148105d04ba9b11fee7bf3f2546" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>const htmlEntityDesc *</type>
+        <definition>const htmlEntityDesc * htmlParseEntityRef</definition>
+        <argsstring>(htmlParserCtxt *ctxt, const xmlChar **str)</argsstring>
+        <name>htmlParseEntityRef</name>
+        <param>
+          <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> **</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000168"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>location to store the entity name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>NULL. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="131" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="2858" bodyend="2861" declfile="HTMLparser.h" declline="131" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1ab3d5850bc97c09606d3f725c2e7fe810" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlParseCharRef</definition>
+        <argsstring>(htmlParserCtxt *ctxt)</argsstring>
+        <name>htmlParseCharRef</name>
+        <param>
+          <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000169"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="135" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="3414" bodyend="3416" declfile="HTMLparser.h" declline="135" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a68bcd47ad9f207b387cce313743a673e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void htmlParseElement</definition>
+        <argsstring>(htmlParserCtxt *ctxt)</argsstring>
+        <name>htmlParseElement</name>
+        <param>
+          <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>This is kept for compatibility with previous code versions. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000170"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="138" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="4307" bodyend="4331" declfile="HTMLparser.h" declline="138" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a951f666dbf44e6184e58024631a2fefd" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+        <definition>htmlParserCtxt * htmlNewParserCtxt</definition>
+        <argsstring>(void)</argsstring>
+        <name>htmlNewParserCtxt</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Allocate and initialize a new HTML parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This can be used to parse HTML documents into DOM trees with functions like <ref refid="parser_8h_1a0cd872bfb02c708cc137fb5877cd25e1" kindref="member">xmlCtxtReadFile</ref> or <ref refid="parser_8h_1aa02be1c2cbed349fd725aa920f1a65a1" kindref="member">xmlCtxtReadMemory</ref>.</para>
+<para>See <ref refid="HTMLparser_8h_1a704c275082cb61c6b35cabab333e5ea9" kindref="member">htmlCtxtUseOptions</ref> for parser options.</para>
+<para>See <ref refid="parser_8h_1ae5ed5da325b136d630c2f774623ff06a" kindref="member">xmlCtxtSetErrorHandler</ref> for advanced error handling.</para>
+<para>See <ref refid="HTMLparser_8h_1ac1e41ad44c7fc5a68f312b0165088fc5" kindref="member">htmlNewSAXParserCtxt</ref> for custom SAX parsers.</para>
+<para><simplesect kind="return"><para>the <ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> or NULL in case of allocation error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="141" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="4603" bodyend="4606" declfile="HTMLparser.h" declline="141" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1ac1e41ad44c7fc5a68f312b0165088fc5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+        <definition>htmlParserCtxt * htmlNewSAXParserCtxt</definition>
+        <argsstring>(const htmlSAXHandler *sax, void *userData)</argsstring>
+        <name>htmlNewSAXParserCtxt</name>
+        <param>
+          <type>const <ref refid="HTMLparser_8h_1a4b14b551885f4613ba46fe1394141555" kindref="member">htmlSAXHandler</ref> *</type>
+          <declname>sax</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>userData</declname>
+        </param>
+        <briefdescription>
+<para>Allocate and initialize a new HTML SAX parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If <computeroutput>userData</computeroutput> is NULL, the parser context will be passed as user data.</para>
+<para><simplesect kind="since"><para>2.11.0</para>
+</simplesect>
+If you want support older versions, it&apos;s best to invoke <ref refid="HTMLparser_8h_1a951f666dbf44e6184e58024631a2fefd" kindref="member">htmlNewParserCtxt</ref> and set <computeroutput>ctxt-&gt;sax</computeroutput> with struct assignment.</para>
+<para>Also see <ref refid="HTMLparser_8h_1a951f666dbf44e6184e58024631a2fefd" kindref="member">htmlNewParserCtxt</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>sax</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>SAX handler </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>userData</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the <ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> or NULL in case of allocation error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="143" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="4624" bodyend="4639" declfile="HTMLparser.h" declline="143" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a19dec2d74a2f2974ba4403192c6845af" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+        <definition>htmlParserCtxt * htmlCreateMemoryParserCtxt</definition>
+        <argsstring>(const char *buffer, int size)</argsstring>
+        <name>htmlCreateMemoryParserCtxt</name>
+        <param>
+          <type>const char *</type>
+          <declname>buffer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>Create a parser context for an HTML in-memory document. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The input buffer must not contain any terminating null bytes.</para>
+<para><xrefsect id="deprecated_1_deprecated000171"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="HTMLparser_8h_1a951f666dbf44e6184e58024631a2fefd" kindref="member">htmlNewParserCtxt</ref> and <ref refid="HTMLparser_8h_1ace0473af24ab42e75e01b61c2fe06798" kindref="member">htmlCtxtReadMemory</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buffer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to a char array </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the size of the array </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new parser context or NULL </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="147" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="4681" bodyend="4686" declfile="HTMLparser.h" declline="147" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a6479c13177c64114c3207cd073c6778d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlParseDocument</definition>
+        <argsstring>(htmlParserCtxt *ctxt)</argsstring>
+        <name>htmlParseDocument</name>
+        <param>
+          <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Parse an HTML document and invoke the SAX handlers. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This is useful if you&apos;re only interested in custom SAX callbacks. If you want a document tree, use <ref refid="HTMLparser_8h_1ae2699376dcd5a1c68fdeebf7648a90c1" kindref="member">htmlCtxtParseDocument</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0, -1 in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="151" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="4397" bodyend="4479" declfile="HTMLparser.h" declline="151" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a9118eff186b9131519f772028488096d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlSAXParseDoc</definition>
+        <argsstring>(const xmlChar *cur, const char *encoding, htmlSAXHandler *sax, void *userData)</argsstring>
+        <name>htmlSAXParseDoc</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type><ref refid="HTMLparser_8h_1a4b14b551885f4613ba46fe1394141555" kindref="member">htmlSAXHandler</ref> *</type>
+          <declname>sax</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>userData</declname>
+        </param>
+        <briefdescription>
+<para>Parse an HTML in-memory document. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>If sax is not NULL, use the SAX callbacks to handle parse events. If sax is NULL, fallback to the default DOM behavior and return a tree.</para>
+<para><xrefsect id="deprecated_1_deprecated000172"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="HTMLparser_8h_1ac1e41ad44c7fc5a68f312b0165088fc5" kindref="member">htmlNewSAXParserCtxt</ref> and <ref refid="HTMLparser_8h_1af53063a6aa56789fce452027e49e0a2a" kindref="member">htmlCtxtReadDoc</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a free form C string describing the HTML document encoding, or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sax</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the SAX handler block </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>userData</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>if using SAX, this pointer will be provided on callbacks. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree unless SAX is NULL or the document is not well formed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="154" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5265" bodyend="5287" declfile="HTMLparser.h" declline="154" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1ac57c4ab8026b3f40da459b6bb094ae75" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlParseDoc</definition>
+        <argsstring>(const xmlChar *cur, const char *encoding)</argsstring>
+        <name>htmlParseDoc</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>cur</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <briefdescription>
+<para>Parse an HTML in-memory document and build a tree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000173"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="HTMLparser_8h_1a842a285bb09c1386db8bf36cc50e5868" kindref="member">htmlReadDoc</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para>This function uses deprecated global parser options.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>cur</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the encoding (optional) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="159" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5302" bodyend="5304" declfile="HTMLparser.h" declline="159" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a4309ede5d90c5c83c237d3ead207d66d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+        <definition>htmlParserCtxt * htmlCreateFileParserCtxt</definition>
+        <argsstring>(const char *filename, const char *encoding)</argsstring>
+        <name>htmlCreateFileParserCtxt</name>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <briefdescription>
+<para>Create a parser context to read from a file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000174"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="HTMLparser_8h_1a951f666dbf44e6184e58024631a2fefd" kindref="member">htmlNewParserCtxt</ref> and <ref refid="HTMLparser_8h_1a430f103da6c143db4aceb47e6930f452" kindref="member">htmlCtxtReadFile</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para>A non-NULL encoding overrides encoding declarations in the document.</para>
+<para>Automatic support for ZLIB/Compress compressed document is provided by default if found at compile-time.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the filename </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>optional encoding </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new parser context or NULL if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="162" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5322" bodyend="5347" declfile="HTMLparser.h" declline="162" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a051e70ce4a56dea3136bcd53e3b3a9c2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlSAXParseFile</definition>
+        <argsstring>(const char *filename, const char *encoding, htmlSAXHandler *sax, void *userData)</argsstring>
+        <name>htmlSAXParseFile</name>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type><ref refid="HTMLparser_8h_1a4b14b551885f4613ba46fe1394141555" kindref="member">htmlSAXHandler</ref> *</type>
+          <declname>sax</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>userData</declname>
+        </param>
+        <briefdescription>
+<para>parse an HTML file and build a tree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Automatic support for ZLIB/Compress compressed document is provided by default if found at compile-time. It use the given SAX function block to handle the parsing callback. If sax is NULL, fallback to the default DOM tree building routines.</para>
+<para><xrefsect id="deprecated_1_deprecated000175"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="HTMLparser_8h_1ac1e41ad44c7fc5a68f312b0165088fc5" kindref="member">htmlNewSAXParserCtxt</ref> and <ref refid="HTMLparser_8h_1a430f103da6c143db4aceb47e6930f452" kindref="member">htmlCtxtReadFile</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the filename </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>encoding (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sax</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the SAX handler block </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>userData</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>if using SAX, this pointer will be provided on callbacks. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree unless SAX is NULL or the document is not well formed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="166" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5366" bodyend="5390" declfile="HTMLparser.h" declline="166" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a206926cca55d8902c770fb6ee6905f96" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlParseFile</definition>
+        <argsstring>(const char *filename, const char *encoding)</argsstring>
+        <name>htmlParseFile</name>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <briefdescription>
+<para>Parse an HTML file and build a tree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the filename </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>encoding (optional) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="171" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5401" bodyend="5403" declfile="HTMLparser.h" declline="171" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1acc1ff76760665c4acd8fcfacf61f09d8" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlUTF8ToHtml</definition>
+        <argsstring>(unsigned char *out, int *outlen, const unsigned char *in, int *inlen)</argsstring>
+        <name>htmlUTF8ToHtml</name>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <briefdescription>
+<para>Take a block of UTF-8 chars in and try to convert it to an ASCII plus HTML entities block of chars out. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000166"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Internal function, don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of bytes to store the result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>outlen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of <computeroutput>out</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>in</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of UTF-8 chars </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inlen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of <computeroutput>in</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if success, -2 if the transcoding fails, or -1 otherwise The value of <computeroutput>inlen</computeroutput> after return is the number of octets consumed as the return value is positive, else unpredictable. The value of <computeroutput>outlen</computeroutput> after return is the number of octets consumed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="175" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="1952" bodyend="2034" declfile="HTMLparser.h" declline="175" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a221e4ca469169e81ce27b6fd6d63ae62" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlEncodeEntities</definition>
+        <argsstring>(unsigned char *out, int *outlen, const unsigned char *in, int *inlen, int quoteChar)</argsstring>
+        <name>htmlEncodeEntities</name>
+        <param>
+          <type>unsigned char *</type>
+          <declname>out</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>outlen</declname>
+        </param>
+        <param>
+          <type>const unsigned char *</type>
+          <declname>in</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>inlen</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>quoteChar</declname>
+        </param>
+        <briefdescription>
+<para>Take a block of UTF-8 chars in and try to convert it to an ASCII plus HTML entities block of chars out. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000167"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Only supports HTML 4.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>out</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of bytes to store the result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>outlen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of <computeroutput>out</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>in</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of UTF-8 chars </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>inlen</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the length of <computeroutput>in</computeroutput> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>quoteChar</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the quote character to escape (&apos; or ") or zero. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if success, -2 if the transcoding fails, or -1 otherwise The value of <computeroutput>inlen</computeroutput> after return is the number of octets consumed as the return value is positive, else unpredictable. The value of <computeroutput>outlen</computeroutput> after return is the number of octets consumed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="181" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="2053" bodyend="2133" declfile="HTMLparser.h" declline="181" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a222be2b10d6e54ded8de81a18e279c1c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlIsScriptAttribute</definition>
+        <argsstring>(const xmlChar *name)</argsstring>
+        <name>htmlIsScriptAttribute</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>name</declname>
+        </param>
+        <briefdescription>
+<para>Check if an attribute is of content type Script. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000163"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Only supports HTML 4.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>name</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an attribute name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 is the attribute is a script 0 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="187" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="1568" bodyend="1585" declfile="HTMLparser.h" declline="187" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a5f798e61a4eae7914180db4009aaf569" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlHandleOmittedElem</definition>
+        <argsstring>(int val)</argsstring>
+        <name>htmlHandleOmittedElem</name>
+        <param>
+          <type>int</type>
+          <declname>val</declname>
+        </param>
+        <briefdescription>
+<para>Set and return the previous value for handling HTML omitted tags. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000176"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use HTML_PARSE_NOIMPLIED</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>val</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>int 0 or 1 </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the last value for 0 for no handling, 1 for auto insertion. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="190" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5415" bodyend="5420" declfile="HTMLparser.h" declline="190" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a0fd0f76d315acc77c96e5319fa32a0c9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+        <definition>htmlParserCtxt * htmlCreatePushParserCtxt</definition>
+        <argsstring>(htmlSAXHandler *sax, void *user_data, const char *chunk, int size, const char *filename, xmlCharEncoding enc)</argsstring>
+        <name>htmlCreatePushParserCtxt</name>
+        <param>
+          <type><ref refid="HTMLparser_8h_1a4b14b551885f4613ba46fe1394141555" kindref="member">htmlSAXHandler</ref> *</type>
+          <declname>sax</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>user_data</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>chunk</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>size</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref></type>
+          <declname>enc</declname>
+        </param>
+        <briefdescription>
+<para>Create a parser context for using the HTML parser in push mode. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>sax</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a SAX handler (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>user_data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>The user data returned on SAX callbacks (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>chunk</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to an array of chars (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>number of chars in the array </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>only used for error reporting (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>enc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>encoding (deprecated, pass XML_CHAR_ENCODING_NONE) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new parser context or NULL if a memory allocation failed. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="197" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5218" bodyend="5246" declfile="HTMLparser.h" declline="197" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a6aa7f4db79c00c1851a7e0eccd40ce3d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlParseChunk</definition>
+        <argsstring>(htmlParserCtxt *ctxt, const char *chunk, int size, int terminate)</argsstring>
+        <name>htmlParseChunk</name>
+        <param>
+          <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>chunk</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>size</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>terminate</declname>
+        </param>
+        <briefdescription>
+<para>Parse a chunk of memory in push parser mode. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Assumes that the parser context was initialized with <ref refid="HTMLparser_8h_1a0fd0f76d315acc77c96e5319fa32a0c9" kindref="member">htmlCreatePushParserCtxt</ref>.</para>
+<para>The last chunk, which will often be empty, must be marked with the <computeroutput>terminate</computeroutput> flag. With the default SAX callbacks, the resulting document will be available in <computeroutput>ctxt-&gt;myDoc</computeroutput>. This pointer will not be freed by the library.</para>
+<para>If the document isn&apos;t well-formed, <computeroutput>ctxt-&gt;myDoc</computeroutput> is set to NULL.</para>
+<para>Since 2.14.0, <ref refid="parser_8h_1a298011fdad3362493ce7afcb0abdd572" kindref="member">xmlCtxtGetDocument</ref> can be used to retrieve the result document.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>chunk</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>chunk of memory </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>size of chunk in bytes </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>terminate</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>last chunk indicator </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>an <ref refid="xmlerror_8h_1adc147424b5aac85cccf5018513b9ec14" kindref="member">xmlParserErrors</ref> code (0 on success). </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="204" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5157" bodyend="5197" declfile="HTMLparser.h" declline="204" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a686dadf06647545aa1050d76703be449" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void htmlFreeParserCtxt</definition>
+        <argsstring>(htmlParserCtxt *ctxt)</argsstring>
+        <name>htmlFreeParserCtxt</name>
+        <param>
+          <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Free all the memory used by a parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>However the parsed document in <computeroutput>ctxt-&gt;myDoc</computeroutput> is not freed.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="211" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="4583" bodyend="4586" declfile="HTMLparser.h" declline="211" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1af6764e20f226963e5dbb42e613c5ec6b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void htmlCtxtReset</definition>
+        <argsstring>(htmlParserCtxt *ctxt)</argsstring>
+        <name>htmlCtxtReset</name>
+        <param>
+          <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Reset a parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Same as <ref refid="parser_8h_1a85c2b1914d05bd33c0b8f905d1f63982" kindref="member">xmlCtxtReset</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="299" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5491" bodyend="5494" declfile="HTMLparser.h" declline="299" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1aacb5d309a35c751ad5f652bab347ce95" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlCtxtSetOptions</definition>
+        <argsstring>(htmlParserCtxt *ctxt, int options)</argsstring>
+        <name>htmlCtxtSetOptions</name>
+        <param>
+          <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Applies the options to the parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Unset options are cleared.</para>
+<para><simplesect kind="since"><para>2.14.0</para>
+</simplesect>
+With older versions, you can use <ref refid="HTMLparser_8h_1a704c275082cb61c6b35cabab333e5ea9" kindref="member">htmlCtxtUseOptions</ref>.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a bitmask of <ref refid="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4" kindref="member">htmlParserOption</ref> values </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, the set of unknown or unimplemented options in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="301" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5567" bodyend="5570" declfile="HTMLparser.h" declline="301" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a704c275082cb61c6b35cabab333e5ea9" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlCtxtUseOptions</definition>
+        <argsstring>(htmlParserCtxt *ctxt, int options)</argsstring>
+        <name>htmlCtxtUseOptions</name>
+        <param>
+          <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Applies the options to the parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The following options are never cleared and can only be enabled:</para>
+<para><xrefsect id="deprecated_1_deprecated000181"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="HTMLparser_8h_1aacb5d309a35c751ad5f652bab347ce95" kindref="member">htmlCtxtSetOptions</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><itemizedlist>
+<listitem><para>HTML_PARSE_NODEFDTD</para>
+</listitem><listitem><para>HTML_PARSE_NOERROR</para>
+</listitem><listitem><para>HTML_PARSE_NOWARNING</para>
+</listitem><listitem><para>HTML_PARSE_NOIMPLIED</para>
+</listitem><listitem><para>HTML_PARSE_COMPACT</para>
+</listitem><listitem><para>HTML_PARSE_HUGE</para>
+</listitem><listitem><para>HTML_PARSE_IGNORE_ENC</para>
+</listitem><listitem><para>HTML_PARSE_BIG_LINES</para>
+</listitem></itemizedlist>
+</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a combination of <ref refid="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4" kindref="member">htmlParserOption</ref> values </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, the set of unknown or unimplemented options in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="304" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5593" bodyend="5610" declfile="HTMLparser.h" declline="304" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a842a285bb09c1386db8bf36cc50e5868" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlReadDoc</definition>
+        <argsstring>(const xmlChar *cur, const char *URL, const char *encoding, int options)</argsstring>
+        <name>htmlReadDoc</name>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>cur</declname>
+          <defname>str</defname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>URL</declname>
+          <defname>url</defname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Convenience function to parse an HTML document from a zero-terminated string. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="HTMLparser_8h_1af53063a6aa56789fce452027e49e0a2a" kindref="member">htmlCtxtReadDoc</ref> for details.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to a zero terminated string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>url</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>only used for error reporting (optoinal) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document encoding (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a combination of <ref refid="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4" kindref="member">htmlParserOption</ref> values </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="307" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5666" bodyend="5687" declfile="HTMLparser.h" declline="307" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a95ae8218ebaf7f1178eec496d6ac210a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlReadFile</definition>
+        <argsstring>(const char *URL, const char *encoding, int options)</argsstring>
+        <name>htmlReadFile</name>
+        <param>
+          <type>const char *</type>
+          <declname>URL</declname>
+          <defname>filename</defname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Convenience function to parse an HTML file from the filesystem, the network or a global user-defined resource loader. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="HTMLparser_8h_1a430f103da6c143db4aceb47e6930f452" kindref="member">htmlCtxtReadFile</ref> for details.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a file or URL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document encoding (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a combination of <ref refid="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4" kindref="member">htmlParserOption</ref> values </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="312" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5701" bodyend="5720" declfile="HTMLparser.h" declline="312" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1aa39feb0f17beaaadcc131db98fa63d4a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlReadMemory</definition>
+        <argsstring>(const char *buffer, int size, const char *URL, const char *encoding, int options)</argsstring>
+        <name>htmlReadMemory</name>
+        <param>
+          <type>const char *</type>
+          <declname>buffer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>size</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>URL</declname>
+          <defname>url</defname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Convenience function to parse an HTML document from memory. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The input buffer must not contain any terminating null bytes.</para>
+<para>See <ref refid="HTMLparser_8h_1ace0473af24ab42e75e01b61c2fe06798" kindref="member">htmlCtxtReadMemory</ref> for details.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buffer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to a char array </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the size of the array </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>url</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>only used for error reporting (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document encoding, or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a combination of <ref refid="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4" kindref="member">htmlParserOption</ref> values </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="316" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5736" bodyend="5760" declfile="HTMLparser.h" declline="316" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1ad778ea8f1d90b1dfbe2899b6a309f94d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlReadFd</definition>
+        <argsstring>(int fd, const char *URL, const char *encoding, int options)</argsstring>
+        <name>htmlReadFd</name>
+        <param>
+          <type>int</type>
+          <declname>fd</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>URL</declname>
+          <defname>url</defname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Convenience function to parse an HTML document from a file descriptor. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>NOTE that the file descriptor will not be closed when the context is freed or reset.</para>
+<para>See <ref refid="HTMLparser_8h_1a8e00404387e63ec8ccb5edd93d78bd8b" kindref="member">htmlCtxtReadFd</ref> for details.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>fd</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an open file descriptor </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>url</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>only used for error reporting (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document encoding, or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a combination of <ref refid="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4" kindref="member">htmlParserOption</ref> values </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="322" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5778" bodyend="5797" declfile="HTMLparser.h" declline="322" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a1a5ecc30c5a676b42a5410c367c9ffcb" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlReadIO</definition>
+        <argsstring>(xmlInputReadCallback ioread, xmlInputCloseCallback ioclose, void *ioctx, const char *URL, const char *encoding, int options)</argsstring>
+        <name>htmlReadIO</name>
+        <param>
+          <type><ref refid="xmlIO_8h_1a8b061791258369d9e2c6624158e018e4" kindref="member">xmlInputReadCallback</ref></type>
+          <declname>ioread</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlIO_8h_1a9c0f6d110f2f87b9c3600328505f32ab" kindref="member">xmlInputCloseCallback</ref></type>
+          <declname>ioclose</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ioctx</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>URL</declname>
+          <defname>url</defname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Convenience function to parse an HTML document from I/O functions and context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="HTMLparser_8h_1af1941762a6e11c2696fe8abe93168737" kindref="member">htmlCtxtReadIO</ref> for details.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ioread</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an I/O read function </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ioclose</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an I/O close function (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ioctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an I/O handler </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>url</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>only used for error reporting (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document encoding (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a combination of <ref refid="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4" kindref="member">htmlParserOption</ref> values </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="327" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5814" bodyend="5835" declfile="HTMLparser.h" declline="327" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1ae2699376dcd5a1c68fdeebf7648a90c1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlCtxtParseDocument</definition>
+        <argsstring>(htmlParserCtxt *ctxt, xmlParserInput *input)</argsstring>
+        <name>htmlCtxtParseDocument</name>
+        <param>
+          <type><ref refid="HTMLparser_8h_1a7da3aab7a3a152aebfea651c29fe29fd" kindref="member">htmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1aa05e6cbf6c68ec5a2e33ddabddf58b7d" kindref="member">xmlParserInput</ref> *</type>
+          <declname>input</declname>
+        </param>
+        <briefdescription>
+<para>Parse an HTML document and return the resulting document tree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="since"><para>2.13.0</para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>input</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>parser input </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree or NULL </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="334" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5622" bodyend="5651" declfile="HTMLparser.h" declline="334" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1af53063a6aa56789fce452027e49e0a2a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlCtxtReadDoc</definition>
+        <argsstring>(xmlParserCtxt *ctxt, const xmlChar *cur, const char *URL, const char *encoding, int options)</argsstring>
+        <name>htmlCtxtReadDoc</name>
+        <param>
+          <type><ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>cur</declname>
+          <defname>str</defname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>URL</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Parse an HTML in-memory document and build a tree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="HTMLparser_8h_1a704c275082cb61c6b35cabab333e5ea9" kindref="member">htmlCtxtUseOptions</ref> for details.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to a zero terminated string </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>URL</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>only used for error reporting (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document encoding (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a combination of <ref refid="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4" kindref="member">htmlParserOption</ref> values </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="337" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5850" bodyend="5867" declfile="HTMLparser.h" declline="337" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a430f103da6c143db4aceb47e6930f452" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlCtxtReadFile</definition>
+        <argsstring>(xmlParserCtxt *ctxt, const char *filename, const char *encoding, int options)</argsstring>
+        <name>htmlCtxtReadFile</name>
+        <param>
+          <type><ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Parse an HTML file from the filesystem, the network or a user-defined resource loader. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="HTMLparser_8h_1a704c275082cb61c6b35cabab333e5ea9" kindref="member">htmlCtxtUseOptions</ref> for details.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a file or URL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document encoding (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a combination of <ref refid="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4" kindref="member">htmlParserOption</ref> values </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="343" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5882" bodyend="5898" declfile="HTMLparser.h" declline="343" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1ace0473af24ab42e75e01b61c2fe06798" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlCtxtReadMemory</definition>
+        <argsstring>(xmlParserCtxt *ctxt, const char *buffer, int size, const char *URL, const char *encoding, int options)</argsstring>
+        <name>htmlCtxtReadMemory</name>
+        <param>
+          <type><ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>buffer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>size</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>URL</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Parse an HTML in-memory document and build a tree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The input buffer must not contain any terminating null bytes.</para>
+<para>See <ref refid="HTMLparser_8h_1a704c275082cb61c6b35cabab333e5ea9" kindref="member">htmlCtxtUseOptions</ref> for details.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>buffer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to a char array </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the size of the array </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>URL</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>only used for error reporting (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document encoding (optinal) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a combination of <ref refid="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4" kindref="member">htmlParserOption</ref> values </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="348" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5915" bodyend="5932" declfile="HTMLparser.h" declline="348" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a8e00404387e63ec8ccb5edd93d78bd8b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlCtxtReadFd</definition>
+        <argsstring>(xmlParserCtxt *ctxt, int fd, const char *URL, const char *encoding, int options)</argsstring>
+        <name>htmlCtxtReadFd</name>
+        <param>
+          <type><ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>fd</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>URL</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Parse an HTML from a file descriptor and build a tree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="HTMLparser_8h_1a704c275082cb61c6b35cabab333e5ea9" kindref="member">htmlCtxtUseOptions</ref> for details.</para>
+<para>NOTE that the file descriptor will not be closed when the context is freed or reset.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>fd</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an open file descriptor </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>URL</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>only used for error reporting (optional) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document encoding (optinal) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a combination of <ref refid="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4" kindref="member">htmlParserOption</ref> values </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="355" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5950" bodyend="5966" declfile="HTMLparser.h" declline="355" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1af1941762a6e11c2696fe8abe93168737" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+        <definition>xmlDoc * htmlCtxtReadIO</definition>
+        <argsstring>(xmlParserCtxt *ctxt, xmlInputReadCallback ioread, xmlInputCloseCallback ioclose, void *ioctx, const char *URL, const char *encoding, int options)</argsstring>
+        <name>htmlCtxtReadIO</name>
+        <param>
+          <type><ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlIO_8h_1a8b061791258369d9e2c6624158e018e4" kindref="member">xmlInputReadCallback</ref></type>
+          <declname>ioread</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlIO_8h_1a9c0f6d110f2f87b9c3600328505f32ab" kindref="member">xmlInputCloseCallback</ref></type>
+          <declname>ioclose</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ioctx</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>URL</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>encoding</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Parse an HTML document from I/O functions and source and build a tree. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>See <ref refid="HTMLparser_8h_1a704c275082cb61c6b35cabab333e5ea9" kindref="member">htmlCtxtUseOptions</ref> for details.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an HTML parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ioread</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an I/O read function </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ioclose</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an I/O close function </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ioctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an I/O handler </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>URL</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the base URL to use for the document </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>encoding</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the document encoding, or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a combination of <ref refid="HTMLparser_8h_1a7120adfabbd532998e80018a58ea09d4" kindref="member">htmlParserOption</ref> values </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the resulting document tree </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="361" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5983" bodyend="6002" declfile="HTMLparser.h" declline="361" declcolumn="1"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1addbb31bb0ec279768f456212de747708" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="HTMLparser_8h_1a11cb64e621ed8381d7dfc7f87d0cec81" kindref="member">htmlStatus</ref></type>
+        <definition>htmlStatus htmlAttrAllowed</definition>
+        <argsstring>(const htmlElemDesc *, const xmlChar *, int)</argsstring>
+        <name>htmlAttrAllowed</name>
+        <param>
+          <type>const htmlElemDesc *</type>
+          <declname>elt</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>attr</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>legacy</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000179"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>elt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>HTML element </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>attr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>HTML attribute </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>legacy</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>whether to allow deprecated attributes </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>HTML_VALID </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="384" column="14" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5457" bodyend="5461" declfile="HTMLparser.h" declline="384" declcolumn="14"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a89a170dc46aa82d78b5161f988dc6298" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int htmlElementAllowedHere</definition>
+        <argsstring>(const htmlElemDesc *, const xmlChar *)</argsstring>
+        <name>htmlElementAllowedHere</name>
+        <param>
+          <type>const htmlElemDesc *</type>
+          <declname>parent</declname>
+        </param>
+        <param>
+          <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+          <declname>elt</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000177"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>parent</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>HTML parent element </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>elt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>HTML element </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="386" column="7" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5430" bodyend="5433" declfile="HTMLparser.h" declline="386" declcolumn="7"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a0ea4c9f2abf92f0b3ebc81a15e7df06b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="HTMLparser_8h_1a11cb64e621ed8381d7dfc7f87d0cec81" kindref="member">htmlStatus</ref></type>
+        <definition>htmlStatus htmlElementStatusHere</definition>
+        <argsstring>(const htmlElemDesc *, const htmlElemDesc *)</argsstring>
+        <name>htmlElementStatusHere</name>
+        <param>
+          <type>const htmlElemDesc *</type>
+          <declname>parent</declname>
+        </param>
+        <param>
+          <type>const htmlElemDesc *</type>
+          <declname>elt</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000178"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>parent</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>HTML parent element </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>elt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>HTML element </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>HTML_VALID </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="388" column="14" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5443" bodyend="5446" declfile="HTMLparser.h" declline="388" declcolumn="14"/>
+      </memberdef>
+      <memberdef kind="function" id="HTMLparser_8h_1a84eeb255719af0df680da2758c47aedf" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="HTMLparser_8h_1a11cb64e621ed8381d7dfc7f87d0cec81" kindref="member">htmlStatus</ref></type>
+        <definition>htmlStatus htmlNodeStatus</definition>
+        <argsstring>(xmlNode *, int)</argsstring>
+        <name>htmlNodeStatus</name>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>node</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>legacy</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000180"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Don&apos;t use.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>node</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an <ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> in a tree </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>legacy</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>whether to allow deprecated elements (YES is faster here for Element nodes) </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>HTML_VALID </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="HTMLparser.h" line="390" column="14" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="5472" bodyend="5475" declfile="HTMLparser.h" declline="390" declcolumn="14"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>HTML parser, doesn&apos;t support HTML5. </para>
+    </briefdescription>
+    <detaileddescription>
+<para>This module orginally implemented an HTML parser based on the (underspecified) HTML 4.0 spec. As of 2.14, the tokenizer conforms to HTML5. Tree construction still follows a custom, unspecified algorithm with many differences to HTML5.</para>
+<para>The parser defaults to ISO-8859-1, the default encoding of HTTP/1.0.</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="HTMLparser.h"/>
+  </compounddef>
+</doxygen>

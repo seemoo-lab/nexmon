@@ -8,19 +8,7 @@
  *
  * Copied from packet-radiotap.c
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -50,64 +38,64 @@ enum ppi_antenna_type {
 void proto_register_ppi_antenna(void);
 
 /* protocol */
-static int proto_ppi_antenna = -1;
+static int proto_ppi_antenna;
 
-static int hf_ppi_antenna_version = -1;
-static int hf_ppi_antenna_pad = -1;
-static int hf_ppi_antenna_length = -1;
-static int hf_ppi_antenna_present = -1;
-static int hf_ppi_antenna_flags = -1;
-static int hf_ppi_antenna_gaindb = -1;
-static int hf_ppi_antenna_horizbw = -1;
-static int hf_ppi_antenna_vertbw = -1;
-static int hf_ppi_antenna_pgain= -1;
-static int hf_ppi_antenna_beamid= -1;
-static int hf_ppi_antenna_serialnum= -1;
-static int hf_ppi_antenna_modelname = -1;
-static int hf_ppi_antenna_descstr = -1;
-static int hf_ppi_antenna_appspecific_num = -1; /* 4-byte tag no */
-static int hf_ppi_antenna_appspecific_data = -1; /* 60 byte arbitrary data */
+static int hf_ppi_antenna_version;
+static int hf_ppi_antenna_pad;
+static int hf_ppi_antenna_length;
+static int hf_ppi_antenna_present;
+static int hf_ppi_antenna_flags;
+static int hf_ppi_antenna_gaindb;
+static int hf_ppi_antenna_horizbw;
+static int hf_ppi_antenna_vertbw;
+static int hf_ppi_antenna_pgain;
+static int hf_ppi_antenna_beamid;
+static int hf_ppi_antenna_serialnum;
+static int hf_ppi_antenna_modelname;
+static int hf_ppi_antenna_descstr;
+static int hf_ppi_antenna_appspecific_num; /* 4-byte tag no */
+static int hf_ppi_antenna_appspecific_data; /* 60 byte arbitrary data */
 
 
 /* "Present" flags */
 /* These represent decoded-bits in the gui */
-static int hf_ppi_antenna_present_flags= -1;
-static int hf_ppi_antenna_present_gaindb = -1;
-static int hf_ppi_antenna_present_horizbw = -1;
-static int hf_ppi_antenna_present_vertbw= -1;
-static int hf_ppi_antenna_present_pgain= -1;
-static int hf_ppi_antenna_present_beamid= -1;
-static int hf_ppi_antenna_present_serialnum= -1;
-static int hf_ppi_antenna_present_modelname = -1;
-static int hf_ppi_antenna_present_descstr = -1;
-static int hf_ppi_antenna_present_appspecific_num = -1;
-static int hf_ppi_antenna_present_appspecific_data = -1;
-static int hf_ppi_antenna_present_ext = -1;
+static int hf_ppi_antenna_present_flags;
+static int hf_ppi_antenna_present_gaindb;
+static int hf_ppi_antenna_present_horizbw;
+static int hf_ppi_antenna_present_vertbw;
+static int hf_ppi_antenna_present_pgain;
+static int hf_ppi_antenna_present_beamid;
+static int hf_ppi_antenna_present_serialnum;
+static int hf_ppi_antenna_present_modelname;
+static int hf_ppi_antenna_present_descstr;
+static int hf_ppi_antenna_present_appspecific_num;
+static int hf_ppi_antenna_present_appspecific_data;
+static int hf_ppi_antenna_present_ext;
 
 /*These are the few defined AntennaFlags bits*/
-static int hf_ppi_antennaflags_mimo= -1;
-static int hf_ppi_antennaflags_horizpol= -1;
-static int hf_ppi_antennaflags_vertpol= -1;
-static int hf_ppi_antennaflags_circpol_l= -1;
-static int hf_ppi_antennaflags_circpol_r= -1;
-static int hf_ppi_antennaflags_steer_elec= -1;
-static int hf_ppi_antennaflags_steer_mech= -1;
+static int hf_ppi_antennaflags_mimo;
+static int hf_ppi_antennaflags_horizpol;
+static int hf_ppi_antennaflags_vertpol;
+static int hf_ppi_antennaflags_circpol_l;
+static int hf_ppi_antennaflags_circpol_r;
+static int hf_ppi_antennaflags_steer_elec;
+static int hf_ppi_antennaflags_steer_mech;
 
 /* These represent arrow-dropdownthings in the gui */
-static gint ett_ppi_antenna = -1;
-static gint ett_ppi_antenna_present = -1;
-static gint ett_ppi_antennaflags= -1;
+static int ett_ppi_antenna;
+static int ett_ppi_antenna_present;
+static int ett_ppi_antennaflags;
 
-static expert_field ei_ppi_antenna_present_bit = EI_INIT;
-static expert_field ei_ppi_antenna_version = EI_INIT;
-static expert_field ei_ppi_antenna_length = EI_INIT;
+static expert_field ei_ppi_antenna_present_bit;
+static expert_field ei_ppi_antenna_version;
+static expert_field ei_ppi_antenna_length;
 
 static int
 dissect_ppi_antenna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_) {
     /* The fixed values up front */
-    guint32 version;
-    guint length;
-    gint  length_remaining;
+    uint32_t version;
+    unsigned length;
+    int   length_remaining;
 
     proto_tree *ppi_antenna_tree;
     proto_tree *pt;
@@ -116,16 +104,16 @@ dissect_ppi_antenna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 
     /* bits */
     int bit;
-    guint32 present, next_present;
+    uint32_t present, next_present;
     /* values actually read out, for displaying */
-    guint8 gaindb;
-    guint16 beamid;
-    guint32 t_hbw, t_vbw, t_pgain, t_appspecific_num; /* temporary conversions */
-    gdouble horizbw, vertbw, pgain;
-    gchar *curr_str;
+    uint8_t gaindb;
+    uint16_t beamid;
+    uint32_t t_hbw, t_vbw, t_pgain, t_appspecific_num; /* temporary conversions */
+    double horizbw, vertbw, pgain;
+    char *curr_str;
     int offset = 0;
 
-    static const int * ppi_antenna_present_flags[] = {
+    static int * const ppi_antenna_present_flags[] = {
         &hf_ppi_antenna_present_flags,
         &hf_ppi_antenna_present_gaindb,
         &hf_ppi_antenna_present_horizbw,
@@ -141,7 +129,7 @@ dissect_ppi_antenna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
         NULL
     };
 
-    static const int * ppi_antenna_ant_flags[] = {
+    static int * const ppi_antenna_ant_flags[] = {
         &hf_ppi_antennaflags_mimo,
         &hf_ppi_antennaflags_horizpol,
         &hf_ppi_antennaflags_vertpol,
@@ -156,7 +144,7 @@ dissect_ppi_antenna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
     col_clear(pinfo->cinfo,COL_INFO);
 
     /* pull out the first three fields of the BASE-GEOTAG-HEADER */
-    version = tvb_get_guint8(tvb, offset);
+    version = tvb_get_uint8(tvb, offset);
     length  = tvb_get_letohs(tvb, offset+2);
     present = tvb_get_letohl(tvb, offset+4);
 
@@ -222,7 +210,7 @@ dissect_ppi_antenna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
         case PPI_ANTENNA_GAINDB:
             if (length_remaining < 1)
                 break;
-            gaindb = tvb_get_guint8(tvb, offset);
+            gaindb = tvb_get_uint8(tvb, offset);
             if (tree) {
                 proto_tree_add_uint(ppi_antenna_tree, hf_ppi_antenna_gaindb, tvb, offset, 1, gaindb);
                 proto_item_append_text(antenna_line, " Gain: %d", gaindb);
@@ -235,7 +223,7 @@ dissect_ppi_antenna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
             if (length_remaining < 4)
                 break;
             t_hbw = tvb_get_letohl(tvb, offset);
-            horizbw =  ppi_fixed3_6_to_gdouble(t_hbw);
+            horizbw =  ppi_fixed3_6_to_double(t_hbw);
             if (tree) {
                 proto_tree_add_double(ppi_antenna_tree, hf_ppi_antenna_horizbw, tvb, offset, 4, horizbw);
                 proto_item_append_text(antenna_line, " HorizBw: %f", horizbw);
@@ -247,7 +235,7 @@ dissect_ppi_antenna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
             if (length_remaining < 4)
                 break;
             t_vbw = tvb_get_letohl(tvb, offset);
-            vertbw =  ppi_fixed3_6_to_gdouble(t_vbw);
+            vertbw =  ppi_fixed3_6_to_double(t_vbw);
             proto_tree_add_double(ppi_antenna_tree, hf_ppi_antenna_vertbw, tvb, offset, 4, vertbw);
             offset+=4;
             length_remaining-=4;
@@ -256,7 +244,7 @@ dissect_ppi_antenna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
             if (length_remaining < 4)
                 break;
             t_pgain = tvb_get_letohl(tvb, offset);
-            pgain   = ppi_fixed3_6_to_gdouble(t_pgain);
+            pgain   = ppi_fixed3_6_to_double(t_pgain);
             proto_tree_add_double(ppi_antenna_tree, hf_ppi_antenna_pgain, tvb, offset, 4, pgain);
             offset+=4;
             length_remaining-=4;
@@ -272,7 +260,7 @@ dissect_ppi_antenna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
         case  PPI_ANTENNA_SERIALNUM:
             if (length_remaining < 32)
                 break;
-            proto_tree_add_item(ppi_antenna_tree, hf_ppi_antenna_serialnum, tvb, offset, 32, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(ppi_antenna_tree, hf_ppi_antenna_serialnum, tvb, offset, 32, ENC_ASCII);
             offset+=32;
             length_remaining-=32;
             break;
@@ -281,8 +269,8 @@ dissect_ppi_antenna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
             if (length_remaining < 32)
                 break;
             if (tree) {
-                /* proto_tree_add_item(ppi_antenna_tree, hf_ppi_antenna_modelname, tvb, offset, 32, ENC_ASCII|ENC_NA); */
-                curr_str = tvb_format_stringzpad(tvb, offset, 32);
+                /* proto_tree_add_item(ppi_antenna_tree, hf_ppi_antenna_modelname, tvb, offset, 32, ENC_ASCII); */
+                curr_str = tvb_format_stringzpad(pinfo->pool, tvb, offset, 32);
                 proto_tree_add_string(ppi_antenna_tree, hf_ppi_antenna_modelname, tvb, offset, 32, curr_str);
                 proto_item_append_text(antenna_line, " (%s)", curr_str);
             }
@@ -293,8 +281,8 @@ dissect_ppi_antenna(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
             if (length_remaining < 32)
                 break;
             if (tree) {
-                /*proto_tree_add_item(ppi_antenna_tree, hf_ppi_antenna_descstr, tvb, offset, 32, ENC_ASCII|ENC_NA);*/
-                curr_str = tvb_format_stringzpad(tvb, offset, 32);
+                /*proto_tree_add_item(ppi_antenna_tree, hf_ppi_antenna_descstr, tvb, offset, 32, ENC_ASCII);*/
+                curr_str = tvb_format_stringzpad(pinfo->pool, tvb, offset, 32);
                 proto_tree_add_string(ppi_antenna_tree, hf_ppi_antenna_descstr, tvb, offset, 32, curr_str);
                 proto_item_append_text(antenna_line, " (%s)", curr_str);
             }
@@ -511,7 +499,7 @@ proto_register_ppi_antenna(void) {
             FT_BYTES, BASE_NONE, NULL, 0x0,
             NULL, HFILL } },
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_ppi_antenna,
         &ett_ppi_antenna_present,
         &ett_ppi_antennaflags

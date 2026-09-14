@@ -1,23 +1,13 @@
-/* sctpppids.h
+/** @file
  * Declarations of SCTP payload protocol IDs.
+ *
+ * Copyright 2011-2021 by Thomas Dreibholz <dreibh [AT] iem.uni-due.de>
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __SCTPPPIDS_H__
@@ -80,7 +70,7 @@
 #define DIAMETER_PROTOCOL_ID                           46
 #define DIAMETER_DTLS_PROTOCOL_ID                      47
 #define R14P_BER_PROTOCOL_ID                           48
-/* Unassigned 49 */
+#define GDT_PROTOCOL_ID                                49
 #define WEBRTC_DCEP_PROTOCOL_ID                        50
 #define WEBRTC_STRING_PAYLOAD_PROTOCOL_ID              51
 #define WEBRTC_BINARY_PARTIAL_PAYLOAD_PROTOCOL_ID      52
@@ -89,5 +79,23 @@
 #define PROTO_3GPP_PUA_PAYLOAD_PROTOCOL_ID             55
 #define WEBRTC_STRING_EMPTY_PAYLOAD_PROTOCOL_ID        56
 #define WEBRTC_BINARY_EMPTY_PAYLOAD_PROTOCOL_ID        57
+#define XWAP_PROTOCOL_ID                               58
+#define XW_CONTROL_PLANE_PROTOCOL_ID                   59
+#define NGAP_PROTOCOL_ID                               60
+#define XNAP_PROTOCOL_ID                               61
+#define F1AP_PROTOCOL_ID                               62
+#define HTTP_SCTP_PROTOCOL_ID                          63
+#define E1AP_PROTOCOL_ID                               64
+#define ELE2_PROTOCOL_ID                               65
+#define NGAP_OVER_DTLS_PROTOCOL_ID                     66
+#define XNAP_OVER_DTLS_PROTOCOL_ID                     67
+#define F1AP_OVER_DTLS_PROTOCOL_ID                     68
+#define E1AP_OVER_DTLS_PROTOCOL_ID                     69
+#define E2_CP_PROTOCOL_ID                              70
+#define E2_UP_PROTOCOL_ID                              71
+#define E2_DU_PROTOCOL_ID                              72
+#define W1AP_PROTOCOL_ID                               73
+
+WS_DLL_PUBLIC value_string_ext sctpppid_val_ext;
 
 #endif /* sctpppids.h */

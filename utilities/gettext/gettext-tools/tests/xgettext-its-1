@@ -121,7 +121,7 @@ cat <<\EOF >messages.xml
     <p its:translate="no">This is a non-translatable message</p>
   </message>
   <message>
-    <p>This is a test message, with an <span>element</span> in a <link href="http://www.gnu.org/s/gettext">text</link></p>
+    <p>This is a test message, with an <span>element</span> in a <link href="https://www.gnu.org/s/gettext">text</link></p>
   </message>
   <message>
     <code>  $ echo '  ' &gt;&gt; /dev/null
@@ -171,18 +171,42 @@ cat <<\EOF >messages.xml
   <message unescaped="This is an unescaped attribute &lt;&gt;&amp;&quot;">
     <p></p>
   </message>
+  <message>
+    <p xml:space="paragraph">
+    This is the first paragraph with
+a newline.
+  
+    This is  the  second paragraph with spaces.
+
+
+    This is the last paragraph.     </p>
+  </message>
+  <message>
+    <p xml:space="paragraph">This is the only one paragraph</p>
+  </message>
+  <message>
+    <p xml:space="paragraph">This is the only one paragraph with a boundary
+
+</p>
+  </message>
+  <message>
+    <p xml:space="paragraph"></p>
+  </message>
+  <message>
+    <p xml:space="paragraph"> </p>
+  </message>
 </messages>
 EOF
 
 cat <<\EOF >messages.ok
 #. (itstool) path: message/p
 #: messages.xml:8
-msgid "This is a test message &foo;&gt;&lt;&amp;\"\""
+msgid "This is a test message &foo;><&\"\""
 msgstr ""
 
 #. (itstool) path: message/p
 #: messages.xml:14
-msgid "This is a test message, with an <span>element</span> in a <link href=\"http://www.gnu.org/s/gettext\">text</link>"
+msgid "This is a test message, with an <span>element</span> in a <link href=\"https://www.gnu.org/s/gettext\">text</link>"
 msgstr ""
 
 #. This is code
@@ -190,15 +214,15 @@ msgstr ""
 #: messages.xml:17
 #, no-wrap
 msgid ""
-"  $ echo '  ' &gt;&gt; /dev/null\n"
-"  $ cat &lt; /dev/yes\n"
-"  $ sleep 10 &amp;\n"
+"  $ echo '  ' >> /dev/null\n"
+"  $ cat < /dev/yes\n"
+"  $ sleep 10 &\n"
 msgstr ""
 
 #. This is a comment
 #. (itstool) path: messages/message@comment
 #: messages.xml:22
-msgid "This is a comment &lt;&gt;&amp;&quot;"
+msgid "This is a comment <>&\""
 msgstr ""
 
 #. (itstool) path: message/p
@@ -246,6 +270,26 @@ msgstr ""
 #. (itstool) path: messages/message@unescaped
 #: messages.xml:61
 msgid "This is an unescaped attribute <>&\""
+msgstr ""
+
+#. (itstool) path: message/p
+#: messages.xml:65
+msgid ""
+"This is the first paragraph with a newline.\n"
+"\n"
+"This is the second paragraph with spaces.\n"
+"\n"
+"This is the last paragraph."
+msgstr ""
+
+#. (itstool) path: message/p
+#: messages.xml:75
+msgid "This is the only one paragraph"
+msgstr ""
+
+#. (itstool) path: message/p
+#: messages.xml:78
+msgid "This is the only one paragraph with a boundary"
 msgstr ""
 EOF
 

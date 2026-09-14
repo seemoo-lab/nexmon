@@ -1,10 +1,10 @@
 /* Java CLASSPATH handling.
-   Copyright (C) 2003, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2003.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,9 +13,17 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#include <stdbool.h>
+/* This file uses _GL_ATTRIBUTE_MALLOC.  */
+#if !_GL_CONFIG_H_INCLUDED
+ #error "Please include config.h first."
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Return the new CLASSPATH value.  The given classpaths are prepended to
    the current CLASSPATH value.   If use_minimal_classpath, the current
@@ -27,7 +35,13 @@ extern char * new_classpath (const char * const *classpaths,
 /* Set CLASSPATH and returns a safe copy of its old value.  */
 extern char * set_classpath (const char * const *classpaths,
                              unsigned int classpaths_count,
-                             bool use_minimal_classpath, bool verbose);
+                             bool use_minimal_classpath, bool verbose)
+     _GL_ATTRIBUTE_MALLOC;
 
 /* Restore CLASSPATH to its previous value.  */
 extern void reset_classpath (char *old_classpath);
+
+
+#ifdef __cplusplus
+}
+#endif

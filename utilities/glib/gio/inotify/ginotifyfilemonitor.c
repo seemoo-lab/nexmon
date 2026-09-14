@@ -3,10 +3,12 @@
  * Copyright (C) 2006-2007 Red Hat, Inc.
  * Copyright (C) 2007 Sebastian Dröge.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -55,13 +57,13 @@ g_inotify_file_monitor_start (GLocalFileMonitor  *local_monitor,
                               GFileMonitorSource *source)
 {
   GInotifyFileMonitor *inotify_monitor = G_INOTIFY_FILE_MONITOR (local_monitor);
-  gboolean success;
+  gboolean success G_GNUC_UNUSED  /* when compiling with G_DISABLE_ASSERT */;
 
   /* should already have been called, from is_supported() */
   success = _ih_startup ();
   g_assert (success);
 
-  inotify_monitor->sub = _ih_sub_new (dirname, basename, filename != NULL, source);
+  inotify_monitor->sub = _ih_sub_new (dirname, basename, filename, source);
   _ih_sub_add (inotify_monitor->sub);
 }
 
@@ -83,7 +85,9 @@ g_inotify_file_monitor_cancel (GFileMonitor *monitor)
 static void
 g_inotify_file_monitor_finalize (GObject *object)
 {
+#ifndef G_DISABLE_ASSERT
   GInotifyFileMonitor *inotify_monitor = G_INOTIFY_FILE_MONITOR (object);
+#endif
 
   /* must surely have been cancelled already */
   g_assert (!inotify_monitor->sub);

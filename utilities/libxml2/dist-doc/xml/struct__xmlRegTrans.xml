@@ -1,0 +1,118 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlRegTrans" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlRegTrans</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlRegTrans_1a6b35bb010401a5a08b7058327e2fc8b5" prot="public" static="no" mutable="no">
+        <type>xmlRegAtomPtr</type>
+        <definition>xmlRegAtomPtr atom</definition>
+        <argsstring></argsstring>
+        <name>atom</name>
+        <qualifiedname>_xmlRegTrans::atom</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="263" column="19" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="263" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegTrans_1ac0ed249f3db34b8135fd2717bda56844" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int to</definition>
+        <argsstring></argsstring>
+        <name>to</name>
+        <qualifiedname>_xmlRegTrans::to</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="264" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="264" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegTrans_1a617a47c70795bcff659815ad0efd2266" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int counter</definition>
+        <argsstring></argsstring>
+        <name>counter</name>
+        <qualifiedname>_xmlRegTrans::counter</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="265" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="265" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegTrans_1ad43c3812e6d13e0518d9f8b8f463ffcf" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int count</definition>
+        <argsstring></argsstring>
+        <name>count</name>
+        <qualifiedname>_xmlRegTrans::count</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="266" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="266" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlRegTrans_1ac3f9621c9e3a3b57fce01472c9c6b1bf" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nd</definition>
+        <argsstring></argsstring>
+        <name>nd</name>
+        <qualifiedname>_xmlRegTrans::nd</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlregexp.c" line="267" column="9" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="267" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="3">
+        <label>_xmlAutomataState</label>
+        <childnode refid="1" relation="usage">
+          <edgelabel>trans</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlRegAtom</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>start</edgelabel>
+          <edgelabel>start0</edgelabel>
+          <edgelabel>stop</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>ranges</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlRegRange</label>
+      </node>
+      <node id="1">
+        <label>_xmlRegTrans</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>atom</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xmlregexp.c" line="262" column="1" bodyfile="/builds/GNOME/libxml2/xmlregexp.c" bodystart="262" bodyend="268"/>
+    <listofallmembers>
+      <member refid="struct__xmlRegTrans_1a6b35bb010401a5a08b7058327e2fc8b5" prot="public" virt="non-virtual"><scope>_xmlRegTrans</scope><name>atom</name></member>
+      <member refid="struct__xmlRegTrans_1ad43c3812e6d13e0518d9f8b8f463ffcf" prot="public" virt="non-virtual"><scope>_xmlRegTrans</scope><name>count</name></member>
+      <member refid="struct__xmlRegTrans_1a617a47c70795bcff659815ad0efd2266" prot="public" virt="non-virtual"><scope>_xmlRegTrans</scope><name>counter</name></member>
+      <member refid="struct__xmlRegTrans_1ac3f9621c9e3a3b57fce01472c9c6b1bf" prot="public" virt="non-virtual"><scope>_xmlRegTrans</scope><name>nd</name></member>
+      <member refid="struct__xmlRegTrans_1ac0ed249f3db34b8135fd2717bda56844" prot="public" virt="non-virtual"><scope>_xmlRegTrans</scope><name>to</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

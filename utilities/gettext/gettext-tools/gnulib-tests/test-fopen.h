@@ -1,9 +1,9 @@
 /* Test of opening a file stream.
-   Copyright (C) 2007-2016 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2007.  */
 
@@ -22,6 +22,11 @@
 #include <unistd.h>
 
 #include "macros.h"
+
+/* Tell GCC not to warn about the specific edge cases tested here.  */
+#if _GL_GNUC_PREREQ (10, 0)
+# pragma GCC diagnostic ignored "-Wanalyzer-file-leak"
+#endif
 
 /* Test fopen.  Assumes BASE is defined.  */
 
@@ -47,6 +52,10 @@ test_fopen (void)
   ASSERT (fopen (BASE "file/", "r") == NULL);
   ASSERT (errno == ENOTDIR || errno == EISDIR || errno == EINVAL);
 
+  errno = 0;
+  ASSERT (fopen (BASE "file/", "r+") == NULL);
+  ASSERT (errno == ENOTDIR || errno == EISDIR || errno == EINVAL);
+
   /* Cannot create a directory.  */
   errno = 0;
   ASSERT (fopen ("nonexist.ent/", "w") == NULL);
@@ -56,6 +65,18 @@ test_fopen (void)
   /* Directories cannot be opened for writing.  */
   errno = 0;
   ASSERT (fopen (".", "w") == NULL);
+  ASSERT (errno == EISDIR || errno == EINVAL || errno == EACCES);
+
+  errno = 0;
+  ASSERT (fopen ("./", "w") == NULL);
+  ASSERT (errno == EISDIR || errno == EINVAL || errno == EACCES);
+
+  errno = 0;
+  ASSERT (fopen (".", "r+") == NULL);
+  ASSERT (errno == EISDIR || errno == EINVAL || errno == EACCES);
+
+  errno = 0;
+  ASSERT (fopen ("./", "r+") == NULL);
   ASSERT (errno == EISDIR || errno == EINVAL || errno == EACCES);
 
   /* /dev/null must exist, and be writable.  */

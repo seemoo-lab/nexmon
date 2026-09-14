@@ -6,7 +6,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -92,7 +92,7 @@ g_win32_fs_monitor_handle_event (GWin32FSMonitorPrivate   *monitor,
           monitor->pfni_prev->Action == FILE_ACTION_RENAMED_OLD_NAME)
         {
           /* don't bother sending events, was already sent (rename) */
-          fme = -1;
+          fme = (GFileMonitorEvent) -1;
         }
       else
         fme = G_FILE_MONITOR_EVENT_MOVED_IN;
@@ -104,7 +104,7 @@ g_win32_fs_monitor_handle_event (GWin32FSMonitorPrivate   *monitor,
       break;
     }
 
-  if (fme != -1)
+  if (fme != (GFileMonitorEvent) -1)
     return g_file_monitor_source_handle_event (monitor->fms,
                                                fme,
                                                filename,
@@ -160,8 +160,8 @@ g_win32_fs_monitor_callback (DWORD        error,
 
           if (monitor->isfile)
             {
-              gint long_filename_length = wcslen (monitor->wfilename_long);
-              gint short_filename_length = wcslen (monitor->wfilename_short);
+              size_t long_filename_length = wcslen (monitor->wfilename_long);
+              size_t short_filename_length = wcslen (monitor->wfilename_short);
               enum GWin32FileMonitorFileAlias alias_state;
 
               /* If monitoring a file, check that the changed file
@@ -245,9 +245,9 @@ g_win32_fs_monitor_init (GWin32FSMonitorPrivate *monitor,
                          const gchar *filename,
                          gboolean isfile)
 {
-  wchar_t *wdirname_with_long_prefix = NULL;
+  gchar   *dirname_with_long_prefix;
+  wchar_t *wdirname_with_long_prefix;
   const gchar LONGPFX[] = "\\\\?\\";
-  gchar *fullpath_with_long_prefix, *dirname_with_long_prefix;
   DWORD notify_filter = isfile ?
                         (FILE_NOTIFY_CHANGE_FILE_NAME |
                          FILE_NOTIFY_CHANGE_ATTRIBUTES |
@@ -260,81 +260,87 @@ g_win32_fs_monitor_init (GWin32FSMonitorPrivate *monitor,
   gboolean success_attribs;
   WIN32_FILE_ATTRIBUTE_DATA attrib_data = {0, };
 
+  g_return_if_fail ((filename && isfile) || (dirname && ! isfile));
 
   if (dirname != NULL)
     {
       dirname_with_long_prefix = g_strconcat (LONGPFX, dirname, NULL);
-      wdirname_with_long_prefix = g_utf8_to_utf16 (dirname_with_long_prefix, -1, NULL, NULL, NULL);
-
-      if (isfile)
-        {
-          gchar *fullpath;
-          wchar_t wlongname[MAX_PATH_LONG];
-          wchar_t wshortname[MAX_PATH_LONG];
-          wchar_t *wfullpath, *wbasename_long, *wbasename_short;
-
-          fullpath = g_build_filename (dirname, filename, NULL);
-          fullpath_with_long_prefix = g_strconcat (LONGPFX, fullpath, NULL);
-
-          wfullpath = g_utf8_to_utf16 (fullpath, -1, NULL, NULL, NULL);
-
-          monitor->wfullpath_with_long_prefix =
-            g_utf8_to_utf16 (fullpath_with_long_prefix, -1, NULL, NULL, NULL);
-
-          /* ReadDirectoryChangesW() can return the normal filename or the
-           * "8.3" format filename, so we need to keep track of both these names
-           * so that we can check against them later when it returns
-           */
-          if (GetLongPathNameW (monitor->wfullpath_with_long_prefix, wlongname, MAX_PATH_LONG) == 0)
-            {
-              wbasename_long = wcsrchr (monitor->wfullpath_with_long_prefix, L'\\');
-              monitor->wfilename_long = wbasename_long != NULL ?
-                                        wcsdup (wbasename_long + 1) :
-                                        wcsdup (wfullpath);
-            }
-          else
-            {
-              wbasename_long = wcsrchr (wlongname, L'\\');
-              monitor->wfilename_long = wbasename_long != NULL ?
-                                        wcsdup (wbasename_long + 1) :
-                                        wcsdup (wlongname);
-
-            }
-
-          if (GetShortPathNameW (monitor->wfullpath_with_long_prefix, wshortname, MAX_PATH_LONG) == 0)
-            {
-              wbasename_short = wcsrchr (monitor->wfullpath_with_long_prefix, L'\\');
-              monitor->wfilename_short = wbasename_short != NULL ?
-                                         wcsdup (wbasename_short + 1) :
-                                         wcsdup (wfullpath);
-            }
-          else
-            {
-              wbasename_short = wcsrchr (wshortname, L'\\');
-              monitor->wfilename_short = wbasename_short != NULL ?
-                                         wcsdup (wbasename_short + 1) :
-                                         wcsdup (wshortname);
-            }
-
-          g_free (fullpath);
-        }
-      else
-        {
-          monitor->wfilename_short = NULL;
-          monitor->wfilename_long = NULL;
-          monitor->wfullpath_with_long_prefix = g_utf8_to_utf16 (dirname_with_long_prefix, -1, NULL, NULL, NULL);
-        }
-
-      monitor->isfile = isfile;
     }
   else
     {
-      dirname_with_long_prefix = g_strconcat (LONGPFX, filename, NULL);
-      monitor->wfullpath_with_long_prefix = g_utf8_to_utf16 (dirname_with_long_prefix, -1, NULL, NULL, NULL);
-      monitor->wfilename_long = NULL;
-      monitor->wfilename_short = NULL;
-      monitor->isfile = FALSE;
+      gchar *tmp_dirname = g_path_get_dirname (filename);
+      dirname_with_long_prefix = g_strconcat (LONGPFX, tmp_dirname, NULL);
+      g_free (tmp_dirname);
     }
+  wdirname_with_long_prefix = g_utf8_to_utf16 (dirname_with_long_prefix, -1, NULL, NULL, NULL);
+
+  if (isfile)
+    {
+      gchar *fullpath;
+      gchar *fullpath_with_long_prefix;
+      wchar_t wlongname[MAX_PATH_LONG];
+      wchar_t wshortname[MAX_PATH_LONG];
+      wchar_t *wfullpath, *wbasename_long, *wbasename_short;
+
+      if (dirname)
+        fullpath = g_build_filename (dirname, filename, NULL);
+      else
+        fullpath = g_strdup (filename);
+
+      fullpath_with_long_prefix = g_strconcat (LONGPFX, fullpath, NULL);
+
+      wfullpath = g_utf8_to_utf16 (fullpath, -1, NULL, NULL, NULL);
+
+      monitor->wfullpath_with_long_prefix =
+        g_utf8_to_utf16 (fullpath_with_long_prefix, -1, NULL, NULL, NULL);
+
+      /* ReadDirectoryChangesW() can return the normal filename or the
+       * "8.3" format filename, so we need to keep track of both these names
+       * so that we can check against them later when it returns
+       */
+      if (GetLongPathNameW (monitor->wfullpath_with_long_prefix, wlongname, MAX_PATH_LONG) == 0)
+        {
+          wbasename_long = wcsrchr (monitor->wfullpath_with_long_prefix, L'\\');
+          monitor->wfilename_long = wbasename_long != NULL ?
+            wcsdup (wbasename_long + 1) :
+            wcsdup (wfullpath);
+        }
+      else
+        {
+          wbasename_long = wcsrchr (wlongname, L'\\');
+          monitor->wfilename_long = wbasename_long != NULL ?
+            wcsdup (wbasename_long + 1) :
+            wcsdup (wlongname);
+
+        }
+
+      if (GetShortPathNameW (monitor->wfullpath_with_long_prefix, wshortname, MAX_PATH_LONG) == 0)
+        {
+          wbasename_short = wcsrchr (monitor->wfullpath_with_long_prefix, L'\\');
+          monitor->wfilename_short = wbasename_short != NULL ?
+            wcsdup (wbasename_short + 1) :
+            wcsdup (wfullpath);
+        }
+      else
+        {
+          wbasename_short = wcsrchr (wshortname, L'\\');
+          monitor->wfilename_short = wbasename_short != NULL ?
+            wcsdup (wbasename_short + 1) :
+            wcsdup (wshortname);
+        }
+
+      g_free (wfullpath);
+      g_free (fullpath);
+      g_free (fullpath_with_long_prefix);
+    }
+  else
+    {
+      monitor->wfilename_short = NULL;
+      monitor->wfilename_long = NULL;
+      monitor->wfullpath_with_long_prefix = g_utf8_to_utf16 (dirname_with_long_prefix, -1, NULL, NULL, NULL);
+    }
+
+  monitor->isfile = isfile;
 
   success_attribs = GetFileAttributesExW (monitor->wfullpath_with_long_prefix,
                                           GetFileExInfoStandard,
@@ -344,8 +350,8 @@ g_win32_fs_monitor_init (GWin32FSMonitorPrivate *monitor,
   else
     monitor->file_attribs = INVALID_FILE_ATTRIBUTES;
   monitor->pfni_prev = NULL;
-  monitor->hDirectory = CreateFileW (wdirname_with_long_prefix != NULL ? wdirname_with_long_prefix : monitor->wfullpath_with_long_prefix,
-                                     FILE_GENERIC_READ | FILE_GENERIC_WRITE,
+  monitor->hDirectory = CreateFileW (wdirname_with_long_prefix,
+                                     FILE_LIST_DIRECTORY,
                                      FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE,
                                      NULL,
                                      OPEN_EXISTING,
@@ -416,7 +422,7 @@ g_win32_fs_monitor_close_handle (GWin32FSMonitorPrivate *monitor)
   /* This triggers a last callback() with nBytes==0. */
 
   /* Actually I am not so sure about that, it seems to trigger a last
-   * callback allright, but the way to recognize that it is the final
+   * callback correctly, but the way to recognize that it is the final
    * one is not to check for nBytes==0, I think that was a
    * misunderstanding.
    */

@@ -3,19 +3,7 @@ Routines for reading PDML produced from TShark.
 
 Copyright (c) 2003, 2013 by Gilbert Ramirez <gram@alumni.rice.edu>
 
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2
-of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+SPDX-License-Identifier: GPL-2.0-or-later
 """
 
 import sys
@@ -35,7 +23,7 @@ class PacketList:
     items within it."""
 
     def __init__(self, children=None):
-        if children == None:
+        if children is None:
             self.children = []
         else:
             self.children = children
@@ -73,7 +61,7 @@ class PacketList:
     def get_items(self, name, items=None):
         """Return all items that match the name 'name'.
         They are returned in order of a depth-first-search."""
-        if items == None:
+        if items is None:
             top_level = 1
             items = []
         else:
@@ -95,7 +83,7 @@ class PacketList:
         before other protocols. For example, if you have an HTTP
         protocol, you can find all tcp.dstport fields *before* that HTTP
         protocol. This helps analyze in the presence of tunneled protocols."""
-        if items == None:
+        if items is None:
             top_level = 1
             items = []
         else:
@@ -185,7 +173,7 @@ class Protocol(ProtoTreeItem):
 
     def dump(self, fh=sys.stdout, indent=0):
         print >> fh, "%s<proto " %  ("  " * indent,),
-       
+
         ProtoTreeItem.dump(self, fh)
 
         print >> fh, '>'
@@ -257,14 +245,14 @@ class ParseXML(xml.sax.handler.ContentHandler):
 
         # Add element as child to previous element as long
         # as there is more than 1 element in the stack. Only
-        # one element in the stack means that the the element in
+        # one element in the stack means that the element in
         # the stack is the single CaptureFile element, and we don't
         # want to add this element to that, as we only want one
         # Packet element in memory at a time.
         if len(self.element_stack) > 1:
             parent_elem = self.element_stack[-1]
             parent_elem.add_child(elem)
-        
+
         self.chars = ""
 
         # If we just finished a Packet element, hand it to the

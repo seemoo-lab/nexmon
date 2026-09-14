@@ -1,0 +1,40 @@
+This file explains how to install GNU libtextstyle from a tarball.
+(If you have checked out the source code repository, start by reading the
+file HACKING instead.)
+
+
+Prerequisites
+=============
+
+Before starting the installation, install the prerequisites listed in the
+file DEPENDENCIES.  You need to have at least those marked as 'Mandatory'
+installed.
+
+
+Installation
+============
+
+Then, you can run 'configure':
+
+  $ mkdir build/ && cd build
+  $ ../configure
+
+Here, you can give as arguments to 'configure'
+
+  - configure options, as listen in the 'configure --help' output,
+  - Makefile variable assignments for building the binaries, as
+    described in the INSTALL.generic file.
+
+If you are in a 64-bit multilib system with support for building 32-bit
+binaries, you can build a 32-bit poke configuring like this:
+
+  $ ../configure CC="gcc -m32"
+
+You find a set of known-to-work variable settings for various platforms
+in https://gitlab.com/ghwiki/gnow-how/-/wikis/Platforms/Configuration .
+
+Finally:
+
+  $ make
+  $ make check
+  $ make install

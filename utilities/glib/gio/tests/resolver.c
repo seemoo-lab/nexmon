@@ -4,10 +4,12 @@
  * 
  * Copyright (C) 2008 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -39,17 +41,18 @@ static int nlookups = 0;
 static gboolean synchronous = FALSE;
 static guint connectable_count = 0;
 static GResolverRecordType record_type = 0;
+static gint timeout_ms = 0;
 
-static void G_GNUC_NORETURN
+static G_NORETURN void
 usage (void)
 {
 	fprintf (stderr, "Usage: resolver [-s] [hostname | IP | service/protocol/domain ] ...\n");
-	fprintf (stderr, "Usage: resolver [-s] [-t MX|TXT|NS|SOA] rrname ...\n");
+	fprintf (stderr, "Usage: resolver [-s] [-t MX|TXT|NS|SOA|SRV] rrname ...\n");
 	fprintf (stderr, "       resolver [-s] -c NUMBER [hostname | IP | service/protocol/domain ]\n");
 	fprintf (stderr, "       Use -s to do synchronous lookups.\n");
 	fprintf (stderr, "       Use -c NUMBER (and only a single resolvable argument) to test GSocketConnectable.\n");
 	fprintf (stderr, "       The given NUMBER determines how many times the connectable will be enumerated.\n");
-	fprintf (stderr, "       Use -t with MX, TXT, NS or SOA to lookup DNS records of those types.\n");
+	fprintf (stderr, "       Use -t with MX, TXT, NS, SOA or SRV to look up DNS records of those types.\n");
 	exit (1);
 }
 
@@ -222,7 +225,48 @@ print_resolved_txt (const char *rrname,
           for (i = 0; contents[i] != NULL; i++)
             printf ("%s\n", contents[i]);
           g_variant_unref (t->data);
+          g_free (contents);
         }
+      g_list_free (records);
+    }
+  printf ("\n");
+
+  done_lookup ();
+  G_UNLOCK (response);
+}
+
+static void
+print_resolved_srv (const char *rrname,
+                    GList      *records,
+                    GError     *error)
+{
+  G_LOCK (response);
+  printf ("Domain: %s\n", rrname);
+  if (error)
+    {
+      printf ("Error: %s\n", error->message);
+      g_error_free (error);
+    }
+  else if (!records)
+    {
+      printf ("no SRV records\n");
+    }
+  else
+    {
+      GList *t;
+
+      for (t = records; t != NULL; t = t->next)
+        {
+          guint16 priority, weight, port;
+          const gchar *target;
+
+          g_variant_get (t->data, "(qqq&s)", &priority, &weight, &port, &target);
+
+          printf ("%s (priority %u, weight %u, port %u)\n",
+                  target, (guint) priority, (guint) weight, (guint) port);
+          g_variant_unref (t->data);
+        }
+
       g_list_free (records);
     }
   printf ("\n");
@@ -329,6 +373,9 @@ lookup_one_sync (const char *arg)
           break;
         case G_RESOLVER_RECORD_TXT:
           print_resolved_txt (arg, records, error);
+          break;
+        case G_RESOLVER_RECORD_SRV:
+          print_resolved_srv (arg, records, error);
           break;
         default:
           g_warn_if_reached ();
@@ -447,6 +494,9 @@ lookup_records_callback (GObject      *source,
       break;
     case G_RESOLVER_RECORD_TXT:
       print_resolved_txt (arg, records, error);
+      break;
+    case G_RESOLVER_RECORD_SRV:
+      print_resolved_srv (arg, records, error);
       break;
     default:
       g_warn_if_reached ();
@@ -569,7 +619,7 @@ do_async_connectable (GSocketAddressEnumerator *enumerator)
 }
 
 static void
-do_connectable (const char *arg, gboolean synchronous, guint count)
+do_connectable (const char *arg, gboolean synch, guint count)
 {
   char **parts;
   GSocketConnectable *connectable;
@@ -613,7 +663,7 @@ do_connectable (const char *arg, gboolean synchronous, guint count)
     {
       enumerator = g_socket_connectable_enumerate (connectable);
 
-      if (synchronous)
+      if (synch)
         do_sync_connectable (enumerator);
       else
         do_async_connectable (enumerator);
@@ -639,7 +689,7 @@ static gboolean
 async_cancel (GIOChannel *source, GIOCondition cond, gpointer cancel)
 {
   g_cancellable_cancel (cancel);
-  return FALSE;
+  return G_SOURCE_REMOVE;
 }
 #endif
 
@@ -658,9 +708,11 @@ record_type_arg (const gchar *option_name,
     record_type = G_RESOLVER_RECORD_SOA;
   } else if (g_ascii_strcasecmp (value, "NS") == 0) {
     record_type = G_RESOLVER_RECORD_NS;
+  } else if (g_ascii_strcasecmp (value, "SRV") == 0) {
+    record_type = G_RESOLVER_RECORD_SRV;
   } else {
       g_set_error (error, G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
-                   "Specify MX, TXT, NS or SOA for the special record lookup types");
+                   "Specify MX, TXT, NS, SOA or SRV for the special record lookup types");
       return FALSE;
   }
 
@@ -671,7 +723,8 @@ static const GOptionEntry option_entries[] = {
   { "synchronous", 's', 0, G_OPTION_ARG_NONE, &synchronous, "Synchronous connections", NULL },
   { "connectable", 'c', 0, G_OPTION_ARG_INT, &connectable_count, "Connectable count", "C" },
   { "special-type", 't', 0, G_OPTION_ARG_CALLBACK, record_type_arg, "Record type like MX, TXT, NS or SOA", "RR" },
-  { NULL },
+  { "timeout", 0, 0, G_OPTION_ARG_INT, &timeout_ms, "Timeout (ms)", "ms" },
+  G_OPTION_ENTRY_NULL,
 };
 
 int
@@ -681,7 +734,7 @@ main (int argc, char **argv)
   GError *error = NULL;
 #ifdef G_OS_UNIX
   GIOChannel *chan;
-  guint watch;
+  GSource *watch_source = NULL;
 #endif
 
   context = g_option_context_new ("lookups ...");
@@ -698,6 +751,9 @@ main (int argc, char **argv)
 
   resolver = g_resolver_get_default ();
 
+  if (timeout_ms != 0)
+    g_resolver_set_timeout (resolver, timeout_ms);
+
   cancellable = g_cancellable_new ();
 
 #ifdef G_OS_UNIX
@@ -712,7 +768,9 @@ main (int argc, char **argv)
       exit (1);
     }
   chan = g_io_channel_unix_new (cancel_fds[0]);
-  watch = g_io_add_watch (chan, G_IO_IN, async_cancel, cancellable);
+  watch_source = g_io_create_watch (chan, G_IO_IN);
+  g_source_set_callback (watch_source, (GSourceFunc) async_cancel, cancellable, NULL);
+  g_source_attach (watch_source, NULL);
   g_io_channel_unref (chan);
 #endif
 
@@ -736,9 +794,11 @@ main (int argc, char **argv)
   g_main_loop_unref (loop);
 
 #ifdef G_OS_UNIX
-  g_source_remove (watch);
+  g_source_destroy (watch_source);
+  g_clear_pointer (&watch_source, g_source_unref);
 #endif
   g_object_unref (cancellable);
+  g_option_context_free (context);
 
   return 0;
 }

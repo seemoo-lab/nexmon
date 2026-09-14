@@ -1,11 +1,8 @@
 /* Do not modify this file. Changes will be overwritten.                      */
 /* Generated automatically by the ASN.1 to Wireshark dissector compiler       */
 /* packet-pcap.c                                                              */
-/* asn2wrs.py -p pcap -c ./pcap.cnf -s ./packet-pcap-template -D . -O ../.. PCAP-CommonDataTypes.asn PCAP-Constants.asn PCAP-Containers.asn PCAP-IEs.asn PCAP-PDU-Contents.asn PCAP-PDU-Descriptions.asn */
+/* asn2wrs.py -q -L -p pcap -c ./pcap.cnf -s ./packet-pcap-template -D . -O ../.. PCAP-CommonDataTypes.asn PCAP-Constants.asn PCAP-Containers.asn PCAP-IEs.asn PCAP-PDU-Contents.asn PCAP-PDU-Descriptions.asn */
 
-/* Input file: packet-pcap-template.c */
-
-#line 1 "./asn1/pcap/packet-pcap-template.c"
 /* packet-pcap.c
  * Routines for UTRAN Iupc interface Positioning Calculation Application Part (PCAP) packet dissection
  *
@@ -15,29 +12,18 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Based on the RANAP dissector
  *
- * References: ETSI TS 125 453 V7.9.0 (2008-02)
+ * References: ETSI TS 125 453 V17.0.0 (2022-04)
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
+#include <wsutil/array.h>
 
 #include <epan/strutil.h>
 #include <epan/asn1.h>
@@ -60,13 +46,6 @@
 void proto_register_pcap(void);
 void proto_reg_handoff_pcap(void);
 
-static range_t *global_ssn_range;
-
-static dissector_table_t sccp_ssn_table;
-
-
-/*--- Included file: packet-pcap-val.h ---*/
-#line 1 "./asn1/pcap/packet-pcap-val.h"
 #define maxPrivateIEs                  65535
 #define maxProtocolExtensions          65535
 #define maxProtocolIEs                 65535
@@ -104,6 +83,11 @@ static dissector_table_t sccp_ssn_table;
 #define maxGANSS_1                     7
 #define maxNrOfIRATMeasurements        16
 #define maxReportedGERANCells          6
+#define maxIonGridInfo                 320
+#define maxAddPos                      8
+#define maxBeacons                     64
+#define maxBTs                         32
+#define maxWLANs                       64
 #define maxNrOfULTSs                   15
 #define maxNrOfDPCHs                   240
 
@@ -247,1573 +231,1721 @@ typedef enum _ProtocolIE_ID_enum {
   id_ganss_Delta_T = 123,
   id_requestedCellIDGERANMeasurements = 124,
   id_CellId_IRATMeasuredResultsSets = 125,
-  id_IMSI      = 126,
-  id_IMEI      = 127
+  id_Unknown_126 = 126,
+  id_Unknown_127 = 127,
+  id_IMSI      = 128,
+  id_IMEI      = 129,
+  id_GANSS_alm_keplerianBDSAlmanac = 130,
+  id_BDS_Ionospheric_Grid_Model = 131,
+  id_DBDS_Correction_Information = 132,
+  id_BDSIonosphericGridModel = 133,
+  id_DBDSCorrection = 134,
+  id_Confidence = 135,
+  id_ExtraDopplerInfoExtension = 136,
+  id_GANSS_Confidence = 137,
+  id_GANSS_ExtraDopplerExtension = 138,
+  id_Additional_PositioningDataSet = 139,
+  id_Additional_PositioningMethod = 140,
+  id_AddPos_MeasuredResults = 141,
+  id_AddPosSupport = 142
 } ProtocolIE_ID_enum;
 
-/*--- End of included file: packet-pcap-val.h ---*/
-#line 60 "./asn1/pcap/packet-pcap-template.c"
-
-static dissector_handle_t pcap_handle = NULL;
+static dissector_handle_t pcap_handle;
 
 /* Initialize the protocol and registered fields */
-static int proto_pcap = -1;
+static int proto_pcap;
 
-
-/*--- Included file: packet-pcap-hf.c ---*/
-#line 1 "./asn1/pcap/packet-pcap-hf.c"
-static int hf_pcap_AccuracyFulfilmentIndicator_PDU = -1;  /* AccuracyFulfilmentIndicator */
-static int hf_pcap_Cause_PDU = -1;                /* Cause */
-static int hf_pcap_CellId_MeasuredResultsSets_PDU = -1;  /* CellId_MeasuredResultsSets */
-static int hf_pcap_RoundTripTimeInfoWithType1_PDU = -1;  /* RoundTripTimeInfoWithType1 */
-static int hf_pcap_ExtendedTimingAdvanceLCR_PDU = -1;  /* ExtendedTimingAdvanceLCR */
-static int hf_pcap_RxTimingDeviation768Info_PDU = -1;  /* RxTimingDeviation768Info */
-static int hf_pcap_RxTimingDeviation384extInfo_PDU = -1;  /* RxTimingDeviation384extInfo */
-static int hf_pcap_AddMeasurementInfo_PDU = -1;   /* AddMeasurementInfo */
-static int hf_pcap_AngleOfArrivalLCR_PDU = -1;    /* AngleOfArrivalLCR */
-static int hf_pcap_CellId_IRATMeasuredResultsSets_PDU = -1;  /* CellId_IRATMeasuredResultsSets */
-static int hf_pcap_CellIDPositioning_PDU = -1;    /* CellIDPositioning */
-static int hf_pcap_RequestedCellIDGERANMeasurements_PDU = -1;  /* RequestedCellIDGERANMeasurements */
-static int hf_pcap_ClientType_PDU = -1;           /* ClientType */
-static int hf_pcap_CriticalityDiagnostics_PDU = -1;  /* CriticalityDiagnostics */
-static int hf_pcap_DGNSS_ValidityPeriod_PDU = -1;  /* DGNSS_ValidityPeriod */
-static int hf_pcap_IMEI_PDU = -1;                 /* IMEI */
-static int hf_pcap_IMSI_PDU = -1;                 /* IMSI */
-static int hf_pcap_UE_PositionEstimate_PDU = -1;  /* UE_PositionEstimate */
-static int hf_pcap_UE_PositionEstimateInfo_PDU = -1;  /* UE_PositionEstimateInfo */
-static int hf_pcap_GANSS_Reference_Time_Only_PDU = -1;  /* GANSS_Reference_Time_Only */
-static int hf_pcap_PositionDataUEbased_PDU = -1;  /* PositionDataUEbased */
-static int hf_pcap_PositionData_PDU = -1;         /* PositionData */
-static int hf_pcap_GANSS_PositioningDataSet_PDU = -1;  /* GANSS_PositioningDataSet */
-static int hf_pcap_AzimuthAndElevationLSB_PDU = -1;  /* AzimuthAndElevationLSB */
-static int hf_pcap_GANSS_Additional_Ionospheric_Model_PDU = -1;  /* GANSS_Additional_Ionospheric_Model */
-static int hf_pcap_GANSS_Additional_Navigation_Models_PDU = -1;  /* GANSS_Additional_Navigation_Models */
-static int hf_pcap_GANSS_Additional_Time_Models_PDU = -1;  /* GANSS_Additional_Time_Models */
-static int hf_pcap_GANSS_Additional_UTC_Models_PDU = -1;  /* GANSS_Additional_UTC_Models */
-static int hf_pcap_GANSS_ALM_ECEFsbasAlmanacSet_PDU = -1;  /* GANSS_ALM_ECEFsbasAlmanacSet */
-static int hf_pcap_GANSS_ALM_GlonassAlmanacSet_PDU = -1;  /* GANSS_ALM_GlonassAlmanacSet */
-static int hf_pcap_GANSS_ALM_MidiAlmanacSet_PDU = -1;  /* GANSS_ALM_MidiAlmanacSet */
-static int hf_pcap_GANSS_ALM_NAVKeplerianSet_PDU = -1;  /* GANSS_ALM_NAVKeplerianSet */
-static int hf_pcap_GANSS_ALM_ReducedKeplerianSet_PDU = -1;  /* GANSS_ALM_ReducedKeplerianSet */
-static int hf_pcap_GANSS_Auxiliary_Information_PDU = -1;  /* GANSS_Auxiliary_Information */
-static int hf_pcap_GANSS_CommonAssistanceData_PDU = -1;  /* GANSS_CommonAssistanceData */
-static int hf_pcap_GANSS_Earth_Orientation_Parameters_PDU = -1;  /* GANSS_Earth_Orientation_Parameters */
-static int hf_pcap_GANSS_GenericAssistanceDataList_PDU = -1;  /* GANSS_GenericAssistanceDataList */
-static int hf_pcap_GanssCodePhaseAmbiguityExt_PDU = -1;  /* GanssCodePhaseAmbiguityExt */
-static int hf_pcap_GanssIntegerCodePhaseExt_PDU = -1;  /* GanssIntegerCodePhaseExt */
-static int hf_pcap_GANSS_MeasuredResultsList_PDU = -1;  /* GANSS_MeasuredResultsList */
-static int hf_pcap_GANSS_Day_Cycle_PDU = -1;      /* GANSS_Day_Cycle */
-static int hf_pcap_GANSS_Delta_T_PDU = -1;        /* GANSS_Delta_T */
-static int hf_pcap_GANSS_UTRAN_TRU_PDU = -1;      /* GANSS_UTRAN_TRU */
-static int hf_pcap_CompleteAlmanacProvided_PDU = -1;  /* CompleteAlmanacProvided */
-static int hf_pcap_MeasuredResultsList_PDU = -1;  /* MeasuredResultsList */
-static int hf_pcap_GPS_ReferenceLocation_PDU = -1;  /* GPS_ReferenceLocation */
-static int hf_pcap_GPS_Week_Cycle_PDU = -1;       /* GPS_Week_Cycle */
-static int hf_pcap_UTRAN_GPS_DriftRate_PDU = -1;  /* UTRAN_GPS_DriftRate */
-static int hf_pcap_GPSReferenceTimeUncertainty_PDU = -1;  /* GPSReferenceTimeUncertainty */
-static int hf_pcap_GPS_UTRAN_TRU_PDU = -1;        /* GPS_UTRAN_TRU */
-static int hf_pcap_AdditionalGPSAssistDataRequired_PDU = -1;  /* AdditionalGPSAssistDataRequired */
-static int hf_pcap_AdditionalGanssAssistDataRequired_PDU = -1;  /* AdditionalGanssAssistDataRequired */
-static int hf_pcap_GANSSReq_AddIonosphericModel_PDU = -1;  /* GANSSReq_AddIonosphericModel */
-static int hf_pcap_GANSSReq_EarthOrientPara_PDU = -1;  /* GANSSReq_EarthOrientPara */
-static int hf_pcap_GANSS_AddNavigationModel_Req_PDU = -1;  /* GANSS_AddNavigationModel_Req */
-static int hf_pcap_GANSS_AddUTCModel_Req_PDU = -1;  /* GANSS_AddUTCModel_Req */
-static int hf_pcap_GANSS_AuxInfo_req_PDU = -1;    /* GANSS_AuxInfo_req */
-static int hf_pcap_GANSS_AddADchoices_PDU = -1;   /* GANSS_AddADchoices */
-static int hf_pcap_InformationExchangeID_PDU = -1;  /* InformationExchangeID */
-static int hf_pcap_InformationReportCharacteristics_PDU = -1;  /* InformationReportCharacteristics */
-static int hf_pcap_InformationType_PDU = -1;      /* InformationType */
-static int hf_pcap_GANSS_AddIonoModelReq_PDU = -1;  /* GANSS_AddIonoModelReq */
-static int hf_pcap_GANSS_EarthOrientParaReq_PDU = -1;  /* GANSS_EarthOrientParaReq */
-static int hf_pcap_GANSS_SBAS_ID_PDU = -1;        /* GANSS_SBAS_ID */
-static int hf_pcap_MeasInstructionsUsed_PDU = -1;  /* MeasInstructionsUsed */
-static int hf_pcap_OTDOA_MeasurementGroup_PDU = -1;  /* OTDOA_MeasurementGroup */
-static int hf_pcap_OTDOA_ReferenceCellInfoSAS_centric_PDU = -1;  /* OTDOA_ReferenceCellInfoSAS_centric */
-static int hf_pcap_OTDOA_MeasuredResultsSets_PDU = -1;  /* OTDOA_MeasuredResultsSets */
-static int hf_pcap_OTDOA_AddMeasuredResultsInfo_PDU = -1;  /* OTDOA_AddMeasuredResultsInfo */
-static int hf_pcap_UC_ID_PDU = -1;                /* UC_ID */
-static int hf_pcap_Extended_RNC_ID_PDU = -1;      /* Extended_RNC_ID */
-static int hf_pcap_AdditionalMeasurementInforLCR_PDU = -1;  /* AdditionalMeasurementInforLCR */
-static int hf_pcap_PeriodicPosCalcInfo_PDU = -1;  /* PeriodicPosCalcInfo */
-static int hf_pcap_PeriodicLocationInfo_PDU = -1;  /* PeriodicLocationInfo */
-static int hf_pcap_PeriodicTerminationCause_PDU = -1;  /* PeriodicTerminationCause */
-static int hf_pcap_PositioningMethod_PDU = -1;    /* PositioningMethod */
-static int hf_pcap_GNSS_PositioningMethod_PDU = -1;  /* GNSS_PositioningMethod */
-static int hf_pcap_PositioningPriority_PDU = -1;  /* PositioningPriority */
-static int hf_pcap_RRCstateChange_PDU = -1;       /* RRCstateChange */
-static int hf_pcap_RequestType_PDU = -1;          /* RequestType */
-static int hf_pcap_ResponseTime_PDU = -1;         /* ResponseTime */
-static int hf_pcap_HorizontalAccuracyCode_PDU = -1;  /* HorizontalAccuracyCode */
-static int hf_pcap_UE_PositioningCapability_PDU = -1;  /* UE_PositioningCapability */
-static int hf_pcap_NetworkAssistedGANSSSupport_PDU = -1;  /* NetworkAssistedGANSSSupport */
-static int hf_pcap_GANSS_SBAS_IDs_PDU = -1;       /* GANSS_SBAS_IDs */
-static int hf_pcap_GANSS_Signal_IDs_PDU = -1;     /* GANSS_Signal_IDs */
-static int hf_pcap_SupportGANSSNonNativeADchoices_PDU = -1;  /* SupportGANSSNonNativeADchoices */
-static int hf_pcap_UTDOAPositioning_PDU = -1;     /* UTDOAPositioning */
-static int hf_pcap_EnvironmentCharacterisation_PDU = -1;  /* EnvironmentCharacterisation */
-static int hf_pcap_GPSPositioning_PDU = -1;       /* GPSPositioning */
-static int hf_pcap_GANSSPositioning_PDU = -1;     /* GANSSPositioning */
-static int hf_pcap_GANSScarrierPhaseRequested_PDU = -1;  /* GANSScarrierPhaseRequested */
-static int hf_pcap_GANSSMultiFreqMeasRequested_PDU = -1;  /* GANSSMultiFreqMeasRequested */
-static int hf_pcap_OTDOAAssistanceData_PDU = -1;  /* OTDOAAssistanceData */
-static int hf_pcap_VerticalAccuracyCode_PDU = -1;  /* VerticalAccuracyCode */
-static int hf_pcap_UTDOA_Group_PDU = -1;          /* UTDOA_Group */
-static int hf_pcap_Positioning_ResponseTime_PDU = -1;  /* Positioning_ResponseTime */
-static int hf_pcap_AmountOfReporting_PDU = -1;    /* AmountOfReporting */
-static int hf_pcap_IncludeVelocity_PDU = -1;      /* IncludeVelocity */
-static int hf_pcap_VelocityEstimate_PDU = -1;     /* VelocityEstimate */
-static int hf_pcap_UTRAN_GPSReferenceTime_PDU = -1;  /* UTRAN_GPSReferenceTime */
-static int hf_pcap_UTRAN_GANSSReferenceTimeResult_PDU = -1;  /* UTRAN_GANSSReferenceTimeResult */
-static int hf_pcap_PositionCalculationRequest_PDU = -1;  /* PositionCalculationRequest */
-static int hf_pcap_PositionCalculationResponse_PDU = -1;  /* PositionCalculationResponse */
-static int hf_pcap_PositionCalculationFailure_PDU = -1;  /* PositionCalculationFailure */
-static int hf_pcap_InformationExchangeInitiationRequest_PDU = -1;  /* InformationExchangeInitiationRequest */
-static int hf_pcap_InformationExchangeObjectType_InfEx_Rqst_PDU = -1;  /* InformationExchangeObjectType_InfEx_Rqst */
-static int hf_pcap_UC_ID_InfEx_Rqst_PDU = -1;     /* UC_ID_InfEx_Rqst */
-static int hf_pcap_InformationExchangeInitiationResponse_PDU = -1;  /* InformationExchangeInitiationResponse */
-static int hf_pcap_InformationExchangeObjectType_InfEx_Rsp_PDU = -1;  /* InformationExchangeObjectType_InfEx_Rsp */
-static int hf_pcap_InformationExchangeInitiationFailure_PDU = -1;  /* InformationExchangeInitiationFailure */
-static int hf_pcap_PositionInitiationRequest_PDU = -1;  /* PositionInitiationRequest */
-static int hf_pcap_PositionInitiationResponse_PDU = -1;  /* PositionInitiationResponse */
-static int hf_pcap_PositionInitiationFailure_PDU = -1;  /* PositionInitiationFailure */
-static int hf_pcap_PositionActivationRequest_PDU = -1;  /* PositionActivationRequest */
-static int hf_pcap_PositionActivationResponse_PDU = -1;  /* PositionActivationResponse */
-static int hf_pcap_PositionActivationFailure_PDU = -1;  /* PositionActivationFailure */
-static int hf_pcap_InformationReport_PDU = -1;    /* InformationReport */
-static int hf_pcap_InformationExchangeObjectType_InfEx_Rprt_PDU = -1;  /* InformationExchangeObjectType_InfEx_Rprt */
-static int hf_pcap_InformationExchangeTerminationRequest_PDU = -1;  /* InformationExchangeTerminationRequest */
-static int hf_pcap_InformationExchangeFailureIndication_PDU = -1;  /* InformationExchangeFailureIndication */
-static int hf_pcap_ErrorIndication_PDU = -1;      /* ErrorIndication */
-static int hf_pcap_PositionParameterModification_PDU = -1;  /* PositionParameterModification */
-static int hf_pcap_PrivateMessage_PDU = -1;       /* PrivateMessage */
-static int hf_pcap_Abort_PDU = -1;                /* Abort */
-static int hf_pcap_PositionPeriodicReport_PDU = -1;  /* PositionPeriodicReport */
-static int hf_pcap_PositionPeriodicResult_PDU = -1;  /* PositionPeriodicResult */
-static int hf_pcap_PositionPeriodicTermination_PDU = -1;  /* PositionPeriodicTermination */
-static int hf_pcap_PCAP_PDU_PDU = -1;             /* PCAP_PDU */
-static int hf_pcap_local = -1;                    /* INTEGER_0_65535 */
-static int hf_pcap_global = -1;                   /* OBJECT_IDENTIFIER */
-static int hf_pcap_shortTID = -1;                 /* INTEGER_0_127 */
-static int hf_pcap_longTID = -1;                  /* INTEGER_0_32767 */
-static int hf_pcap_ProtocolIE_Container_item = -1;  /* ProtocolIE_Field */
-static int hf_pcap_id = -1;                       /* ProtocolIE_ID */
-static int hf_pcap_criticality = -1;              /* Criticality */
-static int hf_pcap_ie_field_value = -1;           /* T_ie_field_value */
-static int hf_pcap_ProtocolExtensionContainer_item = -1;  /* ProtocolExtensionField */
-static int hf_pcap_ext_id = -1;                   /* ProtocolIE_ID */
-static int hf_pcap_extensionValue = -1;           /* T_extensionValue */
-static int hf_pcap_PrivateIE_Container_item = -1;  /* PrivateIE_Field */
-static int hf_pcap_private_id = -1;               /* PrivateIE_ID */
-static int hf_pcap_private_value = -1;            /* T_private_value */
-static int hf_pcap_gpsAlmanacAndSatelliteHealth = -1;  /* GPS_AlmanacAndSatelliteHealth */
-static int hf_pcap_satMask = -1;                  /* BIT_STRING_SIZE_1_32 */
-static int hf_pcap_lsbTOW = -1;                   /* BIT_STRING_SIZE_8 */
-static int hf_pcap_iE_Extensions = -1;            /* ProtocolExtensionContainer */
-static int hf_pcap_radioNetwork = -1;             /* CauseRadioNetwork */
-static int hf_pcap_transport = -1;                /* CauseTransport */
-static int hf_pcap_protocol = -1;                 /* CauseProtocol */
-static int hf_pcap_misc = -1;                     /* CauseMisc */
-static int hf_pcap_CellId_MeasuredResultsSets_item = -1;  /* CellId_MeasuredResultsInfoList */
-static int hf_pcap_CellId_MeasuredResultsInfoList_item = -1;  /* CellId_MeasuredResultsInfo */
-static int hf_pcap_uC_ID = -1;                    /* UC_ID */
-static int hf_pcap_uTRANAccessPointPositionAltitude = -1;  /* UTRANAccessPointPositionAltitude */
-static int hf_pcap_ue_PositionEstimate = -1;      /* UE_PositionEstimate */
-static int hf_pcap_roundTripTimeInfo = -1;        /* RoundTripTimeInfo */
-static int hf_pcap_rxTimingDeviationInfo = -1;    /* RxTimingDeviationInfo */
-static int hf_pcap_rxTimingDeviationLCRInfo = -1;  /* RxTimingDeviationLCRInfo */
-static int hf_pcap_pathloss = -1;                 /* Pathloss */
-static int hf_pcap_ue_RxTxTimeDifferenceType2 = -1;  /* UE_RxTxTimeDifferenceType2 */
-static int hf_pcap_ue_PositioningMeasQuality = -1;  /* UE_PositioningMeasQuality */
-static int hf_pcap_roundTripTime = -1;            /* RoundTripTime */
-static int hf_pcap_ue_RxTxTimeDifferenceType1 = -1;  /* UE_RxTxTimeDifferenceType1 */
-static int hf_pcap_extendedRoundTripTime = -1;    /* ExtendedRoundTripTime */
-static int hf_pcap_stdResolution = -1;            /* BIT_STRING_SIZE_2 */
-static int hf_pcap_numberOfMeasurements = -1;     /* BIT_STRING_SIZE_3 */
-static int hf_pcap_stdOfMeasurements = -1;        /* BIT_STRING_SIZE_5 */
-static int hf_pcap_geographicalCoordinates = -1;  /* GeographicalCoordinates */
-static int hf_pcap_ga_AltitudeAndDirection = -1;  /* GA_AltitudeAndDirection */
-static int hf_pcap_rxTimingDeviation = -1;        /* RxTimingDeviation */
-static int hf_pcap_timingAdvance = -1;            /* TimingAdvance */
-static int hf_pcap_rxTimingDeviationLCR = -1;     /* RxTimingDeviationLCR */
-static int hf_pcap_timingAdvanceLCR = -1;         /* TimingAdvanceLCR */
-static int hf_pcap_rxTimingDeviation768 = -1;     /* RxTimingDeviation768 */
-static int hf_pcap_timingAdvance768 = -1;         /* TimingAdvance768 */
-static int hf_pcap_rxTimingDeviation384ext = -1;  /* RxTimingDeviation384ext */
-static int hf_pcap_timingAdvance384ext = -1;      /* TimingAdvance384ext */
-static int hf_pcap_cpich_RSCP = -1;               /* CPICH_RSCP */
-static int hf_pcap_cpich_EcNo = -1;               /* CPICH_EcNo */
-static int hf_pcap_aOA_LCR = -1;                  /* AOA_LCR */
-static int hf_pcap_aOA_LCR_Accuracy_Class = -1;   /* AOA_LCR_Accuracy_Class */
-static int hf_pcap_CellId_IRATMeasuredResultsSets_item = -1;  /* CellId_IRATMeasuredResultsInfoList */
-static int hf_pcap_gERAN_MeasuredResultsInfoList = -1;  /* GERAN_MeasuredResultsInfoList */
-static int hf_pcap_iE_Extenstions = -1;           /* ProtocolExtensionContainer */
-static int hf_pcap_GERAN_MeasuredResultsInfoList_item = -1;  /* GERAN_MeasuredResultsInfo */
-static int hf_pcap_gERANCellID = -1;              /* GERANCellGlobalID */
-static int hf_pcap_gERANPhysicalCellID = -1;      /* GERANPhysicalCellID */
-static int hf_pcap_gSM_RSSI = -1;                 /* GSM_RSSI */
-static int hf_pcap_plmn_Identity = -1;            /* PLMN_Identity */
-static int hf_pcap_locationAreaCode = -1;         /* BIT_STRING_SIZE_16 */
-static int hf_pcap_cellIdentity = -1;             /* BIT_STRING_SIZE_16 */
-static int hf_pcap_bsic = -1;                     /* GSM_BSIC */
-static int hf_pcap_arfcn = -1;                    /* GSM_BCCH_ARFCN */
-static int hf_pcap_networkColourCode = -1;        /* BIT_STRING_SIZE_3 */
-static int hf_pcap_baseStationColourCode = -1;    /* BIT_STRING_SIZE_3 */
-static int hf_pcap_requestedCellIDMeasurements = -1;  /* RequestedCellIDMeasurements */
-static int hf_pcap_fdd = -1;                      /* T_fdd */
-static int hf_pcap_roundTripTimeInfoWanted = -1;  /* BOOLEAN */
-static int hf_pcap_pathlossWanted = -1;           /* BOOLEAN */
-static int hf_pcap_roundTripTimeInfoWithType1Wanted = -1;  /* BOOLEAN */
-static int hf_pcap_cpichRSCPWanted = -1;          /* BOOLEAN */
-static int hf_pcap_cpicEcNoWanted = -1;           /* BOOLEAN */
-static int hf_pcap_tdd = -1;                      /* T_tdd */
-static int hf_pcap_rxTimingDeviationInfoWanted = -1;  /* BOOLEAN */
-static int hf_pcap_rxTimingDeviationLCRInfoWanted = -1;  /* BOOLEAN */
-static int hf_pcap_rxTimingDeviation768InfoWanted = -1;  /* BOOLEAN */
-static int hf_pcap_rxTimingDeviation384extInfoWanted = -1;  /* BOOLEAN */
-static int hf_pcap_angleOfArrivalLCRWanted = -1;  /* BOOLEAN */
-static int hf_pcap_timingAdvanceLCRWanted = -1;   /* BOOLEAN */
-static int hf_pcap_rSSIMeasurementsWanted = -1;   /* BOOLEAN */
-static int hf_pcap_procedureCode = -1;            /* ProcedureCode */
-static int hf_pcap_triggeringMessage = -1;        /* TriggeringMessage */
-static int hf_pcap_procedureCriticality = -1;     /* Criticality */
-static int hf_pcap_transactionID = -1;            /* TransactionID */
-static int hf_pcap_iEsCriticalityDiagnostics = -1;  /* CriticalityDiagnostics_IE_List */
-static int hf_pcap_CriticalityDiagnostics_IE_List_item = -1;  /* CriticalityDiagnostics_IE_List_item */
-static int hf_pcap_iECriticality = -1;            /* Criticality */
-static int hf_pcap_iE_ID = -1;                    /* ProtocolIE_ID */
-static int hf_pcap_repetitionNumber = -1;         /* CriticalityDiagnosticsRepetition */
-static int hf_pcap_messageStructure = -1;         /* MessageStructure */
-static int hf_pcap_typeOfError = -1;              /* TypeOfError */
-static int hf_pcap_gps_TOW_sec = -1;              /* INTEGER_0_604799 */
-static int hf_pcap_statusHealth = -1;             /* DiffCorrectionStatus */
-static int hf_pcap_dgps_CorrectionSatInfoList = -1;  /* DGPS_CorrectionSatInfoList */
-static int hf_pcap_DGPS_CorrectionSatInfoList_item = -1;  /* DGPS_CorrectionSatInfo */
-static int hf_pcap_satID = -1;                    /* INTEGER_0_63 */
-static int hf_pcap_iode = -1;                     /* INTEGER_0_255 */
-static int hf_pcap_udre = -1;                     /* UDRE */
-static int hf_pcap_prc = -1;                      /* PRC */
-static int hf_pcap_rrc = -1;                      /* RRC */
-static int hf_pcap_udreGrowthRate = -1;           /* UDREGrowthRate */
-static int hf_pcap_udreValidityTime = -1;         /* UDREValidityTime */
-static int hf_pcap_point = -1;                    /* GA_Point */
-static int hf_pcap_pointWithUnCertainty = -1;     /* GA_PointWithUnCertainty */
-static int hf_pcap_polygon = -1;                  /* GA_Polygon */
-static int hf_pcap_pointWithUncertaintyEllipse = -1;  /* GA_PointWithUnCertaintyEllipse */
-static int hf_pcap_pointWithAltitude = -1;        /* GA_PointWithAltitude */
-static int hf_pcap_pointWithAltitudeAndUncertaintyEllipsoid = -1;  /* GA_PointWithAltitudeAndUncertaintyEllipsoid */
-static int hf_pcap_ellipsoidArc = -1;             /* GA_EllipsoidArc */
-static int hf_pcap_latitudeSign = -1;             /* T_latitudeSign */
-static int hf_pcap_latitude = -1;                 /* INTEGER_0_8388607 */
-static int hf_pcap_longitude = -1;                /* INTEGER_M8388608_8388607 */
-static int hf_pcap_directionOfAltitude = -1;      /* T_directionOfAltitude */
-static int hf_pcap_altitude = -1;                 /* INTEGER_0_32767 */
-static int hf_pcap_innerRadius = -1;              /* INTEGER_0_65535 */
-static int hf_pcap_uncertaintyRadius = -1;        /* INTEGER_0_127 */
-static int hf_pcap_offsetAngle = -1;              /* INTEGER_0_179 */
-static int hf_pcap_includedAngle = -1;            /* INTEGER_0_179 */
-static int hf_pcap_confidence = -1;               /* INTEGER_0_100 */
-static int hf_pcap_altitudeAndDirection = -1;     /* GA_AltitudeAndDirection */
-static int hf_pcap_uncertaintyEllipse = -1;       /* GA_UncertaintyEllipse */
-static int hf_pcap_uncertaintyAltitude = -1;      /* INTEGER_0_127 */
-static int hf_pcap_uncertaintyCode = -1;          /* INTEGER_0_127 */
-static int hf_pcap_GA_Polygon_item = -1;          /* GA_Polygon_item */
-static int hf_pcap_uncertaintySemi_major = -1;    /* INTEGER_0_127 */
-static int hf_pcap_uncertaintySemi_minor = -1;    /* INTEGER_0_127 */
-static int hf_pcap_orientationOfMajorAxis = -1;   /* INTEGER_0_89 */
-static int hf_pcap_referenceTimeChoice = -1;      /* ReferenceTimeChoice */
-static int hf_pcap_ue_positionEstimate = -1;      /* UE_PositionEstimate */
-static int hf_pcap_utran_GPSReferenceTimeResult = -1;  /* UTRAN_GPSReferenceTimeResult */
-static int hf_pcap_gps_ReferenceTimeOnly = -1;    /* INTEGER_0_604799999_ */
-static int hf_pcap_cell_Timing = -1;              /* Cell_Timing */
-static int hf_pcap_extension_ReferenceTimeChoice = -1;  /* Extension_ReferenceTimeChoice */
-static int hf_pcap_sfn = -1;                      /* INTEGER_0_4095 */
-static int hf_pcap_ganssTODmsec = -1;             /* INTEGER_0_3599999 */
-static int hf_pcap_ganssTimeID = -1;              /* GANSSID */
-static int hf_pcap_positionData = -1;             /* BIT_STRING_SIZE_16 */
-static int hf_pcap_positioningDataDiscriminator = -1;  /* PositioningDataDiscriminator */
-static int hf_pcap_positioningDataSet = -1;       /* PositioningDataSet */
-static int hf_pcap_GANSS_PositioningDataSet_item = -1;  /* GANSS_PositioningMethodAndUsage */
-static int hf_pcap_PositioningDataSet_item = -1;  /* PositioningMethodAndUsage */
-static int hf_pcap_gps_TOW_1msec = -1;            /* INTEGER_0_604799999 */
-static int hf_pcap_satelliteInformationList = -1;  /* AcquisitionSatInfoList */
-static int hf_pcap_AcquisitionSatInfoList_item = -1;  /* AcquisitionSatInfo */
-static int hf_pcap_doppler0thOrder = -1;          /* INTEGER_M2048_2047 */
-static int hf_pcap_extraDopplerInfo = -1;         /* ExtraDopplerInfo */
-static int hf_pcap_codePhase = -1;                /* INTEGER_0_1022 */
-static int hf_pcap_integerCodePhase = -1;         /* INTEGER_0_19 */
-static int hf_pcap_gps_BitNumber = -1;            /* INTEGER_0_3 */
-static int hf_pcap_codePhaseSearchWindow = -1;    /* CodePhaseSearchWindow */
-static int hf_pcap_azimuthAndElevation = -1;      /* AzimuthAndElevation */
-static int hf_pcap_doppler1stOrder = -1;          /* INTEGER_M42_21 */
-static int hf_pcap_dopplerUncertainty = -1;       /* DopplerUncertainty */
-static int hf_pcap_azimuth = -1;                  /* INTEGER_0_31 */
-static int hf_pcap_elevation = -1;                /* INTEGER_0_7 */
-static int hf_pcap_azimuthLSB = -1;               /* INTEGER_0_15 */
-static int hf_pcap_elevationLSB = -1;             /* INTEGER_0_15 */
-static int hf_pcap_AuxInfoGANSS_ID1_item = -1;    /* AuxInfoGANSS_ID1_element */
-static int hf_pcap_svID = -1;                     /* INTEGER_0_63 */
-static int hf_pcap_signalsAvailable = -1;         /* BIT_STRING_SIZE_8 */
-static int hf_pcap_ie_Extensions = -1;            /* ProtocolExtensionContainer */
-static int hf_pcap_AuxInfoGANSS_ID3_item = -1;    /* AuxInfoGANSS_ID3_element */
-static int hf_pcap_channelNumber = -1;            /* INTEGER_M7_13 */
-static int hf_pcap_cnavToc = -1;                  /* BIT_STRING_SIZE_11 */
-static int hf_pcap_cnavTop = -1;                  /* BIT_STRING_SIZE_11 */
-static int hf_pcap_cnavURA0 = -1;                 /* BIT_STRING_SIZE_5 */
-static int hf_pcap_cnavURA1 = -1;                 /* BIT_STRING_SIZE_3 */
-static int hf_pcap_cnavURA2 = -1;                 /* BIT_STRING_SIZE_3 */
-static int hf_pcap_cnavAf2 = -1;                  /* BIT_STRING_SIZE_10 */
-static int hf_pcap_cnavAf1 = -1;                  /* BIT_STRING_SIZE_20 */
-static int hf_pcap_cnavAf0 = -1;                  /* BIT_STRING_SIZE_26 */
-static int hf_pcap_cnavTgd = -1;                  /* BIT_STRING_SIZE_13 */
-static int hf_pcap_cnavISCl1cp = -1;              /* BIT_STRING_SIZE_13 */
-static int hf_pcap_cnavISCl1cd = -1;              /* BIT_STRING_SIZE_13 */
-static int hf_pcap_cnavISCl1ca = -1;              /* BIT_STRING_SIZE_13 */
-static int hf_pcap_cnavISCl2c = -1;               /* BIT_STRING_SIZE_13 */
-static int hf_pcap_cnavISCl5i5 = -1;              /* BIT_STRING_SIZE_13 */
-static int hf_pcap_cnavISCl5q5 = -1;              /* BIT_STRING_SIZE_13 */
-static int hf_pcap_b1 = -1;                       /* BIT_STRING_SIZE_11 */
-static int hf_pcap_b2 = -1;                       /* BIT_STRING_SIZE_10 */
-static int hf_pcap_dGANSS_ReferenceTime = -1;     /* INTEGER_0_119 */
-static int hf_pcap_dGANSS_Information = -1;       /* DGANSS_Information */
-static int hf_pcap_DGANSS_Information_item = -1;  /* DGANSS_InformationItem */
-static int hf_pcap_gANSS_SignalId = -1;           /* GANSS_SignalID */
-static int hf_pcap_gANSS_StatusHealth = -1;       /* GANSS_StatusHealth */
-static int hf_pcap_dGANSS_SignalInformation = -1;  /* DGANSS_SignalInformation */
-static int hf_pcap_DGANSS_SignalInformation_item = -1;  /* DGANSS_SignalInformationItem */
-static int hf_pcap_satId = -1;                    /* INTEGER_0_63 */
-static int hf_pcap_gANSS_iod = -1;                /* BIT_STRING_SIZE_10 */
-static int hf_pcap_ganss_prc = -1;                /* INTEGER_M2047_2047 */
-static int hf_pcap_ganss_rrc = -1;                /* INTEGER_M127_127 */
-static int hf_pcap_navClockModel = -1;            /* NAVclockModel */
-static int hf_pcap_cnavClockModel = -1;           /* CNAVclockModel */
-static int hf_pcap_glonassClockModel = -1;        /* GLONASSclockModel */
-static int hf_pcap_sbasClockModel = -1;           /* SBASclockModel */
-static int hf_pcap_navKeplerianSet = -1;          /* NavModel_NAVKeplerianSet */
-static int hf_pcap_cnavKeplerianSet = -1;         /* NavModel_CNAVKeplerianSet */
-static int hf_pcap_glonassECEF = -1;              /* NavModel_GLONASSecef */
-static int hf_pcap_sbasECEF = -1;                 /* NavModel_SBASecef */
-static int hf_pcap_dataID = -1;                   /* BIT_STRING_SIZE_2 */
-static int hf_pcap_alpha_beta_parameters = -1;    /* GPS_Ionospheric_Model */
-static int hf_pcap_non_broadcastIndication = -1;  /* T_non_broadcastIndication */
-static int hf_pcap_ganssSatInfoNavList = -1;      /* Ganss_Sat_Info_AddNavList */
-static int hf_pcap_GANSS_Additional_Time_Models_item = -1;  /* GANSS_Time_Model */
-static int hf_pcap_utcModel1 = -1;                /* UTCmodelSet1 */
-static int hf_pcap_utcModel2 = -1;                /* UTCmodelSet2 */
-static int hf_pcap_utcModel3 = -1;                /* UTCmodelSet3 */
-static int hf_pcap_sat_info_SBASecefList = -1;    /* GANSS_SAT_Info_Almanac_SBASecefList */
-static int hf_pcap_sat_info_GLOkpList = -1;       /* GANSS_SAT_Info_Almanac_GLOkpList */
-static int hf_pcap_t_oa = -1;                     /* INTEGER_0_255 */
-static int hf_pcap_sat_info_MIDIkpList = -1;      /* GANSS_SAT_Info_Almanac_MIDIkpList */
-static int hf_pcap_sat_info_NAVkpList = -1;       /* GANSS_SAT_Info_Almanac_NAVkpList */
-static int hf_pcap_sat_info_REDkpList = -1;       /* GANSS_SAT_Info_Almanac_REDkpList */
-static int hf_pcap_weekNumber = -1;               /* INTEGER_0_255 */
-static int hf_pcap_gANSS_AlmanacModel = -1;       /* GANSS_AlmanacModel */
-static int hf_pcap_gANSS_keplerianParameters = -1;  /* GANSS_KeplerianParametersAlm */
-static int hf_pcap_extension_GANSS_AlmanacModel = -1;  /* Extension_GANSS_AlmanacModel */
-static int hf_pcap_ganssID1 = -1;                 /* AuxInfoGANSS_ID1 */
-static int hf_pcap_ganssID3 = -1;                 /* AuxInfoGANSS_ID3 */
-static int hf_pcap_elevation_01 = -1;             /* INTEGER_0_75 */
-static int hf_pcap_GANSS_Clock_Model_item = -1;   /* GANSS_SatelliteClockModelItem */
-static int hf_pcap_ganss_Reference_Time = -1;     /* GANSS_Reference_Time */
-static int hf_pcap_ganss_Ionospheric_Model = -1;  /* GANSS_Ionospheric_Model */
-static int hf_pcap_ganss_Reference_Location = -1;  /* GANSS_Reference_Location */
-static int hf_pcap_ganssTod = -1;                 /* INTEGER_0_59_ */
-static int hf_pcap_dataBitAssistancelist = -1;    /* GANSS_DataBitAssistanceList */
-static int hf_pcap_GANSS_DataBitAssistanceList_item = -1;  /* GANSS_DataBitAssistanceItem */
-static int hf_pcap_dataBitAssistanceSgnList = -1;  /* GANSS_DataBitAssistanceSgnList */
-static int hf_pcap_GANSS_DataBitAssistanceSgnList_item = -1;  /* GANSS_DataBitAssistanceSgnItem */
-static int hf_pcap_ganss_SignalId = -1;           /* GANSS_SignalID */
-static int hf_pcap_ganssDataBits = -1;            /* BIT_STRING_SIZE_1_1024 */
-static int hf_pcap_teop = -1;                     /* BIT_STRING_SIZE_16 */
-static int hf_pcap_pmX = -1;                      /* BIT_STRING_SIZE_21 */
-static int hf_pcap_pmXdot = -1;                   /* BIT_STRING_SIZE_15 */
-static int hf_pcap_pmY = -1;                      /* BIT_STRING_SIZE_21 */
-static int hf_pcap_pmYdot = -1;                   /* BIT_STRING_SIZE_15 */
-static int hf_pcap_deltaUT1 = -1;                 /* BIT_STRING_SIZE_31 */
-static int hf_pcap_deltaUT1dot = -1;              /* BIT_STRING_SIZE_19 */
-static int hf_pcap_dopplerFirstOrder = -1;        /* INTEGER_M42_21 */
-static int hf_pcap_dopplerUncertainty_01 = -1;    /* T_dopplerUncertainty */
-static int hf_pcap_GANSS_GenericAssistanceDataList_item = -1;  /* GANSSGenericAssistanceData */
-static int hf_pcap_ganssId = -1;                  /* GANSSID */
-static int hf_pcap_ganss_Real_Time_Integrity = -1;  /* GANSS_Real_Time_Integrity */
-static int hf_pcap_ganss_DataBitAssistance = -1;  /* GANSS_Data_Bit_Assistance */
-static int hf_pcap_dganss_Corrections = -1;       /* DGANSS_Corrections */
-static int hf_pcap_ganss_AlmanacAndSatelliteHealth = -1;  /* GANSS_AlmanacAndSatelliteHealth */
-static int hf_pcap_ganss_ReferenceMeasurementInfo = -1;  /* GANSS_ReferenceMeasurementInfo */
-static int hf_pcap_ganss_UTC_Model = -1;          /* GANSS_UTC_Model */
-static int hf_pcap_ganss_Time_Model = -1;         /* GANSS_Time_Model */
-static int hf_pcap_ganss_Navigation_Model = -1;   /* GANSS_Navigation_Model */
-static int hf_pcap_GANSS_GenericMeasurementInfo_item = -1;  /* GANSS_GenericMeasurementInfo_item */
-static int hf_pcap_ganssMeasurementSignalList = -1;  /* GANSSMeasurementSignalList */
-static int hf_pcap_ganss_ID = -1;                 /* INTEGER_0_7 */
-static int hf_pcap_GANSSMeasurementSignalList_item = -1;  /* GANSSMeasurementSignalList_item */
-static int hf_pcap_ganssSignalId = -1;            /* GANSS_SignalID */
-static int hf_pcap_ganssCodePhaseAmbiguity = -1;  /* INTEGER_0_31 */
-static int hf_pcap_ganssMeasurementParameters = -1;  /* GANSS_MeasurementParameters */
-static int hf_pcap_ganssCodePhaseAmbiguity_ext = -1;  /* INTEGER_32_127 */
-static int hf_pcap_alpha_zero_ionos = -1;         /* BIT_STRING_SIZE_12 */
-static int hf_pcap_alpha_one_ionos = -1;          /* BIT_STRING_SIZE_12 */
-static int hf_pcap_alpha_two_ionos = -1;          /* BIT_STRING_SIZE_12 */
-static int hf_pcap_gANSS_IonosphereRegionalStormFlags = -1;  /* GANSS_IonosphereRegionalStormFlags */
-static int hf_pcap_storm_flag_one = -1;           /* BOOLEAN */
-static int hf_pcap_storm_flag_two = -1;           /* BOOLEAN */
-static int hf_pcap_storm_flag_three = -1;         /* BOOLEAN */
-static int hf_pcap_storm_flag_four = -1;          /* BOOLEAN */
-static int hf_pcap_storm_flag_five = -1;          /* BOOLEAN */
-static int hf_pcap_iod_a = -1;                    /* INTEGER_0_3 */
-static int hf_pcap_gANSS_SatelliteInformationKP = -1;  /* GANSS_SatelliteInformationKP */
-static int hf_pcap_toe_nav = -1;                  /* BIT_STRING_SIZE_14 */
-static int hf_pcap_ganss_omega_nav = -1;          /* BIT_STRING_SIZE_32 */
-static int hf_pcap_delta_n_nav = -1;              /* BIT_STRING_SIZE_16 */
-static int hf_pcap_m_zero_nav = -1;               /* BIT_STRING_SIZE_32 */
-static int hf_pcap_omegadot_nav = -1;             /* BIT_STRING_SIZE_24 */
-static int hf_pcap_ganss_e_nav = -1;              /* BIT_STRING_SIZE_32 */
-static int hf_pcap_idot_nav = -1;                 /* BIT_STRING_SIZE_14 */
-static int hf_pcap_a_sqrt_nav = -1;               /* BIT_STRING_SIZE_32 */
-static int hf_pcap_i_zero_nav = -1;               /* BIT_STRING_SIZE_32 */
-static int hf_pcap_omega_zero_nav = -1;           /* BIT_STRING_SIZE_32 */
-static int hf_pcap_c_rs_nav = -1;                 /* BIT_STRING_SIZE_16 */
-static int hf_pcap_c_is_nav = -1;                 /* BIT_STRING_SIZE_16 */
-static int hf_pcap_c_us_nav = -1;                 /* BIT_STRING_SIZE_16 */
-static int hf_pcap_c_rc_nav = -1;                 /* BIT_STRING_SIZE_16 */
-static int hf_pcap_c_ic_nav = -1;                 /* BIT_STRING_SIZE_16 */
-static int hf_pcap_c_uc_nav = -1;                 /* BIT_STRING_SIZE_16 */
-static int hf_pcap_GANSS_MeasurementParameters_item = -1;  /* GANSS_MeasurementParametersItem */
-static int hf_pcap_cToNzero = -1;                 /* INTEGER_0_63 */
-static int hf_pcap_multipathIndicator = -1;       /* T_multipathIndicator */
-static int hf_pcap_carrierQualityIndication = -1;  /* BIT_STRING_SIZE_2 */
-static int hf_pcap_ganssCodePhase = -1;           /* INTEGER_0_2097151 */
-static int hf_pcap_ganssIntegerCodePhase = -1;    /* INTEGER_0_63 */
-static int hf_pcap_codePhaseRmsError = -1;        /* INTEGER_0_63 */
-static int hf_pcap_doppler = -1;                  /* INTEGER_M32768_32767 */
-static int hf_pcap_adr = -1;                      /* INTEGER_0_33554431 */
-static int hf_pcap_ganssIntegerCodePhase_ext = -1;  /* INTEGER_64_127 */
-static int hf_pcap_GANSS_MeasuredResultsList_item = -1;  /* GANSS_MeasuredResults */
-static int hf_pcap_referenceTime = -1;            /* T_referenceTime */
-static int hf_pcap_utranReferenceTime = -1;       /* UTRAN_GANSSReferenceTimeUL */
-static int hf_pcap_ganssReferenceTimeOnly = -1;   /* GANSS_ReferenceTimeOnly */
-static int hf_pcap_ganssGenericMeasurementInfo = -1;  /* GANSS_GenericMeasurementInfo */
-static int hf_pcap_non_broadcastIndication_01 = -1;  /* T_non_broadcastIndication_01 */
-static int hf_pcap_ganssSatInfoNav = -1;          /* GANSS_Sat_Info_Nav */
-static int hf_pcap_gANSS_keplerianParameters_01 = -1;  /* GANSS_KeplerianParametersOrb */
-static int hf_pcap_GANSS_Real_Time_Integrity_item = -1;  /* GANSS_RealTimeInformationItem */
-static int hf_pcap_bad_ganss_satId = -1;          /* INTEGER_0_63 */
-static int hf_pcap_bad_ganss_signalId = -1;       /* BIT_STRING_SIZE_8 */
-static int hf_pcap_satelliteInformation = -1;     /* GANSS_SatelliteInformation */
-static int hf_pcap_ganssDay = -1;                 /* INTEGER_0_8191 */
-static int hf_pcap_ganssTod_01 = -1;              /* INTEGER_0_86399 */
-static int hf_pcap_ganssTodUncertainty = -1;      /* INTEGER_0_127 */
-static int hf_pcap_ganssTimeId = -1;              /* GANSSID */
-static int hf_pcap_utran_ganssreferenceTime = -1;  /* UTRAN_GANSSReferenceTimeDL */
-static int hf_pcap_tutran_ganss_driftRate = -1;   /* TUTRAN_GANSS_DriftRate */
-static int hf_pcap_gANSS_tod = -1;                /* INTEGER_0_3599999 */
-static int hf_pcap_gANSS_timeId = -1;             /* GANSSID */
-static int hf_pcap_gANSS_TimeUncertainty = -1;    /* INTEGER_0_127 */
-static int hf_pcap_t_oc = -1;                     /* BIT_STRING_SIZE_14 */
-static int hf_pcap_a_i2 = -1;                     /* BIT_STRING_SIZE_12 */
-static int hf_pcap_a_i1 = -1;                     /* BIT_STRING_SIZE_18 */
-static int hf_pcap_a_i0 = -1;                     /* BIT_STRING_SIZE_28 */
-static int hf_pcap_t_gd = -1;                     /* BIT_STRING_SIZE_10 */
-static int hf_pcap_model_id = -1;                 /* INTEGER_0_3 */
-static int hf_pcap_GANSS_SatelliteInformation_item = -1;  /* GANSS_SatelliteInformationItem */
-static int hf_pcap_ganssSatId = -1;               /* INTEGER_0_63 */
-static int hf_pcap_dopplerZeroOrder = -1;         /* INTEGER_M2048_2047 */
-static int hf_pcap_extraDoppler = -1;             /* GANSS_ExtraDoppler */
-static int hf_pcap_codePhase_01 = -1;             /* INTEGER_0_1023 */
-static int hf_pcap_integerCodePhase_01 = -1;      /* INTEGER_0_127 */
-static int hf_pcap_codePhaseSearchWindow_01 = -1;  /* INTEGER_0_31 */
-static int hf_pcap_azimuthAndElevation_01 = -1;   /* GANSS_AzimuthAndElevation */
-static int hf_pcap_GANSS_SatelliteInformationKP_item = -1;  /* GANSS_SatelliteInformationKPItem */
-static int hf_pcap_ganss_e_alm = -1;              /* BIT_STRING_SIZE_11 */
-static int hf_pcap_ganss_delta_I_alm = -1;        /* BIT_STRING_SIZE_11 */
-static int hf_pcap_ganss_omegadot_alm = -1;       /* BIT_STRING_SIZE_11 */
-static int hf_pcap_ganss_svhealth_alm = -1;       /* BIT_STRING_SIZE_4 */
-static int hf_pcap_ganss_delta_a_sqrt_alm = -1;   /* BIT_STRING_SIZE_17 */
-static int hf_pcap_ganss_omegazero_alm = -1;      /* BIT_STRING_SIZE_16 */
-static int hf_pcap_ganss_m_zero_alm = -1;         /* BIT_STRING_SIZE_16 */
-static int hf_pcap_ganss_omega_alm = -1;          /* BIT_STRING_SIZE_16 */
-static int hf_pcap_ganss_af_zero_alm = -1;        /* BIT_STRING_SIZE_14 */
-static int hf_pcap_ganss_af_one_alm = -1;         /* BIT_STRING_SIZE_11 */
-static int hf_pcap_GANSS_SAT_Info_Almanac_GLOkpList_item = -1;  /* GANSS_SAT_Info_Almanac_GLOkp */
-static int hf_pcap_gloAlmNA = -1;                 /* BIT_STRING_SIZE_11 */
-static int hf_pcap_gloAlmnA = -1;                 /* BIT_STRING_SIZE_5 */
-static int hf_pcap_gloAlmHA = -1;                 /* BIT_STRING_SIZE_5 */
-static int hf_pcap_gloAlmLambdaA = -1;            /* BIT_STRING_SIZE_21 */
-static int hf_pcap_gloAlmTlambdaA = -1;           /* BIT_STRING_SIZE_21 */
-static int hf_pcap_gloAlmDeltaIA = -1;            /* BIT_STRING_SIZE_18 */
-static int hf_pcap_gloAkmDeltaTA = -1;            /* BIT_STRING_SIZE_22 */
-static int hf_pcap_gloAlmDeltaTdotA = -1;         /* BIT_STRING_SIZE_7 */
-static int hf_pcap_gloAlmEpsilonA = -1;           /* BIT_STRING_SIZE_15 */
-static int hf_pcap_gloAlmOmegaA = -1;             /* BIT_STRING_SIZE_16 */
-static int hf_pcap_gloAlmTauA = -1;               /* BIT_STRING_SIZE_10 */
-static int hf_pcap_gloAlmCA = -1;                 /* BIT_STRING_SIZE_1 */
-static int hf_pcap_gloAlmMA = -1;                 /* BIT_STRING_SIZE_2 */
-static int hf_pcap_GANSS_SAT_Info_Almanac_MIDIkpList_item = -1;  /* GANSS_SAT_Info_Almanac_MIDIkp */
-static int hf_pcap_midiAlmE = -1;                 /* BIT_STRING_SIZE_11 */
-static int hf_pcap_midiAlmDeltaI = -1;            /* BIT_STRING_SIZE_11 */
-static int hf_pcap_midiAlmOmegaDot = -1;          /* BIT_STRING_SIZE_11 */
-static int hf_pcap_midiAlmSqrtA = -1;             /* BIT_STRING_SIZE_17 */
-static int hf_pcap_midiAlmOmega0 = -1;            /* BIT_STRING_SIZE_16 */
-static int hf_pcap_midiAlmOmega = -1;             /* BIT_STRING_SIZE_16 */
-static int hf_pcap_midiAlmMo = -1;                /* BIT_STRING_SIZE_16 */
-static int hf_pcap_midiAlmaf0 = -1;               /* BIT_STRING_SIZE_11 */
-static int hf_pcap_midiAlmaf1 = -1;               /* BIT_STRING_SIZE_10 */
-static int hf_pcap_midiAlmL1Health = -1;          /* BIT_STRING_SIZE_1 */
-static int hf_pcap_midiAlmL2Health = -1;          /* BIT_STRING_SIZE_1 */
-static int hf_pcap_midiAlmL5Health = -1;          /* BIT_STRING_SIZE_1 */
-static int hf_pcap_GANSS_SAT_Info_Almanac_NAVkpList_item = -1;  /* GANSS_SAT_Info_Almanac_NAVkp */
-static int hf_pcap_navAlmE = -1;                  /* BIT_STRING_SIZE_16 */
-static int hf_pcap_navAlmDeltaI = -1;             /* BIT_STRING_SIZE_16 */
-static int hf_pcap_navAlmOMEGADOT = -1;           /* BIT_STRING_SIZE_16 */
-static int hf_pcap_navAlmSVHealth = -1;           /* BIT_STRING_SIZE_8 */
-static int hf_pcap_navAlmSqrtA = -1;              /* BIT_STRING_SIZE_24 */
-static int hf_pcap_navAlmOMEGAo = -1;             /* BIT_STRING_SIZE_24 */
-static int hf_pcap_navAlmOmega = -1;              /* BIT_STRING_SIZE_24 */
-static int hf_pcap_navAlmMo = -1;                 /* BIT_STRING_SIZE_24 */
-static int hf_pcap_navAlmaf0 = -1;                /* BIT_STRING_SIZE_11 */
-static int hf_pcap_navAlmaf1 = -1;                /* BIT_STRING_SIZE_11 */
-static int hf_pcap_GANSS_SAT_Info_Almanac_REDkpList_item = -1;  /* GANSS_SAT_Info_Almanac_REDkp */
-static int hf_pcap_redAlmDeltaA = -1;             /* BIT_STRING_SIZE_8 */
-static int hf_pcap_redAlmOmega0 = -1;             /* BIT_STRING_SIZE_7 */
-static int hf_pcap_redAlmPhi0 = -1;               /* BIT_STRING_SIZE_7 */
-static int hf_pcap_redAlmL1Health = -1;           /* BIT_STRING_SIZE_1 */
-static int hf_pcap_redAlmL2Health = -1;           /* BIT_STRING_SIZE_1 */
-static int hf_pcap_redAlmL5Health = -1;           /* BIT_STRING_SIZE_1 */
-static int hf_pcap_GANSS_SAT_Info_Almanac_SBASecefList_item = -1;  /* GANSS_SAT_Info_Almanac_SBASecef */
-static int hf_pcap_sbasAlmDataID = -1;            /* BIT_STRING_SIZE_2 */
-static int hf_pcap_sbasAlmHealth = -1;            /* BIT_STRING_SIZE_8 */
-static int hf_pcap_sbasAlmXg = -1;                /* BIT_STRING_SIZE_15 */
-static int hf_pcap_sbasAlmYg = -1;                /* BIT_STRING_SIZE_15 */
-static int hf_pcap_sbasAlmZg = -1;                /* BIT_STRING_SIZE_9 */
-static int hf_pcap_sbasAlmXgdot = -1;             /* BIT_STRING_SIZE_3 */
-static int hf_pcap_sbasAlmYgDot = -1;             /* BIT_STRING_SIZE_3 */
-static int hf_pcap_sbasAlmZgDot = -1;             /* BIT_STRING_SIZE_4 */
-static int hf_pcap_sbasAlmTo = -1;                /* BIT_STRING_SIZE_11 */
-static int hf_pcap_Ganss_Sat_Info_AddNavList_item = -1;  /* Ganss_Sat_Info_AddNavList_item */
-static int hf_pcap_svHealth = -1;                 /* BIT_STRING_SIZE_6 */
-static int hf_pcap_iod = -1;                      /* BIT_STRING_SIZE_11 */
-static int hf_pcap_ganssAddClockModels = -1;      /* GANSS_AddClockModels */
-static int hf_pcap_ganssAddOrbitModels = -1;      /* GANSS_AddOrbitModels */
-static int hf_pcap_GANSS_Sat_Info_Nav_item = -1;  /* GANSS_Sat_Info_Nav_item */
-static int hf_pcap_svHealth_01 = -1;              /* BIT_STRING_SIZE_5 */
-static int hf_pcap_iod_01 = -1;                   /* BIT_STRING_SIZE_10 */
-static int hf_pcap_ganssClockModel = -1;          /* GANSS_Clock_Model */
-static int hf_pcap_ganssOrbitModel = -1;          /* GANSS_Orbit_Model */
-static int hf_pcap_ganssSignalID = -1;            /* INTEGER_0_3_ */
-static int hf_pcap_ganss_time_model_refTime = -1;  /* INTEGER_0_37799 */
-static int hf_pcap_ganss_t_a0 = -1;               /* INTEGER_M2147483648_2147483647 */
-static int hf_pcap_ganss_t_a1 = -1;               /* INTEGER_M8388608_8388607 */
-static int hf_pcap_ganss_t_a2 = -1;               /* INTEGER_M64_63 */
-static int hf_pcap_gnss_to_id = -1;               /* T_gnss_to_id */
-static int hf_pcap_ganss_wk_number = -1;          /* INTEGER_0_8191 */
-static int hf_pcap_gANSS_UTRAN_TimeRelationshipUncertainty = -1;  /* GANSS_UTRAN_TimeRelationshipUncertainty */
-static int hf_pcap_a_one_utc = -1;                /* BIT_STRING_SIZE_24 */
-static int hf_pcap_a_zero_utc = -1;               /* BIT_STRING_SIZE_32 */
-static int hf_pcap_t_ot_utc = -1;                 /* BIT_STRING_SIZE_8 */
-static int hf_pcap_w_n_t_utc = -1;                /* BIT_STRING_SIZE_8 */
-static int hf_pcap_delta_t_ls_utc = -1;           /* BIT_STRING_SIZE_8 */
-static int hf_pcap_w_n_lsf_utc = -1;              /* BIT_STRING_SIZE_8 */
-static int hf_pcap_dn_utc = -1;                   /* BIT_STRING_SIZE_8 */
-static int hf_pcap_delta_t_lsf_utc = -1;          /* BIT_STRING_SIZE_8 */
-static int hf_pcap_gloTau = -1;                   /* BIT_STRING_SIZE_22 */
-static int hf_pcap_gloGamma = -1;                 /* BIT_STRING_SIZE_11 */
-static int hf_pcap_gloDeltaTau = -1;              /* BIT_STRING_SIZE_5 */
-static int hf_pcap_navToc = -1;                   /* BIT_STRING_SIZE_16 */
-static int hf_pcap_navaf2 = -1;                   /* BIT_STRING_SIZE_8 */
-static int hf_pcap_navaf1 = -1;                   /* BIT_STRING_SIZE_16 */
-static int hf_pcap_navaf0 = -1;                   /* BIT_STRING_SIZE_22 */
-static int hf_pcap_navTgd = -1;                   /* BIT_STRING_SIZE_8 */
-static int hf_pcap_cnavURAindex = -1;             /* BIT_STRING_SIZE_5 */
-static int hf_pcap_cnavDeltaA = -1;               /* BIT_STRING_SIZE_26 */
-static int hf_pcap_cnavAdot = -1;                 /* BIT_STRING_SIZE_25 */
-static int hf_pcap_cnavDeltaNo = -1;              /* BIT_STRING_SIZE_17 */
-static int hf_pcap_cnavDeltaNoDot = -1;           /* BIT_STRING_SIZE_23 */
-static int hf_pcap_cnavMo = -1;                   /* BIT_STRING_SIZE_33 */
-static int hf_pcap_cnavE = -1;                    /* BIT_STRING_SIZE_33 */
-static int hf_pcap_cnavOmega = -1;                /* BIT_STRING_SIZE_33 */
-static int hf_pcap_cnavOMEGA0 = -1;               /* BIT_STRING_SIZE_33 */
-static int hf_pcap_cnavDeltaOmegaDot = -1;        /* BIT_STRING_SIZE_17 */
-static int hf_pcap_cnavIo = -1;                   /* BIT_STRING_SIZE_33 */
-static int hf_pcap_cnavIoDot = -1;                /* BIT_STRING_SIZE_15 */
-static int hf_pcap_cnavCis = -1;                  /* BIT_STRING_SIZE_16 */
-static int hf_pcap_cnavCic = -1;                  /* BIT_STRING_SIZE_16 */
-static int hf_pcap_cnavCrs = -1;                  /* BIT_STRING_SIZE_24 */
-static int hf_pcap_cnavCrc = -1;                  /* BIT_STRING_SIZE_24 */
-static int hf_pcap_cnavCus = -1;                  /* BIT_STRING_SIZE_21 */
-static int hf_pcap_cnavCuc = -1;                  /* BIT_STRING_SIZE_21 */
-static int hf_pcap_gloEn = -1;                    /* BIT_STRING_SIZE_5 */
-static int hf_pcap_gloP1 = -1;                    /* BIT_STRING_SIZE_2 */
-static int hf_pcap_gloP2 = -1;                    /* BIT_STRING_SIZE_1 */
-static int hf_pcap_gloM = -1;                     /* BIT_STRING_SIZE_2 */
-static int hf_pcap_gloX = -1;                     /* BIT_STRING_SIZE_27 */
-static int hf_pcap_gloXdot = -1;                  /* BIT_STRING_SIZE_24 */
-static int hf_pcap_gloXdotdot = -1;               /* BIT_STRING_SIZE_5 */
-static int hf_pcap_gloY = -1;                     /* BIT_STRING_SIZE_27 */
-static int hf_pcap_gloYdot = -1;                  /* BIT_STRING_SIZE_24 */
-static int hf_pcap_gloYdotdot = -1;               /* BIT_STRING_SIZE_5 */
-static int hf_pcap_gloZ = -1;                     /* BIT_STRING_SIZE_27 */
-static int hf_pcap_gloZdot = -1;                  /* BIT_STRING_SIZE_24 */
-static int hf_pcap_gloZdotdot = -1;               /* BIT_STRING_SIZE_5 */
-static int hf_pcap_navURA = -1;                   /* BIT_STRING_SIZE_4 */
-static int hf_pcap_navFitFlag = -1;               /* BIT_STRING_SIZE_1 */
-static int hf_pcap_navToe = -1;                   /* BIT_STRING_SIZE_16 */
-static int hf_pcap_navOmega = -1;                 /* BIT_STRING_SIZE_32 */
-static int hf_pcap_navDeltaN = -1;                /* BIT_STRING_SIZE_16 */
-static int hf_pcap_navM0 = -1;                    /* BIT_STRING_SIZE_32 */
-static int hf_pcap_navOmegaADot = -1;             /* BIT_STRING_SIZE_24 */
-static int hf_pcap_navE = -1;                     /* BIT_STRING_SIZE_32 */
-static int hf_pcap_navIDot = -1;                  /* BIT_STRING_SIZE_14 */
-static int hf_pcap_navAPowerHalf = -1;            /* BIT_STRING_SIZE_32 */
-static int hf_pcap_navI0 = -1;                    /* BIT_STRING_SIZE_32 */
-static int hf_pcap_navOmegaA0 = -1;               /* BIT_STRING_SIZE_32 */
-static int hf_pcap_navCrs = -1;                   /* BIT_STRING_SIZE_16 */
-static int hf_pcap_navCis = -1;                   /* BIT_STRING_SIZE_16 */
-static int hf_pcap_navCus = -1;                   /* BIT_STRING_SIZE_16 */
-static int hf_pcap_navCrc = -1;                   /* BIT_STRING_SIZE_16 */
-static int hf_pcap_navCic = -1;                   /* BIT_STRING_SIZE_16 */
-static int hf_pcap_navCuc = -1;                   /* BIT_STRING_SIZE_16 */
-static int hf_pcap_sbasTo = -1;                   /* BIT_STRING_SIZE_13 */
-static int hf_pcap_sbasAccuracy = -1;             /* BIT_STRING_SIZE_4 */
-static int hf_pcap_sbasXg = -1;                   /* BIT_STRING_SIZE_30 */
-static int hf_pcap_sbasYg = -1;                   /* BIT_STRING_SIZE_30 */
-static int hf_pcap_sbasZg = -1;                   /* BIT_STRING_SIZE_25 */
-static int hf_pcap_sbasXgDot = -1;                /* BIT_STRING_SIZE_17 */
-static int hf_pcap_sbasYgDot = -1;                /* BIT_STRING_SIZE_17 */
-static int hf_pcap_sbasZgDot = -1;                /* BIT_STRING_SIZE_18 */
-static int hf_pcap_sbasXgDotDot = -1;             /* BIT_STRING_SIZE_10 */
-static int hf_pcap_sbagYgDotDot = -1;             /* BIT_STRING_SIZE_10 */
-static int hf_pcap_sbasZgDotDot = -1;             /* BIT_STRING_SIZE_10 */
-static int hf_pcap_sbasAgfo = -1;                 /* BIT_STRING_SIZE_12 */
-static int hf_pcap_sbasAgf1 = -1;                 /* BIT_STRING_SIZE_8 */
-static int hf_pcap_utcA0 = -1;                    /* BIT_STRING_SIZE_16 */
-static int hf_pcap_utcA1 = -1;                    /* BIT_STRING_SIZE_13 */
-static int hf_pcap_utcA2 = -1;                    /* BIT_STRING_SIZE_7 */
-static int hf_pcap_utcDeltaTls = -1;              /* BIT_STRING_SIZE_8 */
-static int hf_pcap_utcTot = -1;                   /* BIT_STRING_SIZE_16 */
-static int hf_pcap_utcWNot = -1;                  /* BIT_STRING_SIZE_13 */
-static int hf_pcap_utcWNlsf = -1;                 /* BIT_STRING_SIZE_8 */
-static int hf_pcap_utcDN = -1;                    /* BIT_STRING_SIZE_4 */
-static int hf_pcap_utcDeltaTlsf = -1;             /* BIT_STRING_SIZE_8 */
-static int hf_pcap_nA = -1;                       /* BIT_STRING_SIZE_11 */
-static int hf_pcap_tauC = -1;                     /* BIT_STRING_SIZE_32 */
-static int hf_pcap_deltaUT1_01 = -1;              /* DeltaUT1 */
-static int hf_pcap_kp = -1;                       /* BIT_STRING_SIZE_2 */
-static int hf_pcap_utcA1wnt = -1;                 /* BIT_STRING_SIZE_24 */
-static int hf_pcap_utcA0wnt = -1;                 /* BIT_STRING_SIZE_32 */
-static int hf_pcap_utcTot_01 = -1;                /* BIT_STRING_SIZE_8 */
-static int hf_pcap_utcWNt = -1;                   /* BIT_STRING_SIZE_8 */
-static int hf_pcap_utcDN_01 = -1;                 /* BIT_STRING_SIZE_8 */
-static int hf_pcap_utcStandardID = -1;            /* BIT_STRING_SIZE_3 */
-static int hf_pcap_utran_GANSSTimingOfCellFrames = -1;  /* INTEGER_0_3999999 */
-static int hf_pcap_referenceSfn = -1;             /* INTEGER_0_4095 */
-static int hf_pcap_ue_GANSSTimingOfCellFrames = -1;  /* INTEGER_0_345599999999 */
-static int hf_pcap_gANSS_TimeId = -1;             /* GANSSID */
-static int hf_pcap_wn_a = -1;                     /* BIT_STRING_SIZE_8 */
-static int hf_pcap_almanacSatInfoList = -1;       /* AlmanacSatInfoList */
-static int hf_pcap_svGlobalHealth = -1;           /* BIT_STRING_SIZE_364 */
-static int hf_pcap_AlmanacSatInfoList_item = -1;  /* AlmanacSatInfo */
-static int hf_pcap_e = -1;                        /* BIT_STRING_SIZE_16 */
-static int hf_pcap_t_oa_01 = -1;                  /* BIT_STRING_SIZE_8 */
-static int hf_pcap_deltaI = -1;                   /* BIT_STRING_SIZE_16 */
-static int hf_pcap_omegaDot = -1;                 /* BIT_STRING_SIZE_16 */
-static int hf_pcap_satHealth = -1;                /* BIT_STRING_SIZE_8 */
-static int hf_pcap_a_Sqrt = -1;                   /* BIT_STRING_SIZE_24 */
-static int hf_pcap_omega0 = -1;                   /* BIT_STRING_SIZE_24 */
-static int hf_pcap_m0 = -1;                       /* BIT_STRING_SIZE_24 */
-static int hf_pcap_omega = -1;                    /* BIT_STRING_SIZE_24 */
-static int hf_pcap_af0 = -1;                      /* BIT_STRING_SIZE_11 */
-static int hf_pcap_af1 = -1;                      /* BIT_STRING_SIZE_11 */
-static int hf_pcap_codeOnL2 = -1;                 /* BIT_STRING_SIZE_2 */
-static int hf_pcap_uraIndex = -1;                 /* BIT_STRING_SIZE_4 */
-static int hf_pcap_satHealth_01 = -1;             /* BIT_STRING_SIZE_6 */
-static int hf_pcap_iodc = -1;                     /* BIT_STRING_SIZE_10 */
-static int hf_pcap_l2Pflag = -1;                  /* BIT_STRING_SIZE_1 */
-static int hf_pcap_sf1Revd = -1;                  /* SubFrame1Reserved */
-static int hf_pcap_t_GD = -1;                     /* BIT_STRING_SIZE_8 */
-static int hf_pcap_t_oc_01 = -1;                  /* BIT_STRING_SIZE_16 */
-static int hf_pcap_af2 = -1;                      /* BIT_STRING_SIZE_8 */
-static int hf_pcap_af1_01 = -1;                   /* BIT_STRING_SIZE_16 */
-static int hf_pcap_af0_01 = -1;                   /* BIT_STRING_SIZE_22 */
-static int hf_pcap_c_rs = -1;                     /* BIT_STRING_SIZE_16 */
-static int hf_pcap_delta_n = -1;                  /* BIT_STRING_SIZE_16 */
-static int hf_pcap_m0_01 = -1;                    /* BIT_STRING_SIZE_32 */
-static int hf_pcap_c_uc = -1;                     /* BIT_STRING_SIZE_16 */
-static int hf_pcap_e_01 = -1;                     /* BIT_STRING_SIZE_32 */
-static int hf_pcap_c_us = -1;                     /* BIT_STRING_SIZE_16 */
-static int hf_pcap_a_Sqrt_01 = -1;                /* BIT_STRING_SIZE_32 */
-static int hf_pcap_t_oe = -1;                     /* BIT_STRING_SIZE_16 */
-static int hf_pcap_fitInterval = -1;              /* BIT_STRING_SIZE_1 */
-static int hf_pcap_aodo = -1;                     /* BIT_STRING_SIZE_5 */
-static int hf_pcap_c_ic = -1;                     /* BIT_STRING_SIZE_16 */
-static int hf_pcap_omega0_01 = -1;                /* BIT_STRING_SIZE_32 */
-static int hf_pcap_c_is = -1;                     /* BIT_STRING_SIZE_16 */
-static int hf_pcap_i0 = -1;                       /* BIT_STRING_SIZE_32 */
-static int hf_pcap_c_rc = -1;                     /* BIT_STRING_SIZE_16 */
-static int hf_pcap_omega_01 = -1;                 /* BIT_STRING_SIZE_32 */
-static int hf_pcap_omegaDot_01 = -1;              /* BIT_STRING_SIZE_24 */
-static int hf_pcap_iDot = -1;                     /* BIT_STRING_SIZE_14 */
-static int hf_pcap_reserved1 = -1;                /* BIT_STRING_SIZE_23 */
-static int hf_pcap_reserved2 = -1;                /* BIT_STRING_SIZE_24 */
-static int hf_pcap_reserved3 = -1;                /* BIT_STRING_SIZE_24 */
-static int hf_pcap_reserved4 = -1;                /* BIT_STRING_SIZE_16 */
-static int hf_pcap_alfa0 = -1;                    /* BIT_STRING_SIZE_8 */
-static int hf_pcap_alfa1 = -1;                    /* BIT_STRING_SIZE_8 */
-static int hf_pcap_alfa2 = -1;                    /* BIT_STRING_SIZE_8 */
-static int hf_pcap_alfa3 = -1;                    /* BIT_STRING_SIZE_8 */
-static int hf_pcap_beta0 = -1;                    /* BIT_STRING_SIZE_8 */
-static int hf_pcap_beta1 = -1;                    /* BIT_STRING_SIZE_8 */
-static int hf_pcap_beta2 = -1;                    /* BIT_STRING_SIZE_8 */
-static int hf_pcap_beta3 = -1;                    /* BIT_STRING_SIZE_8 */
-static int hf_pcap_MeasuredResultsList_item = -1;  /* GPS_MeasuredResults */
-static int hf_pcap_gps_MeasurementParamList = -1;  /* GPS_MeasurementParamList */
-static int hf_pcap_GPS_MeasurementParamList_item = -1;  /* GPS_MeasurementParam */
-static int hf_pcap_satelliteID = -1;              /* INTEGER_0_63 */
-static int hf_pcap_c_N0 = -1;                     /* INTEGER_0_63 */
-static int hf_pcap_doppler_01 = -1;               /* INTEGER_M32768_32768 */
-static int hf_pcap_wholeGPS_Chips = -1;           /* INTEGER_0_1022 */
-static int hf_pcap_fractionalGPS_Chips = -1;      /* INTEGER_0_1023 */
-static int hf_pcap_multipathIndicator_01 = -1;    /* MultipathIndicator */
-static int hf_pcap_pseudorangeRMS_Error = -1;     /* INTEGER_0_63 */
-static int hf_pcap_GPS_NavigationModel_item = -1;  /* NavigationModelSatInfo */
-static int hf_pcap_satelliteStatus = -1;          /* SatelliteStatus */
-static int hf_pcap_gps_clockAndEphemerisParms = -1;  /* GPS_ClockAndEphemerisParameters */
-static int hf_pcap_badSatellites = -1;            /* BadSatList */
-static int hf_pcap_noBadSatellites = -1;          /* NoBadSatellites */
-static int hf_pcap_BadSatList_item = -1;          /* INTEGER_0_63 */
-static int hf_pcap_gps_Week = -1;                 /* INTEGER_0_1023 */
-static int hf_pcap_gps_TOW_AssistList = -1;       /* GPS_TOW_AssistList */
-static int hf_pcap_GPS_TOW_AssistList_item = -1;  /* GPS_TOW_Assist */
-static int hf_pcap_tlm_Message = -1;              /* BIT_STRING_SIZE_14 */
-static int hf_pcap_antiSpoof = -1;                /* BOOLEAN */
-static int hf_pcap_alert = -1;                    /* BOOLEAN */
-static int hf_pcap_tlm_Reserved = -1;             /* BIT_STRING_SIZE_2 */
-static int hf_pcap_gps_RefTimeUNC = -1;           /* INTEGER_0_127 */
-static int hf_pcap_a1 = -1;                       /* BIT_STRING_SIZE_24 */
-static int hf_pcap_a0 = -1;                       /* BIT_STRING_SIZE_32 */
-static int hf_pcap_t_ot = -1;                     /* BIT_STRING_SIZE_8 */
-static int hf_pcap_delta_t_LS = -1;               /* BIT_STRING_SIZE_8 */
-static int hf_pcap_wn_t = -1;                     /* BIT_STRING_SIZE_8 */
-static int hf_pcap_wn_lsf = -1;                   /* BIT_STRING_SIZE_8 */
-static int hf_pcap_dn = -1;                       /* BIT_STRING_SIZE_8 */
-static int hf_pcap_delta_t_LSF = -1;              /* BIT_STRING_SIZE_8 */
-static int hf_pcap_almanacRequest = -1;           /* BOOLEAN */
-static int hf_pcap_utcModelRequest = -1;          /* BOOLEAN */
-static int hf_pcap_ionosphericModelRequest = -1;  /* BOOLEAN */
-static int hf_pcap_navigationModelRequest = -1;   /* BOOLEAN */
-static int hf_pcap_dgpsCorrectionsRequest = -1;   /* BOOLEAN */
-static int hf_pcap_referenceLocationRequest = -1;  /* BOOLEAN */
-static int hf_pcap_referenceTimeRequest = -1;     /* BOOLEAN */
-static int hf_pcap_aquisitionAssistanceRequest = -1;  /* BOOLEAN */
-static int hf_pcap_realTimeIntegrityRequest = -1;  /* BOOLEAN */
-static int hf_pcap_navModelAddDataRequest = -1;   /* NavModelAdditionalData */
-static int hf_pcap_ganssReferenceTime = -1;       /* BOOLEAN */
-static int hf_pcap_ganssreferenceLocation = -1;   /* BOOLEAN */
-static int hf_pcap_ganssIonosphericModel = -1;    /* BOOLEAN */
-static int hf_pcap_ganssRequestedGenericAssistanceDataList = -1;  /* GanssRequestedGenericAssistanceDataList */
-static int hf_pcap_ganss_add_iono_mode_req = -1;  /* BIT_STRING_SIZE_2 */
-static int hf_pcap_GanssRequestedGenericAssistanceDataList_item = -1;  /* GanssReqGenericData */
-static int hf_pcap_ganssRealTimeIntegrity = -1;   /* BOOLEAN */
-static int hf_pcap_ganssDifferentialCorrection = -1;  /* DGANSS_Sig_Id_Req */
-static int hf_pcap_ganssAlmanac = -1;             /* BOOLEAN */
-static int hf_pcap_ganssNavigationModel = -1;     /* BOOLEAN */
-static int hf_pcap_ganssTimeModelGnssGnss = -1;   /* BIT_STRING_SIZE_9 */
-static int hf_pcap_ganssReferenceMeasurementInfo = -1;  /* BOOLEAN */
-static int hf_pcap_ganssDataBits_01 = -1;         /* GanssDataBits */
-static int hf_pcap_ganssUTCModel = -1;            /* BOOLEAN */
-static int hf_pcap_ganssNavigationModelAdditionalData = -1;  /* NavigationModelGANSS */
-static int hf_pcap_orbitModelID = -1;             /* INTEGER_0_7 */
-static int hf_pcap_clockModelID = -1;             /* INTEGER_0_7 */
-static int hf_pcap_utcModelID = -1;               /* INTEGER_0_7 */
-static int hf_pcap_almanacModelID = -1;           /* INTEGER_0_7 */
-static int hf_pcap_dataBitAssistancelist_01 = -1;  /* ReqDataBitAssistanceList */
-static int hf_pcap_ganssSignalID_01 = -1;         /* BIT_STRING_SIZE_8 */
-static int hf_pcap_ganssDataBitInterval = -1;     /* INTEGER_0_15 */
-static int hf_pcap_ganssSatelliteInfo = -1;       /* T_ganssSatelliteInfo */
-static int hf_pcap_ganssSatelliteInfo_item = -1;  /* INTEGER_0_63 */
-static int hf_pcap_type = -1;                     /* InformationReportCharacteristicsType */
-static int hf_pcap_periodicity = -1;              /* InformationReportPeriodicity */
-static int hf_pcap_min = -1;                      /* INTEGER_1_60_ */
-static int hf_pcap_hour = -1;                     /* INTEGER_1_24_ */
-static int hf_pcap_implicitInformation = -1;      /* MethodType */
-static int hf_pcap_explicitInformation = -1;      /* ExplicitInformationList */
-static int hf_pcap_ExplicitInformationList_item = -1;  /* ExplicitInformation */
-static int hf_pcap_almanacAndSatelliteHealth = -1;  /* AlmanacAndSatelliteHealth */
-static int hf_pcap_utcModel = -1;                 /* UtcModel */
-static int hf_pcap_ionosphericModel = -1;         /* IonosphericModel */
-static int hf_pcap_navigationModel = -1;          /* NavigationModel */
-static int hf_pcap_dgpsCorrections = -1;          /* DgpsCorrections */
-static int hf_pcap_referenceTime_01 = -1;         /* ReferenceTime */
-static int hf_pcap_acquisitionAssistance = -1;    /* AcquisitionAssistance */
-static int hf_pcap_realTimeIntegrity = -1;        /* RealTimeIntegrity */
-static int hf_pcap_almanacAndSatelliteHealthSIB = -1;  /* AlmanacAndSatelliteHealthSIB_InfoType */
-static int hf_pcap_referenceLocation = -1;        /* ReferenceLocation */
-static int hf_pcap_ganss_Common_DataReq = -1;     /* GANSSCommonDataReq */
-static int hf_pcap_ganss_Generic_DataList = -1;   /* GANSSGenericDataList */
-static int hf_pcap_transmissionGanssTimeIndicator = -1;  /* TransmissionGanssTimeIndicator */
-static int hf_pcap_dganss_sig_id_req = -1;        /* DGANSS_Sig_Id_Req */
-static int hf_pcap_ganss_ReferenceTime = -1;      /* T_ganss_ReferenceTime */
-static int hf_pcap_ganss_IonosphericModel = -1;   /* T_ganss_IonosphericModel */
-static int hf_pcap_ganss_ReferenceLocation = -1;  /* T_ganss_ReferenceLocation */
-static int hf_pcap_eopReq = -1;                   /* T_eopReq */
-static int hf_pcap_GANSSGenericDataList_item = -1;  /* GANSSGenericDataReq */
-static int hf_pcap_ganssID = -1;                  /* GANSSID */
-static int hf_pcap_ganss_realTimeIntegrity = -1;  /* Ganss_realTimeIntegrityReq */
-static int hf_pcap_ganss_dataBitAssistance = -1;  /* GanssDataBits */
-static int hf_pcap_dganssCorrections = -1;        /* DganssCorrectionsReq */
-static int hf_pcap_ganss_almanacAndSatelliteHealth = -1;  /* Ganss_almanacAndSatelliteHealthReq */
-static int hf_pcap_ganss_referenceMeasurementInfo = -1;  /* Ganss_referenceMeasurementInfoReq */
-static int hf_pcap_ganss_utcModel = -1;           /* Ganss_utcModelReq */
-static int hf_pcap_ganss_TimeModel_Gnss_Gnss = -1;  /* Ganss_TimeModel_Gnss_Gnss */
-static int hf_pcap_navigationModel_01 = -1;       /* NavigationModelGANSS */
-static int hf_pcap_ganss_AddNavModelsReq = -1;    /* AddNavigationModelsGANSS */
-static int hf_pcap_ganss_AddUtcModelsReq = -1;    /* GANSS_AddUtcModelsReq */
-static int hf_pcap_ganss_AuxInfoReq = -1;         /* GANSS_AuxInfoReq */
-static int hf_pcap_ganss_SBAS_ID = -1;            /* GANSS_SBAS_ID */
-static int hf_pcap_ganssWeek = -1;                /* INTEGER_0_4095 */
-static int hf_pcap_ganssTOE = -1;                 /* INTEGER_0_167 */
-static int hf_pcap_t_toe_limit = -1;              /* INTEGER_0_10 */
-static int hf_pcap_addSatRelatedDataListGANSS = -1;  /* AddSatelliteRelatedDataListGANSS */
-static int hf_pcap_AddSatelliteRelatedDataListGANSS_item = -1;  /* AddSatelliteRelatedDataGANSS */
-static int hf_pcap_ganssTimeModelGnssGnssExt = -1;  /* BIT_STRING_SIZE_9 */
-static int hf_pcap_transmissionTOWIndicator = -1;  /* TransmissionTOWIndicator */
-static int hf_pcap_navModelAdditionalData = -1;   /* NavModelAdditionalData */
-static int hf_pcap_gps_TOE = -1;                  /* INTEGER_0_167 */
-static int hf_pcap_t_TOE_limit = -1;              /* INTEGER_0_10 */
-static int hf_pcap_satRelatedDataList = -1;       /* SatelliteRelatedDataList */
-static int hf_pcap_SatelliteRelatedDataList_item = -1;  /* SatelliteRelatedData */
-static int hf_pcap_satRelatedDataListGANSS = -1;  /* SatelliteRelatedDataListGANSS */
-static int hf_pcap_SatelliteRelatedDataListGANSS_item = -1;  /* SatelliteRelatedDataGANSS */
-static int hf_pcap_MessageStructure_item = -1;    /* MessageStructure_item */
-static int hf_pcap_repetitionNumber_01 = -1;      /* MessageStructureRepetition */
-static int hf_pcap_measurementValidity = -1;      /* MeasurementValidity */
-static int hf_pcap_ue_State = -1;                 /* T_ue_State */
-static int hf_pcap_otdoa_ReferenceCellInfo = -1;  /* OTDOA_ReferenceCellInfo */
-static int hf_pcap_otdoa_NeighbourCellInfoList = -1;  /* OTDOA_NeighbourCellInfoList */
-static int hf_pcap_otdoa_MeasuredResultsSets = -1;  /* OTDOA_MeasuredResultsSets */
-static int hf_pcap_tUTRANGPSMeasurementValueInfo = -1;  /* TUTRANGPSMeasurementValueInfo */
-static int hf_pcap_OTDOA_NeighbourCellInfoList_item = -1;  /* OTDOA_NeighbourCellInfo */
-static int hf_pcap_relativeTimingDifferenceInfo = -1;  /* RelativeTimingDifferenceInfo */
-static int hf_pcap_OTDOA_MeasuredResultsSets_item = -1;  /* OTDOA_MeasuredResultsInfoList */
-static int hf_pcap_OTDOA_MeasuredResultsInfoList_item = -1;  /* OTDOA_MeasuredResultsInfo */
-static int hf_pcap_ue_SFNSFNTimeDifferenceType2Info = -1;  /* UE_SFNSFNTimeDifferenceType2Info */
-static int hf_pcap_primaryCPICH_Info = -1;        /* PrimaryScramblingCode */
-static int hf_pcap_ue_SFNSFNTimeDifferenceType2 = -1;  /* INTEGER_0_40961 */
-static int hf_pcap_measurementDelay = -1;         /* INTEGER_0_65535 */
-static int hf_pcap_rNC_ID = -1;                   /* INTEGER_0_4095 */
-static int hf_pcap_c_ID = -1;                     /* INTEGER_0_65535 */
-static int hf_pcap_sFNSFNMeasurementValueInfo = -1;  /* SFNSFNMeasurementValueInfo */
-static int hf_pcap_tUTRANGANSSMeasurementValueInfo = -1;  /* TUTRANGANSSMeasurementValueInfo */
-static int hf_pcap_sFNSFNValue = -1;              /* SFNSFNValue */
-static int hf_pcap_sFNSFNQuality = -1;            /* SFNSFNQuality */
-static int hf_pcap_sFNSFNDriftRate = -1;          /* SFNSFNDriftRate */
-static int hf_pcap_sFNSFNDriftRateQuality = -1;   /* SFNSFNDriftRateQuality */
-static int hf_pcap_sFN = -1;                      /* SFN */
-static int hf_pcap_tUTRANGPS = -1;                /* TUTRANGPS */
-static int hf_pcap_tUTRANGPSQuality = -1;         /* TUTRANGPSQuality */
-static int hf_pcap_tUTRANGPSDriftRate = -1;       /* TUTRANGPSDriftRate */
-static int hf_pcap_tUTRANGPSDriftRateQuality = -1;  /* TUTRANGPSDriftRateQuality */
-static int hf_pcap_ms_part = -1;                  /* INTEGER_0_16383 */
-static int hf_pcap_ls_part = -1;                  /* INTEGER_0_4294967295 */
-static int hf_pcap_tUTRANGANSS = -1;              /* TUTRANGANSS */
-static int hf_pcap_tUTRANGANSSQuality = -1;       /* INTEGER_0_255 */
-static int hf_pcap_tUTRANGANSSDriftRate = -1;     /* INTEGER_M50_50 */
-static int hf_pcap_tUTRANGANSSDriftRateQuality = -1;  /* INTEGER_0_50 */
-static int hf_pcap_timingAdvanceLCR_R7 = -1;      /* TimingAdvanceLCR_R7 */
-static int hf_pcap_angleOfArrivalLCR = -1;        /* AngleOfArrivalLCR */
-static int hf_pcap_referenceNumber = -1;          /* INTEGER_0_32767_ */
-static int hf_pcap_amountOutstandingRequests = -1;  /* INTEGER_1_8639999_ */
-static int hf_pcap_reportingInterval = -1;        /* INTEGER_1_8639999_ */
-static int hf_pcap_reportingAmount = -1;          /* INTEGER_1_8639999_ */
-static int hf_pcap_additionalMethodType = -1;     /* AdditionalMethodType */
-static int hf_pcap_selectedPositionMethod = -1;   /* SelectedPositionMethod */
-static int hf_pcap_new_ue_State = -1;             /* T_new_ue_State */
-static int hf_pcap_gps_UTC_Model = -1;            /* GPS_UTC_Model */
-static int hf_pcap_gps_Ionospheric_Model = -1;    /* GPS_Ionospheric_Model */
-static int hf_pcap_gps_NavigationModel = -1;      /* GPS_NavigationModel */
-static int hf_pcap_dgpsCorrections_01 = -1;       /* DGPSCorrections */
-static int hf_pcap_referenceTime_02 = -1;         /* GPS_ReferenceTime */
-static int hf_pcap_gps_AcquisitionAssistance = -1;  /* GPS_AcquisitionAssistance */
-static int hf_pcap_gps_RealTime_Integrity = -1;   /* GPS_RealTimeIntegrity */
-static int hf_pcap_almanacAndSatelliteHealthSIB_01 = -1;  /* AlmanacAndSatelliteHealthSIB */
-static int hf_pcap_gps_Transmission_TOW = -1;     /* GPS_Transmission_TOW */
-static int hf_pcap_informationAvailable = -1;     /* InformationAvailable */
-static int hf_pcap_informationNotAvailable = -1;  /* InformationNotAvailable */
-static int hf_pcap_requestedDataValue = -1;       /* RequestedDataValue */
-static int hf_pcap_event = -1;                    /* RequestTypeEvent */
-static int hf_pcap_reportArea = -1;               /* RequestTypeReportArea */
-static int hf_pcap_horizontalaccuracyCode = -1;   /* RequestTypeAccuracyCode */
-static int hf_pcap_standAloneLocationMethodsSupported = -1;  /* BOOLEAN */
-static int hf_pcap_ueBasedOTDOASupported = -1;    /* BOOLEAN */
-static int hf_pcap_networkAssistedGPSSupport = -1;  /* NetworkAssistedGPSSuport */
-static int hf_pcap_supportGPSTimingOfCellFrame = -1;  /* BOOLEAN */
-static int hf_pcap_supportForIPDL = -1;           /* BOOLEAN */
-static int hf_pcap_supportForRxTxTimeDiff = -1;   /* BOOLEAN */
-static int hf_pcap_supportForUEAGPSinCellPCH = -1;  /* BOOLEAN */
-static int hf_pcap_supportForSFNSFNTimeDiff = -1;  /* BOOLEAN */
-static int hf_pcap_NetworkAssistedGANSSSupport_item = -1;  /* NetworkAssistedGANSSSupport_item */
-static int hf_pcap_ganssMode = -1;                /* T_ganssMode */
-static int hf_pcap_ganssSignalID_02 = -1;         /* GANSS_SignalID */
-static int hf_pcap_supportGANSSTimingOfCellFrame = -1;  /* BOOLEAN */
-static int hf_pcap_supportGANSSCarrierPhaseMeasurement = -1;  /* BOOLEAN */
-static int hf_pcap_ganss_sbas_ids = -1;           /* BIT_STRING_SIZE_8 */
-static int hf_pcap_ganss_signal_ids = -1;         /* BIT_STRING_SIZE_8 */
-static int hf_pcap_utdoa_BitCount = -1;           /* UTDOA_BitCount */
-static int hf_pcap_utdoa_timeInterval = -1;       /* UTDOA_TimeInterval */
-static int hf_pcap_gpsPositioningInstructions = -1;  /* GPSPositioningInstructions */
-static int hf_pcap_horizontalAccuracyCode = -1;   /* HorizontalAccuracyCode */
-static int hf_pcap_verticalAccuracyCode = -1;     /* VerticalAccuracyCode */
-static int hf_pcap_gpsTimingOfCellWanted = -1;    /* BOOLEAN */
-static int hf_pcap_additionalAssistanceDataRequest = -1;  /* BOOLEAN */
-static int hf_pcap_ganssPositioningInstructions = -1;  /* GANSS_PositioningInstructions */
-static int hf_pcap_ganssTimingOfCellWanted = -1;  /* BIT_STRING_SIZE_8 */
-static int hf_pcap_additionalAssistanceDataRequest_01 = -1;  /* BIT_STRING_SIZE_8 */
-static int hf_pcap_uE_Positioning_OTDOA_AssistanceData = -1;  /* UE_Positioning_OTDOA_AssistanceData */
-static int hf_pcap_ue_positioning_OTDOA_ReferenceCellInfo = -1;  /* UE_Positioning_OTDOA_ReferenceCellInfo */
-static int hf_pcap_ue_positioning_OTDOA_NeighbourCellList = -1;  /* UE_Positioning_OTDOA_NeighbourCellList */
-static int hf_pcap_sfn_01 = -1;                   /* SFN */
-static int hf_pcap_modeSpecificInfo = -1;         /* T_modeSpecificInfo */
-static int hf_pcap_fdd_01 = -1;                   /* T_fdd_01 */
-static int hf_pcap_tdd_01 = -1;                   /* T_tdd_01 */
-static int hf_pcap_cellParameterID = -1;          /* CellParameterID */
-static int hf_pcap_frequencyInfo = -1;            /* FrequencyInfo */
-static int hf_pcap_positioningMode = -1;          /* T_positioningMode */
-static int hf_pcap_ueBased = -1;                  /* T_ueBased */
-static int hf_pcap_cellPosition = -1;             /* ReferenceCellPosition */
-static int hf_pcap_roundTripTime_01 = -1;         /* INTEGER_0_32766 */
-static int hf_pcap_ueAssisted = -1;               /* T_ueAssisted */
-static int hf_pcap_ue_positioning_IPDL_Paremeters = -1;  /* UE_Positioning_IPDL_Parameters */
-static int hf_pcap_ellipsoidPoint = -1;           /* GeographicalCoordinates */
-static int hf_pcap_ellipsoidPointWithAltitude = -1;  /* GA_PointWithAltitude */
-static int hf_pcap_modeSpecificInfo_01 = -1;      /* T_modeSpecificInfo_01 */
-static int hf_pcap_fdd_02 = -1;                   /* T_fdd_02 */
-static int hf_pcap_ip_Spacing = -1;               /* IP_Spacing */
-static int hf_pcap_ip_Length = -1;                /* IP_Length */
-static int hf_pcap_ip_Offset = -1;                /* INTEGER_0_9 */
-static int hf_pcap_seed = -1;                     /* INTEGER_0_63 */
-static int hf_pcap_tdd_02 = -1;                   /* T_tdd_02 */
-static int hf_pcap_burstModeParameters = -1;      /* BurstModeParameters */
-static int hf_pcap_burstStart = -1;               /* INTEGER_0_15 */
-static int hf_pcap_burstLength = -1;              /* INTEGER_10_25 */
-static int hf_pcap_burstFreq = -1;                /* INTEGER_1_16 */
-static int hf_pcap_UE_Positioning_OTDOA_NeighbourCellList_item = -1;  /* UE_Positioning_OTDOA_NeighbourCellInfo */
-static int hf_pcap_modeSpecificInfo_02 = -1;      /* T_modeSpecificInfo_02 */
-static int hf_pcap_fdd_03 = -1;                   /* T_fdd_03 */
-static int hf_pcap_tdd_03 = -1;                   /* T_tdd_03 */
-static int hf_pcap_sfn_SFN_RelTimeDifference = -1;  /* SFN_SFN_RelTimeDifference1 */
-static int hf_pcap_sfn_Offset_Validity = -1;      /* SFN_Offset_Validity */
-static int hf_pcap_sfn_SFN_Drift = -1;            /* SFN_SFN_Drift */
-static int hf_pcap_searchWindowSize = -1;         /* OTDOA_SearchWindowSize */
-static int hf_pcap_positioningMode_01 = -1;       /* T_positioningMode_01 */
-static int hf_pcap_ueBased_01 = -1;               /* T_ueBased_01 */
-static int hf_pcap_relativeNorth = -1;            /* INTEGER_M20000_20000 */
-static int hf_pcap_relativeEast = -1;             /* INTEGER_M20000_20000 */
-static int hf_pcap_relativeAltitude = -1;         /* INTEGER_M4000_4000 */
-static int hf_pcap_fineSFN_SFN = -1;              /* FineSFNSFN */
-static int hf_pcap_ueAssisted_01 = -1;            /* T_ueAssisted_01 */
-static int hf_pcap_sfn_Offset = -1;               /* INTEGER_0_4095 */
-static int hf_pcap_sfn_sfn_Reltimedifference = -1;  /* INTEGER_0_38399 */
-static int hf_pcap_uTDOA_ChannelSettings = -1;    /* UTDOA_RRCState */
-static int hf_pcap_modeSpecificInfo_03 = -1;      /* T_modeSpecificInfo_03 */
-static int hf_pcap_fdd_04 = -1;                   /* FrequencyInfoFDD */
-static int hf_pcap_tdd_04 = -1;                   /* FrequencyInfoTDD */
-static int hf_pcap_uarfcn_UL = -1;                /* UARFCN */
-static int hf_pcap_uarfcn_DL = -1;                /* UARFCN */
-static int hf_pcap_uarfcn = -1;                   /* UARFCN */
-static int hf_pcap_uTDOA_CELLDCH = -1;            /* UTDOA_CELLDCH */
-static int hf_pcap_uTDOA_CELLFACH = -1;           /* UTDOA_CELLFACH */
-static int hf_pcap_uL_DPCHInfo = -1;              /* UL_DPCHInfo */
-static int hf_pcap_compressedModeAssistanceData = -1;  /* Compressed_Mode_Assistance_Data */
-static int hf_pcap_dCH_Information = -1;          /* DCH_Information */
-static int hf_pcap_e_DPCH_Information = -1;       /* E_DPCH_Information */
-static int hf_pcap_fdd_05 = -1;                   /* T_fdd_04 */
-static int hf_pcap_scramblingCodeType = -1;       /* ScramblingCodeType */
-static int hf_pcap_scramblingCode = -1;           /* UL_ScramblingCode */
-static int hf_pcap_tfci_Existence = -1;           /* BOOLEAN */
-static int hf_pcap_numberOfFBI_Bits = -1;         /* NumberOfFBI_Bits */
-static int hf_pcap_tdd_05 = -1;                   /* T_tdd_04 */
-static int hf_pcap_tFCI_Coding = -1;              /* TFCI_Coding */
-static int hf_pcap_punctureLimit = -1;            /* PuncturingLimit */
-static int hf_pcap_repetitionPeriod = -1;         /* RepetitionPeriod */
-static int hf_pcap_repetitionLength = -1;         /* RepetitionLength */
-static int hf_pcap_tdd_DPCHOffset = -1;           /* TDD_DPCHOffset */
-static int hf_pcap_uL_Timeslot_Information = -1;  /* UL_Timeslot_Information */
-static int hf_pcap_frameOffset = -1;              /* FrameOffset */
-static int hf_pcap_specialBurstScheduling = -1;   /* SpecialBurstScheduling */
-static int hf_pcap_dl_information = -1;           /* DL_InformationFDD */
-static int hf_pcap_ul_information = -1;           /* UL_InformationFDD */
-static int hf_pcap_primaryScramblingCode = -1;    /* PrimaryScramblingCode */
-static int hf_pcap_chipOffset = -1;               /* ChipOffset */
-static int hf_pcap_transmissionGapPatternSequenceInfo = -1;  /* Transmission_Gap_Pattern_Sequence_Information */
-static int hf_pcap_activePatternSequenceInfo = -1;  /* Active_Pattern_Sequence_Information */
-static int hf_pcap_cFN = -1;                      /* CFN */
-static int hf_pcap_Transmission_Gap_Pattern_Sequence_Information_item = -1;  /* Transmission_Gap_Pattern_Sequence_Information_item */
-static int hf_pcap_tGPSID = -1;                   /* TGPSID */
-static int hf_pcap_tGSN = -1;                     /* TGSN */
-static int hf_pcap_tGL1 = -1;                     /* GapLength */
-static int hf_pcap_tGL2 = -1;                     /* GapLength */
-static int hf_pcap_tGD = -1;                      /* TGD */
-static int hf_pcap_tGPL1 = -1;                    /* GapDuration */
-static int hf_pcap_uplink_Compressed_Mode_Method = -1;  /* Uplink_Compressed_Mode_Method */
-static int hf_pcap_cMConfigurationChangeCFN = -1;  /* CFN */
-static int hf_pcap_transmission_Gap_Pattern_Sequence_Status = -1;  /* Transmission_Gap_Pattern_Sequence_Status_List */
-static int hf_pcap_Transmission_Gap_Pattern_Sequence_Status_List_item = -1;  /* Transmission_Gap_Pattern_Sequence_Status_List_item */
-static int hf_pcap_tGPRC = -1;                    /* TGPRC */
-static int hf_pcap_tGCFN = -1;                    /* CFN */
-static int hf_pcap_tFCS = -1;                     /* TFCS */
-static int hf_pcap_trChInfo = -1;                 /* TrChInfoList */
-static int hf_pcap_TrChInfoList_item = -1;        /* UL_TrCHInfo */
-static int hf_pcap_uL_TrCHtype = -1;              /* UL_TrCHType */
-static int hf_pcap_tfs = -1;                      /* TransportFormatSet */
-static int hf_pcap_maxSet_E_DPDCHs = -1;          /* Max_Set_E_DPDCHs */
-static int hf_pcap_ul_PunctureLimit = -1;         /* PuncturingLimit */
-static int hf_pcap_e_TFCS_Information = -1;       /* E_TFCS_Information */
-static int hf_pcap_e_TTI = -1;                    /* E_TTI */
-static int hf_pcap_e_DPCCH_PO = -1;               /* E_DPCCH_PO */
-static int hf_pcap_e_DCH_TFCS_Index = -1;         /* E_DCH_TFCS_Index */
-static int hf_pcap_reference_E_TFCI_Information = -1;  /* Reference_E_TFCI_Information */
-static int hf_pcap_Reference_E_TFCI_Information_item = -1;  /* Reference_E_TFCI_Information_Item */
-static int hf_pcap_reference_E_TFCI = -1;         /* E_TFCI */
-static int hf_pcap_reference_E_TFCI_PO = -1;      /* Reference_E_TFCI_PO */
-static int hf_pcap_initialOffset = -1;            /* INTEGER_0_255 */
-static int hf_pcap_noinitialOffset = -1;          /* INTEGER_0_63 */
-static int hf_pcap_UL_Timeslot_Information_item = -1;  /* UL_Timeslot_InformationItem */
-static int hf_pcap_timeSlot = -1;                 /* TimeSlot */
-static int hf_pcap_midambleShiftAndBurstType = -1;  /* MidambleShiftAndBurstType */
-static int hf_pcap_tFCI_Presence = -1;            /* BOOLEAN */
-static int hf_pcap_uL_Code_InformationList = -1;  /* TDD_UL_Code_Information */
-static int hf_pcap_type1 = -1;                    /* T_type1 */
-static int hf_pcap_midambleConfigurationBurstType1And3 = -1;  /* MidambleConfigurationBurstType1And3 */
-static int hf_pcap_midambleAllocationMode = -1;   /* T_midambleAllocationMode */
-static int hf_pcap_defaultMidamble = -1;          /* NULL */
-static int hf_pcap_commonMidamble = -1;           /* NULL */
-static int hf_pcap_ueSpecificMidamble = -1;       /* MidambleShiftLong */
-static int hf_pcap_type2 = -1;                    /* T_type2 */
-static int hf_pcap_midambleConfigurationBurstType2 = -1;  /* MidambleConfigurationBurstType2 */
-static int hf_pcap_midambleAllocationMode_01 = -1;  /* T_midambleAllocationMode_01 */
-static int hf_pcap_ueSpecificMidamble_01 = -1;    /* MidambleShiftShort */
-static int hf_pcap_type3 = -1;                    /* T_type3 */
-static int hf_pcap_midambleAllocationMode_02 = -1;  /* T_midambleAllocationMode_02 */
-static int hf_pcap_TDD_UL_Code_Information_item = -1;  /* TDD_UL_Code_InformationItem */
-static int hf_pcap_tdd_ChannelisationCode = -1;   /* TDD_ChannelisationCode */
-static int hf_pcap_pRACHparameters = -1;          /* PRACHparameters */
-static int hf_pcap_cRNTI = -1;                    /* C_RNTI */
-static int hf_pcap_uschParameters = -1;           /* UschParameters */
-static int hf_pcap_PRACHparameters_item = -1;     /* PRACH_ChannelInfo */
-static int hf_pcap_pRACH_Info = -1;               /* PRACH_Info */
-static int hf_pcap_tFS = -1;                      /* TransportFormatSet */
-static int hf_pcap_fdd_06 = -1;                   /* T_fdd_05 */
-static int hf_pcap_availableSignatures = -1;      /* AvailableSignatures */
-static int hf_pcap_availableSF = -1;              /* SF_PRACH */
-static int hf_pcap_preambleScramblingCodeWordNumber = -1;  /* PreambleScramblingCodeWordNumber */
-static int hf_pcap_puncturingLimit = -1;          /* PuncturingLimit */
-static int hf_pcap_availableSubChannelNumbers = -1;  /* AvailableSubChannelNumbers */
-static int hf_pcap_tdd_06 = -1;                   /* T_tdd_05 */
-static int hf_pcap_maxPRACH_MidambleShifts = -1;  /* MaxPRACH_MidambleShifts */
-static int hf_pcap_pRACH_Midamble = -1;           /* PRACH_Midamble */
-static int hf_pcap_dynamicPart = -1;              /* TransportFormatSet_DynamicPartList */
-static int hf_pcap_semi_staticPart = -1;          /* TransportFormatSet_Semi_staticPart */
-static int hf_pcap_TransportFormatSet_DynamicPartList_item = -1;  /* TransportFormatSet_DynamicPartList_item */
-static int hf_pcap_rlc_Size = -1;                 /* RLC_Size */
-static int hf_pcap_numberOfTbsTTIList = -1;       /* SEQUENCE_SIZE_1_maxNrOfTFs_OF_TbsTTIInfo */
-static int hf_pcap_numberOfTbsTTIList_item = -1;  /* TbsTTIInfo */
-static int hf_pcap_tTIInfo = -1;                  /* TransportFormatSet_TransmissionTimeIntervalDynamic */
-static int hf_pcap_numberOfTbs = -1;              /* TransportFormatSet_NrOfTransportBlocks */
-static int hf_pcap_transmissionTimeInterval = -1;  /* TransportFormatSet_TransmissionTimeIntervalSemiStatic */
-static int hf_pcap_channelCoding = -1;            /* TransportFormatSet_ChannelCodingType */
-static int hf_pcap_codingRate = -1;               /* TransportFormatSet_CodingRate */
-static int hf_pcap_rateMatchingAttribute = -1;    /* TransportFormatSet_RateMatchingAttribute */
-static int hf_pcap_cRC_Size = -1;                 /* TransportFormatSet_CRC_Size */
-static int hf_pcap_TFCS_item = -1;                /* CTFC */
-static int hf_pcap_ctfc2Bit = -1;                 /* T_ctfc2Bit */
-static int hf_pcap_ctfc2Bit_item = -1;            /* INTEGER_0_3 */
-static int hf_pcap_ctfc4Bit = -1;                 /* T_ctfc4Bit */
-static int hf_pcap_ctfc4Bit_item = -1;            /* INTEGER_0_15 */
-static int hf_pcap_ctfc6Bit = -1;                 /* T_ctfc6Bit */
-static int hf_pcap_ctfc6Bit_item = -1;            /* INTEGER_0_63 */
-static int hf_pcap_ctfc8Bit = -1;                 /* T_ctfc8Bit */
-static int hf_pcap_ctfc8Bit_item = -1;            /* INTEGER_0_255 */
-static int hf_pcap_ctfc12Bit = -1;                /* T_ctfc12Bit */
-static int hf_pcap_ctfc12Bit_item = -1;           /* INTEGER_0_4095 */
-static int hf_pcap_ctfc16Bit = -1;                /* T_ctfc16Bit */
-static int hf_pcap_ctfc16Bit_item = -1;           /* INTEGER_0_65535 */
-static int hf_pcap_ctfc24Bit = -1;                /* T_ctfc24Bit */
-static int hf_pcap_ctfc24Bit_item = -1;           /* INTEGER_0_16777215 */
-static int hf_pcap_uSCH_SchedulingOffset = -1;    /* USCH_SchedulingOffset */
-static int hf_pcap_horizontalVelocity = -1;       /* HorizontalVelocity */
-static int hf_pcap_horizontalWithVerticalVelocity = -1;  /* HorizontalWithVerticalVelocity */
-static int hf_pcap_horizontalVelocityWithUncertainty = -1;  /* HorizontalVelocityWithUncertainty */
-static int hf_pcap_horizontalWithVerticalVelocityAndUncertainty = -1;  /* HorizontalWithVerticalVelocityAndUncertainty */
-static int hf_pcap_horizontalSpeedAndBearing = -1;  /* HorizontalSpeedAndBearing */
-static int hf_pcap_verticalVelocity = -1;         /* VerticalVelocity */
-static int hf_pcap_uncertaintySpeed = -1;         /* INTEGER_0_255 */
-static int hf_pcap_horizontalUncertaintySpeed = -1;  /* INTEGER_0_255 */
-static int hf_pcap_verticalUncertaintySpeed = -1;  /* INTEGER_0_255 */
-static int hf_pcap_bearing = -1;                  /* INTEGER_0_359 */
-static int hf_pcap_horizontalSpeed = -1;          /* INTEGER_0_2047 */
-static int hf_pcap_verticalSpeed = -1;            /* INTEGER_0_255 */
-static int hf_pcap_verticalSpeedDirection = -1;   /* VerticalSpeedDirection */
-static int hf_pcap_utran_GPSTimingOfCell = -1;    /* INTEGER_0_2322431999999_ */
-static int hf_pcap_ue_GPSTimingOfCell = -1;       /* INTEGER_0_37158911999999_ */
-static int hf_pcap_ue_GANSSTimingOfCell = -1;     /* INTEGER_0_345599999999_ */
-static int hf_pcap_ganss_Time_ID = -1;            /* GANSSID */
-static int hf_pcap_protocolIEs = -1;              /* ProtocolIE_Container */
-static int hf_pcap_protocolExtensions = -1;       /* ProtocolExtensionContainer */
-static int hf_pcap_referencePosition = -1;        /* RefPosition_InfEx_Rqst */
-static int hf_pcap_extension_InformationExchangeObjectType_InfEx_Rqst = -1;  /* Extension_InformationExchangeObjectType_InfEx_Rqst */
-static int hf_pcap_referencePositionEstimate = -1;  /* UE_PositionEstimate */
-static int hf_pcap_referenceUC_ID = -1;           /* UC_ID */
-static int hf_pcap_referencePosition_01 = -1;     /* RefPosition_InfEx_Rsp */
-static int hf_pcap_referencePosition_02 = -1;     /* RefPosition_InfEx_Rprt */
-static int hf_pcap_requestedDataValueInformation = -1;  /* RequestedDataValueInformation */
-static int hf_pcap_privateIEs = -1;               /* PrivateIE_Container */
-static int hf_pcap_initiatingMessage = -1;        /* InitiatingMessage */
-static int hf_pcap_successfulOutcome = -1;        /* SuccessfulOutcome */
-static int hf_pcap_unsuccessfulOutcome = -1;      /* UnsuccessfulOutcome */
-static int hf_pcap_outcome = -1;                  /* Outcome */
-static int hf_pcap_initiatingMessagevalue = -1;   /* InitiatingMessage_value */
-static int hf_pcap_successfulOutcome_value = -1;  /* SuccessfulOutcome_value */
-static int hf_pcap_unsuccessfulOutcome_value = -1;  /* UnsuccessfulOutcome_value */
-static int hf_pcap_outcome_value = -1;            /* Outcome_value */
+static int hf_pcap_AccuracyFulfilmentIndicator_PDU;  /* AccuracyFulfilmentIndicator */
+static int hf_pcap_AddPos_MeasuredResults_PDU;    /* AddPos_MeasuredResults */
+static int hf_pcap_Cause_PDU;                     /* Cause */
+static int hf_pcap_CellId_MeasuredResultsSets_PDU;  /* CellId_MeasuredResultsSets */
+static int hf_pcap_RoundTripTimeInfoWithType1_PDU;  /* RoundTripTimeInfoWithType1 */
+static int hf_pcap_ExtendedTimingAdvanceLCR_PDU;  /* ExtendedTimingAdvanceLCR */
+static int hf_pcap_RxTimingDeviation768Info_PDU;  /* RxTimingDeviation768Info */
+static int hf_pcap_RxTimingDeviation384extInfo_PDU;  /* RxTimingDeviation384extInfo */
+static int hf_pcap_AddMeasurementInfo_PDU;        /* AddMeasurementInfo */
+static int hf_pcap_AngleOfArrivalLCR_PDU;         /* AngleOfArrivalLCR */
+static int hf_pcap_CellId_IRATMeasuredResultsSets_PDU;  /* CellId_IRATMeasuredResultsSets */
+static int hf_pcap_CellIDPositioning_PDU;         /* CellIDPositioning */
+static int hf_pcap_RequestedCellIDGERANMeasurements_PDU;  /* RequestedCellIDGERANMeasurements */
+static int hf_pcap_ClientType_PDU;                /* ClientType */
+static int hf_pcap_CriticalityDiagnostics_PDU;    /* CriticalityDiagnostics */
+static int hf_pcap_DGNSS_ValidityPeriod_PDU;      /* DGNSS_ValidityPeriod */
+static int hf_pcap_IMEI_PDU;                      /* IMEI */
+static int hf_pcap_IMSI_PDU;                      /* IMSI */
+static int hf_pcap_UE_PositionEstimate_PDU;       /* UE_PositionEstimate */
+static int hf_pcap_UE_PositionEstimateInfo_PDU;   /* UE_PositionEstimateInfo */
+static int hf_pcap_GANSS_Reference_Time_Only_PDU;  /* GANSS_Reference_Time_Only */
+static int hf_pcap_PositionDataUEbased_PDU;       /* PositionDataUEbased */
+static int hf_pcap_PositionData_PDU;              /* PositionData */
+static int hf_pcap_GANSS_PositioningDataSet_PDU;  /* GANSS_PositioningDataSet */
+static int hf_pcap_Additional_PositioningDataSet_PDU;  /* Additional_PositioningDataSet */
+static int hf_pcap_ExtraDopplerInfoExtension_PDU;  /* ExtraDopplerInfoExtension */
+static int hf_pcap_AzimuthAndElevationLSB_PDU;    /* AzimuthAndElevationLSB */
+static int hf_pcap_Confidence_PDU;                /* Confidence */
+static int hf_pcap_GANSS_Additional_Ionospheric_Model_PDU;  /* GANSS_Additional_Ionospheric_Model */
+static int hf_pcap_GANSS_Additional_Navigation_Models_PDU;  /* GANSS_Additional_Navigation_Models */
+static int hf_pcap_GANSS_Additional_Time_Models_PDU;  /* GANSS_Additional_Time_Models */
+static int hf_pcap_GANSS_Additional_UTC_Models_PDU;  /* GANSS_Additional_UTC_Models */
+static int hf_pcap_GANSS_ALM_BDSKeplericanset_PDU;  /* GANSS_ALM_BDSKeplericanset */
+static int hf_pcap_GANSS_ALM_ECEFsbasAlmanacSet_PDU;  /* GANSS_ALM_ECEFsbasAlmanacSet */
+static int hf_pcap_GANSS_ALM_GlonassAlmanacSet_PDU;  /* GANSS_ALM_GlonassAlmanacSet */
+static int hf_pcap_GANSS_ALM_MidiAlmanacSet_PDU;  /* GANSS_ALM_MidiAlmanacSet */
+static int hf_pcap_GANSS_ALM_NAVKeplerianSet_PDU;  /* GANSS_ALM_NAVKeplerianSet */
+static int hf_pcap_GANSS_ALM_ReducedKeplerianSet_PDU;  /* GANSS_ALM_ReducedKeplerianSet */
+static int hf_pcap_GANSS_Auxiliary_Information_PDU;  /* GANSS_Auxiliary_Information */
+static int hf_pcap_GANSS_CommonAssistanceData_PDU;  /* GANSS_CommonAssistanceData */
+static int hf_pcap_GANSS_Earth_Orientation_Parameters_PDU;  /* GANSS_Earth_Orientation_Parameters */
+static int hf_pcap_GANSS_ExtraDopplerExtension_PDU;  /* GANSS_ExtraDopplerExtension */
+static int hf_pcap_GANSS_GenericAssistanceDataList_PDU;  /* GANSS_GenericAssistanceDataList */
+static int hf_pcap_BDS_Ionospheric_Grid_Model_PDU;  /* BDS_Ionospheric_Grid_Model */
+static int hf_pcap_DBDS_Correction_Information_PDU;  /* DBDS_Correction_Information */
+static int hf_pcap_GanssCodePhaseAmbiguityExt_PDU;  /* GanssCodePhaseAmbiguityExt */
+static int hf_pcap_GanssIntegerCodePhaseExt_PDU;  /* GanssIntegerCodePhaseExt */
+static int hf_pcap_GANSS_MeasuredResultsList_PDU;  /* GANSS_MeasuredResultsList */
+static int hf_pcap_GANSS_Day_Cycle_PDU;           /* GANSS_Day_Cycle */
+static int hf_pcap_GANSS_Delta_T_PDU;             /* GANSS_Delta_T */
+static int hf_pcap_GANSS_UTRAN_TRU_PDU;           /* GANSS_UTRAN_TRU */
+static int hf_pcap_CompleteAlmanacProvided_PDU;   /* CompleteAlmanacProvided */
+static int hf_pcap_MeasuredResultsList_PDU;       /* MeasuredResultsList */
+static int hf_pcap_GPS_ReferenceLocation_PDU;     /* GPS_ReferenceLocation */
+static int hf_pcap_GPS_Week_Cycle_PDU;            /* GPS_Week_Cycle */
+static int hf_pcap_UTRAN_GPS_DriftRate_PDU;       /* UTRAN_GPS_DriftRate */
+static int hf_pcap_GPSReferenceTimeUncertainty_PDU;  /* GPSReferenceTimeUncertainty */
+static int hf_pcap_GPS_UTRAN_TRU_PDU;             /* GPS_UTRAN_TRU */
+static int hf_pcap_AdditionalGPSAssistDataRequired_PDU;  /* AdditionalGPSAssistDataRequired */
+static int hf_pcap_AdditionalGanssAssistDataRequired_PDU;  /* AdditionalGanssAssistDataRequired */
+static int hf_pcap_GANSSReq_AddIonosphericModel_PDU;  /* GANSSReq_AddIonosphericModel */
+static int hf_pcap_GANSSReq_EarthOrientPara_PDU;  /* GANSSReq_EarthOrientPara */
+static int hf_pcap_BDSIonosphericGridModel_PDU;   /* BDSIonosphericGridModel */
+static int hf_pcap_DBDSCorrection_PDU;            /* DBDSCorrection */
+static int hf_pcap_GANSS_AddNavigationModel_Req_PDU;  /* GANSS_AddNavigationModel_Req */
+static int hf_pcap_GANSS_AddUTCModel_Req_PDU;     /* GANSS_AddUTCModel_Req */
+static int hf_pcap_GANSS_AuxInfo_req_PDU;         /* GANSS_AuxInfo_req */
+static int hf_pcap_GANSS_AddADchoices_PDU;        /* GANSS_AddADchoices */
+static int hf_pcap_InformationExchangeID_PDU;     /* InformationExchangeID */
+static int hf_pcap_InformationReportCharacteristics_PDU;  /* InformationReportCharacteristics */
+static int hf_pcap_InformationType_PDU;           /* InformationType */
+static int hf_pcap_GANSS_AddIonoModelReq_PDU;     /* GANSS_AddIonoModelReq */
+static int hf_pcap_GANSS_EarthOrientParaReq_PDU;  /* GANSS_EarthOrientParaReq */
+static int hf_pcap_GANSS_SBAS_ID_PDU;             /* GANSS_SBAS_ID */
+static int hf_pcap_MeasInstructionsUsed_PDU;      /* MeasInstructionsUsed */
+static int hf_pcap_OTDOA_MeasurementGroup_PDU;    /* OTDOA_MeasurementGroup */
+static int hf_pcap_OTDOA_ReferenceCellInfoSAS_centric_PDU;  /* OTDOA_ReferenceCellInfoSAS_centric */
+static int hf_pcap_OTDOA_MeasuredResultsSets_PDU;  /* OTDOA_MeasuredResultsSets */
+static int hf_pcap_OTDOA_AddMeasuredResultsInfo_PDU;  /* OTDOA_AddMeasuredResultsInfo */
+static int hf_pcap_UC_ID_PDU;                     /* UC_ID */
+static int hf_pcap_Extended_RNC_ID_PDU;           /* Extended_RNC_ID */
+static int hf_pcap_AdditionalMeasurementInforLCR_PDU;  /* AdditionalMeasurementInforLCR */
+static int hf_pcap_PeriodicPosCalcInfo_PDU;       /* PeriodicPosCalcInfo */
+static int hf_pcap_PeriodicLocationInfo_PDU;      /* PeriodicLocationInfo */
+static int hf_pcap_PeriodicTerminationCause_PDU;  /* PeriodicTerminationCause */
+static int hf_pcap_PositioningMethod_PDU;         /* PositioningMethod */
+static int hf_pcap_GNSS_PositioningMethod_PDU;    /* GNSS_PositioningMethod */
+static int hf_pcap_Additional_PositioningMethod_PDU;  /* Additional_PositioningMethod */
+static int hf_pcap_PositioningPriority_PDU;       /* PositioningPriority */
+static int hf_pcap_RRCstateChange_PDU;            /* RRCstateChange */
+static int hf_pcap_RequestType_PDU;               /* RequestType */
+static int hf_pcap_ResponseTime_PDU;              /* ResponseTime */
+static int hf_pcap_HorizontalAccuracyCode_PDU;    /* HorizontalAccuracyCode */
+static int hf_pcap_UE_PositioningCapability_PDU;  /* UE_PositioningCapability */
+static int hf_pcap_NetworkAssistedGANSSSupport_PDU;  /* NetworkAssistedGANSSSupport */
+static int hf_pcap_AddPosSupport_PDU;             /* AddPosSupport */
+static int hf_pcap_GANSS_SBAS_IDs_PDU;            /* GANSS_SBAS_IDs */
+static int hf_pcap_GANSS_Signal_IDs_PDU;          /* GANSS_Signal_IDs */
+static int hf_pcap_SupportGANSSNonNativeADchoices_PDU;  /* SupportGANSSNonNativeADchoices */
+static int hf_pcap_UTDOAPositioning_PDU;          /* UTDOAPositioning */
+static int hf_pcap_EnvironmentCharacterisation_PDU;  /* EnvironmentCharacterisation */
+static int hf_pcap_GPSPositioning_PDU;            /* GPSPositioning */
+static int hf_pcap_GANSSPositioning_PDU;          /* GANSSPositioning */
+static int hf_pcap_GANSScarrierPhaseRequested_PDU;  /* GANSScarrierPhaseRequested */
+static int hf_pcap_GANSSMultiFreqMeasRequested_PDU;  /* GANSSMultiFreqMeasRequested */
+static int hf_pcap_OTDOAAssistanceData_PDU;       /* OTDOAAssistanceData */
+static int hf_pcap_VerticalAccuracyCode_PDU;      /* VerticalAccuracyCode */
+static int hf_pcap_UTDOA_Group_PDU;               /* UTDOA_Group */
+static int hf_pcap_Positioning_ResponseTime_PDU;  /* Positioning_ResponseTime */
+static int hf_pcap_AmountOfReporting_PDU;         /* AmountOfReporting */
+static int hf_pcap_IncludeVelocity_PDU;           /* IncludeVelocity */
+static int hf_pcap_VelocityEstimate_PDU;          /* VelocityEstimate */
+static int hf_pcap_UTRAN_GPSReferenceTime_PDU;    /* UTRAN_GPSReferenceTime */
+static int hf_pcap_UTRAN_GANSSReferenceTimeResult_PDU;  /* UTRAN_GANSSReferenceTimeResult */
+static int hf_pcap_PositionCalculationRequest_PDU;  /* PositionCalculationRequest */
+static int hf_pcap_PositionCalculationResponse_PDU;  /* PositionCalculationResponse */
+static int hf_pcap_PositionCalculationFailure_PDU;  /* PositionCalculationFailure */
+static int hf_pcap_InformationExchangeInitiationRequest_PDU;  /* InformationExchangeInitiationRequest */
+static int hf_pcap_InformationExchangeObjectType_InfEx_Rqst_PDU;  /* InformationExchangeObjectType_InfEx_Rqst */
+static int hf_pcap_UC_ID_InfEx_Rqst_PDU;          /* UC_ID_InfEx_Rqst */
+static int hf_pcap_InformationExchangeInitiationResponse_PDU;  /* InformationExchangeInitiationResponse */
+static int hf_pcap_InformationExchangeObjectType_InfEx_Rsp_PDU;  /* InformationExchangeObjectType_InfEx_Rsp */
+static int hf_pcap_InformationExchangeInitiationFailure_PDU;  /* InformationExchangeInitiationFailure */
+static int hf_pcap_PositionInitiationRequest_PDU;  /* PositionInitiationRequest */
+static int hf_pcap_PositionInitiationResponse_PDU;  /* PositionInitiationResponse */
+static int hf_pcap_PositionInitiationFailure_PDU;  /* PositionInitiationFailure */
+static int hf_pcap_PositionActivationRequest_PDU;  /* PositionActivationRequest */
+static int hf_pcap_PositionActivationResponse_PDU;  /* PositionActivationResponse */
+static int hf_pcap_PositionActivationFailure_PDU;  /* PositionActivationFailure */
+static int hf_pcap_InformationReport_PDU;         /* InformationReport */
+static int hf_pcap_InformationExchangeObjectType_InfEx_Rprt_PDU;  /* InformationExchangeObjectType_InfEx_Rprt */
+static int hf_pcap_InformationExchangeTerminationRequest_PDU;  /* InformationExchangeTerminationRequest */
+static int hf_pcap_InformationExchangeFailureIndication_PDU;  /* InformationExchangeFailureIndication */
+static int hf_pcap_ErrorIndication_PDU;           /* ErrorIndication */
+static int hf_pcap_PositionParameterModification_PDU;  /* PositionParameterModification */
+static int hf_pcap_PrivateMessage_PDU;            /* PrivateMessage */
+static int hf_pcap_Abort_PDU;                     /* Abort */
+static int hf_pcap_PositionPeriodicReport_PDU;    /* PositionPeriodicReport */
+static int hf_pcap_PositionPeriodicResult_PDU;    /* PositionPeriodicResult */
+static int hf_pcap_PositionPeriodicTermination_PDU;  /* PositionPeriodicTermination */
+static int hf_pcap_PCAP_PDU_PDU;                  /* PCAP_PDU */
+static int hf_pcap_local;                         /* INTEGER_0_65535 */
+static int hf_pcap_global;                        /* OBJECT_IDENTIFIER */
+static int hf_pcap_shortTID;                      /* INTEGER_0_127 */
+static int hf_pcap_longTID;                       /* INTEGER_0_32767 */
+static int hf_pcap_ProtocolIE_Container_item;     /* ProtocolIE_Field */
+static int hf_pcap_id;                            /* ProtocolIE_ID */
+static int hf_pcap_criticality;                   /* Criticality */
+static int hf_pcap_ie_field_value;                /* T_ie_field_value */
+static int hf_pcap_ProtocolExtensionContainer_item;  /* ProtocolExtensionField */
+static int hf_pcap_ext_id;                        /* ProtocolIE_ID */
+static int hf_pcap_extensionValue;                /* T_extensionValue */
+static int hf_pcap_PrivateIE_Container_item;      /* PrivateIE_Field */
+static int hf_pcap_private_id;                    /* PrivateIE_ID */
+static int hf_pcap_private_value;                 /* T_private_value */
+static int hf_pcap_AddPos_MeasuredResults_item;   /* AddPos_MeasuredResults_Element */
+static int hf_pcap_timestamp;                     /* UTCTime */
+static int hf_pcap_type;                          /* T_type */
+static int hf_pcap_barometricPressure;            /* T_barometricPressure */
+static int hf_pcap_uncompensatedBarometricPressure;  /* BaroMeasurement */
+static int hf_pcap_iE_Extensions;                 /* ProtocolExtensionContainer */
+static int hf_pcap_wlan;                          /* T_wlan */
+static int hf_pcap_wlanMeasurementList;           /* WLANMeasurementList */
+static int hf_pcap_bt;                            /* T_bt */
+static int hf_pcap_btMeasurementList;             /* BTMeasurementList */
+static int hf_pcap_mbs;                           /* T_mbs */
+static int hf_pcap_mbsMeasurementList;            /* MBSMeasurementList */
+static int hf_pcap_WLANMeasurementList_item;      /* WLANMeasurementList_Element */
+static int hf_pcap_wlanBSSID;                     /* OCTET_STRING_SIZE_6 */
+static int hf_pcap_wlanSSID;                      /* OCTET_STRING_SIZE_1_32 */
+static int hf_pcap_wlanRSSI;                      /* INTEGER_M127_128 */
+static int hf_pcap_wlanRTTvalue;                  /* INTEGER_0_16777215 */
+static int hf_pcap_wlanRTTunits;                  /* T_wlanRTTunits */
+static int hf_pcap_wlanRTTaccuracy;               /* INTEGER_0_255 */
+static int hf_pcap_wlanAPChannelFrequency;        /* INTEGER_0_256 */
+static int hf_pcap_wlanServingFlag;               /* BOOLEAN */
+static int hf_pcap_BTMeasurementList_item;        /* BTMeasurementList_Element */
+static int hf_pcap_btADDR;                        /* OCTET_STRING_SIZE_6 */
+static int hf_pcap_btRSSI;                        /* INTEGER_M127_128 */
+static int hf_pcap_MBSMeasurementList_item;       /* MBSMeasurementList_Element */
+static int hf_pcap_transmitterID;                 /* INTEGER_0_32767 */
+static int hf_pcap_codephase;                     /* INTEGER_0_2097151 */
+static int hf_pcap_codephaseRMS;                  /* INTEGER_0_63 */
+static int hf_pcap_gpsAlmanacAndSatelliteHealth;  /* GPS_AlmanacAndSatelliteHealth */
+static int hf_pcap_satMask;                       /* BIT_STRING_SIZE_1_32 */
+static int hf_pcap_lsbTOW;                        /* BIT_STRING_SIZE_8 */
+static int hf_pcap_radioNetwork;                  /* CauseRadioNetwork */
+static int hf_pcap_transport;                     /* CauseTransport */
+static int hf_pcap_protocol;                      /* CauseProtocol */
+static int hf_pcap_misc;                          /* CauseMisc */
+static int hf_pcap_CellId_MeasuredResultsSets_item;  /* CellId_MeasuredResultsInfoList */
+static int hf_pcap_CellId_MeasuredResultsInfoList_item;  /* CellId_MeasuredResultsInfo */
+static int hf_pcap_uC_ID;                         /* UC_ID */
+static int hf_pcap_uTRANAccessPointPositionAltitude;  /* UTRANAccessPointPositionAltitude */
+static int hf_pcap_ue_PositionEstimate;           /* UE_PositionEstimate */
+static int hf_pcap_roundTripTimeInfo;             /* RoundTripTimeInfo */
+static int hf_pcap_rxTimingDeviationInfo;         /* RxTimingDeviationInfo */
+static int hf_pcap_rxTimingDeviationLCRInfo;      /* RxTimingDeviationLCRInfo */
+static int hf_pcap_pathloss;                      /* Pathloss */
+static int hf_pcap_ue_RxTxTimeDifferenceType2;    /* UE_RxTxTimeDifferenceType2 */
+static int hf_pcap_ue_PositioningMeasQuality;     /* UE_PositioningMeasQuality */
+static int hf_pcap_roundTripTime;                 /* RoundTripTime */
+static int hf_pcap_ue_RxTxTimeDifferenceType1;    /* UE_RxTxTimeDifferenceType1 */
+static int hf_pcap_extendedRoundTripTime;         /* ExtendedRoundTripTime */
+static int hf_pcap_stdResolution;                 /* BIT_STRING_SIZE_2 */
+static int hf_pcap_numberOfMeasurements;          /* BIT_STRING_SIZE_3 */
+static int hf_pcap_stdOfMeasurements;             /* BIT_STRING_SIZE_5 */
+static int hf_pcap_geographicalCoordinates;       /* GeographicalCoordinates */
+static int hf_pcap_ga_AltitudeAndDirection;       /* GA_AltitudeAndDirection */
+static int hf_pcap_rxTimingDeviation;             /* RxTimingDeviation */
+static int hf_pcap_timingAdvance;                 /* TimingAdvance */
+static int hf_pcap_rxTimingDeviationLCR;          /* RxTimingDeviationLCR */
+static int hf_pcap_timingAdvanceLCR;              /* TimingAdvanceLCR */
+static int hf_pcap_rxTimingDeviation768;          /* RxTimingDeviation768 */
+static int hf_pcap_timingAdvance768;              /* TimingAdvance768 */
+static int hf_pcap_rxTimingDeviation384ext;       /* RxTimingDeviation384ext */
+static int hf_pcap_timingAdvance384ext;           /* TimingAdvance384ext */
+static int hf_pcap_cpich_RSCP;                    /* CPICH_RSCP */
+static int hf_pcap_cpich_EcNo;                    /* CPICH_EcNo */
+static int hf_pcap_aOA_LCR;                       /* AOA_LCR */
+static int hf_pcap_aOA_LCR_Accuracy_Class;        /* AOA_LCR_Accuracy_Class */
+static int hf_pcap_CellId_IRATMeasuredResultsSets_item;  /* CellId_IRATMeasuredResultsInfoList */
+static int hf_pcap_gERAN_MeasuredResultsInfoList;  /* GERAN_MeasuredResultsInfoList */
+static int hf_pcap_iE_Extenstions;                /* ProtocolExtensionContainer */
+static int hf_pcap_GERAN_MeasuredResultsInfoList_item;  /* GERAN_MeasuredResultsInfo */
+static int hf_pcap_gERANCellID;                   /* GERANCellGlobalID */
+static int hf_pcap_gERANPhysicalCellID;           /* GERANPhysicalCellID */
+static int hf_pcap_gSM_RSSI;                      /* GSM_RSSI */
+static int hf_pcap_plmn_Identity;                 /* PLMN_Identity */
+static int hf_pcap_locationAreaCode;              /* BIT_STRING_SIZE_16 */
+static int hf_pcap_cellIdentity;                  /* BIT_STRING_SIZE_16 */
+static int hf_pcap_bsic;                          /* GSM_BSIC */
+static int hf_pcap_arfcn;                         /* GSM_BCCH_ARFCN */
+static int hf_pcap_networkColourCode;             /* BIT_STRING_SIZE_3 */
+static int hf_pcap_baseStationColourCode;         /* BIT_STRING_SIZE_3 */
+static int hf_pcap_requestedCellIDMeasurements;   /* RequestedCellIDMeasurements */
+static int hf_pcap_fdd;                           /* T_fdd */
+static int hf_pcap_roundTripTimeInfoWanted;       /* BOOLEAN */
+static int hf_pcap_pathlossWanted;                /* BOOLEAN */
+static int hf_pcap_roundTripTimeInfoWithType1Wanted;  /* BOOLEAN */
+static int hf_pcap_cpichRSCPWanted;               /* BOOLEAN */
+static int hf_pcap_cpicEcNoWanted;                /* BOOLEAN */
+static int hf_pcap_tdd;                           /* T_tdd */
+static int hf_pcap_rxTimingDeviationInfoWanted;   /* BOOLEAN */
+static int hf_pcap_rxTimingDeviationLCRInfoWanted;  /* BOOLEAN */
+static int hf_pcap_rxTimingDeviation768InfoWanted;  /* BOOLEAN */
+static int hf_pcap_rxTimingDeviation384extInfoWanted;  /* BOOLEAN */
+static int hf_pcap_angleOfArrivalLCRWanted;       /* BOOLEAN */
+static int hf_pcap_timingAdvanceLCRWanted;        /* BOOLEAN */
+static int hf_pcap_rSSIMeasurementsWanted;        /* BOOLEAN */
+static int hf_pcap_procedureCode;                 /* ProcedureCode */
+static int hf_pcap_triggeringMessage;             /* TriggeringMessage */
+static int hf_pcap_procedureCriticality;          /* Criticality */
+static int hf_pcap_transactionID;                 /* TransactionID */
+static int hf_pcap_iEsCriticalityDiagnostics;     /* CriticalityDiagnostics_IE_List */
+static int hf_pcap_CriticalityDiagnostics_IE_List_item;  /* CriticalityDiagnostics_IE_List_item */
+static int hf_pcap_iECriticality;                 /* Criticality */
+static int hf_pcap_iE_ID;                         /* ProtocolIE_ID */
+static int hf_pcap_repetitionNumber;              /* CriticalityDiagnosticsRepetition */
+static int hf_pcap_messageStructure;              /* MessageStructure */
+static int hf_pcap_typeOfError;                   /* TypeOfError */
+static int hf_pcap_gps_TOW_sec;                   /* INTEGER_0_604799 */
+static int hf_pcap_statusHealth;                  /* DiffCorrectionStatus */
+static int hf_pcap_dgps_CorrectionSatInfoList;    /* DGPS_CorrectionSatInfoList */
+static int hf_pcap_DGPS_CorrectionSatInfoList_item;  /* DGPS_CorrectionSatInfo */
+static int hf_pcap_satID;                         /* INTEGER_0_63 */
+static int hf_pcap_iode;                          /* INTEGER_0_255 */
+static int hf_pcap_udre;                          /* UDRE */
+static int hf_pcap_prc;                           /* PRC */
+static int hf_pcap_rrc;                           /* RRC */
+static int hf_pcap_udreGrowthRate;                /* UDREGrowthRate */
+static int hf_pcap_udreValidityTime;              /* UDREValidityTime */
+static int hf_pcap_point;                         /* GA_Point */
+static int hf_pcap_pointWithUnCertainty;          /* GA_PointWithUnCertainty */
+static int hf_pcap_polygon;                       /* GA_Polygon */
+static int hf_pcap_pointWithUncertaintyEllipse;   /* GA_PointWithUnCertaintyEllipse */
+static int hf_pcap_pointWithAltitude;             /* GA_PointWithAltitude */
+static int hf_pcap_pointWithAltitudeAndUncertaintyEllipsoid;  /* GA_PointWithAltitudeAndUncertaintyEllipsoid */
+static int hf_pcap_ellipsoidArc;                  /* GA_EllipsoidArc */
+static int hf_pcap_latitudeSign;                  /* T_latitudeSign */
+static int hf_pcap_latitude;                      /* INTEGER_0_8388607 */
+static int hf_pcap_longitude;                     /* INTEGER_M8388608_8388607 */
+static int hf_pcap_directionOfAltitude;           /* T_directionOfAltitude */
+static int hf_pcap_altitude;                      /* INTEGER_0_32767 */
+static int hf_pcap_innerRadius;                   /* INTEGER_0_65535 */
+static int hf_pcap_uncertaintyRadius;             /* INTEGER_0_127 */
+static int hf_pcap_offsetAngle;                   /* INTEGER_0_179 */
+static int hf_pcap_includedAngle;                 /* INTEGER_0_179 */
+static int hf_pcap_confidence;                    /* INTEGER_0_100 */
+static int hf_pcap_altitudeAndDirection;          /* GA_AltitudeAndDirection */
+static int hf_pcap_uncertaintyEllipse;            /* GA_UncertaintyEllipse */
+static int hf_pcap_uncertaintyAltitude;           /* INTEGER_0_127 */
+static int hf_pcap_uncertaintyCode;               /* INTEGER_0_127 */
+static int hf_pcap_GA_Polygon_item;               /* GA_Polygon_item */
+static int hf_pcap_uncertaintySemi_major;         /* INTEGER_0_127 */
+static int hf_pcap_uncertaintySemi_minor;         /* INTEGER_0_127 */
+static int hf_pcap_orientationOfMajorAxis;        /* INTEGER_0_89 */
+static int hf_pcap_referenceTimeChoice;           /* ReferenceTimeChoice */
+static int hf_pcap_ue_positionEstimate;           /* UE_PositionEstimate */
+static int hf_pcap_utran_GPSReferenceTimeResult;  /* UTRAN_GPSReferenceTimeResult */
+static int hf_pcap_gps_ReferenceTimeOnly;         /* INTEGER_0_604799999_ */
+static int hf_pcap_cell_Timing;                   /* Cell_Timing */
+static int hf_pcap_extension_ReferenceTimeChoice;  /* Extension_ReferenceTimeChoice */
+static int hf_pcap_sfn;                           /* INTEGER_0_4095 */
+static int hf_pcap_ganssTODmsec;                  /* INTEGER_0_3599999 */
+static int hf_pcap_ganssTimeID;                   /* GANSSID */
+static int hf_pcap_positionData;                  /* BIT_STRING_SIZE_16 */
+static int hf_pcap_positioningDataDiscriminator;  /* PositioningDataDiscriminator */
+static int hf_pcap_positioningDataSet;            /* PositioningDataSet */
+static int hf_pcap_GANSS_PositioningDataSet_item;  /* GANSS_PositioningMethodAndUsage */
+static int hf_pcap_PositioningDataSet_item;       /* PositioningMethodAndUsage */
+static int hf_pcap_Additional_PositioningDataSet_item;  /* Additional_PositioningMethodAndUsage */
+static int hf_pcap_gps_TOW_1msec;                 /* INTEGER_0_604799999 */
+static int hf_pcap_satelliteInformationList;      /* AcquisitionSatInfoList */
+static int hf_pcap_AcquisitionSatInfoList_item;   /* AcquisitionSatInfo */
+static int hf_pcap_doppler0thOrder;               /* INTEGER_M2048_2047 */
+static int hf_pcap_extraDopplerInfo;              /* ExtraDopplerInfo */
+static int hf_pcap_codePhase;                     /* INTEGER_0_1022 */
+static int hf_pcap_integerCodePhase;              /* INTEGER_0_19 */
+static int hf_pcap_gps_BitNumber;                 /* INTEGER_0_3 */
+static int hf_pcap_codePhaseSearchWindow;         /* CodePhaseSearchWindow */
+static int hf_pcap_azimuthAndElevation;           /* AzimuthAndElevation */
+static int hf_pcap_doppler1stOrder;               /* INTEGER_M42_21 */
+static int hf_pcap_dopplerUncertainty;            /* DopplerUncertainty */
+static int hf_pcap_dopplerUncertaintyExtension;   /* DopplerUncertaintyExtension */
+static int hf_pcap_azimuth;                       /* INTEGER_0_31 */
+static int hf_pcap_elevation;                     /* INTEGER_0_7 */
+static int hf_pcap_azimuthLSB;                    /* INTEGER_0_15 */
+static int hf_pcap_elevationLSB;                  /* INTEGER_0_15 */
+static int hf_pcap_AuxInfoGANSS_ID1_item;         /* AuxInfoGANSS_ID1_element */
+static int hf_pcap_svID;                          /* INTEGER_0_63 */
+static int hf_pcap_signalsAvailable;              /* BIT_STRING_SIZE_8 */
+static int hf_pcap_ie_Extensions;                 /* ProtocolExtensionContainer */
+static int hf_pcap_AuxInfoGANSS_ID3_item;         /* AuxInfoGANSS_ID3_element */
+static int hf_pcap_channelNumber;                 /* INTEGER_M7_13 */
+static int hf_pcap_cnavToc;                       /* BIT_STRING_SIZE_11 */
+static int hf_pcap_cnavTop;                       /* BIT_STRING_SIZE_11 */
+static int hf_pcap_cnavURA0;                      /* BIT_STRING_SIZE_5 */
+static int hf_pcap_cnavURA1;                      /* BIT_STRING_SIZE_3 */
+static int hf_pcap_cnavURA2;                      /* BIT_STRING_SIZE_3 */
+static int hf_pcap_cnavAf2;                       /* BIT_STRING_SIZE_10 */
+static int hf_pcap_cnavAf1;                       /* BIT_STRING_SIZE_20 */
+static int hf_pcap_cnavAf0;                       /* BIT_STRING_SIZE_26 */
+static int hf_pcap_cnavTgd;                       /* BIT_STRING_SIZE_13 */
+static int hf_pcap_cnavISCl1cp;                   /* BIT_STRING_SIZE_13 */
+static int hf_pcap_cnavISCl1cd;                   /* BIT_STRING_SIZE_13 */
+static int hf_pcap_cnavISCl1ca;                   /* BIT_STRING_SIZE_13 */
+static int hf_pcap_cnavISCl2c;                    /* BIT_STRING_SIZE_13 */
+static int hf_pcap_cnavISCl5i5;                   /* BIT_STRING_SIZE_13 */
+static int hf_pcap_cnavISCl5q5;                   /* BIT_STRING_SIZE_13 */
+static int hf_pcap_b1;                            /* BIT_STRING_SIZE_11 */
+static int hf_pcap_b2;                            /* BIT_STRING_SIZE_10 */
+static int hf_pcap_dGANSS_ReferenceTime;          /* INTEGER_0_119 */
+static int hf_pcap_dGANSS_Information;            /* DGANSS_Information */
+static int hf_pcap_DGANSS_Information_item;       /* DGANSS_InformationItem */
+static int hf_pcap_gANSS_SignalId;                /* GANSS_SignalID */
+static int hf_pcap_gANSS_StatusHealth;            /* GANSS_StatusHealth */
+static int hf_pcap_dGANSS_SignalInformation;      /* DGANSS_SignalInformation */
+static int hf_pcap_DGANSS_SignalInformation_item;  /* DGANSS_SignalInformationItem */
+static int hf_pcap_satId;                         /* INTEGER_0_63 */
+static int hf_pcap_gANSS_iod;                     /* BIT_STRING_SIZE_10 */
+static int hf_pcap_ganss_prc;                     /* INTEGER_M2047_2047 */
+static int hf_pcap_ganss_rrc;                     /* INTEGER_M127_127 */
+static int hf_pcap_navClockModel;                 /* NAVclockModel */
+static int hf_pcap_cnavClockModel;                /* CNAVclockModel */
+static int hf_pcap_glonassClockModel;             /* GLONASSclockModel */
+static int hf_pcap_sbasClockModel;                /* SBASclockModel */
+static int hf_pcap_bDSClockModel;                 /* BDSClockModel */
+static int hf_pcap_navKeplerianSet;               /* NavModel_NAVKeplerianSet */
+static int hf_pcap_cnavKeplerianSet;              /* NavModel_CNAVKeplerianSet */
+static int hf_pcap_glonassECEF;                   /* NavModel_GLONASSecef */
+static int hf_pcap_sbasECEF;                      /* NavModel_SBASecef */
+static int hf_pcap_bDSKeplerianSet;               /* NavModel_BDSKeplerianSet */
+static int hf_pcap_dataID;                        /* BIT_STRING_SIZE_2 */
+static int hf_pcap_alpha_beta_parameters;         /* GPS_Ionospheric_Model */
+static int hf_pcap_non_broadcastIndication;       /* T_non_broadcastIndication */
+static int hf_pcap_ganssSatInfoNavList;           /* Ganss_Sat_Info_AddNavList */
+static int hf_pcap_GANSS_Additional_Time_Models_item;  /* GANSS_Time_Model */
+static int hf_pcap_utcModel1;                     /* UTCmodelSet1 */
+static int hf_pcap_utcModel2;                     /* UTCmodelSet2 */
+static int hf_pcap_utcModel3;                     /* UTCmodelSet3 */
+static int hf_pcap_utcModel4;                     /* UTCmodelSet4 */
+static int hf_pcap_satellite_Information_BDS_KP_List;  /* Satellite_Information_BDS_KP_List */
+static int hf_pcap_Satellite_Information_BDS_KP_List_item;  /* Satellite_Information_BDS_KP_Item */
+static int hf_pcap_sVID_BDS;                      /* INTEGER_0_63 */
+static int hf_pcap_tOA_BDS;                       /* BIT_STRING_SIZE_8 */
+static int hf_pcap_a21_BDS;                       /* BIT_STRING_SIZE_24 */
+static int hf_pcap_e_BDS;                         /* BIT_STRING_SIZE_17 */
+static int hf_pcap_omg_lower_BDS;                 /* BIT_STRING_SIZE_24 */
+static int hf_pcap_m0_BDS;                        /* BIT_STRING_SIZE_24 */
+static int hf_pcap_omg_0_BDS;                     /* BIT_STRING_SIZE_24 */
+static int hf_pcap_omg_upper_BDS;                 /* BIT_STRING_SIZE_17 */
+static int hf_pcap_delta_i_BDS;                   /* BIT_STRING_SIZE_16 */
+static int hf_pcap_a0_BDS;                        /* BIT_STRING_SIZE_11 */
+static int hf_pcap_a1_BDS;                        /* BIT_STRING_SIZE_11 */
+static int hf_pcap_hea_BDS;                       /* BIT_STRING_SIZE_9 */
+static int hf_pcap_sat_info_SBASecefList;         /* GANSS_SAT_Info_Almanac_SBASecefList */
+static int hf_pcap_sat_info_GLOkpList;            /* GANSS_SAT_Info_Almanac_GLOkpList */
+static int hf_pcap_t_oa;                          /* INTEGER_0_255 */
+static int hf_pcap_sat_info_MIDIkpList;           /* GANSS_SAT_Info_Almanac_MIDIkpList */
+static int hf_pcap_sat_info_NAVkpList;            /* GANSS_SAT_Info_Almanac_NAVkpList */
+static int hf_pcap_sat_info_REDkpList;            /* GANSS_SAT_Info_Almanac_REDkpList */
+static int hf_pcap_weekNumber;                    /* INTEGER_0_255 */
+static int hf_pcap_gANSS_AlmanacModel;            /* GANSS_AlmanacModel */
+static int hf_pcap_gANSS_keplerianParameters;     /* GANSS_KeplerianParametersAlm */
+static int hf_pcap_extension_GANSS_AlmanacModel;  /* Extension_GANSS_AlmanacModel */
+static int hf_pcap_ganssID1;                      /* AuxInfoGANSS_ID1 */
+static int hf_pcap_ganssID3;                      /* AuxInfoGANSS_ID3 */
+static int hf_pcap_elevation_01;                  /* INTEGER_0_75 */
+static int hf_pcap_GANSS_Clock_Model_item;        /* GANSS_SatelliteClockModelItem */
+static int hf_pcap_ganss_Reference_Time;          /* GANSS_Reference_Time */
+static int hf_pcap_ganss_Ionospheric_Model;       /* GANSS_Ionospheric_Model */
+static int hf_pcap_ganss_Reference_Location;      /* GANSS_Reference_Location */
+static int hf_pcap_ganssTod;                      /* INTEGER_0_59_ */
+static int hf_pcap_dataBitAssistancelist;         /* GANSS_DataBitAssistanceList */
+static int hf_pcap_GANSS_DataBitAssistanceList_item;  /* GANSS_DataBitAssistanceItem */
+static int hf_pcap_dataBitAssistanceSgnList;      /* GANSS_DataBitAssistanceSgnList */
+static int hf_pcap_GANSS_DataBitAssistanceSgnList_item;  /* GANSS_DataBitAssistanceSgnItem */
+static int hf_pcap_ganss_SignalId;                /* GANSS_SignalID */
+static int hf_pcap_ganssDataBits;                 /* BIT_STRING_SIZE_1_1024 */
+static int hf_pcap_teop;                          /* BIT_STRING_SIZE_16 */
+static int hf_pcap_pmX;                           /* BIT_STRING_SIZE_21 */
+static int hf_pcap_pmXdot;                        /* BIT_STRING_SIZE_15 */
+static int hf_pcap_pmY;                           /* BIT_STRING_SIZE_21 */
+static int hf_pcap_pmYdot;                        /* BIT_STRING_SIZE_15 */
+static int hf_pcap_deltaUT1;                      /* BIT_STRING_SIZE_31 */
+static int hf_pcap_deltaUT1dot;                   /* BIT_STRING_SIZE_19 */
+static int hf_pcap_dopplerFirstOrder;             /* INTEGER_M42_21 */
+static int hf_pcap_dopplerUncertainty_01;         /* T_dopplerUncertainty */
+static int hf_pcap_dopplerUncertaintyExtension_01;  /* T_dopplerUncertaintyExtension */
+static int hf_pcap_GANSS_GenericAssistanceDataList_item;  /* GANSSGenericAssistanceData */
+static int hf_pcap_ganssId;                       /* GANSSID */
+static int hf_pcap_ganss_Real_Time_Integrity;     /* GANSS_Real_Time_Integrity */
+static int hf_pcap_ganss_DataBitAssistance;       /* GANSS_Data_Bit_Assistance */
+static int hf_pcap_dganss_Corrections;            /* DGANSS_Corrections */
+static int hf_pcap_ganss_AlmanacAndSatelliteHealth;  /* GANSS_AlmanacAndSatelliteHealth */
+static int hf_pcap_ganss_ReferenceMeasurementInfo;  /* GANSS_ReferenceMeasurementInfo */
+static int hf_pcap_ganss_UTC_Model;               /* GANSS_UTC_Model */
+static int hf_pcap_ganss_Time_Model;              /* GANSS_Time_Model */
+static int hf_pcap_ganss_Navigation_Model;        /* GANSS_Navigation_Model */
+static int hf_pcap_bDS_Reference_Time;            /* BDS_Reference_Time */
+static int hf_pcap_bDS_Ionospheric_Grid_Information;  /* BDS_Ionospheric_Grid_Information */
+static int hf_pcap_BDS_Ionospheric_Grid_Information_item;  /* BDS_Ionospheric_Grid_Information_item */
+static int hf_pcap_iGP_number_BDS;                /* INTEGER_1_320 */
+static int hf_pcap_vertical_Delay_BDS;            /* BIT_STRING_SIZE_9 */
+static int hf_pcap_gIVEI_BDS;                     /* BIT_STRING_SIZE_4 */
+static int hf_pcap_dBDS_Information;              /* DBDS_Information */
+static int hf_pcap_DBDS_Information_item;         /* DBDS_Information_item */
+static int hf_pcap_dBDS_Signal_ID;                /* GANSSID */
+static int hf_pcap_dGANSS_Signal_Information;     /* DGANSS_Signal_Information */
+static int hf_pcap_DGANSS_Signal_Information_item;  /* DGANSS_Signal_Information_item */
+static int hf_pcap_sat_ID_BDS;                    /* INTEGER_0_63 */
+static int hf_pcap_uDREI_BDS;                     /* INTEGER_0_15 */
+static int hf_pcap_rURAI_BDS;                     /* INTEGER_0_15 */
+static int hf_pcap_delta_t_BDS;                   /* BIT_STRING_SIZE_13 */
+static int hf_pcap_GANSS_GenericMeasurementInfo_item;  /* GANSS_GenericMeasurementInfo_item */
+static int hf_pcap_ganssMeasurementSignalList;    /* GANSSMeasurementSignalList */
+static int hf_pcap_ganss_ID;                      /* INTEGER_0_7 */
+static int hf_pcap_GANSSMeasurementSignalList_item;  /* GANSSMeasurementSignalList_item */
+static int hf_pcap_ganssSignalId;                 /* GANSS_SignalID */
+static int hf_pcap_ganssCodePhaseAmbiguity;       /* INTEGER_0_31 */
+static int hf_pcap_ganssMeasurementParameters;    /* GANSS_MeasurementParameters */
+static int hf_pcap_ganssCodePhaseAmbiguity_ext;   /* INTEGER_32_127 */
+static int hf_pcap_alpha_zero_ionos;              /* BIT_STRING_SIZE_11 */
+static int hf_pcap_alpha_one_ionos;               /* BIT_STRING_SIZE_11 */
+static int hf_pcap_alpha_two_ionos;               /* BIT_STRING_SIZE_14 */
+static int hf_pcap_gANSS_IonosphereRegionalStormFlags;  /* GANSS_IonosphereRegionalStormFlags */
+static int hf_pcap_storm_flag_one;                /* BOOLEAN */
+static int hf_pcap_storm_flag_two;                /* BOOLEAN */
+static int hf_pcap_storm_flag_three;              /* BOOLEAN */
+static int hf_pcap_storm_flag_four;               /* BOOLEAN */
+static int hf_pcap_storm_flag_five;               /* BOOLEAN */
+static int hf_pcap_t_oa_01;                       /* INTEGER_0_1023 */
+static int hf_pcap_iod_a;                         /* INTEGER_0_15 */
+static int hf_pcap_gANSS_SatelliteInformationKP;  /* GANSS_SatelliteInformationKP */
+static int hf_pcap_toe_nav;                       /* BIT_STRING_SIZE_14 */
+static int hf_pcap_ganss_omega_nav;               /* BIT_STRING_SIZE_32 */
+static int hf_pcap_delta_n_nav;                   /* BIT_STRING_SIZE_16 */
+static int hf_pcap_m_zero_nav;                    /* BIT_STRING_SIZE_32 */
+static int hf_pcap_omegadot_nav;                  /* BIT_STRING_SIZE_24 */
+static int hf_pcap_ganss_e_nav;                   /* BIT_STRING_SIZE_32 */
+static int hf_pcap_idot_nav;                      /* BIT_STRING_SIZE_14 */
+static int hf_pcap_a_sqrt_nav;                    /* BIT_STRING_SIZE_32 */
+static int hf_pcap_i_zero_nav;                    /* BIT_STRING_SIZE_32 */
+static int hf_pcap_omega_zero_nav;                /* BIT_STRING_SIZE_32 */
+static int hf_pcap_c_rs_nav;                      /* BIT_STRING_SIZE_16 */
+static int hf_pcap_c_is_nav;                      /* BIT_STRING_SIZE_16 */
+static int hf_pcap_c_us_nav;                      /* BIT_STRING_SIZE_16 */
+static int hf_pcap_c_rc_nav;                      /* BIT_STRING_SIZE_16 */
+static int hf_pcap_c_ic_nav;                      /* BIT_STRING_SIZE_16 */
+static int hf_pcap_c_uc_nav;                      /* BIT_STRING_SIZE_16 */
+static int hf_pcap_GANSS_MeasurementParameters_item;  /* GANSS_MeasurementParametersItem */
+static int hf_pcap_cToNzero;                      /* INTEGER_0_63 */
+static int hf_pcap_multipathIndicator;            /* T_multipathIndicator */
+static int hf_pcap_carrierQualityIndication;      /* BIT_STRING_SIZE_2 */
+static int hf_pcap_ganssCodePhase;                /* INTEGER_0_2097151 */
+static int hf_pcap_ganssIntegerCodePhase;         /* INTEGER_0_63 */
+static int hf_pcap_codePhaseRmsError;             /* INTEGER_0_63 */
+static int hf_pcap_doppler;                       /* INTEGER_M32768_32767 */
+static int hf_pcap_adr;                           /* INTEGER_0_33554431 */
+static int hf_pcap_ganssIntegerCodePhase_ext;     /* INTEGER_64_127 */
+static int hf_pcap_GANSS_MeasuredResultsList_item;  /* GANSS_MeasuredResults */
+static int hf_pcap_referenceTime;                 /* T_referenceTime */
+static int hf_pcap_utranReferenceTime;            /* UTRAN_GANSSReferenceTimeUL */
+static int hf_pcap_ganssReferenceTimeOnly;        /* GANSS_ReferenceTimeOnly */
+static int hf_pcap_ganssGenericMeasurementInfo;   /* GANSS_GenericMeasurementInfo */
+static int hf_pcap_non_broadcastIndication_01;    /* T_non_broadcastIndication_01 */
+static int hf_pcap_ganssSatInfoNav;               /* GANSS_Sat_Info_Nav */
+static int hf_pcap_gANSS_keplerianParameters_01;  /* GANSS_KeplerianParametersOrb */
+static int hf_pcap_GANSS_Real_Time_Integrity_item;  /* GANSS_RealTimeInformationItem */
+static int hf_pcap_bad_ganss_satId;               /* INTEGER_0_63 */
+static int hf_pcap_bad_ganss_signalId;            /* BIT_STRING_SIZE_8 */
+static int hf_pcap_satelliteInformation;          /* GANSS_SatelliteInformation */
+static int hf_pcap_ganssDay;                      /* INTEGER_0_8191 */
+static int hf_pcap_ganssTod_01;                   /* INTEGER_0_86399 */
+static int hf_pcap_ganssTodUncertainty;           /* INTEGER_0_127 */
+static int hf_pcap_ganssTimeId;                   /* GANSSID */
+static int hf_pcap_utran_ganssreferenceTime;      /* UTRAN_GANSSReferenceTimeDL */
+static int hf_pcap_tutran_ganss_driftRate;        /* TUTRAN_GANSS_DriftRate */
+static int hf_pcap_gANSS_tod;                     /* INTEGER_0_3599999 */
+static int hf_pcap_gANSS_timeId;                  /* GANSSID */
+static int hf_pcap_gANSS_TimeUncertainty;         /* INTEGER_0_127 */
+static int hf_pcap_t_oc;                          /* BIT_STRING_SIZE_14 */
+static int hf_pcap_a_i2;                          /* BIT_STRING_SIZE_6 */
+static int hf_pcap_a_i1;                          /* BIT_STRING_SIZE_21 */
+static int hf_pcap_a_i0;                          /* BIT_STRING_SIZE_31 */
+static int hf_pcap_t_gd;                          /* BIT_STRING_SIZE_10 */
+static int hf_pcap_sisa;                          /* BIT_STRING_SIZE_8 */
+static int hf_pcap_model_id;                      /* INTEGER_0_3 */
+static int hf_pcap_GANSS_SatelliteInformation_item;  /* GANSS_SatelliteInformationItem */
+static int hf_pcap_ganssSatId;                    /* INTEGER_0_63 */
+static int hf_pcap_dopplerZeroOrder;              /* INTEGER_M2048_2047 */
+static int hf_pcap_extraDoppler;                  /* GANSS_ExtraDoppler */
+static int hf_pcap_codePhase_01;                  /* INTEGER_0_1023 */
+static int hf_pcap_integerCodePhase_01;           /* INTEGER_0_127 */
+static int hf_pcap_codePhaseSearchWindow_01;      /* INTEGER_0_31 */
+static int hf_pcap_azimuthAndElevation_01;        /* GANSS_AzimuthAndElevation */
+static int hf_pcap_GANSS_SatelliteInformationKP_item;  /* GANSS_SatelliteInformationKPItem */
+static int hf_pcap_ganss_e_alm;                   /* BIT_STRING_SIZE_11 */
+static int hf_pcap_ganss_delta_I_alm;             /* BIT_STRING_SIZE_11 */
+static int hf_pcap_ganss_omegadot_alm;            /* BIT_STRING_SIZE_11 */
+static int hf_pcap_ganss_svStatusINAV_alm;        /* BIT_STRING_SIZE_4 */
+static int hf_pcap_ganss_svStatusFNAV_alm;        /* BIT_STRING_SIZE_2 */
+static int hf_pcap_ganss_delta_a_sqrt_alm;        /* BIT_STRING_SIZE_13 */
+static int hf_pcap_ganss_omegazero_alm;           /* BIT_STRING_SIZE_16 */
+static int hf_pcap_ganss_m_zero_alm;              /* BIT_STRING_SIZE_16 */
+static int hf_pcap_ganss_omega_alm;               /* BIT_STRING_SIZE_16 */
+static int hf_pcap_ganss_af_zero_alm;             /* BIT_STRING_SIZE_16 */
+static int hf_pcap_ganss_af_one_alm;              /* BIT_STRING_SIZE_13 */
+static int hf_pcap_GANSS_SAT_Info_Almanac_GLOkpList_item;  /* GANSS_SAT_Info_Almanac_GLOkp */
+static int hf_pcap_gloAlmNA;                      /* BIT_STRING_SIZE_11 */
+static int hf_pcap_gloAlmnA;                      /* BIT_STRING_SIZE_5 */
+static int hf_pcap_gloAlmHA;                      /* BIT_STRING_SIZE_5 */
+static int hf_pcap_gloAlmLambdaA;                 /* BIT_STRING_SIZE_21 */
+static int hf_pcap_gloAlmTlambdaA;                /* BIT_STRING_SIZE_21 */
+static int hf_pcap_gloAlmDeltaIA;                 /* BIT_STRING_SIZE_18 */
+static int hf_pcap_gloAkmDeltaTA;                 /* BIT_STRING_SIZE_22 */
+static int hf_pcap_gloAlmDeltaTdotA;              /* BIT_STRING_SIZE_7 */
+static int hf_pcap_gloAlmEpsilonA;                /* BIT_STRING_SIZE_15 */
+static int hf_pcap_gloAlmOmegaA;                  /* BIT_STRING_SIZE_16 */
+static int hf_pcap_gloAlmTauA;                    /* BIT_STRING_SIZE_10 */
+static int hf_pcap_gloAlmCA;                      /* BIT_STRING_SIZE_1 */
+static int hf_pcap_gloAlmMA;                      /* BIT_STRING_SIZE_2 */
+static int hf_pcap_GANSS_SAT_Info_Almanac_MIDIkpList_item;  /* GANSS_SAT_Info_Almanac_MIDIkp */
+static int hf_pcap_midiAlmE;                      /* BIT_STRING_SIZE_11 */
+static int hf_pcap_midiAlmDeltaI;                 /* BIT_STRING_SIZE_11 */
+static int hf_pcap_midiAlmOmegaDot;               /* BIT_STRING_SIZE_11 */
+static int hf_pcap_midiAlmSqrtA;                  /* BIT_STRING_SIZE_17 */
+static int hf_pcap_midiAlmOmega0;                 /* BIT_STRING_SIZE_16 */
+static int hf_pcap_midiAlmOmega;                  /* BIT_STRING_SIZE_16 */
+static int hf_pcap_midiAlmMo;                     /* BIT_STRING_SIZE_16 */
+static int hf_pcap_midiAlmaf0;                    /* BIT_STRING_SIZE_11 */
+static int hf_pcap_midiAlmaf1;                    /* BIT_STRING_SIZE_10 */
+static int hf_pcap_midiAlmL1Health;               /* BIT_STRING_SIZE_1 */
+static int hf_pcap_midiAlmL2Health;               /* BIT_STRING_SIZE_1 */
+static int hf_pcap_midiAlmL5Health;               /* BIT_STRING_SIZE_1 */
+static int hf_pcap_GANSS_SAT_Info_Almanac_NAVkpList_item;  /* GANSS_SAT_Info_Almanac_NAVkp */
+static int hf_pcap_navAlmE;                       /* BIT_STRING_SIZE_16 */
+static int hf_pcap_navAlmDeltaI;                  /* BIT_STRING_SIZE_16 */
+static int hf_pcap_navAlmOMEGADOT;                /* BIT_STRING_SIZE_16 */
+static int hf_pcap_navAlmSVHealth;                /* BIT_STRING_SIZE_8 */
+static int hf_pcap_navAlmSqrtA;                   /* BIT_STRING_SIZE_24 */
+static int hf_pcap_navAlmOMEGAo;                  /* BIT_STRING_SIZE_24 */
+static int hf_pcap_navAlmOmega;                   /* BIT_STRING_SIZE_24 */
+static int hf_pcap_navAlmMo;                      /* BIT_STRING_SIZE_24 */
+static int hf_pcap_navAlmaf0;                     /* BIT_STRING_SIZE_11 */
+static int hf_pcap_navAlmaf1;                     /* BIT_STRING_SIZE_11 */
+static int hf_pcap_GANSS_SAT_Info_Almanac_REDkpList_item;  /* GANSS_SAT_Info_Almanac_REDkp */
+static int hf_pcap_redAlmDeltaA;                  /* BIT_STRING_SIZE_8 */
+static int hf_pcap_redAlmOmega0;                  /* BIT_STRING_SIZE_7 */
+static int hf_pcap_redAlmPhi0;                    /* BIT_STRING_SIZE_7 */
+static int hf_pcap_redAlmL1Health;                /* BIT_STRING_SIZE_1 */
+static int hf_pcap_redAlmL2Health;                /* BIT_STRING_SIZE_1 */
+static int hf_pcap_redAlmL5Health;                /* BIT_STRING_SIZE_1 */
+static int hf_pcap_GANSS_SAT_Info_Almanac_SBASecefList_item;  /* GANSS_SAT_Info_Almanac_SBASecef */
+static int hf_pcap_sbasAlmDataID;                 /* BIT_STRING_SIZE_2 */
+static int hf_pcap_sbasAlmHealth;                 /* BIT_STRING_SIZE_8 */
+static int hf_pcap_sbasAlmXg;                     /* BIT_STRING_SIZE_15 */
+static int hf_pcap_sbasAlmYg;                     /* BIT_STRING_SIZE_15 */
+static int hf_pcap_sbasAlmZg;                     /* BIT_STRING_SIZE_9 */
+static int hf_pcap_sbasAlmXgdot;                  /* BIT_STRING_SIZE_3 */
+static int hf_pcap_sbasAlmYgDot;                  /* BIT_STRING_SIZE_3 */
+static int hf_pcap_sbasAlmZgDot;                  /* BIT_STRING_SIZE_4 */
+static int hf_pcap_sbasAlmTo;                     /* BIT_STRING_SIZE_11 */
+static int hf_pcap_Ganss_Sat_Info_AddNavList_item;  /* Ganss_Sat_Info_AddNavList_item */
+static int hf_pcap_svHealth;                      /* BIT_STRING_SIZE_6 */
+static int hf_pcap_iod;                           /* BIT_STRING_SIZE_11 */
+static int hf_pcap_ganssAddClockModels;           /* GANSS_AddClockModels */
+static int hf_pcap_ganssAddOrbitModels;           /* GANSS_AddOrbitModels */
+static int hf_pcap_GANSS_Sat_Info_Nav_item;       /* GANSS_Sat_Info_Nav_item */
+static int hf_pcap_svHealth_01;                   /* BIT_STRING_SIZE_9 */
+static int hf_pcap_iod_01;                        /* BIT_STRING_SIZE_10 */
+static int hf_pcap_ganssClockModel;               /* GANSS_Clock_Model */
+static int hf_pcap_ganssOrbitModel;               /* GANSS_Orbit_Model */
+static int hf_pcap_ganssSignalID;                 /* INTEGER_0_3_ */
+static int hf_pcap_ganss_time_model_refTime;      /* INTEGER_0_37799 */
+static int hf_pcap_ganss_t_a0;                    /* INTEGER_M2147483648_2147483647 */
+static int hf_pcap_ganss_t_a1;                    /* INTEGER_M8388608_8388607 */
+static int hf_pcap_ganss_t_a2;                    /* INTEGER_M64_63 */
+static int hf_pcap_gnss_to_id;                    /* T_gnss_to_id */
+static int hf_pcap_ganss_wk_number;               /* INTEGER_0_8191 */
+static int hf_pcap_gANSS_UTRAN_TimeRelationshipUncertainty;  /* GANSS_UTRAN_TimeRelationshipUncertainty */
+static int hf_pcap_a_one_utc;                     /* BIT_STRING_SIZE_24 */
+static int hf_pcap_a_zero_utc;                    /* BIT_STRING_SIZE_32 */
+static int hf_pcap_t_ot_utc;                      /* BIT_STRING_SIZE_8 */
+static int hf_pcap_w_n_t_utc;                     /* BIT_STRING_SIZE_8 */
+static int hf_pcap_delta_t_ls_utc;                /* BIT_STRING_SIZE_8 */
+static int hf_pcap_w_n_lsf_utc;                   /* BIT_STRING_SIZE_8 */
+static int hf_pcap_dn_utc;                        /* BIT_STRING_SIZE_8 */
+static int hf_pcap_delta_t_lsf_utc;               /* BIT_STRING_SIZE_8 */
+static int hf_pcap_gloTau;                        /* BIT_STRING_SIZE_22 */
+static int hf_pcap_gloGamma;                      /* BIT_STRING_SIZE_11 */
+static int hf_pcap_gloDeltaTau;                   /* BIT_STRING_SIZE_5 */
+static int hf_pcap_navToc;                        /* BIT_STRING_SIZE_16 */
+static int hf_pcap_navaf2;                        /* BIT_STRING_SIZE_8 */
+static int hf_pcap_navaf1;                        /* BIT_STRING_SIZE_16 */
+static int hf_pcap_navaf0;                        /* BIT_STRING_SIZE_22 */
+static int hf_pcap_navTgd;                        /* BIT_STRING_SIZE_8 */
+static int hf_pcap_cnavURAindex;                  /* BIT_STRING_SIZE_5 */
+static int hf_pcap_cnavDeltaA;                    /* BIT_STRING_SIZE_26 */
+static int hf_pcap_cnavAdot;                      /* BIT_STRING_SIZE_25 */
+static int hf_pcap_cnavDeltaNo;                   /* BIT_STRING_SIZE_17 */
+static int hf_pcap_cnavDeltaNoDot;                /* BIT_STRING_SIZE_23 */
+static int hf_pcap_cnavMo;                        /* BIT_STRING_SIZE_33 */
+static int hf_pcap_cnavE;                         /* BIT_STRING_SIZE_33 */
+static int hf_pcap_cnavOmega;                     /* BIT_STRING_SIZE_33 */
+static int hf_pcap_cnavOMEGA0;                    /* BIT_STRING_SIZE_33 */
+static int hf_pcap_cnavDeltaOmegaDot;             /* BIT_STRING_SIZE_17 */
+static int hf_pcap_cnavIo;                        /* BIT_STRING_SIZE_33 */
+static int hf_pcap_cnavIoDot;                     /* BIT_STRING_SIZE_15 */
+static int hf_pcap_cnavCis;                       /* BIT_STRING_SIZE_16 */
+static int hf_pcap_cnavCic;                       /* BIT_STRING_SIZE_16 */
+static int hf_pcap_cnavCrs;                       /* BIT_STRING_SIZE_24 */
+static int hf_pcap_cnavCrc;                       /* BIT_STRING_SIZE_24 */
+static int hf_pcap_cnavCus;                       /* BIT_STRING_SIZE_21 */
+static int hf_pcap_cnavCuc;                       /* BIT_STRING_SIZE_21 */
+static int hf_pcap_gloEn;                         /* BIT_STRING_SIZE_5 */
+static int hf_pcap_gloP1;                         /* BIT_STRING_SIZE_2 */
+static int hf_pcap_gloP2;                         /* BIT_STRING_SIZE_1 */
+static int hf_pcap_gloM;                          /* BIT_STRING_SIZE_2 */
+static int hf_pcap_gloX;                          /* BIT_STRING_SIZE_27 */
+static int hf_pcap_gloXdot;                       /* BIT_STRING_SIZE_24 */
+static int hf_pcap_gloXdotdot;                    /* BIT_STRING_SIZE_5 */
+static int hf_pcap_gloY;                          /* BIT_STRING_SIZE_27 */
+static int hf_pcap_gloYdot;                       /* BIT_STRING_SIZE_24 */
+static int hf_pcap_gloYdotdot;                    /* BIT_STRING_SIZE_5 */
+static int hf_pcap_gloZ;                          /* BIT_STRING_SIZE_27 */
+static int hf_pcap_gloZdot;                       /* BIT_STRING_SIZE_24 */
+static int hf_pcap_gloZdotdot;                    /* BIT_STRING_SIZE_5 */
+static int hf_pcap_navURA;                        /* BIT_STRING_SIZE_4 */
+static int hf_pcap_navFitFlag;                    /* BIT_STRING_SIZE_1 */
+static int hf_pcap_navToe;                        /* BIT_STRING_SIZE_16 */
+static int hf_pcap_navOmega;                      /* BIT_STRING_SIZE_32 */
+static int hf_pcap_navDeltaN;                     /* BIT_STRING_SIZE_16 */
+static int hf_pcap_navM0;                         /* BIT_STRING_SIZE_32 */
+static int hf_pcap_navOmegaADot;                  /* BIT_STRING_SIZE_24 */
+static int hf_pcap_navE;                          /* BIT_STRING_SIZE_32 */
+static int hf_pcap_navIDot;                       /* BIT_STRING_SIZE_14 */
+static int hf_pcap_navAPowerHalf;                 /* BIT_STRING_SIZE_32 */
+static int hf_pcap_navI0;                         /* BIT_STRING_SIZE_32 */
+static int hf_pcap_navOmegaA0;                    /* BIT_STRING_SIZE_32 */
+static int hf_pcap_navCrs;                        /* BIT_STRING_SIZE_16 */
+static int hf_pcap_navCis;                        /* BIT_STRING_SIZE_16 */
+static int hf_pcap_navCus;                        /* BIT_STRING_SIZE_16 */
+static int hf_pcap_navCrc;                        /* BIT_STRING_SIZE_16 */
+static int hf_pcap_navCic;                        /* BIT_STRING_SIZE_16 */
+static int hf_pcap_navCuc;                        /* BIT_STRING_SIZE_16 */
+static int hf_pcap_sbasTo;                        /* BIT_STRING_SIZE_13 */
+static int hf_pcap_sbasAccuracy;                  /* BIT_STRING_SIZE_4 */
+static int hf_pcap_sbasXg;                        /* BIT_STRING_SIZE_30 */
+static int hf_pcap_sbasYg;                        /* BIT_STRING_SIZE_30 */
+static int hf_pcap_sbasZg;                        /* BIT_STRING_SIZE_25 */
+static int hf_pcap_sbasXgDot;                     /* BIT_STRING_SIZE_17 */
+static int hf_pcap_sbasYgDot;                     /* BIT_STRING_SIZE_17 */
+static int hf_pcap_sbasZgDot;                     /* BIT_STRING_SIZE_18 */
+static int hf_pcap_sbasXgDotDot;                  /* BIT_STRING_SIZE_10 */
+static int hf_pcap_sbagYgDotDot;                  /* BIT_STRING_SIZE_10 */
+static int hf_pcap_sbasZgDotDot;                  /* BIT_STRING_SIZE_10 */
+static int hf_pcap_uRAIndex_BDS;                  /* BIT_STRING_SIZE_4 */
+static int hf_pcap_tOA_BDS_01;                    /* BIT_STRING_SIZE_17 */
+static int hf_pcap_a1_2_BDS;                      /* BIT_STRING_SIZE_32 */
+static int hf_pcap_e_BDS_01;                      /* BIT_STRING_SIZE_32 */
+static int hf_pcap_oMG_BDS;                       /* BIT_STRING_SIZE_32 */
+static int hf_pcap_dLTn_BDS;                      /* BIT_STRING_SIZE_16 */
+static int hf_pcap_m0_BDS_01;                     /* BIT_STRING_SIZE_32 */
+static int hf_pcap_oMG0_BDS;                      /* BIT_STRING_SIZE_32 */
+static int hf_pcap_oMGdot_BDS;                    /* BIT_STRING_SIZE_24 */
+static int hf_pcap_i0_BDS;                        /* BIT_STRING_SIZE_32 */
+static int hf_pcap_iDOT_BDS;                      /* BIT_STRING_SIZE_14 */
+static int hf_pcap_cuc_BDS;                       /* BIT_STRING_SIZE_18 */
+static int hf_pcap_cus_BDS;                       /* BIT_STRING_SIZE_18 */
+static int hf_pcap_crc_BDS;                       /* BIT_STRING_SIZE_18 */
+static int hf_pcap_crs_BDS;                       /* BIT_STRING_SIZE_18 */
+static int hf_pcap_cic_BDS;                       /* BIT_STRING_SIZE_18 */
+static int hf_pcap_cis_BDS;                       /* BIT_STRING_SIZE_18 */
+static int hf_pcap_aODE_BDS;                      /* BIT_STRING_SIZE_5 */
+static int hf_pcap_sbasAgfo;                      /* BIT_STRING_SIZE_12 */
+static int hf_pcap_sbasAgf1;                      /* BIT_STRING_SIZE_8 */
+static int hf_pcap_toc_BDS;                       /* BIT_STRING_SIZE_17 */
+static int hf_pcap_a0_BDS_01;                     /* BIT_STRING_SIZE_24 */
+static int hf_pcap_a1_BDS_01;                     /* BIT_STRING_SIZE_22 */
+static int hf_pcap_a2_BDS;                        /* BIT_STRING_SIZE_11 */
+static int hf_pcap_tGD1_BDS;                      /* BIT_STRING_SIZE_10 */
+static int hf_pcap_aODC_BDS;                      /* BIT_STRING_SIZE_5 */
+static int hf_pcap_utcA0;                         /* BIT_STRING_SIZE_16 */
+static int hf_pcap_utcA1;                         /* BIT_STRING_SIZE_13 */
+static int hf_pcap_utcA2;                         /* BIT_STRING_SIZE_7 */
+static int hf_pcap_utcDeltaTls;                   /* BIT_STRING_SIZE_8 */
+static int hf_pcap_utcTot;                        /* BIT_STRING_SIZE_16 */
+static int hf_pcap_utcWNot;                       /* BIT_STRING_SIZE_13 */
+static int hf_pcap_utcWNlsf;                      /* BIT_STRING_SIZE_8 */
+static int hf_pcap_utcDN;                         /* BIT_STRING_SIZE_4 */
+static int hf_pcap_utcDeltaTlsf;                  /* BIT_STRING_SIZE_8 */
+static int hf_pcap_nA;                            /* BIT_STRING_SIZE_11 */
+static int hf_pcap_tauC;                          /* BIT_STRING_SIZE_32 */
+static int hf_pcap_deltaUT1_01;                   /* DeltaUT1 */
+static int hf_pcap_kp;                            /* BIT_STRING_SIZE_2 */
+static int hf_pcap_utcA1wnt;                      /* BIT_STRING_SIZE_24 */
+static int hf_pcap_utcA0wnt;                      /* BIT_STRING_SIZE_32 */
+static int hf_pcap_utcTot_01;                     /* BIT_STRING_SIZE_8 */
+static int hf_pcap_utcWNt;                        /* BIT_STRING_SIZE_8 */
+static int hf_pcap_utcDN_01;                      /* BIT_STRING_SIZE_8 */
+static int hf_pcap_utcStandardID;                 /* BIT_STRING_SIZE_3 */
+static int hf_pcap_utca0_BDS;                     /* BIT_STRING_SIZE_32 */
+static int hf_pcap_utca1_BDS;                     /* BIT_STRING_SIZE_24 */
+static int hf_pcap_utcDeltatLS_BDS;               /* BIT_STRING_SIZE_8 */
+static int hf_pcap_utcWNlsf_BDS;                  /* BIT_STRING_SIZE_8 */
+static int hf_pcap_utcDN_BDS;                     /* BIT_STRING_SIZE_8 */
+static int hf_pcap_utcDeltaTlsf_BDS;              /* BIT_STRING_SIZE_8 */
+static int hf_pcap_utran_GANSSTimingOfCellFrames;  /* INTEGER_0_3999999 */
+static int hf_pcap_referenceSfn;                  /* INTEGER_0_4095 */
+static int hf_pcap_ue_GANSSTimingOfCellFrames;    /* INTEGER_0_345599999999 */
+static int hf_pcap_gANSS_TimeId;                  /* GANSSID */
+static int hf_pcap_wn_a;                          /* BIT_STRING_SIZE_8 */
+static int hf_pcap_almanacSatInfoList;            /* AlmanacSatInfoList */
+static int hf_pcap_svGlobalHealth;                /* BIT_STRING_SIZE_364 */
+static int hf_pcap_AlmanacSatInfoList_item;       /* AlmanacSatInfo */
+static int hf_pcap_e;                             /* BIT_STRING_SIZE_16 */
+static int hf_pcap_almanacSatInfo_t_oa;           /* BIT_STRING_SIZE_8 */
+static int hf_pcap_deltaI;                        /* BIT_STRING_SIZE_16 */
+static int hf_pcap_omegaDot;                      /* BIT_STRING_SIZE_16 */
+static int hf_pcap_satHealth;                     /* BIT_STRING_SIZE_8 */
+static int hf_pcap_a_Sqrt;                        /* BIT_STRING_SIZE_24 */
+static int hf_pcap_omega0;                        /* BIT_STRING_SIZE_24 */
+static int hf_pcap_m0;                            /* BIT_STRING_SIZE_24 */
+static int hf_pcap_omega;                         /* BIT_STRING_SIZE_24 */
+static int hf_pcap_af0;                           /* BIT_STRING_SIZE_11 */
+static int hf_pcap_af1;                           /* BIT_STRING_SIZE_11 */
+static int hf_pcap_codeOnL2;                      /* BIT_STRING_SIZE_2 */
+static int hf_pcap_uraIndex;                      /* BIT_STRING_SIZE_4 */
+static int hf_pcap_satHealth_01;                  /* BIT_STRING_SIZE_6 */
+static int hf_pcap_iodc;                          /* BIT_STRING_SIZE_10 */
+static int hf_pcap_l2Pflag;                       /* BIT_STRING_SIZE_1 */
+static int hf_pcap_sf1Revd;                       /* SubFrame1Reserved */
+static int hf_pcap_t_GD;                          /* BIT_STRING_SIZE_8 */
+static int hf_pcap_t_oc_01;                       /* BIT_STRING_SIZE_16 */
+static int hf_pcap_af2;                           /* BIT_STRING_SIZE_8 */
+static int hf_pcap_af1_01;                        /* BIT_STRING_SIZE_16 */
+static int hf_pcap_af0_01;                        /* BIT_STRING_SIZE_22 */
+static int hf_pcap_c_rs;                          /* BIT_STRING_SIZE_16 */
+static int hf_pcap_delta_n;                       /* BIT_STRING_SIZE_16 */
+static int hf_pcap_m0_01;                         /* BIT_STRING_SIZE_32 */
+static int hf_pcap_c_uc;                          /* BIT_STRING_SIZE_16 */
+static int hf_pcap_e_01;                          /* BIT_STRING_SIZE_32 */
+static int hf_pcap_c_us;                          /* BIT_STRING_SIZE_16 */
+static int hf_pcap_a_Sqrt_01;                     /* BIT_STRING_SIZE_32 */
+static int hf_pcap_t_oe;                          /* BIT_STRING_SIZE_16 */
+static int hf_pcap_fitInterval;                   /* BIT_STRING_SIZE_1 */
+static int hf_pcap_aodo;                          /* BIT_STRING_SIZE_5 */
+static int hf_pcap_c_ic;                          /* BIT_STRING_SIZE_16 */
+static int hf_pcap_omega0_01;                     /* BIT_STRING_SIZE_32 */
+static int hf_pcap_c_is;                          /* BIT_STRING_SIZE_16 */
+static int hf_pcap_i0;                            /* BIT_STRING_SIZE_32 */
+static int hf_pcap_c_rc;                          /* BIT_STRING_SIZE_16 */
+static int hf_pcap_omega_01;                      /* BIT_STRING_SIZE_32 */
+static int hf_pcap_omegaDot_01;                   /* BIT_STRING_SIZE_24 */
+static int hf_pcap_iDot;                          /* BIT_STRING_SIZE_14 */
+static int hf_pcap_reserved1;                     /* BIT_STRING_SIZE_23 */
+static int hf_pcap_reserved2;                     /* BIT_STRING_SIZE_24 */
+static int hf_pcap_reserved3;                     /* BIT_STRING_SIZE_24 */
+static int hf_pcap_reserved4;                     /* BIT_STRING_SIZE_16 */
+static int hf_pcap_alfa0;                         /* BIT_STRING_SIZE_8 */
+static int hf_pcap_alfa1;                         /* BIT_STRING_SIZE_8 */
+static int hf_pcap_alfa2;                         /* BIT_STRING_SIZE_8 */
+static int hf_pcap_alfa3;                         /* BIT_STRING_SIZE_8 */
+static int hf_pcap_beta0;                         /* BIT_STRING_SIZE_8 */
+static int hf_pcap_beta1;                         /* BIT_STRING_SIZE_8 */
+static int hf_pcap_beta2;                         /* BIT_STRING_SIZE_8 */
+static int hf_pcap_beta3;                         /* BIT_STRING_SIZE_8 */
+static int hf_pcap_MeasuredResultsList_item;      /* GPS_MeasuredResults */
+static int hf_pcap_gps_MeasurementParamList;      /* GPS_MeasurementParamList */
+static int hf_pcap_GPS_MeasurementParamList_item;  /* GPS_MeasurementParam */
+static int hf_pcap_satelliteID;                   /* INTEGER_0_63 */
+static int hf_pcap_c_N0;                          /* INTEGER_0_63 */
+static int hf_pcap_doppler_01;                    /* INTEGER_M32768_32768 */
+static int hf_pcap_wholeGPS_Chips;                /* INTEGER_0_1022 */
+static int hf_pcap_fractionalGPS_Chips;           /* INTEGER_0_1023 */
+static int hf_pcap_multipathIndicator_01;         /* MultipathIndicator */
+static int hf_pcap_pseudorangeRMS_Error;          /* INTEGER_0_63 */
+static int hf_pcap_GPS_NavigationModel_item;      /* NavigationModelSatInfo */
+static int hf_pcap_satelliteStatus;               /* SatelliteStatus */
+static int hf_pcap_gps_clockAndEphemerisParms;    /* GPS_ClockAndEphemerisParameters */
+static int hf_pcap_badSatellites;                 /* BadSatList */
+static int hf_pcap_noBadSatellites;               /* NoBadSatellites */
+static int hf_pcap_BadSatList_item;               /* INTEGER_0_63 */
+static int hf_pcap_gps_Week;                      /* INTEGER_0_1023 */
+static int hf_pcap_gps_TOW_AssistList;            /* GPS_TOW_AssistList */
+static int hf_pcap_GPS_TOW_AssistList_item;       /* GPS_TOW_Assist */
+static int hf_pcap_tlm_Message;                   /* BIT_STRING_SIZE_14 */
+static int hf_pcap_antiSpoof;                     /* BOOLEAN */
+static int hf_pcap_alert;                         /* BOOLEAN */
+static int hf_pcap_tlm_Reserved;                  /* BIT_STRING_SIZE_2 */
+static int hf_pcap_gps_RefTimeUNC;                /* INTEGER_0_127 */
+static int hf_pcap_a1;                            /* BIT_STRING_SIZE_24 */
+static int hf_pcap_a0;                            /* BIT_STRING_SIZE_32 */
+static int hf_pcap_t_ot;                          /* BIT_STRING_SIZE_8 */
+static int hf_pcap_delta_t_LS;                    /* BIT_STRING_SIZE_8 */
+static int hf_pcap_wn_t;                          /* BIT_STRING_SIZE_8 */
+static int hf_pcap_wn_lsf;                        /* BIT_STRING_SIZE_8 */
+static int hf_pcap_dn;                            /* BIT_STRING_SIZE_8 */
+static int hf_pcap_delta_t_LSF;                   /* BIT_STRING_SIZE_8 */
+static int hf_pcap_almanacRequest;                /* BOOLEAN */
+static int hf_pcap_utcModelRequest;               /* BOOLEAN */
+static int hf_pcap_ionosphericModelRequest;       /* BOOLEAN */
+static int hf_pcap_navigationModelRequest;        /* BOOLEAN */
+static int hf_pcap_dgpsCorrectionsRequest;        /* BOOLEAN */
+static int hf_pcap_referenceLocationRequest;      /* BOOLEAN */
+static int hf_pcap_referenceTimeRequest;          /* BOOLEAN */
+static int hf_pcap_aquisitionAssistanceRequest;   /* BOOLEAN */
+static int hf_pcap_realTimeIntegrityRequest;      /* BOOLEAN */
+static int hf_pcap_navModelAddDataRequest;        /* NavModelAdditionalData */
+static int hf_pcap_ganssReferenceTime;            /* BOOLEAN */
+static int hf_pcap_ganssreferenceLocation;        /* BOOLEAN */
+static int hf_pcap_ganssIonosphericModel;         /* BOOLEAN */
+static int hf_pcap_ganssRequestedGenericAssistanceDataList;  /* GanssRequestedGenericAssistanceDataList */
+static int hf_pcap_ganss_add_iono_mode_req;       /* BIT_STRING_SIZE_2 */
+static int hf_pcap_GanssRequestedGenericAssistanceDataList_item;  /* GanssReqGenericData */
+static int hf_pcap_ganssRealTimeIntegrity;        /* BOOLEAN */
+static int hf_pcap_ganssDifferentialCorrection;   /* DGANSS_Sig_Id_Req */
+static int hf_pcap_ganssAlmanac;                  /* BOOLEAN */
+static int hf_pcap_ganssNavigationModel;          /* BOOLEAN */
+static int hf_pcap_ganssTimeModelGnssGnss;        /* BIT_STRING_SIZE_9 */
+static int hf_pcap_ganssReferenceMeasurementInfo;  /* BOOLEAN */
+static int hf_pcap_ganssDataBits_01;              /* GanssDataBits */
+static int hf_pcap_ganssUTCModel;                 /* BOOLEAN */
+static int hf_pcap_ganssNavigationModelAdditionalData;  /* NavigationModelGANSS */
+static int hf_pcap_dGANSSSignalBDS;               /* BIT_STRING_SIZE_8 */
+static int hf_pcap_orbitModelID;                  /* INTEGER_0_7 */
+static int hf_pcap_clockModelID;                  /* INTEGER_0_7 */
+static int hf_pcap_utcModelID;                    /* INTEGER_0_7 */
+static int hf_pcap_almanacModelID;                /* INTEGER_0_7 */
+static int hf_pcap_dataBitAssistancelist_01;      /* ReqDataBitAssistanceList */
+static int hf_pcap_reqDataBitAssistanceList_ganssSignalID;  /* BIT_STRING_SIZE_8 */
+static int hf_pcap_ganssDataBitInterval;          /* INTEGER_0_15 */
+static int hf_pcap_ganssSatelliteInfo;            /* T_ganssSatelliteInfo */
+static int hf_pcap_ganssSatelliteInfo_item;       /* INTEGER_0_63 */
+static int hf_pcap_type_01;                       /* InformationReportCharacteristicsType */
+static int hf_pcap_periodicity;                   /* InformationReportPeriodicity */
+static int hf_pcap_min;                           /* INTEGER_1_60_ */
+static int hf_pcap_hour;                          /* INTEGER_1_24_ */
+static int hf_pcap_implicitInformation;           /* MethodType */
+static int hf_pcap_explicitInformation;           /* ExplicitInformationList */
+static int hf_pcap_ExplicitInformationList_item;  /* ExplicitInformation */
+static int hf_pcap_almanacAndSatelliteHealth;     /* AlmanacAndSatelliteHealth */
+static int hf_pcap_utcModel;                      /* UtcModel */
+static int hf_pcap_ionosphericModel;              /* IonosphericModel */
+static int hf_pcap_navigationModel;               /* NavigationModel */
+static int hf_pcap_dgpsCorrections;               /* DgpsCorrections */
+static int hf_pcap_referenceTime_01;              /* ReferenceTime */
+static int hf_pcap_acquisitionAssistance;         /* AcquisitionAssistance */
+static int hf_pcap_realTimeIntegrity;             /* RealTimeIntegrity */
+static int hf_pcap_almanacAndSatelliteHealthSIB;  /* AlmanacAndSatelliteHealthSIB_InfoType */
+static int hf_pcap_referenceLocation;             /* ReferenceLocation */
+static int hf_pcap_ganss_Common_DataReq;          /* GANSSCommonDataReq */
+static int hf_pcap_ganss_Generic_DataList;        /* GANSSGenericDataList */
+static int hf_pcap_transmissionGanssTimeIndicator;  /* TransmissionGanssTimeIndicator */
+static int hf_pcap_dganss_sig_id_req;             /* DGANSS_Sig_Id_Req */
+static int hf_pcap_ganss_ReferenceTime;           /* T_ganss_ReferenceTime */
+static int hf_pcap_ganss_IonosphericModel;        /* T_ganss_IonosphericModel */
+static int hf_pcap_ganss_ReferenceLocation;       /* T_ganss_ReferenceLocation */
+static int hf_pcap_eopReq;                        /* T_eopReq */
+static int hf_pcap_GANSSGenericDataList_item;     /* GANSSGenericDataReq */
+static int hf_pcap_ganssID;                       /* GANSSID */
+static int hf_pcap_ganss_realTimeIntegrity;       /* Ganss_realTimeIntegrityReq */
+static int hf_pcap_ganss_dataBitAssistance;       /* GanssDataBits */
+static int hf_pcap_dganssCorrections;             /* DganssCorrectionsReq */
+static int hf_pcap_ganss_almanacAndSatelliteHealth;  /* Ganss_almanacAndSatelliteHealthReq */
+static int hf_pcap_ganss_referenceMeasurementInfo;  /* Ganss_referenceMeasurementInfoReq */
+static int hf_pcap_ganss_utcModel;                /* Ganss_utcModelReq */
+static int hf_pcap_ganss_TimeModel_Gnss_Gnss;     /* Ganss_TimeModel_Gnss_Gnss */
+static int hf_pcap_navigationModel_01;            /* NavigationModelGANSS */
+static int hf_pcap_ganss_AddNavModelsReq;         /* AddNavigationModelsGANSS */
+static int hf_pcap_ganss_AddUtcModelsReq;         /* GANSS_AddUtcModelsReq */
+static int hf_pcap_ganss_AuxInfoReq;              /* GANSS_AuxInfoReq */
+static int hf_pcap_ganss_SBAS_ID;                 /* GANSS_SBAS_ID */
+static int hf_pcap_dBDS_Corrections;              /* DBDS_Corrections */
+static int hf_pcap_bDS_Ionospheric_Grid_Model_Request;  /* BDS_Ionospheric_Grid_Model_Request */
+static int hf_pcap_ganssWeek;                     /* INTEGER_0_4095 */
+static int hf_pcap_ganssTOE;                      /* INTEGER_0_167 */
+static int hf_pcap_t_toe_limit;                   /* INTEGER_0_10 */
+static int hf_pcap_addSatRelatedDataListGANSS;    /* AddSatelliteRelatedDataListGANSS */
+static int hf_pcap_AddSatelliteRelatedDataListGANSS_item;  /* AddSatelliteRelatedDataGANSS */
+static int hf_pcap_dGANSS_Signal;                 /* BIT_STRING_SIZE_8 */
+static int hf_pcap_ganssTimeModelGnssGnssExt;     /* BIT_STRING_SIZE_9 */
+static int hf_pcap_transmissionTOWIndicator;      /* TransmissionTOWIndicator */
+static int hf_pcap_navModelAdditionalData;        /* NavModelAdditionalData */
+static int hf_pcap_gps_TOE;                       /* INTEGER_0_167 */
+static int hf_pcap_t_TOE_limit;                   /* INTEGER_0_10 */
+static int hf_pcap_satRelatedDataList;            /* SatelliteRelatedDataList */
+static int hf_pcap_SatelliteRelatedDataList_item;  /* SatelliteRelatedData */
+static int hf_pcap_satRelatedDataListGANSS;       /* SatelliteRelatedDataListGANSS */
+static int hf_pcap_SatelliteRelatedDataListGANSS_item;  /* SatelliteRelatedDataGANSS */
+static int hf_pcap_MessageStructure_item;         /* MessageStructure_item */
+static int hf_pcap_repetitionNumber_01;           /* MessageStructureRepetition */
+static int hf_pcap_measurementValidity;           /* MeasurementValidity */
+static int hf_pcap_ue_State;                      /* T_ue_State */
+static int hf_pcap_otdoa_ReferenceCellInfo;       /* OTDOA_ReferenceCellInfo */
+static int hf_pcap_otdoa_NeighbourCellInfoList;   /* OTDOA_NeighbourCellInfoList */
+static int hf_pcap_otdoa_MeasuredResultsSets;     /* OTDOA_MeasuredResultsSets */
+static int hf_pcap_tUTRANGPSMeasurementValueInfo;  /* TUTRANGPSMeasurementValueInfo */
+static int hf_pcap_OTDOA_NeighbourCellInfoList_item;  /* OTDOA_NeighbourCellInfo */
+static int hf_pcap_relativeTimingDifferenceInfo;  /* RelativeTimingDifferenceInfo */
+static int hf_pcap_OTDOA_MeasuredResultsSets_item;  /* OTDOA_MeasuredResultsInfoList */
+static int hf_pcap_OTDOA_MeasuredResultsInfoList_item;  /* OTDOA_MeasuredResultsInfo */
+static int hf_pcap_ue_SFNSFNTimeDifferenceType2Info;  /* UE_SFNSFNTimeDifferenceType2Info */
+static int hf_pcap_primaryCPICH_Info;             /* PrimaryScramblingCode */
+static int hf_pcap_ue_SFNSFNTimeDifferenceType2;  /* INTEGER_0_40961 */
+static int hf_pcap_measurementDelay;              /* INTEGER_0_65535 */
+static int hf_pcap_rNC_ID;                        /* INTEGER_0_4095 */
+static int hf_pcap_c_ID;                          /* INTEGER_0_65535 */
+static int hf_pcap_sFNSFNMeasurementValueInfo;    /* SFNSFNMeasurementValueInfo */
+static int hf_pcap_tUTRANGANSSMeasurementValueInfo;  /* TUTRANGANSSMeasurementValueInfo */
+static int hf_pcap_sFNSFNValue;                   /* SFNSFNValue */
+static int hf_pcap_sFNSFNQuality;                 /* SFNSFNQuality */
+static int hf_pcap_sFNSFNDriftRate;               /* SFNSFNDriftRate */
+static int hf_pcap_sFNSFNDriftRateQuality;        /* SFNSFNDriftRateQuality */
+static int hf_pcap_sFN;                           /* SFN */
+static int hf_pcap_tUTRANGPS;                     /* TUTRANGPS */
+static int hf_pcap_tUTRANGPSQuality;              /* TUTRANGPSQuality */
+static int hf_pcap_tUTRANGPSDriftRate;            /* TUTRANGPSDriftRate */
+static int hf_pcap_tUTRANGPSDriftRateQuality;     /* TUTRANGPSDriftRateQuality */
+static int hf_pcap_ms_part;                       /* INTEGER_0_16383 */
+static int hf_pcap_ls_part;                       /* INTEGER_0_4294967295 */
+static int hf_pcap_tUTRANGANSS;                   /* TUTRANGANSS */
+static int hf_pcap_tUTRANGANSSQuality;            /* INTEGER_0_255 */
+static int hf_pcap_tUTRANGANSSDriftRate;          /* INTEGER_M50_50 */
+static int hf_pcap_tUTRANGANSSDriftRateQuality;   /* INTEGER_0_50 */
+static int hf_pcap_timingAdvanceLCR_R7;           /* TimingAdvanceLCR_R7 */
+static int hf_pcap_angleOfArrivalLCR;             /* AngleOfArrivalLCR */
+static int hf_pcap_referenceNumber;               /* INTEGER_0_32767_ */
+static int hf_pcap_amountOutstandingRequests;     /* INTEGER_1_8639999_ */
+static int hf_pcap_reportingInterval;             /* INTEGER_1_8639999_ */
+static int hf_pcap_reportingAmount;               /* INTEGER_1_8639999_ */
+static int hf_pcap_additionalMethodType;          /* AdditionalMethodType */
+static int hf_pcap_selectedPositionMethod;        /* SelectedPositionMethod */
+static int hf_pcap_new_ue_State;                  /* T_new_ue_State */
+static int hf_pcap_gps_UTC_Model;                 /* GPS_UTC_Model */
+static int hf_pcap_gps_Ionospheric_Model;         /* GPS_Ionospheric_Model */
+static int hf_pcap_gps_NavigationModel;           /* GPS_NavigationModel */
+static int hf_pcap_dgpsCorrections_01;            /* DGPSCorrections */
+static int hf_pcap_referenceTime_02;              /* GPS_ReferenceTime */
+static int hf_pcap_gps_AcquisitionAssistance;     /* GPS_AcquisitionAssistance */
+static int hf_pcap_gps_RealTime_Integrity;        /* GPS_RealTimeIntegrity */
+static int hf_pcap_almanacAndSatelliteHealthSIB_01;  /* AlmanacAndSatelliteHealthSIB */
+static int hf_pcap_gps_Transmission_TOW;          /* GPS_Transmission_TOW */
+static int hf_pcap_informationAvailable;          /* InformationAvailable */
+static int hf_pcap_informationNotAvailable;       /* InformationNotAvailable */
+static int hf_pcap_requestedDataValue;            /* RequestedDataValue */
+static int hf_pcap_event;                         /* RequestTypeEvent */
+static int hf_pcap_reportArea;                    /* RequestTypeReportArea */
+static int hf_pcap_horizontalaccuracyCode;        /* RequestTypeAccuracyCode */
+static int hf_pcap_standAloneLocationMethodsSupported;  /* BOOLEAN */
+static int hf_pcap_ueBasedOTDOASupported;         /* BOOLEAN */
+static int hf_pcap_networkAssistedGPSSupport;     /* NetworkAssistedGPSSuport */
+static int hf_pcap_supportGPSTimingOfCellFrame;   /* BOOLEAN */
+static int hf_pcap_supportForIPDL;                /* BOOLEAN */
+static int hf_pcap_supportForRxTxTimeDiff;        /* BOOLEAN */
+static int hf_pcap_supportForUEAGPSinCellPCH;     /* BOOLEAN */
+static int hf_pcap_supportForSFNSFNTimeDiff;      /* BOOLEAN */
+static int hf_pcap_NetworkAssistedGANSSSupport_item;  /* NetworkAssistedGANSSSupport_item */
+static int hf_pcap_ganssMode;                     /* T_ganssMode */
+static int hf_pcap_networkAssistedGANSSSupport_item_ganssSignalID;  /* GANSS_SignalID */
+static int hf_pcap_supportGANSSTimingOfCellFrame;  /* BOOLEAN */
+static int hf_pcap_supportGANSSCarrierPhaseMeasurement;  /* BOOLEAN */
+static int hf_pcap_AddPosSupport_item;            /* AddPosSupport_Element */
+static int hf_pcap_addPosID;                      /* T_addPosID */
+static int hf_pcap_addPosMode;                    /* T_addPosMode */
+static int hf_pcap_ganss_sbas_ids;                /* BIT_STRING_SIZE_8 */
+static int hf_pcap_ganss_signal_ids;              /* BIT_STRING_SIZE_8 */
+static int hf_pcap_utdoa_BitCount;                /* UTDOA_BitCount */
+static int hf_pcap_utdoa_timeInterval;            /* UTDOA_TimeInterval */
+static int hf_pcap_gpsPositioningInstructions;    /* GPSPositioningInstructions */
+static int hf_pcap_horizontalAccuracyCode;        /* HorizontalAccuracyCode */
+static int hf_pcap_verticalAccuracyCode;          /* VerticalAccuracyCode */
+static int hf_pcap_gpsTimingOfCellWanted;         /* BOOLEAN */
+static int hf_pcap_additionalAssistanceDataRequest;  /* BOOLEAN */
+static int hf_pcap_ganssPositioningInstructions;  /* GANSS_PositioningInstructions */
+static int hf_pcap_ganssTimingOfCellWanted;       /* BIT_STRING_SIZE_8 */
+static int hf_pcap_gANSS_PositioningInstructions_additionalAssistanceDataRequest;  /* BIT_STRING_SIZE_8 */
+static int hf_pcap_uE_Positioning_OTDOA_AssistanceData;  /* UE_Positioning_OTDOA_AssistanceData */
+static int hf_pcap_ue_positioning_OTDOA_ReferenceCellInfo;  /* UE_Positioning_OTDOA_ReferenceCellInfo */
+static int hf_pcap_ue_positioning_OTDOA_NeighbourCellList;  /* UE_Positioning_OTDOA_NeighbourCellList */
+static int hf_pcap_sfn_01;                        /* SFN */
+static int hf_pcap_modeSpecificInfo;              /* T_modeSpecificInfo */
+static int hf_pcap_fdd_01;                        /* T_fdd_01 */
+static int hf_pcap_tdd_01;                        /* T_tdd_01 */
+static int hf_pcap_cellParameterID;               /* CellParameterID */
+static int hf_pcap_frequencyInfo;                 /* FrequencyInfo */
+static int hf_pcap_positioningMode;               /* T_positioningMode */
+static int hf_pcap_ueBased;                       /* T_ueBased */
+static int hf_pcap_cellPosition;                  /* ReferenceCellPosition */
+static int hf_pcap_roundTripTime_01;              /* INTEGER_0_32766 */
+static int hf_pcap_ueAssisted;                    /* T_ueAssisted */
+static int hf_pcap_ue_positioning_IPDL_Paremeters;  /* UE_Positioning_IPDL_Parameters */
+static int hf_pcap_ellipsoidPoint;                /* GeographicalCoordinates */
+static int hf_pcap_ellipsoidPointWithAltitude;    /* GA_PointWithAltitude */
+static int hf_pcap_modeSpecificInfo_01;           /* T_modeSpecificInfo_01 */
+static int hf_pcap_fdd_02;                        /* T_fdd_02 */
+static int hf_pcap_ip_Spacing;                    /* IP_Spacing */
+static int hf_pcap_ip_Length;                     /* IP_Length */
+static int hf_pcap_ip_Offset;                     /* INTEGER_0_9 */
+static int hf_pcap_seed;                          /* INTEGER_0_63 */
+static int hf_pcap_tdd_02;                        /* T_tdd_02 */
+static int hf_pcap_burstModeParameters;           /* BurstModeParameters */
+static int hf_pcap_burstStart;                    /* INTEGER_0_15 */
+static int hf_pcap_burstLength;                   /* INTEGER_10_25 */
+static int hf_pcap_burstFreq;                     /* INTEGER_1_16 */
+static int hf_pcap_UE_Positioning_OTDOA_NeighbourCellList_item;  /* UE_Positioning_OTDOA_NeighbourCellInfo */
+static int hf_pcap_modeSpecificInfo_02;           /* T_modeSpecificInfo_02 */
+static int hf_pcap_fdd_03;                        /* T_fdd_03 */
+static int hf_pcap_tdd_03;                        /* T_tdd_03 */
+static int hf_pcap_sfn_SFN_RelTimeDifference;     /* SFN_SFN_RelTimeDifference1 */
+static int hf_pcap_sfn_Offset_Validity;           /* SFN_Offset_Validity */
+static int hf_pcap_sfn_SFN_Drift;                 /* SFN_SFN_Drift */
+static int hf_pcap_searchWindowSize;              /* OTDOA_SearchWindowSize */
+static int hf_pcap_positioningMode_01;            /* T_positioningMode_01 */
+static int hf_pcap_ueBased_01;                    /* T_ueBased_01 */
+static int hf_pcap_relativeNorth;                 /* INTEGER_M20000_20000 */
+static int hf_pcap_relativeEast;                  /* INTEGER_M20000_20000 */
+static int hf_pcap_relativeAltitude;              /* INTEGER_M4000_4000 */
+static int hf_pcap_fineSFN_SFN;                   /* FineSFNSFN */
+static int hf_pcap_ueAssisted_01;                 /* T_ueAssisted_01 */
+static int hf_pcap_sfn_Offset;                    /* INTEGER_0_4095 */
+static int hf_pcap_sfn_sfn_Reltimedifference;     /* INTEGER_0_38399 */
+static int hf_pcap_uTDOA_ChannelSettings;         /* UTDOA_RRCState */
+static int hf_pcap_modeSpecificInfo_03;           /* T_modeSpecificInfo_03 */
+static int hf_pcap_fdd_04;                        /* FrequencyInfoFDD */
+static int hf_pcap_tdd_04;                        /* FrequencyInfoTDD */
+static int hf_pcap_uarfcn_UL;                     /* UARFCN */
+static int hf_pcap_uarfcn_DL;                     /* UARFCN */
+static int hf_pcap_uarfcn;                        /* UARFCN */
+static int hf_pcap_uTDOA_CELLDCH;                 /* UTDOA_CELLDCH */
+static int hf_pcap_uTDOA_CELLFACH;                /* UTDOA_CELLFACH */
+static int hf_pcap_uL_DPCHInfo;                   /* UL_DPCHInfo */
+static int hf_pcap_compressedModeAssistanceData;  /* Compressed_Mode_Assistance_Data */
+static int hf_pcap_dCH_Information;               /* DCH_Information */
+static int hf_pcap_e_DPCH_Information;            /* E_DPCH_Information */
+static int hf_pcap_fdd_05;                        /* T_fdd_04 */
+static int hf_pcap_scramblingCodeType;            /* ScramblingCodeType */
+static int hf_pcap_scramblingCode;                /* UL_ScramblingCode */
+static int hf_pcap_tfci_Existence;                /* BOOLEAN */
+static int hf_pcap_numberOfFBI_Bits;              /* NumberOfFBI_Bits */
+static int hf_pcap_tdd_05;                        /* T_tdd_04 */
+static int hf_pcap_tFCI_Coding;                   /* TFCI_Coding */
+static int hf_pcap_punctureLimit;                 /* PuncturingLimit */
+static int hf_pcap_repetitionPeriod;              /* RepetitionPeriod */
+static int hf_pcap_repetitionLength;              /* RepetitionLength */
+static int hf_pcap_tdd_DPCHOffset;                /* TDD_DPCHOffset */
+static int hf_pcap_uL_Timeslot_Information;       /* UL_Timeslot_Information */
+static int hf_pcap_frameOffset;                   /* FrameOffset */
+static int hf_pcap_specialBurstScheduling;        /* SpecialBurstScheduling */
+static int hf_pcap_dl_information;                /* DL_InformationFDD */
+static int hf_pcap_ul_information;                /* UL_InformationFDD */
+static int hf_pcap_primaryScramblingCode;         /* PrimaryScramblingCode */
+static int hf_pcap_chipOffset;                    /* ChipOffset */
+static int hf_pcap_transmissionGapPatternSequenceInfo;  /* Transmission_Gap_Pattern_Sequence_Information */
+static int hf_pcap_activePatternSequenceInfo;     /* Active_Pattern_Sequence_Information */
+static int hf_pcap_cFN;                           /* CFN */
+static int hf_pcap_Transmission_Gap_Pattern_Sequence_Information_item;  /* Transmission_Gap_Pattern_Sequence_Information_item */
+static int hf_pcap_tGPSID;                        /* TGPSID */
+static int hf_pcap_tGSN;                          /* TGSN */
+static int hf_pcap_tGL1;                          /* GapLength */
+static int hf_pcap_tGL2;                          /* GapLength */
+static int hf_pcap_tGD;                           /* TGD */
+static int hf_pcap_tGPL1;                         /* GapDuration */
+static int hf_pcap_uplink_Compressed_Mode_Method;  /* Uplink_Compressed_Mode_Method */
+static int hf_pcap_cMConfigurationChangeCFN;      /* CFN */
+static int hf_pcap_transmission_Gap_Pattern_Sequence_Status;  /* Transmission_Gap_Pattern_Sequence_Status_List */
+static int hf_pcap_Transmission_Gap_Pattern_Sequence_Status_List_item;  /* Transmission_Gap_Pattern_Sequence_Status_List_item */
+static int hf_pcap_tGPRC;                         /* TGPRC */
+static int hf_pcap_tGCFN;                         /* CFN */
+static int hf_pcap_tFCS;                          /* TFCS */
+static int hf_pcap_trChInfo;                      /* TrChInfoList */
+static int hf_pcap_TrChInfoList_item;             /* UL_TrCHInfo */
+static int hf_pcap_uL_TrCHtype;                   /* UL_TrCHType */
+static int hf_pcap_tfs;                           /* TransportFormatSet */
+static int hf_pcap_maxSet_E_DPDCHs;               /* Max_Set_E_DPDCHs */
+static int hf_pcap_ul_PunctureLimit;              /* PuncturingLimit */
+static int hf_pcap_e_TFCS_Information;            /* E_TFCS_Information */
+static int hf_pcap_e_TTI;                         /* E_TTI */
+static int hf_pcap_e_DPCCH_PO;                    /* E_DPCCH_PO */
+static int hf_pcap_e_DCH_TFCS_Index;              /* E_DCH_TFCS_Index */
+static int hf_pcap_reference_E_TFCI_Information;  /* Reference_E_TFCI_Information */
+static int hf_pcap_Reference_E_TFCI_Information_item;  /* Reference_E_TFCI_Information_Item */
+static int hf_pcap_reference_E_TFCI;              /* E_TFCI */
+static int hf_pcap_reference_E_TFCI_PO;           /* Reference_E_TFCI_PO */
+static int hf_pcap_initialOffset;                 /* INTEGER_0_255 */
+static int hf_pcap_noinitialOffset;               /* INTEGER_0_63 */
+static int hf_pcap_UL_Timeslot_Information_item;  /* UL_Timeslot_InformationItem */
+static int hf_pcap_timeSlot;                      /* TimeSlot */
+static int hf_pcap_midambleShiftAndBurstType;     /* MidambleShiftAndBurstType */
+static int hf_pcap_tFCI_Presence;                 /* BOOLEAN */
+static int hf_pcap_uL_Code_InformationList;       /* TDD_UL_Code_Information */
+static int hf_pcap_type1;                         /* T_type1 */
+static int hf_pcap_midambleConfigurationBurstType1And3;  /* MidambleConfigurationBurstType1And3 */
+static int hf_pcap_midambleAllocationMode;        /* T_midambleAllocationMode */
+static int hf_pcap_defaultMidamble;               /* NULL */
+static int hf_pcap_commonMidamble;                /* NULL */
+static int hf_pcap_ueSpecificMidamble;            /* MidambleShiftLong */
+static int hf_pcap_type2;                         /* T_type2 */
+static int hf_pcap_midambleConfigurationBurstType2;  /* MidambleConfigurationBurstType2 */
+static int hf_pcap_midambleAllocationMode_01;     /* T_midambleAllocationMode_01 */
+static int hf_pcap_ueSpecificMidamble_01;         /* MidambleShiftShort */
+static int hf_pcap_type3;                         /* T_type3 */
+static int hf_pcap_midambleAllocationMode_02;     /* T_midambleAllocationMode_02 */
+static int hf_pcap_TDD_UL_Code_Information_item;  /* TDD_UL_Code_InformationItem */
+static int hf_pcap_tdd_ChannelisationCode;        /* TDD_ChannelisationCode */
+static int hf_pcap_pRACHparameters;               /* PRACHparameters */
+static int hf_pcap_cRNTI;                         /* C_RNTI */
+static int hf_pcap_uschParameters;                /* UschParameters */
+static int hf_pcap_PRACHparameters_item;          /* PRACH_ChannelInfo */
+static int hf_pcap_pRACH_Info;                    /* PRACH_Info */
+static int hf_pcap_tFS;                           /* TransportFormatSet */
+static int hf_pcap_fdd_06;                        /* T_fdd_05 */
+static int hf_pcap_availableSignatures;           /* AvailableSignatures */
+static int hf_pcap_availableSF;                   /* SF_PRACH */
+static int hf_pcap_preambleScramblingCodeWordNumber;  /* PreambleScramblingCodeWordNumber */
+static int hf_pcap_puncturingLimit;               /* PuncturingLimit */
+static int hf_pcap_availableSubChannelNumbers;    /* AvailableSubChannelNumbers */
+static int hf_pcap_tdd_06;                        /* T_tdd_05 */
+static int hf_pcap_maxPRACH_MidambleShifts;       /* MaxPRACH_MidambleShifts */
+static int hf_pcap_pRACH_Midamble;                /* PRACH_Midamble */
+static int hf_pcap_dynamicPart;                   /* TransportFormatSet_DynamicPartList */
+static int hf_pcap_semi_staticPart;               /* TransportFormatSet_Semi_staticPart */
+static int hf_pcap_TransportFormatSet_DynamicPartList_item;  /* TransportFormatSet_DynamicPartList_item */
+static int hf_pcap_rlc_Size;                      /* RLC_Size */
+static int hf_pcap_numberOfTbsTTIList;            /* SEQUENCE_SIZE_1_maxNrOfTFs_OF_TbsTTIInfo */
+static int hf_pcap_numberOfTbsTTIList_item;       /* TbsTTIInfo */
+static int hf_pcap_tTIInfo;                       /* TransportFormatSet_TransmissionTimeIntervalDynamic */
+static int hf_pcap_numberOfTbs;                   /* TransportFormatSet_NrOfTransportBlocks */
+static int hf_pcap_transmissionTimeInterval;      /* TransportFormatSet_TransmissionTimeIntervalSemiStatic */
+static int hf_pcap_channelCoding;                 /* TransportFormatSet_ChannelCodingType */
+static int hf_pcap_codingRate;                    /* TransportFormatSet_CodingRate */
+static int hf_pcap_rateMatchingAttribute;         /* TransportFormatSet_RateMatchingAttribute */
+static int hf_pcap_cRC_Size;                      /* TransportFormatSet_CRC_Size */
+static int hf_pcap_TFCS_item;                     /* CTFC */
+static int hf_pcap_ctfc2Bit;                      /* T_ctfc2Bit */
+static int hf_pcap_ctfc2Bit_item;                 /* INTEGER_0_3 */
+static int hf_pcap_ctfc4Bit;                      /* T_ctfc4Bit */
+static int hf_pcap_ctfc4Bit_item;                 /* INTEGER_0_15 */
+static int hf_pcap_ctfc6Bit;                      /* T_ctfc6Bit */
+static int hf_pcap_ctfc6Bit_item;                 /* INTEGER_0_63 */
+static int hf_pcap_ctfc8Bit;                      /* T_ctfc8Bit */
+static int hf_pcap_ctfc8Bit_item;                 /* INTEGER_0_255 */
+static int hf_pcap_ctfc12Bit;                     /* T_ctfc12Bit */
+static int hf_pcap_ctfc12Bit_item;                /* INTEGER_0_4095 */
+static int hf_pcap_ctfc16Bit;                     /* T_ctfc16Bit */
+static int hf_pcap_ctfc16Bit_item;                /* INTEGER_0_65535 */
+static int hf_pcap_ctfc24Bit;                     /* T_ctfc24Bit */
+static int hf_pcap_ctfc24Bit_item;                /* INTEGER_0_16777215 */
+static int hf_pcap_uSCH_SchedulingOffset;         /* USCH_SchedulingOffset */
+static int hf_pcap_horizontalVelocity;            /* HorizontalVelocity */
+static int hf_pcap_horizontalWithVerticalVelocity;  /* HorizontalWithVerticalVelocity */
+static int hf_pcap_horizontalVelocityWithUncertainty;  /* HorizontalVelocityWithUncertainty */
+static int hf_pcap_horizontalWithVerticalVelocityAndUncertainty;  /* HorizontalWithVerticalVelocityAndUncertainty */
+static int hf_pcap_horizontalSpeedAndBearing;     /* HorizontalSpeedAndBearing */
+static int hf_pcap_verticalVelocity;              /* VerticalVelocity */
+static int hf_pcap_uncertaintySpeed;              /* INTEGER_0_255 */
+static int hf_pcap_horizontalUncertaintySpeed;    /* INTEGER_0_255 */
+static int hf_pcap_verticalUncertaintySpeed;      /* INTEGER_0_255 */
+static int hf_pcap_bearing;                       /* INTEGER_0_359 */
+static int hf_pcap_horizontalSpeed;               /* INTEGER_0_2047 */
+static int hf_pcap_verticalSpeed;                 /* INTEGER_0_255 */
+static int hf_pcap_verticalSpeedDirection;        /* VerticalSpeedDirection */
+static int hf_pcap_utran_GPSTimingOfCell;         /* INTEGER_0_2322431999999_ */
+static int hf_pcap_ue_GPSTimingOfCell;            /* INTEGER_0_37158911999999_ */
+static int hf_pcap_ue_GANSSTimingOfCell;          /* INTEGER_0_345599999999_ */
+static int hf_pcap_ganss_Time_ID;                 /* GANSSID */
+static int hf_pcap_protocolIEs;                   /* ProtocolIE_Container */
+static int hf_pcap_protocolExtensions;            /* ProtocolExtensionContainer */
+static int hf_pcap_referencePosition;             /* RefPosition_InfEx_Rqst */
+static int hf_pcap_extension_InformationExchangeObjectType_InfEx_Rqst;  /* Extension_InformationExchangeObjectType_InfEx_Rqst */
+static int hf_pcap_referencePositionEstimate;     /* UE_PositionEstimate */
+static int hf_pcap_referenceUC_ID;                /* UC_ID */
+static int hf_pcap_referencePosition_01;          /* RefPosition_InfEx_Rsp */
+static int hf_pcap_referencePosition_02;          /* RefPosition_InfEx_Rprt */
+static int hf_pcap_requestedDataValueInformation;  /* RequestedDataValueInformation */
+static int hf_pcap_privateIEs;                    /* PrivateIE_Container */
+static int hf_pcap_initiatingMessage;             /* InitiatingMessage */
+static int hf_pcap_successfulOutcome;             /* SuccessfulOutcome */
+static int hf_pcap_unsuccessfulOutcome;           /* UnsuccessfulOutcome */
+static int hf_pcap_outcome;                       /* Outcome */
+static int hf_pcap_initiatingMessagevalue;        /* InitiatingMessage_value */
+static int hf_pcap_successfulOutcome_value;       /* SuccessfulOutcome_value */
+static int hf_pcap_unsuccessfulOutcome_value;     /* UnsuccessfulOutcome_value */
+static int hf_pcap_outcome_value;                 /* Outcome_value */
 /* named bits */
-static int hf_pcap_AvailableSignatures_signature15 = -1;
-static int hf_pcap_AvailableSignatures_signature14 = -1;
-static int hf_pcap_AvailableSignatures_signature13 = -1;
-static int hf_pcap_AvailableSignatures_signature12 = -1;
-static int hf_pcap_AvailableSignatures_signature11 = -1;
-static int hf_pcap_AvailableSignatures_signature10 = -1;
-static int hf_pcap_AvailableSignatures_signature9 = -1;
-static int hf_pcap_AvailableSignatures_signature8 = -1;
-static int hf_pcap_AvailableSignatures_signature7 = -1;
-static int hf_pcap_AvailableSignatures_signature6 = -1;
-static int hf_pcap_AvailableSignatures_signature5 = -1;
-static int hf_pcap_AvailableSignatures_signature4 = -1;
-static int hf_pcap_AvailableSignatures_signature3 = -1;
-static int hf_pcap_AvailableSignatures_signature2 = -1;
-static int hf_pcap_AvailableSignatures_signature1 = -1;
-static int hf_pcap_AvailableSignatures_signature0 = -1;
-static int hf_pcap_AvailableSubChannelNumbers_subCh11 = -1;
-static int hf_pcap_AvailableSubChannelNumbers_subCh10 = -1;
-static int hf_pcap_AvailableSubChannelNumbers_subCh9 = -1;
-static int hf_pcap_AvailableSubChannelNumbers_subCh8 = -1;
-static int hf_pcap_AvailableSubChannelNumbers_subCh7 = -1;
-static int hf_pcap_AvailableSubChannelNumbers_subCh6 = -1;
-static int hf_pcap_AvailableSubChannelNumbers_subCh5 = -1;
-static int hf_pcap_AvailableSubChannelNumbers_subCh4 = -1;
-static int hf_pcap_AvailableSubChannelNumbers_subCh3 = -1;
-static int hf_pcap_AvailableSubChannelNumbers_subCh2 = -1;
-static int hf_pcap_AvailableSubChannelNumbers_subCh1 = -1;
-static int hf_pcap_AvailableSubChannelNumbers_subCh0 = -1;
-
-/*--- End of included file: packet-pcap-hf.c ---*/
-#line 67 "./asn1/pcap/packet-pcap-template.c"
+static int hf_pcap_AvailableSignatures_signature15;
+static int hf_pcap_AvailableSignatures_signature14;
+static int hf_pcap_AvailableSignatures_signature13;
+static int hf_pcap_AvailableSignatures_signature12;
+static int hf_pcap_AvailableSignatures_signature11;
+static int hf_pcap_AvailableSignatures_signature10;
+static int hf_pcap_AvailableSignatures_signature9;
+static int hf_pcap_AvailableSignatures_signature8;
+static int hf_pcap_AvailableSignatures_signature7;
+static int hf_pcap_AvailableSignatures_signature6;
+static int hf_pcap_AvailableSignatures_signature5;
+static int hf_pcap_AvailableSignatures_signature4;
+static int hf_pcap_AvailableSignatures_signature3;
+static int hf_pcap_AvailableSignatures_signature2;
+static int hf_pcap_AvailableSignatures_signature1;
+static int hf_pcap_AvailableSignatures_signature0;
+static int hf_pcap_AvailableSubChannelNumbers_subCh11;
+static int hf_pcap_AvailableSubChannelNumbers_subCh10;
+static int hf_pcap_AvailableSubChannelNumbers_subCh9;
+static int hf_pcap_AvailableSubChannelNumbers_subCh8;
+static int hf_pcap_AvailableSubChannelNumbers_subCh7;
+static int hf_pcap_AvailableSubChannelNumbers_subCh6;
+static int hf_pcap_AvailableSubChannelNumbers_subCh5;
+static int hf_pcap_AvailableSubChannelNumbers_subCh4;
+static int hf_pcap_AvailableSubChannelNumbers_subCh3;
+static int hf_pcap_AvailableSubChannelNumbers_subCh2;
+static int hf_pcap_AvailableSubChannelNumbers_subCh1;
+static int hf_pcap_AvailableSubChannelNumbers_subCh0;
 
 /* Initialize the subtree pointers */
-static int ett_pcap = -1;
+static int ett_pcap;
 
-
-/*--- Included file: packet-pcap-ett.c ---*/
-#line 1 "./asn1/pcap/packet-pcap-ett.c"
-static gint ett_pcap_PrivateIE_ID = -1;
-static gint ett_pcap_TransactionID = -1;
-static gint ett_pcap_ProtocolIE_Container = -1;
-static gint ett_pcap_ProtocolIE_Field = -1;
-static gint ett_pcap_ProtocolExtensionContainer = -1;
-static gint ett_pcap_ProtocolExtensionField = -1;
-static gint ett_pcap_PrivateIE_Container = -1;
-static gint ett_pcap_PrivateIE_Field = -1;
-static gint ett_pcap_AlmanacAndSatelliteHealthSIB = -1;
-static gint ett_pcap_Cause = -1;
-static gint ett_pcap_CellId_MeasuredResultsSets = -1;
-static gint ett_pcap_CellId_MeasuredResultsInfoList = -1;
-static gint ett_pcap_CellId_MeasuredResultsInfo = -1;
-static gint ett_pcap_RoundTripTimeInfo = -1;
-static gint ett_pcap_RoundTripTimeInfoWithType1 = -1;
-static gint ett_pcap_UE_PositioningMeasQuality = -1;
-static gint ett_pcap_UTRANAccessPointPositionAltitude = -1;
-static gint ett_pcap_RxTimingDeviationInfo = -1;
-static gint ett_pcap_RxTimingDeviationLCRInfo = -1;
-static gint ett_pcap_RxTimingDeviation768Info = -1;
-static gint ett_pcap_RxTimingDeviation384extInfo = -1;
-static gint ett_pcap_AddMeasurementInfo = -1;
-static gint ett_pcap_AngleOfArrivalLCR = -1;
-static gint ett_pcap_CellId_IRATMeasuredResultsSets = -1;
-static gint ett_pcap_CellId_IRATMeasuredResultsInfoList = -1;
-static gint ett_pcap_GERAN_MeasuredResultsInfoList = -1;
-static gint ett_pcap_GERAN_MeasuredResultsInfo = -1;
-static gint ett_pcap_GERANCellGlobalID = -1;
-static gint ett_pcap_GERANPhysicalCellID = -1;
-static gint ett_pcap_GSM_BSIC = -1;
-static gint ett_pcap_CellIDPositioning = -1;
-static gint ett_pcap_RequestedCellIDMeasurements = -1;
-static gint ett_pcap_T_fdd = -1;
-static gint ett_pcap_T_tdd = -1;
-static gint ett_pcap_RequestedCellIDGERANMeasurements = -1;
-static gint ett_pcap_CriticalityDiagnostics = -1;
-static gint ett_pcap_CriticalityDiagnostics_IE_List = -1;
-static gint ett_pcap_CriticalityDiagnostics_IE_List_item = -1;
-static gint ett_pcap_DGPSCorrections = -1;
-static gint ett_pcap_DGPS_CorrectionSatInfoList = -1;
-static gint ett_pcap_DGPS_CorrectionSatInfo = -1;
-static gint ett_pcap_DGNSS_ValidityPeriod = -1;
-static gint ett_pcap_UE_PositionEstimate = -1;
-static gint ett_pcap_GeographicalCoordinates = -1;
-static gint ett_pcap_GA_AltitudeAndDirection = -1;
-static gint ett_pcap_GA_EllipsoidArc = -1;
-static gint ett_pcap_GA_Point = -1;
-static gint ett_pcap_GA_PointWithAltitude = -1;
-static gint ett_pcap_GA_PointWithAltitudeAndUncertaintyEllipsoid = -1;
-static gint ett_pcap_GA_PointWithUnCertainty = -1;
-static gint ett_pcap_GA_PointWithUnCertaintyEllipse = -1;
-static gint ett_pcap_GA_Polygon = -1;
-static gint ett_pcap_GA_Polygon_item = -1;
-static gint ett_pcap_GA_UncertaintyEllipse = -1;
-static gint ett_pcap_UE_PositionEstimateInfo = -1;
-static gint ett_pcap_ReferenceTimeChoice = -1;
-static gint ett_pcap_Cell_Timing = -1;
-static gint ett_pcap_GANSS_Reference_Time_Only = -1;
-static gint ett_pcap_PositionDataUEbased = -1;
-static gint ett_pcap_PositionData = -1;
-static gint ett_pcap_GANSS_PositioningDataSet = -1;
-static gint ett_pcap_PositioningDataSet = -1;
-static gint ett_pcap_GPS_AcquisitionAssistance = -1;
-static gint ett_pcap_AcquisitionSatInfoList = -1;
-static gint ett_pcap_AcquisitionSatInfo = -1;
-static gint ett_pcap_ExtraDopplerInfo = -1;
-static gint ett_pcap_AzimuthAndElevation = -1;
-static gint ett_pcap_AzimuthAndElevationLSB = -1;
-static gint ett_pcap_AuxInfoGANSS_ID1 = -1;
-static gint ett_pcap_AuxInfoGANSS_ID1_element = -1;
-static gint ett_pcap_AuxInfoGANSS_ID3 = -1;
-static gint ett_pcap_AuxInfoGANSS_ID3_element = -1;
-static gint ett_pcap_CNAVclockModel = -1;
-static gint ett_pcap_DeltaUT1 = -1;
-static gint ett_pcap_DGANSS_Corrections = -1;
-static gint ett_pcap_DGANSS_Information = -1;
-static gint ett_pcap_DGANSS_InformationItem = -1;
-static gint ett_pcap_DGANSS_SignalInformation = -1;
-static gint ett_pcap_DGANSS_SignalInformationItem = -1;
-static gint ett_pcap_GANSS_AddClockModels = -1;
-static gint ett_pcap_GANSS_AddOrbitModels = -1;
-static gint ett_pcap_GANSS_Additional_Ionospheric_Model = -1;
-static gint ett_pcap_GANSS_Additional_Navigation_Models = -1;
-static gint ett_pcap_GANSS_Additional_Time_Models = -1;
-static gint ett_pcap_GANSS_Additional_UTC_Models = -1;
-static gint ett_pcap_GANSS_ALM_ECEFsbasAlmanacSet = -1;
-static gint ett_pcap_GANSS_ALM_GlonassAlmanacSet = -1;
-static gint ett_pcap_GANSS_ALM_MidiAlmanacSet = -1;
-static gint ett_pcap_GANSS_ALM_NAVKeplerianSet = -1;
-static gint ett_pcap_GANSS_ALM_ReducedKeplerianSet = -1;
-static gint ett_pcap_GANSS_AlmanacAndSatelliteHealth = -1;
-static gint ett_pcap_GANSS_AlmanacModel = -1;
-static gint ett_pcap_GANSS_Auxiliary_Information = -1;
-static gint ett_pcap_GANSS_AzimuthAndElevation = -1;
-static gint ett_pcap_GANSS_Clock_Model = -1;
-static gint ett_pcap_GANSS_CommonAssistanceData = -1;
-static gint ett_pcap_GANSS_Data_Bit_Assistance = -1;
-static gint ett_pcap_GANSS_DataBitAssistanceList = -1;
-static gint ett_pcap_GANSS_DataBitAssistanceItem = -1;
-static gint ett_pcap_GANSS_DataBitAssistanceSgnList = -1;
-static gint ett_pcap_GANSS_DataBitAssistanceSgnItem = -1;
-static gint ett_pcap_GANSS_Earth_Orientation_Parameters = -1;
-static gint ett_pcap_GANSS_ExtraDoppler = -1;
-static gint ett_pcap_GANSS_GenericAssistanceDataList = -1;
-static gint ett_pcap_GANSSGenericAssistanceData = -1;
-static gint ett_pcap_GANSS_GenericMeasurementInfo = -1;
-static gint ett_pcap_GANSS_GenericMeasurementInfo_item = -1;
-static gint ett_pcap_GANSSID = -1;
-static gint ett_pcap_GANSSMeasurementSignalList = -1;
-static gint ett_pcap_GANSSMeasurementSignalList_item = -1;
-static gint ett_pcap_GanssCodePhaseAmbiguityExt = -1;
-static gint ett_pcap_GANSS_Ionospheric_Model = -1;
-static gint ett_pcap_GANSS_IonosphereRegionalStormFlags = -1;
-static gint ett_pcap_GANSS_KeplerianParametersAlm = -1;
-static gint ett_pcap_GANSS_KeplerianParametersOrb = -1;
-static gint ett_pcap_GANSS_MeasurementParameters = -1;
-static gint ett_pcap_GANSS_MeasurementParametersItem = -1;
-static gint ett_pcap_GanssIntegerCodePhaseExt = -1;
-static gint ett_pcap_GANSS_MeasuredResultsList = -1;
-static gint ett_pcap_GANSS_MeasuredResults = -1;
-static gint ett_pcap_T_referenceTime = -1;
-static gint ett_pcap_GANSS_Navigation_Model = -1;
-static gint ett_pcap_GANSS_Orbit_Model = -1;
-static gint ett_pcap_GANSS_Real_Time_Integrity = -1;
-static gint ett_pcap_GANSS_RealTimeInformationItem = -1;
-static gint ett_pcap_GANSS_Reference_Location = -1;
-static gint ett_pcap_GANSS_ReferenceMeasurementInfo = -1;
-static gint ett_pcap_GANSS_Reference_Time = -1;
-static gint ett_pcap_GANSS_ReferenceTimeOnly = -1;
-static gint ett_pcap_GANSS_SatelliteClockModelItem = -1;
-static gint ett_pcap_GANSS_SatelliteInformation = -1;
-static gint ett_pcap_GANSS_SatelliteInformationItem = -1;
-static gint ett_pcap_GANSS_SatelliteInformationKP = -1;
-static gint ett_pcap_GANSS_SatelliteInformationKPItem = -1;
-static gint ett_pcap_GANSS_SAT_Info_Almanac_GLOkpList = -1;
-static gint ett_pcap_GANSS_SAT_Info_Almanac_GLOkp = -1;
-static gint ett_pcap_GANSS_SAT_Info_Almanac_MIDIkpList = -1;
-static gint ett_pcap_GANSS_SAT_Info_Almanac_MIDIkp = -1;
-static gint ett_pcap_GANSS_SAT_Info_Almanac_NAVkpList = -1;
-static gint ett_pcap_GANSS_SAT_Info_Almanac_NAVkp = -1;
-static gint ett_pcap_GANSS_SAT_Info_Almanac_REDkpList = -1;
-static gint ett_pcap_GANSS_SAT_Info_Almanac_REDkp = -1;
-static gint ett_pcap_GANSS_SAT_Info_Almanac_SBASecefList = -1;
-static gint ett_pcap_GANSS_SAT_Info_Almanac_SBASecef = -1;
-static gint ett_pcap_Ganss_Sat_Info_AddNavList = -1;
-static gint ett_pcap_Ganss_Sat_Info_AddNavList_item = -1;
-static gint ett_pcap_GANSS_Sat_Info_Nav = -1;
-static gint ett_pcap_GANSS_Sat_Info_Nav_item = -1;
-static gint ett_pcap_GANSS_SignalID = -1;
-static gint ett_pcap_GANSS_Time_Model = -1;
-static gint ett_pcap_GANSS_UTRAN_TRU = -1;
-static gint ett_pcap_GANSS_UTC_Model = -1;
-static gint ett_pcap_GLONASSclockModel = -1;
-static gint ett_pcap_NAVclockModel = -1;
-static gint ett_pcap_NavModel_CNAVKeplerianSet = -1;
-static gint ett_pcap_NavModel_GLONASSecef = -1;
-static gint ett_pcap_NavModel_NAVKeplerianSet = -1;
-static gint ett_pcap_NavModel_SBASecef = -1;
-static gint ett_pcap_SBASclockModel = -1;
-static gint ett_pcap_UTCmodelSet1 = -1;
-static gint ett_pcap_UTCmodelSet2 = -1;
-static gint ett_pcap_UTCmodelSet3 = -1;
-static gint ett_pcap_UTRAN_GANSSReferenceTimeDL = -1;
-static gint ett_pcap_UTRAN_GANSSReferenceTimeUL = -1;
-static gint ett_pcap_GPS_AlmanacAndSatelliteHealth = -1;
-static gint ett_pcap_AlmanacSatInfoList = -1;
-static gint ett_pcap_AlmanacSatInfo = -1;
-static gint ett_pcap_GPS_ClockAndEphemerisParameters = -1;
-static gint ett_pcap_SubFrame1Reserved = -1;
-static gint ett_pcap_GPS_Ionospheric_Model = -1;
-static gint ett_pcap_MeasuredResultsList = -1;
-static gint ett_pcap_GPS_MeasuredResults = -1;
-static gint ett_pcap_GPS_MeasurementParamList = -1;
-static gint ett_pcap_GPS_MeasurementParam = -1;
-static gint ett_pcap_GPS_NavigationModel = -1;
-static gint ett_pcap_NavigationModelSatInfo = -1;
-static gint ett_pcap_GPS_RealTimeIntegrity = -1;
-static gint ett_pcap_BadSatList = -1;
-static gint ett_pcap_GPS_ReferenceLocation = -1;
-static gint ett_pcap_GPS_ReferenceTime = -1;
-static gint ett_pcap_GPS_TOW_AssistList = -1;
-static gint ett_pcap_GPS_TOW_Assist = -1;
-static gint ett_pcap_GPSReferenceTimeUncertainty = -1;
-static gint ett_pcap_GPS_UTC_Model = -1;
-static gint ett_pcap_AdditionalGPSAssistDataRequired = -1;
-static gint ett_pcap_AdditionalGanssAssistDataRequired = -1;
-static gint ett_pcap_GANSSReq_AddIonosphericModel = -1;
-static gint ett_pcap_GanssRequestedGenericAssistanceDataList = -1;
-static gint ett_pcap_GanssReqGenericData = -1;
-static gint ett_pcap_GANSS_AddADchoices = -1;
-static gint ett_pcap_GanssDataBits = -1;
-static gint ett_pcap_ReqDataBitAssistanceList = -1;
-static gint ett_pcap_T_ganssSatelliteInfo = -1;
-static gint ett_pcap_InformationReportCharacteristics = -1;
-static gint ett_pcap_InformationReportPeriodicity = -1;
-static gint ett_pcap_InformationType = -1;
-static gint ett_pcap_ExplicitInformationList = -1;
-static gint ett_pcap_ExplicitInformation = -1;
-static gint ett_pcap_DganssCorrectionsReq = -1;
-static gint ett_pcap_Ganss_almanacAndSatelliteHealthReq = -1;
-static gint ett_pcap_GANSSCommonDataReq = -1;
-static gint ett_pcap_GANSS_AddIonoModelReq = -1;
-static gint ett_pcap_GANSS_EarthOrientParaReq = -1;
-static gint ett_pcap_GANSSGenericDataList = -1;
-static gint ett_pcap_GANSSGenericDataReq = -1;
-static gint ett_pcap_AddNavigationModelsGANSS = -1;
-static gint ett_pcap_AddSatelliteRelatedDataListGANSS = -1;
-static gint ett_pcap_AddSatelliteRelatedDataGANSS = -1;
-static gint ett_pcap_GANSS_AddUtcModelsReq = -1;
-static gint ett_pcap_GANSS_AuxInfoReq = -1;
-static gint ett_pcap_Ganss_utcModelReq = -1;
-static gint ett_pcap_Ganss_realTimeIntegrityReq = -1;
-static gint ett_pcap_Ganss_referenceMeasurementInfoReq = -1;
-static gint ett_pcap_Ganss_TimeModel_Gnss_Gnss = -1;
-static gint ett_pcap_UtcModel = -1;
-static gint ett_pcap_IonosphericModel = -1;
-static gint ett_pcap_NavigationModel = -1;
-static gint ett_pcap_NavModelAdditionalData = -1;
-static gint ett_pcap_SatelliteRelatedDataList = -1;
-static gint ett_pcap_SatelliteRelatedData = -1;
-static gint ett_pcap_NavigationModelGANSS = -1;
-static gint ett_pcap_SatelliteRelatedDataListGANSS = -1;
-static gint ett_pcap_SatelliteRelatedDataGANSS = -1;
-static gint ett_pcap_AlmanacAndSatelliteHealthSIB_InfoType = -1;
-static gint ett_pcap_MessageStructure = -1;
-static gint ett_pcap_MessageStructure_item = -1;
-static gint ett_pcap_MeasInstructionsUsed = -1;
-static gint ett_pcap_MeasurementValidity = -1;
-static gint ett_pcap_OTDOA_MeasurementGroup = -1;
-static gint ett_pcap_OTDOA_ReferenceCellInfo = -1;
-static gint ett_pcap_OTDOA_ReferenceCellInfoSAS_centric = -1;
-static gint ett_pcap_OTDOA_NeighbourCellInfoList = -1;
-static gint ett_pcap_OTDOA_NeighbourCellInfo = -1;
-static gint ett_pcap_OTDOA_MeasuredResultsSets = -1;
-static gint ett_pcap_OTDOA_MeasuredResultsInfoList = -1;
-static gint ett_pcap_OTDOA_MeasuredResultsInfo = -1;
-static gint ett_pcap_OTDOA_AddMeasuredResultsInfo = -1;
-static gint ett_pcap_UE_SFNSFNTimeDifferenceType2Info = -1;
-static gint ett_pcap_UC_ID = -1;
-static gint ett_pcap_RelativeTimingDifferenceInfo = -1;
-static gint ett_pcap_SFNSFNMeasurementValueInfo = -1;
-static gint ett_pcap_TUTRANGPSMeasurementValueInfo = -1;
-static gint ett_pcap_TUTRANGPS = -1;
-static gint ett_pcap_TUTRANGANSSMeasurementValueInfo = -1;
-static gint ett_pcap_TUTRANGANSS = -1;
-static gint ett_pcap_AdditionalMeasurementInforLCR = -1;
-static gint ett_pcap_PeriodicPosCalcInfo = -1;
-static gint ett_pcap_PeriodicLocationInfo = -1;
-static gint ett_pcap_PositioningMethod = -1;
-static gint ett_pcap_RRCstateChange = -1;
-static gint ett_pcap_RequestedDataValue = -1;
-static gint ett_pcap_RequestedDataValueInformation = -1;
-static gint ett_pcap_InformationAvailable = -1;
-static gint ett_pcap_RequestType = -1;
-static gint ett_pcap_UE_PositioningCapability = -1;
-static gint ett_pcap_NetworkAssistedGANSSSupport = -1;
-static gint ett_pcap_NetworkAssistedGANSSSupport_item = -1;
-static gint ett_pcap_GANSS_SBAS_IDs = -1;
-static gint ett_pcap_GANSS_Signal_IDs = -1;
-static gint ett_pcap_UTDOAPositioning = -1;
-static gint ett_pcap_GPSPositioning = -1;
-static gint ett_pcap_GPSPositioningInstructions = -1;
-static gint ett_pcap_GANSSPositioning = -1;
-static gint ett_pcap_GANSS_PositioningInstructions = -1;
-static gint ett_pcap_OTDOAAssistanceData = -1;
-static gint ett_pcap_UE_Positioning_OTDOA_AssistanceData = -1;
-static gint ett_pcap_UE_Positioning_OTDOA_ReferenceCellInfo = -1;
-static gint ett_pcap_T_modeSpecificInfo = -1;
-static gint ett_pcap_T_fdd_01 = -1;
-static gint ett_pcap_T_tdd_01 = -1;
-static gint ett_pcap_T_positioningMode = -1;
-static gint ett_pcap_T_ueBased = -1;
-static gint ett_pcap_T_ueAssisted = -1;
-static gint ett_pcap_ReferenceCellPosition = -1;
-static gint ett_pcap_UE_Positioning_IPDL_Parameters = -1;
-static gint ett_pcap_T_modeSpecificInfo_01 = -1;
-static gint ett_pcap_T_fdd_02 = -1;
-static gint ett_pcap_T_tdd_02 = -1;
-static gint ett_pcap_BurstModeParameters = -1;
-static gint ett_pcap_UE_Positioning_OTDOA_NeighbourCellList = -1;
-static gint ett_pcap_UE_Positioning_OTDOA_NeighbourCellInfo = -1;
-static gint ett_pcap_T_modeSpecificInfo_02 = -1;
-static gint ett_pcap_T_fdd_03 = -1;
-static gint ett_pcap_T_tdd_03 = -1;
-static gint ett_pcap_T_positioningMode_01 = -1;
-static gint ett_pcap_T_ueBased_01 = -1;
-static gint ett_pcap_T_ueAssisted_01 = -1;
-static gint ett_pcap_SFN_SFN_RelTimeDifference1 = -1;
-static gint ett_pcap_UTDOA_Group = -1;
-static gint ett_pcap_FrequencyInfo = -1;
-static gint ett_pcap_T_modeSpecificInfo_03 = -1;
-static gint ett_pcap_FrequencyInfoFDD = -1;
-static gint ett_pcap_FrequencyInfoTDD = -1;
-static gint ett_pcap_UTDOA_RRCState = -1;
-static gint ett_pcap_UTDOA_CELLDCH = -1;
-static gint ett_pcap_UL_DPCHInfo = -1;
-static gint ett_pcap_T_fdd_04 = -1;
-static gint ett_pcap_T_tdd_04 = -1;
-static gint ett_pcap_Compressed_Mode_Assistance_Data = -1;
-static gint ett_pcap_DL_InformationFDD = -1;
-static gint ett_pcap_UL_InformationFDD = -1;
-static gint ett_pcap_Transmission_Gap_Pattern_Sequence_Information = -1;
-static gint ett_pcap_Transmission_Gap_Pattern_Sequence_Information_item = -1;
-static gint ett_pcap_Active_Pattern_Sequence_Information = -1;
-static gint ett_pcap_Transmission_Gap_Pattern_Sequence_Status_List = -1;
-static gint ett_pcap_Transmission_Gap_Pattern_Sequence_Status_List_item = -1;
-static gint ett_pcap_DCH_Information = -1;
-static gint ett_pcap_TrChInfoList = -1;
-static gint ett_pcap_UL_TrCHInfo = -1;
-static gint ett_pcap_E_DPCH_Information = -1;
-static gint ett_pcap_E_TFCS_Information = -1;
-static gint ett_pcap_Reference_E_TFCI_Information = -1;
-static gint ett_pcap_Reference_E_TFCI_Information_Item = -1;
-static gint ett_pcap_TDD_DPCHOffset = -1;
-static gint ett_pcap_UL_Timeslot_Information = -1;
-static gint ett_pcap_UL_Timeslot_InformationItem = -1;
-static gint ett_pcap_MidambleShiftAndBurstType = -1;
-static gint ett_pcap_T_type1 = -1;
-static gint ett_pcap_T_midambleAllocationMode = -1;
-static gint ett_pcap_T_type2 = -1;
-static gint ett_pcap_T_midambleAllocationMode_01 = -1;
-static gint ett_pcap_T_type3 = -1;
-static gint ett_pcap_T_midambleAllocationMode_02 = -1;
-static gint ett_pcap_TDD_UL_Code_Information = -1;
-static gint ett_pcap_TDD_UL_Code_InformationItem = -1;
-static gint ett_pcap_UTDOA_CELLFACH = -1;
-static gint ett_pcap_PRACHparameters = -1;
-static gint ett_pcap_PRACH_ChannelInfo = -1;
-static gint ett_pcap_PRACH_Info = -1;
-static gint ett_pcap_T_fdd_05 = -1;
-static gint ett_pcap_T_tdd_05 = -1;
-static gint ett_pcap_AvailableSignatures = -1;
-static gint ett_pcap_AvailableSubChannelNumbers = -1;
-static gint ett_pcap_TransportFormatSet = -1;
-static gint ett_pcap_TransportFormatSet_DynamicPartList = -1;
-static gint ett_pcap_TransportFormatSet_DynamicPartList_item = -1;
-static gint ett_pcap_SEQUENCE_SIZE_1_maxNrOfTFs_OF_TbsTTIInfo = -1;
-static gint ett_pcap_TbsTTIInfo = -1;
-static gint ett_pcap_TransportFormatSet_Semi_staticPart = -1;
-static gint ett_pcap_TFCS = -1;
-static gint ett_pcap_CTFC = -1;
-static gint ett_pcap_T_ctfc2Bit = -1;
-static gint ett_pcap_T_ctfc4Bit = -1;
-static gint ett_pcap_T_ctfc6Bit = -1;
-static gint ett_pcap_T_ctfc8Bit = -1;
-static gint ett_pcap_T_ctfc12Bit = -1;
-static gint ett_pcap_T_ctfc16Bit = -1;
-static gint ett_pcap_T_ctfc24Bit = -1;
-static gint ett_pcap_UschParameters = -1;
-static gint ett_pcap_VelocityEstimate = -1;
-static gint ett_pcap_HorizontalVelocity = -1;
-static gint ett_pcap_HorizontalWithVerticalVelocity = -1;
-static gint ett_pcap_HorizontalVelocityWithUncertainty = -1;
-static gint ett_pcap_HorizontalWithVerticalVelocityAndUncertainty = -1;
-static gint ett_pcap_HorizontalSpeedAndBearing = -1;
-static gint ett_pcap_VerticalVelocity = -1;
-static gint ett_pcap_UTRAN_GPSReferenceTime = -1;
-static gint ett_pcap_UTRAN_GPSReferenceTimeResult = -1;
-static gint ett_pcap_UTRAN_GANSSReferenceTimeResult = -1;
-static gint ett_pcap_PositionCalculationRequest = -1;
-static gint ett_pcap_PositionCalculationResponse = -1;
-static gint ett_pcap_PositionCalculationFailure = -1;
-static gint ett_pcap_InformationExchangeInitiationRequest = -1;
-static gint ett_pcap_InformationExchangeObjectType_InfEx_Rqst = -1;
-static gint ett_pcap_RefPosition_InfEx_Rqst = -1;
-static gint ett_pcap_UC_ID_InfEx_Rqst = -1;
-static gint ett_pcap_InformationExchangeInitiationResponse = -1;
-static gint ett_pcap_InformationExchangeObjectType_InfEx_Rsp = -1;
-static gint ett_pcap_RefPosition_InfEx_Rsp = -1;
-static gint ett_pcap_InformationExchangeInitiationFailure = -1;
-static gint ett_pcap_PositionInitiationRequest = -1;
-static gint ett_pcap_PositionInitiationResponse = -1;
-static gint ett_pcap_PositionInitiationFailure = -1;
-static gint ett_pcap_PositionActivationRequest = -1;
-static gint ett_pcap_PositionActivationResponse = -1;
-static gint ett_pcap_PositionActivationFailure = -1;
-static gint ett_pcap_InformationReport = -1;
-static gint ett_pcap_InformationExchangeObjectType_InfEx_Rprt = -1;
-static gint ett_pcap_RefPosition_InfEx_Rprt = -1;
-static gint ett_pcap_InformationExchangeTerminationRequest = -1;
-static gint ett_pcap_InformationExchangeFailureIndication = -1;
-static gint ett_pcap_ErrorIndication = -1;
-static gint ett_pcap_PositionParameterModification = -1;
-static gint ett_pcap_PrivateMessage = -1;
-static gint ett_pcap_Abort = -1;
-static gint ett_pcap_PositionPeriodicReport = -1;
-static gint ett_pcap_PositionPeriodicResult = -1;
-static gint ett_pcap_PositionPeriodicTermination = -1;
-static gint ett_pcap_PCAP_PDU = -1;
-static gint ett_pcap_InitiatingMessage = -1;
-static gint ett_pcap_SuccessfulOutcome = -1;
-static gint ett_pcap_UnsuccessfulOutcome = -1;
-static gint ett_pcap_Outcome = -1;
-
-/*--- End of included file: packet-pcap-ett.c ---*/
-#line 72 "./asn1/pcap/packet-pcap-template.c"
+static int ett_pcap_PrivateIE_ID;
+static int ett_pcap_TransactionID;
+static int ett_pcap_ProtocolIE_Container;
+static int ett_pcap_ProtocolIE_Field;
+static int ett_pcap_ProtocolExtensionContainer;
+static int ett_pcap_ProtocolExtensionField;
+static int ett_pcap_PrivateIE_Container;
+static int ett_pcap_PrivateIE_Field;
+static int ett_pcap_AddPos_MeasuredResults;
+static int ett_pcap_AddPos_MeasuredResults_Element;
+static int ett_pcap_T_type;
+static int ett_pcap_T_barometricPressure;
+static int ett_pcap_T_wlan;
+static int ett_pcap_T_bt;
+static int ett_pcap_T_mbs;
+static int ett_pcap_WLANMeasurementList;
+static int ett_pcap_WLANMeasurementList_Element;
+static int ett_pcap_BTMeasurementList;
+static int ett_pcap_BTMeasurementList_Element;
+static int ett_pcap_MBSMeasurementList;
+static int ett_pcap_MBSMeasurementList_Element;
+static int ett_pcap_AlmanacAndSatelliteHealthSIB;
+static int ett_pcap_Cause;
+static int ett_pcap_CellId_MeasuredResultsSets;
+static int ett_pcap_CellId_MeasuredResultsInfoList;
+static int ett_pcap_CellId_MeasuredResultsInfo;
+static int ett_pcap_RoundTripTimeInfo;
+static int ett_pcap_RoundTripTimeInfoWithType1;
+static int ett_pcap_UE_PositioningMeasQuality;
+static int ett_pcap_UTRANAccessPointPositionAltitude;
+static int ett_pcap_RxTimingDeviationInfo;
+static int ett_pcap_RxTimingDeviationLCRInfo;
+static int ett_pcap_RxTimingDeviation768Info;
+static int ett_pcap_RxTimingDeviation384extInfo;
+static int ett_pcap_AddMeasurementInfo;
+static int ett_pcap_AngleOfArrivalLCR;
+static int ett_pcap_CellId_IRATMeasuredResultsSets;
+static int ett_pcap_CellId_IRATMeasuredResultsInfoList;
+static int ett_pcap_GERAN_MeasuredResultsInfoList;
+static int ett_pcap_GERAN_MeasuredResultsInfo;
+static int ett_pcap_GERANCellGlobalID;
+static int ett_pcap_GERANPhysicalCellID;
+static int ett_pcap_GSM_BSIC;
+static int ett_pcap_CellIDPositioning;
+static int ett_pcap_RequestedCellIDMeasurements;
+static int ett_pcap_T_fdd;
+static int ett_pcap_T_tdd;
+static int ett_pcap_RequestedCellIDGERANMeasurements;
+static int ett_pcap_CriticalityDiagnostics;
+static int ett_pcap_CriticalityDiagnostics_IE_List;
+static int ett_pcap_CriticalityDiagnostics_IE_List_item;
+static int ett_pcap_DGPSCorrections;
+static int ett_pcap_DGPS_CorrectionSatInfoList;
+static int ett_pcap_DGPS_CorrectionSatInfo;
+static int ett_pcap_DGNSS_ValidityPeriod;
+static int ett_pcap_UE_PositionEstimate;
+static int ett_pcap_GeographicalCoordinates;
+static int ett_pcap_GA_AltitudeAndDirection;
+static int ett_pcap_GA_EllipsoidArc;
+static int ett_pcap_GA_Point;
+static int ett_pcap_GA_PointWithAltitude;
+static int ett_pcap_GA_PointWithAltitudeAndUncertaintyEllipsoid;
+static int ett_pcap_GA_PointWithUnCertainty;
+static int ett_pcap_GA_PointWithUnCertaintyEllipse;
+static int ett_pcap_GA_Polygon;
+static int ett_pcap_GA_Polygon_item;
+static int ett_pcap_GA_UncertaintyEllipse;
+static int ett_pcap_UE_PositionEstimateInfo;
+static int ett_pcap_ReferenceTimeChoice;
+static int ett_pcap_Cell_Timing;
+static int ett_pcap_GANSS_Reference_Time_Only;
+static int ett_pcap_PositionDataUEbased;
+static int ett_pcap_PositionData;
+static int ett_pcap_GANSS_PositioningDataSet;
+static int ett_pcap_PositioningDataSet;
+static int ett_pcap_Additional_PositioningDataSet;
+static int ett_pcap_GPS_AcquisitionAssistance;
+static int ett_pcap_AcquisitionSatInfoList;
+static int ett_pcap_AcquisitionSatInfo;
+static int ett_pcap_ExtraDopplerInfo;
+static int ett_pcap_ExtraDopplerInfoExtension;
+static int ett_pcap_AzimuthAndElevation;
+static int ett_pcap_AzimuthAndElevationLSB;
+static int ett_pcap_AuxInfoGANSS_ID1;
+static int ett_pcap_AuxInfoGANSS_ID1_element;
+static int ett_pcap_AuxInfoGANSS_ID3;
+static int ett_pcap_AuxInfoGANSS_ID3_element;
+static int ett_pcap_CNAVclockModel;
+static int ett_pcap_DeltaUT1;
+static int ett_pcap_DGANSS_Corrections;
+static int ett_pcap_DGANSS_Information;
+static int ett_pcap_DGANSS_InformationItem;
+static int ett_pcap_DGANSS_SignalInformation;
+static int ett_pcap_DGANSS_SignalInformationItem;
+static int ett_pcap_GANSS_AddClockModels;
+static int ett_pcap_GANSS_AddOrbitModels;
+static int ett_pcap_GANSS_Additional_Ionospheric_Model;
+static int ett_pcap_GANSS_Additional_Navigation_Models;
+static int ett_pcap_GANSS_Additional_Time_Models;
+static int ett_pcap_GANSS_Additional_UTC_Models;
+static int ett_pcap_GANSS_ALM_BDSKeplericanset;
+static int ett_pcap_Satellite_Information_BDS_KP_List;
+static int ett_pcap_Satellite_Information_BDS_KP_Item;
+static int ett_pcap_GANSS_ALM_ECEFsbasAlmanacSet;
+static int ett_pcap_GANSS_ALM_GlonassAlmanacSet;
+static int ett_pcap_GANSS_ALM_MidiAlmanacSet;
+static int ett_pcap_GANSS_ALM_NAVKeplerianSet;
+static int ett_pcap_GANSS_ALM_ReducedKeplerianSet;
+static int ett_pcap_GANSS_AlmanacAndSatelliteHealth;
+static int ett_pcap_GANSS_AlmanacModel;
+static int ett_pcap_GANSS_Auxiliary_Information;
+static int ett_pcap_GANSS_AzimuthAndElevation;
+static int ett_pcap_GANSS_Clock_Model;
+static int ett_pcap_GANSS_CommonAssistanceData;
+static int ett_pcap_GANSS_Data_Bit_Assistance;
+static int ett_pcap_GANSS_DataBitAssistanceList;
+static int ett_pcap_GANSS_DataBitAssistanceItem;
+static int ett_pcap_GANSS_DataBitAssistanceSgnList;
+static int ett_pcap_GANSS_DataBitAssistanceSgnItem;
+static int ett_pcap_GANSS_Earth_Orientation_Parameters;
+static int ett_pcap_GANSS_ExtraDoppler;
+static int ett_pcap_GANSS_ExtraDopplerExtension;
+static int ett_pcap_GANSS_GenericAssistanceDataList;
+static int ett_pcap_GANSSGenericAssistanceData;
+static int ett_pcap_BDS_Ionospheric_Grid_Model;
+static int ett_pcap_BDS_Ionospheric_Grid_Information;
+static int ett_pcap_BDS_Ionospheric_Grid_Information_item;
+static int ett_pcap_DBDS_Correction_Information;
+static int ett_pcap_DBDS_Information;
+static int ett_pcap_DBDS_Information_item;
+static int ett_pcap_DGANSS_Signal_Information;
+static int ett_pcap_DGANSS_Signal_Information_item;
+static int ett_pcap_GANSS_GenericMeasurementInfo;
+static int ett_pcap_GANSS_GenericMeasurementInfo_item;
+static int ett_pcap_GANSSID;
+static int ett_pcap_GANSSMeasurementSignalList;
+static int ett_pcap_GANSSMeasurementSignalList_item;
+static int ett_pcap_GanssCodePhaseAmbiguityExt;
+static int ett_pcap_GANSS_Ionospheric_Model;
+static int ett_pcap_GANSS_IonosphereRegionalStormFlags;
+static int ett_pcap_GANSS_KeplerianParametersAlm;
+static int ett_pcap_GANSS_KeplerianParametersOrb;
+static int ett_pcap_GANSS_MeasurementParameters;
+static int ett_pcap_GANSS_MeasurementParametersItem;
+static int ett_pcap_GanssIntegerCodePhaseExt;
+static int ett_pcap_GANSS_MeasuredResultsList;
+static int ett_pcap_GANSS_MeasuredResults;
+static int ett_pcap_T_referenceTime;
+static int ett_pcap_GANSS_Navigation_Model;
+static int ett_pcap_GANSS_Orbit_Model;
+static int ett_pcap_GANSS_Real_Time_Integrity;
+static int ett_pcap_GANSS_RealTimeInformationItem;
+static int ett_pcap_GANSS_Reference_Location;
+static int ett_pcap_GANSS_ReferenceMeasurementInfo;
+static int ett_pcap_GANSS_Reference_Time;
+static int ett_pcap_GANSS_ReferenceTimeOnly;
+static int ett_pcap_GANSS_SatelliteClockModelItem;
+static int ett_pcap_GANSS_SatelliteInformation;
+static int ett_pcap_GANSS_SatelliteInformationItem;
+static int ett_pcap_GANSS_SatelliteInformationKP;
+static int ett_pcap_GANSS_SatelliteInformationKPItem;
+static int ett_pcap_GANSS_SAT_Info_Almanac_GLOkpList;
+static int ett_pcap_GANSS_SAT_Info_Almanac_GLOkp;
+static int ett_pcap_GANSS_SAT_Info_Almanac_MIDIkpList;
+static int ett_pcap_GANSS_SAT_Info_Almanac_MIDIkp;
+static int ett_pcap_GANSS_SAT_Info_Almanac_NAVkpList;
+static int ett_pcap_GANSS_SAT_Info_Almanac_NAVkp;
+static int ett_pcap_GANSS_SAT_Info_Almanac_REDkpList;
+static int ett_pcap_GANSS_SAT_Info_Almanac_REDkp;
+static int ett_pcap_GANSS_SAT_Info_Almanac_SBASecefList;
+static int ett_pcap_GANSS_SAT_Info_Almanac_SBASecef;
+static int ett_pcap_Ganss_Sat_Info_AddNavList;
+static int ett_pcap_Ganss_Sat_Info_AddNavList_item;
+static int ett_pcap_GANSS_Sat_Info_Nav;
+static int ett_pcap_GANSS_Sat_Info_Nav_item;
+static int ett_pcap_GANSS_SignalID;
+static int ett_pcap_GANSS_Time_Model;
+static int ett_pcap_GANSS_UTRAN_TRU;
+static int ett_pcap_GANSS_UTC_Model;
+static int ett_pcap_GLONASSclockModel;
+static int ett_pcap_NAVclockModel;
+static int ett_pcap_NavModel_CNAVKeplerianSet;
+static int ett_pcap_NavModel_GLONASSecef;
+static int ett_pcap_NavModel_NAVKeplerianSet;
+static int ett_pcap_NavModel_SBASecef;
+static int ett_pcap_NavModel_BDSKeplerianSet;
+static int ett_pcap_SBASclockModel;
+static int ett_pcap_BDSClockModel;
+static int ett_pcap_UTCmodelSet1;
+static int ett_pcap_UTCmodelSet2;
+static int ett_pcap_UTCmodelSet3;
+static int ett_pcap_UTCmodelSet4;
+static int ett_pcap_UTRAN_GANSSReferenceTimeDL;
+static int ett_pcap_UTRAN_GANSSReferenceTimeUL;
+static int ett_pcap_GPS_AlmanacAndSatelliteHealth;
+static int ett_pcap_AlmanacSatInfoList;
+static int ett_pcap_AlmanacSatInfo;
+static int ett_pcap_GPS_ClockAndEphemerisParameters;
+static int ett_pcap_SubFrame1Reserved;
+static int ett_pcap_GPS_Ionospheric_Model;
+static int ett_pcap_MeasuredResultsList;
+static int ett_pcap_GPS_MeasuredResults;
+static int ett_pcap_GPS_MeasurementParamList;
+static int ett_pcap_GPS_MeasurementParam;
+static int ett_pcap_GPS_NavigationModel;
+static int ett_pcap_NavigationModelSatInfo;
+static int ett_pcap_GPS_RealTimeIntegrity;
+static int ett_pcap_BadSatList;
+static int ett_pcap_GPS_ReferenceLocation;
+static int ett_pcap_GPS_ReferenceTime;
+static int ett_pcap_GPS_TOW_AssistList;
+static int ett_pcap_GPS_TOW_Assist;
+static int ett_pcap_GPSReferenceTimeUncertainty;
+static int ett_pcap_GPS_UTC_Model;
+static int ett_pcap_AdditionalGPSAssistDataRequired;
+static int ett_pcap_AdditionalGanssAssistDataRequired;
+static int ett_pcap_GANSSReq_AddIonosphericModel;
+static int ett_pcap_GanssRequestedGenericAssistanceDataList;
+static int ett_pcap_GanssReqGenericData;
+static int ett_pcap_DBDSCorrection;
+static int ett_pcap_GANSS_AddADchoices;
+static int ett_pcap_GanssDataBits;
+static int ett_pcap_ReqDataBitAssistanceList;
+static int ett_pcap_T_ganssSatelliteInfo;
+static int ett_pcap_InformationReportCharacteristics;
+static int ett_pcap_InformationReportPeriodicity;
+static int ett_pcap_InformationType;
+static int ett_pcap_ExplicitInformationList;
+static int ett_pcap_ExplicitInformation;
+static int ett_pcap_DganssCorrectionsReq;
+static int ett_pcap_Ganss_almanacAndSatelliteHealthReq;
+static int ett_pcap_GANSSCommonDataReq;
+static int ett_pcap_GANSS_AddIonoModelReq;
+static int ett_pcap_GANSS_EarthOrientParaReq;
+static int ett_pcap_GANSSGenericDataList;
+static int ett_pcap_GANSSGenericDataReq;
+static int ett_pcap_AddNavigationModelsGANSS;
+static int ett_pcap_AddSatelliteRelatedDataListGANSS;
+static int ett_pcap_AddSatelliteRelatedDataGANSS;
+static int ett_pcap_DBDS_Corrections;
+static int ett_pcap_GANSS_AddUtcModelsReq;
+static int ett_pcap_GANSS_AuxInfoReq;
+static int ett_pcap_Ganss_utcModelReq;
+static int ett_pcap_Ganss_realTimeIntegrityReq;
+static int ett_pcap_Ganss_referenceMeasurementInfoReq;
+static int ett_pcap_Ganss_TimeModel_Gnss_Gnss;
+static int ett_pcap_UtcModel;
+static int ett_pcap_IonosphericModel;
+static int ett_pcap_NavigationModel;
+static int ett_pcap_NavModelAdditionalData;
+static int ett_pcap_SatelliteRelatedDataList;
+static int ett_pcap_SatelliteRelatedData;
+static int ett_pcap_NavigationModelGANSS;
+static int ett_pcap_SatelliteRelatedDataListGANSS;
+static int ett_pcap_SatelliteRelatedDataGANSS;
+static int ett_pcap_AlmanacAndSatelliteHealthSIB_InfoType;
+static int ett_pcap_MessageStructure;
+static int ett_pcap_MessageStructure_item;
+static int ett_pcap_MeasInstructionsUsed;
+static int ett_pcap_MeasurementValidity;
+static int ett_pcap_OTDOA_MeasurementGroup;
+static int ett_pcap_OTDOA_ReferenceCellInfo;
+static int ett_pcap_OTDOA_ReferenceCellInfoSAS_centric;
+static int ett_pcap_OTDOA_NeighbourCellInfoList;
+static int ett_pcap_OTDOA_NeighbourCellInfo;
+static int ett_pcap_OTDOA_MeasuredResultsSets;
+static int ett_pcap_OTDOA_MeasuredResultsInfoList;
+static int ett_pcap_OTDOA_MeasuredResultsInfo;
+static int ett_pcap_OTDOA_AddMeasuredResultsInfo;
+static int ett_pcap_UE_SFNSFNTimeDifferenceType2Info;
+static int ett_pcap_UC_ID;
+static int ett_pcap_RelativeTimingDifferenceInfo;
+static int ett_pcap_SFNSFNMeasurementValueInfo;
+static int ett_pcap_TUTRANGPSMeasurementValueInfo;
+static int ett_pcap_TUTRANGPS;
+static int ett_pcap_TUTRANGANSSMeasurementValueInfo;
+static int ett_pcap_TUTRANGANSS;
+static int ett_pcap_AdditionalMeasurementInforLCR;
+static int ett_pcap_PeriodicPosCalcInfo;
+static int ett_pcap_PeriodicLocationInfo;
+static int ett_pcap_PositioningMethod;
+static int ett_pcap_RRCstateChange;
+static int ett_pcap_RequestedDataValue;
+static int ett_pcap_RequestedDataValueInformation;
+static int ett_pcap_InformationAvailable;
+static int ett_pcap_RequestType;
+static int ett_pcap_UE_PositioningCapability;
+static int ett_pcap_NetworkAssistedGANSSSupport;
+static int ett_pcap_NetworkAssistedGANSSSupport_item;
+static int ett_pcap_AddPosSupport;
+static int ett_pcap_AddPosSupport_Element;
+static int ett_pcap_GANSS_SBAS_IDs;
+static int ett_pcap_GANSS_Signal_IDs;
+static int ett_pcap_UTDOAPositioning;
+static int ett_pcap_GPSPositioning;
+static int ett_pcap_GPSPositioningInstructions;
+static int ett_pcap_GANSSPositioning;
+static int ett_pcap_GANSS_PositioningInstructions;
+static int ett_pcap_OTDOAAssistanceData;
+static int ett_pcap_UE_Positioning_OTDOA_AssistanceData;
+static int ett_pcap_UE_Positioning_OTDOA_ReferenceCellInfo;
+static int ett_pcap_T_modeSpecificInfo;
+static int ett_pcap_T_fdd_01;
+static int ett_pcap_T_tdd_01;
+static int ett_pcap_T_positioningMode;
+static int ett_pcap_T_ueBased;
+static int ett_pcap_T_ueAssisted;
+static int ett_pcap_ReferenceCellPosition;
+static int ett_pcap_UE_Positioning_IPDL_Parameters;
+static int ett_pcap_T_modeSpecificInfo_01;
+static int ett_pcap_T_fdd_02;
+static int ett_pcap_T_tdd_02;
+static int ett_pcap_BurstModeParameters;
+static int ett_pcap_UE_Positioning_OTDOA_NeighbourCellList;
+static int ett_pcap_UE_Positioning_OTDOA_NeighbourCellInfo;
+static int ett_pcap_T_modeSpecificInfo_02;
+static int ett_pcap_T_fdd_03;
+static int ett_pcap_T_tdd_03;
+static int ett_pcap_T_positioningMode_01;
+static int ett_pcap_T_ueBased_01;
+static int ett_pcap_T_ueAssisted_01;
+static int ett_pcap_SFN_SFN_RelTimeDifference1;
+static int ett_pcap_UTDOA_Group;
+static int ett_pcap_FrequencyInfo;
+static int ett_pcap_T_modeSpecificInfo_03;
+static int ett_pcap_FrequencyInfoFDD;
+static int ett_pcap_FrequencyInfoTDD;
+static int ett_pcap_UTDOA_RRCState;
+static int ett_pcap_UTDOA_CELLDCH;
+static int ett_pcap_UL_DPCHInfo;
+static int ett_pcap_T_fdd_04;
+static int ett_pcap_T_tdd_04;
+static int ett_pcap_Compressed_Mode_Assistance_Data;
+static int ett_pcap_DL_InformationFDD;
+static int ett_pcap_UL_InformationFDD;
+static int ett_pcap_Transmission_Gap_Pattern_Sequence_Information;
+static int ett_pcap_Transmission_Gap_Pattern_Sequence_Information_item;
+static int ett_pcap_Active_Pattern_Sequence_Information;
+static int ett_pcap_Transmission_Gap_Pattern_Sequence_Status_List;
+static int ett_pcap_Transmission_Gap_Pattern_Sequence_Status_List_item;
+static int ett_pcap_DCH_Information;
+static int ett_pcap_TrChInfoList;
+static int ett_pcap_UL_TrCHInfo;
+static int ett_pcap_E_DPCH_Information;
+static int ett_pcap_E_TFCS_Information;
+static int ett_pcap_Reference_E_TFCI_Information;
+static int ett_pcap_Reference_E_TFCI_Information_Item;
+static int ett_pcap_TDD_DPCHOffset;
+static int ett_pcap_UL_Timeslot_Information;
+static int ett_pcap_UL_Timeslot_InformationItem;
+static int ett_pcap_MidambleShiftAndBurstType;
+static int ett_pcap_T_type1;
+static int ett_pcap_T_midambleAllocationMode;
+static int ett_pcap_T_type2;
+static int ett_pcap_T_midambleAllocationMode_01;
+static int ett_pcap_T_type3;
+static int ett_pcap_T_midambleAllocationMode_02;
+static int ett_pcap_TDD_UL_Code_Information;
+static int ett_pcap_TDD_UL_Code_InformationItem;
+static int ett_pcap_UTDOA_CELLFACH;
+static int ett_pcap_PRACHparameters;
+static int ett_pcap_PRACH_ChannelInfo;
+static int ett_pcap_PRACH_Info;
+static int ett_pcap_T_fdd_05;
+static int ett_pcap_T_tdd_05;
+static int ett_pcap_AvailableSignatures;
+static int ett_pcap_AvailableSubChannelNumbers;
+static int ett_pcap_TransportFormatSet;
+static int ett_pcap_TransportFormatSet_DynamicPartList;
+static int ett_pcap_TransportFormatSet_DynamicPartList_item;
+static int ett_pcap_SEQUENCE_SIZE_1_maxNrOfTFs_OF_TbsTTIInfo;
+static int ett_pcap_TbsTTIInfo;
+static int ett_pcap_TransportFormatSet_Semi_staticPart;
+static int ett_pcap_TFCS;
+static int ett_pcap_CTFC;
+static int ett_pcap_T_ctfc2Bit;
+static int ett_pcap_T_ctfc4Bit;
+static int ett_pcap_T_ctfc6Bit;
+static int ett_pcap_T_ctfc8Bit;
+static int ett_pcap_T_ctfc12Bit;
+static int ett_pcap_T_ctfc16Bit;
+static int ett_pcap_T_ctfc24Bit;
+static int ett_pcap_UschParameters;
+static int ett_pcap_VelocityEstimate;
+static int ett_pcap_HorizontalVelocity;
+static int ett_pcap_HorizontalWithVerticalVelocity;
+static int ett_pcap_HorizontalVelocityWithUncertainty;
+static int ett_pcap_HorizontalWithVerticalVelocityAndUncertainty;
+static int ett_pcap_HorizontalSpeedAndBearing;
+static int ett_pcap_VerticalVelocity;
+static int ett_pcap_UTRAN_GPSReferenceTime;
+static int ett_pcap_UTRAN_GPSReferenceTimeResult;
+static int ett_pcap_UTRAN_GANSSReferenceTimeResult;
+static int ett_pcap_PositionCalculationRequest;
+static int ett_pcap_PositionCalculationResponse;
+static int ett_pcap_PositionCalculationFailure;
+static int ett_pcap_InformationExchangeInitiationRequest;
+static int ett_pcap_InformationExchangeObjectType_InfEx_Rqst;
+static int ett_pcap_RefPosition_InfEx_Rqst;
+static int ett_pcap_UC_ID_InfEx_Rqst;
+static int ett_pcap_InformationExchangeInitiationResponse;
+static int ett_pcap_InformationExchangeObjectType_InfEx_Rsp;
+static int ett_pcap_RefPosition_InfEx_Rsp;
+static int ett_pcap_InformationExchangeInitiationFailure;
+static int ett_pcap_PositionInitiationRequest;
+static int ett_pcap_PositionInitiationResponse;
+static int ett_pcap_PositionInitiationFailure;
+static int ett_pcap_PositionActivationRequest;
+static int ett_pcap_PositionActivationResponse;
+static int ett_pcap_PositionActivationFailure;
+static int ett_pcap_InformationReport;
+static int ett_pcap_InformationExchangeObjectType_InfEx_Rprt;
+static int ett_pcap_RefPosition_InfEx_Rprt;
+static int ett_pcap_InformationExchangeTerminationRequest;
+static int ett_pcap_InformationExchangeFailureIndication;
+static int ett_pcap_ErrorIndication;
+static int ett_pcap_PositionParameterModification;
+static int ett_pcap_PrivateMessage;
+static int ett_pcap_Abort;
+static int ett_pcap_PositionPeriodicReport;
+static int ett_pcap_PositionPeriodicResult;
+static int ett_pcap_PositionPeriodicTermination;
+static int ett_pcap_PCAP_PDU;
+static int ett_pcap_InitiatingMessage;
+static int ett_pcap_SuccessfulOutcome;
+static int ett_pcap_UnsuccessfulOutcome;
+static int ett_pcap_Outcome;
 
 /* Global variables */
-static guint32 ProcedureCode;
-static guint32 ProtocolIE_ID;
-/*static guint32 ProtocolExtensionID;*/
+static uint32_t ProcedureCode;
+static uint32_t ProtocolIE_ID;
+/*static uint32_t ProtocolExtensionID;*/
 
 /* Dissector tables */
 static dissector_table_t pcap_ies_dissector_table;
@@ -1832,9 +1964,30 @@ static int dissect_SuccessfulOutcomeValue(tvbuff_t *tvb, packet_info *pinfo, pro
 static int dissect_UnsuccessfulOutcomeValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *);
 static int dissect_OutcomeValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *);
 
+/*--- Cyclic dependencies ---*/
 
-/*--- Included file: packet-pcap-fn.c ---*/
-#line 1 "./asn1/pcap/packet-pcap-fn.c"
+/* ProtocolIE-Field/value -> ProtocolIE-Field/value */
+static int dissect_pcap_T_ie_field_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+
+/* ProtocolExtensionField/extensionValue -> ProtocolExtensionField/extensionValue */
+static int dissect_pcap_T_extensionValue(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+
+/* PrivateIE-Field/value -> PrivateIE-Field/value */
+static int dissect_pcap_T_private_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+
+/* InitiatingMessage/value -> InitiatingMessage/value */
+static int dissect_pcap_InitiatingMessage_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+
+/* SuccessfulOutcome/value -> SuccessfulOutcome/value */
+static int dissect_pcap_SuccessfulOutcome_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+
+/* UnsuccessfulOutcome/value -> UnsuccessfulOutcome/value */
+static int dissect_pcap_UnsuccessfulOutcome_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+
+/* Outcome/value -> Outcome/value */
+static int dissect_pcap_Outcome_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_);
+
+
 
 static const value_string pcap_Criticality_vals[] = {
   {   0, "reject" },
@@ -1847,7 +2000,7 @@ static const value_string pcap_Criticality_vals[] = {
 static int
 dissect_pcap_Criticality(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, FALSE, 0, NULL);
+                                     3, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -1857,7 +2010,7 @@ dissect_pcap_Criticality(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_pcap_INTEGER_0_65535(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 65535U, NULL, FALSE);
+                                                            0U, 65535U, NULL, false);
 
   return offset;
 }
@@ -1916,11 +2069,11 @@ static const value_string pcap_ProcedureCode_vals[] = {
 static int
 dissect_pcap_ProcedureCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, &ProcedureCode, FALSE);
+                                                            0U, 255U, &ProcedureCode, false);
 
     col_add_fstr(actx->pinfo->cinfo, COL_INFO, "%s ",
-                val_to_str(ProcedureCode, pcap_ProcedureCode_vals,
-                            "unknown message"));
+                val_to_str_const(ProcedureCode, pcap_ProcedureCode_vals,
+                                 "unknown message"));
   return offset;
 }
 
@@ -2048,8 +2201,23 @@ static const value_string pcap_ProtocolIE_ID_vals[] = {
   { id_ganss_Delta_T, "id-ganss-Delta-T" },
   { id_requestedCellIDGERANMeasurements, "id-requestedCellIDGERANMeasurements" },
   { id_CellId_IRATMeasuredResultsSets, "id-CellId-IRATMeasuredResultsSets" },
+  { id_Unknown_126, "id-Unknown-126" },
+  { id_Unknown_127, "id-Unknown-127" },
   { id_IMSI, "id-IMSI" },
   { id_IMEI, "id-IMEI" },
+  { id_GANSS_alm_keplerianBDSAlmanac, "id-GANSS-alm-keplerianBDSAlmanac" },
+  { id_BDS_Ionospheric_Grid_Model, "id-BDS-Ionospheric-Grid-Model" },
+  { id_DBDS_Correction_Information, "id-DBDS-Correction-Information" },
+  { id_BDSIonosphericGridModel, "id-BDSIonosphericGridModel" },
+  { id_DBDSCorrection, "id-DBDSCorrection" },
+  { id_Confidence, "id-Confidence" },
+  { id_ExtraDopplerInfoExtension, "id-ExtraDopplerInfoExtension" },
+  { id_GANSS_Confidence, "id-GANSS-Confidence" },
+  { id_GANSS_ExtraDopplerExtension, "id-GANSS-ExtraDopplerExtension" },
+  { id_Additional_PositioningDataSet, "id-Additional-PositioningDataSet" },
+  { id_Additional_PositioningMethod, "id-Additional-PositioningMethod" },
+  { id_AddPos_MeasuredResults, "id-AddPos-MeasuredResults" },
+  { id_AddPosSupport, "id-AddPosSupport" },
   { 0, NULL }
 };
 
@@ -2059,10 +2227,11 @@ static value_string_ext pcap_ProtocolIE_ID_vals_ext = VALUE_STRING_EXT_INIT(pcap
 static int
 dissect_pcap_ProtocolIE_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, maxProtocolIEs, &ProtocolIE_ID, FALSE);
+                                                            0U, maxProtocolIEs, &ProtocolIE_ID, false);
 
   if (tree) {
-    proto_item_append_text(proto_item_get_parent_nth(actx->created_item, 2), ": %s", val_to_str_ext(ProtocolIE_ID, &pcap_ProtocolIE_ID_vals_ext, "unknown (%d)"));
+    proto_item_append_text(proto_item_get_parent_nth(actx->created_item, 2), ": %s",
+                           val_to_str_ext(actx->pinfo->pool, ProtocolIE_ID, &pcap_ProtocolIE_ID_vals_ext, "unknown (%d)"));
   }
   return offset;
 }
@@ -2072,7 +2241,7 @@ dissect_pcap_ProtocolIE_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_pcap_INTEGER_0_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -2082,7 +2251,7 @@ dissect_pcap_INTEGER_0_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_pcap_INTEGER_0_32767(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 32767U, NULL, FALSE);
+                                                            0U, 32767U, NULL, false);
 
   return offset;
 }
@@ -2122,7 +2291,7 @@ static const value_string pcap_TriggeringMessage_vals[] = {
 static int
 dissect_pcap_TriggeringMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, FALSE, 0, NULL);
+                                     4, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -2131,8 +2300,11 @@ dissect_pcap_TriggeringMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 static int
 dissect_pcap_T_ie_field_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  // ProtocolIE-Field/value -> ProtocolIE-Field/value
+  increment_dissection_depth_by_n(actx->pinfo, 1);
   offset = dissect_per_open_type_pdu_new(tvb, offset, actx, tree, hf_index, dissect_ProtocolIEFieldValue);
 
+  decrement_dissection_depth_by_n(actx->pinfo, 1);
   return offset;
 }
 
@@ -2161,7 +2333,7 @@ static int
 dissect_pcap_ProtocolIE_Container(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_ProtocolIE_Container, ProtocolIE_Container_sequence_of,
-                                                  0, maxProtocolIEs, FALSE);
+                                                  0, maxProtocolIEs, false);
 
   return offset;
 }
@@ -2179,8 +2351,11 @@ dissect_pcap_ProtocolIE_Single_Container(tvbuff_t *tvb _U_, int offset _U_, asn1
 
 static int
 dissect_pcap_T_extensionValue(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  // ProtocolExtensionField/extensionValue -> ProtocolExtensionField/extensionValue
+  increment_dissection_depth_by_n(actx->pinfo, 1);
   offset = dissect_per_open_type_pdu_new(tvb, offset, actx, tree, hf_index, dissect_ProtocolExtensionFieldExtensionValue);
 
+  decrement_dissection_depth_by_n(actx->pinfo, 1);
   return offset;
 }
 
@@ -2209,7 +2384,7 @@ static int
 dissect_pcap_ProtocolExtensionContainer(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_ProtocolExtensionContainer, ProtocolExtensionContainer_sequence_of,
-                                                  1, maxProtocolExtensions, FALSE);
+                                                  1, maxProtocolExtensions, false);
 
   return offset;
 }
@@ -2218,8 +2393,11 @@ dissect_pcap_ProtocolExtensionContainer(tvbuff_t *tvb _U_, int offset _U_, asn1_
 
 static int
 dissect_pcap_T_private_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  // PrivateIE-Field/value -> PrivateIE-Field/value
+  increment_dissection_depth_by_n(actx->pinfo, 1);
   offset = dissect_per_open_type(tvb, offset, actx, tree, hf_index, NULL);
 
+  decrement_dissection_depth_by_n(actx->pinfo, 1);
   return offset;
 }
 
@@ -2248,7 +2426,7 @@ static int
 dissect_pcap_PrivateIE_Container(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_PrivateIE_Container, PrivateIE_Container_sequence_of,
-                                                  1, maxPrivateIEs, FALSE);
+                                                  1, maxPrivateIEs, false);
 
   return offset;
 }
@@ -2264,7 +2442,7 @@ static const value_string pcap_AccuracyFulfilmentIndicator_vals[] = {
 static int
 dissect_pcap_AccuracyFulfilmentIndicator(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2282,7 +2460,7 @@ static const value_string pcap_AdditionalMethodType_vals[] = {
 static int
 dissect_pcap_AdditionalMethodType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, TRUE, 0, NULL);
+                                     4, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2290,9 +2468,10 @@ dissect_pcap_AdditionalMethodType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 
 
 static int
-dissect_pcap_BIT_STRING_SIZE_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     8, 8, FALSE, NULL, NULL);
+dissect_pcap_UTCTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_VisibleString(tvb, offset, actx, tree, hf_index,
+                                        NO_BOUND, NO_BOUND, false,
+                                        NULL);
 
   return offset;
 }
@@ -2300,9 +2479,218 @@ dissect_pcap_BIT_STRING_SIZE_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 
 static int
-dissect_pcap_BIT_STRING_SIZE_2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     2, 2, FALSE, NULL, NULL);
+dissect_pcap_BaroMeasurement(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            30000U, 115000U, NULL, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t T_barometricPressure_sequence[] = {
+  { &hf_pcap_uncompensatedBarometricPressure, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BaroMeasurement },
+  { &hf_pcap_iE_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_T_barometricPressure(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_T_barometricPressure, T_barometricPressure_sequence);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_OCTET_STRING_SIZE_6(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
+                                       6, 6, false, NULL);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_OCTET_STRING_SIZE_1_32(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
+                                       1, 32, false, NULL);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_INTEGER_M127_128(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            -127, 128U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_INTEGER_0_16777215(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 16777215U, NULL, false);
+
+  return offset;
+}
+
+
+static const value_string pcap_T_wlanRTTunits_vals[] = {
+  {   0, "microseconds" },
+  {   1, "hundredsofnanoseconds" },
+  {   2, "tensofnanoseconds" },
+  {   3, "nanoseconds" },
+  {   4, "tenthsofnanosecond" },
+  { 0, NULL }
+};
+
+
+static int
+dissect_pcap_T_wlanRTTunits(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
+                                     5, NULL, true, 0, NULL);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_INTEGER_0_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 255U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_INTEGER_0_256(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 256U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_BOOLEAN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_boolean(tvb, offset, actx, tree, hf_index, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t WLANMeasurementList_Element_sequence[] = {
+  { &hf_pcap_wlanBSSID      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_OCTET_STRING_SIZE_6 },
+  { &hf_pcap_wlanSSID       , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_OCTET_STRING_SIZE_1_32 },
+  { &hf_pcap_wlanRSSI       , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_INTEGER_M127_128 },
+  { &hf_pcap_wlanRTTvalue   , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_INTEGER_0_16777215 },
+  { &hf_pcap_wlanRTTunits   , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_T_wlanRTTunits },
+  { &hf_pcap_wlanRTTaccuracy, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_INTEGER_0_255 },
+  { &hf_pcap_wlanAPChannelFrequency, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_INTEGER_0_256 },
+  { &hf_pcap_wlanServingFlag, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_BOOLEAN },
+  { &hf_pcap_iE_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_WLANMeasurementList_Element(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_WLANMeasurementList_Element, WLANMeasurementList_Element_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t WLANMeasurementList_sequence_of[1] = {
+  { &hf_pcap_WLANMeasurementList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_pcap_WLANMeasurementList_Element },
+};
+
+static int
+dissect_pcap_WLANMeasurementList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_pcap_WLANMeasurementList, WLANMeasurementList_sequence_of,
+                                                  1, maxWLANs, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t T_wlan_sequence[] = {
+  { &hf_pcap_wlanMeasurementList, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_WLANMeasurementList },
+  { &hf_pcap_iE_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_T_wlan(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_T_wlan, T_wlan_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t BTMeasurementList_Element_sequence[] = {
+  { &hf_pcap_btADDR         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_OCTET_STRING_SIZE_6 },
+  { &hf_pcap_btRSSI         , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_INTEGER_M127_128 },
+  { &hf_pcap_iE_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_BTMeasurementList_Element(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_BTMeasurementList_Element, BTMeasurementList_Element_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t BTMeasurementList_sequence_of[1] = {
+  { &hf_pcap_BTMeasurementList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_pcap_BTMeasurementList_Element },
+};
+
+static int
+dissect_pcap_BTMeasurementList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_pcap_BTMeasurementList, BTMeasurementList_sequence_of,
+                                                  1, maxBTs, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t T_bt_sequence[] = {
+  { &hf_pcap_btMeasurementList, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BTMeasurementList },
+  { &hf_pcap_iE_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_T_bt(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_T_bt, T_bt_sequence);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_INTEGER_0_2097151(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 2097151U, NULL, false);
 
   return offset;
 }
@@ -2312,7 +2700,128 @@ dissect_pcap_BIT_STRING_SIZE_2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_INTEGER_0_63(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 63U, NULL, FALSE);
+                                                            0U, 63U, NULL, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t MBSMeasurementList_Element_sequence[] = {
+  { &hf_pcap_transmitterID  , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_32767 },
+  { &hf_pcap_codephase      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_2097151 },
+  { &hf_pcap_codephaseRMS   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_63 },
+  { &hf_pcap_iE_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_MBSMeasurementList_Element(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_MBSMeasurementList_Element, MBSMeasurementList_Element_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t MBSMeasurementList_sequence_of[1] = {
+  { &hf_pcap_MBSMeasurementList_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_pcap_MBSMeasurementList_Element },
+};
+
+static int
+dissect_pcap_MBSMeasurementList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_pcap_MBSMeasurementList, MBSMeasurementList_sequence_of,
+                                                  1, maxBeacons, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t T_mbs_sequence[] = {
+  { &hf_pcap_mbsMeasurementList, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_MBSMeasurementList },
+  { &hf_pcap_iE_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_T_mbs(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_T_mbs, T_mbs_sequence);
+
+  return offset;
+}
+
+
+static const value_string pcap_T_type_vals[] = {
+  {   0, "barometricPressure" },
+  {   1, "wlan" },
+  {   2, "bt" },
+  {   3, "mbs" },
+  { 0, NULL }
+};
+
+static const per_choice_t T_type_choice[] = {
+  {   0, &hf_pcap_barometricPressure, ASN1_EXTENSION_ROOT    , dissect_pcap_T_barometricPressure },
+  {   1, &hf_pcap_wlan           , ASN1_EXTENSION_ROOT    , dissect_pcap_T_wlan },
+  {   2, &hf_pcap_bt             , ASN1_EXTENSION_ROOT    , dissect_pcap_T_bt },
+  {   3, &hf_pcap_mbs            , ASN1_EXTENSION_ROOT    , dissect_pcap_T_mbs },
+  { 0, NULL, 0, NULL }
+};
+
+static int
+dissect_pcap_T_type(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_choice(tvb, offset, actx, tree, hf_index,
+                                 ett_pcap_T_type, T_type_choice,
+                                 NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t AddPos_MeasuredResults_Element_sequence[] = {
+  { &hf_pcap_timestamp      , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_UTCTime },
+  { &hf_pcap_type           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_T_type },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_AddPos_MeasuredResults_Element(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_AddPos_MeasuredResults_Element, AddPos_MeasuredResults_Element_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t AddPos_MeasuredResults_sequence_of[1] = {
+  { &hf_pcap_AddPos_MeasuredResults_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_pcap_AddPos_MeasuredResults_Element },
+};
+
+static int
+dissect_pcap_AddPos_MeasuredResults(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_pcap_AddPos_MeasuredResults, AddPos_MeasuredResults_sequence_of,
+                                                  1, maxAddPos, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_BIT_STRING_SIZE_8(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     8, 8, false, NULL, 0, NULL, NULL);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_BIT_STRING_SIZE_2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     2, 2, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -2322,7 +2831,7 @@ dissect_pcap_INTEGER_0_63(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_pcap_BIT_STRING_SIZE_16(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     16, 16, FALSE, NULL, NULL);
+                                     16, 16, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -2332,7 +2841,7 @@ dissect_pcap_BIT_STRING_SIZE_16(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_BIT_STRING_SIZE_24(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     24, 24, FALSE, NULL, NULL);
+                                     24, 24, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -2342,7 +2851,7 @@ dissect_pcap_BIT_STRING_SIZE_24(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_BIT_STRING_SIZE_11(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     11, 11, FALSE, NULL, NULL);
+                                     11, 11, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -2352,7 +2861,7 @@ static const per_sequence_t AlmanacSatInfo_sequence[] = {
   { &hf_pcap_dataID         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_2 },
   { &hf_pcap_satID          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_63 },
   { &hf_pcap_e              , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_16 },
-  { &hf_pcap_t_oa_01        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
+  { &hf_pcap_almanacSatInfo_t_oa, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
   { &hf_pcap_deltaI         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_16 },
   { &hf_pcap_omegaDot       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_16 },
   { &hf_pcap_satHealth      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
@@ -2383,7 +2892,7 @@ static int
 dissect_pcap_AlmanacSatInfoList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_AlmanacSatInfoList, AlmanacSatInfoList_sequence_of,
-                                                  1, maxSatAlmanac, FALSE);
+                                                  1, maxSatAlmanac, false);
 
   return offset;
 }
@@ -2393,7 +2902,7 @@ dissect_pcap_AlmanacSatInfoList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_BIT_STRING_SIZE_364(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     364, 364, FALSE, NULL, NULL);
+                                     364, 364, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -2420,7 +2929,7 @@ dissect_pcap_GPS_AlmanacAndSatelliteHealth(tvbuff_t *tvb _U_, int offset _U_, as
 static int
 dissect_pcap_BIT_STRING_SIZE_1_32(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     1, 32, FALSE, NULL, NULL);
+                                     1, 32, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -2476,6 +2985,9 @@ static const value_string pcap_CauseRadioNetwork_vals[] = {
   {  29, "position-calculation-error-AGANSS-positioning-method-not-supported" },
   {  30, "ue-positioning-error-Not-enough-GANSS-Satellites" },
   {  31, "ue-positioning-error-Not-Accomplished-GANSS-Timing-of-Cell-Frames" },
+  {  32, "position-calculation-error-invalid-BDS-measured-results" },
+  {  33, "ue-Positioning-Error-Not-enough-BDS-Satellites" },
+  {  34, "position-calculation-error-A-BDS-positioning-method-not-supported" },
   { 0, NULL }
 };
 
@@ -2485,7 +2997,7 @@ static value_string_ext pcap_CauseRadioNetwork_vals_ext = VALUE_STRING_EXT_INIT(
 static int
 dissect_pcap_CauseRadioNetwork(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, TRUE, 28, NULL);
+                                     4, NULL, true, 31, NULL);
 
   return offset;
 }
@@ -2501,7 +3013,7 @@ static const value_string pcap_CauseTransport_vals[] = {
 static int
 dissect_pcap_CauseTransport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2522,7 +3034,7 @@ static const value_string pcap_CauseProtocol_vals[] = {
 static int
 dissect_pcap_CauseProtocol(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     7, NULL, TRUE, 0, NULL);
+                                     7, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2540,7 +3052,7 @@ static const value_string pcap_CauseMisc_vals[] = {
 static int
 dissect_pcap_CauseMisc(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, TRUE, 0, NULL);
+                                     4, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -2576,7 +3088,7 @@ dissect_pcap_Cause(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
 static int
 dissect_pcap_INTEGER_0_4095(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 4095U, NULL, FALSE);
+                                                            0U, 4095U, NULL, false);
 
   return offset;
 }
@@ -2608,7 +3120,7 @@ static const value_string pcap_T_latitudeSign_vals[] = {
 static int
 dissect_pcap_T_latitudeSign(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -2618,7 +3130,7 @@ dissect_pcap_T_latitudeSign(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_pcap_INTEGER_0_8388607(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 8388607U, NULL, FALSE);
+                                                            0U, 8388607U, NULL, false);
 
   return offset;
 }
@@ -2628,7 +3140,7 @@ dissect_pcap_INTEGER_0_8388607(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_INTEGER_M8388608_8388607(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -8388608, 8388607U, NULL, FALSE);
+                                                            -8388608, 8388607U, NULL, false);
 
   return offset;
 }
@@ -2661,7 +3173,7 @@ static const value_string pcap_T_directionOfAltitude_vals[] = {
 static int
 dissect_pcap_T_directionOfAltitude(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -2752,7 +3264,7 @@ static int
 dissect_pcap_GA_Polygon(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GA_Polygon, GA_Polygon_sequence_of,
-                                                  1, maxNrOfPoints, FALSE);
+                                                  1, maxNrOfPoints, false);
 
   return offset;
 }
@@ -2762,7 +3274,7 @@ dissect_pcap_GA_Polygon(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 static int
 dissect_pcap_INTEGER_0_89(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 89U, NULL, FALSE);
+                                                            0U, 89U, NULL, false);
 
   return offset;
 }
@@ -2788,7 +3300,7 @@ dissect_pcap_GA_UncertaintyEllipse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_pcap_INTEGER_0_100(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 100U, NULL, FALSE);
+                                                            0U, 100U, NULL, false);
 
   return offset;
 }
@@ -2850,7 +3362,7 @@ dissect_pcap_GA_PointWithAltitudeAndUncertaintyEllipsoid(tvbuff_t *tvb _U_, int 
 static int
 dissect_pcap_INTEGER_0_179(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 179U, NULL, FALSE);
+                                                            0U, 179U, NULL, false);
 
   return offset;
 }
@@ -2912,7 +3424,7 @@ dissect_pcap_UE_PositionEstimate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_pcap_UE_RxTxTimeDifferenceType2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 8191U, NULL, FALSE);
+                                                            0U, 8191U, NULL, false);
 
   return offset;
 }
@@ -2922,7 +3434,7 @@ dissect_pcap_UE_RxTxTimeDifferenceType2(tvbuff_t *tvb _U_, int offset _U_, asn1_
 static int
 dissect_pcap_BIT_STRING_SIZE_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     3, 3, FALSE, NULL, NULL);
+                                     3, 3, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -2932,7 +3444,7 @@ dissect_pcap_BIT_STRING_SIZE_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_BIT_STRING_SIZE_5(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     5, 5, FALSE, NULL, NULL);
+                                     5, 5, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -2959,7 +3471,7 @@ dissect_pcap_UE_PositioningMeasQuality(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_pcap_RoundTripTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 32766U, NULL, FALSE);
+                                                            0U, 32766U, NULL, false);
 
   return offset;
 }
@@ -2986,7 +3498,7 @@ dissect_pcap_RoundTripTimeInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_RxTimingDeviation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 8191U, NULL, FALSE);
+                                                            0U, 8191U, NULL, false);
 
   return offset;
 }
@@ -2996,7 +3508,7 @@ dissect_pcap_RxTimingDeviation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_TimingAdvance(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 63U, NULL, FALSE);
+                                                            0U, 63U, NULL, false);
 
   return offset;
 }
@@ -3022,7 +3534,7 @@ dissect_pcap_RxTimingDeviationInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_pcap_RxTimingDeviationLCR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 511U, NULL, FALSE);
+                                                            0U, 511U, NULL, false);
 
   return offset;
 }
@@ -3032,7 +3544,7 @@ dissect_pcap_RxTimingDeviationLCR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_pcap_TimingAdvanceLCR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 2047U, NULL, FALSE);
+                                                            0U, 2047U, NULL, false);
 
   return offset;
 }
@@ -3058,7 +3570,7 @@ dissect_pcap_RxTimingDeviationLCRInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 static int
 dissect_pcap_Pathloss(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            46U, 158U, NULL, FALSE);
+                                                            46U, 158U, NULL, false);
 
   return offset;
 }
@@ -3093,7 +3605,7 @@ static int
 dissect_pcap_CellId_MeasuredResultsInfoList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_CellId_MeasuredResultsInfoList, CellId_MeasuredResultsInfoList_sequence_of,
-                                                  1, maxNrOfMeasNCell, FALSE);
+                                                  1, maxNrOfMeasNCell, false);
 
   return offset;
 }
@@ -3107,7 +3619,7 @@ static int
 dissect_pcap_CellId_MeasuredResultsSets(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_CellId_MeasuredResultsSets, CellId_MeasuredResultsSets_sequence_of,
-                                                  1, maxNrOfMeasurements, FALSE);
+                                                  1, maxNrOfMeasurements, false);
 
   return offset;
 }
@@ -3117,7 +3629,7 @@ dissect_pcap_CellId_MeasuredResultsSets(tvbuff_t *tvb _U_, int offset _U_, asn1_
 static int
 dissect_pcap_UE_RxTxTimeDifferenceType1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            768U, 1280U, NULL, FALSE);
+                                                            768U, 1280U, NULL, false);
 
   return offset;
 }
@@ -3127,7 +3639,7 @@ dissect_pcap_UE_RxTxTimeDifferenceType1(tvbuff_t *tvb _U_, int offset _U_, asn1_
 static int
 dissect_pcap_ExtendedRoundTripTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            32767U, 103041U, NULL, FALSE);
+                                                            32767U, 103041U, NULL, false);
 
   return offset;
 }
@@ -3154,7 +3666,7 @@ dissect_pcap_RoundTripTimeInfoWithType1(tvbuff_t *tvb _U_, int offset _U_, asn1_
 static int
 dissect_pcap_ExtendedTimingAdvanceLCR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            2048U, 8191U, NULL, FALSE);
+                                                            2048U, 8191U, NULL, false);
 
   return offset;
 }
@@ -3164,7 +3676,7 @@ dissect_pcap_ExtendedTimingAdvanceLCR(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 static int
 dissect_pcap_RxTimingDeviation768(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 65535U, NULL, FALSE);
+                                                            0U, 65535U, NULL, false);
 
   return offset;
 }
@@ -3174,7 +3686,7 @@ dissect_pcap_RxTimingDeviation768(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_pcap_TimingAdvance768(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 511U, NULL, FALSE);
+                                                            0U, 511U, NULL, false);
 
   return offset;
 }
@@ -3200,7 +3712,7 @@ dissect_pcap_RxTimingDeviation768Info(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 static int
 dissect_pcap_RxTimingDeviation384ext(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 32767U, NULL, FALSE);
+                                                            0U, 32767U, NULL, false);
 
   return offset;
 }
@@ -3210,7 +3722,7 @@ dissect_pcap_RxTimingDeviation384ext(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 static int
 dissect_pcap_TimingAdvance384ext(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
+                                                            0U, 255U, NULL, false);
 
   return offset;
 }
@@ -3236,7 +3748,7 @@ dissect_pcap_RxTimingDeviation384extInfo(tvbuff_t *tvb _U_, int offset _U_, asn1
 static int
 dissect_pcap_CPICH_RSCP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -5, 91U, NULL, FALSE);
+                                                            -5, 91U, NULL, false);
 
   return offset;
 }
@@ -3246,7 +3758,7 @@ dissect_pcap_CPICH_RSCP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 static int
 dissect_pcap_CPICH_EcNo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 49U, NULL, FALSE);
+                                                            0U, 49U, NULL, false);
 
   return offset;
 }
@@ -3272,7 +3784,7 @@ dissect_pcap_AddMeasurementInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_AOA_LCR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 719U, NULL, FALSE);
+                                                            0U, 719U, NULL, false);
 
   return offset;
 }
@@ -3294,7 +3806,7 @@ static const value_string pcap_AOA_LCR_Accuracy_Class_vals[] = {
 static int
 dissect_pcap_AOA_LCR_Accuracy_Class(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     8, NULL, TRUE, 0, NULL);
+                                     8, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -3320,7 +3832,7 @@ dissect_pcap_AngleOfArrivalLCR(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_PLMN_Identity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       3, 3, FALSE, NULL);
+                                       3, 3, false, NULL);
 
   return offset;
 }
@@ -3362,7 +3874,7 @@ dissect_pcap_GSM_BSIC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 static int
 dissect_pcap_GSM_BCCH_ARFCN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 1023U, NULL, FALSE);
+                                                            0U, 1023U, NULL, false);
 
   return offset;
 }
@@ -3387,7 +3899,7 @@ dissect_pcap_GERANPhysicalCellID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_pcap_GSM_RSSI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 63U, NULL, FALSE);
+                                                            0U, 63U, NULL, false);
 
   return offset;
 }
@@ -3418,7 +3930,7 @@ static int
 dissect_pcap_GERAN_MeasuredResultsInfoList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GERAN_MeasuredResultsInfoList, GERAN_MeasuredResultsInfoList_sequence_of,
-                                                  1, maxReportedGERANCells, FALSE);
+                                                  1, maxReportedGERANCells, false);
 
   return offset;
 }
@@ -3447,16 +3959,7 @@ static int
 dissect_pcap_CellId_IRATMeasuredResultsSets(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_CellId_IRATMeasuredResultsSets, CellId_IRATMeasuredResultsSets_sequence_of,
-                                                  1, maxNrOfIRATMeasurements, FALSE);
-
-  return offset;
-}
-
-
-
-static int
-dissect_pcap_BOOLEAN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_boolean(tvb, offset, actx, tree, hf_index, NULL);
+                                                  1, maxNrOfIRATMeasurements, false);
 
   return offset;
 }
@@ -3570,7 +4073,7 @@ static const value_string pcap_ClientType_vals[] = {
 static int
 dissect_pcap_ClientType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     8, NULL, TRUE, 0, NULL);
+                                     8, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -3580,7 +4083,7 @@ dissect_pcap_ClientType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 static int
 dissect_pcap_CriticalityDiagnosticsRepetition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
+                                                            0U, 255U, NULL, false);
 
   return offset;
 }
@@ -3590,7 +4093,7 @@ dissect_pcap_CriticalityDiagnosticsRepetition(tvbuff_t *tvb _U_, int offset _U_,
 static int
 dissect_pcap_MessageStructureRepetition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 256U, NULL, FALSE);
+                                                            1U, 256U, NULL, false);
 
   return offset;
 }
@@ -3620,7 +4123,7 @@ static int
 dissect_pcap_MessageStructure(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_MessageStructure, MessageStructure_sequence_of,
-                                                  1, maxNrOfLevels, FALSE);
+                                                  1, maxNrOfLevels, false);
 
   return offset;
 }
@@ -3636,7 +4139,7 @@ static const value_string pcap_TypeOfError_vals[] = {
 static int
 dissect_pcap_TypeOfError(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -3669,7 +4172,7 @@ static int
 dissect_pcap_CriticalityDiagnostics_IE_List(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_CriticalityDiagnostics_IE_List, CriticalityDiagnostics_IE_List_sequence_of,
-                                                  1, maxNrOfErrors, FALSE);
+                                                  1, maxNrOfErrors, false);
 
   return offset;
 }
@@ -3698,7 +4201,7 @@ dissect_pcap_CriticalityDiagnostics(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 static int
 dissect_pcap_INTEGER_0_604799(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 604799U, NULL, FALSE);
+                                                            0U, 604799U, NULL, false);
 
   return offset;
 }
@@ -3720,17 +4223,7 @@ static const value_string pcap_DiffCorrectionStatus_vals[] = {
 static int
 dissect_pcap_DiffCorrectionStatus(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     8, NULL, FALSE, 0, NULL);
-
-  return offset;
-}
-
-
-
-static int
-dissect_pcap_INTEGER_0_255(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
+                                     8, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -3748,7 +4241,7 @@ static const value_string pcap_UDRE_vals[] = {
 static int
 dissect_pcap_UDRE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, FALSE, 0, NULL);
+                                     4, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -3758,7 +4251,7 @@ dissect_pcap_UDRE(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 static int
 dissect_pcap_PRC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -2047, 2047U, NULL, FALSE);
+                                                            -2047, 2047U, NULL, false);
 
   return offset;
 }
@@ -3768,7 +4261,7 @@ dissect_pcap_PRC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_
 static int
 dissect_pcap_RRC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -127, 127U, NULL, FALSE);
+                                                            -127, 127U, NULL, false);
 
   return offset;
 }
@@ -3801,7 +4294,7 @@ static int
 dissect_pcap_DGPS_CorrectionSatInfoList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_DGPS_CorrectionSatInfoList, DGPS_CorrectionSatInfoList_sequence_of,
-                                                  1, maxSat, FALSE);
+                                                  1, maxSat, false);
 
   return offset;
 }
@@ -3840,7 +4333,7 @@ static const value_string pcap_UDREGrowthRate_vals[] = {
 static int
 dissect_pcap_UDREGrowthRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     8, NULL, FALSE, 0, NULL);
+                                     8, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -3862,7 +4355,7 @@ static const value_string pcap_UDREValidityTime_vals[] = {
 static int
 dissect_pcap_UDREValidityTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     8, NULL, FALSE, 0, NULL);
+                                     8, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -3888,7 +4381,7 @@ dissect_pcap_DGNSS_ValidityPeriod(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_pcap_IMEI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       3, 8, FALSE, NULL);
+                                       8, 8, false, NULL);
 
   return offset;
 }
@@ -3898,7 +4391,7 @@ dissect_pcap_IMEI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 static int
 dissect_pcap_IMSI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       8, 8, FALSE, NULL);
+                                       3, 8, false, NULL);
 
   return offset;
 }
@@ -3908,7 +4401,7 @@ dissect_pcap_IMSI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 static int
 dissect_pcap_INTEGER_0_37158911999999_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer_64b(tvb, offset, actx, tree, hf_index,
-                                                            0U, G_GUINT64_CONSTANT(37158911999999), NULL, TRUE);
+                                                            0U, UINT64_C(37158911999999), NULL, true);
 
   return offset;
 }
@@ -3935,7 +4428,7 @@ dissect_pcap_UTRAN_GPSReferenceTimeResult(tvbuff_t *tvb _U_, int offset _U_, asn
 static int
 dissect_pcap_INTEGER_0_604799999_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 604799999U, NULL, TRUE);
+                                                            0U, 604799999U, NULL, true);
 
   return offset;
 }
@@ -4012,7 +4505,7 @@ dissect_pcap_UE_PositionEstimateInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 static int
 dissect_pcap_INTEGER_0_3599999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 3599999U, NULL, FALSE);
+                                                            0U, 3599999U, NULL, false);
 
   return offset;
 }
@@ -4022,7 +4515,7 @@ dissect_pcap_INTEGER_0_3599999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_INTEGER_0_7(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 7U, NULL, FALSE);
+                                                            0U, 7U, NULL, false);
 
   return offset;
 }
@@ -4078,7 +4571,7 @@ dissect_pcap_PositionDataUEbased(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_pcap_PositioningDataDiscriminator(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     4, 4, FALSE, NULL, NULL);
+                                     4, 4, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4088,7 +4581,7 @@ dissect_pcap_PositioningDataDiscriminator(tvbuff_t *tvb _U_, int offset _U_, asn
 static int
 dissect_pcap_PositioningMethodAndUsage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 1, FALSE, NULL);
+                                       1, 1, false, NULL);
 
   return offset;
 }
@@ -4102,7 +4595,7 @@ static int
 dissect_pcap_PositioningDataSet(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_PositioningDataSet, PositioningDataSet_sequence_of,
-                                                  1, maxSet, FALSE);
+                                                  1, maxSet, false);
 
   return offset;
 }
@@ -4128,7 +4621,7 @@ dissect_pcap_PositionData(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_pcap_GANSS_PositioningMethodAndUsage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       1, 1, FALSE, NULL);
+                                       1, 1, false, NULL);
 
   return offset;
 }
@@ -4142,7 +4635,31 @@ static int
 dissect_pcap_GANSS_PositioningDataSet(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_PositioningDataSet, GANSS_PositioningDataSet_sequence_of,
-                                                  1, maxGANSSSet, FALSE);
+                                                  1, maxGANSSSet, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_Additional_PositioningMethodAndUsage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
+                                       1, 1, false, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t Additional_PositioningDataSet_sequence_of[1] = {
+  { &hf_pcap_Additional_PositioningDataSet_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_pcap_Additional_PositioningMethodAndUsage },
+};
+
+static int
+dissect_pcap_Additional_PositioningDataSet(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_pcap_Additional_PositioningDataSet, Additional_PositioningDataSet_sequence_of,
+                                                  1, maxAddPos, false);
 
   return offset;
 }
@@ -4152,7 +4669,7 @@ dissect_pcap_GANSS_PositioningDataSet(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 static int
 dissect_pcap_INTEGER_0_604799999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 604799999U, NULL, FALSE);
+                                                            0U, 604799999U, NULL, false);
 
   return offset;
 }
@@ -4162,7 +4679,7 @@ dissect_pcap_INTEGER_0_604799999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 static int
 dissect_pcap_INTEGER_M2048_2047(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -2048, 2047U, NULL, FALSE);
+                                                            -2048, 2047U, NULL, false);
 
   return offset;
 }
@@ -4172,7 +4689,7 @@ dissect_pcap_INTEGER_M2048_2047(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_INTEGER_M42_21(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -42, 21U, NULL, FALSE);
+                                                            -42, 21U, NULL, false);
 
   return offset;
 }
@@ -4191,7 +4708,7 @@ static const value_string pcap_DopplerUncertainty_vals[] = {
 static int
 dissect_pcap_DopplerUncertainty(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     5, NULL, TRUE, 0, NULL);
+                                     5, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -4217,7 +4734,7 @@ dissect_pcap_ExtraDopplerInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_pcap_INTEGER_0_1022(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 1022U, NULL, FALSE);
+                                                            0U, 1022U, NULL, false);
 
   return offset;
 }
@@ -4227,7 +4744,7 @@ dissect_pcap_INTEGER_0_1022(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_pcap_INTEGER_0_19(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 19U, NULL, FALSE);
+                                                            0U, 19U, NULL, false);
 
   return offset;
 }
@@ -4237,7 +4754,7 @@ dissect_pcap_INTEGER_0_19(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_pcap_INTEGER_0_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 3U, NULL, FALSE);
+                                                            0U, 3U, NULL, false);
 
   return offset;
 }
@@ -4269,7 +4786,7 @@ static value_string_ext pcap_CodePhaseSearchWindow_vals_ext = VALUE_STRING_EXT_I
 static int
 dissect_pcap_CodePhaseSearchWindow(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     16, NULL, FALSE, 0, NULL);
+                                     16, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -4279,7 +4796,7 @@ dissect_pcap_CodePhaseSearchWindow(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_pcap_INTEGER_0_31(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 31U, NULL, FALSE);
+                                                            0U, 31U, NULL, false);
 
   return offset;
 }
@@ -4331,7 +4848,7 @@ static int
 dissect_pcap_AcquisitionSatInfoList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_AcquisitionSatInfoList, AcquisitionSatInfoList_sequence_of,
-                                                  1, maxSat, FALSE);
+                                                  1, maxSat, false);
 
   return offset;
 }
@@ -4353,11 +4870,46 @@ dissect_pcap_GPS_AcquisitionAssistance(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 }
 
 
+static const value_string pcap_DopplerUncertaintyExtension_vals[] = {
+  {   0, "hz300" },
+  {   1, "hz400" },
+  {   2, "hz500" },
+  {   3, "hz600" },
+  {   4, "noInformation" },
+  { 0, NULL }
+};
+
+
+static int
+dissect_pcap_DopplerUncertaintyExtension(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
+                                     5, NULL, true, 0, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t ExtraDopplerInfoExtension_sequence[] = {
+  { &hf_pcap_doppler1stOrder, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_M42_21 },
+  { &hf_pcap_dopplerUncertaintyExtension, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_DopplerUncertaintyExtension },
+  { &hf_pcap_iE_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_ExtraDopplerInfoExtension(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_ExtraDopplerInfoExtension, ExtraDopplerInfoExtension_sequence);
+
+  return offset;
+}
+
+
 
 static int
 dissect_pcap_INTEGER_0_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 15U, NULL, FALSE);
+                                                            0U, 15U, NULL, false);
 
   return offset;
 }
@@ -4374,6 +4926,16 @@ static int
 dissect_pcap_AzimuthAndElevationLSB(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_pcap_AzimuthAndElevationLSB, AzimuthAndElevationLSB_sequence);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_Confidence(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 100U, NULL, false);
 
   return offset;
 }
@@ -4403,7 +4965,7 @@ static int
 dissect_pcap_AuxInfoGANSS_ID1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_AuxInfoGANSS_ID1, AuxInfoGANSS_ID1_sequence_of,
-                                                  1, maxGANSSSat, FALSE);
+                                                  1, maxGANSSSat, false);
 
   return offset;
 }
@@ -4413,7 +4975,7 @@ dissect_pcap_AuxInfoGANSS_ID1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_pcap_INTEGER_M7_13(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -7, 13U, NULL, FALSE);
+                                                            -7, 13U, NULL, false);
 
   return offset;
 }
@@ -4444,7 +5006,7 @@ static int
 dissect_pcap_AuxInfoGANSS_ID3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_AuxInfoGANSS_ID3, AuxInfoGANSS_ID3_sequence_of,
-                                                  1, maxGANSSSat, FALSE);
+                                                  1, maxGANSSSat, false);
 
   return offset;
 }
@@ -4454,7 +5016,7 @@ dissect_pcap_AuxInfoGANSS_ID3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_pcap_BIT_STRING_SIZE_10(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     10, 10, FALSE, NULL, NULL);
+                                     10, 10, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4464,7 +5026,7 @@ dissect_pcap_BIT_STRING_SIZE_10(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_BIT_STRING_SIZE_20(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     20, 20, FALSE, NULL, NULL);
+                                     20, 20, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4474,7 +5036,7 @@ dissect_pcap_BIT_STRING_SIZE_20(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_BIT_STRING_SIZE_26(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     26, 26, FALSE, NULL, NULL);
+                                     26, 26, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4484,7 +5046,7 @@ dissect_pcap_BIT_STRING_SIZE_26(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_BIT_STRING_SIZE_13(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     13, 13, FALSE, NULL, NULL);
+                                     13, 13, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4539,7 +5101,7 @@ dissect_pcap_DeltaUT1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 static int
 dissect_pcap_INTEGER_0_119(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 119U, NULL, FALSE);
+                                                            0U, 119U, NULL, false);
 
   return offset;
 }
@@ -4549,7 +5111,7 @@ dissect_pcap_INTEGER_0_119(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_pcap_INTEGER_0_3_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 3U, NULL, TRUE);
+                                                            0U, 3U, NULL, true);
 
   return offset;
 }
@@ -4586,7 +5148,7 @@ static const value_string pcap_GANSS_StatusHealth_vals[] = {
 static int
 dissect_pcap_GANSS_StatusHealth(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     8, NULL, FALSE, 0, NULL);
+                                     8, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -4596,7 +5158,7 @@ dissect_pcap_GANSS_StatusHealth(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_INTEGER_M2047_2047(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -2047, 2047U, NULL, FALSE);
+                                                            -2047, 2047U, NULL, false);
 
   return offset;
 }
@@ -4606,7 +5168,7 @@ dissect_pcap_INTEGER_M2047_2047(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_INTEGER_M127_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -127, 127U, NULL, FALSE);
+                                                            -127, 127U, NULL, false);
 
   return offset;
 }
@@ -4639,7 +5201,7 @@ static int
 dissect_pcap_DGANSS_SignalInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_DGANSS_SignalInformation, DGANSS_SignalInformation_sequence_of,
-                                                  1, maxGANSSSat, FALSE);
+                                                  1, maxGANSSSat, false);
 
   return offset;
 }
@@ -4670,7 +5232,7 @@ static int
 dissect_pcap_DGANSS_Information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_DGANSS_Information, DGANSS_Information_sequence_of,
-                                                  1, maxSgnType, FALSE);
+                                                  1, maxSgnType, false);
 
   return offset;
 }
@@ -4696,7 +5258,7 @@ dissect_pcap_DGANSS_Corrections(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_BIT_STRING_SIZE_22(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     22, 22, FALSE, NULL, NULL);
+                                     22, 22, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4742,7 +5304,7 @@ dissect_pcap_GLONASSclockModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_BIT_STRING_SIZE_12(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     12, 12, FALSE, NULL, NULL);
+                                     12, 12, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4765,11 +5327,42 @@ dissect_pcap_SBASclockModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 }
 
 
+
+static int
+dissect_pcap_BIT_STRING_SIZE_17(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     17, 17, false, NULL, 0, NULL, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t BDSClockModel_sequence[] = {
+  { &hf_pcap_toc_BDS        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_17 },
+  { &hf_pcap_a0_BDS_01      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_24 },
+  { &hf_pcap_a1_BDS_01      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_22 },
+  { &hf_pcap_a2_BDS         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_11 },
+  { &hf_pcap_tGD1_BDS       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_10 },
+  { &hf_pcap_aODC_BDS       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_5 },
+  { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_BDSClockModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_BDSClockModel, BDSClockModel_sequence);
+
+  return offset;
+}
+
+
 static const value_string pcap_GANSS_AddClockModels_vals[] = {
   {   0, "navClockModel" },
   {   1, "cnavClockModel" },
   {   2, "glonassClockModel" },
   {   3, "sbasClockModel" },
+  {   4, "bDSClockModel" },
   { 0, NULL }
 };
 
@@ -4778,6 +5371,7 @@ static const per_choice_t GANSS_AddClockModels_choice[] = {
   {   1, &hf_pcap_cnavClockModel , ASN1_EXTENSION_ROOT    , dissect_pcap_CNAVclockModel },
   {   2, &hf_pcap_glonassClockModel, ASN1_EXTENSION_ROOT    , dissect_pcap_GLONASSclockModel },
   {   3, &hf_pcap_sbasClockModel , ASN1_EXTENSION_ROOT    , dissect_pcap_SBASclockModel },
+  {   4, &hf_pcap_bDSClockModel  , ASN1_NOT_EXTENSION_ROOT, dissect_pcap_BDSClockModel },
   { 0, NULL, 0, NULL }
 };
 
@@ -4795,7 +5389,7 @@ dissect_pcap_GANSS_AddClockModels(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_pcap_BIT_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     4, 4, FALSE, NULL, NULL);
+                                     4, 4, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4805,7 +5399,7 @@ dissect_pcap_BIT_STRING_SIZE_4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_BIT_STRING_SIZE_1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     1, 1, FALSE, NULL, NULL);
+                                     1, 1, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4815,7 +5409,7 @@ dissect_pcap_BIT_STRING_SIZE_1(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_BIT_STRING_SIZE_32(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     32, 32, FALSE, NULL, NULL);
+                                     32, 32, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4825,7 +5419,7 @@ dissect_pcap_BIT_STRING_SIZE_32(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_BIT_STRING_SIZE_14(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     14, 14, FALSE, NULL, NULL);
+                                     14, 14, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4867,17 +5461,7 @@ dissect_pcap_NavModel_NAVKeplerianSet(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 static int
 dissect_pcap_BIT_STRING_SIZE_25(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     25, 25, FALSE, NULL, NULL);
-
-  return offset;
-}
-
-
-
-static int
-dissect_pcap_BIT_STRING_SIZE_17(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     17, 17, FALSE, NULL, NULL);
+                                     25, 25, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4887,7 +5471,7 @@ dissect_pcap_BIT_STRING_SIZE_17(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_BIT_STRING_SIZE_23(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     23, 23, FALSE, NULL, NULL);
+                                     23, 23, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4897,7 +5481,7 @@ dissect_pcap_BIT_STRING_SIZE_23(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_BIT_STRING_SIZE_33(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     33, 33, FALSE, NULL, NULL);
+                                     33, 33, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4907,7 +5491,7 @@ dissect_pcap_BIT_STRING_SIZE_33(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_BIT_STRING_SIZE_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     15, 15, FALSE, NULL, NULL);
+                                     15, 15, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4917,7 +5501,7 @@ dissect_pcap_BIT_STRING_SIZE_15(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_BIT_STRING_SIZE_21(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     21, 21, FALSE, NULL, NULL);
+                                     21, 21, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4960,7 +5544,7 @@ dissect_pcap_NavModel_CNAVKeplerianSet(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_pcap_BIT_STRING_SIZE_27(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     27, 27, FALSE, NULL, NULL);
+                                     27, 27, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -4997,7 +5581,7 @@ dissect_pcap_NavModel_GLONASSecef(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_pcap_BIT_STRING_SIZE_30(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     30, 30, FALSE, NULL, NULL);
+                                     30, 30, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -5007,7 +5591,7 @@ dissect_pcap_BIT_STRING_SIZE_30(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_BIT_STRING_SIZE_18(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     18, 18, FALSE, NULL, NULL);
+                                     18, 18, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -5038,11 +5622,44 @@ dissect_pcap_NavModel_SBASecef(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 }
 
 
+static const per_sequence_t NavModel_BDSKeplerianSet_sequence[] = {
+  { &hf_pcap_uRAIndex_BDS   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_4 },
+  { &hf_pcap_tOA_BDS_01     , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_17 },
+  { &hf_pcap_a1_2_BDS       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_32 },
+  { &hf_pcap_e_BDS_01       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_32 },
+  { &hf_pcap_oMG_BDS        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_32 },
+  { &hf_pcap_dLTn_BDS       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_16 },
+  { &hf_pcap_m0_BDS_01      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_32 },
+  { &hf_pcap_oMG0_BDS       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_32 },
+  { &hf_pcap_oMGdot_BDS     , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_24 },
+  { &hf_pcap_i0_BDS         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_32 },
+  { &hf_pcap_iDOT_BDS       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_14 },
+  { &hf_pcap_cuc_BDS        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_18 },
+  { &hf_pcap_cus_BDS        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_18 },
+  { &hf_pcap_crc_BDS        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_18 },
+  { &hf_pcap_crs_BDS        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_18 },
+  { &hf_pcap_cic_BDS        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_18 },
+  { &hf_pcap_cis_BDS        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_18 },
+  { &hf_pcap_aODE_BDS       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_5 },
+  { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_NavModel_BDSKeplerianSet(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_NavModel_BDSKeplerianSet, NavModel_BDSKeplerianSet_sequence);
+
+  return offset;
+}
+
+
 static const value_string pcap_GANSS_AddOrbitModels_vals[] = {
   {   0, "navKeplerianSet" },
   {   1, "cnavKeplerianSet" },
   {   2, "glonassECEF" },
   {   3, "sbasECEF" },
+  {   4, "bDSKeplerianSet" },
   { 0, NULL }
 };
 
@@ -5051,6 +5668,7 @@ static const per_choice_t GANSS_AddOrbitModels_choice[] = {
   {   1, &hf_pcap_cnavKeplerianSet, ASN1_EXTENSION_ROOT    , dissect_pcap_NavModel_CNAVKeplerianSet },
   {   2, &hf_pcap_glonassECEF    , ASN1_EXTENSION_ROOT    , dissect_pcap_NavModel_GLONASSecef },
   {   3, &hf_pcap_sbasECEF       , ASN1_EXTENSION_ROOT    , dissect_pcap_NavModel_SBASecef },
+  {   4, &hf_pcap_bDSKeplerianSet, ASN1_NOT_EXTENSION_ROOT, dissect_pcap_NavModel_BDSKeplerianSet },
   { 0, NULL, 0, NULL }
 };
 
@@ -5111,7 +5729,7 @@ static const value_string pcap_T_non_broadcastIndication_vals[] = {
 static int
 dissect_pcap_T_non_broadcastIndication(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     1, NULL, FALSE, 0, NULL);
+                                     1, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -5121,7 +5739,7 @@ dissect_pcap_T_non_broadcastIndication(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_pcap_BIT_STRING_SIZE_6(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     6, 6, FALSE, NULL, NULL);
+                                     6, 6, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -5154,7 +5772,7 @@ static int
 dissect_pcap_Ganss_Sat_Info_AddNavList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_Ganss_Sat_Info_AddNavList, Ganss_Sat_Info_AddNavList_sequence_of,
-                                                  1, maxGANSSSat, FALSE);
+                                                  1, maxGANSSSat, false);
 
   return offset;
 }
@@ -5180,7 +5798,7 @@ dissect_pcap_GANSS_Additional_Navigation_Models(tvbuff_t *tvb _U_, int offset _U
 static int
 dissect_pcap_INTEGER_0_37799(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 37799U, NULL, FALSE);
+                                                            0U, 37799U, NULL, false);
 
   return offset;
 }
@@ -5190,7 +5808,7 @@ dissect_pcap_INTEGER_0_37799(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_pcap_INTEGER_M2147483648_2147483647(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            G_MININT32, 2147483647U, NULL, FALSE);
+                                                            INT32_MIN, 2147483647U, NULL, false);
 
   return offset;
 }
@@ -5200,7 +5818,7 @@ dissect_pcap_INTEGER_M2147483648_2147483647(tvbuff_t *tvb _U_, int offset _U_, a
 static int
 dissect_pcap_INTEGER_M64_63(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -64, 63U, NULL, FALSE);
+                                                            -64, 63U, NULL, false);
 
   return offset;
 }
@@ -5211,6 +5829,7 @@ static const value_string pcap_T_gnss_to_id_vals[] = {
   {   1, "galileo" },
   {   2, "qzss" },
   {   3, "glonass" },
+  {   4, "bds" },
   { 0, NULL }
 };
 
@@ -5218,7 +5837,7 @@ static const value_string pcap_T_gnss_to_id_vals[] = {
 static int
 dissect_pcap_T_gnss_to_id(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     1, NULL, TRUE, 3, NULL);
+                                     1, NULL, true, 4, NULL);
 
   return offset;
 }
@@ -5228,7 +5847,7 @@ dissect_pcap_T_gnss_to_id(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_pcap_INTEGER_0_8191(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 8191U, NULL, FALSE);
+                                                            0U, 8191U, NULL, false);
 
   return offset;
 }
@@ -5262,7 +5881,7 @@ static int
 dissect_pcap_GANSS_Additional_Time_Models(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_Additional_Time_Models, GANSS_Additional_Time_Models_sequence_of,
-                                                  1, maxGANSS_1, FALSE);
+                                                  1, maxGANSS_1, false);
 
   return offset;
 }
@@ -5272,7 +5891,7 @@ dissect_pcap_GANSS_Additional_Time_Models(tvbuff_t *tvb _U_, int offset _U_, asn
 static int
 dissect_pcap_BIT_STRING_SIZE_7(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     7, 7, FALSE, NULL, NULL);
+                                     7, 7, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -5342,10 +5961,33 @@ dissect_pcap_UTCmodelSet3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 }
 
 
+static const per_sequence_t UTCmodelSet4_sequence[] = {
+  { &hf_pcap_utca0_BDS      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_32 },
+  { &hf_pcap_utca1_BDS      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_24 },
+  { &hf_pcap_utcDeltatLS_BDS, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
+  { &hf_pcap_utcWNt         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
+  { &hf_pcap_utcDeltaTls    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
+  { &hf_pcap_utcWNlsf_BDS   , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
+  { &hf_pcap_utcDN_BDS      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
+  { &hf_pcap_utcDeltaTlsf_BDS, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
+  { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_UTCmodelSet4(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_UTCmodelSet4, UTCmodelSet4_sequence);
+
+  return offset;
+}
+
+
 static const value_string pcap_GANSS_Additional_UTC_Models_vals[] = {
   {   0, "utcModel1" },
   {   1, "utcModel2" },
   {   2, "utcModel3" },
+  {   3, "utcModel4" },
   { 0, NULL }
 };
 
@@ -5353,6 +5995,7 @@ static const per_choice_t GANSS_Additional_UTC_Models_choice[] = {
   {   0, &hf_pcap_utcModel1      , ASN1_EXTENSION_ROOT    , dissect_pcap_UTCmodelSet1 },
   {   1, &hf_pcap_utcModel2      , ASN1_EXTENSION_ROOT    , dissect_pcap_UTCmodelSet2 },
   {   2, &hf_pcap_utcModel3      , ASN1_EXTENSION_ROOT    , dissect_pcap_UTCmodelSet3 },
+  {   3, &hf_pcap_utcModel4      , ASN1_NOT_EXTENSION_ROOT, dissect_pcap_UTCmodelSet4 },
   { 0, NULL, 0, NULL }
 };
 
@@ -5370,7 +6013,62 @@ dissect_pcap_GANSS_Additional_UTC_Models(tvbuff_t *tvb _U_, int offset _U_, asn1
 static int
 dissect_pcap_BIT_STRING_SIZE_9(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     9, 9, FALSE, NULL, NULL);
+                                     9, 9, false, NULL, 0, NULL, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t Satellite_Information_BDS_KP_Item_sequence[] = {
+  { &hf_pcap_sVID_BDS       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_63 },
+  { &hf_pcap_tOA_BDS        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
+  { &hf_pcap_a21_BDS        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_24 },
+  { &hf_pcap_e_BDS          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_17 },
+  { &hf_pcap_omg_lower_BDS  , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_24 },
+  { &hf_pcap_m0_BDS         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_24 },
+  { &hf_pcap_omg_0_BDS      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_24 },
+  { &hf_pcap_omg_upper_BDS  , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_17 },
+  { &hf_pcap_delta_i_BDS    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_16 },
+  { &hf_pcap_a0_BDS         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_11 },
+  { &hf_pcap_a1_BDS         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_11 },
+  { &hf_pcap_hea_BDS        , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_BIT_STRING_SIZE_9 },
+  { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_Satellite_Information_BDS_KP_Item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_Satellite_Information_BDS_KP_Item, Satellite_Information_BDS_KP_Item_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t Satellite_Information_BDS_KP_List_sequence_of[1] = {
+  { &hf_pcap_Satellite_Information_BDS_KP_List_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_pcap_Satellite_Information_BDS_KP_Item },
+};
+
+static int
+dissect_pcap_Satellite_Information_BDS_KP_List(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_pcap_Satellite_Information_BDS_KP_List, Satellite_Information_BDS_KP_List_sequence_of,
+                                                  1, maxGANSSSatAlmanac, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t GANSS_ALM_BDSKeplericanset_sequence[] = {
+  { &hf_pcap_satellite_Information_BDS_KP_List, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_Satellite_Information_BDS_KP_List },
+  { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_GANSS_ALM_BDSKeplericanset(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_GANSS_ALM_BDSKeplericanset, GANSS_ALM_BDSKeplericanset_sequence);
 
   return offset;
 }
@@ -5408,7 +6106,7 @@ static int
 dissect_pcap_GANSS_SAT_Info_Almanac_SBASecefList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_SAT_Info_Almanac_SBASecefList, GANSS_SAT_Info_Almanac_SBASecefList_sequence_of,
-                                                  1, maxGANSSSatAlmanac, FALSE);
+                                                  1, maxGANSSSatAlmanac, false);
 
   return offset;
 }
@@ -5464,7 +6162,7 @@ static int
 dissect_pcap_GANSS_SAT_Info_Almanac_GLOkpList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_SAT_Info_Almanac_GLOkpList, GANSS_SAT_Info_Almanac_GLOkpList_sequence_of,
-                                                  1, maxGANSSSatAlmanac, FALSE);
+                                                  1, maxGANSSSatAlmanac, false);
 
   return offset;
 }
@@ -5520,7 +6218,7 @@ static int
 dissect_pcap_GANSS_SAT_Info_Almanac_MIDIkpList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_SAT_Info_Almanac_MIDIkpList, GANSS_SAT_Info_Almanac_MIDIkpList_sequence_of,
-                                                  1, maxGANSSSatAlmanac, FALSE);
+                                                  1, maxGANSSSatAlmanac, false);
 
   return offset;
 }
@@ -5575,7 +6273,7 @@ static int
 dissect_pcap_GANSS_SAT_Info_Almanac_NAVkpList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_SAT_Info_Almanac_NAVkpList, GANSS_SAT_Info_Almanac_NAVkpList_sequence_of,
-                                                  1, maxGANSSSatAlmanac, FALSE);
+                                                  1, maxGANSSSatAlmanac, false);
 
   return offset;
 }
@@ -5626,7 +6324,7 @@ static int
 dissect_pcap_GANSS_SAT_Info_Almanac_REDkpList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_SAT_Info_Almanac_REDkpList, GANSS_SAT_Info_Almanac_REDkpList_sequence_of,
-                                                  1, maxGANSSSatAlmanac, FALSE);
+                                                  1, maxGANSSSatAlmanac, false);
 
   return offset;
 }
@@ -5648,18 +6346,29 @@ dissect_pcap_GANSS_ALM_ReducedKeplerianSet(tvbuff_t *tvb _U_, int offset _U_, as
 }
 
 
+
+static int
+dissect_pcap_INTEGER_0_1023(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 1023U, NULL, false);
+
+  return offset;
+}
+
+
 static const per_sequence_t GANSS_SatelliteInformationKPItem_sequence[] = {
   { &hf_pcap_satId          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_63 },
   { &hf_pcap_ganss_e_alm    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_11 },
   { &hf_pcap_ganss_delta_I_alm, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_11 },
   { &hf_pcap_ganss_omegadot_alm, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_11 },
-  { &hf_pcap_ganss_svhealth_alm, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_4 },
-  { &hf_pcap_ganss_delta_a_sqrt_alm, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_17 },
+  { &hf_pcap_ganss_svStatusINAV_alm, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_4 },
+  { &hf_pcap_ganss_svStatusFNAV_alm, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_BIT_STRING_SIZE_2 },
+  { &hf_pcap_ganss_delta_a_sqrt_alm, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_13 },
   { &hf_pcap_ganss_omegazero_alm, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_16 },
   { &hf_pcap_ganss_m_zero_alm, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_16 },
   { &hf_pcap_ganss_omega_alm, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_16 },
-  { &hf_pcap_ganss_af_zero_alm, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_14 },
-  { &hf_pcap_ganss_af_one_alm, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_11 },
+  { &hf_pcap_ganss_af_zero_alm, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_16 },
+  { &hf_pcap_ganss_af_one_alm, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_13 },
   { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
   { NULL, 0, 0, NULL }
 };
@@ -5681,15 +6390,15 @@ static int
 dissect_pcap_GANSS_SatelliteInformationKP(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_SatelliteInformationKP, GANSS_SatelliteInformationKP_sequence_of,
-                                                  1, maxGANSSSatAlmanac, FALSE);
+                                                  1, maxGANSSSatAlmanac, false);
 
   return offset;
 }
 
 
 static const per_sequence_t GANSS_KeplerianParametersAlm_sequence[] = {
-  { &hf_pcap_t_oa           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_255 },
-  { &hf_pcap_iod_a          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_3 },
+  { &hf_pcap_t_oa_01        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_1023 },
+  { &hf_pcap_iod_a          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_15 },
   { &hf_pcap_gANSS_SatelliteInformationKP, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_GANSS_SatelliteInformationKP },
   { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
   { NULL, 0, 0, NULL }
@@ -5777,7 +6486,7 @@ dissect_pcap_GANSS_Auxiliary_Information(tvbuff_t *tvb _U_, int offset _U_, asn1
 static int
 dissect_pcap_INTEGER_0_75(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 75U, NULL, FALSE);
+                                                            0U, 75U, NULL, false);
 
   return offset;
 }
@@ -5801,9 +6510,9 @@ dissect_pcap_GANSS_AzimuthAndElevation(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 static int
-dissect_pcap_BIT_STRING_SIZE_28(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+dissect_pcap_BIT_STRING_SIZE_31(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     28, 28, FALSE, NULL, NULL);
+                                     31, 31, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -5811,10 +6520,11 @@ dissect_pcap_BIT_STRING_SIZE_28(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 
 static const per_sequence_t GANSS_SatelliteClockModelItem_sequence[] = {
   { &hf_pcap_t_oc           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_14 },
-  { &hf_pcap_a_i2           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_12 },
-  { &hf_pcap_a_i1           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_18 },
-  { &hf_pcap_a_i0           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_28 },
+  { &hf_pcap_a_i2           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_6 },
+  { &hf_pcap_a_i1           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_21 },
+  { &hf_pcap_a_i0           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_31 },
   { &hf_pcap_t_gd           , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_BIT_STRING_SIZE_10 },
+  { &hf_pcap_sisa           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
   { &hf_pcap_model_id       , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_INTEGER_0_3 },
   { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
   { NULL, 0, 0, NULL }
@@ -5837,7 +6547,7 @@ static int
 dissect_pcap_GANSS_Clock_Model(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_Clock_Model, GANSS_Clock_Model_sequence_of,
-                                                  1, maxGANSSClockMod, FALSE);
+                                                  1, maxGANSSClockMod, false);
 
   return offset;
 }
@@ -5847,7 +6557,7 @@ dissect_pcap_GANSS_Clock_Model(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_INTEGER_0_86399(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 86399U, NULL, FALSE);
+                                                            0U, 86399U, NULL, false);
 
   return offset;
 }
@@ -5857,7 +6567,7 @@ dissect_pcap_INTEGER_0_86399(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_pcap_INTEGER_0_3999999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 3999999U, NULL, FALSE);
+                                                            0U, 3999999U, NULL, false);
 
   return offset;
 }
@@ -5905,7 +6615,7 @@ static value_string_ext pcap_TUTRAN_GANSS_DriftRate_vals_ext = VALUE_STRING_EXT_
 static int
 dissect_pcap_TUTRAN_GANSS_DriftRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     15, NULL, TRUE, 0, NULL);
+                                     15, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -5951,9 +6661,9 @@ dissect_pcap_GANSS_IonosphereRegionalStormFlags(tvbuff_t *tvb _U_, int offset _U
 
 
 static const per_sequence_t GANSS_Ionospheric_Model_sequence[] = {
-  { &hf_pcap_alpha_zero_ionos, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_12 },
-  { &hf_pcap_alpha_one_ionos, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_12 },
-  { &hf_pcap_alpha_two_ionos, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_12 },
+  { &hf_pcap_alpha_zero_ionos, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_11 },
+  { &hf_pcap_alpha_one_ionos, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_11 },
+  { &hf_pcap_alpha_two_ionos, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_14 },
   { &hf_pcap_gANSS_IonosphereRegionalStormFlags, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_GANSS_IonosphereRegionalStormFlags },
   { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
   { NULL, 0, 0, NULL }
@@ -6004,7 +6714,7 @@ dissect_pcap_GANSS_CommonAssistanceData(tvbuff_t *tvb _U_, int offset _U_, asn1_
 static int
 dissect_pcap_INTEGER_0_59_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 59U, NULL, TRUE);
+                                                            0U, 59U, NULL, true);
 
   return offset;
 }
@@ -6014,7 +6724,7 @@ dissect_pcap_INTEGER_0_59_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_pcap_BIT_STRING_SIZE_1_1024(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     1, 1024, FALSE, NULL, NULL);
+                                     1, 1024, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -6044,7 +6754,7 @@ static int
 dissect_pcap_GANSS_DataBitAssistanceSgnList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_DataBitAssistanceSgnList, GANSS_DataBitAssistanceSgnList_sequence_of,
-                                                  1, maxSgnType, FALSE);
+                                                  1, maxSgnType, false);
 
   return offset;
 }
@@ -6074,7 +6784,7 @@ static int
 dissect_pcap_GANSS_DataBitAssistanceList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_DataBitAssistanceList, GANSS_DataBitAssistanceList_sequence_of,
-                                                  1, maxGANSSSat, FALSE);
+                                                  1, maxGANSSSat, false);
 
   return offset;
 }
@@ -6098,19 +6808,9 @@ dissect_pcap_GANSS_Data_Bit_Assistance(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 
 
 static int
-dissect_pcap_BIT_STRING_SIZE_31(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     31, 31, FALSE, NULL, NULL);
-
-  return offset;
-}
-
-
-
-static int
 dissect_pcap_BIT_STRING_SIZE_19(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     19, 19, FALSE, NULL, NULL);
+                                     19, 19, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -6150,7 +6850,7 @@ static const value_string pcap_T_dopplerUncertainty_vals[] = {
 static int
 dissect_pcap_T_dopplerUncertainty(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     5, NULL, FALSE, 0, NULL);
+                                     5, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -6167,6 +6867,41 @@ static int
 dissect_pcap_GANSS_ExtraDoppler(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
                                    ett_pcap_GANSS_ExtraDoppler, GANSS_ExtraDoppler_sequence);
+
+  return offset;
+}
+
+
+static const value_string pcap_T_dopplerUncertaintyExtension_vals[] = {
+  {   0, "dH60" },
+  {   1, "dH80" },
+  {   2, "dH100" },
+  {   3, "dH120" },
+  {   4, "noInformation" },
+  { 0, NULL }
+};
+
+
+static int
+dissect_pcap_T_dopplerUncertaintyExtension(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
+                                     5, NULL, false, 0, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t GANSS_ExtraDopplerExtension_sequence[] = {
+  { &hf_pcap_dopplerFirstOrder, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_M42_21 },
+  { &hf_pcap_dopplerUncertaintyExtension_01, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_T_dopplerUncertaintyExtension },
+  { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_GANSS_ExtraDopplerExtension(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_GANSS_ExtraDopplerExtension, GANSS_ExtraDopplerExtension_sequence);
 
   return offset;
 }
@@ -6196,17 +6931,7 @@ static int
 dissect_pcap_GANSS_Real_Time_Integrity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_Real_Time_Integrity, GANSS_Real_Time_Integrity_sequence_of,
-                                                  1, maxGANSSSat, FALSE);
-
-  return offset;
-}
-
-
-
-static int
-dissect_pcap_INTEGER_0_1023(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 1023U, NULL, FALSE);
+                                                  1, maxGANSSSat, false);
 
   return offset;
 }
@@ -6241,7 +6966,7 @@ static int
 dissect_pcap_GANSS_SatelliteInformation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_SatelliteInformation, GANSS_SatelliteInformation_sequence_of,
-                                                  1, maxGANSSSat, FALSE);
+                                                  1, maxGANSSSat, false);
 
   return offset;
 }
@@ -6294,7 +7019,7 @@ static const value_string pcap_T_non_broadcastIndication_01_vals[] = {
 static int
 dissect_pcap_T_non_broadcastIndication_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     1, NULL, FALSE, 0, NULL);
+                                     1, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -6352,7 +7077,7 @@ dissect_pcap_GANSS_Orbit_Model(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 static const per_sequence_t GANSS_Sat_Info_Nav_item_sequence[] = {
   { &hf_pcap_satId          , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_63 },
-  { &hf_pcap_svHealth_01    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_5 },
+  { &hf_pcap_svHealth_01    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_9 },
   { &hf_pcap_iod_01         , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_10 },
   { &hf_pcap_ganssClockModel, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_GANSS_Clock_Model },
   { &hf_pcap_ganssOrbitModel, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_GANSS_Orbit_Model },
@@ -6377,7 +7102,7 @@ static int
 dissect_pcap_GANSS_Sat_Info_Nav(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_Sat_Info_Nav, GANSS_Sat_Info_Nav_sequence_of,
-                                                  1, maxGANSSSat, FALSE);
+                                                  1, maxGANSSSat, false);
 
   return offset;
 }
@@ -6430,7 +7155,152 @@ static int
 dissect_pcap_GANSS_GenericAssistanceDataList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_GenericAssistanceDataList, GANSS_GenericAssistanceDataList_sequence_of,
-                                                  1, maxGANSS, FALSE);
+                                                  1, maxGANSS, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_BDS_Reference_Time(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            0U, 3570U, NULL, false);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_INTEGER_1_320(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
+                                                            1U, 320U, NULL, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t BDS_Ionospheric_Grid_Information_item_sequence[] = {
+  { &hf_pcap_iGP_number_BDS , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_1_320 },
+  { &hf_pcap_vertical_Delay_BDS, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_9 },
+  { &hf_pcap_gIVEI_BDS      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_4 },
+  { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_BDS_Ionospheric_Grid_Information_item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_BDS_Ionospheric_Grid_Information_item, BDS_Ionospheric_Grid_Information_item_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t BDS_Ionospheric_Grid_Information_sequence_of[1] = {
+  { &hf_pcap_BDS_Ionospheric_Grid_Information_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_pcap_BDS_Ionospheric_Grid_Information_item },
+};
+
+static int
+dissect_pcap_BDS_Ionospheric_Grid_Information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_pcap_BDS_Ionospheric_Grid_Information, BDS_Ionospheric_Grid_Information_sequence_of,
+                                                  1, maxIonGridInfo, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t BDS_Ionospheric_Grid_Model_sequence[] = {
+  { &hf_pcap_bDS_Reference_Time, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BDS_Reference_Time },
+  { &hf_pcap_bDS_Ionospheric_Grid_Information, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BDS_Ionospheric_Grid_Information },
+  { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_BDS_Ionospheric_Grid_Model(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_BDS_Ionospheric_Grid_Model, BDS_Ionospheric_Grid_Model_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t DGANSS_Signal_Information_item_sequence[] = {
+  { &hf_pcap_sat_ID_BDS     , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_63 },
+  { &hf_pcap_uDREI_BDS      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_15 },
+  { &hf_pcap_rURAI_BDS      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_15 },
+  { &hf_pcap_delta_t_BDS    , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_13 },
+  { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_DGANSS_Signal_Information_item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_DGANSS_Signal_Information_item, DGANSS_Signal_Information_item_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t DGANSS_Signal_Information_sequence_of[1] = {
+  { &hf_pcap_DGANSS_Signal_Information_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_pcap_DGANSS_Signal_Information_item },
+};
+
+static int
+dissect_pcap_DGANSS_Signal_Information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_pcap_DGANSS_Signal_Information, DGANSS_Signal_Information_sequence_of,
+                                                  1, maxGANSSSat, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t DBDS_Information_item_sequence[] = {
+  { &hf_pcap_dBDS_Signal_ID , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_GANSSID },
+  { &hf_pcap_dGANSS_Signal_Information, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_DGANSS_Signal_Information },
+  { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_DBDS_Information_item(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_DBDS_Information_item, DBDS_Information_item_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t DBDS_Information_sequence_of[1] = {
+  { &hf_pcap_DBDS_Information_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_pcap_DBDS_Information_item },
+};
+
+static int
+dissect_pcap_DBDS_Information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_pcap_DBDS_Information, DBDS_Information_sequence_of,
+                                                  1, maxSgnType, false);
+
+  return offset;
+}
+
+
+static const per_sequence_t DBDS_Correction_Information_sequence[] = {
+  { &hf_pcap_bDS_Reference_Time, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BDS_Reference_Time },
+  { &hf_pcap_dBDS_Information, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_DBDS_Information },
+  { &hf_pcap_ie_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_DBDS_Correction_Information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_DBDS_Correction_Information, DBDS_Correction_Information_sequence);
 
   return offset;
 }
@@ -6448,17 +7318,7 @@ static const value_string pcap_T_multipathIndicator_vals[] = {
 static int
 dissect_pcap_T_multipathIndicator(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, FALSE, 0, NULL);
-
-  return offset;
-}
-
-
-
-static int
-dissect_pcap_INTEGER_0_2097151(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 2097151U, NULL, FALSE);
+                                     4, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -6468,7 +7328,7 @@ dissect_pcap_INTEGER_0_2097151(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_INTEGER_M32768_32767(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -32768, 32767U, NULL, FALSE);
+                                                            -32768, 32767U, NULL, false);
 
   return offset;
 }
@@ -6478,7 +7338,7 @@ dissect_pcap_INTEGER_M32768_32767(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_pcap_INTEGER_0_33554431(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 33554431U, NULL, FALSE);
+                                                            0U, 33554431U, NULL, false);
 
   return offset;
 }
@@ -6515,7 +7375,7 @@ static int
 dissect_pcap_GANSS_MeasurementParameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_MeasurementParameters, GANSS_MeasurementParameters_sequence_of,
-                                                  1, maxGANSSSat, FALSE);
+                                                  1, maxGANSSSat, false);
 
   return offset;
 }
@@ -6546,7 +7406,7 @@ static int
 dissect_pcap_GANSSMeasurementSignalList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSSMeasurementSignalList, GANSSMeasurementSignalList_sequence_of,
-                                                  1, maxSgnType, FALSE);
+                                                  1, maxSgnType, false);
 
   return offset;
 }
@@ -6576,7 +7436,7 @@ static int
 dissect_pcap_GANSS_GenericMeasurementInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_GenericMeasurementInfo, GANSS_GenericMeasurementInfo_sequence_of,
-                                                  1, maxGANSS, FALSE);
+                                                  1, maxGANSS, false);
 
   return offset;
 }
@@ -6586,7 +7446,7 @@ dissect_pcap_GANSS_GenericMeasurementInfo(tvbuff_t *tvb _U_, int offset _U_, asn
 static int
 dissect_pcap_INTEGER_32_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            32U, 127U, NULL, FALSE);
+                                                            32U, 127U, NULL, false);
 
   return offset;
 }
@@ -6611,7 +7471,7 @@ dissect_pcap_GanssCodePhaseAmbiguityExt(tvbuff_t *tvb _U_, int offset _U_, asn1_
 static int
 dissect_pcap_INTEGER_64_127(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            64U, 127U, NULL, FALSE);
+                                                            64U, 127U, NULL, false);
 
   return offset;
 }
@@ -6636,7 +7496,7 @@ dissect_pcap_GanssIntegerCodePhaseExt(tvbuff_t *tvb _U_, int offset _U_, asn1_ct
 static int
 dissect_pcap_INTEGER_0_345599999999(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer_64b(tvb, offset, actx, tree, hf_index,
-                                                            0U, G_GUINT64_CONSTANT(345599999999), NULL, FALSE);
+                                                            0U, UINT64_C(345599999999), NULL, false);
 
   return offset;
 }
@@ -6724,7 +7584,7 @@ static int
 dissect_pcap_GANSS_MeasuredResultsList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSS_MeasuredResultsList, GANSS_MeasuredResultsList_sequence_of,
-                                                  1, maxNrOfSets, FALSE);
+                                                  1, maxNrOfSets, false);
 
   return offset;
 }
@@ -6734,7 +7594,7 @@ dissect_pcap_GANSS_MeasuredResultsList(tvbuff_t *tvb _U_, int offset _U_, asn1_c
 static int
 dissect_pcap_GANSS_Day_Cycle(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 7U, NULL, FALSE);
+                                                            0U, 7U, NULL, false);
 
   return offset;
 }
@@ -6744,7 +7604,7 @@ dissect_pcap_GANSS_Day_Cycle(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_pcap_GANSS_Delta_T(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -128, 127U, NULL, FALSE);
+                                                            -128, 127U, NULL, false);
 
   return offset;
 }
@@ -6766,7 +7626,7 @@ static const value_string pcap_GANSS_UTRAN_TimeRelationshipUncertainty_vals[] = 
 static int
 dissect_pcap_GANSS_UTRAN_TimeRelationshipUncertainty(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     8, NULL, TRUE, 0, NULL);
+                                     8, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -6861,7 +7721,7 @@ dissect_pcap_GPS_ClockAndEphemerisParameters(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 dissect_pcap_INTEGER_M32768_32768(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -32768, 32768U, NULL, FALSE);
+                                                            -32768, 32768U, NULL, false);
 
   return offset;
 }
@@ -6879,7 +7739,7 @@ static const value_string pcap_MultipathIndicator_vals[] = {
 static int
 dissect_pcap_MultipathIndicator(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, FALSE, 0, NULL);
+                                     4, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -6914,7 +7774,7 @@ static int
 dissect_pcap_GPS_MeasurementParamList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GPS_MeasurementParamList, GPS_MeasurementParamList_sequence_of,
-                                                  1, maxSat, FALSE);
+                                                  1, maxSat, false);
 
   return offset;
 }
@@ -6944,7 +7804,7 @@ static int
 dissect_pcap_MeasuredResultsList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_MeasuredResultsList, MeasuredResultsList_sequence_of,
-                                                  1, maxNrOfSets, FALSE);
+                                                  1, maxNrOfSets, false);
 
   return offset;
 }
@@ -6963,7 +7823,7 @@ static const value_string pcap_SatelliteStatus_vals[] = {
 static int
 dissect_pcap_SatelliteStatus(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     5, NULL, FALSE, 0, NULL);
+                                     5, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -6994,7 +7854,7 @@ static int
 dissect_pcap_GPS_NavigationModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GPS_NavigationModel, GPS_NavigationModel_sequence_of,
-                                                  1, maxSat, FALSE);
+                                                  1, maxSat, false);
 
   return offset;
 }
@@ -7008,7 +7868,7 @@ static int
 dissect_pcap_BadSatList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_BadSatList, BadSatList_sequence_of,
-                                                  1, maxSat, FALSE);
+                                                  1, maxSat, false);
 
   return offset;
 }
@@ -7087,7 +7947,7 @@ static int
 dissect_pcap_GPS_TOW_AssistList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GPS_TOW_AssistList, GPS_TOW_AssistList_sequence_of,
-                                                  1, maxSat, FALSE);
+                                                  1, maxSat, false);
 
   return offset;
 }
@@ -7114,7 +7974,7 @@ dissect_pcap_GPS_ReferenceTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_GPS_Week_Cycle(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 7U, NULL, FALSE);
+                                                            0U, 7U, NULL, false);
 
   return offset;
 }
@@ -7145,7 +8005,7 @@ static value_string_ext pcap_UTRAN_GPS_DriftRate_vals_ext = VALUE_STRING_EXT_INI
 static int
 dissect_pcap_UTRAN_GPS_DriftRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     15, NULL, TRUE, 0, NULL);
+                                     15, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -7170,7 +8030,7 @@ dissect_pcap_GPSReferenceTimeUncertainty(tvbuff_t *tvb _U_, int offset _U_, asn1
 static int
 dissect_pcap_GPS_Transmission_TOW(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 604799U, NULL, FALSE);
+                                                            0U, 604799U, NULL, false);
 
   return offset;
 }
@@ -7214,7 +8074,7 @@ static const value_string pcap_GPS_UTRAN_TRU_vals[] = {
 static int
 dissect_pcap_GPS_UTRAN_TRU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     8, NULL, TRUE, 0, NULL);
+                                     8, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -7224,7 +8084,7 @@ dissect_pcap_GPS_UTRAN_TRU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_pcap_INTEGER_0_167(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 167U, NULL, FALSE);
+                                                            0U, 167U, NULL, false);
 
   return offset;
 }
@@ -7234,7 +8094,7 @@ dissect_pcap_INTEGER_0_167(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_pcap_INTEGER_0_10(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 10U, NULL, FALSE);
+                                                            0U, 10U, NULL, false);
 
   return offset;
 }
@@ -7264,7 +8124,7 @@ static int
 dissect_pcap_SatelliteRelatedDataList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_SatelliteRelatedDataList, SatelliteRelatedDataList_sequence_of,
-                                                  0, maxSat, FALSE);
+                                                  0, maxSat, false);
 
   return offset;
 }
@@ -7316,7 +8176,7 @@ dissect_pcap_AdditionalGPSAssistDataRequired(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 dissect_pcap_DGANSS_Sig_Id_Req(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     8, 8, FALSE, NULL, NULL);
+                                     8, 8, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -7330,14 +8190,14 @@ static int
 dissect_pcap_T_ganssSatelliteInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_T_ganssSatelliteInfo, T_ganssSatelliteInfo_sequence_of,
-                                                  1, maxGANSSSat, FALSE);
+                                                  1, maxGANSSSat, false);
 
   return offset;
 }
 
 
 static const per_sequence_t ReqDataBitAssistanceList_sequence[] = {
-  { &hf_pcap_ganssSignalID_01, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
+  { &hf_pcap_reqDataBitAssistanceList_ganssSignalID, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
   { &hf_pcap_ganssDataBitInterval, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_INTEGER_0_15 },
   { &hf_pcap_ganssSatelliteInfo, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_T_ganssSatelliteInfo },
   { &hf_pcap_iE_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
@@ -7393,7 +8253,7 @@ static int
 dissect_pcap_SatelliteRelatedDataListGANSS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_SatelliteRelatedDataListGANSS, SatelliteRelatedDataListGANSS_sequence_of,
-                                                  0, maxGANSSSat, FALSE);
+                                                  0, maxGANSSSat, false);
 
   return offset;
 }
@@ -7449,7 +8309,7 @@ static int
 dissect_pcap_GanssRequestedGenericAssistanceDataList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GanssRequestedGenericAssistanceDataList, GanssRequestedGenericAssistanceDataList_sequence_of,
-                                                  1, maxGANSS, FALSE);
+                                                  1, maxGANSS, false);
 
   return offset;
 }
@@ -7492,6 +8352,30 @@ dissect_pcap_GANSSReq_AddIonosphericModel(tvbuff_t *tvb _U_, int offset _U_, asn
 static int
 dissect_pcap_GANSSReq_EarthOrientPara(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_boolean(tvb, offset, actx, tree, hf_index, NULL);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_BDSIonosphericGridModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_boolean(tvb, offset, actx, tree, hf_index, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t DBDSCorrection_sequence[] = {
+  { &hf_pcap_dGANSSSignalBDS, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
+  { &hf_pcap_iE_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_DBDSCorrection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_DBDSCorrection, DBDSCorrection_sequence);
 
   return offset;
 }
@@ -7546,7 +8430,7 @@ dissect_pcap_GANSS_AddADchoices(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_InformationExchangeID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 1048575U, NULL, FALSE);
+                                                            0U, 1048575U, NULL, false);
 
   return offset;
 }
@@ -7563,7 +8447,7 @@ static const value_string pcap_InformationReportCharacteristicsType_vals[] = {
 static int
 dissect_pcap_InformationReportCharacteristicsType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -7573,7 +8457,7 @@ dissect_pcap_InformationReportCharacteristicsType(tvbuff_t *tvb _U_, int offset 
 static int
 dissect_pcap_INTEGER_1_60_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 60U, NULL, TRUE);
+                                                            1U, 60U, NULL, true);
 
   return offset;
 }
@@ -7583,7 +8467,7 @@ dissect_pcap_INTEGER_1_60_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_pcap_INTEGER_1_24_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 24U, NULL, TRUE);
+                                                            1U, 24U, NULL, true);
 
   return offset;
 }
@@ -7612,7 +8496,7 @@ dissect_pcap_InformationReportPeriodicity(tvbuff_t *tvb _U_, int offset _U_, asn
 
 
 static const per_sequence_t InformationReportCharacteristics_sequence[] = {
-  { &hf_pcap_type           , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_InformationReportCharacteristicsType },
+  { &hf_pcap_type_01        , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_InformationReportCharacteristicsType },
   { &hf_pcap_periodicity    , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_InformationReportPeriodicity },
   { NULL, 0, 0, NULL }
 };
@@ -7636,7 +8520,7 @@ static const value_string pcap_MethodType_vals[] = {
 static int
 dissect_pcap_MethodType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -7661,7 +8545,7 @@ static const value_string pcap_TransmissionTOWIndicator_vals[] = {
 static int
 dissect_pcap_TransmissionTOWIndicator(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -7783,7 +8667,7 @@ static const value_string pcap_T_ganss_ReferenceTime_vals[] = {
 static int
 dissect_pcap_T_ganss_ReferenceTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -7799,7 +8683,7 @@ static const value_string pcap_T_ganss_IonosphericModel_vals[] = {
 static int
 dissect_pcap_T_ganss_IonosphericModel(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -7815,7 +8699,7 @@ static const value_string pcap_T_ganss_ReferenceLocation_vals[] = {
 static int
 dissect_pcap_T_ganss_ReferenceLocation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -7848,7 +8732,7 @@ static const value_string pcap_TransmissionGanssTimeIndicator_vals[] = {
 static int
 dissect_pcap_TransmissionGanssTimeIndicator(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -7970,7 +8854,7 @@ static int
 dissect_pcap_AddSatelliteRelatedDataListGANSS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_AddSatelliteRelatedDataListGANSS, AddSatelliteRelatedDataListGANSS_sequence_of,
-                                                  0, maxGANSSSat, FALSE);
+                                                  0, maxGANSSSat, false);
 
   return offset;
 }
@@ -8036,7 +8920,38 @@ static const value_string pcap_GANSS_SBAS_ID_vals[] = {
 static int
 dissect_pcap_GANSS_SBAS_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, TRUE, 0, NULL);
+                                     4, NULL, true, 0, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t DBDS_Corrections_sequence[] = {
+  { &hf_pcap_transmissionGanssTimeIndicator, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_TransmissionGanssTimeIndicator },
+  { &hf_pcap_dGANSS_Signal  , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
+  { &hf_pcap_iE_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_DBDS_Corrections(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_DBDS_Corrections, DBDS_Corrections_sequence);
+
+  return offset;
+}
+
+
+static const value_string pcap_BDS_Ionospheric_Grid_Model_Request_vals[] = {
+  {   0, "requested" },
+  { 0, NULL }
+};
+
+
+static int
+dissect_pcap_BDS_Ionospheric_Grid_Model_Request(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
+                                     1, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -8056,6 +8971,8 @@ static const per_sequence_t GANSSGenericDataReq_sequence[] = {
   { &hf_pcap_ganss_AddUtcModelsReq, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_pcap_GANSS_AddUtcModelsReq },
   { &hf_pcap_ganss_AuxInfoReq, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_pcap_GANSS_AuxInfoReq },
   { &hf_pcap_ganss_SBAS_ID  , ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_pcap_GANSS_SBAS_ID },
+  { &hf_pcap_dBDS_Corrections, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_pcap_DBDS_Corrections },
+  { &hf_pcap_bDS_Ionospheric_Grid_Model_Request, ASN1_NOT_EXTENSION_ROOT, ASN1_OPTIONAL    , dissect_pcap_BDS_Ionospheric_Grid_Model_Request },
   { NULL, 0, 0, NULL }
 };
 
@@ -8076,7 +8993,7 @@ static int
 dissect_pcap_GANSSGenericDataList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_GANSSGenericDataList, GANSSGenericDataList_sequence_of,
-                                                  1, maxGANSS, FALSE);
+                                                  1, maxGANSS, false);
 
   return offset;
 }
@@ -8134,7 +9051,7 @@ static int
 dissect_pcap_ExplicitInformationList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_ExplicitInformationList, ExplicitInformationList_sequence_of,
-                                                  1, maxNrOfExpInfo, FALSE);
+                                                  1, maxNrOfExpInfo, false);
 
   return offset;
 }
@@ -8187,7 +9104,7 @@ static const value_string pcap_T_eopReq_vals[] = {
 static int
 dissect_pcap_T_eopReq(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -8219,7 +9136,7 @@ static const value_string pcap_T_ue_State_vals[] = {
 static int
 dissect_pcap_T_ue_State(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -8259,7 +9176,7 @@ dissect_pcap_MeasInstructionsUsed(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_pcap_SFN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 4095U, NULL, FALSE);
+                                                            0U, 4095U, NULL, false);
 
   return offset;
 }
@@ -8269,7 +9186,7 @@ dissect_pcap_SFN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_
 static int
 dissect_pcap_INTEGER_0_16383(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 16383U, NULL, FALSE);
+                                                            0U, 16383U, NULL, false);
 
   return offset;
 }
@@ -8279,7 +9196,7 @@ dissect_pcap_INTEGER_0_16383(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_pcap_INTEGER_0_4294967295(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 4294967295U, NULL, FALSE);
+                                                            0U, 4294967295U, NULL, false);
 
   return offset;
 }
@@ -8304,7 +9221,7 @@ dissect_pcap_TUTRANGPS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_pcap_TUTRANGPSQuality(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
+                                                            0U, 255U, NULL, false);
 
   return offset;
 }
@@ -8314,7 +9231,7 @@ dissect_pcap_TUTRANGPSQuality(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_pcap_TUTRANGPSDriftRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -50, 50U, NULL, FALSE);
+                                                            -50, 50U, NULL, false);
 
   return offset;
 }
@@ -8324,7 +9241,7 @@ dissect_pcap_TUTRANGPSDriftRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_TUTRANGPSDriftRateQuality(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 50U, NULL, FALSE);
+                                                            0U, 50U, NULL, false);
 
   return offset;
 }
@@ -8370,7 +9287,7 @@ dissect_pcap_OTDOA_ReferenceCellInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 static int
 dissect_pcap_SFNSFNValue(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 614399U, NULL, FALSE);
+                                                            0U, 614399U, NULL, false);
 
   return offset;
 }
@@ -8380,7 +9297,7 @@ dissect_pcap_SFNSFNValue(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_pcap_SFNSFNQuality(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
+                                                            0U, 255U, NULL, false);
 
   return offset;
 }
@@ -8390,7 +9307,7 @@ dissect_pcap_SFNSFNQuality(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_pcap_SFNSFNDriftRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -100, 100U, NULL, FALSE);
+                                                            -100, 100U, NULL, false);
 
   return offset;
 }
@@ -8400,7 +9317,7 @@ dissect_pcap_SFNSFNDriftRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_pcap_SFNSFNDriftRateQuality(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 100U, NULL, FALSE);
+                                                            0U, 100U, NULL, false);
 
   return offset;
 }
@@ -8443,7 +9360,7 @@ dissect_pcap_TUTRANGANSS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_pcap_INTEGER_M50_50(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -50, 50U, NULL, FALSE);
+                                                            -50, 50U, NULL, false);
 
   return offset;
 }
@@ -8453,7 +9370,7 @@ dissect_pcap_INTEGER_M50_50(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_pcap_INTEGER_0_50(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 50U, NULL, FALSE);
+                                                            0U, 50U, NULL, false);
 
   return offset;
 }
@@ -8528,7 +9445,7 @@ static int
 dissect_pcap_OTDOA_NeighbourCellInfoList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_OTDOA_NeighbourCellInfoList, OTDOA_NeighbourCellInfoList_sequence_of,
-                                                  1, maxNrOfMeasNCell, FALSE);
+                                                  1, maxNrOfMeasNCell, false);
 
   return offset;
 }
@@ -8538,7 +9455,7 @@ dissect_pcap_OTDOA_NeighbourCellInfoList(tvbuff_t *tvb _U_, int offset _U_, asn1
 static int
 dissect_pcap_INTEGER_0_40961(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 40961U, NULL, FALSE);
+                                                            0U, 40961U, NULL, false);
 
   return offset;
 }
@@ -8585,7 +9502,7 @@ static int
 dissect_pcap_OTDOA_MeasuredResultsInfoList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_OTDOA_MeasuredResultsInfoList, OTDOA_MeasuredResultsInfoList_sequence_of,
-                                                  1, maxNrOfMeasNCell, FALSE);
+                                                  1, maxNrOfMeasNCell, false);
 
   return offset;
 }
@@ -8599,7 +9516,7 @@ static int
 dissect_pcap_OTDOA_MeasuredResultsSets(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_OTDOA_MeasuredResultsSets, OTDOA_MeasuredResultsSets_sequence_of,
-                                                  1, maxNrOfMeasurements, FALSE);
+                                                  1, maxNrOfMeasurements, false);
 
   return offset;
 }
@@ -8641,7 +9558,7 @@ dissect_pcap_OTDOA_ReferenceCellInfoSAS_centric(tvbuff_t *tvb _U_, int offset _U
 static int
 dissect_pcap_PrimaryScramblingCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 511U, NULL, FALSE);
+                                                            0U, 511U, NULL, false);
 
   return offset;
 }
@@ -8666,7 +9583,7 @@ dissect_pcap_OTDOA_AddMeasuredResultsInfo(tvbuff_t *tvb _U_, int offset _U_, asn
 static int
 dissect_pcap_Extended_RNC_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            4096U, 65535U, NULL, FALSE);
+                                                            4096U, 65535U, NULL, false);
 
   return offset;
 }
@@ -8676,7 +9593,7 @@ dissect_pcap_Extended_RNC_ID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_pcap_TimingAdvanceLCR_R7(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 8191U, NULL, FALSE);
+                                                            0U, 8191U, NULL, false);
 
   return offset;
 }
@@ -8703,7 +9620,7 @@ dissect_pcap_AdditionalMeasurementInforLCR(tvbuff_t *tvb _U_, int offset _U_, as
 static int
 dissect_pcap_INTEGER_0_32767_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 32767U, NULL, TRUE);
+                                                            0U, 32767U, NULL, true);
 
   return offset;
 }
@@ -8713,7 +9630,7 @@ dissect_pcap_INTEGER_0_32767_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_pcap_INTEGER_1_8639999_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 8639999U, NULL, TRUE);
+                                                            1U, 8639999U, NULL, true);
 
   return offset;
 }
@@ -8764,7 +9681,7 @@ static const value_string pcap_PeriodicTerminationCause_vals[] = {
 static int
 dissect_pcap_PeriodicTerminationCause(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, TRUE, 0, NULL);
+                                     4, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -8778,6 +9695,8 @@ static const value_string pcap_SelectedPositionMethod_vals[] = {
   {   4, "uTDOA" },
   {   5, "gNSS" },
   {   6, "oTDOA-or-GNSS" },
+  {   7, "gPS-and-AddPos" },
+  {   8, "oTDOA-or-GPS-and-AddPos" },
   { 0, NULL }
 };
 
@@ -8785,7 +9704,7 @@ static const value_string pcap_SelectedPositionMethod_vals[] = {
 static int
 dissect_pcap_SelectedPositionMethod(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     5, NULL, TRUE, 2, NULL);
+                                     5, NULL, true, 4, NULL);
 
   return offset;
 }
@@ -8811,7 +9730,17 @@ dissect_pcap_PositioningMethod(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_GNSS_PositioningMethod(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     9, 9, FALSE, NULL, NULL);
+                                     9, 9, false, NULL, 0, NULL, NULL);
+
+  return offset;
+}
+
+
+
+static int
+dissect_pcap_Additional_PositioningMethod(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
+                                     8, 8, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -8827,7 +9756,7 @@ static const value_string pcap_PositioningPriority_vals[] = {
 static int
 dissect_pcap_PositioningPriority(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -8845,7 +9774,7 @@ static const value_string pcap_T_new_ue_State_vals[] = {
 static int
 dissect_pcap_T_new_ue_State(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, TRUE, 0, NULL);
+                                     4, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -8950,7 +9879,7 @@ static const value_string pcap_RequestTypeEvent_vals[] = {
 static int
 dissect_pcap_RequestTypeEvent(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, TRUE, 2, NULL);
+                                     4, NULL, true, 2, NULL);
 
   return offset;
 }
@@ -8966,7 +9895,7 @@ static const value_string pcap_RequestTypeReportArea_vals[] = {
 static int
 dissect_pcap_RequestTypeReportArea(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -8976,7 +9905,7 @@ dissect_pcap_RequestTypeReportArea(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_pcap_RequestTypeAccuracyCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -9009,7 +9938,7 @@ static const value_string pcap_ResponseTime_vals[] = {
 static int
 dissect_pcap_ResponseTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -9019,7 +9948,7 @@ dissect_pcap_ResponseTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U
 static int
 dissect_pcap_HorizontalAccuracyCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -9037,7 +9966,7 @@ static const value_string pcap_NetworkAssistedGPSSuport_vals[] = {
 static int
 dissect_pcap_NetworkAssistedGPSSuport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, TRUE, 0, NULL);
+                                     4, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -9077,7 +10006,7 @@ static const value_string pcap_T_ganssMode_vals[] = {
 static int
 dissect_pcap_T_ganssMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, FALSE, 0, NULL);
+                                     4, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -9086,7 +10015,7 @@ dissect_pcap_T_ganssMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static const per_sequence_t NetworkAssistedGANSSSupport_item_sequence[] = {
   { &hf_pcap_ganssID        , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_GANSSID },
   { &hf_pcap_ganssMode      , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_T_ganssMode },
-  { &hf_pcap_ganssSignalID_02, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_GANSS_SignalID },
+  { &hf_pcap_networkAssistedGANSSSupport_item_ganssSignalID, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_GANSS_SignalID },
   { &hf_pcap_supportGANSSTimingOfCellFrame, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BOOLEAN },
   { &hf_pcap_supportGANSSCarrierPhaseMeasurement, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BOOLEAN },
   { &hf_pcap_iE_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
@@ -9110,7 +10039,71 @@ static int
 dissect_pcap_NetworkAssistedGANSSSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_NetworkAssistedGANSSSupport, NetworkAssistedGANSSSupport_sequence_of,
-                                                  1, maxGANSS, FALSE);
+                                                  1, maxGANSS, false);
+
+  return offset;
+}
+
+
+static const value_string pcap_T_addPosID_vals[] = {
+  {   0, "barometricPressure" },
+  {   1, "wLAN" },
+  {   2, "bluetooth" },
+  {   3, "mBS" },
+  { 0, NULL }
+};
+
+
+static int
+dissect_pcap_T_addPosID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
+                                     4, NULL, true, 0, NULL);
+
+  return offset;
+}
+
+
+static const value_string pcap_T_addPosMode_vals[] = {
+  {   0, "standalone" },
+  {   1, "ue-assisted" },
+  {   2, "both" },
+  { 0, NULL }
+};
+
+
+static int
+dissect_pcap_T_addPosMode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
+                                     3, NULL, true, 0, NULL);
+
+  return offset;
+}
+
+
+static const per_sequence_t AddPosSupport_Element_sequence[] = {
+  { &hf_pcap_addPosID       , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_T_addPosID },
+  { &hf_pcap_addPosMode     , ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_T_addPosMode },
+  { NULL, 0, 0, NULL }
+};
+
+static int
+dissect_pcap_AddPosSupport_Element(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_sequence(tvb, offset, actx, tree, hf_index,
+                                   ett_pcap_AddPosSupport_Element, AddPosSupport_Element_sequence);
+
+  return offset;
+}
+
+
+static const per_sequence_t AddPosSupport_sequence_of[1] = {
+  { &hf_pcap_AddPosSupport_item, ASN1_NO_EXTENSIONS     , ASN1_NOT_OPTIONAL, dissect_pcap_AddPosSupport_Element },
+};
+
+static int
+dissect_pcap_AddPosSupport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
+                                                  ett_pcap_AddPosSupport, AddPosSupport_sequence_of,
+                                                  1, maxAddPos, false);
 
   return offset;
 }
@@ -9159,7 +10152,7 @@ dissect_pcap_SupportGANSSNonNativeADchoices(tvbuff_t *tvb _U_, int offset _U_, a
 static int
 dissect_pcap_UTDOA_BitCount(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 5000U, NULL, FALSE);
+                                                            0U, 5000U, NULL, false);
 
   return offset;
 }
@@ -9169,7 +10162,7 @@ dissect_pcap_UTDOA_BitCount(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_pcap_UTDOA_TimeInterval(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 3000U, NULL, FALSE);
+                                                            0U, 3000U, NULL, false);
 
   return offset;
 }
@@ -9202,7 +10195,7 @@ static const value_string pcap_EnvironmentCharacterisation_vals[] = {
 static int
 dissect_pcap_EnvironmentCharacterisation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -9212,7 +10205,7 @@ dissect_pcap_EnvironmentCharacterisation(tvbuff_t *tvb _U_, int offset _U_, asn1
 static int
 dissect_pcap_VerticalAccuracyCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -9256,7 +10249,7 @@ static const per_sequence_t GANSS_PositioningInstructions_sequence[] = {
   { &hf_pcap_horizontalAccuracyCode, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_HorizontalAccuracyCode },
   { &hf_pcap_verticalAccuracyCode, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_VerticalAccuracyCode },
   { &hf_pcap_ganssTimingOfCellWanted, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
-  { &hf_pcap_additionalAssistanceDataRequest_01, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
+  { &hf_pcap_gANSS_PositioningInstructions_additionalAssistanceDataRequest, ASN1_EXTENSION_ROOT    , ASN1_NOT_OPTIONAL, dissect_pcap_BIT_STRING_SIZE_8 },
   { &hf_pcap_measurementValidity, ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_MeasurementValidity },
   { &hf_pcap_iE_Extensions  , ASN1_EXTENSION_ROOT    , ASN1_OPTIONAL    , dissect_pcap_ProtocolExtensionContainer },
   { NULL, 0, 0, NULL }
@@ -9291,7 +10284,7 @@ dissect_pcap_GANSSPositioning(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_pcap_GANSScarrierPhaseRequested(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     8, 8, FALSE, NULL, NULL);
+                                     8, 8, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -9301,7 +10294,7 @@ dissect_pcap_GANSScarrierPhaseRequested(tvbuff_t *tvb _U_, int offset _U_, asn1_
 static int
 dissect_pcap_GANSSMultiFreqMeasRequested(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     8, 8, FALSE, NULL, NULL);
+                                     8, 8, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -9325,7 +10318,7 @@ dissect_pcap_T_fdd_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 static int
 dissect_pcap_CellParameterID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, TRUE);
+                                                            0U, 127U, NULL, true);
 
   return offset;
 }
@@ -9371,7 +10364,7 @@ dissect_pcap_T_modeSpecificInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_UARFCN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 16383U, NULL, FALSE);
+                                                            0U, 16383U, NULL, false);
 
   return offset;
 }
@@ -9471,7 +10464,7 @@ dissect_pcap_ReferenceCellPosition(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_pcap_INTEGER_0_32766(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 32766U, NULL, FALSE);
+                                                            0U, 32766U, NULL, false);
 
   return offset;
 }
@@ -9543,7 +10536,7 @@ static const value_string pcap_IP_Spacing_vals[] = {
 static int
 dissect_pcap_IP_Spacing(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     8, NULL, TRUE, 0, NULL);
+                                     8, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -9559,7 +10552,7 @@ static const value_string pcap_IP_Length_vals[] = {
 static int
 dissect_pcap_IP_Length(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -9569,7 +10562,7 @@ dissect_pcap_IP_Length(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_pcap_INTEGER_0_9(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 9U, NULL, FALSE);
+                                                            0U, 9U, NULL, false);
 
   return offset;
 }
@@ -9631,7 +10624,7 @@ dissect_pcap_T_modeSpecificInfo_01(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_pcap_INTEGER_10_25(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            10U, 25U, NULL, FALSE);
+                                                            10U, 25U, NULL, false);
 
   return offset;
 }
@@ -9641,7 +10634,7 @@ dissect_pcap_INTEGER_10_25(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_pcap_INTEGER_1_16(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 16U, NULL, FALSE);
+                                                            1U, 16U, NULL, false);
 
   return offset;
 }
@@ -9753,7 +10746,7 @@ dissect_pcap_T_modeSpecificInfo_02(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_pcap_INTEGER_0_38399(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 38399U, NULL, FALSE);
+                                                            0U, 38399U, NULL, false);
 
   return offset;
 }
@@ -9784,7 +10777,7 @@ static const value_string pcap_SFN_Offset_Validity_vals[] = {
 static int
 dissect_pcap_SFN_Offset_Validity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     1, NULL, FALSE, 0, NULL);
+                                     1, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -9829,7 +10822,7 @@ static value_string_ext pcap_SFN_SFN_Drift_vals_ext = VALUE_STRING_EXT_INIT(pcap
 static int
 dissect_pcap_SFN_SFN_Drift(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     29, NULL, TRUE, 0, NULL);
+                                     29, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -9851,7 +10844,7 @@ static const value_string pcap_OTDOA_SearchWindowSize_vals[] = {
 static int
 dissect_pcap_OTDOA_SearchWindowSize(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     8, NULL, TRUE, 0, NULL);
+                                     8, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -9861,7 +10854,7 @@ dissect_pcap_OTDOA_SearchWindowSize(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 static int
 dissect_pcap_INTEGER_M20000_20000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -20000, 20000U, NULL, FALSE);
+                                                            -20000, 20000U, NULL, false);
 
   return offset;
 }
@@ -9871,7 +10864,7 @@ dissect_pcap_INTEGER_M20000_20000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t 
 static int
 dissect_pcap_INTEGER_M4000_4000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            -4000, 4000U, NULL, FALSE);
+                                                            -4000, 4000U, NULL, false);
 
   return offset;
 }
@@ -9881,7 +10874,7 @@ dissect_pcap_INTEGER_M4000_4000(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_FineSFNSFN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 15U, NULL, FALSE);
+                                                            0U, 15U, NULL, false);
 
   return offset;
 }
@@ -9970,7 +10963,7 @@ static int
 dissect_pcap_UE_Positioning_OTDOA_NeighbourCellList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_UE_Positioning_OTDOA_NeighbourCellList, UE_Positioning_OTDOA_NeighbourCellList_sequence_of,
-                                                  1, maxCellMeas, FALSE);
+                                                  1, maxCellMeas, false);
 
   return offset;
 }
@@ -10017,7 +11010,7 @@ static const value_string pcap_ScramblingCodeType_vals[] = {
 static int
 dissect_pcap_ScramblingCodeType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -10027,7 +11020,7 @@ dissect_pcap_ScramblingCodeType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *a
 static int
 dissect_pcap_UL_ScramblingCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 16777215U, NULL, FALSE);
+                                                            0U, 16777215U, NULL, false);
 
   return offset;
 }
@@ -10037,7 +11030,7 @@ dissect_pcap_UL_ScramblingCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_NumberOfFBI_Bits(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 2U, NULL, FALSE);
+                                                            0U, 2U, NULL, false);
 
   return offset;
 }
@@ -10073,7 +11066,7 @@ static const value_string pcap_TFCI_Coding_vals[] = {
 static int
 dissect_pcap_TFCI_Coding(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, TRUE, 0, NULL);
+                                     4, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -10083,7 +11076,7 @@ dissect_pcap_TFCI_Coding(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_pcap_PuncturingLimit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 15U, NULL, FALSE);
+                                                            0U, 15U, NULL, false);
 
   return offset;
 }
@@ -10104,7 +11097,7 @@ static const value_string pcap_RepetitionPeriod_vals[] = {
 static int
 dissect_pcap_RepetitionPeriod(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     7, NULL, TRUE, 0, NULL);
+                                     7, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -10114,7 +11107,7 @@ dissect_pcap_RepetitionPeriod(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_pcap_RepetitionLength(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 63U, NULL, FALSE);
+                                                            1U, 63U, NULL, false);
 
   return offset;
 }
@@ -10146,7 +11139,7 @@ dissect_pcap_TDD_DPCHOffset(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx 
 static int
 dissect_pcap_TimeSlot(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 14U, NULL, FALSE);
+                                                            0U, 14U, NULL, false);
 
   return offset;
 }
@@ -10163,7 +11156,7 @@ static const value_string pcap_MidambleConfigurationBurstType1And3_vals[] = {
 static int
 dissect_pcap_MidambleConfigurationBurstType1And3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, FALSE, 0, NULL);
+                                     3, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -10182,7 +11175,7 @@ dissect_pcap_NULL(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 static int
 dissect_pcap_MidambleShiftLong(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 15U, NULL, FALSE);
+                                                            0U, 15U, NULL, false);
 
   return offset;
 }
@@ -10237,7 +11230,7 @@ static const value_string pcap_MidambleConfigurationBurstType2_vals[] = {
 static int
 dissect_pcap_MidambleConfigurationBurstType2(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -10247,7 +11240,7 @@ dissect_pcap_MidambleConfigurationBurstType2(tvbuff_t *tvb _U_, int offset _U_, 
 static int
 dissect_pcap_MidambleShiftShort(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 5U, NULL, FALSE);
+                                                            0U, 5U, NULL, false);
 
   return offset;
 }
@@ -10394,7 +11387,7 @@ static value_string_ext pcap_TDD_ChannelisationCode_vals_ext = VALUE_STRING_EXT_
 static int
 dissect_pcap_TDD_ChannelisationCode(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     31, NULL, TRUE, 0, NULL);
+                                     31, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -10423,7 +11416,7 @@ static int
 dissect_pcap_TDD_UL_Code_Information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_TDD_UL_Code_Information, TDD_UL_Code_Information_sequence_of,
-                                                  1, maxNrOfDPCHs, FALSE);
+                                                  1, maxNrOfDPCHs, false);
 
   return offset;
 }
@@ -10455,7 +11448,7 @@ static int
 dissect_pcap_UL_Timeslot_Information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_UL_Timeslot_Information, UL_Timeslot_Information_sequence_of,
-                                                  1, maxNrOfULTSs, FALSE);
+                                                  1, maxNrOfULTSs, false);
 
   return offset;
 }
@@ -10465,7 +11458,7 @@ dissect_pcap_UL_Timeslot_Information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx
 static int
 dissect_pcap_FrameOffset(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
+                                                            0U, 255U, NULL, false);
 
   return offset;
 }
@@ -10475,7 +11468,7 @@ dissect_pcap_FrameOffset(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_pcap_SpecialBurstScheduling(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 256U, NULL, FALSE);
+                                                            1U, 256U, NULL, false);
 
   return offset;
 }
@@ -10530,7 +11523,7 @@ dissect_pcap_UL_DPCHInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_pcap_ChipOffset(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 38399U, NULL, FALSE);
+                                                            0U, 38399U, NULL, false);
 
   return offset;
 }
@@ -10557,7 +11550,7 @@ dissect_pcap_DL_InformationFDD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int
 dissect_pcap_TGPSID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, maxTGPS, NULL, FALSE);
+                                                            1U, maxTGPS, NULL, false);
 
   return offset;
 }
@@ -10567,7 +11560,7 @@ dissect_pcap_TGPSID(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 static int
 dissect_pcap_TGSN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 14U, NULL, FALSE);
+                                                            0U, 14U, NULL, false);
 
   return offset;
 }
@@ -10577,7 +11570,7 @@ dissect_pcap_TGSN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto
 static int
 dissect_pcap_GapLength(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 14U, NULL, FALSE);
+                                                            1U, 14U, NULL, false);
 
   return offset;
 }
@@ -10587,7 +11580,7 @@ dissect_pcap_GapLength(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_pcap_TGD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 269U, NULL, FALSE);
+                                                            0U, 269U, NULL, false);
 
   return offset;
 }
@@ -10597,7 +11590,7 @@ dissect_pcap_TGD(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_
 static int
 dissect_pcap_GapDuration(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 144U, NULL, TRUE);
+                                                            1U, 144U, NULL, true);
 
   return offset;
 }
@@ -10613,7 +11606,7 @@ static const value_string pcap_Uplink_Compressed_Mode_Method_vals[] = {
 static int
 dissect_pcap_Uplink_Compressed_Mode_Method(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -10648,7 +11641,7 @@ static int
 dissect_pcap_Transmission_Gap_Pattern_Sequence_Information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_Transmission_Gap_Pattern_Sequence_Information, Transmission_Gap_Pattern_Sequence_Information_sequence_of,
-                                                  1, maxTGPS, FALSE);
+                                                  1, maxTGPS, false);
 
   return offset;
 }
@@ -10658,7 +11651,7 @@ dissect_pcap_Transmission_Gap_Pattern_Sequence_Information(tvbuff_t *tvb _U_, in
 static int
 dissect_pcap_CFN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
+                                                            0U, 255U, NULL, false);
 
   return offset;
 }
@@ -10668,7 +11661,7 @@ dissect_pcap_CFN(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_
 static int
 dissect_pcap_TGPRC(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 511U, NULL, FALSE);
+                                                            0U, 511U, NULL, false);
 
   return offset;
 }
@@ -10699,7 +11692,7 @@ static int
 dissect_pcap_Transmission_Gap_Pattern_Sequence_Status_List(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_Transmission_Gap_Pattern_Sequence_Status_List, Transmission_Gap_Pattern_Sequence_Status_List_sequence_of,
-                                                  1, maxTGPS, FALSE);
+                                                  1, maxTGPS, false);
 
   return offset;
 }
@@ -10762,7 +11755,7 @@ static int
 dissect_pcap_T_ctfc2Bit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_T_ctfc2Bit, T_ctfc2Bit_sequence_of,
-                                                  1, maxTFC, FALSE);
+                                                  1, maxTFC, false);
 
   return offset;
 }
@@ -10776,7 +11769,7 @@ static int
 dissect_pcap_T_ctfc4Bit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_T_ctfc4Bit, T_ctfc4Bit_sequence_of,
-                                                  1, maxTFC, FALSE);
+                                                  1, maxTFC, false);
 
   return offset;
 }
@@ -10790,7 +11783,7 @@ static int
 dissect_pcap_T_ctfc6Bit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_T_ctfc6Bit, T_ctfc6Bit_sequence_of,
-                                                  1, maxTFC, FALSE);
+                                                  1, maxTFC, false);
 
   return offset;
 }
@@ -10804,7 +11797,7 @@ static int
 dissect_pcap_T_ctfc8Bit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_T_ctfc8Bit, T_ctfc8Bit_sequence_of,
-                                                  1, maxTFC, FALSE);
+                                                  1, maxTFC, false);
 
   return offset;
 }
@@ -10818,7 +11811,7 @@ static int
 dissect_pcap_T_ctfc12Bit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_T_ctfc12Bit, T_ctfc12Bit_sequence_of,
-                                                  1, maxTFC, FALSE);
+                                                  1, maxTFC, false);
 
   return offset;
 }
@@ -10832,17 +11825,7 @@ static int
 dissect_pcap_T_ctfc16Bit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_T_ctfc16Bit, T_ctfc16Bit_sequence_of,
-                                                  1, maxTFC, FALSE);
-
-  return offset;
-}
-
-
-
-static int
-dissect_pcap_INTEGER_0_16777215(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
-  offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 16777215U, NULL, FALSE);
+                                                  1, maxTFC, false);
 
   return offset;
 }
@@ -10856,7 +11839,7 @@ static int
 dissect_pcap_T_ctfc24Bit(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_T_ctfc24Bit, T_ctfc24Bit_sequence_of,
-                                                  1, maxTFC, FALSE);
+                                                  1, maxTFC, false);
 
   return offset;
 }
@@ -10902,7 +11885,7 @@ static int
 dissect_pcap_TFCS(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_TFCS, TFCS_sequence_of,
-                                                  1, maxTFC, FALSE);
+                                                  1, maxTFC, false);
 
   return offset;
 }
@@ -10918,7 +11901,7 @@ static const value_string pcap_UL_TrCHType_vals[] = {
 static int
 dissect_pcap_UL_TrCHType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -10928,7 +11911,7 @@ dissect_pcap_UL_TrCHType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_pcap_RLC_Size(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            129U, 5055U, NULL, FALSE);
+                                                            129U, 5055U, NULL, false);
 
   return offset;
 }
@@ -10947,7 +11930,7 @@ static const value_string pcap_TransportFormatSet_TransmissionTimeIntervalDynami
 static int
 dissect_pcap_TransportFormatSet_TransmissionTimeIntervalDynamic(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     5, NULL, TRUE, 0, NULL);
+                                     5, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -10957,7 +11940,7 @@ dissect_pcap_TransportFormatSet_TransmissionTimeIntervalDynamic(tvbuff_t *tvb _U
 static int
 dissect_pcap_TransportFormatSet_NrOfTransportBlocks(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 512U, NULL, FALSE);
+                                                            0U, 512U, NULL, false);
 
   return offset;
 }
@@ -10987,7 +11970,7 @@ static int
 dissect_pcap_SEQUENCE_SIZE_1_maxNrOfTFs_OF_TbsTTIInfo(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_SEQUENCE_SIZE_1_maxNrOfTFs_OF_TbsTTIInfo, SEQUENCE_SIZE_1_maxNrOfTFs_OF_TbsTTIInfo_sequence_of,
-                                                  1, maxNrOfTFs, FALSE);
+                                                  1, maxNrOfTFs, false);
 
   return offset;
 }
@@ -11017,7 +12000,7 @@ static int
 dissect_pcap_TransportFormatSet_DynamicPartList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_TransportFormatSet_DynamicPartList, TransportFormatSet_DynamicPartList_sequence_of,
-                                                  1, maxNrOfTFs, FALSE);
+                                                  1, maxNrOfTFs, false);
 
   return offset;
 }
@@ -11037,7 +12020,7 @@ static const value_string pcap_TransportFormatSet_TransmissionTimeIntervalSemiSt
 static int
 dissect_pcap_TransportFormatSet_TransmissionTimeIntervalSemiStatic(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     6, NULL, TRUE, 0, NULL);
+                                     6, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -11054,7 +12037,7 @@ static const value_string pcap_TransportFormatSet_ChannelCodingType_vals[] = {
 static int
 dissect_pcap_TransportFormatSet_ChannelCodingType(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, TRUE, 0, NULL);
+                                     3, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -11070,7 +12053,7 @@ static const value_string pcap_TransportFormatSet_CodingRate_vals[] = {
 static int
 dissect_pcap_TransportFormatSet_CodingRate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -11080,7 +12063,7 @@ dissect_pcap_TransportFormatSet_CodingRate(tvbuff_t *tvb _U_, int offset _U_, as
 static int
 dissect_pcap_TransportFormatSet_RateMatchingAttribute(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, maxRateMatching, NULL, FALSE);
+                                                            1U, maxRateMatching, NULL, false);
 
   return offset;
 }
@@ -11099,7 +12082,7 @@ static const value_string pcap_TransportFormatSet_CRC_Size_vals[] = {
 static int
 dissect_pcap_TransportFormatSet_CRC_Size(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     5, NULL, TRUE, 0, NULL);
+                                     5, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -11164,7 +12147,7 @@ static int
 dissect_pcap_TrChInfoList(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_TrChInfoList, TrChInfoList_sequence_of,
-                                                  1, maxTrCH, FALSE);
+                                                  1, maxTrCH, false);
 
   return offset;
 }
@@ -11201,7 +12184,7 @@ static const value_string pcap_Max_Set_E_DPDCHs_vals[] = {
 static int
 dissect_pcap_Max_Set_E_DPDCHs(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     7, NULL, TRUE, 0, NULL);
+                                     7, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -11211,7 +12194,7 @@ dissect_pcap_Max_Set_E_DPDCHs(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_pcap_E_DCH_TFCS_Index(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 4U, NULL, TRUE);
+                                                            1U, 4U, NULL, true);
 
   return offset;
 }
@@ -11221,7 +12204,7 @@ dissect_pcap_E_DCH_TFCS_Index(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_pcap_E_TFCI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 127U, NULL, FALSE);
+                                                            0U, 127U, NULL, false);
 
   return offset;
 }
@@ -11231,7 +12214,7 @@ dissect_pcap_E_TFCI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 static int
 dissect_pcap_Reference_E_TFCI_PO(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, maxNrOfRefETFCI_PO_QUANTSTEPs, NULL, FALSE);
+                                                            0U, maxNrOfRefETFCI_PO_QUANTSTEPs, NULL, false);
 
   return offset;
 }
@@ -11261,7 +12244,7 @@ static int
 dissect_pcap_Reference_E_TFCI_Information(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_Reference_E_TFCI_Information, Reference_E_TFCI_Information_sequence_of,
-                                                  1, maxNrOfRefETFCIs, FALSE);
+                                                  1, maxNrOfRefETFCIs, false);
 
   return offset;
 }
@@ -11293,7 +12276,7 @@ static const value_string pcap_E_TTI_vals[] = {
 static int
 dissect_pcap_E_TTI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -11303,7 +12286,7 @@ dissect_pcap_E_TTI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, prot
 static int
 dissect_pcap_E_DPCCH_PO(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, maxNrOfEDPCCH_PO_QUANTSTEPs, NULL, FALSE);
+                                                            0U, maxNrOfEDPCCH_PO_QUANTSTEPs, NULL, false);
 
   return offset;
 }
@@ -11346,11 +12329,30 @@ dissect_pcap_UTDOA_CELLDCH(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 }
 
 
+static int * const AvailableSignatures_bits[] = {
+  &hf_pcap_AvailableSignatures_signature15,
+  &hf_pcap_AvailableSignatures_signature14,
+  &hf_pcap_AvailableSignatures_signature13,
+  &hf_pcap_AvailableSignatures_signature12,
+  &hf_pcap_AvailableSignatures_signature11,
+  &hf_pcap_AvailableSignatures_signature10,
+  &hf_pcap_AvailableSignatures_signature9,
+  &hf_pcap_AvailableSignatures_signature8,
+  &hf_pcap_AvailableSignatures_signature7,
+  &hf_pcap_AvailableSignatures_signature6,
+  &hf_pcap_AvailableSignatures_signature5,
+  &hf_pcap_AvailableSignatures_signature4,
+  &hf_pcap_AvailableSignatures_signature3,
+  &hf_pcap_AvailableSignatures_signature2,
+  &hf_pcap_AvailableSignatures_signature1,
+  &hf_pcap_AvailableSignatures_signature0,
+  NULL
+};
 
 static int
 dissect_pcap_AvailableSignatures(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     16, 16, FALSE, NULL, NULL);
+                                     16, 16, false, AvailableSignatures_bits, 16, NULL, NULL);
 
   return offset;
 }
@@ -11368,7 +12370,7 @@ static const value_string pcap_SF_PRACH_vals[] = {
 static int
 dissect_pcap_SF_PRACH(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     4, NULL, TRUE, 0, NULL);
+                                     4, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -11378,17 +12380,32 @@ dissect_pcap_SF_PRACH(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 static int
 dissect_pcap_PreambleScramblingCodeWordNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 15U, NULL, FALSE);
+                                                            0U, 15U, NULL, false);
 
   return offset;
 }
 
 
+static int * const AvailableSubChannelNumbers_bits[] = {
+  &hf_pcap_AvailableSubChannelNumbers_subCh11,
+  &hf_pcap_AvailableSubChannelNumbers_subCh10,
+  &hf_pcap_AvailableSubChannelNumbers_subCh9,
+  &hf_pcap_AvailableSubChannelNumbers_subCh8,
+  &hf_pcap_AvailableSubChannelNumbers_subCh7,
+  &hf_pcap_AvailableSubChannelNumbers_subCh6,
+  &hf_pcap_AvailableSubChannelNumbers_subCh5,
+  &hf_pcap_AvailableSubChannelNumbers_subCh4,
+  &hf_pcap_AvailableSubChannelNumbers_subCh3,
+  &hf_pcap_AvailableSubChannelNumbers_subCh2,
+  &hf_pcap_AvailableSubChannelNumbers_subCh1,
+  &hf_pcap_AvailableSubChannelNumbers_subCh0,
+  NULL
+};
 
 static int
 dissect_pcap_AvailableSubChannelNumbers(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     12, 12, FALSE, NULL, NULL);
+                                     12, 12, false, AvailableSubChannelNumbers_bits, 12, NULL, NULL);
 
   return offset;
 }
@@ -11423,7 +12440,7 @@ static const value_string pcap_MaxPRACH_MidambleShifts_vals[] = {
 static int
 dissect_pcap_MaxPRACH_MidambleShifts(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -11439,7 +12456,7 @@ static const value_string pcap_PRACH_Midamble_vals[] = {
 static int
 dissect_pcap_PRACH_Midamble(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, TRUE, 0, NULL);
+                                     2, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -11510,7 +12527,7 @@ static int
 dissect_pcap_PRACHparameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_pcap_PRACHparameters, PRACHparameters_sequence_of,
-                                                  1, maxPRACH, FALSE);
+                                                  1, maxPRACH, false);
 
   return offset;
 }
@@ -11520,7 +12537,7 @@ dissect_pcap_PRACHparameters(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_pcap_C_RNTI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_bit_string(tvb, offset, actx, tree, hf_index,
-                                     16, 16, FALSE, NULL, NULL);
+                                     16, 16, false, NULL, 0, NULL, NULL);
 
   return offset;
 }
@@ -11530,7 +12547,7 @@ dissect_pcap_C_RNTI(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 static int
 dissect_pcap_USCH_SchedulingOffset(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
+                                                            0U, 255U, NULL, false);
 
   return offset;
 }
@@ -11637,7 +12654,7 @@ static const value_string pcap_Positioning_ResponseTime_vals[] = {
 static int
 dissect_pcap_Positioning_ResponseTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     15, NULL, TRUE, 0, NULL);
+                                     15, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -11658,7 +12675,7 @@ static const value_string pcap_AmountOfReporting_vals[] = {
 static int
 dissect_pcap_AmountOfReporting(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     7, NULL, TRUE, 0, NULL);
+                                     7, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -11673,7 +12690,7 @@ static const value_string pcap_IncludeVelocity_vals[] = {
 static int
 dissect_pcap_IncludeVelocity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     1, NULL, FALSE, 0, NULL);
+                                     1, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -11683,7 +12700,7 @@ dissect_pcap_IncludeVelocity(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx
 static int
 dissect_pcap_INTEGER_0_359(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 359U, NULL, FALSE);
+                                                            0U, 359U, NULL, false);
 
   return offset;
 }
@@ -11693,7 +12710,7 @@ dissect_pcap_INTEGER_0_359(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_pcap_INTEGER_0_2047(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 2047U, NULL, FALSE);
+                                                            0U, 2047U, NULL, false);
 
   return offset;
 }
@@ -11739,7 +12756,7 @@ static const value_string pcap_VerticalSpeedDirection_vals[] = {
 static int
 dissect_pcap_VerticalSpeedDirection(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -11840,7 +12857,7 @@ dissect_pcap_VelocityEstimate(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *act
 static int
 dissect_pcap_INTEGER_0_2322431999999_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer_64b(tvb, offset, actx, tree, hf_index,
-                                                            0U, G_GUINT64_CONSTANT(2322431999999), NULL, TRUE);
+                                                            0U, UINT64_C(2322431999999), NULL, true);
 
   return offset;
 }
@@ -11867,7 +12884,7 @@ dissect_pcap_UTRAN_GPSReferenceTime(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_
 static int
 dissect_pcap_INTEGER_0_345599999999_(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer_64b(tvb, offset, actx, tree, hf_index,
-                                                            0U, G_GUINT64_CONSTANT(345599999999), NULL, TRUE);
+                                                            0U, UINT64_C(345599999999), NULL, true);
 
   return offset;
 }
@@ -12355,8 +13372,11 @@ dissect_pcap_PositionPeriodicTermination(tvbuff_t *tvb _U_, int offset _U_, asn1
 
 static int
 dissect_pcap_InitiatingMessage_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  // InitiatingMessage/value -> InitiatingMessage/value
+  increment_dissection_depth_by_n(actx->pinfo, 1);
   offset = dissect_per_open_type_pdu_new(tvb, offset, actx, tree, hf_index, dissect_InitiatingMessageValue);
 
+  decrement_dissection_depth_by_n(actx->pinfo, 1);
   return offset;
 }
 
@@ -12381,8 +13401,11 @@ dissect_pcap_InitiatingMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 static int
 dissect_pcap_SuccessfulOutcome_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  // SuccessfulOutcome/value -> SuccessfulOutcome/value
+  increment_dissection_depth_by_n(actx->pinfo, 1);
   offset = dissect_per_open_type_pdu_new(tvb, offset, actx, tree, hf_index, dissect_SuccessfulOutcomeValue);
 
+  decrement_dissection_depth_by_n(actx->pinfo, 1);
   return offset;
 }
 
@@ -12407,8 +13430,11 @@ dissect_pcap_SuccessfulOutcome(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 
 static int
 dissect_pcap_UnsuccessfulOutcome_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  // UnsuccessfulOutcome/value -> UnsuccessfulOutcome/value
+  increment_dissection_depth_by_n(actx->pinfo, 1);
   offset = dissect_per_open_type_pdu_new(tvb, offset, actx, tree, hf_index, dissect_UnsuccessfulOutcomeValue);
 
+  decrement_dissection_depth_by_n(actx->pinfo, 1);
   return offset;
 }
 
@@ -12433,8 +13459,11 @@ dissect_pcap_UnsuccessfulOutcome(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *
 
 static int
 dissect_pcap_Outcome_value(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
+  // Outcome/value -> Outcome/value
+  increment_dissection_depth_by_n(actx->pinfo, 1);
   offset = dissect_per_open_type_pdu_new(tvb, offset, actx, tree, hf_index, dissect_OutcomeValue);
 
+  decrement_dissection_depth_by_n(actx->pinfo, 1);
   return offset;
 }
 
@@ -12486,15 +13515,23 @@ dissect_pcap_PCAP_PDU(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, p
 static int dissect_AccuracyFulfilmentIndicator_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_AccuracyFulfilmentIndicator(tvb, offset, &asn1_ctx, tree, hf_pcap_AccuracyFulfilmentIndicator_PDU);
+  offset += 7; offset >>= 3;
+  return offset;
+}
+static int dissect_AddPos_MeasuredResults_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
+  int offset = 0;
+  asn1_ctx_t asn1_ctx;
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
+  offset = dissect_pcap_AddPos_MeasuredResults(tvb, offset, &asn1_ctx, tree, hf_pcap_AddPos_MeasuredResults_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 static int dissect_Cause_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_Cause(tvb, offset, &asn1_ctx, tree, hf_pcap_Cause_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12502,7 +13539,7 @@ static int dissect_Cause_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tr
 static int dissect_CellId_MeasuredResultsSets_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_CellId_MeasuredResultsSets(tvb, offset, &asn1_ctx, tree, hf_pcap_CellId_MeasuredResultsSets_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12510,7 +13547,7 @@ static int dissect_CellId_MeasuredResultsSets_PDU(tvbuff_t *tvb _U_, packet_info
 static int dissect_RoundTripTimeInfoWithType1_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_RoundTripTimeInfoWithType1(tvb, offset, &asn1_ctx, tree, hf_pcap_RoundTripTimeInfoWithType1_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12518,7 +13555,7 @@ static int dissect_RoundTripTimeInfoWithType1_PDU(tvbuff_t *tvb _U_, packet_info
 static int dissect_ExtendedTimingAdvanceLCR_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_ExtendedTimingAdvanceLCR(tvb, offset, &asn1_ctx, tree, hf_pcap_ExtendedTimingAdvanceLCR_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12526,7 +13563,7 @@ static int dissect_ExtendedTimingAdvanceLCR_PDU(tvbuff_t *tvb _U_, packet_info *
 static int dissect_RxTimingDeviation768Info_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_RxTimingDeviation768Info(tvb, offset, &asn1_ctx, tree, hf_pcap_RxTimingDeviation768Info_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12534,7 +13571,7 @@ static int dissect_RxTimingDeviation768Info_PDU(tvbuff_t *tvb _U_, packet_info *
 static int dissect_RxTimingDeviation384extInfo_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_RxTimingDeviation384extInfo(tvb, offset, &asn1_ctx, tree, hf_pcap_RxTimingDeviation384extInfo_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12542,7 +13579,7 @@ static int dissect_RxTimingDeviation384extInfo_PDU(tvbuff_t *tvb _U_, packet_inf
 static int dissect_AddMeasurementInfo_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_AddMeasurementInfo(tvb, offset, &asn1_ctx, tree, hf_pcap_AddMeasurementInfo_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12550,7 +13587,7 @@ static int dissect_AddMeasurementInfo_PDU(tvbuff_t *tvb _U_, packet_info *pinfo 
 static int dissect_AngleOfArrivalLCR_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_AngleOfArrivalLCR(tvb, offset, &asn1_ctx, tree, hf_pcap_AngleOfArrivalLCR_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12558,7 +13595,7 @@ static int dissect_AngleOfArrivalLCR_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _
 static int dissect_CellId_IRATMeasuredResultsSets_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_CellId_IRATMeasuredResultsSets(tvb, offset, &asn1_ctx, tree, hf_pcap_CellId_IRATMeasuredResultsSets_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12566,7 +13603,7 @@ static int dissect_CellId_IRATMeasuredResultsSets_PDU(tvbuff_t *tvb _U_, packet_
 static int dissect_CellIDPositioning_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_CellIDPositioning(tvb, offset, &asn1_ctx, tree, hf_pcap_CellIDPositioning_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12574,7 +13611,7 @@ static int dissect_CellIDPositioning_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _
 static int dissect_RequestedCellIDGERANMeasurements_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_RequestedCellIDGERANMeasurements(tvb, offset, &asn1_ctx, tree, hf_pcap_RequestedCellIDGERANMeasurements_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12582,7 +13619,7 @@ static int dissect_RequestedCellIDGERANMeasurements_PDU(tvbuff_t *tvb _U_, packe
 static int dissect_ClientType_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_ClientType(tvb, offset, &asn1_ctx, tree, hf_pcap_ClientType_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12590,7 +13627,7 @@ static int dissect_ClientType_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, pro
 static int dissect_CriticalityDiagnostics_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_CriticalityDiagnostics(tvb, offset, &asn1_ctx, tree, hf_pcap_CriticalityDiagnostics_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12598,7 +13635,7 @@ static int dissect_CriticalityDiagnostics_PDU(tvbuff_t *tvb _U_, packet_info *pi
 static int dissect_DGNSS_ValidityPeriod_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_DGNSS_ValidityPeriod(tvb, offset, &asn1_ctx, tree, hf_pcap_DGNSS_ValidityPeriod_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12606,7 +13643,7 @@ static int dissect_DGNSS_ValidityPeriod_PDU(tvbuff_t *tvb _U_, packet_info *pinf
 static int dissect_IMEI_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_IMEI(tvb, offset, &asn1_ctx, tree, hf_pcap_IMEI_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12614,7 +13651,7 @@ static int dissect_IMEI_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tre
 static int dissect_IMSI_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_IMSI(tvb, offset, &asn1_ctx, tree, hf_pcap_IMSI_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12622,7 +13659,7 @@ static int dissect_IMSI_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tre
 static int dissect_UE_PositionEstimate_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_UE_PositionEstimate(tvb, offset, &asn1_ctx, tree, hf_pcap_UE_PositionEstimate_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12630,7 +13667,7 @@ static int dissect_UE_PositionEstimate_PDU(tvbuff_t *tvb _U_, packet_info *pinfo
 static int dissect_UE_PositionEstimateInfo_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_UE_PositionEstimateInfo(tvb, offset, &asn1_ctx, tree, hf_pcap_UE_PositionEstimateInfo_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12638,7 +13675,7 @@ static int dissect_UE_PositionEstimateInfo_PDU(tvbuff_t *tvb _U_, packet_info *p
 static int dissect_GANSS_Reference_Time_Only_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_Reference_Time_Only(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_Reference_Time_Only_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12646,7 +13683,7 @@ static int dissect_GANSS_Reference_Time_Only_PDU(tvbuff_t *tvb _U_, packet_info 
 static int dissect_PositionDataUEbased_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionDataUEbased(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionDataUEbased_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12654,7 +13691,7 @@ static int dissect_PositionDataUEbased_PDU(tvbuff_t *tvb _U_, packet_info *pinfo
 static int dissect_PositionData_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionData(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionData_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12662,23 +13699,47 @@ static int dissect_PositionData_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, p
 static int dissect_GANSS_PositioningDataSet_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_PositioningDataSet(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_PositioningDataSet_PDU);
+  offset += 7; offset >>= 3;
+  return offset;
+}
+static int dissect_Additional_PositioningDataSet_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
+  int offset = 0;
+  asn1_ctx_t asn1_ctx;
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
+  offset = dissect_pcap_Additional_PositioningDataSet(tvb, offset, &asn1_ctx, tree, hf_pcap_Additional_PositioningDataSet_PDU);
+  offset += 7; offset >>= 3;
+  return offset;
+}
+static int dissect_ExtraDopplerInfoExtension_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
+  int offset = 0;
+  asn1_ctx_t asn1_ctx;
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
+  offset = dissect_pcap_ExtraDopplerInfoExtension(tvb, offset, &asn1_ctx, tree, hf_pcap_ExtraDopplerInfoExtension_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 static int dissect_AzimuthAndElevationLSB_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_AzimuthAndElevationLSB(tvb, offset, &asn1_ctx, tree, hf_pcap_AzimuthAndElevationLSB_PDU);
+  offset += 7; offset >>= 3;
+  return offset;
+}
+static int dissect_Confidence_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
+  int offset = 0;
+  asn1_ctx_t asn1_ctx;
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
+  offset = dissect_pcap_Confidence(tvb, offset, &asn1_ctx, tree, hf_pcap_Confidence_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 static int dissect_GANSS_Additional_Ionospheric_Model_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_Additional_Ionospheric_Model(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_Additional_Ionospheric_Model_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12686,7 +13747,7 @@ static int dissect_GANSS_Additional_Ionospheric_Model_PDU(tvbuff_t *tvb _U_, pac
 static int dissect_GANSS_Additional_Navigation_Models_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_Additional_Navigation_Models(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_Additional_Navigation_Models_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12694,7 +13755,7 @@ static int dissect_GANSS_Additional_Navigation_Models_PDU(tvbuff_t *tvb _U_, pac
 static int dissect_GANSS_Additional_Time_Models_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_Additional_Time_Models(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_Additional_Time_Models_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12702,15 +13763,23 @@ static int dissect_GANSS_Additional_Time_Models_PDU(tvbuff_t *tvb _U_, packet_in
 static int dissect_GANSS_Additional_UTC_Models_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_Additional_UTC_Models(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_Additional_UTC_Models_PDU);
+  offset += 7; offset >>= 3;
+  return offset;
+}
+static int dissect_GANSS_ALM_BDSKeplericanset_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
+  int offset = 0;
+  asn1_ctx_t asn1_ctx;
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
+  offset = dissect_pcap_GANSS_ALM_BDSKeplericanset(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_ALM_BDSKeplericanset_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 static int dissect_GANSS_ALM_ECEFsbasAlmanacSet_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_ALM_ECEFsbasAlmanacSet(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_ALM_ECEFsbasAlmanacSet_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12718,7 +13787,7 @@ static int dissect_GANSS_ALM_ECEFsbasAlmanacSet_PDU(tvbuff_t *tvb _U_, packet_in
 static int dissect_GANSS_ALM_GlonassAlmanacSet_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_ALM_GlonassAlmanacSet(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_ALM_GlonassAlmanacSet_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12726,7 +13795,7 @@ static int dissect_GANSS_ALM_GlonassAlmanacSet_PDU(tvbuff_t *tvb _U_, packet_inf
 static int dissect_GANSS_ALM_MidiAlmanacSet_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_ALM_MidiAlmanacSet(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_ALM_MidiAlmanacSet_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12734,7 +13803,7 @@ static int dissect_GANSS_ALM_MidiAlmanacSet_PDU(tvbuff_t *tvb _U_, packet_info *
 static int dissect_GANSS_ALM_NAVKeplerianSet_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_ALM_NAVKeplerianSet(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_ALM_NAVKeplerianSet_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12742,7 +13811,7 @@ static int dissect_GANSS_ALM_NAVKeplerianSet_PDU(tvbuff_t *tvb _U_, packet_info 
 static int dissect_GANSS_ALM_ReducedKeplerianSet_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_ALM_ReducedKeplerianSet(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_ALM_ReducedKeplerianSet_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12750,7 +13819,7 @@ static int dissect_GANSS_ALM_ReducedKeplerianSet_PDU(tvbuff_t *tvb _U_, packet_i
 static int dissect_GANSS_Auxiliary_Information_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_Auxiliary_Information(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_Auxiliary_Information_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12758,7 +13827,7 @@ static int dissect_GANSS_Auxiliary_Information_PDU(tvbuff_t *tvb _U_, packet_inf
 static int dissect_GANSS_CommonAssistanceData_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_CommonAssistanceData(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_CommonAssistanceData_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12766,23 +13835,47 @@ static int dissect_GANSS_CommonAssistanceData_PDU(tvbuff_t *tvb _U_, packet_info
 static int dissect_GANSS_Earth_Orientation_Parameters_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_Earth_Orientation_Parameters(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_Earth_Orientation_Parameters_PDU);
+  offset += 7; offset >>= 3;
+  return offset;
+}
+static int dissect_GANSS_ExtraDopplerExtension_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
+  int offset = 0;
+  asn1_ctx_t asn1_ctx;
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
+  offset = dissect_pcap_GANSS_ExtraDopplerExtension(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_ExtraDopplerExtension_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 static int dissect_GANSS_GenericAssistanceDataList_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_GenericAssistanceDataList(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_GenericAssistanceDataList_PDU);
+  offset += 7; offset >>= 3;
+  return offset;
+}
+static int dissect_BDS_Ionospheric_Grid_Model_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
+  int offset = 0;
+  asn1_ctx_t asn1_ctx;
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
+  offset = dissect_pcap_BDS_Ionospheric_Grid_Model(tvb, offset, &asn1_ctx, tree, hf_pcap_BDS_Ionospheric_Grid_Model_PDU);
+  offset += 7; offset >>= 3;
+  return offset;
+}
+static int dissect_DBDS_Correction_Information_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
+  int offset = 0;
+  asn1_ctx_t asn1_ctx;
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
+  offset = dissect_pcap_DBDS_Correction_Information(tvb, offset, &asn1_ctx, tree, hf_pcap_DBDS_Correction_Information_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 static int dissect_GanssCodePhaseAmbiguityExt_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GanssCodePhaseAmbiguityExt(tvb, offset, &asn1_ctx, tree, hf_pcap_GanssCodePhaseAmbiguityExt_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12790,7 +13883,7 @@ static int dissect_GanssCodePhaseAmbiguityExt_PDU(tvbuff_t *tvb _U_, packet_info
 static int dissect_GanssIntegerCodePhaseExt_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GanssIntegerCodePhaseExt(tvb, offset, &asn1_ctx, tree, hf_pcap_GanssIntegerCodePhaseExt_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12798,7 +13891,7 @@ static int dissect_GanssIntegerCodePhaseExt_PDU(tvbuff_t *tvb _U_, packet_info *
 static int dissect_GANSS_MeasuredResultsList_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_MeasuredResultsList(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_MeasuredResultsList_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12806,7 +13899,7 @@ static int dissect_GANSS_MeasuredResultsList_PDU(tvbuff_t *tvb _U_, packet_info 
 static int dissect_GANSS_Day_Cycle_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_Day_Cycle(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_Day_Cycle_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12814,7 +13907,7 @@ static int dissect_GANSS_Day_Cycle_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_
 static int dissect_GANSS_Delta_T_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_Delta_T(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_Delta_T_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12822,7 +13915,7 @@ static int dissect_GANSS_Delta_T_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, 
 static int dissect_GANSS_UTRAN_TRU_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_UTRAN_TRU(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_UTRAN_TRU_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12830,7 +13923,7 @@ static int dissect_GANSS_UTRAN_TRU_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_
 static int dissect_CompleteAlmanacProvided_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_CompleteAlmanacProvided(tvb, offset, &asn1_ctx, tree, hf_pcap_CompleteAlmanacProvided_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12838,7 +13931,7 @@ static int dissect_CompleteAlmanacProvided_PDU(tvbuff_t *tvb _U_, packet_info *p
 static int dissect_MeasuredResultsList_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_MeasuredResultsList(tvb, offset, &asn1_ctx, tree, hf_pcap_MeasuredResultsList_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12846,7 +13939,7 @@ static int dissect_MeasuredResultsList_PDU(tvbuff_t *tvb _U_, packet_info *pinfo
 static int dissect_GPS_ReferenceLocation_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GPS_ReferenceLocation(tvb, offset, &asn1_ctx, tree, hf_pcap_GPS_ReferenceLocation_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12854,7 +13947,7 @@ static int dissect_GPS_ReferenceLocation_PDU(tvbuff_t *tvb _U_, packet_info *pin
 static int dissect_GPS_Week_Cycle_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GPS_Week_Cycle(tvb, offset, &asn1_ctx, tree, hf_pcap_GPS_Week_Cycle_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12862,7 +13955,7 @@ static int dissect_GPS_Week_Cycle_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_,
 static int dissect_UTRAN_GPS_DriftRate_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_UTRAN_GPS_DriftRate(tvb, offset, &asn1_ctx, tree, hf_pcap_UTRAN_GPS_DriftRate_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12870,7 +13963,7 @@ static int dissect_UTRAN_GPS_DriftRate_PDU(tvbuff_t *tvb _U_, packet_info *pinfo
 static int dissect_GPSReferenceTimeUncertainty_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GPSReferenceTimeUncertainty(tvb, offset, &asn1_ctx, tree, hf_pcap_GPSReferenceTimeUncertainty_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12878,7 +13971,7 @@ static int dissect_GPSReferenceTimeUncertainty_PDU(tvbuff_t *tvb _U_, packet_inf
 static int dissect_GPS_UTRAN_TRU_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GPS_UTRAN_TRU(tvb, offset, &asn1_ctx, tree, hf_pcap_GPS_UTRAN_TRU_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12886,7 +13979,7 @@ static int dissect_GPS_UTRAN_TRU_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, 
 static int dissect_AdditionalGPSAssistDataRequired_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_AdditionalGPSAssistDataRequired(tvb, offset, &asn1_ctx, tree, hf_pcap_AdditionalGPSAssistDataRequired_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12894,7 +13987,7 @@ static int dissect_AdditionalGPSAssistDataRequired_PDU(tvbuff_t *tvb _U_, packet
 static int dissect_AdditionalGanssAssistDataRequired_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_AdditionalGanssAssistDataRequired(tvb, offset, &asn1_ctx, tree, hf_pcap_AdditionalGanssAssistDataRequired_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12902,7 +13995,7 @@ static int dissect_AdditionalGanssAssistDataRequired_PDU(tvbuff_t *tvb _U_, pack
 static int dissect_GANSSReq_AddIonosphericModel_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSSReq_AddIonosphericModel(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSSReq_AddIonosphericModel_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12910,15 +14003,31 @@ static int dissect_GANSSReq_AddIonosphericModel_PDU(tvbuff_t *tvb _U_, packet_in
 static int dissect_GANSSReq_EarthOrientPara_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSSReq_EarthOrientPara(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSSReq_EarthOrientPara_PDU);
+  offset += 7; offset >>= 3;
+  return offset;
+}
+static int dissect_BDSIonosphericGridModel_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
+  int offset = 0;
+  asn1_ctx_t asn1_ctx;
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
+  offset = dissect_pcap_BDSIonosphericGridModel(tvb, offset, &asn1_ctx, tree, hf_pcap_BDSIonosphericGridModel_PDU);
+  offset += 7; offset >>= 3;
+  return offset;
+}
+static int dissect_DBDSCorrection_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
+  int offset = 0;
+  asn1_ctx_t asn1_ctx;
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
+  offset = dissect_pcap_DBDSCorrection(tvb, offset, &asn1_ctx, tree, hf_pcap_DBDSCorrection_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 static int dissect_GANSS_AddNavigationModel_Req_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_AddNavigationModel_Req(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_AddNavigationModel_Req_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12926,7 +14035,7 @@ static int dissect_GANSS_AddNavigationModel_Req_PDU(tvbuff_t *tvb _U_, packet_in
 static int dissect_GANSS_AddUTCModel_Req_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_AddUTCModel_Req(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_AddUTCModel_Req_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12934,7 +14043,7 @@ static int dissect_GANSS_AddUTCModel_Req_PDU(tvbuff_t *tvb _U_, packet_info *pin
 static int dissect_GANSS_AuxInfo_req_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_AuxInfo_req(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_AuxInfo_req_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12942,7 +14051,7 @@ static int dissect_GANSS_AuxInfo_req_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _
 static int dissect_GANSS_AddADchoices_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_AddADchoices(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_AddADchoices_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12950,7 +14059,7 @@ static int dissect_GANSS_AddADchoices_PDU(tvbuff_t *tvb _U_, packet_info *pinfo 
 static int dissect_InformationExchangeID_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_InformationExchangeID(tvb, offset, &asn1_ctx, tree, hf_pcap_InformationExchangeID_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12958,7 +14067,7 @@ static int dissect_InformationExchangeID_PDU(tvbuff_t *tvb _U_, packet_info *pin
 static int dissect_InformationReportCharacteristics_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_InformationReportCharacteristics(tvb, offset, &asn1_ctx, tree, hf_pcap_InformationReportCharacteristics_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12966,7 +14075,7 @@ static int dissect_InformationReportCharacteristics_PDU(tvbuff_t *tvb _U_, packe
 static int dissect_InformationType_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_InformationType(tvb, offset, &asn1_ctx, tree, hf_pcap_InformationType_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12974,7 +14083,7 @@ static int dissect_InformationType_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_
 static int dissect_GANSS_AddIonoModelReq_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_AddIonoModelReq(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_AddIonoModelReq_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12982,7 +14091,7 @@ static int dissect_GANSS_AddIonoModelReq_PDU(tvbuff_t *tvb _U_, packet_info *pin
 static int dissect_GANSS_EarthOrientParaReq_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_EarthOrientParaReq(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_EarthOrientParaReq_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12990,7 +14099,7 @@ static int dissect_GANSS_EarthOrientParaReq_PDU(tvbuff_t *tvb _U_, packet_info *
 static int dissect_GANSS_SBAS_ID_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_SBAS_ID(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_SBAS_ID_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -12998,7 +14107,7 @@ static int dissect_GANSS_SBAS_ID_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, 
 static int dissect_MeasInstructionsUsed_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_MeasInstructionsUsed(tvb, offset, &asn1_ctx, tree, hf_pcap_MeasInstructionsUsed_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13006,7 +14115,7 @@ static int dissect_MeasInstructionsUsed_PDU(tvbuff_t *tvb _U_, packet_info *pinf
 static int dissect_OTDOA_MeasurementGroup_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_OTDOA_MeasurementGroup(tvb, offset, &asn1_ctx, tree, hf_pcap_OTDOA_MeasurementGroup_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13014,7 +14123,7 @@ static int dissect_OTDOA_MeasurementGroup_PDU(tvbuff_t *tvb _U_, packet_info *pi
 static int dissect_OTDOA_ReferenceCellInfoSAS_centric_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_OTDOA_ReferenceCellInfoSAS_centric(tvb, offset, &asn1_ctx, tree, hf_pcap_OTDOA_ReferenceCellInfoSAS_centric_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13022,7 +14131,7 @@ static int dissect_OTDOA_ReferenceCellInfoSAS_centric_PDU(tvbuff_t *tvb _U_, pac
 static int dissect_OTDOA_MeasuredResultsSets_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_OTDOA_MeasuredResultsSets(tvb, offset, &asn1_ctx, tree, hf_pcap_OTDOA_MeasuredResultsSets_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13030,7 +14139,7 @@ static int dissect_OTDOA_MeasuredResultsSets_PDU(tvbuff_t *tvb _U_, packet_info 
 static int dissect_OTDOA_AddMeasuredResultsInfo_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_OTDOA_AddMeasuredResultsInfo(tvb, offset, &asn1_ctx, tree, hf_pcap_OTDOA_AddMeasuredResultsInfo_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13038,7 +14147,7 @@ static int dissect_OTDOA_AddMeasuredResultsInfo_PDU(tvbuff_t *tvb _U_, packet_in
 static int dissect_UC_ID_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_UC_ID(tvb, offset, &asn1_ctx, tree, hf_pcap_UC_ID_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13046,7 +14155,7 @@ static int dissect_UC_ID_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tr
 static int dissect_Extended_RNC_ID_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_Extended_RNC_ID(tvb, offset, &asn1_ctx, tree, hf_pcap_Extended_RNC_ID_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13054,7 +14163,7 @@ static int dissect_Extended_RNC_ID_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_
 static int dissect_AdditionalMeasurementInforLCR_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_AdditionalMeasurementInforLCR(tvb, offset, &asn1_ctx, tree, hf_pcap_AdditionalMeasurementInforLCR_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13062,7 +14171,7 @@ static int dissect_AdditionalMeasurementInforLCR_PDU(tvbuff_t *tvb _U_, packet_i
 static int dissect_PeriodicPosCalcInfo_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PeriodicPosCalcInfo(tvb, offset, &asn1_ctx, tree, hf_pcap_PeriodicPosCalcInfo_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13070,7 +14179,7 @@ static int dissect_PeriodicPosCalcInfo_PDU(tvbuff_t *tvb _U_, packet_info *pinfo
 static int dissect_PeriodicLocationInfo_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PeriodicLocationInfo(tvb, offset, &asn1_ctx, tree, hf_pcap_PeriodicLocationInfo_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13078,7 +14187,7 @@ static int dissect_PeriodicLocationInfo_PDU(tvbuff_t *tvb _U_, packet_info *pinf
 static int dissect_PeriodicTerminationCause_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PeriodicTerminationCause(tvb, offset, &asn1_ctx, tree, hf_pcap_PeriodicTerminationCause_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13086,7 +14195,7 @@ static int dissect_PeriodicTerminationCause_PDU(tvbuff_t *tvb _U_, packet_info *
 static int dissect_PositioningMethod_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositioningMethod(tvb, offset, &asn1_ctx, tree, hf_pcap_PositioningMethod_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13094,15 +14203,23 @@ static int dissect_PositioningMethod_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _
 static int dissect_GNSS_PositioningMethod_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GNSS_PositioningMethod(tvb, offset, &asn1_ctx, tree, hf_pcap_GNSS_PositioningMethod_PDU);
+  offset += 7; offset >>= 3;
+  return offset;
+}
+static int dissect_Additional_PositioningMethod_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
+  int offset = 0;
+  asn1_ctx_t asn1_ctx;
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
+  offset = dissect_pcap_Additional_PositioningMethod(tvb, offset, &asn1_ctx, tree, hf_pcap_Additional_PositioningMethod_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 static int dissect_PositioningPriority_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositioningPriority(tvb, offset, &asn1_ctx, tree, hf_pcap_PositioningPriority_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13110,7 +14227,7 @@ static int dissect_PositioningPriority_PDU(tvbuff_t *tvb _U_, packet_info *pinfo
 static int dissect_RRCstateChange_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_RRCstateChange(tvb, offset, &asn1_ctx, tree, hf_pcap_RRCstateChange_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13118,7 +14235,7 @@ static int dissect_RRCstateChange_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_,
 static int dissect_RequestType_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_RequestType(tvb, offset, &asn1_ctx, tree, hf_pcap_RequestType_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13126,7 +14243,7 @@ static int dissect_RequestType_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, pr
 static int dissect_ResponseTime_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_ResponseTime(tvb, offset, &asn1_ctx, tree, hf_pcap_ResponseTime_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13134,7 +14251,7 @@ static int dissect_ResponseTime_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, p
 static int dissect_HorizontalAccuracyCode_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_HorizontalAccuracyCode(tvb, offset, &asn1_ctx, tree, hf_pcap_HorizontalAccuracyCode_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13142,7 +14259,7 @@ static int dissect_HorizontalAccuracyCode_PDU(tvbuff_t *tvb _U_, packet_info *pi
 static int dissect_UE_PositioningCapability_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_UE_PositioningCapability(tvb, offset, &asn1_ctx, tree, hf_pcap_UE_PositioningCapability_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13150,15 +14267,23 @@ static int dissect_UE_PositioningCapability_PDU(tvbuff_t *tvb _U_, packet_info *
 static int dissect_NetworkAssistedGANSSSupport_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_NetworkAssistedGANSSSupport(tvb, offset, &asn1_ctx, tree, hf_pcap_NetworkAssistedGANSSSupport_PDU);
+  offset += 7; offset >>= 3;
+  return offset;
+}
+static int dissect_AddPosSupport_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
+  int offset = 0;
+  asn1_ctx_t asn1_ctx;
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
+  offset = dissect_pcap_AddPosSupport(tvb, offset, &asn1_ctx, tree, hf_pcap_AddPosSupport_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 static int dissect_GANSS_SBAS_IDs_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_SBAS_IDs(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_SBAS_IDs_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13166,7 +14291,7 @@ static int dissect_GANSS_SBAS_IDs_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_,
 static int dissect_GANSS_Signal_IDs_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSS_Signal_IDs(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSS_Signal_IDs_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13174,7 +14299,7 @@ static int dissect_GANSS_Signal_IDs_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U
 static int dissect_SupportGANSSNonNativeADchoices_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_SupportGANSSNonNativeADchoices(tvb, offset, &asn1_ctx, tree, hf_pcap_SupportGANSSNonNativeADchoices_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13182,7 +14307,7 @@ static int dissect_SupportGANSSNonNativeADchoices_PDU(tvbuff_t *tvb _U_, packet_
 static int dissect_UTDOAPositioning_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_UTDOAPositioning(tvb, offset, &asn1_ctx, tree, hf_pcap_UTDOAPositioning_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13190,7 +14315,7 @@ static int dissect_UTDOAPositioning_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U
 static int dissect_EnvironmentCharacterisation_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_EnvironmentCharacterisation(tvb, offset, &asn1_ctx, tree, hf_pcap_EnvironmentCharacterisation_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13198,7 +14323,7 @@ static int dissect_EnvironmentCharacterisation_PDU(tvbuff_t *tvb _U_, packet_inf
 static int dissect_GPSPositioning_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GPSPositioning(tvb, offset, &asn1_ctx, tree, hf_pcap_GPSPositioning_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13206,7 +14331,7 @@ static int dissect_GPSPositioning_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_,
 static int dissect_GANSSPositioning_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSSPositioning(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSSPositioning_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13214,7 +14339,7 @@ static int dissect_GANSSPositioning_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U
 static int dissect_GANSScarrierPhaseRequested_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSScarrierPhaseRequested(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSScarrierPhaseRequested_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13222,7 +14347,7 @@ static int dissect_GANSScarrierPhaseRequested_PDU(tvbuff_t *tvb _U_, packet_info
 static int dissect_GANSSMultiFreqMeasRequested_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_GANSSMultiFreqMeasRequested(tvb, offset, &asn1_ctx, tree, hf_pcap_GANSSMultiFreqMeasRequested_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13230,7 +14355,7 @@ static int dissect_GANSSMultiFreqMeasRequested_PDU(tvbuff_t *tvb _U_, packet_inf
 static int dissect_OTDOAAssistanceData_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_OTDOAAssistanceData(tvb, offset, &asn1_ctx, tree, hf_pcap_OTDOAAssistanceData_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13238,7 +14363,7 @@ static int dissect_OTDOAAssistanceData_PDU(tvbuff_t *tvb _U_, packet_info *pinfo
 static int dissect_VerticalAccuracyCode_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_VerticalAccuracyCode(tvb, offset, &asn1_ctx, tree, hf_pcap_VerticalAccuracyCode_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13246,7 +14371,7 @@ static int dissect_VerticalAccuracyCode_PDU(tvbuff_t *tvb _U_, packet_info *pinf
 static int dissect_UTDOA_Group_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_UTDOA_Group(tvb, offset, &asn1_ctx, tree, hf_pcap_UTDOA_Group_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13254,7 +14379,7 @@ static int dissect_UTDOA_Group_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, pr
 static int dissect_Positioning_ResponseTime_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_Positioning_ResponseTime(tvb, offset, &asn1_ctx, tree, hf_pcap_Positioning_ResponseTime_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13262,7 +14387,7 @@ static int dissect_Positioning_ResponseTime_PDU(tvbuff_t *tvb _U_, packet_info *
 static int dissect_AmountOfReporting_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_AmountOfReporting(tvb, offset, &asn1_ctx, tree, hf_pcap_AmountOfReporting_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13270,7 +14395,7 @@ static int dissect_AmountOfReporting_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _
 static int dissect_IncludeVelocity_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_IncludeVelocity(tvb, offset, &asn1_ctx, tree, hf_pcap_IncludeVelocity_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13278,7 +14403,7 @@ static int dissect_IncludeVelocity_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_
 static int dissect_VelocityEstimate_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_VelocityEstimate(tvb, offset, &asn1_ctx, tree, hf_pcap_VelocityEstimate_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13286,7 +14411,7 @@ static int dissect_VelocityEstimate_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U
 static int dissect_UTRAN_GPSReferenceTime_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_UTRAN_GPSReferenceTime(tvb, offset, &asn1_ctx, tree, hf_pcap_UTRAN_GPSReferenceTime_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13294,7 +14419,7 @@ static int dissect_UTRAN_GPSReferenceTime_PDU(tvbuff_t *tvb _U_, packet_info *pi
 static int dissect_UTRAN_GANSSReferenceTimeResult_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_UTRAN_GANSSReferenceTimeResult(tvb, offset, &asn1_ctx, tree, hf_pcap_UTRAN_GANSSReferenceTimeResult_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13302,7 +14427,7 @@ static int dissect_UTRAN_GANSSReferenceTimeResult_PDU(tvbuff_t *tvb _U_, packet_
 static int dissect_PositionCalculationRequest_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionCalculationRequest(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionCalculationRequest_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13310,7 +14435,7 @@ static int dissect_PositionCalculationRequest_PDU(tvbuff_t *tvb _U_, packet_info
 static int dissect_PositionCalculationResponse_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionCalculationResponse(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionCalculationResponse_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13318,7 +14443,7 @@ static int dissect_PositionCalculationResponse_PDU(tvbuff_t *tvb _U_, packet_inf
 static int dissect_PositionCalculationFailure_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionCalculationFailure(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionCalculationFailure_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13326,7 +14451,7 @@ static int dissect_PositionCalculationFailure_PDU(tvbuff_t *tvb _U_, packet_info
 static int dissect_InformationExchangeInitiationRequest_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_InformationExchangeInitiationRequest(tvb, offset, &asn1_ctx, tree, hf_pcap_InformationExchangeInitiationRequest_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13334,7 +14459,7 @@ static int dissect_InformationExchangeInitiationRequest_PDU(tvbuff_t *tvb _U_, p
 static int dissect_InformationExchangeObjectType_InfEx_Rqst_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_InformationExchangeObjectType_InfEx_Rqst(tvb, offset, &asn1_ctx, tree, hf_pcap_InformationExchangeObjectType_InfEx_Rqst_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13342,7 +14467,7 @@ static int dissect_InformationExchangeObjectType_InfEx_Rqst_PDU(tvbuff_t *tvb _U
 static int dissect_UC_ID_InfEx_Rqst_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_UC_ID_InfEx_Rqst(tvb, offset, &asn1_ctx, tree, hf_pcap_UC_ID_InfEx_Rqst_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13350,7 +14475,7 @@ static int dissect_UC_ID_InfEx_Rqst_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U
 static int dissect_InformationExchangeInitiationResponse_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_InformationExchangeInitiationResponse(tvb, offset, &asn1_ctx, tree, hf_pcap_InformationExchangeInitiationResponse_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13358,7 +14483,7 @@ static int dissect_InformationExchangeInitiationResponse_PDU(tvbuff_t *tvb _U_, 
 static int dissect_InformationExchangeObjectType_InfEx_Rsp_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_InformationExchangeObjectType_InfEx_Rsp(tvb, offset, &asn1_ctx, tree, hf_pcap_InformationExchangeObjectType_InfEx_Rsp_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13366,7 +14491,7 @@ static int dissect_InformationExchangeObjectType_InfEx_Rsp_PDU(tvbuff_t *tvb _U_
 static int dissect_InformationExchangeInitiationFailure_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_InformationExchangeInitiationFailure(tvb, offset, &asn1_ctx, tree, hf_pcap_InformationExchangeInitiationFailure_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13374,7 +14499,7 @@ static int dissect_InformationExchangeInitiationFailure_PDU(tvbuff_t *tvb _U_, p
 static int dissect_PositionInitiationRequest_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionInitiationRequest(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionInitiationRequest_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13382,7 +14507,7 @@ static int dissect_PositionInitiationRequest_PDU(tvbuff_t *tvb _U_, packet_info 
 static int dissect_PositionInitiationResponse_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionInitiationResponse(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionInitiationResponse_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13390,7 +14515,7 @@ static int dissect_PositionInitiationResponse_PDU(tvbuff_t *tvb _U_, packet_info
 static int dissect_PositionInitiationFailure_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionInitiationFailure(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionInitiationFailure_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13398,7 +14523,7 @@ static int dissect_PositionInitiationFailure_PDU(tvbuff_t *tvb _U_, packet_info 
 static int dissect_PositionActivationRequest_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionActivationRequest(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionActivationRequest_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13406,7 +14531,7 @@ static int dissect_PositionActivationRequest_PDU(tvbuff_t *tvb _U_, packet_info 
 static int dissect_PositionActivationResponse_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionActivationResponse(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionActivationResponse_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13414,7 +14539,7 @@ static int dissect_PositionActivationResponse_PDU(tvbuff_t *tvb _U_, packet_info
 static int dissect_PositionActivationFailure_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionActivationFailure(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionActivationFailure_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13422,7 +14547,7 @@ static int dissect_PositionActivationFailure_PDU(tvbuff_t *tvb _U_, packet_info 
 static int dissect_InformationReport_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_InformationReport(tvb, offset, &asn1_ctx, tree, hf_pcap_InformationReport_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13430,7 +14555,7 @@ static int dissect_InformationReport_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _
 static int dissect_InformationExchangeObjectType_InfEx_Rprt_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_InformationExchangeObjectType_InfEx_Rprt(tvb, offset, &asn1_ctx, tree, hf_pcap_InformationExchangeObjectType_InfEx_Rprt_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13438,7 +14563,7 @@ static int dissect_InformationExchangeObjectType_InfEx_Rprt_PDU(tvbuff_t *tvb _U
 static int dissect_InformationExchangeTerminationRequest_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_InformationExchangeTerminationRequest(tvb, offset, &asn1_ctx, tree, hf_pcap_InformationExchangeTerminationRequest_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13446,7 +14571,7 @@ static int dissect_InformationExchangeTerminationRequest_PDU(tvbuff_t *tvb _U_, 
 static int dissect_InformationExchangeFailureIndication_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_InformationExchangeFailureIndication(tvb, offset, &asn1_ctx, tree, hf_pcap_InformationExchangeFailureIndication_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13454,7 +14579,7 @@ static int dissect_InformationExchangeFailureIndication_PDU(tvbuff_t *tvb _U_, p
 static int dissect_ErrorIndication_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_ErrorIndication(tvb, offset, &asn1_ctx, tree, hf_pcap_ErrorIndication_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13462,7 +14587,7 @@ static int dissect_ErrorIndication_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_
 static int dissect_PositionParameterModification_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionParameterModification(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionParameterModification_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13470,7 +14595,7 @@ static int dissect_PositionParameterModification_PDU(tvbuff_t *tvb _U_, packet_i
 static int dissect_PrivateMessage_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PrivateMessage(tvb, offset, &asn1_ctx, tree, hf_pcap_PrivateMessage_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13478,7 +14603,7 @@ static int dissect_PrivateMessage_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_,
 static int dissect_Abort_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_Abort(tvb, offset, &asn1_ctx, tree, hf_pcap_Abort_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13486,7 +14611,7 @@ static int dissect_Abort_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tr
 static int dissect_PositionPeriodicReport_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionPeriodicReport(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionPeriodicReport_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13494,7 +14619,7 @@ static int dissect_PositionPeriodicReport_PDU(tvbuff_t *tvb _U_, packet_info *pi
 static int dissect_PositionPeriodicResult_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionPeriodicResult(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionPeriodicResult_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13502,7 +14627,7 @@ static int dissect_PositionPeriodicResult_PDU(tvbuff_t *tvb _U_, packet_info *pi
 static int dissect_PositionPeriodicTermination_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PositionPeriodicTermination(tvb, offset, &asn1_ctx, tree, hf_pcap_PositionPeriodicTermination_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -13510,15 +14635,12 @@ static int dissect_PositionPeriodicTermination_PDU(tvbuff_t *tvb _U_, packet_inf
 static int dissect_PCAP_PDU_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, TRUE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, true, pinfo);
   offset = dissect_pcap_PCAP_PDU(tvb, offset, &asn1_ctx, tree, hf_pcap_PCAP_PDU_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 
-
-/*--- End of included file: packet-pcap-fn.c ---*/
-#line 96 "./asn1/pcap/packet-pcap-template.c"
 
 static int dissect_ProtocolIEFieldValue(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
@@ -13571,15 +14693,6 @@ dissect_pcap(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 void
 proto_reg_handoff_pcap(void)
 {
-    static gboolean prefs_initialized = FALSE;
-    static range_t *ssn_range;
-
-    if (! prefs_initialized) {
-        sccp_ssn_table = find_dissector_table("sccp.ssn");
-        prefs_initialized = TRUE;
-
-/*--- Included file: packet-pcap-dis-tab.c ---*/
-#line 1 "./asn1/pcap/packet-pcap-dis-tab.c"
   dissector_add_uint("pcap.ies", id_Cause, create_dissector_handle(dissect_Cause_PDU, proto_pcap));
   dissector_add_uint("pcap.ies", id_CriticalityDiagnostics, create_dissector_handle(dissect_CriticalityDiagnostics_PDU, proto_pcap));
   dissector_add_uint("pcap.ies", id_GPS_UTRAN_TRU, create_dissector_handle(dissect_GPS_UTRAN_TRU_PDU, proto_pcap));
@@ -13616,6 +14729,7 @@ proto_reg_handoff_pcap(void)
   dissector_add_uint("pcap.ies", id_OTDOA_MeasuredResultsSets, create_dissector_handle(dissect_OTDOA_MeasuredResultsSets_PDU, proto_pcap));
   dissector_add_uint("pcap.ies", id_PeriodicPosCalcInfo, create_dissector_handle(dissect_PeriodicPosCalcInfo_PDU, proto_pcap));
   dissector_add_uint("pcap.ies", id_PeriodicTerminationCause, create_dissector_handle(dissect_PeriodicTerminationCause_PDU, proto_pcap));
+  dissector_add_uint("pcap.ies", id_GANSS_alm_keplerianBDSAlmanac, create_dissector_handle(dissect_GANSS_ALM_BDSKeplericanset_PDU, proto_pcap));
   dissector_add_uint("pcap.extension", id_CellId_MeasuredResultsSets, create_dissector_handle(dissect_CellId_MeasuredResultsSets_PDU, proto_pcap));
   dissector_add_uint("pcap.extension", id_OTDOA_MeasurementGroup, create_dissector_handle(dissect_OTDOA_MeasurementGroup_PDU, proto_pcap));
   dissector_add_uint("pcap.extension", id_HorizontalAccuracyCode, create_dissector_handle(dissect_HorizontalAccuracyCode_PDU, proto_pcap));
@@ -13693,6 +14807,18 @@ proto_reg_handoff_pcap(void)
   dissector_add_uint("pcap.extension", id_CellId_IRATMeasuredResultsSets, create_dissector_handle(dissect_CellId_IRATMeasuredResultsSets_PDU, proto_pcap));
   dissector_add_uint("pcap.extension", id_IMSI, create_dissector_handle(dissect_IMSI_PDU, proto_pcap));
   dissector_add_uint("pcap.extension", id_IMEI, create_dissector_handle(dissect_IMEI_PDU, proto_pcap));
+  dissector_add_uint("pcap.extension", id_BDS_Ionospheric_Grid_Model, create_dissector_handle(dissect_BDS_Ionospheric_Grid_Model_PDU, proto_pcap));
+  dissector_add_uint("pcap.extension", id_DBDS_Correction_Information, create_dissector_handle(dissect_DBDS_Correction_Information_PDU, proto_pcap));
+  dissector_add_uint("pcap.extension", id_BDSIonosphericGridModel, create_dissector_handle(dissect_BDSIonosphericGridModel_PDU, proto_pcap));
+  dissector_add_uint("pcap.extension", id_DBDSCorrection, create_dissector_handle(dissect_DBDSCorrection_PDU, proto_pcap));
+  dissector_add_uint("pcap.extension", id_Confidence, create_dissector_handle(dissect_Confidence_PDU, proto_pcap));
+  dissector_add_uint("pcap.extension", id_ExtraDopplerInfoExtension, create_dissector_handle(dissect_ExtraDopplerInfoExtension_PDU, proto_pcap));
+  dissector_add_uint("pcap.extension", id_GANSS_Confidence, create_dissector_handle(dissect_Confidence_PDU, proto_pcap));
+  dissector_add_uint("pcap.extension", id_GANSS_ExtraDopplerExtension, create_dissector_handle(dissect_GANSS_ExtraDopplerExtension_PDU, proto_pcap));
+  dissector_add_uint("pcap.extension", id_Additional_PositioningDataSet, create_dissector_handle(dissect_Additional_PositioningDataSet_PDU, proto_pcap));
+  dissector_add_uint("pcap.extension", id_Additional_PositioningMethod, create_dissector_handle(dissect_Additional_PositioningMethod_PDU, proto_pcap));
+  dissector_add_uint("pcap.extension", id_AddPos_MeasuredResults, create_dissector_handle(dissect_AddPos_MeasuredResults_PDU, proto_pcap));
+  dissector_add_uint("pcap.extension", id_AddPosSupport, create_dissector_handle(dissect_AddPosSupport_PDU, proto_pcap));
   dissector_add_uint("pcap.proc.imsg", id_PositionCalculation, create_dissector_handle(dissect_PositionCalculationRequest_PDU, proto_pcap));
   dissector_add_uint("pcap.proc.sout", id_PositionCalculation, create_dissector_handle(dissect_PositionCalculationResponse_PDU, proto_pcap));
   dissector_add_uint("pcap.proc.uout", id_PositionCalculation, create_dissector_handle(dissect_PositionCalculationFailure_PDU, proto_pcap));
@@ -13716,15 +14842,7 @@ proto_reg_handoff_pcap(void)
   dissector_add_uint("pcap.proc.imsg", id_PositionPeriodicResult, create_dissector_handle(dissect_PositionPeriodicResult_PDU, proto_pcap));
   dissector_add_uint("pcap.proc.imsg", id_PositionPeriodicTermination, create_dissector_handle(dissect_PositionPeriodicTermination_PDU, proto_pcap));
 
-
-/*--- End of included file: packet-pcap-dis-tab.c ---*/
-#line 155 "./asn1/pcap/packet-pcap-template.c"
-    } else {
-        dissector_delete_uint_range("sccp.ssn", ssn_range, pcap_handle);
-        g_free(ssn_range);
-    }
-    ssn_range = range_copy(global_ssn_range);
-    dissector_add_uint_range("sccp.ssn", ssn_range, pcap_handle);
+    dissector_add_for_decode_as_with_preference("sccp.ssn", pcap_handle);
 }
 
 /*--- proto_register_pcap -------------------------------------------*/
@@ -13734,12 +14852,13 @@ void proto_register_pcap(void) {
 
   static hf_register_info hf[] = {
 
-
-/*--- Included file: packet-pcap-hfarr.c ---*/
-#line 1 "./asn1/pcap/packet-pcap-hfarr.c"
     { &hf_pcap_AccuracyFulfilmentIndicator_PDU,
       { "AccuracyFulfilmentIndicator", "pcap.AccuracyFulfilmentIndicator",
         FT_UINT32, BASE_DEC, VALS(pcap_AccuracyFulfilmentIndicator_vals), 0,
+        NULL, HFILL }},
+    { &hf_pcap_AddPos_MeasuredResults_PDU,
+      { "AddPos-MeasuredResults", "pcap.AddPos_MeasuredResults",
+        FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
     { &hf_pcap_Cause_PDU,
       { "Cause", "pcap.Cause",
@@ -13829,9 +14948,21 @@ void proto_register_pcap(void) {
       { "GANSS-PositioningDataSet", "pcap.GANSS_PositioningDataSet",
         FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
+    { &hf_pcap_Additional_PositioningDataSet_PDU,
+      { "Additional-PositioningDataSet", "pcap.Additional_PositioningDataSet",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_ExtraDopplerInfoExtension_PDU,
+      { "ExtraDopplerInfoExtension", "pcap.ExtraDopplerInfoExtension_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
     { &hf_pcap_AzimuthAndElevationLSB_PDU,
       { "AzimuthAndElevationLSB", "pcap.AzimuthAndElevationLSB_element",
         FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_Confidence_PDU,
+      { "Confidence", "pcap.Confidence",
+        FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
     { &hf_pcap_GANSS_Additional_Ionospheric_Model_PDU,
       { "GANSS-Additional-Ionospheric-Model", "pcap.GANSS_Additional_Ionospheric_Model_element",
@@ -13848,6 +14979,10 @@ void proto_register_pcap(void) {
     { &hf_pcap_GANSS_Additional_UTC_Models_PDU,
       { "GANSS-Additional-UTC-Models", "pcap.GANSS_Additional_UTC_Models",
         FT_UINT32, BASE_DEC, VALS(pcap_GANSS_Additional_UTC_Models_vals), 0,
+        NULL, HFILL }},
+    { &hf_pcap_GANSS_ALM_BDSKeplericanset_PDU,
+      { "GANSS-ALM-BDSKeplericanset", "pcap.GANSS_ALM_BDSKeplericanset_element",
+        FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_pcap_GANSS_ALM_ECEFsbasAlmanacSet_PDU,
       { "GANSS-ALM-ECEFsbasAlmanacSet", "pcap.GANSS_ALM_ECEFsbasAlmanacSet_element",
@@ -13881,9 +15016,21 @@ void proto_register_pcap(void) {
       { "GANSS-Earth-Orientation-Parameters", "pcap.GANSS_Earth_Orientation_Parameters_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
+    { &hf_pcap_GANSS_ExtraDopplerExtension_PDU,
+      { "GANSS-ExtraDopplerExtension", "pcap.GANSS_ExtraDopplerExtension_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
     { &hf_pcap_GANSS_GenericAssistanceDataList_PDU,
       { "GANSS-GenericAssistanceDataList", "pcap.GANSS_GenericAssistanceDataList",
         FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_BDS_Ionospheric_Grid_Model_PDU,
+      { "BDS-Ionospheric-Grid-Model", "pcap.BDS_Ionospheric_Grid_Model_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_DBDS_Correction_Information_PDU,
+      { "DBDS-Correction-Information", "pcap.DBDS_Correction_Information_element",
+        FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_pcap_GanssCodePhaseAmbiguityExt_PDU,
       { "GanssCodePhaseAmbiguityExt", "pcap.GanssCodePhaseAmbiguityExt_element",
@@ -13952,6 +15099,14 @@ void proto_register_pcap(void) {
     { &hf_pcap_GANSSReq_EarthOrientPara_PDU,
       { "GANSSReq-EarthOrientPara", "pcap.GANSSReq_EarthOrientPara",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_BDSIonosphericGridModel_PDU,
+      { "BDSIonosphericGridModel", "pcap.BDSIonosphericGridModel",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_DBDSCorrection_PDU,
+      { "DBDSCorrection", "pcap.DBDSCorrection_element",
+        FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_pcap_GANSS_AddNavigationModel_Req_PDU,
       { "GANSS-AddNavigationModel-Req", "pcap.GANSS_AddNavigationModel_Req",
@@ -14045,6 +15200,10 @@ void proto_register_pcap(void) {
       { "GNSS-PositioningMethod", "pcap.GNSS_PositioningMethod",
         FT_BYTES, BASE_NONE, NULL, 0,
         NULL, HFILL }},
+    { &hf_pcap_Additional_PositioningMethod_PDU,
+      { "Additional-PositioningMethod", "pcap.Additional_PositioningMethod",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
     { &hf_pcap_PositioningPriority_PDU,
       { "PositioningPriority", "pcap.PositioningPriority",
         FT_UINT32, BASE_DEC, VALS(pcap_PositioningPriority_vals), 0,
@@ -14071,6 +15230,10 @@ void proto_register_pcap(void) {
         NULL, HFILL }},
     { &hf_pcap_NetworkAssistedGANSSSupport_PDU,
       { "NetworkAssistedGANSSSupport", "pcap.NetworkAssistedGANSSSupport",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_AddPosSupport_PDU,
+      { "AddPosSupport", "pcap.AddPosSupport",
         FT_UINT32, BASE_DEC, NULL, 0,
         NULL, HFILL }},
     { &hf_pcap_GANSS_SBAS_IDs_PDU,
@@ -14282,7 +15445,7 @@ void proto_register_pcap(void) {
         FT_UINT32, BASE_DEC, VALS(pcap_Criticality_vals), 0,
         NULL, HFILL }},
     { &hf_pcap_ie_field_value,
-      { "value", "pcap.value_element",
+      { "value", "pcap.ie_field_value_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "T_ie_field_value", HFILL }},
     { &hf_pcap_ProtocolExtensionContainer_item,
@@ -14290,7 +15453,7 @@ void proto_register_pcap(void) {
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_pcap_ext_id,
-      { "id", "pcap.id",
+      { "id", "pcap.ext_id",
         FT_UINT32, BASE_DEC|BASE_EXT_STRING, &pcap_ProtocolIE_ID_vals_ext, 0,
         "ProtocolIE_ID", HFILL }},
     { &hf_pcap_extensionValue,
@@ -14302,13 +15465,125 @@ void proto_register_pcap(void) {
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_pcap_private_id,
-      { "id", "pcap.id",
+      { "id", "pcap.private_id",
         FT_UINT32, BASE_DEC, VALS(pcap_PrivateIE_ID_vals), 0,
         "PrivateIE_ID", HFILL }},
     { &hf_pcap_private_value,
-      { "value", "pcap.value_element",
+      { "value", "pcap.private_value_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "T_private_value", HFILL }},
+    { &hf_pcap_AddPos_MeasuredResults_item,
+      { "AddPos-MeasuredResults-Element", "pcap.AddPos_MeasuredResults_Element_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_timestamp,
+      { "timestamp", "pcap.timestamp",
+        FT_STRING, BASE_NONE, NULL, 0,
+        "UTCTime", HFILL }},
+    { &hf_pcap_type,
+      { "type", "pcap.type",
+        FT_UINT32, BASE_DEC, VALS(pcap_T_type_vals), 0,
+        NULL, HFILL }},
+    { &hf_pcap_barometricPressure,
+      { "barometricPressure", "pcap.barometricPressure_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_uncompensatedBarometricPressure,
+      { "uncompensatedBarometricPressure", "pcap.uncompensatedBarometricPressure",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "BaroMeasurement", HFILL }},
+    { &hf_pcap_iE_Extensions,
+      { "iE-Extensions", "pcap.iE_Extensions",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "ProtocolExtensionContainer", HFILL }},
+    { &hf_pcap_wlan,
+      { "wlan", "pcap.wlan_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_wlanMeasurementList,
+      { "wlanMeasurementList", "pcap.wlanMeasurementList",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_bt,
+      { "bt", "pcap.bt_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_btMeasurementList,
+      { "btMeasurementList", "pcap.btMeasurementList",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_mbs,
+      { "mbs", "pcap.mbs_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_mbsMeasurementList,
+      { "mbsMeasurementList", "pcap.mbsMeasurementList",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_WLANMeasurementList_item,
+      { "WLANMeasurementList-Element", "pcap.WLANMeasurementList_Element_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_wlanBSSID,
+      { "wlanBSSID", "pcap.wlanBSSID",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "OCTET_STRING_SIZE_6", HFILL }},
+    { &hf_pcap_wlanSSID,
+      { "wlanSSID", "pcap.wlanSSID",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "OCTET_STRING_SIZE_1_32", HFILL }},
+    { &hf_pcap_wlanRSSI,
+      { "wlanRSSI", "pcap.wlanRSSI",
+        FT_INT32, BASE_DEC, NULL, 0,
+        "INTEGER_M127_128", HFILL }},
+    { &hf_pcap_wlanRTTvalue,
+      { "wlanRTTvalue", "pcap.wlanRTTvalue",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_16777215", HFILL }},
+    { &hf_pcap_wlanRTTunits,
+      { "wlanRTTunits", "pcap.wlanRTTunits",
+        FT_UINT32, BASE_DEC, VALS(pcap_T_wlanRTTunits_vals), 0,
+        NULL, HFILL }},
+    { &hf_pcap_wlanRTTaccuracy,
+      { "wlanRTTaccuracy", "pcap.wlanRTTaccuracy",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_255", HFILL }},
+    { &hf_pcap_wlanAPChannelFrequency,
+      { "wlanAPChannelFrequency", "pcap.wlanAPChannelFrequency",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_256", HFILL }},
+    { &hf_pcap_wlanServingFlag,
+      { "wlanServingFlag", "pcap.wlanServingFlag",
+        FT_BOOLEAN, BASE_NONE, NULL, 0,
+        "BOOLEAN", HFILL }},
+    { &hf_pcap_BTMeasurementList_item,
+      { "BTMeasurementList-Element", "pcap.BTMeasurementList_Element_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_btADDR,
+      { "btADDR", "pcap.btADDR",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "OCTET_STRING_SIZE_6", HFILL }},
+    { &hf_pcap_btRSSI,
+      { "btRSSI", "pcap.btRSSI",
+        FT_INT32, BASE_DEC, NULL, 0,
+        "INTEGER_M127_128", HFILL }},
+    { &hf_pcap_MBSMeasurementList_item,
+      { "MBSMeasurementList-Element", "pcap.MBSMeasurementList_Element_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_transmitterID,
+      { "transmitterID", "pcap.transmitterID",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_32767", HFILL }},
+    { &hf_pcap_codephase,
+      { "codephase", "pcap.codephase",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_2097151", HFILL }},
+    { &hf_pcap_codephaseRMS,
+      { "codephaseRMS", "pcap.codephaseRMS",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_63", HFILL }},
     { &hf_pcap_gpsAlmanacAndSatelliteHealth,
       { "gpsAlmanacAndSatelliteHealth", "pcap.gpsAlmanacAndSatelliteHealth_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -14321,10 +15596,6 @@ void proto_register_pcap(void) {
       { "lsbTOW", "pcap.lsbTOW",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_8", HFILL }},
-    { &hf_pcap_iE_Extensions,
-      { "iE-Extensions", "pcap.iE_Extensions",
-        FT_UINT32, BASE_DEC, NULL, 0,
-        "ProtocolExtensionContainer", HFILL }},
     { &hf_pcap_radioNetwork,
       { "radioNetwork", "pcap.radioNetwork",
         FT_UINT32, BASE_DEC|BASE_EXT_STRING, &pcap_CauseRadioNetwork_vals_ext, 0,
@@ -14825,6 +16096,10 @@ void proto_register_pcap(void) {
       { "PositioningMethodAndUsage", "pcap.PositioningMethodAndUsage",
         FT_BYTES, BASE_NONE, NULL, 0,
         NULL, HFILL }},
+    { &hf_pcap_Additional_PositioningDataSet_item,
+      { "Additional-PositioningMethodAndUsage", "pcap.Additional_PositioningMethodAndUsage",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
     { &hf_pcap_gps_TOW_1msec,
       { "gps-TOW-1msec", "pcap.gps_TOW_1msec",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -14872,6 +16147,10 @@ void proto_register_pcap(void) {
     { &hf_pcap_dopplerUncertainty,
       { "dopplerUncertainty", "pcap.dopplerUncertainty",
         FT_UINT32, BASE_DEC, VALS(pcap_DopplerUncertainty_vals), 0,
+        NULL, HFILL }},
+    { &hf_pcap_dopplerUncertaintyExtension,
+      { "dopplerUncertaintyExtension", "pcap.dopplerUncertaintyExtension",
+        FT_UINT32, BASE_DEC, VALS(pcap_DopplerUncertaintyExtension_vals), 0,
         NULL, HFILL }},
     { &hf_pcap_azimuth,
       { "azimuth", "pcap.azimuth",
@@ -15041,6 +16320,10 @@ void proto_register_pcap(void) {
       { "sbasClockModel", "pcap.sbasClockModel_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
+    { &hf_pcap_bDSClockModel,
+      { "bDSClockModel", "pcap.bDSClockModel_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
     { &hf_pcap_navKeplerianSet,
       { "navKeplerianSet", "pcap.navKeplerianSet_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -15057,6 +16340,10 @@ void proto_register_pcap(void) {
       { "sbasECEF", "pcap.sbasECEF_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "NavModel_SBASecef", HFILL }},
+    { &hf_pcap_bDSKeplerianSet,
+      { "bDSKeplerianSet", "pcap.bDSKeplerianSet_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        "NavModel_BDSKeplerianSet", HFILL }},
     { &hf_pcap_dataID,
       { "dataID", "pcap.dataID",
         FT_BYTES, BASE_NONE, NULL, 0,
@@ -15089,6 +16376,66 @@ void proto_register_pcap(void) {
       { "utcModel3", "pcap.utcModel3_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "UTCmodelSet3", HFILL }},
+    { &hf_pcap_utcModel4,
+      { "utcModel4", "pcap.utcModel4_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        "UTCmodelSet4", HFILL }},
+    { &hf_pcap_satellite_Information_BDS_KP_List,
+      { "satellite-Information-BDS-KP-List", "pcap.satellite_Information_BDS_KP_List",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_Satellite_Information_BDS_KP_List_item,
+      { "Satellite-Information-BDS-KP-Item", "pcap.Satellite_Information_BDS_KP_Item_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_sVID_BDS,
+      { "sVID-BDS", "pcap.sVID_BDS",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_63", HFILL }},
+    { &hf_pcap_tOA_BDS,
+      { "tOA-BDS", "pcap.tOA_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_8", HFILL }},
+    { &hf_pcap_a21_BDS,
+      { "a21-BDS", "pcap.a21_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_24", HFILL }},
+    { &hf_pcap_e_BDS,
+      { "e-BDS", "pcap.e_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_17", HFILL }},
+    { &hf_pcap_omg_lower_BDS,
+      { "omg-lower-BDS", "pcap.omg_lower_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_24", HFILL }},
+    { &hf_pcap_m0_BDS,
+      { "m0-BDS", "pcap.m0_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_24", HFILL }},
+    { &hf_pcap_omg_0_BDS,
+      { "omg-0-BDS", "pcap.omg_0_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_24", HFILL }},
+    { &hf_pcap_omg_upper_BDS,
+      { "omg-upper-BDS", "pcap.omg_upper_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_17", HFILL }},
+    { &hf_pcap_delta_i_BDS,
+      { "delta-i-BDS", "pcap.delta_i_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_16", HFILL }},
+    { &hf_pcap_a0_BDS,
+      { "a0-BDS", "pcap.a0_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_11", HFILL }},
+    { &hf_pcap_a1_BDS,
+      { "a1-BDS", "pcap.a1_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_11", HFILL }},
+    { &hf_pcap_hea_BDS,
+      { "hea-BDS", "pcap.hea_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_9", HFILL }},
     { &hf_pcap_sat_info_SBASecefList,
       { "sat-info-SBASecefList", "pcap.sat_info_SBASecefList",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -15221,6 +16568,10 @@ void proto_register_pcap(void) {
       { "dopplerUncertainty", "pcap.dopplerUncertainty",
         FT_UINT32, BASE_DEC, VALS(pcap_T_dopplerUncertainty_vals), 0,
         NULL, HFILL }},
+    { &hf_pcap_dopplerUncertaintyExtension_01,
+      { "dopplerUncertaintyExtension", "pcap.dopplerUncertaintyExtension",
+        FT_UINT32, BASE_DEC, VALS(pcap_T_dopplerUncertaintyExtension_vals), 0,
+        NULL, HFILL }},
     { &hf_pcap_GANSS_GenericAssistanceDataList_item,
       { "GANSSGenericAssistanceData", "pcap.GANSSGenericAssistanceData_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -15261,6 +16612,66 @@ void proto_register_pcap(void) {
       { "ganss-Navigation-Model", "pcap.ganss_Navigation_Model_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
+    { &hf_pcap_bDS_Reference_Time,
+      { "bDS-Reference-Time", "pcap.bDS_Reference_Time",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_bDS_Ionospheric_Grid_Information,
+      { "bDS-Ionospheric-Grid-Information", "pcap.bDS_Ionospheric_Grid_Information",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_BDS_Ionospheric_Grid_Information_item,
+      { "BDS-Ionospheric-Grid-Information item", "pcap.BDS_Ionospheric_Grid_Information_item_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_iGP_number_BDS,
+      { "iGP-number-BDS", "pcap.iGP_number_BDS",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_1_320", HFILL }},
+    { &hf_pcap_vertical_Delay_BDS,
+      { "vertical-Delay-BDS", "pcap.vertical_Delay_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_9", HFILL }},
+    { &hf_pcap_gIVEI_BDS,
+      { "gIVEI-BDS", "pcap.gIVEI_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_4", HFILL }},
+    { &hf_pcap_dBDS_Information,
+      { "dBDS-Information", "pcap.dBDS_Information",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_DBDS_Information_item,
+      { "DBDS-Information item", "pcap.DBDS_Information_item_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_dBDS_Signal_ID,
+      { "dBDS-Signal-ID", "pcap.dBDS_Signal_ID_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        "GANSSID", HFILL }},
+    { &hf_pcap_dGANSS_Signal_Information,
+      { "dGANSS-Signal-Information", "pcap.dGANSS_Signal_Information",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_DGANSS_Signal_Information_item,
+      { "DGANSS-Signal-Information item", "pcap.DGANSS_Signal_Information_item_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_sat_ID_BDS,
+      { "sat-ID-BDS", "pcap.sat_ID_BDS",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_63", HFILL }},
+    { &hf_pcap_uDREI_BDS,
+      { "uDREI-BDS", "pcap.uDREI_BDS",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_15", HFILL }},
+    { &hf_pcap_rURAI_BDS,
+      { "rURAI-BDS", "pcap.rURAI_BDS",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_15", HFILL }},
+    { &hf_pcap_delta_t_BDS,
+      { "delta-t-BDS", "pcap.delta_t_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_13", HFILL }},
     { &hf_pcap_GANSS_GenericMeasurementInfo_item,
       { "GANSS-GenericMeasurementInfo item", "pcap.GANSS_GenericMeasurementInfo_item_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -15296,15 +16707,15 @@ void proto_register_pcap(void) {
     { &hf_pcap_alpha_zero_ionos,
       { "alpha-zero-ionos", "pcap.alpha_zero_ionos",
         FT_BYTES, BASE_NONE, NULL, 0,
-        "BIT_STRING_SIZE_12", HFILL }},
+        "BIT_STRING_SIZE_11", HFILL }},
     { &hf_pcap_alpha_one_ionos,
       { "alpha-one-ionos", "pcap.alpha_one_ionos",
         FT_BYTES, BASE_NONE, NULL, 0,
-        "BIT_STRING_SIZE_12", HFILL }},
+        "BIT_STRING_SIZE_11", HFILL }},
     { &hf_pcap_alpha_two_ionos,
       { "alpha-two-ionos", "pcap.alpha_two_ionos",
         FT_BYTES, BASE_NONE, NULL, 0,
-        "BIT_STRING_SIZE_12", HFILL }},
+        "BIT_STRING_SIZE_14", HFILL }},
     { &hf_pcap_gANSS_IonosphereRegionalStormFlags,
       { "gANSS-IonosphereRegionalStormFlags", "pcap.gANSS_IonosphereRegionalStormFlags_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -15329,10 +16740,14 @@ void proto_register_pcap(void) {
       { "storm-flag-five", "pcap.storm_flag_five",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
+    { &hf_pcap_t_oa_01,
+      { "t-oa", "pcap.t_oa",
+        FT_UINT32, BASE_DEC, NULL, 0,
+        "INTEGER_0_1023", HFILL }},
     { &hf_pcap_iod_a,
       { "iod-a", "pcap.iod_a",
         FT_UINT32, BASE_DEC, NULL, 0,
-        "INTEGER_0_3", HFILL }},
+        "INTEGER_0_15", HFILL }},
     { &hf_pcap_gANSS_SatelliteInformationKP,
       { "gANSS-SatelliteInformationKP", "pcap.gANSS_SatelliteInformationKP",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -15532,19 +16947,23 @@ void proto_register_pcap(void) {
     { &hf_pcap_a_i2,
       { "a-i2", "pcap.a_i2",
         FT_BYTES, BASE_NONE, NULL, 0,
-        "BIT_STRING_SIZE_12", HFILL }},
+        "BIT_STRING_SIZE_6", HFILL }},
     { &hf_pcap_a_i1,
       { "a-i1", "pcap.a_i1",
         FT_BYTES, BASE_NONE, NULL, 0,
-        "BIT_STRING_SIZE_18", HFILL }},
+        "BIT_STRING_SIZE_21", HFILL }},
     { &hf_pcap_a_i0,
       { "a-i0", "pcap.a_i0",
         FT_BYTES, BASE_NONE, NULL, 0,
-        "BIT_STRING_SIZE_28", HFILL }},
+        "BIT_STRING_SIZE_31", HFILL }},
     { &hf_pcap_t_gd,
       { "t-gd", "pcap.t_gd",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_10", HFILL }},
+    { &hf_pcap_sisa,
+      { "sisa", "pcap.sisa",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_8", HFILL }},
     { &hf_pcap_model_id,
       { "model-id", "pcap.model_id",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -15597,14 +17016,18 @@ void proto_register_pcap(void) {
       { "ganss-omegadot-alm", "pcap.ganss_omegadot_alm",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_11", HFILL }},
-    { &hf_pcap_ganss_svhealth_alm,
-      { "ganss-svhealth-alm", "pcap.ganss_svhealth_alm",
+    { &hf_pcap_ganss_svStatusINAV_alm,
+      { "ganss-svStatusINAV-alm", "pcap.ganss_svStatusINAV_alm",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_4", HFILL }},
+    { &hf_pcap_ganss_svStatusFNAV_alm,
+      { "ganss-svStatusFNAV-alm", "pcap.ganss_svStatusFNAV_alm",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_2", HFILL }},
     { &hf_pcap_ganss_delta_a_sqrt_alm,
       { "ganss-delta-a-sqrt-alm", "pcap.ganss_delta_a_sqrt_alm",
         FT_BYTES, BASE_NONE, NULL, 0,
-        "BIT_STRING_SIZE_17", HFILL }},
+        "BIT_STRING_SIZE_13", HFILL }},
     { &hf_pcap_ganss_omegazero_alm,
       { "ganss-omegazero-alm", "pcap.ganss_omegazero_alm",
         FT_BYTES, BASE_NONE, NULL, 0,
@@ -15620,11 +17043,11 @@ void proto_register_pcap(void) {
     { &hf_pcap_ganss_af_zero_alm,
       { "ganss-af-zero-alm", "pcap.ganss_af_zero_alm",
         FT_BYTES, BASE_NONE, NULL, 0,
-        "BIT_STRING_SIZE_14", HFILL }},
+        "BIT_STRING_SIZE_16", HFILL }},
     { &hf_pcap_ganss_af_one_alm,
       { "ganss-af-one-alm", "pcap.ganss_af_one_alm",
         FT_BYTES, BASE_NONE, NULL, 0,
-        "BIT_STRING_SIZE_11", HFILL }},
+        "BIT_STRING_SIZE_13", HFILL }},
     { &hf_pcap_GANSS_SAT_Info_Almanac_GLOkpList_item,
       { "GANSS-SAT-Info-Almanac-GLOkp", "pcap.GANSS_SAT_Info_Almanac_GLOkp_element",
         FT_NONE, BASE_NONE, NULL, 0,
@@ -15872,7 +17295,7 @@ void proto_register_pcap(void) {
     { &hf_pcap_svHealth_01,
       { "svHealth", "pcap.svHealth",
         FT_BYTES, BASE_NONE, NULL, 0,
-        "BIT_STRING_SIZE_5", HFILL }},
+        "BIT_STRING_SIZE_9", HFILL }},
     { &hf_pcap_iod_01,
       { "iod", "pcap.iod",
         FT_BYTES, BASE_NONE, NULL, 0,
@@ -16221,6 +17644,78 @@ void proto_register_pcap(void) {
       { "sbasZgDotDot", "pcap.sbasZgDotDot",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_10", HFILL }},
+    { &hf_pcap_uRAIndex_BDS,
+      { "uRAIndex-BDS", "pcap.uRAIndex_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_4", HFILL }},
+    { &hf_pcap_tOA_BDS_01,
+      { "tOA-BDS", "pcap.tOA_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_17", HFILL }},
+    { &hf_pcap_a1_2_BDS,
+      { "a1-2-BDS", "pcap.a1_2_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_32", HFILL }},
+    { &hf_pcap_e_BDS_01,
+      { "e-BDS", "pcap.e_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_32", HFILL }},
+    { &hf_pcap_oMG_BDS,
+      { "oMG-BDS", "pcap.oMG_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_32", HFILL }},
+    { &hf_pcap_dLTn_BDS,
+      { "dLTn-BDS", "pcap.dLTn_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_16", HFILL }},
+    { &hf_pcap_m0_BDS_01,
+      { "m0-BDS", "pcap.m0_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_32", HFILL }},
+    { &hf_pcap_oMG0_BDS,
+      { "oMG0-BDS", "pcap.oMG0_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_32", HFILL }},
+    { &hf_pcap_oMGdot_BDS,
+      { "oMGdot-BDS", "pcap.oMGdot_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_24", HFILL }},
+    { &hf_pcap_i0_BDS,
+      { "i0-BDS", "pcap.i0_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_32", HFILL }},
+    { &hf_pcap_iDOT_BDS,
+      { "iDOT-BDS", "pcap.iDOT_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_14", HFILL }},
+    { &hf_pcap_cuc_BDS,
+      { "cuc-BDS", "pcap.cuc_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_18", HFILL }},
+    { &hf_pcap_cus_BDS,
+      { "cus-BDS", "pcap.cus_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_18", HFILL }},
+    { &hf_pcap_crc_BDS,
+      { "crc-BDS", "pcap.crc_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_18", HFILL }},
+    { &hf_pcap_crs_BDS,
+      { "crs-BDS", "pcap.crs_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_18", HFILL }},
+    { &hf_pcap_cic_BDS,
+      { "cic-BDS", "pcap.cic_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_18", HFILL }},
+    { &hf_pcap_cis_BDS,
+      { "cis-BDS", "pcap.cis_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_18", HFILL }},
+    { &hf_pcap_aODE_BDS,
+      { "aODE-BDS", "pcap.aODE_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_5", HFILL }},
     { &hf_pcap_sbasAgfo,
       { "sbasAgfo", "pcap.sbasAgfo",
         FT_BYTES, BASE_NONE, NULL, 0,
@@ -16229,6 +17724,30 @@ void proto_register_pcap(void) {
       { "sbasAgf1", "pcap.sbasAgf1",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_8", HFILL }},
+    { &hf_pcap_toc_BDS,
+      { "toc-BDS", "pcap.toc_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_17", HFILL }},
+    { &hf_pcap_a0_BDS_01,
+      { "a0-BDS", "pcap.a0_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_24", HFILL }},
+    { &hf_pcap_a1_BDS_01,
+      { "a1-BDS", "pcap.a1_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_22", HFILL }},
+    { &hf_pcap_a2_BDS,
+      { "a2-BDS", "pcap.a2_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_11", HFILL }},
+    { &hf_pcap_tGD1_BDS,
+      { "tGD1-BDS", "pcap.tGD1_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_10", HFILL }},
+    { &hf_pcap_aODC_BDS,
+      { "aODC-BDS", "pcap.aODC_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_5", HFILL }},
     { &hf_pcap_utcA0,
       { "utcA0", "pcap.utcA0",
         FT_BYTES, BASE_NONE, NULL, 0,
@@ -16305,6 +17824,30 @@ void proto_register_pcap(void) {
       { "utcStandardID", "pcap.utcStandardID",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_3", HFILL }},
+    { &hf_pcap_utca0_BDS,
+      { "utca0-BDS", "pcap.utca0_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_32", HFILL }},
+    { &hf_pcap_utca1_BDS,
+      { "utca1-BDS", "pcap.utca1_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_24", HFILL }},
+    { &hf_pcap_utcDeltatLS_BDS,
+      { "utcDeltatLS-BDS", "pcap.utcDeltatLS_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_8", HFILL }},
+    { &hf_pcap_utcWNlsf_BDS,
+      { "utcWNlsf-BDS", "pcap.utcWNlsf_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_8", HFILL }},
+    { &hf_pcap_utcDN_BDS,
+      { "utcDN-BDS", "pcap.utcDN_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_8", HFILL }},
+    { &hf_pcap_utcDeltaTlsf_BDS,
+      { "utcDeltaTlsf-BDS", "pcap.utcDeltaTlsf_BDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_8", HFILL }},
     { &hf_pcap_utran_GANSSTimingOfCellFrames,
       { "utran-GANSSTimingOfCellFrames", "pcap.utran_GANSSTimingOfCellFrames",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -16341,8 +17884,8 @@ void proto_register_pcap(void) {
       { "e", "pcap.e",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_16", HFILL }},
-    { &hf_pcap_t_oa_01,
-      { "t-oa", "pcap.t_oa",
+    { &hf_pcap_almanacSatInfo_t_oa,
+      { "t-oa", "pcap.almanacSatInfo.t-oa",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_8", HFILL }},
     { &hf_pcap_deltaI,
@@ -16773,6 +18316,10 @@ void proto_register_pcap(void) {
       { "ganssNavigationModelAdditionalData", "pcap.ganssNavigationModelAdditionalData_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "NavigationModelGANSS", HFILL }},
+    { &hf_pcap_dGANSSSignalBDS,
+      { "dGANSSSignalBDS", "pcap.dGANSSSignalBDS",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_8", HFILL }},
     { &hf_pcap_orbitModelID,
       { "orbitModelID", "pcap.orbitModelID",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -16793,8 +18340,8 @@ void proto_register_pcap(void) {
       { "dataBitAssistancelist", "pcap.dataBitAssistancelist_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "ReqDataBitAssistanceList", HFILL }},
-    { &hf_pcap_ganssSignalID_01,
-      { "ganssSignalID", "pcap.ganssSignalID",
+    { &hf_pcap_reqDataBitAssistanceList_ganssSignalID,
+      { "ganssSignalID", "pcap.reqDataBitAssistanceList.ganssSignalID",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_8", HFILL }},
     { &hf_pcap_ganssDataBitInterval,
@@ -16809,7 +18356,7 @@ void proto_register_pcap(void) {
       { "ganssSatelliteInfo item", "pcap.ganssSatelliteInfo_item",
         FT_UINT32, BASE_DEC, NULL, 0,
         "INTEGER_0_63", HFILL }},
-    { &hf_pcap_type,
+    { &hf_pcap_type_01,
       { "type", "pcap.type",
         FT_UINT32, BASE_DEC, VALS(pcap_InformationReportCharacteristicsType_vals), 0,
         "InformationReportCharacteristicsType", HFILL }},
@@ -16965,6 +18512,14 @@ void proto_register_pcap(void) {
       { "ganss-SBAS-ID", "pcap.ganss_SBAS_ID",
         FT_UINT32, BASE_DEC, VALS(pcap_GANSS_SBAS_ID_vals), 0,
         NULL, HFILL }},
+    { &hf_pcap_dBDS_Corrections,
+      { "dBDS-Corrections", "pcap.dBDS_Corrections_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_bDS_Ionospheric_Grid_Model_Request,
+      { "bDS-Ionospheric-Grid-Model-Request", "pcap.bDS_Ionospheric_Grid_Model_Request",
+        FT_UINT32, BASE_DEC, VALS(pcap_BDS_Ionospheric_Grid_Model_Request_vals), 0,
+        NULL, HFILL }},
     { &hf_pcap_ganssWeek,
       { "ganssWeek", "pcap.ganssWeek",
         FT_UINT32, BASE_DEC, NULL, 0,
@@ -16985,6 +18540,10 @@ void proto_register_pcap(void) {
       { "AddSatelliteRelatedDataGANSS", "pcap.AddSatelliteRelatedDataGANSS_element",
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
+    { &hf_pcap_dGANSS_Signal,
+      { "dGANSS-Signal", "pcap.dGANSS_Signal",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        "BIT_STRING_SIZE_8", HFILL }},
     { &hf_pcap_ganssTimeModelGnssGnssExt,
       { "ganssTimeModelGnssGnssExt", "pcap.ganssTimeModelGnssGnssExt",
         FT_BYTES, BASE_NONE, NULL, 0,
@@ -17297,8 +18856,8 @@ void proto_register_pcap(void) {
       { "ganssMode", "pcap.ganssMode",
         FT_UINT32, BASE_DEC, VALS(pcap_T_ganssMode_vals), 0,
         NULL, HFILL }},
-    { &hf_pcap_ganssSignalID_02,
-      { "ganssSignalID", "pcap.ganssSignalID_element",
+    { &hf_pcap_networkAssistedGANSSSupport_item_ganssSignalID,
+      { "ganssSignalID", "pcap.networkAssistedGANSSSupport.item.ganssSignalID_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "GANSS_SignalID", HFILL }},
     { &hf_pcap_supportGANSSTimingOfCellFrame,
@@ -17309,6 +18868,18 @@ void proto_register_pcap(void) {
       { "supportGANSSCarrierPhaseMeasurement", "pcap.supportGANSSCarrierPhaseMeasurement",
         FT_BOOLEAN, BASE_NONE, NULL, 0,
         "BOOLEAN", HFILL }},
+    { &hf_pcap_AddPosSupport_item,
+      { "AddPosSupport-Element", "pcap.AddPosSupport_Element_element",
+        FT_NONE, BASE_NONE, NULL, 0,
+        NULL, HFILL }},
+    { &hf_pcap_addPosID,
+      { "addPosID", "pcap.addPosID",
+        FT_UINT32, BASE_DEC, VALS(pcap_T_addPosID_vals), 0,
+        NULL, HFILL }},
+    { &hf_pcap_addPosMode,
+      { "addPosMode", "pcap.addPosMode",
+        FT_UINT32, BASE_DEC, VALS(pcap_T_addPosMode_vals), 0,
+        NULL, HFILL }},
     { &hf_pcap_ganss_sbas_ids,
       { "ganss-sbas-ids", "pcap.ganss_sbas_ids",
         FT_BYTES, BASE_NONE, NULL, 0,
@@ -17353,8 +18924,8 @@ void proto_register_pcap(void) {
       { "ganssTimingOfCellWanted", "pcap.ganssTimingOfCellWanted",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_8", HFILL }},
-    { &hf_pcap_additionalAssistanceDataRequest_01,
-      { "additionalAssistanceDataRequest", "pcap.additionalAssistanceDataRequest",
+    { &hf_pcap_gANSS_PositioningInstructions_additionalAssistanceDataRequest,
+      { "additionalAssistanceDataRequest", "pcap.gANSS-PositioningInstructions.additionalAssistanceDataRequest",
         FT_BYTES, BASE_NONE, NULL, 0,
         "BIT_STRING_SIZE_8", HFILL }},
     { &hf_pcap_uE_Positioning_OTDOA_AssistanceData,
@@ -18170,144 +19741,138 @@ void proto_register_pcap(void) {
         FT_NONE, BASE_NONE, NULL, 0,
         NULL, HFILL }},
     { &hf_pcap_initiatingMessagevalue,
-      { "value", "pcap.value_element",
+      { "value", "pcap.initiatingMessagevalue_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "InitiatingMessage_value", HFILL }},
     { &hf_pcap_successfulOutcome_value,
-      { "value", "pcap.value_element",
+      { "value", "pcap.successfulOutcome_value_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "SuccessfulOutcome_value", HFILL }},
     { &hf_pcap_unsuccessfulOutcome_value,
-      { "value", "pcap.value_element",
+      { "value", "pcap.unsuccessfulOutcome_value_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "UnsuccessfulOutcome_value", HFILL }},
     { &hf_pcap_outcome_value,
-      { "value", "pcap.value_element",
+      { "value", "pcap.outcome_value_element",
         FT_NONE, BASE_NONE, NULL, 0,
         "Outcome_value", HFILL }},
     { &hf_pcap_AvailableSignatures_signature15,
-      { "signature15", "pcap.signature15",
+      { "signature15", "pcap.AvailableSignatures.signature15",
         FT_BOOLEAN, 8, NULL, 0x80,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature14,
-      { "signature14", "pcap.signature14",
+      { "signature14", "pcap.AvailableSignatures.signature14",
         FT_BOOLEAN, 8, NULL, 0x40,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature13,
-      { "signature13", "pcap.signature13",
+      { "signature13", "pcap.AvailableSignatures.signature13",
         FT_BOOLEAN, 8, NULL, 0x20,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature12,
-      { "signature12", "pcap.signature12",
+      { "signature12", "pcap.AvailableSignatures.signature12",
         FT_BOOLEAN, 8, NULL, 0x10,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature11,
-      { "signature11", "pcap.signature11",
+      { "signature11", "pcap.AvailableSignatures.signature11",
         FT_BOOLEAN, 8, NULL, 0x08,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature10,
-      { "signature10", "pcap.signature10",
+      { "signature10", "pcap.AvailableSignatures.signature10",
         FT_BOOLEAN, 8, NULL, 0x04,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature9,
-      { "signature9", "pcap.signature9",
+      { "signature9", "pcap.AvailableSignatures.signature9",
         FT_BOOLEAN, 8, NULL, 0x02,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature8,
-      { "signature8", "pcap.signature8",
+      { "signature8", "pcap.AvailableSignatures.signature8",
         FT_BOOLEAN, 8, NULL, 0x01,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature7,
-      { "signature7", "pcap.signature7",
+      { "signature7", "pcap.AvailableSignatures.signature7",
         FT_BOOLEAN, 8, NULL, 0x80,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature6,
-      { "signature6", "pcap.signature6",
+      { "signature6", "pcap.AvailableSignatures.signature6",
         FT_BOOLEAN, 8, NULL, 0x40,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature5,
-      { "signature5", "pcap.signature5",
+      { "signature5", "pcap.AvailableSignatures.signature5",
         FT_BOOLEAN, 8, NULL, 0x20,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature4,
-      { "signature4", "pcap.signature4",
+      { "signature4", "pcap.AvailableSignatures.signature4",
         FT_BOOLEAN, 8, NULL, 0x10,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature3,
-      { "signature3", "pcap.signature3",
+      { "signature3", "pcap.AvailableSignatures.signature3",
         FT_BOOLEAN, 8, NULL, 0x08,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature2,
-      { "signature2", "pcap.signature2",
+      { "signature2", "pcap.AvailableSignatures.signature2",
         FT_BOOLEAN, 8, NULL, 0x04,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature1,
-      { "signature1", "pcap.signature1",
+      { "signature1", "pcap.AvailableSignatures.signature1",
         FT_BOOLEAN, 8, NULL, 0x02,
         NULL, HFILL }},
     { &hf_pcap_AvailableSignatures_signature0,
-      { "signature0", "pcap.signature0",
+      { "signature0", "pcap.AvailableSignatures.signature0",
         FT_BOOLEAN, 8, NULL, 0x01,
         NULL, HFILL }},
     { &hf_pcap_AvailableSubChannelNumbers_subCh11,
-      { "subCh11", "pcap.subCh11",
+      { "subCh11", "pcap.AvailableSubChannelNumbers.subCh11",
         FT_BOOLEAN, 8, NULL, 0x80,
         NULL, HFILL }},
     { &hf_pcap_AvailableSubChannelNumbers_subCh10,
-      { "subCh10", "pcap.subCh10",
+      { "subCh10", "pcap.AvailableSubChannelNumbers.subCh10",
         FT_BOOLEAN, 8, NULL, 0x40,
         NULL, HFILL }},
     { &hf_pcap_AvailableSubChannelNumbers_subCh9,
-      { "subCh9", "pcap.subCh9",
+      { "subCh9", "pcap.AvailableSubChannelNumbers.subCh9",
         FT_BOOLEAN, 8, NULL, 0x20,
         NULL, HFILL }},
     { &hf_pcap_AvailableSubChannelNumbers_subCh8,
-      { "subCh8", "pcap.subCh8",
+      { "subCh8", "pcap.AvailableSubChannelNumbers.subCh8",
         FT_BOOLEAN, 8, NULL, 0x10,
         NULL, HFILL }},
     { &hf_pcap_AvailableSubChannelNumbers_subCh7,
-      { "subCh7", "pcap.subCh7",
+      { "subCh7", "pcap.AvailableSubChannelNumbers.subCh7",
         FT_BOOLEAN, 8, NULL, 0x08,
         NULL, HFILL }},
     { &hf_pcap_AvailableSubChannelNumbers_subCh6,
-      { "subCh6", "pcap.subCh6",
+      { "subCh6", "pcap.AvailableSubChannelNumbers.subCh6",
         FT_BOOLEAN, 8, NULL, 0x04,
         NULL, HFILL }},
     { &hf_pcap_AvailableSubChannelNumbers_subCh5,
-      { "subCh5", "pcap.subCh5",
+      { "subCh5", "pcap.AvailableSubChannelNumbers.subCh5",
         FT_BOOLEAN, 8, NULL, 0x02,
         NULL, HFILL }},
     { &hf_pcap_AvailableSubChannelNumbers_subCh4,
-      { "subCh4", "pcap.subCh4",
+      { "subCh4", "pcap.AvailableSubChannelNumbers.subCh4",
         FT_BOOLEAN, 8, NULL, 0x01,
         NULL, HFILL }},
     { &hf_pcap_AvailableSubChannelNumbers_subCh3,
-      { "subCh3", "pcap.subCh3",
+      { "subCh3", "pcap.AvailableSubChannelNumbers.subCh3",
         FT_BOOLEAN, 8, NULL, 0x80,
         NULL, HFILL }},
     { &hf_pcap_AvailableSubChannelNumbers_subCh2,
-      { "subCh2", "pcap.subCh2",
+      { "subCh2", "pcap.AvailableSubChannelNumbers.subCh2",
         FT_BOOLEAN, 8, NULL, 0x40,
         NULL, HFILL }},
     { &hf_pcap_AvailableSubChannelNumbers_subCh1,
-      { "subCh1", "pcap.subCh1",
+      { "subCh1", "pcap.AvailableSubChannelNumbers.subCh1",
         FT_BOOLEAN, 8, NULL, 0x20,
         NULL, HFILL }},
     { &hf_pcap_AvailableSubChannelNumbers_subCh0,
-      { "subCh0", "pcap.subCh0",
+      { "subCh0", "pcap.AvailableSubChannelNumbers.subCh0",
         FT_BOOLEAN, 8, NULL, 0x10,
         NULL, HFILL }},
-
-/*--- End of included file: packet-pcap-hfarr.c ---*/
-#line 171 "./asn1/pcap/packet-pcap-template.c"
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
 		  &ett_pcap,
-
-/*--- Included file: packet-pcap-ettarr.c ---*/
-#line 1 "./asn1/pcap/packet-pcap-ettarr.c"
     &ett_pcap_PrivateIE_ID,
     &ett_pcap_TransactionID,
     &ett_pcap_ProtocolIE_Container,
@@ -18316,6 +19881,19 @@ void proto_register_pcap(void) {
     &ett_pcap_ProtocolExtensionField,
     &ett_pcap_PrivateIE_Container,
     &ett_pcap_PrivateIE_Field,
+    &ett_pcap_AddPos_MeasuredResults,
+    &ett_pcap_AddPos_MeasuredResults_Element,
+    &ett_pcap_T_type,
+    &ett_pcap_T_barometricPressure,
+    &ett_pcap_T_wlan,
+    &ett_pcap_T_bt,
+    &ett_pcap_T_mbs,
+    &ett_pcap_WLANMeasurementList,
+    &ett_pcap_WLANMeasurementList_Element,
+    &ett_pcap_BTMeasurementList,
+    &ett_pcap_BTMeasurementList_Element,
+    &ett_pcap_MBSMeasurementList,
+    &ett_pcap_MBSMeasurementList_Element,
     &ett_pcap_AlmanacAndSatelliteHealthSIB,
     &ett_pcap_Cause,
     &ett_pcap_CellId_MeasuredResultsSets,
@@ -18370,10 +19948,12 @@ void proto_register_pcap(void) {
     &ett_pcap_PositionData,
     &ett_pcap_GANSS_PositioningDataSet,
     &ett_pcap_PositioningDataSet,
+    &ett_pcap_Additional_PositioningDataSet,
     &ett_pcap_GPS_AcquisitionAssistance,
     &ett_pcap_AcquisitionSatInfoList,
     &ett_pcap_AcquisitionSatInfo,
     &ett_pcap_ExtraDopplerInfo,
+    &ett_pcap_ExtraDopplerInfoExtension,
     &ett_pcap_AzimuthAndElevation,
     &ett_pcap_AzimuthAndElevationLSB,
     &ett_pcap_AuxInfoGANSS_ID1,
@@ -18393,6 +19973,9 @@ void proto_register_pcap(void) {
     &ett_pcap_GANSS_Additional_Navigation_Models,
     &ett_pcap_GANSS_Additional_Time_Models,
     &ett_pcap_GANSS_Additional_UTC_Models,
+    &ett_pcap_GANSS_ALM_BDSKeplericanset,
+    &ett_pcap_Satellite_Information_BDS_KP_List,
+    &ett_pcap_Satellite_Information_BDS_KP_Item,
     &ett_pcap_GANSS_ALM_ECEFsbasAlmanacSet,
     &ett_pcap_GANSS_ALM_GlonassAlmanacSet,
     &ett_pcap_GANSS_ALM_MidiAlmanacSet,
@@ -18411,8 +19994,17 @@ void proto_register_pcap(void) {
     &ett_pcap_GANSS_DataBitAssistanceSgnItem,
     &ett_pcap_GANSS_Earth_Orientation_Parameters,
     &ett_pcap_GANSS_ExtraDoppler,
+    &ett_pcap_GANSS_ExtraDopplerExtension,
     &ett_pcap_GANSS_GenericAssistanceDataList,
     &ett_pcap_GANSSGenericAssistanceData,
+    &ett_pcap_BDS_Ionospheric_Grid_Model,
+    &ett_pcap_BDS_Ionospheric_Grid_Information,
+    &ett_pcap_BDS_Ionospheric_Grid_Information_item,
+    &ett_pcap_DBDS_Correction_Information,
+    &ett_pcap_DBDS_Information,
+    &ett_pcap_DBDS_Information_item,
+    &ett_pcap_DGANSS_Signal_Information,
+    &ett_pcap_DGANSS_Signal_Information_item,
     &ett_pcap_GANSS_GenericMeasurementInfo,
     &ett_pcap_GANSS_GenericMeasurementInfo_item,
     &ett_pcap_GANSSID,
@@ -18466,10 +20058,13 @@ void proto_register_pcap(void) {
     &ett_pcap_NavModel_GLONASSecef,
     &ett_pcap_NavModel_NAVKeplerianSet,
     &ett_pcap_NavModel_SBASecef,
+    &ett_pcap_NavModel_BDSKeplerianSet,
     &ett_pcap_SBASclockModel,
+    &ett_pcap_BDSClockModel,
     &ett_pcap_UTCmodelSet1,
     &ett_pcap_UTCmodelSet2,
     &ett_pcap_UTCmodelSet3,
+    &ett_pcap_UTCmodelSet4,
     &ett_pcap_UTRAN_GANSSReferenceTimeDL,
     &ett_pcap_UTRAN_GANSSReferenceTimeUL,
     &ett_pcap_GPS_AlmanacAndSatelliteHealth,
@@ -18497,6 +20092,7 @@ void proto_register_pcap(void) {
     &ett_pcap_GANSSReq_AddIonosphericModel,
     &ett_pcap_GanssRequestedGenericAssistanceDataList,
     &ett_pcap_GanssReqGenericData,
+    &ett_pcap_DBDSCorrection,
     &ett_pcap_GANSS_AddADchoices,
     &ett_pcap_GanssDataBits,
     &ett_pcap_ReqDataBitAssistanceList,
@@ -18516,6 +20112,7 @@ void proto_register_pcap(void) {
     &ett_pcap_AddNavigationModelsGANSS,
     &ett_pcap_AddSatelliteRelatedDataListGANSS,
     &ett_pcap_AddSatelliteRelatedDataGANSS,
+    &ett_pcap_DBDS_Corrections,
     &ett_pcap_GANSS_AddUtcModelsReq,
     &ett_pcap_GANSS_AuxInfoReq,
     &ett_pcap_Ganss_utcModelReq,
@@ -18565,6 +20162,8 @@ void proto_register_pcap(void) {
     &ett_pcap_UE_PositioningCapability,
     &ett_pcap_NetworkAssistedGANSSSupport,
     &ett_pcap_NetworkAssistedGANSSSupport_item,
+    &ett_pcap_AddPosSupport,
+    &ett_pcap_AddPosSupport_Element,
     &ett_pcap_GANSS_SBAS_IDs,
     &ett_pcap_GANSS_Signal_IDs,
     &ett_pcap_UTDOAPositioning,
@@ -18701,12 +20300,9 @@ void proto_register_pcap(void) {
     &ett_pcap_SuccessfulOutcome,
     &ett_pcap_UnsuccessfulOutcome,
     &ett_pcap_Outcome,
-
-/*--- End of included file: packet-pcap-ettarr.c ---*/
-#line 177 "./asn1/pcap/packet-pcap-template.c"
   };
 
-  module_t *pcap_module;
+  /* module_t *pcap_module; */
 
   /* Register protocol */
   proto_pcap = proto_register_protocol(PNAME, PSNAME, PFNAME);
@@ -18714,7 +20310,7 @@ void proto_register_pcap(void) {
   proto_register_field_array(proto_pcap, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
 
-  pcap_module = prefs_register_protocol(proto_pcap, proto_reg_handoff_pcap);
+  /* pcap_module = prefs_register_protocol(proto_pcap, NULL); */
 
   /* Register dissector */
   pcap_handle = register_dissector("pcap", dissect_pcap, proto_pcap);
@@ -18730,13 +20326,6 @@ void proto_register_pcap(void) {
   pcap_proc_out_dissector_table = register_dissector_table("pcap.proc.out", "PCAP-ELEMENTARY-PROCEDURE Outcome", proto_pcap, FT_UINT32, BASE_DEC);
 
 
-  /* Preferences */
-  /* Set default SSNs */
-  range_convert_str(&global_ssn_range, "", MAX_SSN);
-
-  prefs_register_range_preference(pcap_module, "ssn", "SCCP SSNs",
-                                  "SCCP (and SUA) SSNs to decode as PCAP",
-                                  &global_ssn_range, MAX_SSN);
 }
 
 

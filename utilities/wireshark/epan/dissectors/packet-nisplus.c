@@ -5,24 +5,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
-
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-rpc.h"
 #include "packet-nisplus.h"
 
@@ -31,175 +20,175 @@ void proto_reg_handoff_nis(void);
 void proto_register_niscb(void);
 void proto_reg_handoff_niscb(void);
 
-static int proto_nisplus = -1;
-static int hf_nisplus_procedure_v3 = -1;
-static int hf_nisplus_object = -1;
-static int hf_nisplus_oid = -1;
-static int hf_nisplus_object_ctime = -1;
-static int hf_nisplus_object_mtime = -1;
-static int hf_nisplus_object_name = -1;
-static int hf_nisplus_object_owner = -1;
-static int hf_nisplus_object_group = -1;
-static int hf_nisplus_object_domain = -1;
-static int hf_nisplus_object_ttl = -1;
-static int hf_nisplus_object_type = -1;
-static int hf_nisplus_object_private = -1;
-static int hf_nisplus_directory = -1;
-static int hf_nisplus_directory_name = -1;
-static int hf_nisplus_directory_type = -1;
-static int hf_nisplus_directory_ttl = -1;
-static int hf_nisplus_directory_mask = -1;
-static int hf_nisplus_directory_mask_list = -1;
-static int hf_nisplus_access_mask = -1;
-static int hf_nisplus_mask_world_read = -1;
-static int hf_nisplus_mask_world_modify = -1;
-static int hf_nisplus_mask_world_create = -1;
-static int hf_nisplus_mask_world_destroy = -1;
-static int hf_nisplus_mask_group_read = -1;
-static int hf_nisplus_mask_group_modify = -1;
-static int hf_nisplus_mask_group_create = -1;
-static int hf_nisplus_mask_group_destroy = -1;
-static int hf_nisplus_mask_owner_read = -1;
-static int hf_nisplus_mask_owner_modify = -1;
-static int hf_nisplus_mask_owner_create = -1;
-static int hf_nisplus_mask_owner_destroy = -1;
-static int hf_nisplus_mask_nobody_read = -1;
-static int hf_nisplus_mask_nobody_modify = -1;
-static int hf_nisplus_mask_nobody_create = -1;
-static int hf_nisplus_mask_nobody_destroy = -1;
-static int hf_nisplus_server_name = -1;
-static int hf_nisplus_key_type = -1;
-static int hf_nisplus_key_data = -1;
-static int hf_nisplus_servers = -1;
-static int hf_nisplus_cbservers = -1;
-static int hf_nisplus_server = -1;
-static int hf_nisplus_endpoints = -1;
-static int hf_nisplus_endpoint = -1;
-static int hf_nisplus_endpoint_uaddr = -1;
-static int hf_nisplus_endpoint_family = -1;
-static int hf_nisplus_endpoint_proto = -1;
-static int hf_nisplus_link = -1;
-static int hf_nisplus_attrs_array = -1;
-static int hf_nisplus_attr = -1;
-static int hf_nisplus_attr_name = -1;
-static int hf_nisplus_attr_val = -1;
-static int hf_nisplus_entry = -1;
-static int hf_nisplus_entry_type = -1;
-static int hf_nisplus_entry_cols = -1;
-static int hf_nisplus_entry_col = -1;
-/* static int hf_nisplus_entry_flags = -1; */
-static int hf_nisplus_entry_val = -1;
-static int hf_nisplus_entry_mask = -1;
-static int hf_nisplus_entry_mask_binary = -1;
-static int hf_nisplus_entry_mask_crypt = -1;
-static int hf_nisplus_entry_mask_xdr = -1;
-static int hf_nisplus_entry_mask_modified = -1;
-static int hf_nisplus_entry_mask_asn = -1;
-static int hf_nisplus_table = -1;
-static int hf_nisplus_table_type = -1;
-static int hf_nisplus_table_maxcol = -1;
-static int hf_nisplus_table_sep = -1;
-static int hf_nisplus_table_cols = -1;
-static int hf_nisplus_table_col = -1;
-static int hf_nisplus_table_path = -1;
-static int hf_nisplus_table_col_name = -1;
-static int hf_nisplus_table_col_mask = -1;
-static int hf_nisplus_table_col_mask_binary = -1;
-static int hf_nisplus_table_col_mask_encrypted = -1;
-static int hf_nisplus_table_col_mask_xdr = -1;
-static int hf_nisplus_table_col_mask_searchable = -1;
-static int hf_nisplus_table_col_mask_casesensitive = -1;
-static int hf_nisplus_table_col_mask_modified = -1;
-static int hf_nisplus_table_col_mask_asn = -1;
-static int hf_nisplus_group = -1;
-static int hf_nisplus_group_flags = -1;
-static int hf_nisplus_grps = -1;
-static int hf_nisplus_group_name = -1;
-static int hf_nisplus_ib_flags = -1;
-static int hf_nisplus_ib_bufsize = -1;
-static int hf_nisplus_cookie = -1;
-static int hf_nisplus_fd_dirname = -1;
-static int hf_nisplus_fd_requester = -1;
-static int hf_nisplus_taglist = -1;
-static int hf_nisplus_tag = -1;
-static int hf_nisplus_tag_type = -1;
-static int hf_nisplus_tag_val = -1;
-static int hf_nisplus_dump_dir = -1;
-static int hf_nisplus_dump_time = -1;
-static int hf_nisplus_dummy = -1;
-static int hf_nisplus_ping_dir = -1;
-static int hf_nisplus_ping_time = -1;
-static int hf_nisplus_error = -1;
-static int hf_nisplus_dir_data = -1;
-static int hf_nisplus_signature = -1;
-static int hf_nisplus_log_entries = -1;
-static int hf_nisplus_log_entry = -1;
-static int hf_nisplus_log_type = -1;
-static int hf_nisplus_log_time = -1;
-static int hf_nisplus_log_principal = -1;
-static int hf_nisplus_callback_status = -1;
-static int hf_nisplus_cp_status = -1;
-static int hf_nisplus_cp_zticks = -1;
-static int hf_nisplus_cp_dticks = -1;
-static int hf_nisplus_zticks = -1;
-static int hf_nisplus_dticks = -1;
-static int hf_nisplus_aticks = -1;
-static int hf_nisplus_cticks = -1;
+static int proto_nisplus;
+static int hf_nisplus_procedure_v3;
+static int hf_nisplus_object;
+static int hf_nisplus_oid;
+static int hf_nisplus_object_ctime;
+static int hf_nisplus_object_mtime;
+static int hf_nisplus_object_name;
+static int hf_nisplus_object_owner;
+static int hf_nisplus_object_group;
+static int hf_nisplus_object_domain;
+static int hf_nisplus_object_ttl;
+static int hf_nisplus_object_type;
+static int hf_nisplus_object_private;
+static int hf_nisplus_directory;
+static int hf_nisplus_directory_name;
+static int hf_nisplus_directory_type;
+static int hf_nisplus_directory_ttl;
+static int hf_nisplus_directory_mask;
+static int hf_nisplus_directory_mask_list;
+static int hf_nisplus_access_mask;
+static int hf_nisplus_mask_world_read;
+static int hf_nisplus_mask_world_modify;
+static int hf_nisplus_mask_world_create;
+static int hf_nisplus_mask_world_destroy;
+static int hf_nisplus_mask_group_read;
+static int hf_nisplus_mask_group_modify;
+static int hf_nisplus_mask_group_create;
+static int hf_nisplus_mask_group_destroy;
+static int hf_nisplus_mask_owner_read;
+static int hf_nisplus_mask_owner_modify;
+static int hf_nisplus_mask_owner_create;
+static int hf_nisplus_mask_owner_destroy;
+static int hf_nisplus_mask_nobody_read;
+static int hf_nisplus_mask_nobody_modify;
+static int hf_nisplus_mask_nobody_create;
+static int hf_nisplus_mask_nobody_destroy;
+static int hf_nisplus_server_name;
+static int hf_nisplus_key_type;
+static int hf_nisplus_key_data;
+static int hf_nisplus_servers;
+static int hf_nisplus_cbservers;
+static int hf_nisplus_server;
+static int hf_nisplus_endpoints;
+static int hf_nisplus_endpoint;
+static int hf_nisplus_endpoint_uaddr;
+static int hf_nisplus_endpoint_family;
+static int hf_nisplus_endpoint_proto;
+static int hf_nisplus_link;
+static int hf_nisplus_attrs_array;
+static int hf_nisplus_attr;
+static int hf_nisplus_attr_name;
+static int hf_nisplus_attr_val;
+static int hf_nisplus_entry;
+static int hf_nisplus_entry_type;
+static int hf_nisplus_entry_cols;
+static int hf_nisplus_entry_col;
+/* static int hf_nisplus_entry_flags; */
+static int hf_nisplus_entry_val;
+static int hf_nisplus_entry_mask;
+static int hf_nisplus_entry_mask_binary;
+static int hf_nisplus_entry_mask_crypt;
+static int hf_nisplus_entry_mask_xdr;
+static int hf_nisplus_entry_mask_modified;
+static int hf_nisplus_entry_mask_asn;
+static int hf_nisplus_table;
+static int hf_nisplus_table_type;
+static int hf_nisplus_table_maxcol;
+static int hf_nisplus_table_sep;
+static int hf_nisplus_table_cols;
+static int hf_nisplus_table_col;
+static int hf_nisplus_table_path;
+static int hf_nisplus_table_col_name;
+static int hf_nisplus_table_col_mask;
+static int hf_nisplus_table_col_mask_binary;
+static int hf_nisplus_table_col_mask_encrypted;
+static int hf_nisplus_table_col_mask_xdr;
+static int hf_nisplus_table_col_mask_searchable;
+static int hf_nisplus_table_col_mask_casesensitive;
+static int hf_nisplus_table_col_mask_modified;
+static int hf_nisplus_table_col_mask_asn;
+static int hf_nisplus_group;
+static int hf_nisplus_group_flags;
+static int hf_nisplus_grps;
+static int hf_nisplus_group_name;
+static int hf_nisplus_ib_flags;
+static int hf_nisplus_ib_bufsize;
+static int hf_nisplus_cookie;
+static int hf_nisplus_fd_dirname;
+static int hf_nisplus_fd_requester;
+static int hf_nisplus_taglist;
+static int hf_nisplus_tag;
+static int hf_nisplus_tag_type;
+static int hf_nisplus_tag_val;
+static int hf_nisplus_dump_dir;
+static int hf_nisplus_dump_time;
+static int hf_nisplus_dummy;
+static int hf_nisplus_ping_dir;
+static int hf_nisplus_ping_time;
+static int hf_nisplus_error;
+static int hf_nisplus_dir_data;
+static int hf_nisplus_signature;
+static int hf_nisplus_log_entries;
+static int hf_nisplus_log_entry;
+static int hf_nisplus_log_type;
+static int hf_nisplus_log_time;
+static int hf_nisplus_log_principal;
+static int hf_nisplus_callback_status;
+static int hf_nisplus_cp_status;
+static int hf_nisplus_cp_zticks;
+static int hf_nisplus_cp_dticks;
+static int hf_nisplus_zticks;
+static int hf_nisplus_dticks;
+static int hf_nisplus_aticks;
+static int hf_nisplus_cticks;
 
-static gint ett_nisplus = -1;
-static gint ett_nisplus_object = -1;
-static gint ett_nisplus_oid = -1;
-static gint ett_nisplus_directory = -1;
-static gint ett_nisplus_directory_mask = -1;
-static gint ett_nisplus_access_mask = -1;
-static gint ett_nisplus_server = -1;
-static gint ett_nisplus_endpoint = -1;
-static gint ett_nisplus_link = -1;
-static gint ett_nisplus_attr = -1;
-static gint ett_nisplus_entry = -1;
-static gint ett_nisplus_entry_col = -1;
-static gint ett_nisplus_entry_mask = -1;
-static gint ett_nisplus_table = -1;
-static gint ett_nisplus_table_col = -1;
-static gint ett_nisplus_table_col_mask = -1;
-static gint ett_nisplus_group = -1;
-static gint ett_nisplus_grps = -1;
-static gint ett_nisplus_tag = -1;
-static gint ett_nisplus_log_entry = -1;
-
-
-#define NIS_MASK_TABLE_BINARY	0x0001
-#define NIS_MASK_TABLE_CRYPT	0x0002
-#define NIS_MASK_TABLE_XDR	0x0004
-#define NIS_MASK_TABLE_SRCH	0x0008
-#define NIS_MASK_TABLE_CASE	0x0010
-#define NIS_MASK_TABLE_MODIFIED	0x0020
-#define NIS_MASK_TABLE_ASN	0x0040
+static int ett_nisplus;
+static int ett_nisplus_object;
+static int ett_nisplus_oid;
+static int ett_nisplus_directory;
+static int ett_nisplus_directory_mask;
+static int ett_nisplus_access_mask;
+static int ett_nisplus_server;
+static int ett_nisplus_endpoint;
+static int ett_nisplus_link;
+static int ett_nisplus_attr;
+static int ett_nisplus_entry;
+static int ett_nisplus_entry_col;
+static int ett_nisplus_entry_mask;
+static int ett_nisplus_table;
+static int ett_nisplus_table_col;
+static int ett_nisplus_table_col_mask;
+static int ett_nisplus_group;
+static int ett_nisplus_grps;
+static int ett_nisplus_tag;
+static int ett_nisplus_log_entry;
 
 
-#define NIS_MASK_ENTRY_BINARY	0x0001
-#define NIS_MASK_ENTRY_CRYPT	0x0002
-#define NIS_MASK_ENTRY_XDR	0x0004
-#define NIS_MASK_ENTRY_MODIFIED	0x0008
-#define NIS_MASK_ENTRY_ASN	0x0040
+#define NIS_MASK_TABLE_BINARY   0x00000001
+#define NIS_MASK_TABLE_CRYPT    0x00000002
+#define NIS_MASK_TABLE_XDR      0x00000004
+#define NIS_MASK_TABLE_SRCH     0x00000008
+#define NIS_MASK_TABLE_CASE     0x00000010
+#define NIS_MASK_TABLE_MODIFIED 0x00000020
+#define NIS_MASK_TABLE_ASN      0x00000040
 
 
-#define NIS_MASK_WORLD_READ	0x0001
-#define NIS_MASK_WORLD_MODIFY	0x0002
-#define NIS_MASK_WORLD_CREATE	0x0004
-#define NIS_MASK_WORLD_DESTROY	0x0008
-#define NIS_MASK_GROUP_READ	0x0010
-#define NIS_MASK_GROUP_MODIFY	0x0020
-#define NIS_MASK_GROUP_CREATE	0x0040
-#define NIS_MASK_GROUP_DESTROY	0x0080
-#define NIS_MASK_OWNER_READ	0x0100
-#define NIS_MASK_OWNER_MODIFY	0x0200
-#define NIS_MASK_OWNER_CREATE	0x0400
-#define NIS_MASK_OWNER_DESTROY	0x0800
-#define NIS_MASK_NOBODY_READ	0x1000
-#define NIS_MASK_NOBODY_MODIFY	0x2000
-#define NIS_MASK_NOBODY_CREATE	0x4000
-#define NIS_MASK_NOBODY_DESTROY	0x8000
+#define NIS_MASK_ENTRY_BINARY   0x00000001
+#define NIS_MASK_ENTRY_CRYPT    0x00000002
+#define NIS_MASK_ENTRY_XDR      0x00000004
+#define NIS_MASK_ENTRY_MODIFIED 0x00000008
+#define NIS_MASK_ENTRY_ASN      0x00000040
+
+
+#define NIS_MASK_WORLD_READ     0x00000001
+#define NIS_MASK_WORLD_MODIFY   0x00000002
+#define NIS_MASK_WORLD_CREATE   0x00000004
+#define NIS_MASK_WORLD_DESTROY  0x00000008
+#define NIS_MASK_GROUP_READ     0x00000010
+#define NIS_MASK_GROUP_MODIFY   0x00000020
+#define NIS_MASK_GROUP_CREATE   0x00000040
+#define NIS_MASK_GROUP_DESTROY  0x00000080
+#define NIS_MASK_OWNER_READ     0x00000100
+#define NIS_MASK_OWNER_MODIFY   0x00000200
+#define NIS_MASK_OWNER_CREATE   0x00000400
+#define NIS_MASK_OWNER_DESTROY  0x00000800
+#define NIS_MASK_NOBODY_READ    0x00001000
+#define NIS_MASK_NOBODY_MODIFY  0x00002000
+#define NIS_MASK_NOBODY_CREATE  0x00004000
+#define NIS_MASK_NOBODY_DESTROY 0x00008000
 
 
 static const value_string key_type[] = {
@@ -276,9 +265,9 @@ dissect_nisplus_time(tvbuff_t *tvb, int offset, proto_tree *tree, int hfindex)
 }
 
 static int
-dissect_group(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_group(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	offset = dissect_rpc_string(tvb, tree,
+	offset = dissect_rpc_string(tvb, pinfo, tree,
 			hf_nisplus_group_name, offset, NULL);
 
 	return offset;
@@ -311,7 +300,7 @@ dissect_group_obj(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tre
 static int
 dissect_access_rights(tvbuff_t *tvb, int offset, proto_tree *tree)
 {
-	static const int * flags[] = {
+	static int * const flags[] = {
 		&hf_nisplus_mask_world_read,
 		&hf_nisplus_mask_world_modify,
 		&hf_nisplus_mask_world_create,
@@ -338,12 +327,12 @@ dissect_access_rights(tvbuff_t *tvb, int offset, proto_tree *tree)
 }
 
 static int
-dissect_table(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_table(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_item* lock_item;
 	proto_tree* lock_tree;
 	int old_offset = offset;
-	static const int * flags[] = {
+	static int * const flags[] = {
 		&hf_nisplus_table_col_mask_binary,
 		&hf_nisplus_table_col_mask_encrypted,
 		&hf_nisplus_table_col_mask_xdr,
@@ -359,7 +348,7 @@ dissect_table(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tre
 
 	lock_tree = proto_item_add_subtree(lock_item, ett_nisplus_table_col);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_table_col_name, offset, NULL);
 
 	proto_tree_add_bitmask(lock_tree, tvb, offset, hf_nisplus_table_col_mask, ett_nisplus_table_col_mask, flags, ENC_BIG_ENDIAN);
@@ -383,7 +372,7 @@ dissect_table_obj(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tre
 
 	lock_tree = proto_item_add_subtree(lock_item, ett_nisplus_table);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_table_type, offset, NULL);
 
 	offset = dissect_rpc_uint32(tvb, lock_tree,
@@ -395,7 +384,7 @@ dissect_table_obj(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tre
 	offset = dissect_rpc_array(tvb, pinfo, lock_tree, offset,
 			dissect_table, hf_nisplus_table_cols);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_table_path, offset, NULL);
 
 	proto_item_set_len(lock_item, offset-old_offset);
@@ -403,12 +392,12 @@ dissect_table_obj(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tre
 }
 
 static int
-dissect_entry(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_entry(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_item* lock_item;
 	proto_tree* lock_tree;
 	int old_offset = offset;
-	static const int * flags[] = {
+	static int * const flags[] = {
 		&hf_nisplus_entry_mask_binary,
 		&hf_nisplus_entry_mask_crypt,
 		&hf_nisplus_entry_mask_xdr,
@@ -425,7 +414,7 @@ dissect_entry(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tre
 	proto_tree_add_bitmask(lock_tree, tvb, offset, hf_nisplus_entry_mask, ett_nisplus_entry_mask, flags, ENC_BIG_ENDIAN);
 	offset += 4;
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_entry_val, offset, NULL);
 
 	proto_item_set_len(lock_item, offset-old_offset);
@@ -444,7 +433,7 @@ dissect_entry_obj(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tre
 
 	lock_tree = proto_item_add_subtree(lock_item, ett_nisplus_entry);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_entry_type, offset, NULL);
 
 	offset = dissect_rpc_array(tvb, pinfo, lock_tree, offset,
@@ -455,7 +444,7 @@ dissect_entry_obj(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tre
 }
 
 static int
-dissect_attr(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_attr(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_item* lock_item = NULL;
 	proto_tree* lock_tree = NULL;
@@ -466,10 +455,10 @@ dissect_attr(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree
 
 	lock_tree = proto_item_add_subtree(lock_item, ett_nisplus_attr);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_attr_name, offset, NULL);
 
-	offset = dissect_rpc_data(tvb, lock_tree,
+	offset = dissect_rpc_data(tvb, pinfo, lock_tree,
 			hf_nisplus_attr_val, offset);
 
 	proto_item_set_len(lock_item, offset-old_offset);
@@ -494,7 +483,7 @@ dissect_link_obj(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree
 	offset = dissect_rpc_array(tvb, pinfo, lock_tree, offset,
 			dissect_attr, hf_nisplus_attrs_array);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_object_name,	offset, NULL);
 
 	proto_item_set_len(lock_item, offset-old_offset);
@@ -503,7 +492,7 @@ dissect_link_obj(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree
 
 
 static int
-dissect_endpoint(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_endpoint(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_item* lock_item = NULL;
 	proto_tree* lock_tree = NULL;
@@ -514,13 +503,13 @@ dissect_endpoint(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *
 
 	lock_tree = proto_item_add_subtree(lock_item, ett_nisplus_endpoint);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_endpoint_uaddr, offset, NULL);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_endpoint_family, offset, NULL);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_endpoint_proto, offset, NULL);
 
 	proto_item_set_len(lock_item, offset-old_offset);
@@ -540,7 +529,7 @@ dissect_directory_server(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tr
 
 	lock_tree = proto_item_add_subtree(lock_item, ett_nisplus_server);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_server_name, offset, NULL);
 
 	offset = dissect_rpc_array(tvb, pinfo, lock_tree, offset,
@@ -549,7 +538,7 @@ dissect_directory_server(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tr
 	offset = dissect_rpc_uint32(tvb, lock_tree,
 			hf_nisplus_key_type, offset);
 
-	offset = dissect_rpc_data(tvb, lock_tree,
+	offset = dissect_rpc_data(tvb, pinfo, lock_tree,
 			hf_nisplus_key_data, offset);
 
 	proto_item_set_len(lock_item, offset-old_offset);
@@ -590,7 +579,7 @@ dissect_directory_obj(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree 
 
 	lock_tree = proto_item_add_subtree(lock_item, ett_nisplus_directory);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_directory_name, offset, NULL);
 
 	offset = dissect_rpc_uint32(tvb, lock_tree,
@@ -636,7 +625,7 @@ dissect_nisplus_object(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree
 {
 	proto_item* lock_item = NULL;
 	proto_tree* lock_tree = NULL;
-	gint32	type;
+	int32_t	type;
 	int old_offset = offset;
 
 	lock_item = proto_tree_add_item(tree, hf_nisplus_object, tvb,
@@ -646,16 +635,16 @@ dissect_nisplus_object(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree
 
 	offset = dissect_nisplus_oid(tvb, offset, lock_tree);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_object_name,	offset, NULL);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_object_owner, offset, NULL);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_object_group, offset, NULL);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_object_domain, offset, NULL);
 
 	offset = dissect_access_rights(tvb, offset, lock_tree);
@@ -683,7 +672,7 @@ dissect_nisplus_object(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree
 		offset = dissect_link_obj(tvb, offset, pinfo, lock_tree);
 		break;
 	case	NIS_PRIVATE_OBJ:
-		offset = dissect_rpc_data(tvb, lock_tree,
+		offset = dissect_rpc_data(tvb, pinfo, lock_tree,
 				hf_nisplus_object_private, offset);
 		break;
 	case	NIS_NO_OBJ:
@@ -708,7 +697,7 @@ static int
 dissect_ns_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
-	offset = dissect_rpc_string(tvb, tree,
+	offset = dissect_rpc_string(tvb, pinfo, tree,
 			hf_nisplus_object_name, offset, NULL);
 
 	offset = dissect_rpc_array(tvb, pinfo, tree, offset,
@@ -722,7 +711,7 @@ dissect_ib_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 {
 	int offset = 0;
 
-	offset = dissect_rpc_string(tvb, tree,
+	offset = dissect_rpc_string(tvb, pinfo, tree,
 			hf_nisplus_object_name, offset, NULL);
 
 	offset = dissect_rpc_array(tvb, pinfo, tree, offset,
@@ -740,28 +729,28 @@ dissect_ib_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 	offset = dissect_rpc_uint32(tvb, tree,
 			hf_nisplus_ib_bufsize, offset);
 
-	offset = dissect_rpc_data(tvb, tree,
+	offset = dissect_rpc_data(tvb, pinfo, tree,
 			hf_nisplus_cookie, offset);
 
 	return offset;
 }
 
 static int
-dissect_fd_args(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_fd_args(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
 
-	offset = dissect_rpc_string(tvb, tree,
+	offset = dissect_rpc_string(tvb, pinfo, tree,
 			hf_nisplus_fd_dirname, offset, NULL);
 
-	offset = dissect_rpc_string(tvb, tree,
+	offset = dissect_rpc_string(tvb, pinfo, tree,
 			hf_nisplus_fd_requester, offset, NULL);
 
 	return offset;
 }
 
 static int
-dissect_nisplus_tag(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_nisplus_tag(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_item* lock_item = NULL;
 	proto_tree* lock_tree = NULL;
@@ -775,7 +764,7 @@ dissect_nisplus_tag(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tre
 	offset = dissect_rpc_uint32(tvb, lock_tree,
 			hf_nisplus_tag_type, offset);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_tag_val, offset, NULL);
 
 	proto_item_set_len(lock_item, offset-old_offset);
@@ -794,7 +783,7 @@ dissect_dump_args(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 {
 	int offset = 0;
 
-	offset = dissect_rpc_string(tvb, tree,
+	offset = dissect_rpc_string(tvb, pinfo, tree,
 			hf_nisplus_dump_dir, offset, NULL);
 
 	offset = dissect_nisplus_time(tvb, offset, tree,
@@ -807,24 +796,24 @@ dissect_dump_args(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 }
 
 static int
-dissect_netobj(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_netobj(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	return dissect_rpc_data(tvb, tree, hf_nisplus_dummy, 0);
+	return dissect_rpc_data(tvb, pinfo, tree, hf_nisplus_dummy, 0);
 }
 
 static int
-dissect_nisname(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_nisname(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	return dissect_rpc_string(tvb, tree,
+	return dissect_rpc_string(tvb, pinfo, tree,
 			hf_nisplus_object_name, 0, NULL);
 }
 
 static int
-dissect_ping_args(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_ping_args(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
 
-	offset = dissect_rpc_string(tvb, tree,
+	offset = dissect_rpc_string(tvb, pinfo, tree,
 			hf_nisplus_ping_dir, offset, NULL);
 
 	offset = dissect_nisplus_time(tvb, offset, tree,
@@ -878,7 +867,7 @@ static const value_string nis_error[] = {
 #define NIS_NOSUCHNAME		20
 	{	NIS_NOSUCHNAME,		"Name unknown"	},
 #define NIS_NOTUNIQUE		21
-	{	NIS_NOTUNIQUE,		"Value is not uniques (entry)"	},
+	{	NIS_NOTUNIQUE,		"Value is not unique (entry)"	},
 #define NIS_IBMODERROR		22
 	{	NIS_IBMODERROR,		"Inf. Base. Modify error."	},
 #define NIS_NOSUCHTABLE		23
@@ -945,7 +934,7 @@ dissect_nisplus_result(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 	offset = dissect_rpc_array(tvb, pinfo, tree, offset,
 			dissect_nisplus_object, hf_nisplus_object);
 
-	offset = dissect_rpc_data(tvb, tree,
+	offset = dissect_rpc_data(tvb, pinfo, tree,
 			hf_nisplus_cookie, offset);
 
 	offset = dissect_rpc_uint32(tvb, tree,
@@ -964,20 +953,20 @@ dissect_nisplus_result(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 }
 
 static int
-dissect_fd_result(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_fd_result(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
 
 	offset = dissect_rpc_uint32(tvb, tree,
 			hf_nisplus_error, offset);
 
-	offset = dissect_rpc_string(tvb, tree,
+	offset = dissect_rpc_string(tvb, pinfo, tree,
 			hf_nisplus_fd_dirname, offset, NULL);
 
-	offset = dissect_rpc_data(tvb, tree,
+	offset = dissect_rpc_data(tvb, pinfo, tree,
 			hf_nisplus_dir_data, offset);
 
-	offset = dissect_rpc_data(tvb, tree,
+	offset = dissect_rpc_data(tvb, pinfo, tree,
 			hf_nisplus_signature, offset);
 
 	return offset;
@@ -1022,10 +1011,10 @@ dissect_log_entry(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tre
 	offset = dissect_rpc_uint32(tvb, lock_tree,
 			hf_nisplus_log_type, offset);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_log_principal, offset, NULL);
 
-	offset = dissect_rpc_string(tvb, lock_tree,
+	offset = dissect_rpc_string(tvb, pinfo, lock_tree,
 			hf_nisplus_directory_name, offset, NULL);
 
 	offset = dissect_rpc_array(tvb, pinfo, lock_tree, offset,
@@ -1045,7 +1034,7 @@ dissect_log_result(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 	offset = dissect_rpc_uint32(tvb, tree,
 			hf_nisplus_error, offset);
 
-	offset = dissect_rpc_data(tvb, tree,
+	offset = dissect_rpc_data(tvb, pinfo, tree,
 			hf_nisplus_cookie, offset);
 
 	offset = dissect_rpc_array(tvb, pinfo, tree, offset,
@@ -1309,8 +1298,8 @@ proto_register_nis(void)
 	};
 
 	static const true_false_string tfs_callback_status = {
-		"unknown",
-		"unknown"
+		"callback is running",
+		"callback is not running"
 	};
 
 
@@ -1801,7 +1790,7 @@ proto_register_nis(void)
 
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_nisplus,
 		&ett_nisplus_object,
 		&ett_nisplus_oid,
@@ -1824,8 +1813,7 @@ proto_register_nis(void)
 		&ett_nisplus_log_entry,
 	};
 
-	proto_nisplus = proto_register_protocol("NIS+",
-	    "NIS+", "nisplus");
+	proto_nisplus = proto_register_protocol("NIS+", "NIS+", "nisplus");
 	proto_register_field_array(proto_nisplus, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 }
@@ -1847,13 +1835,13 @@ proto_reg_handoff_nis(void)
    callback protocol for NIS+
    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
 
-static int proto_nispluscb = -1;
-static int hf_nispluscb_procedure_v1 = -1;
-static int hf_nispluscb_entries = -1;
-static int hf_nispluscb_entry = -1;
+static int proto_nispluscb;
+static int hf_nispluscb_procedure_v1;
+static int hf_nispluscb_entries;
+static int hf_nispluscb_entry;
 
-static gint ett_nispluscb = -1;
-static gint ett_nispluscb_entry = -1;
+static int ett_nispluscb;
+static int ett_nispluscb_entry;
 
 static int
 dissect_cb_entry(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
@@ -1920,7 +1908,7 @@ proto_register_niscb(void)
 
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_nispluscb,
 		&ett_nispluscb_entry,
 	};
@@ -1940,7 +1928,7 @@ proto_reg_handoff_niscb(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

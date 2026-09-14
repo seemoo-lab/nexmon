@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "capture_file.h"
@@ -31,7 +19,6 @@
 capture_file cfile;
 
 #include "file.h"
-#include "log.h"
 
 #include "epan/epan_dissect.h"
 
@@ -39,6 +26,49 @@ capture_file cfile;
 
 #include <QFileInfo>
 #include <QTimer>
+#include <QDebug>
+
+CaptureEvent::CaptureEvent(Context ctx, EventType evt) :
+    _ctx(ctx),
+    _evt(evt),
+    _session(Q_NULLPTR)
+{
+}
+
+CaptureEvent::CaptureEvent(Context ctx, EventType evt, QString file) :
+    _ctx(ctx),
+    _evt(evt),
+    _filePath(file),
+    _session(Q_NULLPTR)
+{
+}
+
+CaptureEvent::CaptureEvent(Context ctx, EventType evt, capture_session * session) :
+    _ctx(ctx),
+    _evt(evt),
+    _session(session)
+{
+}
+
+CaptureEvent::CaptureEvent(const CaptureEvent &ce) :
+    _ctx(ce._ctx),
+    _evt(ce._evt),
+    _filePath(ce._filePath),
+    _session(ce._session)
+{
+}
+
+CaptureEvent::Context CaptureEvent::captureContext() const
+{ return _ctx; }
+
+CaptureEvent::EventType CaptureEvent::eventType() const
+{ return _evt; }
+
+QString CaptureEvent::filePath() const
+{ return _filePath; }
+
+capture_session * CaptureEvent::capSession() const
+{ return _session; }
 
 // To do:
 // - Add getters and (if needed) setters:
@@ -52,13 +82,12 @@ QString CaptureFile::no_capture_file_ = QObject::tr("[no capture file]");
 CaptureFile::CaptureFile(QObject *parent, capture_file *cap_file) :
     QObject(parent),
     cap_file_(cap_file),
-    file_name_(no_capture_file_),
     file_state_(QString())
 {
 #ifdef HAVE_LIBPCAP
-    capture_callback_add(captureCallback, (gpointer) this);
+    capture_callback_add(captureCallback, (void *) this);
 #endif
-    cf_callback_add(captureFileCallback, (gpointer) this);
+    cf_callback_add(captureFileCallback, (void *) this);
 }
 
 CaptureFile::~CaptureFile()
@@ -68,27 +97,94 @@ CaptureFile::~CaptureFile()
 
 bool CaptureFile::isValid() const
 {
-    if (cap_file_ && cap_file_->state != FILE_CLOSED) { // XXX FILE_READ_IN_PROGRESS as well?
+    if (cap_file_ && cap_file_->state != FILE_CLOSED && cap_file_->state != FILE_READ_PENDING) { // XXX FILE_READ_IN_PROGRESS as well?
         return true;
     }
     return false;
 }
 
-int CaptureFile::currentRow()
+const QString CaptureFile::filePath()
 {
-    if (isValid())
-        return cap_file_->current_row;
-    return -1;
+    QString path;
+
+    if (isValid()) {
+        //
+        // Sadly, some UN*Xes don't necessarily use UTF-8
+        // for their file names, so we have to map the
+        // file path to UTF-8.  If that fails, we're somewhat
+        // stuck.
+        //
+        char *utf8_filename = g_filename_to_utf8(cap_file_->filename,
+                                                 -1,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL);
+        if (utf8_filename) {
+            path = QString::fromUtf8(utf8_filename);
+            g_free(utf8_filename);
+        } else {
+            // So what the heck else can we do here?
+            path = QString();
+        }
+    } else {
+        path = QString();
+    }
+    return path;
 }
 
 const QString CaptureFile::fileName()
 {
-    if (isValid()) {
-        QFileInfo cfi(QString::fromUtf8(cap_file_->filename));
-        file_name_ = cfi.baseName();
+    QString path, name;
+
+    path = filePath();
+    if (!path.isEmpty()) {
+        QFileInfo cfi(path);
+        name = cfi.fileName();
+    } else {
+        name = QString();
     }
 
-    return file_name_;
+    return name;
+}
+
+const QString CaptureFile::fileBaseName()
+{
+    QString baseName;
+
+    if (isValid()) {
+        char *basename = cf_get_basename(cap_file_);
+        baseName = basename;
+        g_free(basename);
+    } else {
+        baseName = QString();
+    }
+    return baseName;
+}
+
+const QString CaptureFile::fileDisplayName()
+{
+    QString displayName;
+
+    if (isValid()) {
+        char *display_name = cf_get_display_name(cap_file_);
+        displayName = display_name;
+        g_free(display_name);
+    } else {
+        displayName = QString();
+    }
+    return displayName;
+}
+
+const QString CaptureFile::fileTitle()
+{
+    QString title;
+
+    if (isValid()) {
+        title = fileDisplayName() + file_state_;
+    } else {
+        title = no_capture_file_;
+    }
+    return title;
 }
 
 struct _packet_info *CaptureFile::packetInfo()
@@ -101,8 +197,8 @@ struct _packet_info *CaptureFile::packetInfo()
 
 int CaptureFile::timestampPrecision()
 {
-    if (capFile() && capFile()->wth) {
-        return wtap_file_tsprec(capFile()->wth);
+    if (capFile() && capFile()->provider.wth) {
+        return wtap_file_tsprec(capFile()->provider.wth);
     }
     return WTAP_TSPREC_UNKNOWN;
 }
@@ -131,12 +227,19 @@ void CaptureFile::stopLoading()
     setCaptureStopFlag(true);
 }
 
+QString CaptureFile::displayFilter() const
+{
+    if (isValid())
+        return QString(cap_file_->dfilter);
+    return QString();
+}
+
 capture_file *CaptureFile::globalCapFile()
 {
     return &cfile;
 }
 
-gpointer CaptureFile::window()
+void *CaptureFile::window()
 {
     if (cap_file_) return cap_file_->window;
     return NULL;
@@ -147,7 +250,7 @@ void CaptureFile::setCaptureStopFlag(bool stop_flag)
     if (cap_file_) cap_file_->stop_flag = stop_flag;
 }
 
-void CaptureFile::captureFileCallback(gint event, gpointer data, gpointer user_data)
+void CaptureFile::captureFileCallback(int event, void *data, void *user_data)
 {
     CaptureFile *capture_file = static_cast<CaptureFile *>(user_data);
     if (!capture_file) return;
@@ -156,70 +259,63 @@ void CaptureFile::captureFileCallback(gint event, gpointer data, gpointer user_d
 }
 
 #ifdef HAVE_LIBPCAP
-void CaptureFile::captureCallback(gint event, capture_session *cap_session, gpointer user_data)
+void CaptureFile::captureCallback(int event, capture_session *cap_session, void *user_data)
 {
     CaptureFile *capture_file = static_cast<CaptureFile *>(user_data);
     if (!capture_file) return;
 
-    capture_file->captureEvent(event, cap_session);
+    capture_file->captureSessionEvent(event, cap_session);
 }
 #endif
 
-void CaptureFile::captureFileEvent(int event, gpointer data)
+void CaptureFile::captureFileEvent(int event, void *data)
 {
     switch(event) {
     case(cf_cb_file_opened):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: Opened");
         cap_file_ = (capture_file *) data;
-        fileName();
-        emit captureFileOpened();
+        emit captureEvent(CaptureEvent(CaptureEvent::File, CaptureEvent::Opened));
         break;
     case(cf_cb_file_closing):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: Closing");
         file_state_ = tr(" [closing]");
-        emit captureFileClosing();
+        emit captureEvent(CaptureEvent(CaptureEvent::File, CaptureEvent::Closing));
         break;
     case(cf_cb_file_closed):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: Closed");
         file_state_ = tr(" [closed]");
-        emit captureFileClosed();
+        emit captureEvent(CaptureEvent(CaptureEvent::File, CaptureEvent::Closed));
         cap_file_ = NULL;
-        file_name_ = no_capture_file_;
         file_state_ = QString();
         break;
     case(cf_cb_file_read_started):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: Read started");
-        emit captureFileReadStarted();
+        emit captureEvent(CaptureEvent(CaptureEvent::File, CaptureEvent::Started));
         break;
     case(cf_cb_file_read_finished):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: Read finished");
-        emit captureFileReadFinished();
+        emit captureEvent(CaptureEvent(CaptureEvent::File, CaptureEvent::Finished));
         break;
     case(cf_cb_file_reload_started):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: Reload started");
-        emit captureFileReloadStarted();
+        emit captureEvent(CaptureEvent(CaptureEvent::Reload, CaptureEvent::Started));
         break;
     case(cf_cb_file_reload_finished):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: Reload finished");
-        emit captureFileReloadFinished();
+        emit captureEvent(CaptureEvent(CaptureEvent::Reload, CaptureEvent::Finished));
         break;
     case(cf_cb_file_rescan_started):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: Rescan started");
-        emit captureFileRescanStarted();
+        emit captureEvent(CaptureEvent(CaptureEvent::Rescan, CaptureEvent::Started));
         break;
     case(cf_cb_file_rescan_finished):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: Rescan finished");
-        emit captureFileRescanFinished();
+        emit captureEvent(CaptureEvent(CaptureEvent::Rescan, CaptureEvent::Finished));
         break;
     case(cf_cb_file_retap_started):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: Retap started");
-        emit captureFileRetapStarted();
+        emit captureEvent(CaptureEvent(CaptureEvent::Retap, CaptureEvent::Started));
         break;
     case(cf_cb_file_retap_finished):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: Retap finished");
         /* Flush any pending tapped packet before emitting captureFileRetapFinished() */
-        emit captureFileFlushTapsData();
-        emit captureFileRetapFinished();
+        emit captureEvent(CaptureEvent(CaptureEvent::Retap, CaptureEvent::Finished));
+        emit captureEvent(CaptureEvent(CaptureEvent::Retap, CaptureEvent::Flushed));
+        break;
+    case(cf_cb_file_merge_started):
+        emit captureEvent(CaptureEvent(CaptureEvent::Merge, CaptureEvent::Started));
+        break;
+    case(cf_cb_file_merge_finished):
+        emit captureEvent(CaptureEvent(CaptureEvent::Merge, CaptureEvent::Finished));
         break;
 
     case(cf_cb_file_fast_save_finished):
@@ -227,103 +323,64 @@ void CaptureFile::captureFileEvent(int event, gpointer data)
         // the equivalent?
         break;
 
-    case(cf_cb_packet_selected):
-    case(cf_cb_packet_unselected):
-    case(cf_cb_field_unselected):
-        // GTK+ only. Handled in Qt via signals and slots.
-        break;
-
     case(cf_cb_file_save_started):
     {
-        const QString file_path = (const char *) data;
-        captureFileSaveStarted(file_path);
+        emit captureEvent(CaptureEvent(CaptureEvent::Save, CaptureEvent::Started, QString((const char *)data)));
         break;
     }
     case(cf_cb_file_save_finished):
-        emit captureFileSaveFinished();
+        emit captureEvent(CaptureEvent(CaptureEvent::Save, CaptureEvent::Finished));
         break;
     case(cf_cb_file_save_failed):
-        emit captureFileSaveFailed();
+        emit captureEvent(CaptureEvent(CaptureEvent::Save, CaptureEvent::Failed));
         break;
     case(cf_cb_file_save_stopped):
-        emit captureFileSaveStopped();
-        break;
-
-    case cf_cb_file_export_specified_packets_started:
-    case cf_cb_file_export_specified_packets_finished:
-    case cf_cb_file_export_specified_packets_failed:
-    case cf_cb_file_export_specified_packets_stopped:
-        // GTK+ only.
+        emit captureEvent(CaptureEvent(CaptureEvent::Save, CaptureEvent::Stopped));
         break;
 
     default:
-        g_warning("CaptureFile::captureFileCallback: event %u unknown", event);
-        g_assert_not_reached();
+        qWarning() << "CaptureFile::captureFileCallback: event " << event << " unknown";
+        Q_ASSERT(false);
         break;
     }
 }
 
-void CaptureFile::captureEvent(int event, capture_session *cap_session)
+#ifdef HAVE_LIBPCAP
+void CaptureFile::captureSessionEvent(int event, capture_session *cap_session)
 {
-#ifndef HAVE_LIBPCAP
-    Q_UNUSED(event)
-    Q_UNUSED(cap_session)
-#else
     switch(event) {
     case(capture_cb_capture_prepared):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: capture prepared");
-        emit captureCapturePrepared(cap_session);
+        emit captureEvent(CaptureEvent(CaptureEvent::Capture, CaptureEvent::Prepared, cap_session));
         cap_file_ = cap_session->cf;
         break;
     case(capture_cb_capture_update_started):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: capture update started");
-        emit captureCaptureUpdateStarted(cap_session);
+        emit captureEvent(CaptureEvent(CaptureEvent::Update, CaptureEvent::Started, cap_session));
         break;
     case(capture_cb_capture_update_continue):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: capture update continue");
-        emit captureCaptureUpdateContinue(cap_session);
+        emit captureEvent(CaptureEvent(CaptureEvent::Update, CaptureEvent::Continued, cap_session));
         break;
     case(capture_cb_capture_update_finished):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: capture update finished");
-        emit captureCaptureUpdateFinished(cap_session);
+        emit captureEvent(CaptureEvent(CaptureEvent::Update, CaptureEvent::Finished, cap_session));
         break;
     case(capture_cb_capture_fixed_started):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: capture fixed started");
-        emit captureCaptureFixedStarted(cap_session);
+        emit captureEvent(CaptureEvent(CaptureEvent::Fixed, CaptureEvent::Started, cap_session));
         break;
     case(capture_cb_capture_fixed_continue):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: capture fixed continue");
-        emit captureCaptureFixedContinue(cap_session);
+        emit captureEvent(CaptureEvent(CaptureEvent::Fixed, CaptureEvent::Continued, cap_session));
         break;
     case(capture_cb_capture_fixed_finished):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: capture fixed finished");
-        emit captureCaptureFixedFinished(cap_session);
+        emit captureEvent(CaptureEvent(CaptureEvent::Fixed, CaptureEvent::Finished, cap_session));
         break;
     case(capture_cb_capture_stopping):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: capture stopping");
         /* Beware: this state won't be called, if the capture child
              * closes the capturing on it's own! */
-        emit captureCaptureStopping(cap_session);
+        emit captureEvent(CaptureEvent(CaptureEvent::Capture, CaptureEvent::Stopping, cap_session));
         break;
     case(capture_cb_capture_failed):
-        g_log(LOG_DOMAIN_MAIN, G_LOG_LEVEL_DEBUG, "Callback: capture failed");
-        emit captureCaptureFailed(cap_session);
+        emit captureEvent(CaptureEvent(CaptureEvent::Capture, CaptureEvent::Failed, cap_session));
         break;
     default:
-        g_warning("main_capture_callback: event %u unknown", event);
+        qWarning() << "main_capture_callback: event " << event << " unknown";
     }
-#endif // HAVE_LIBPCAP
 }
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */
+#endif // HAVE_LIBPCAP

@@ -1,6 +1,5 @@
 /* Error handling during reading and writing of PO files.
-   Copyright (C) 2004, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2004.
+   Copyright (C) 2004-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,17 +12,19 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+#include <config.h>
+/* Avoid side effect of gnulib's error.h.  */
+#define _GL_NO_INLINE_ERROR
 
 /* Specification.  */
 #include "po-error.h"
 
-#include "error.h"
+#include <error.h>
 #include "xerror.h"
 
 
@@ -36,7 +37,19 @@ void (*po_error_at_line) (int status, int errnum,
                           const char *format, ...)
   = error_at_line;
 
+static void
+void_multiline_warning (char *prefix, char *message)
+{
+  multiline_warning (prefix, message);
+}
+
+static void
+void_multiline_error (char *prefix, char *message)
+{
+  multiline_error (prefix, message);
+}
+
 void (*po_multiline_warning) (char *prefix, char *message)
-  = multiline_warning;
+  = void_multiline_warning;
 void (*po_multiline_error) (char *prefix, char *message)
-  = multiline_error;
+  = void_multiline_error;

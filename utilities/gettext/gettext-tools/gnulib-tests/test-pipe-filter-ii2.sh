@@ -2,12 +2,12 @@
 
 # pipe-filter test driver.
 #
-# Copyright (C) 2009-2016 Free Software Foundation, Inc.
+# Copyright (C) 2009-2026 Free Software Foundation, Inc.
 # Written by Paolo Bonzini <bonzini@gnu.org>, 2009.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -16,9 +16,9 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-./test-pipe-filter-ii2-main${EXEEXT} ./test-pipe-filter-ii2-child${EXEEXT} | {
+${CHECKER} ./test-pipe-filter-ii2-main${EXEEXT} ./test-pipe-filter-ii2-child${EXEEXT} | {
   set -e
   read a && test "$a" = "Test 1 passed."
   read a && test "$a" = "Test 2 passed."

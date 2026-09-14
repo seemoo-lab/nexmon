@@ -6,7 +6,7 @@
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,6 +29,7 @@
 #include "gio/gfile.h"
 #include "gio/gfileattribute.h"
 #include "gio/gfileinfo.h"
+#include "gio/gfileinfo-priv.h"
 #include "gwinhttpfile.h"
 #include "gwinhttpfileinputstream.h"
 #include "gwinhttpfileoutputstream.h"
@@ -80,7 +81,7 @@ g_winhttp_file_init (GWinHttpFile *winhttp)
  * @vfs: GWinHttpVfs to use
  * @uri: URI of the GWinHttpFile to create.
  *
- * Returns: new winhttp #GFile.
+ * Returns: (nullable): new winhttp #GFile, or %NULL if there was an error constructing it.
  */
 GFile *
 _g_winhttp_file_new (GWinHttpVfs *vfs,
@@ -175,6 +176,21 @@ g_winhttp_file_get_basename (GFile *file)
   g_free (basename);
 
   return retval;
+}
+
+static char *
+g_winhttp_file_get_display_name (GFile *file)
+{
+  char *basename;
+
+  /* FIXME: This could be improved by using a new g_utf16_make_valid() function
+   * to recover what we can from the URI, and then suffixing it with
+   * “ (invalid encoding)” as per g_filename_display_basename(). */
+  basename = g_winhttp_file_get_basename (file);
+  if (!basename)
+    return g_strdup (_(" (invalid encoding)"));
+
+  return g_steal_pointer (&basename);
 }
 
 static char *
@@ -302,7 +318,7 @@ static const char *
 match_prefix (const char *path,
               const char *prefix)
 {
-  int prefix_len;
+  size_t prefix_len;
 
   prefix_len = strlen (prefix);
   if (strncmp (path, prefix, prefix_len) != 0)
@@ -393,10 +409,10 @@ g_winhttp_file_resolve_relative_path (GFile      *file,
   child = g_object_new (G_TYPE_WINHTTP_FILE, NULL);
   child->vfs = winhttp_file->vfs;
   child->url = winhttp_file->url;
-  child->url.lpszScheme = g_memdup (winhttp_file->url.lpszScheme, (winhttp_file->url.dwSchemeLength+1)*2);
-  child->url.lpszHostName = g_memdup (winhttp_file->url.lpszHostName, (winhttp_file->url.dwHostNameLength+1)*2);
-  child->url.lpszUserName = g_memdup (winhttp_file->url.lpszUserName, (winhttp_file->url.dwUserNameLength+1)*2);
-  child->url.lpszPassword = g_memdup (winhttp_file->url.lpszPassword, (winhttp_file->url.dwPasswordLength+1)*2);
+  child->url.lpszScheme = g_memdup2 (winhttp_file->url.lpszScheme, ((gsize) winhttp_file->url.dwSchemeLength + 1) * 2);
+  child->url.lpszHostName = g_memdup2 (winhttp_file->url.lpszHostName, ((gsize) winhttp_file->url.dwHostNameLength + 1) * 2);
+  child->url.lpszUserName = g_memdup2 (winhttp_file->url.lpszUserName, ((gsize) winhttp_file->url.dwUserNameLength + 1) * 2);
+  child->url.lpszPassword = g_memdup2 (winhttp_file->url.lpszPassword, ((gsize) winhttp_file->url.dwPasswordLength + 1) * 2);
   child->url.lpszUrlPath = wnew_path;
   child->url.dwUrlPathLength = wcslen (wnew_path);
   child->url.lpszExtraInfo = NULL;
@@ -439,31 +455,6 @@ g_winhttp_file_set_display_name (GFile         *file,
   return NULL;
 }
 
-static time_t
-mktime_utc (SYSTEMTIME *t)
-{
-  time_t retval;
-
-  static const gint days_before[] =
-  {
-    0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
-  };
-
-  if (t->wMonth < 1 || t->wMonth > 12)
-    return (time_t) -1;
-
-  retval = (t->wYear - 1970) * 365;
-  retval += (t->wYear - 1968) / 4;
-  retval += days_before[t->wMonth-1] + t->wDay - 1;
-
-  if (t->wYear % 4 == 0 && t->wMonth < 3)
-    retval -= 1;
-
-  retval = ((((retval * 24) + t->wHour) * 60) + t->wMinute) * 60 + t->wSecond;
-
-  return retval;
-}
-
 static GFileInfo *
 g_winhttp_file_query_info (GFile                *file,
                            const char           *attributes,
@@ -485,6 +476,34 @@ g_winhttp_file_query_info (GFile                *file,
   wchar_t *content_type;
   SYSTEMTIME last_modified;
   DWORD last_modified_len;
+
+  matcher = g_file_attribute_matcher_new (attributes);
+  info = g_file_info_new ();
+  g_file_info_set_attribute_mask (info, matcher);
+
+  basename = g_winhttp_file_get_basename (file);
+  g_file_info_set_name (info, basename);
+  g_free (basename);
+
+  if (_g_file_attribute_matcher_matches_id (matcher,
+                                            G_FILE_ATTRIBUTE_ID_STANDARD_DISPLAY_NAME))
+    {
+      char *display_name = g_winhttp_file_get_display_name (file);
+      g_file_info_set_display_name (info, display_name);
+      g_free (display_name);
+    }
+
+  if (_g_file_attribute_matcher_matches_id (matcher, G_FILE_ATTRIBUTE_ID_STANDARD_TYPE))
+    g_file_info_set_file_type (info, G_FILE_TYPE_REGULAR);
+
+  if (!(_g_file_attribute_matcher_matches_id (matcher, G_FILE_ATTRIBUTE_ID_STANDARD_SIZE) ||
+        _g_file_attribute_matcher_matches_id (matcher, G_FILE_ATTRIBUTE_ID_STANDARD_CONTENT_TYPE) ||
+        _g_file_attribute_matcher_matches_id (matcher, G_FILE_ATTRIBUTE_ID_TIME_MODIFIED) ||
+        _g_file_attribute_matcher_matches_id (matcher, G_FILE_ATTRIBUTE_ID_TIME_MODIFIED_NSEC) ||
+        _g_file_attribute_matcher_matches_id (matcher, G_FILE_ATTRIBUTE_ID_TIME_MODIFIED_USEC)))
+    {
+      return info;
+    }
 
   connection = G_WINHTTP_VFS_GET_CLASS (winhttp_file->vfs)->funcs->pWinHttpConnect
     (G_WINHTTP_VFS (winhttp_file->vfs)->session,
@@ -530,14 +549,6 @@ g_winhttp_file_query_info (GFile                *file,
   if (!_g_winhttp_response (winhttp_file->vfs, request, error, "HEAD request"))
     return NULL;
 
-  matcher = g_file_attribute_matcher_new (attributes);
-  info = g_file_info_new ();
-  g_file_info_set_attribute_mask (info, matcher);
-
-  basename = g_winhttp_file_get_basename (file);
-  g_file_info_set_name (info, basename);
-  g_free (basename);
-
   content_length = NULL;
   if (_g_winhttp_query_header (winhttp_file->vfs,
                                request,
@@ -547,7 +558,7 @@ g_winhttp_file_query_info (GFile                *file,
                                NULL))
     {
       gint64 cl;
-      int n;
+      size_t n;
       const char *gint64_format = "%"G_GINT64_FORMAT"%n";
       wchar_t *gint64_format_w = g_utf8_to_utf16 (gint64_format, -1, NULL, NULL, NULL);
 
@@ -603,12 +614,15 @@ g_winhttp_file_query_info (GFile                *file,
       last_modified.wYear >= 1970 &&
       last_modified.wYear < 2038)
     {
-      GTimeVal tv;
+      GDateTime *dt = NULL, *dt2 = NULL;
 
-      tv.tv_sec = mktime_utc (&last_modified);
-      tv.tv_usec = last_modified.wMilliseconds * 1000;
+      dt = g_date_time_new_from_unix_utc (last_modified.wMilliseconds / 1000);
+      dt2 = g_date_time_add_seconds (dt, (last_modified.wMilliseconds % 1000) / 1000);
 
-      g_file_info_set_modification_time (info, &tv);
+      g_file_info_set_modification_date_time (info, dt2);
+
+      g_date_time_unref (dt2);
+      g_date_time_unref (dt);
     }
 
   g_file_attribute_matcher_unref (matcher);

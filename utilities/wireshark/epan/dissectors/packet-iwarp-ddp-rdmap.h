@@ -9,20 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #ifndef __PACKET_IWARP_DDP_RDMAP_H_
 #define __PACKET_IWARP_DDP_RDMAP_H_
@@ -37,8 +24,33 @@
 #define RDMA_SEND_SE_INVALIDATE 0x06
 #define RDMA_TERMINATE 0x07
 
-struct rdmapinfo {
-	guint8 opcode;
-};
+/* Read request info */
+typedef struct rdmap_request {
+	uint32_t sink_stag;
+	uint64_t sink_toffset;
+	uint32_t source_stag;
+	uint64_t source_toffset;
+	uint32_t message_size;
+} rdmap_request_t;
+
+typedef struct rdmapinfo {
+	uint8_t  opcode;
+	bool last_flag;
+	bool is_tagged;
+	union {
+		/* Tagged Buffer Model */
+		struct {
+			uint32_t steering_tag;
+			uint64_t tagged_offset;
+		};
+		/* Untagged Buffer Model */
+		struct {
+			uint32_t queue_number;
+			uint32_t message_seq_num;
+			uint32_t message_offset;
+		};
+	};
+	rdmap_request_t *read_request;
+} rdmap_info_t;
 
 #endif /* __PACKET_IWARP_DDP_RDMAP_H_ */

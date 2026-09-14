@@ -4,10 +4,12 @@
  * GQueue: Double ended queue implementation, piggy backed on GList.
  * Copyright (C) 1998 Tim Janik
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,31 +24,6 @@
  * MT safe
  */
 
-/**
- * SECTION:queue
- * @Title: Double-ended Queues
- * @Short_description: double-ended queue data structure
- *
- * The #GQueue structure and its associated functions provide a standard
- * queue data structure. Internally, GQueue uses the same data structure
- * as #GList to store elements.
- *
- * The data contained in each element can be either integer values, by
- * using one of the [Type Conversion Macros][glib-Type-Conversion-Macros],
- * or simply pointers to any type of data.
- *
- * To create a new GQueue, use g_queue_new().
- *
- * To initialize a statically-allocated GQueue, use #G_QUEUE_INIT or
- * g_queue_init().
- *
- * To add elements, use g_queue_push_head(), g_queue_push_head_link(),
- * g_queue_push_tail() and g_queue_push_tail_link().
- *
- * To remove elements, use g_queue_pop_head() and g_queue_pop_tail().
- *
- * To free the entire queue, use g_queue_free().
- */
 #include "config.h"
 
 #include "gqueue.h"
@@ -95,6 +72,9 @@ g_queue_free (GQueue *queue)
  * Convenience method, which frees all the memory used by a #GQueue,
  * and calls the specified destroy function on every element's data.
  *
+ * @free_func should not modify the queue (eg, by removing the freed
+ * element from it).
+ *
  * Since: 2.32
  */
 void
@@ -111,7 +91,7 @@ g_queue_free_full (GQueue        *queue,
  *
  * A statically-allocated #GQueue must be initialized with this function
  * before it can be used. Alternatively you can initialize it with
- * #G_QUEUE_INIT. It is not necessary to initialize queues created with
+ * %G_QUEUE_INIT. It is not necessary to initialize queues created with
  * g_queue_new().
  *
  * Since: 2.14
@@ -141,6 +121,28 @@ g_queue_clear (GQueue *queue)
 
   g_list_free (queue->head);
   g_queue_init (queue);
+}
+
+/**
+ * g_queue_clear_full:
+ * @queue: a pointer to a #GQueue
+ * @free_func: (nullable): the function to be called to free memory allocated
+ *
+ * Convenience method, which frees all the memory used by a #GQueue,
+ * and calls the provided @free_func on each item in the #GQueue.
+ *
+ * Since: 2.60
+ */
+void
+g_queue_clear_full (GQueue          *queue,
+                    GDestroyNotify  free_func)
+{
+  g_return_if_fail (queue != NULL);
+
+  if (free_func != NULL)
+    g_queue_foreach (queue, (GFunc) free_func, NULL);
+
+  g_queue_clear (queue);
 }
 
 /**
@@ -225,12 +227,15 @@ g_queue_copy (GQueue *queue)
 /**
  * g_queue_foreach:
  * @queue: a #GQueue
- * @func: the function to call for each element's data
+ * @func: (scope call): the function to call for each element's data
  * @user_data: user data to pass to @func
  * 
  * Calls @func for each element in the queue passing @user_data to the
  * function.
  * 
+ * It is safe for @func to remove the element from @queue, but it must
+ * not modify any part of the queue after that element.
+ *
  * Since: 2.4
  */
 void
@@ -276,7 +281,7 @@ g_queue_find (GQueue        *queue,
  * g_queue_find_custom:
  * @queue: a #GQueue
  * @data: user data passed to @func
- * @func: a #GCompareFunc to call for each element. It should return 0
+ * @func: (scope call): a #GCompareFunc to call for each element. It should return 0
  *     when the desired element is found
  *
  * Finds an element in a #GQueue, using a supplied function to find the
@@ -303,7 +308,7 @@ g_queue_find_custom (GQueue        *queue,
 /**
  * g_queue_sort:
  * @queue: a #GQueue
- * @compare_func: the #GCompareDataFunc used to sort @queue. This function
+ * @compare_func: (scope call): the #GCompareDataFunc used to sort @queue. This function
  *     is passed two elements of the queue and should return 0 if they are
  *     equal, a negative value if the first comes before the second, and
  *     a positive value if the second comes before the first.
@@ -363,7 +368,7 @@ g_queue_push_nth (GQueue   *queue,
 {
   g_return_if_fail (queue != NULL);
 
-  if (n < 0 || n >= queue->length)
+  if (n < 0 || (guint) n >= queue->length)
     {
       g_queue_push_tail (queue, data);
       return;
@@ -466,7 +471,7 @@ g_queue_push_nth_link (GQueue *queue,
   g_return_if_fail (queue != NULL);
   g_return_if_fail (link_ != NULL);
 
-  if (n < 0 || n >= queue->length)
+  if (n < 0 || (guint) n >= queue->length)
     {
       g_queue_push_tail_link (queue, link_);
       return;
@@ -488,8 +493,10 @@ g_queue_push_nth_link (GQueue *queue,
   if (queue->head->prev)
     queue->head = queue->head->prev;
 
-  if (queue->tail->next)
-    queue->tail = queue->tail->next;
+  /* The case where we’re pushing @link_ at the end of @queue is handled above
+   * using g_queue_push_tail_link(), so we should never have to manually adjust
+   * queue->tail. */
+  g_assert (queue->tail->next == NULL);
   
   queue->length++;
 }
@@ -740,7 +747,7 @@ g_queue_peek_nth_link (GQueue *queue,
                        guint   n)
 {
   GList *link;
-  gint i;
+  guint i;
   
   g_return_val_if_fail (queue != NULL, NULL);
 
@@ -1017,6 +1024,44 @@ g_queue_insert_before (GQueue   *queue,
 }
 
 /**
+ * g_queue_insert_before_link:
+ * @queue: a #GQueue
+ * @sibling: (nullable): a #GList link that must be part of @queue, or %NULL to
+ *   push at the tail of the queue.
+ * @link_: a #GList link to insert which must not be part of any other list.
+ *
+ * Inserts @link_ into @queue before @sibling.
+ *
+ * @sibling must be part of @queue.
+ *
+ * Since: 2.62
+ */
+void
+g_queue_insert_before_link (GQueue   *queue,
+                            GList    *sibling,
+                            GList    *link_)
+{
+  g_return_if_fail (queue != NULL);
+  g_return_if_fail (link_ != NULL);
+  g_return_if_fail (link_->prev == NULL);
+  g_return_if_fail (link_->next == NULL);
+
+  if G_UNLIKELY (sibling == NULL)
+    {
+      /* We don't use g_list_insert_before_link() with a NULL sibling because it
+       * would be a O(n) operation and we would need to update manually the tail
+       * pointer.
+       */
+      g_queue_push_tail_link (queue, link_);
+    }
+  else
+    {
+      queue->head = g_list_insert_before_link (queue->head, sibling, link_);
+      queue->length++;
+    }
+}
+
+/**
  * g_queue_insert_after:
  * @queue: a #GQueue
  * @sibling: (nullable): a #GList link that must be part of @queue, or %NULL to
@@ -1044,10 +1089,39 @@ g_queue_insert_after (GQueue   *queue,
 }
 
 /**
+ * g_queue_insert_after_link:
+ * @queue: a #GQueue
+ * @sibling: (nullable): a #GList link that must be part of @queue, or %NULL to
+ *   push at the head of the queue.
+ * @link_: a #GList link to insert which must not be part of any other list.
+ *
+ * Inserts @link_ into @queue after @sibling.
+ *
+ * @sibling must be part of @queue.
+ *
+ * Since: 2.62
+ */
+void
+g_queue_insert_after_link (GQueue   *queue,
+                           GList    *sibling,
+                           GList    *link_)
+{
+  g_return_if_fail (queue != NULL);
+  g_return_if_fail (link_ != NULL);
+  g_return_if_fail (link_->prev == NULL);
+  g_return_if_fail (link_->next == NULL);
+
+  if G_UNLIKELY (sibling == NULL)
+    g_queue_push_head_link (queue, link_);
+  else
+    g_queue_insert_before_link (queue, sibling->next, link_);
+}
+
+/**
  * g_queue_insert_sorted:
  * @queue: a #GQueue
  * @data: the data to insert
- * @func: the #GCompareDataFunc used to compare elements in the queue. It is
+ * @func: (scope call): the #GCompareDataFunc used to compare elements in the queue. It is
  *     called with two elements of the @queue and @user_data. It should
  *     return 0 if the elements are equal, a negative value if the first
  *     element comes before the second, and a positive value if the second

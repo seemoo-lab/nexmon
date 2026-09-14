@@ -15,33 +15,30 @@
  * Wiretap Library
  * Copyright (c) 1998 by Gilbert Ramirez <gram@alumni.rice.edu>
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
-#include <errno.h>
+#include "peektagged.h"
+
 #include <string.h>
 #include <stdlib.h>
-#include "wtap-int.h"
+#include "wtap_module.h"
 #include "file_wrappers.h"
-#include "peektagged.h"
-#include <wsutil/frequency-utils.h>
+#include <wsutil/802_11-utils.h>
+#include <wsutil/array.h>
+#include <wsutil/strtoi.h>
+#include <wsutil/pint.h>
+#include <wsutil/str_util.h>
+#include <libxml/tree.h>
+#include <libxml/parser.h>
+#include <libxml/xpath.h>
+
+void register_peektagged(void);
 
 /* CREDITS
  *
- * This file decoder could not have been writen without examining
+ * This file decoder could not have been written without examining
  * http://www.varsanofiev.com/inside/airopeekv9.htm, the help from
  * Martin Regner and Guy Harris, and the etherpeek.c file (as it
  * was called before renaming it to peekclassic.c).
@@ -67,16 +64,27 @@
  * "sess" - capture session information.  The contents are XML, giving
  * various information about the capture session.
  *
+ * "cpid" - capture ID.  The contents are XML, giving a capture ID UUID
+ * and Index. The same UUID appears in the "sess" section, so it's not
+ * clear what this adds. In at least one file this is *before* the "sess"
+ * section, and in other files after it.
+ *
  * "pkts" - captured packets.  The contents are binary records, one for
  * each packet, with the record being a list of tagged values followed
  * by the raw packet data.
  */
 typedef struct peektagged_section_header {
-        gint8   section_id[4];          /* string identifying the section */
-        guint32 section_len;            /* little-endian section length */
-        guint32 section_const;          /* little-endian 0x00000200 */
+        int8_t  section_id[4];          /* string identifying the section */
+        uint32_t section_len;            /* little-endian section length */
+        uint32_t section_const;          /* little-endian 0x00000200 */
 } peektagged_section_header_t;
 
+/* Size of the "header" sections */
+/* XXX - What is the maximum practical size here? If this increases much
+ * more, we'll have to allocate on the heap instead of stack.
+ */
+#define MAX_SECTION_SIZE    16384
+#define SECTION_CONST_VALUE 0x00000200
 /*
  * Network subtype values.
  *
@@ -118,6 +126,8 @@ typedef struct peektagged_section_header {
  *
  * We're assuming here that the "remote Peek" flags from bug 9586 are
  * the same as the "Peek tagged" flags.
+ *
+ * Are these the same as in "Peek classic"?  The first three are.
  */
 #define FLAGS_CONTROL_FRAME     0x01    /* Frame is a control frame */
 #define FLAGS_HAS_CRC_ERROR     0x02    /* Frame has a CRC error */
@@ -155,255 +165,111 @@ typedef struct peektagged_section_header {
 
 /* 64-bit time in nanoseconds from the (Windows FILETIME) epoch */
 typedef struct peektagged_utime {
-        guint32 upper;
-        guint32 lower;
+        uint32_t upper;
+        uint32_t lower;
 } peektagged_utime;
 
 typedef struct {
-        gboolean        has_fcs;
+        bool            has_fcs;
 } peektagged_t;
 
-static gboolean peektagged_read(wtap *wth, int *err, gchar **err_info,
-    gint64 *data_offset);
-static gboolean peektagged_seek_read(wtap *wth, gint64 seek_off,
-    struct wtap_pkthdr *phdr, Buffer *buf, int *err, gchar **err_info);
+static int peektagged_file_type_subtype = -1;
 
-static int wtap_file_read_pattern (wtap *wth, const char *pattern, int *err,
-                                gchar **err_info)
+static uint32_t
+peektagged_get_file_version(xmlDocPtr doc)
 {
-    int c;
-    const char *cp;
+    xmlNodePtr root_element;
 
-    cp = pattern;
-    while (*cp)
-    {
-        c = file_getc(wth->fh);
-        if (c == EOF)
-        {
-            *err = file_error(wth->fh, err_info);
-            if (*err != 0 && *err != WTAP_ERR_SHORT_READ)
-                return -1;      /* error */
-            return 0;   /* EOF */
-        }
-        if (c == *cp)
-            cp++;
-        else
-        {
-            if (c == pattern[0])
-                cp = &pattern[1];
-            else
-                cp = pattern;
-        }
-    }
-    return (*cp == '\0' ? 1 : 0);
-}
-
-
-static int wtap_file_read_till_separator (wtap *wth, char *buffer, int buflen,
-                                        const char *separators, int *err,
-                                        gchar **err_info)
-{
-    int c;
-    char *cp;
-    int i;
-
-    for (cp = buffer, i = 0; i < buflen; i++, cp++)
-    {
-        c = file_getc(wth->fh);
-        if (c == EOF)
-        {
-            *err = file_error(wth->fh, err_info);
-            if (*err != 0 && *err != WTAP_ERR_SHORT_READ)
-                return -1;      /* error */
-            return 0;   /* EOF */
-        }
-        if (strchr (separators, c) != NULL)
-        {
-            *cp = '\0';
-            break;
-        }
-        else
-            *cp = c;
-    }
-    return i;
-}
-
-
-static int wtap_file_read_number (wtap *wth, guint32 *num, int *err,
-                                gchar **err_info)
-{
-    int ret;
-    char str_num[12];
-    unsigned long value;
-    char *p;
-
-    ret = wtap_file_read_till_separator (wth, str_num, sizeof (str_num)-1, "<",
-                                         err, err_info);
-    if (ret == 0 || ret == -1) {
-        /* 0 means EOF, which means "not a valid Peek tagged file";
-           -1 means error, and "err" has been set. */
-        return ret;
-    }
-    value = strtoul (str_num, &p, 10);
-    if (p == str_num || value > G_MAXUINT32)
+    root_element = xmlDocGetRootElement(doc);
+    if (root_element == NULL)
         return 0;
-    *num = (guint32)value;
-    return 1;
+
+    if (xmlStrcmp(root_element->name, (const xmlChar*)"VersionInfo") != 0)
+        return 0;
+
+    for (xmlNodePtr cur = root_element->children; cur != NULL; cur = cur->next) {
+        if (cur->type == XML_ELEMENT_NODE && xmlStrcmp(cur->name, (const xmlChar*)"FileVersion") == 0) {
+            uint32_t value;
+            xmlChar* str_version = xmlNodeGetContent(cur);
+            if (str_version == NULL)
+                return 0;
+
+            if (!ws_strtou32(str_version, NULL, &value)) {
+                xmlFree(str_version);
+                return 0;
+            }
+            xmlFree(str_version);
+            return value;
+        }
+    }
+
+    // Not found
+    return 0;
 }
 
-
-wtap_open_return_val peektagged_open(wtap *wth, int *err, gchar **err_info)
+static bool
+peektagged_get_media_info(xmlDocPtr doc, uint32_t *mediaType, uint32_t* mediaSubType)
 {
-    peektagged_section_header_t ap_hdr;
-    int ret;
-    guint32 fileVersion = 0;
-    guint32 mediaType;
-    guint32 mediaSubType = 0;
-    int file_encap;
-    static const int peektagged_encap[] = {
-        WTAP_ENCAP_ETHERNET,
-        WTAP_ENCAP_IEEE_802_11_WITH_RADIO,
-        WTAP_ENCAP_IEEE_802_11_WITH_RADIO,
-        WTAP_ENCAP_IEEE_802_11_WITH_RADIO
-    };
-    #define NUM_PEEKTAGGED_ENCAPS (sizeof peektagged_encap / sizeof peektagged_encap[0])
-    peektagged_t *peektagged;
+    xmlNodePtr root_element;
+    bool found_media_type = false,
+         found_media_subtype = false;
 
-    if (!wtap_read_bytes(wth->fh, &ap_hdr, (int)sizeof(ap_hdr), err, err_info)) {
-        if (*err != WTAP_ERR_SHORT_READ)
-            return WTAP_OPEN_ERROR;
-        return WTAP_OPEN_NOT_MINE;
+    root_element = xmlDocGetRootElement(doc);
+    if (root_element == NULL)
+        return false;
+
+    if (xmlStrcmp(root_element->name, (const xmlChar*)"Session") != 0)
+        return false;
+
+    for (xmlNodePtr cur = root_element->children; cur != NULL; cur = cur->next) {
+        if (cur->type == XML_ELEMENT_NODE && xmlStrcmp(cur->name, (const xmlChar*)"MediaType") == 0) {
+            xmlChar* str_type = xmlNodeGetContent(cur);
+            if (str_type != NULL) {
+                if (ws_strtou32(str_type, NULL, mediaType))
+                    found_media_type = true;
+
+                xmlFree(str_type);
+            }
+        }
+        else if (cur->type == XML_ELEMENT_NODE && xmlStrcmp(cur->name, (const xmlChar*)"MediaSubType") == 0) {
+            xmlChar* str_type = xmlNodeGetContent(cur);
+
+            if (str_type != NULL) {
+                if (ws_strtou32(str_type, NULL, mediaSubType))
+                    found_media_subtype = true;
+
+                xmlFree(str_type);
+            }
+        }
+        /* XXX - There is some other information we could parse out of here
+         * that might be useful. */
     }
 
-    if (memcmp (ap_hdr.section_id, "\177ver", sizeof(ap_hdr.section_id)) != 0)
-        return WTAP_OPEN_NOT_MINE;      /* doesn't begin with a "\177ver" section */
+    return (found_media_type && found_media_subtype);
+}
+
+static bool
+peektagged_skip_cpid(wtap* wth, peektagged_section_header_t* ap_hdr, int* err, char** err_info)
+{
+    uint32_t length;
 
     /*
-     * XXX - we should get the length of the "\177ver" section, check
-     * that it's followed by a little-endian 0x00000200, and then,
-     * when reading the XML, make sure we don't go past the end of
-     * that section, and skip to the end of that section when
-     * we have the file version (and possibly check to make sure all
-     * tags are properly opened and closed).
+     * If we see an "cpid" section, which appears to be optional, skip over it.
      */
-    ret = wtap_file_read_pattern (wth, "<FileVersion>", err, err_info);
-    if (ret == -1)
-        return WTAP_OPEN_ERROR;
-    if (ret == 0) {
-        /* 0 means EOF, which means "not a valid Peek tagged file" */
-        return WTAP_OPEN_NOT_MINE;
-    }
-    ret = wtap_file_read_number (wth, &fileVersion, err, err_info);
-    if (ret == -1)
-        return WTAP_OPEN_ERROR;
-    if (ret == 0) {
-        /* 0 means EOF, which means "not a valid Peek tagged file" */
-        return WTAP_OPEN_NOT_MINE;
+    if (memcmp(ap_hdr->section_id, "cpid", sizeof(ap_hdr->section_id)) == 0) {
+        length = GUINT32_TO_LE(ap_hdr->section_len);
+        if ((length >= MAX_SECTION_SIZE) || (GUINT32_TO_LE(ap_hdr->section_const) != SECTION_CONST_VALUE))
+            return false;
+
+        if (!wtap_read_bytes(wth->fh, NULL, (int)length, err, err_info)) {
+            return false;
+        }
+
+        if (!wtap_read_bytes(wth->fh, ap_hdr, (int)sizeof(*ap_hdr), err, err_info))
+            return false;
     }
 
-    /* If we got this far, we assume it's a Peek tagged file. */
-    if (fileVersion != 9) {
-        /* We only support version 9. */
-        *err = WTAP_ERR_UNSUPPORTED;
-        *err_info = g_strdup_printf("peektagged: version %u unsupported",
-            fileVersion);
-        return WTAP_OPEN_ERROR;
-    }
-
-    /*
-     * XXX - once we've skipped the "\177ver" section, we should
-     * check for a "sess" section and fail if we don't see it.
-     * Then we should get the length of the "sess" section, check
-     * that it's followed by a little-endian 0x00000200, and then,
-     * when reading the XML, make sure we don't go past the end of
-     * that section, and skip to the end of the section when
-     * we have the file version (and possibly check to make sure all
-     * tags are properly opened and closed).
-     */
-    ret = wtap_file_read_pattern (wth, "<MediaType>", err, err_info);
-    if (ret == -1)
-        return WTAP_OPEN_ERROR;
-    if (ret == 0) {
-        *err = WTAP_ERR_BAD_FILE;
-        *err_info = g_strdup("peektagged: <MediaType> tag not found");
-        return WTAP_OPEN_ERROR;
-    }
-    /* XXX - this appears to be 0 in both the EtherPeek and AiroPeek
-       files we've seen; should we require it to be 0? */
-    ret = wtap_file_read_number (wth, &mediaType, err, err_info);
-    if (ret == -1)
-        return WTAP_OPEN_ERROR;
-    if (ret == 0) {
-        *err = WTAP_ERR_BAD_FILE;
-        *err_info = g_strdup("peektagged: <MediaType> value not found");
-        return WTAP_OPEN_ERROR;
-    }
-
-    ret = wtap_file_read_pattern (wth, "<MediaSubType>", err, err_info);
-    if (ret == -1)
-        return WTAP_OPEN_ERROR;
-    if (ret == 0) {
-        *err = WTAP_ERR_BAD_FILE;
-        *err_info = g_strdup("peektagged: <MediaSubType> tag not found");
-        return WTAP_OPEN_ERROR;
-    }
-    ret = wtap_file_read_number (wth, &mediaSubType, err, err_info);
-    if (ret == -1)
-        return WTAP_OPEN_ERROR;
-    if (ret == 0) {
-        *err = WTAP_ERR_BAD_FILE;
-        *err_info = g_strdup("peektagged: <MediaSubType> value not found");
-        return WTAP_OPEN_ERROR;
-    }
-    if (mediaSubType >= NUM_PEEKTAGGED_ENCAPS
-        || peektagged_encap[mediaSubType] == WTAP_ENCAP_UNKNOWN) {
-        *err = WTAP_ERR_UNSUPPORTED;
-        *err_info = g_strdup_printf("peektagged: network type %u unknown or unsupported",
-            mediaSubType);
-        return WTAP_OPEN_ERROR;
-    }
-
-    ret = wtap_file_read_pattern (wth, "pkts", err, err_info);
-    if (ret == -1)
-        return WTAP_OPEN_ERROR;
-    if (ret == 0) {
-        *err = WTAP_ERR_SHORT_READ;
-        return WTAP_OPEN_ERROR;
-    }
-
-    /* skip 8 zero bytes */
-    if (file_seek (wth->fh, 8L, SEEK_CUR, err) == -1)
-        return WTAP_OPEN_NOT_MINE;
-
-    /*
-     * This is an Peek tagged file.
-     */
-    file_encap = peektagged_encap[mediaSubType];
-
-    wth->file_type_subtype = WTAP_FILE_TYPE_SUBTYPE_PEEKTAGGED;
-    wth->file_encap = file_encap;
-    wth->subtype_read = peektagged_read;
-    wth->subtype_seek_read = peektagged_seek_read;
-    wth->file_tsprec = WTAP_TSPREC_NSEC;
-
-    peektagged = (peektagged_t *)g_malloc(sizeof(peektagged_t));
-    wth->priv = (void *)peektagged;
-    switch (mediaSubType) {
-
-    case PEEKTAGGED_NST_ETHERNET:
-    case PEEKTAGGED_NST_802_11:
-    case PEEKTAGGED_NST_802_11_2:
-        peektagged->has_fcs = FALSE;
-        break;
-
-    case PEEKTAGGED_NST_802_11_WITH_FCS:
-        peektagged->has_fcs = TRUE;
-        break;
-    }
-
-    wth->snapshot_length   = 0; /* not available in header */
-
-    return WTAP_OPEN_MINE;
+    return true;
 }
 
 /*
@@ -416,35 +282,36 @@ wtap_open_return_val peektagged_open(wtap *wth, int *err, gchar **err_info)
  * are present.
  */
 static int
-peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
-                       Buffer *buf, int *err, gchar **err_info)
+peektagged_read_packet(wtap *wth, FILE_T fh, wtap_rec *rec,
+                       int *err, char **err_info)
 {
     peektagged_t *peektagged = (peektagged_t *)wth->priv;
-    gboolean read_a_tag = FALSE;
-    guint8 tag_value[6];
-    guint16 tag;
-    gboolean saw_length = FALSE;
-    guint32 length = 0;
-    guint32 sliceLength = 0;
-    gboolean saw_timestamp_lower = FALSE;
-    gboolean saw_timestamp_upper = FALSE;
+    bool read_a_tag = false;
+    uint8_t tag_value[6];
+    uint16_t tag;
+    bool saw_length = false;
+    uint32_t length = 0;
+    uint32_t sliceLength = 0;
+    bool saw_timestamp_lower = false;
+    bool saw_timestamp_upper = false;
+    bool saw_flags_and_status = false;
     peektagged_utime timestamp;
-    guint32 ext_flags = 0;
-    gboolean saw_data_rate_or_mcs_index = FALSE;
-    guint32 data_rate_or_mcs_index = 0;
-    gint channel;
-    guint frequency;
-    struct ieee_802_11_phdr ieee_802_11;
-    guint i;
+    uint32_t flags_and_status = 0;
+    uint32_t ext_flags = 0;
+    bool saw_data_rate_or_mcs_index = false;
+    uint32_t data_rate_or_mcs_index = 0;
+    int channel;
+    unsigned frequency;
+    struct ieee_802_11_phdr ieee_802_11 = {0};
+    unsigned i;
     int skip_len = 0;
-    guint64 t;
+    uint64_t t;
 
     timestamp.upper = 0;
     timestamp.lower = 0;
-    memset(&ieee_802_11, 0, sizeof ieee_802_11);
     ieee_802_11.fcs_len = -1; /* Unknown */
-    ieee_802_11.decrypted = FALSE;
-    ieee_802_11.datapad = FALSE;
+    ieee_802_11.decrypted = false;
+    ieee_802_11.datapad = false;
     ieee_802_11.phy = PHDR_802_11_PHY_UNKNOWN;
 
     /* Extract the fields from the packet header */
@@ -462,8 +329,8 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
             }
             return -1;
         }
-        read_a_tag = TRUE;
-        tag = pletoh16(&tag_value[0]);
+        read_a_tag = true;
+        tag = pletohu16(&tag_value[0]);
         switch (tag) {
 
         case TAG_PEEKTAGGED_LENGTH:
@@ -472,8 +339,8 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
                 *err_info = g_strdup("peektagged: record has two length fields");
                 return -1;
             }
-            length = pletoh32(&tag_value[2]);
-            saw_length = TRUE;
+            length = pletohu32(&tag_value[2]);
+            saw_length = true;
             break;
 
         case TAG_PEEKTAGGED_TIMESTAMP_LOWER:
@@ -482,8 +349,8 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
                 *err_info = g_strdup("peektagged: record has two timestamp-lower fields");
                 return -1;
             }
-            timestamp.lower = pletoh32(&tag_value[2]);
-            saw_timestamp_lower = TRUE;
+            timestamp.lower = pletohu32(&tag_value[2]);
+            saw_timestamp_lower = true;
             break;
 
         case TAG_PEEKTAGGED_TIMESTAMP_UPPER:
@@ -492,42 +359,43 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
                 *err_info = g_strdup("peektagged: record has two timestamp-upper fields");
                 return -1;
             }
-            timestamp.upper = pletoh32(&tag_value[2]);
-            saw_timestamp_upper = TRUE;
+            timestamp.upper = pletohu32(&tag_value[2]);
+            saw_timestamp_upper = true;
             break;
 
         case TAG_PEEKTAGGED_FLAGS_AND_STATUS:
-            /* XXX - not used yet */
+            saw_flags_and_status = true;
+            flags_and_status = pletohu32(&tag_value[2]);
             break;
 
         case TAG_PEEKTAGGED_CHANNEL:
-            ieee_802_11.has_channel = TRUE;
-            ieee_802_11.channel = pletoh32(&tag_value[2]);
+            ieee_802_11.has_channel = true;
+            ieee_802_11.channel = pletohu32(&tag_value[2]);
             break;
 
         case TAG_PEEKTAGGED_DATA_RATE_OR_MCS_INDEX:
-            data_rate_or_mcs_index = pletoh32(&tag_value[2]);
-            saw_data_rate_or_mcs_index = TRUE;
+            data_rate_or_mcs_index = pletohu32(&tag_value[2]);
+            saw_data_rate_or_mcs_index = true;
             break;
 
         case TAG_PEEKTAGGED_SIGNAL_PERC:
-            ieee_802_11.has_signal_percent = TRUE;
-            ieee_802_11.signal_percent = pletoh32(&tag_value[2]);
+            ieee_802_11.has_signal_percent = true;
+            ieee_802_11.signal_percent = pletohu32(&tag_value[2]);
             break;
 
         case TAG_PEEKTAGGED_SIGNAL_DBM:
-            ieee_802_11.has_signal_dbm = TRUE;
-            ieee_802_11.signal_dbm = pletoh32(&tag_value[2]);
+            ieee_802_11.has_signal_dbm = true;
+            ieee_802_11.signal_dbm = pletohu32(&tag_value[2]);
             break;
 
         case TAG_PEEKTAGGED_NOISE_PERC:
-            ieee_802_11.has_noise_percent = TRUE;
-            ieee_802_11.noise_percent = pletoh32(&tag_value[2]);
+            ieee_802_11.has_noise_percent = true;
+            ieee_802_11.noise_percent = pletohu32(&tag_value[2]);
             break;
 
         case TAG_PEEKTAGGED_NOISE_DBM:
-            ieee_802_11.has_noise_dbm = TRUE;
-            ieee_802_11.noise_dbm = pletoh32(&tag_value[2]);
+            ieee_802_11.has_noise_dbm = true;
+            ieee_802_11.noise_dbm = pletohu32(&tag_value[2]);
             break;
 
         case TAG_PEEKTAGGED_UNKNOWN_0x000A:
@@ -539,8 +407,8 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
 
         case TAG_PEEKTAGGED_CENTER_FREQUENCY:
             /* XXX - also seen in an EtherPeek capture; value unknown */
-            ieee_802_11.has_frequency = TRUE;
-            ieee_802_11.frequency = pletoh32(&tag_value[2]);
+            ieee_802_11.has_frequency = true;
+            ieee_802_11.frequency = pletohu32(&tag_value[2]);
             break;
 
         case TAG_PEEKTAGGED_UNKNOWN_0x000E:
@@ -608,7 +476,7 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
              * We assume this is present for HT and VHT frames and absent
              * for other frames.
              */
-            ext_flags = pletoh32(&tag_value[2]);
+            ext_flags = pletohu32(&tag_value[2]);
             if (ext_flags & EXT_FLAG_802_11ac) {
                 ieee_802_11.phy = PHDR_802_11_PHY_11AC;
                 /*
@@ -622,12 +490,12 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
                 switch (ext_flags & EXT_FLAGS_GI) {
 
                 case EXT_FLAG_HALF_GI:
-                    ieee_802_11.phy_info.info_11ac.has_short_gi = TRUE;
+                    ieee_802_11.phy_info.info_11ac.has_short_gi = true;
                     ieee_802_11.phy_info.info_11ac.short_gi = 1;
                     break;
 
                 case EXT_FLAG_FULL_GI:
-                    ieee_802_11.phy_info.info_11ac.has_short_gi = TRUE;
+                    ieee_802_11.phy_info.info_11ac.has_short_gi = true;
                     ieee_802_11.phy_info.info_11ac.short_gi = 0;
                     break;
 
@@ -640,22 +508,22 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
                 switch (ext_flags & EXT_FLAGS_BANDWIDTH) {
 
                 case 0:
-                    ieee_802_11.phy_info.info_11n.has_bandwidth = TRUE;
+                    ieee_802_11.phy_info.info_11n.has_bandwidth = true;
                     ieee_802_11.phy_info.info_11n.bandwidth = PHDR_802_11_BANDWIDTH_20_MHZ;
                     break;
 
                 case EXT_FLAG_20_MHZ_LOWER:
-                    ieee_802_11.phy_info.info_11n.has_bandwidth = TRUE;
+                    ieee_802_11.phy_info.info_11n.has_bandwidth = true;
                     ieee_802_11.phy_info.info_11n.bandwidth = PHDR_802_11_BANDWIDTH_20_20L;
                     break;
 
                 case EXT_FLAG_20_MHZ_UPPER:
-                    ieee_802_11.phy_info.info_11n.has_bandwidth = TRUE;
+                    ieee_802_11.phy_info.info_11n.has_bandwidth = true;
                     ieee_802_11.phy_info.info_11n.bandwidth = PHDR_802_11_BANDWIDTH_20_20U;
                     break;
 
                 case EXT_FLAG_40_MHZ:
-                    ieee_802_11.phy_info.info_11n.has_bandwidth = TRUE;
+                    ieee_802_11.phy_info.info_11n.has_bandwidth = true;
                     ieee_802_11.phy_info.info_11n.bandwidth = PHDR_802_11_BANDWIDTH_40_MHZ;
                     break;
 
@@ -667,12 +535,12 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
                 switch (ext_flags & EXT_FLAGS_GI) {
 
                 case EXT_FLAG_HALF_GI:
-                    ieee_802_11.phy_info.info_11n.has_short_gi = TRUE;
+                    ieee_802_11.phy_info.info_11n.has_short_gi = true;
                     ieee_802_11.phy_info.info_11n.short_gi = 1;
                     break;
 
                 case EXT_FLAG_FULL_GI:
-                    ieee_802_11.phy_info.info_11n.has_short_gi = TRUE;
+                    ieee_802_11.phy_info.info_11n.has_short_gi = true;
                     ieee_802_11.phy_info.info_11n.short_gi = 0;
                     break;
 
@@ -684,7 +552,7 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
             break;
 
         case TAG_PEEKTAGGED_SLICE_LENGTH:
-            sliceLength = pletoh32(&tag_value[2]);
+            sliceLength = pletohu32(&tag_value[2]);
             break;
 
         default:
@@ -714,25 +582,32 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
     if (sliceLength == 0)
         sliceLength = length;
 
-    if (sliceLength > WTAP_MAX_PACKET_SIZE) {
+    if (sliceLength > WTAP_MAX_PACKET_SIZE_STANDARD) {
         /*
          * Probably a corrupt capture file; don't blow up trying
          * to allocate space for an immensely-large packet.
          */
         *err = WTAP_ERR_BAD_FILE;
-        *err_info = g_strdup_printf("peektagged: File has %u-byte packet, bigger than maximum of %u",
-            sliceLength, WTAP_MAX_PACKET_SIZE);
+        *err_info = ws_strdup_printf("peektagged: File has %u-byte packet, bigger than maximum of %u",
+            sliceLength, WTAP_MAX_PACKET_SIZE_STANDARD);
         return -1;
     }
 
-    phdr->rec_type = REC_TYPE_PACKET;
-    phdr->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
-    phdr->len    = length;
-    phdr->caplen = sliceLength;
+    wtap_setup_packet_rec(rec, wth->file_encap);
+    rec->block = wtap_block_create(WTAP_BLOCK_PACKET);
+    rec->presence_flags = WTAP_HAS_TS|WTAP_HAS_CAP_LEN;
+    rec->rec_header.packet_header.len    = length;
+    rec->rec_header.packet_header.caplen = sliceLength;
+    if (saw_flags_and_status) {
+        uint32_t flags = 0;
+        if (flags_and_status & FLAGS_HAS_CRC_ERROR)
+            flags |= PACK_FLAGS_CRC_ERROR;
+        wtap_block_add_uint32_option(rec->block, OPT_PKT_FLAGS, flags);
+    }
 
     /* calculate and fill in packet time stamp */
-    t = (((guint64) timestamp.upper) << 32) + timestamp.lower;
-    if (!nsfiletime_to_nstime(&phdr->ts, t)) {
+    t = (((uint64_t) timestamp.upper) << 32) + timestamp.lower;
+    if (!filetime_ns_to_nstime(&rec->ts, t)) {
         *err = WTAP_ERR_BAD_FILE;
         *err_info = g_strdup("peektagged: time stamp outside supported range");
         return -1;
@@ -749,20 +624,64 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
                  * XXX - what about 11ac?
                  */
                 if (!(ext_flags & EXT_FLAG_802_11ac)) {
-                    ieee_802_11.phy_info.info_11n.has_mcs_index = TRUE;
+                    ieee_802_11.phy_info.info_11n.has_mcs_index = true;
                     ieee_802_11.phy_info.info_11n.mcs_index = data_rate_or_mcs_index;
                 }
             } else {
                 /* It's a data rate. */
-                ieee_802_11.has_data_rate = TRUE;
+                ieee_802_11.has_data_rate = true;
                 ieee_802_11.data_rate = data_rate_or_mcs_index;
+                if (ieee_802_11.phy == PHDR_802_11_PHY_UNKNOWN) {
+                  /*
+                   * We don't know they PHY; try to guess it based
+                   * on the data rate and channel/center frequency.
+                   */
+                  if (RATE_IS_DSSS(ieee_802_11.data_rate)) {
+                    /* 11b */
+                    ieee_802_11.phy = PHDR_802_11_PHY_11B;
+                    if (saw_flags_and_status) {
+                      ieee_802_11.phy_info.info_11b.has_short_preamble = true;
+                      ieee_802_11.phy_info.info_11b.short_preamble =
+                          (flags_and_status & STATUS_SHORT_PREAMBLE) ? true : false;
+                    } else
+                      ieee_802_11.phy_info.info_11b.has_short_preamble = false;
+                  } else if (RATE_IS_OFDM(ieee_802_11.data_rate)) {
+                    /* 11a or 11g, depending on the band. */
+                    if (ieee_802_11.has_channel) {
+                      if (CHAN_IS_BG(ieee_802_11.channel)) {
+                        /* 11g */
+                        ieee_802_11.phy = PHDR_802_11_PHY_11G;
+                      } else {
+                        /* 11a */
+                        ieee_802_11.phy = PHDR_802_11_PHY_11A;
+                      }
+                    } else if (ieee_802_11.has_frequency) {
+                      if (FREQ_IS_BG(ieee_802_11.frequency)) {
+                        /* 11g */
+                        ieee_802_11.phy = PHDR_802_11_PHY_11G;
+                      } else {
+                        /* 11a */
+                        ieee_802_11.phy = PHDR_802_11_PHY_11A;
+                      }
+                    }
+                    if (ieee_802_11.phy == PHDR_802_11_PHY_11G) {
+                      /* Set 11g metadata */
+                      ieee_802_11.phy_info.info_11g.has_mode = false;
+                    } else if (ieee_802_11.phy == PHDR_802_11_PHY_11A) {
+                      /* Set 11a metadata */
+                      ieee_802_11.phy_info.info_11a.has_channel_type = false;
+                      ieee_802_11.phy_info.info_11a.has_turbo_type = false;
+                    }
+                    /* Otherwise we don't know the PHY */
+                  }
+                }
             }
         }
         if (ieee_802_11.has_frequency && !ieee_802_11.has_channel) {
             /* Frequency, but no channel; try to calculate the channel. */
             channel = ieee80211_mhz_to_chan(ieee_802_11.frequency);
             if (channel != -1) {
-                ieee_802_11.has_channel = TRUE;
+                ieee_802_11.has_channel = true;
                 ieee_802_11.channel = channel;
             }
         } else if (ieee_802_11.has_channel && !ieee_802_11.has_frequency) {
@@ -778,11 +697,11 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
             case PHDR_802_11_PHY_11_DSSS:
             case PHDR_802_11_PHY_11B:
             case PHDR_802_11_PHY_11G:
-                frequency = ieee80211_chan_to_mhz(ieee_802_11.channel, TRUE);
+                frequency = ieee80211_chan_to_mhz(ieee_802_11.channel, true);
                 break;
 
             case PHDR_802_11_PHY_11A:
-                frequency = ieee80211_chan_to_mhz(ieee_802_11.channel, FALSE);
+                frequency = ieee80211_chan_to_mhz(ieee_802_11.channel, false);
                 break;
 
             default:
@@ -791,26 +710,26 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
                 break;
             }
             if (frequency != 0) {
-                ieee_802_11.has_frequency = TRUE;
+                ieee_802_11.has_frequency = true;
                 ieee_802_11.frequency = frequency;
             }
         }
-        phdr->pseudo_header.ieee_802_11 = ieee_802_11;
+        rec->rec_header.packet_header.pseudo_header.ieee_802_11 = ieee_802_11;
         if (peektagged->has_fcs)
-            phdr->pseudo_header.ieee_802_11.fcs_len = 4;
+            rec->rec_header.packet_header.pseudo_header.ieee_802_11.fcs_len = 4;
         else {
-            if (phdr->len < 4 || phdr->caplen < 4) {
+            if (rec->rec_header.packet_header.len < 4 || rec->rec_header.packet_header.caplen < 4) {
                 *err = WTAP_ERR_BAD_FILE;
-                *err_info = g_strdup_printf("peektagged: 802.11 packet has length < 4");
-                return FALSE;
+                *err_info = ws_strdup_printf("peektagged: 802.11 packet has length < 4");
+                return false;
             }
-            phdr->pseudo_header.ieee_802_11.fcs_len = 0;
-            phdr->len -= 4;
-            phdr->caplen -= 4;
+            rec->rec_header.packet_header.pseudo_header.ieee_802_11.fcs_len = 0;
+            rec->rec_header.packet_header.len -= 4;
+            rec->rec_header.packet_header.caplen -= 4;
             skip_len = 4;
         }
-        phdr->pseudo_header.ieee_802_11.decrypted = FALSE;
-        phdr->pseudo_header.ieee_802_11.datapad = FALSE;
+        rec->rec_header.packet_header.pseudo_header.ieee_802_11.decrypted = false;
+        rec->rec_header.packet_header.pseudo_header.ieee_802_11.datapad = false;
         break;
 
     case WTAP_ENCAP_ETHERNET:
@@ -818,65 +737,277 @@ peektagged_read_packet(wtap *wth, FILE_T fh, struct wtap_pkthdr *phdr,
          * The last 4 bytes appear to be 0 in the captures I've seen;
          * are there any captures where it's an FCS?
          */
-        if (phdr->len < 4 || phdr->caplen < 4) {
+        if (rec->rec_header.packet_header.len < 4 || rec->rec_header.packet_header.caplen < 4) {
             *err = WTAP_ERR_BAD_FILE;
-            *err_info = g_strdup_printf("peektagged: Ethernet packet has length < 4");
-            return FALSE;
+            *err_info = ws_strdup_printf("peektagged: Ethernet packet has length < 4");
+            return false;
         }
-        phdr->pseudo_header.eth.fcs_len = 0;
-        phdr->len -= 4;
-        phdr->caplen -= 4;
+        rec->rec_header.packet_header.pseudo_header.eth.fcs_len = 0;
+        rec->rec_header.packet_header.len -= 4;
+        rec->rec_header.packet_header.caplen -= 4;
         skip_len = 4;
         break;
     }
 
     /* Read the packet data. */
-    if (!wtap_read_packet_bytes(fh, buf, phdr->caplen, err, err_info))
+    if (!wtap_read_bytes_buffer(fh, &rec->data, rec->rec_header.packet_header.caplen, err, err_info))
         return -1;
 
     return skip_len;
 }
 
-static gboolean peektagged_read(wtap *wth, int *err, gchar **err_info,
-    gint64 *data_offset)
+static bool peektagged_read(wtap *wth, wtap_rec *rec,
+    int *err, char **err_info, int64_t *data_offset)
 {
     int skip_len;
 
     *data_offset = file_tell(wth->fh);
 
     /* Read the packet. */
-    skip_len = peektagged_read_packet(wth, wth->fh, &wth->phdr,
-                                      wth->frame_buffer, err, err_info);
+    skip_len = peektagged_read_packet(wth, wth->fh, rec, err, err_info);
     if (skip_len == -1)
-        return FALSE;
+        return false;
 
     if (skip_len != 0) {
         /* Skip extra junk at the end of the packet data. */
-        if (!file_skip(wth->fh, skip_len, err))
-            return FALSE;
+        if (!wtap_read_bytes(wth->fh, NULL, skip_len, err, err_info))
+            return false;
     }
 
-    return TRUE;
+    return true;
 }
 
-static gboolean
-peektagged_seek_read(wtap *wth, gint64 seek_off,
-    struct wtap_pkthdr *phdr, Buffer *buf, int *err, gchar **err_info)
+static bool
+peektagged_seek_read(wtap *wth, int64_t seek_off, wtap_rec *rec,
+    int *err, char **err_info)
 {
     if (file_seek(wth->random_fh, seek_off, SEEK_SET, err) == -1)
-        return FALSE;
+        return false;
 
     /* Read the packet. */
-    if (peektagged_read_packet(wth, wth->random_fh, phdr, buf, err, err_info) == -1) {
+    if (peektagged_read_packet(wth, wth->random_fh, rec, err, err_info) == -1) {
         if (*err == 0)
             *err = WTAP_ERR_SHORT_READ;
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
+}
+
+wtap_open_return_val peektagged_open(wtap* wth, int* err, char** err_info)
+{
+    peektagged_section_header_t ap_hdr;
+    xmlDocPtr doc;
+    uint32_t length;
+    uint32_t fileVersion, mediaType = 0, mediaSubType = 0;
+    uint8_t sectionData[MAX_SECTION_SIZE];
+    const int peektagged_encap[] = {
+        WTAP_ENCAP_ETHERNET,
+        WTAP_ENCAP_IEEE_802_11_WITH_RADIO,
+        WTAP_ENCAP_IEEE_802_11_WITH_RADIO,
+        WTAP_ENCAP_IEEE_802_11_WITH_RADIO
+    };
+#define NUM_PEEKTAGGED_ENCAPS array_length(peektagged_encap)
+    peektagged_t* peektagged;
+
+    if (!wtap_read_bytes(wth->fh, &ap_hdr, (int)sizeof(ap_hdr), err, err_info)) {
+        if (*err != WTAP_ERR_SHORT_READ)
+            return WTAP_OPEN_ERROR;
+        return WTAP_OPEN_NOT_MINE;
+    }
+
+    if (memcmp(ap_hdr.section_id, "\177ver", sizeof(ap_hdr.section_id)) != 0)
+        return WTAP_OPEN_NOT_MINE;      /* doesn't begin with a "\177ver" section */
+
+    length = GUINT32_TO_LE(ap_hdr.section_len);
+    if ((length >= MAX_SECTION_SIZE) || (GUINT32_TO_LE(ap_hdr.section_const) != SECTION_CONST_VALUE))
+        return WTAP_OPEN_NOT_MINE;
+
+    if (!wtap_read_bytes(wth->fh, sectionData, (int)length, err, err_info)) {
+        if (*err != WTAP_ERR_SHORT_READ)
+            return WTAP_OPEN_ERROR;
+        return WTAP_OPEN_NOT_MINE;
+    }
+    sectionData[length] = 0;
+
+    /* Now section data can be parsed into a proper structure */
+    doc = xmlParseMemory(sectionData, (int)length);
+    if (doc == NULL)
+        return WTAP_OPEN_NOT_MINE;
+
+    fileVersion = peektagged_get_file_version(doc);
+    xmlFreeDoc(doc);
+    if (fileVersion == 0) {
+        /* Something when wrong trying to retrieve file version, so
+           consider this not a Peek tagged file */
+        return WTAP_OPEN_NOT_MINE;
+    }
+
+    /* If we got this far, we assume it's a Peek tagged file. */
+    if (fileVersion != 9) {
+        /* We only support version 9. */
+        *err = WTAP_ERR_UNSUPPORTED;
+        *err_info = ws_strdup_printf("peektagged: version %u unsupported",
+            fileVersion);
+        return WTAP_OPEN_ERROR;
+    }
+
+    /*
+     * Now check for a "sess" section and fail if we don't see it.
+     * Then we should get the length of the "sess" section, check
+     * that it's followed by a little-endian 0x00000200, and then,
+     * when reading the XML, make sure we don't go past the end of
+     * that section, and skip to the end of the section when
+     * we have the file version (and possibly check to make sure all
+     * tags are properly opened and closed).
+     */
+
+    if (!wtap_read_bytes(wth->fh, &ap_hdr, (int)sizeof(ap_hdr), err, err_info))
+        return WTAP_OPEN_ERROR;
+
+    /*
+     * If we see an "cpid" section, which appears to be optional, skip over it.
+     */
+    if (memcmp(ap_hdr.section_id, "cpid", sizeof(ap_hdr.section_id)) == 0) {
+        if (!peektagged_skip_cpid(wth, &ap_hdr, err, err_info)) {
+            if (*err && *err != WTAP_ERR_SHORT_READ)
+                return WTAP_OPEN_ERROR;
+            return WTAP_OPEN_NOT_MINE;
+        }
+    }
+
+    if (memcmp(ap_hdr.section_id, "sess", sizeof(ap_hdr.section_id)) != 0) {
+        *err = WTAP_ERR_UNSUPPORTED;
+        char *section_name = format_text_wsp(NULL, (char *)ap_hdr.section_id, sizeof(ap_hdr.section_id));
+        *err_info = ws_strdup_printf("peektagged: Unknown section ID 0x%08x (\"%s\")", pntohu32(ap_hdr.section_id), section_name);
+        wmem_free(NULL, section_name);
+        return WTAP_OPEN_ERROR;
+    }
+
+    length = GUINT32_TO_LE(ap_hdr.section_len);
+    if ((length >= MAX_SECTION_SIZE) || (GUINT32_TO_LE(ap_hdr.section_const) != SECTION_CONST_VALUE))
+        return WTAP_OPEN_NOT_MINE;
+
+    if (!wtap_read_bytes(wth->fh, sectionData, (int)length, err, err_info)) {
+        if (*err != WTAP_ERR_SHORT_READ)
+            return WTAP_OPEN_ERROR;
+        return WTAP_OPEN_NOT_MINE;
+    }
+    sectionData[length] = 0;
+
+    /* Now section data can be parsed into a proper structure */
+    doc = xmlParseMemory(sectionData, (int)length);
+    if (doc == NULL) {
+        *err = WTAP_ERR_BAD_FILE;
+        *err_info = g_strdup("peektagged: session section XML couldn't be parsed");
+        return WTAP_OPEN_ERROR;
+    }
+
+    if (!peektagged_get_media_info(doc, &mediaType, &mediaSubType)) {
+        xmlFreeDoc(doc);
+        *err = WTAP_ERR_BAD_FILE;
+        *err_info = g_strdup("peektagged: session media tag(s) not found");
+        return WTAP_OPEN_ERROR;
+    }
+
+    xmlFreeDoc(doc);
+
+    if (mediaSubType >= NUM_PEEKTAGGED_ENCAPS
+        || peektagged_encap[mediaSubType] == WTAP_ENCAP_UNKNOWN) {
+        *err = WTAP_ERR_UNSUPPORTED;
+        *err_info = ws_strdup_printf("peektagged: network type %u unknown or unsupported",
+            mediaSubType);
+        return WTAP_OPEN_ERROR;
+    }
+
+    /*
+     * Now check for a "pkts" section and fail if we don't see it.
+     */
+    if (!wtap_read_bytes(wth->fh, &ap_hdr, (int)sizeof(ap_hdr), err, err_info))
+        return WTAP_OPEN_ERROR;
+
+    /*
+     * If we see an "cpid" section, which appears to be optional, skip over it.
+     */
+    if (memcmp(ap_hdr.section_id, "cpid", sizeof(ap_hdr.section_id)) == 0) {
+        if (!peektagged_skip_cpid(wth, &ap_hdr, err, err_info)) {
+            if (*err && *err != WTAP_ERR_SHORT_READ)
+                return WTAP_OPEN_ERROR;
+            return WTAP_OPEN_NOT_MINE;
+        }
+    }
+
+    if (memcmp(ap_hdr.section_id, "pkts", sizeof(ap_hdr.section_id)) != 0) {
+        *err = WTAP_ERR_UNSUPPORTED;
+        char *section_name = format_text_wsp(NULL, (char *)ap_hdr.section_id, sizeof(ap_hdr.section_id));
+        *err_info = ws_strdup_printf("peektagged: Unknown section ID 0x%08x (\"%s\")", pntohu32(ap_hdr.section_id), section_name);
+        wmem_free(NULL, section_name);
+        return WTAP_OPEN_ERROR;
+    }
+
+    /*
+     * This is an Peek tagged file.
+     */
+    wth->file_type_subtype = peektagged_file_type_subtype;
+    wth->file_encap = peektagged_encap[mediaSubType];
+    wth->subtype_read = peektagged_read;
+    wth->subtype_seek_read = peektagged_seek_read;
+    wth->file_tsprec = WTAP_TSPREC_NSEC;
+
+    peektagged = g_new(peektagged_t, 1);
+    wth->priv = (void*)peektagged;
+    switch (mediaSubType) {
+
+    case PEEKTAGGED_NST_ETHERNET:
+    case PEEKTAGGED_NST_802_11:
+    case PEEKTAGGED_NST_802_11_2:
+        peektagged->has_fcs = false;
+        break;
+
+    case PEEKTAGGED_NST_802_11_WITH_FCS:
+        peektagged->has_fcs = true;
+        break;
+    }
+
+    wth->snapshot_length = 0; /* not available in header */
+
+    /*
+     * Add an IDB; we don't know how many interfaces were involved,
+     * so we just say one interface, about which we only know
+     * the link-layer type, snapshot length, and time stamp
+     * resolution.
+     */
+    wtap_add_generated_idb(wth);
+
+    return WTAP_OPEN_MINE;
+}
+
+static const struct supported_block_type peektagged_blocks_supported[] = {
+    /*
+     * We support packet blocks, with no comments or other options.
+     */
+    { WTAP_BLOCK_PACKET, MULTIPLE_BLOCKS_SUPPORTED, NO_OPTIONS_SUPPORTED }
+};
+
+static const struct file_type_subtype_info peektagged_info = {
+    "Savvius tagged", "peektagged", "pkt", "tpc;apc;wpz",
+    false, BLOCKS_SUPPORTED(peektagged_blocks_supported),
+    NULL, NULL, NULL
+};
+
+void register_peektagged(void)
+{
+    peektagged_file_type_subtype = wtap_register_file_type_subtype(&peektagged_info);
+
+    /*
+     * Register name for backwards compatibility with the
+     * wtap_filetypes table in Lua.
+     */
+    wtap_register_backwards_compatibility_lua_name("PEEKTAGGED",
+                                                   peektagged_file_type_subtype);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

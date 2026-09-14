@@ -1,5 +1,5 @@
 #!@PHP@ -q
-<?
+<?php
   // Example for use of GNU gettext.
   // This file is in the public domain.
   //
@@ -11,7 +11,6 @@
 
   echo _("Hello, world!");
   echo "\n";
-  echo printf (_("This program is running as process number %d."),
-               posix_getpid());
+  printf (_("This program is running as process number %d."), posix_getpid());
   echo "\n";
 ?>

@@ -1,0 +1,58 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test OCaml support: String literals.
+
+cat <<\EOF > xg-oc-2.ml
+let s1 = s_ {abracadabra|Test string 1 abc\ndef\tghi\\jkl\
+   mno\u{20AC}pqr|xyz|abracadabra} in
+let s2 = s_ "Test string 2 abc\ndef\tghi\\jkl\
+   mno\u{20AC}pqr\ stu\'vwx" in
+let s3 = s_ ("Test string 3" ^ " abc" ^ "def") in
+let s4 = s_ "Test string 4 \0377\064\x404\o1006\u{1F603}" in
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --no-location -d xg-oc-2.tmp xg-oc-2.ml || Exit 1
+func_filter_POT_Creation_Date xg-oc-2.tmp.po xg-oc-2.pot
+
+cat <<\EOF > xg-oc-2.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid ""
+"Test string 1 abc\\ndef\\tghi\\\\jkl\\\n"
+"   mno\\u{20AC}pqr|xyz"
+msgstr ""
+
+msgid ""
+"Test string 2 abc\n"
+"def\tghi\\jklmno€pqr stu'vwx"
+msgstr ""
+
+msgid "Test string 3 abcdef"
+msgstr ""
+
+msgid "Test string 4 %7@@4@6😃"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-oc-2.ok xg-oc-2.pot || Exit 1
+
+exit 0

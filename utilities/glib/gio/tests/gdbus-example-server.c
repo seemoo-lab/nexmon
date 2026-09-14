@@ -7,6 +7,8 @@
 #include <unistd.h>
 #endif
 
+#define DBUS_INTERFACE_PROPERTIES "org.freedesktop.DBus.Properties"
+
 /* ---------------------------------------------------------------------------------------------------- */
 
 static GDBusNodeInfo *introspection_data = NULL;
@@ -243,7 +245,7 @@ handle_set_property (GDBusConnection  *connection,
           g_dbus_connection_emit_signal (connection,
                                          NULL,
                                          object_path,
-                                         "org.freedesktop.DBus.Properties",
+                                         DBUS_INTERFACE_PROPERTIES,
                                          "PropertiesChanged",
                                          g_variant_new ("(sa{sv}as)",
                                                         interface_name,
@@ -276,7 +278,8 @@ static const GDBusInterfaceVTable interface_vtable =
 {
   handle_method_call,
   handle_get_property,
-  handle_set_property
+  handle_set_property,
+  { 0 }
 };
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -305,7 +308,7 @@ on_timeout_cb (gpointer user_data)
   g_dbus_connection_emit_signal (connection,
                                  NULL,
                                  "/org/gtk/GDBus/TestObject",
-                                 "org.freedesktop.DBus.Properties",
+                                 DBUS_INTERFACE_PROPERTIES,
                                  "PropertiesChanged",
                                  g_variant_new ("(sa{sv}as)",
                                                 "org.gtk.GDBus.TestInterface",
@@ -315,7 +318,7 @@ on_timeout_cb (gpointer user_data)
   g_assert_no_error (error);
 
 
-  return TRUE;
+  return G_SOURCE_CONTINUE;
 }
 
 /* ---------------------------------------------------------------------------------------------------- */

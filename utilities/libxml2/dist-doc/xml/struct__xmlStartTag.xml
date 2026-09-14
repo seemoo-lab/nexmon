@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlStartTag" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlStartTag</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlStartTag_1a58c92e44a4fb4e2a2ab327f2870ac85e" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* prefix</definition>
+        <argsstring></argsstring>
+        <name>prefix</name>
+        <qualifiedname>_xmlStartTag::prefix</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="102" column="19" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="102" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStartTag_1ae14779c7ab7f4d9d699c216f3f9f12ad" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* URI</definition>
+        <argsstring></argsstring>
+        <name>URI</name>
+        <qualifiedname>_xmlStartTag::URI</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="103" column="19" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="103" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStartTag_1a41ebd28ef1d7c6ade45642cb6acc1039" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int line</definition>
+        <argsstring></argsstring>
+        <name>line</name>
+        <qualifiedname>_xmlStartTag::line</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="104" column="9" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="104" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlStartTag_1a4a9621c1dc0c3ddd3b199e7d818e86e1" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nsNr</definition>
+        <argsstring></argsstring>
+        <name>nsNr</name>
+        <qualifiedname>_xmlStartTag::nsNr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/parser.c" line="105" column="9" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="105" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/parser.c" line="101" column="1" bodyfile="/builds/GNOME/libxml2/parser.c" bodystart="101" bodyend="106"/>
+    <listofallmembers>
+      <member refid="struct__xmlStartTag_1a41ebd28ef1d7c6ade45642cb6acc1039" prot="public" virt="non-virtual"><scope>_xmlStartTag</scope><name>line</name></member>
+      <member refid="struct__xmlStartTag_1a4a9621c1dc0c3ddd3b199e7d818e86e1" prot="public" virt="non-virtual"><scope>_xmlStartTag</scope><name>nsNr</name></member>
+      <member refid="struct__xmlStartTag_1a58c92e44a4fb4e2a2ab327f2870ac85e" prot="public" virt="non-virtual"><scope>_xmlStartTag</scope><name>prefix</name></member>
+      <member refid="struct__xmlStartTag_1ae14779c7ab7f4d9d699c216f3f9f12ad" prot="public" virt="non-virtual"><scope>_xmlStartTag</scope><name>URI</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

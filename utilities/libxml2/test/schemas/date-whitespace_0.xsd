@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <xsd:element name="test">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:choice minOccurs="1" maxOccurs="unbounded">
+          <xsd:element name="date" type="xsd:date"/>
+          <xsd:element name="dateTime" type="xsd:dateTime"/>
+          <xsd:element name="time" type="xsd:time"/>
+          <xsd:element name="gYear" type="xsd:gYear"/>
+          <xsd:element name="gYearMonth" type="xsd:gYearMonth"/>
+          <xsd:element name="gMonth" type="xsd:gMonth"/>
+          <xsd:element name="gMonthDay" type="xsd:gMonthDay"/>
+          <xsd:element name="gDay" type="xsd:gDay"/>
+          <xsd:element name="duration" type="xsd:duration"/>
+        </xsd:choice>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+</xsd:schema>

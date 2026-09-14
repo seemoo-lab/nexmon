@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
 
  * The information used comes from:
  * RFC6810: The Resource Public Key Infrastructure (RPKI) to Router Protocol
@@ -29,47 +17,61 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include "packet-tcp.h"
+#include "packet-tls.h"
 #include <epan/expert.h>
+#include <epan/exceptions.h>
 #include <epan/asn1.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-x509af.h"
 
 void proto_register_rpkirtr(void);
 void proto_reg_handoff_rpkirtr(void);
 
-static int proto_rpkirtr = -1;
-static int hf_rpkirtr_version = -1;
-static int hf_rpkirtr_pdu_type = -1;
-static int hf_rpkirtr_reserved = -1;
-static int hf_rpkirtr_session_id = -1;
-static int hf_rpkirtr_length = -1;
-static int hf_rpkirtr_serial_number = -1;
-static int hf_rpkirtr_flags = -1;
-static int hf_rpkirtr_flags_aw = -1;
-static int hf_rpkirtr_flags_rk = -1;
-static int hf_rpkirtr_prefix_length = -1;
-static int hf_rpkirtr_max_length = -1;
-static int hf_rpkirtr_ipv4_prefix = -1;
-static int hf_rpkirtr_ipv6_prefix = -1;
-static int hf_rpkirtr_as_number = -1;
-static int hf_rpkirtr_error_code = -1;
-static int hf_rpkirtr_length_pdu = -1;
-static int hf_rpkirtr_error_pdu = -1;
-static int hf_rpkirtr_length_text = -1;
-static int hf_rpkirtr_error_text = -1;
-static int hf_rpkirtr_refresh_interval = -1;
-static int hf_rpkirtr_retry_interval = -1;
-static int hf_rpkirtr_expire_interval = -1;
-static int hf_rpkirtr_subject_key_identifier = -1;
-static int hf_rpkirtr_subject_public_key_info = -1;
+static int proto_rpkirtr;
+static int hf_rpkirtr_version;
+static int hf_rpkirtr_pdu_type;
+static int hf_rpkirtr_reserved;
+static int hf_rpkirtr_session_id;
+static int hf_rpkirtr_length;
+static int hf_rpkirtr_serial_number;
+static int hf_rpkirtr_flags;
+static int hf_rpkirtr_flags_aw;
+static int hf_rpkirtr_flags_rk;
+static int hf_rpkirtr_flags_ar;
+static int hf_rpkirtr_flags_arafi;
+static int hf_rpkirtr_prefix_length;
+static int hf_rpkirtr_max_length;
+static int hf_rpkirtr_ipv4_prefix;
+static int hf_rpkirtr_ipv6_prefix;
+static int hf_rpkirtr_as_number;
+static int hf_rpkirtr_error_code;
+static int hf_rpkirtr_length_pdu;
+static int hf_rpkirtr_error_pdu;
+static int hf_rpkirtr_length_text;
+static int hf_rpkirtr_error_text;
+static int hf_rpkirtr_refresh_interval;
+static int hf_rpkirtr_retry_interval;
+static int hf_rpkirtr_expire_interval;
+static int hf_rpkirtr_subject_key_identifier;
+static int hf_rpkirtr_subject_public_key_info;
+static int hf_rpkirtr_aspa_customer_asn;
+static int hf_rpkirtr_aspa_provider_asn;
 
-static guint g_port_rpkirtr     = 323;
-static guint g_port_rpkirtr_tls = 324;
+#define RPKI_RTR_TCP_PORT 323
+#define RPKI_RTR_TLS_PORT 324
+static unsigned g_port_rpkirtr_tls = RPKI_RTR_TLS_PORT;
 
-static gint ett_rpkirtr = -1;
-static gint ett_flags   = -1;
-static gint ett_flags_nd = -1;
+static int ett_rpkirtr;
+static int ett_flags;
+static int ett_flags_nd;
+static int ett_providers;
 
-static expert_field ei_rpkirtr_wrong_version_router_key = EI_INIT;
+static expert_field ei_rpkirtr_wrong_version_aspa;
+static expert_field ei_rpkirtr_wrong_version_router_key;
+static expert_field ei_rpkirtr_bad_length;
+
+static dissector_handle_t rpkirtr_handle;
 
 
 /* http://www.iana.org/assignments/rpki/rpki.xml#rpki-rtr-pdu */
@@ -83,6 +85,7 @@ static expert_field ei_rpkirtr_wrong_version_router_key = EI_INIT;
 #define RPKI_RTR_CACHE_RESET_PDU     8
 #define RPKI_RTR_ROUTER_KEY          9
 #define RPKI_RTR_ERROR_REPORT_PDU   10
+#define RPKI_RTR_ASPA_PDU           11
 
 static const value_string rtr_pdu_type_vals[] = {
     { RPKI_RTR_SERIAL_NOTIFY_PDU,  "Serial Notify" },
@@ -95,6 +98,7 @@ static const value_string rtr_pdu_type_vals[] = {
     { RPKI_RTR_CACHE_RESET_PDU,    "Cache Reset" },
     { RPKI_RTR_ROUTER_KEY,         "Router Key" },
     { RPKI_RTR_ERROR_REPORT_PDU,   "Error Report" },
+    { RPKI_RTR_ASPA_PDU,           "ASPA" },
     { 0, NULL }
 };
 
@@ -108,6 +112,7 @@ static const value_string rtr_error_code_vals[] = {
     { 5, "Unsupported PDU Type" },
     { 6, "Withdrawal of Unknown Record" },
     { 7, "Duplicate Announcement Received" },
+    { 8, "Unexpected Protocol Version" },
     { 0, NULL }
 };
 
@@ -121,10 +126,20 @@ static const true_false_string tfs_flag_type_rk = {
     "Delete Router Key"
 };
 
-static guint
+static const true_false_string tfs_flag_type_ar = {
+    "New Autonomous System Provider Authorization Record",
+    "Delete Autonomous System Provider Authorization Record"
+};
+
+static const true_false_string tfs_flag_type_afi_ar = {
+    "IPv6",
+    "IPv4",
+};
+
+static unsigned
 get_rpkirtr_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
-  guint32 plen;
+  uint32_t plen;
 
   /*
   * Get the length of the RPKI-RTR packet.
@@ -140,27 +155,25 @@ static int dissect_rpkirtr_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 
     proto_item *ti = NULL, *ti_flags, *ti_type;
     proto_tree *rpkirtr_tree = NULL, *flags_tree = NULL;
-    int offset = 0;
-    guint8 pdu_type, version;
-    guint length;
+    unsigned offset = 0;
+    uint32_t pdu_type, version;
+    unsigned length;
+    char* str_pdu_type;
 
-    while (tvb_reported_length_remaining(tvb, offset) != 0) {
+    while (tvb_reported_length_remaining(tvb, offset) > 0) {
 
         ti = proto_tree_add_item(tree, proto_rpkirtr, tvb, 0, -1, ENC_NA);
 
         rpkirtr_tree = proto_item_add_subtree(ti, ett_rpkirtr);
 
-        proto_tree_add_item(rpkirtr_tree, hf_rpkirtr_version, tvb, offset, 1, ENC_BIG_ENDIAN);
-        version = tvb_get_guint8(tvb, offset);
+        proto_tree_add_item_ret_uint(rpkirtr_tree, hf_rpkirtr_version, tvb, offset, 1, ENC_BIG_ENDIAN, &version);
         offset += 1;
 
-        ti_type = proto_tree_add_item(rpkirtr_tree, hf_rpkirtr_pdu_type, tvb, offset, 1, ENC_BIG_ENDIAN);
-        pdu_type = tvb_get_guint8(tvb, offset);
-        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, val_to_str(pdu_type, rtr_pdu_type_vals, "Unknown (%d)"));
-        proto_item_append_text(ti, " (%s)", val_to_str(pdu_type, rtr_pdu_type_vals, "Unknown %d"));
+        ti_type = proto_tree_add_item_ret_uint(rpkirtr_tree, hf_rpkirtr_pdu_type, tvb, offset, 1, ENC_BIG_ENDIAN, &pdu_type);
+        str_pdu_type = val_to_str(pinfo->pool, pdu_type, rtr_pdu_type_vals, "Unknown (%d)");
+        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL, str_pdu_type);
+        proto_item_append_text(ti, " (%s)", str_pdu_type);
         offset += 1;
-
-        length = tvb_get_ntohl(tvb, offset);
 
         switch (pdu_type) {
             case RPKI_RTR_SERIAL_NOTIFY_PDU: /* Serial Notify (0) */
@@ -272,14 +285,14 @@ static int dissect_rpkirtr_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 
                     proto_tree_add_item(rpkirtr_tree, hf_rpkirtr_as_number, tvb, offset, 4, ENC_BIG_ENDIAN);
                     offset += 4;
-                    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
-                    offset = dissect_x509af_SubjectPublicKeyInfo(FALSE, tvb, offset, &asn1_ctx, rpkirtr_tree, hf_rpkirtr_subject_public_key_info);
+                    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
+                    offset = dissect_x509af_SubjectPublicKeyInfo(false, tvb, offset, &asn1_ctx, rpkirtr_tree, hf_rpkirtr_subject_public_key_info);
 
                 }
                 break;
             case RPKI_RTR_ERROR_REPORT_PDU: /* Error Report (10) */
             {
-                guint32 len_pdu, len_text;
+                uint32_t len_pdu, len_text;
                 proto_tree_add_item(rpkirtr_tree, hf_rpkirtr_error_code,       tvb, offset, 2, ENC_BIG_ENDIAN);
                 offset += 2;
                 proto_tree_add_item(rpkirtr_tree, hf_rpkirtr_length,           tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -292,14 +305,56 @@ static int dissect_rpkirtr_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
                 offset +=  len_pdu;
                 proto_tree_add_item(rpkirtr_tree, hf_rpkirtr_length_text,      tvb, offset, 4, ENC_BIG_ENDIAN);
                 len_text =                                                     tvb_get_ntohl(tvb, offset);
-                offset += 4,
-                proto_tree_add_item(rpkirtr_tree, hf_rpkirtr_error_text,   tvb, offset, len_text, ENC_ASCII|ENC_NA);
+                offset += 4;
+                proto_tree_add_item(rpkirtr_tree, hf_rpkirtr_error_text,   tvb, offset, len_text, ENC_ASCII);
                 offset += len_text;
             }
             break;
+            case RPKI_RTR_ASPA_PDU: /* ASPA (11) */
+                if(version < 2){
+                    /* Error about wrong version... */
+                    expert_add_info(pinfo, ti_type, &ei_rpkirtr_wrong_version_aspa);
+                } else {
+                    // draft-ietf-sidrops-8210bis-21
+                    // flags 1B Announce/Widthdraw
+                    ti_flags = proto_tree_add_item(rpkirtr_tree, hf_rpkirtr_flags, tvb, offset, 1, ENC_BIG_ENDIAN);
+                    flags_tree = proto_item_add_subtree(ti_flags, ett_flags);
+                    proto_tree_add_item(flags_tree, hf_rpkirtr_flags_aw, tvb, offset, 1, ENC_BIG_ENDIAN);
+                    offset += 1;
+                    // zero 1B
+                    proto_tree_add_item(rpkirtr_tree, hf_rpkirtr_reserved, tvb, offset, 1, ENC_NA);
+                    offset += 1;
+                    // length 4B
+                    proto_tree_add_item(rpkirtr_tree, hf_rpkirtr_length, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    unsigned aspa_length = tvb_get_ntohl(tvb, offset);
+                    offset += 4;
+                    unsigned cnt_asns = (aspa_length-12)/4;
+                    // customer AS (4B)
+                    proto_tree_add_item(rpkirtr_tree, hf_rpkirtr_aspa_customer_asn, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    offset += 4;
+                    // provider AS's (4B*cnt_asns)
+                    proto_tree *providers_tree = proto_item_add_subtree(rpkirtr_tree, ett_providers);
+                    for (unsigned i = 0; i < cnt_asns; i++) {
+                        proto_tree_add_item(providers_tree, hf_rpkirtr_aspa_provider_asn, tvb, offset, 4, ENC_BIG_ENDIAN);
+                        offset += 4;
+                    }
+                }
+                break;
             default:
-                /* No default ? */
-                offset += length;
+                /* No default ? At least sanity check the length*/
+                offset += 2; // Depends on the PDU type
+                proto_tree_add_item_ret_uint(rpkirtr_tree, hf_rpkirtr_length,           tvb, offset, 4, ENC_BIG_ENDIAN, &length);
+                if (length > tvb_reported_length(tvb)) {
+                    /* XXX - I don't believe this ever gets called, because
+                     * tcp_dissect_pdus and get_rpkirtr_pdu_len guarantee
+                     * that the tvb reported length matches the field here. */
+                    expert_add_info(pinfo, ti_type, &ei_rpkirtr_bad_length);
+                    return tvb_reported_length(tvb);
+                }
+                /* Since we don't add a field to the tree... */
+                if (ckd_add(&offset, offset, length)) {
+                    THROW(ReportedBoundsError);
+                }
                 break;
         }
     }
@@ -366,6 +421,16 @@ proto_register_rpkirtr(void)
         { &hf_rpkirtr_flags_rk,
             { "Flag Router Key", "rpki-rtr.flags.rk",
             FT_BOOLEAN, 8, TFS(&tfs_flag_type_rk), 0x01,
+            NULL, HFILL }
+        },
+        { &hf_rpkirtr_flags_ar,
+            { "Flag ASPA", "rpki-rtr.flags.ar",
+            FT_BOOLEAN, 8, TFS(&tfs_flag_type_ar), 0x01,
+            NULL, HFILL }
+        },
+        { &hf_rpkirtr_flags_arafi,
+            { "ASPA Address Family Flag", "rpki-rtr.flags.arafi",
+            FT_BOOLEAN, 8, TFS(&tfs_flag_type_afi_ar), 0x01,
             NULL, HFILL }
         },
         { &hf_rpkirtr_prefix_length,
@@ -442,17 +507,30 @@ proto_register_rpkirtr(void)
             { "Subject Public Key Info", "rpki-rtr.subject_public_key_info",
             FT_NONE, BASE_NONE, NULL, 0x0,
             NULL, HFILL }
+        },
+        { &hf_rpkirtr_aspa_customer_asn,
+            { "ASPA Customer ASN", "rpki-rtr.aspa_customer_asn",
+            FT_UINT32, BASE_DEC, NULL, 0x0,
+            "The Customer Autonomous System Number is the 32-bit Autonomous System Number of the customer which authenticated the ASPA RPKI data", HFILL }
+        },
+        { &hf_rpkirtr_aspa_provider_asn,
+            { "ASPA Provider ASN", "rpki-rtr.aspa_provider_asn",
+            FT_UINT32, BASE_DEC, NULL, 0x0,
+            NULL, HFILL }
         }
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_rpkirtr,
         &ett_flags,
-        &ett_flags_nd
+        &ett_flags_nd,
+        &ett_providers
     };
 
     static ei_register_info ei[] = {
+        { &ei_rpkirtr_wrong_version_aspa, { "rpkirtr.aspa.wrong_version", PI_MALFORMED, PI_WARN, "Wrong version for ASPA type", EXPFILL }},
         { &ei_rpkirtr_wrong_version_router_key, { "rpkirtr.router_key.wrong_version", PI_MALFORMED, PI_WARN, "Wrong version for Router Key type", EXPFILL }},
+        { &ei_rpkirtr_bad_length, { "rpkirtr.bad_length", PI_MALFORMED, PI_ERROR, "Invalid length field", EXPFILL }},
     };
 
     expert_module_t *expert_rpkirtr;
@@ -466,48 +544,36 @@ proto_register_rpkirtr(void)
     rpkirtr_module = prefs_register_protocol(proto_rpkirtr,
         proto_reg_handoff_rpkirtr);
 
-    prefs_register_uint_preference(rpkirtr_module, "tcp.rpkirtr.port", "RPKI-RTR TCP Port",
-         "RPKI-Router Protocol TCP port if other than the default",
-         10, &g_port_rpkirtr);
     prefs_register_uint_preference(rpkirtr_module, "tcp.rpkirtr_tls.port", "RPKI-RTR TCP TLS Port",
          "RPKI-Router Protocol TCP TLS port if other than the default",
          10, &g_port_rpkirtr_tls);
 
     expert_rpkirtr = expert_register_protocol(proto_rpkirtr);
     expert_register_field_array(expert_rpkirtr, ei, array_length(ei));
+    rpkirtr_handle = register_dissector("rpkirtr", dissect_rpkirtr, proto_rpkirtr);
 }
 
 
 void
 proto_reg_handoff_rpkirtr(void)
 {
-    static gboolean initialized = FALSE;
-    static dissector_handle_t rpkirtr_handle;
-    static dissector_handle_t ssl_handle;
-    static int rpki_rtr_port, rpki_rtr_tls_port;
+    static bool initialized = false;
+    static int rpki_rtr_tls_port;
 
     if (!initialized) {
-
-        rpkirtr_handle = create_dissector_handle(dissect_rpkirtr,
-                                                        proto_rpkirtr);
-        ssl_handle           = find_dissector("ssl");
-        initialized = TRUE;
+        dissector_add_uint_with_preference("tcp.port", RPKI_RTR_TCP_PORT, rpkirtr_handle);
+        initialized = true;
     } else {
-
-        dissector_delete_uint("tcp.port", rpki_rtr_port, rpkirtr_handle);
-        dissector_delete_uint("tcp.port", rpki_rtr_tls_port, ssl_handle);
+        ssl_dissector_delete(rpki_rtr_tls_port, rpkirtr_handle);
     }
 
-    rpki_rtr_port = g_port_rpkirtr;
     rpki_rtr_tls_port = g_port_rpkirtr_tls;
-
-    dissector_add_uint("tcp.port", rpki_rtr_port, rpkirtr_handle);
-    dissector_add_uint("tcp.port", rpki_rtr_tls_port, ssl_handle);
+    ssl_dissector_add(rpki_rtr_tls_port, rpkirtr_handle);
 }
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -30,6 +18,7 @@
 #include <epan/asn1.h>
 #include <epan/expert.h>
 
+#include <wsutil/array.h>
 #include <wsutil/str_util.h>
 
 #include "packet-ber.h"
@@ -46,46 +35,46 @@ void proto_register_rtse(void);
 void proto_reg_handoff_rtse(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_rtse = -1;
+static int proto_rtse;
 
-static gboolean open_request=FALSE;
-static guint32 app_proto=0;
+static bool open_request=false;
+static uint32_t app_proto=0;
 
-static proto_tree *top_tree=NULL;
+static proto_tree *top_tree;
 
 /* Preferences */
-static gboolean rtse_reassemble = TRUE;
+static bool rtse_reassemble = true;
 
 #include "packet-rtse-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_rtse = -1;
+static int ett_rtse;
 #include "packet-rtse-ett.c"
 
-static expert_field ei_rtse_dissector_oid_not_implemented = EI_INIT;
-static expert_field ei_rtse_unknown_rtse_pdu = EI_INIT;
-static expert_field ei_rtse_abstract_syntax = EI_INIT;
+static expert_field ei_rtse_dissector_oid_not_implemented;
+static expert_field ei_rtse_unknown_rtse_pdu;
+static expert_field ei_rtse_abstract_syntax;
 
-static dissector_table_t rtse_oid_dissector_table=NULL;
-static GHashTable *oid_table=NULL;
-static gint ett_rtse_unknown = -1;
+static dissector_table_t rtse_oid_dissector_table;
+static dissector_handle_t rtse_handle;
+static int ett_rtse_unknown;
 
 static reassembly_table rtse_reassembly_table;
 
-static int hf_rtse_segment_data = -1;
-static int hf_rtse_fragments = -1;
-static int hf_rtse_fragment = -1;
-static int hf_rtse_fragment_overlap = -1;
-static int hf_rtse_fragment_overlap_conflicts = -1;
-static int hf_rtse_fragment_multiple_tails = -1;
-static int hf_rtse_fragment_too_long_fragment = -1;
-static int hf_rtse_fragment_error = -1;
-static int hf_rtse_fragment_count = -1;
-static int hf_rtse_reassembled_in = -1;
-static int hf_rtse_reassembled_length = -1;
+static int hf_rtse_segment_data;
+static int hf_rtse_fragments;
+static int hf_rtse_fragment;
+static int hf_rtse_fragment_overlap;
+static int hf_rtse_fragment_overlap_conflicts;
+static int hf_rtse_fragment_multiple_tails;
+static int hf_rtse_fragment_too_long_fragment;
+static int hf_rtse_fragment_error;
+static int hf_rtse_fragment_count;
+static int hf_rtse_reassembled_in;
+static int hf_rtse_reassembled_length;
 
-static gint ett_rtse_fragment = -1;
-static gint ett_rtse_fragments = -1;
+static int ett_rtse_fragment;
+static int ett_rtse_fragments;
 
 static const fragment_items rtse_frag_items = {
     /* Fragment subtrees */
@@ -111,20 +100,14 @@ static const fragment_items rtse_frag_items = {
 };
 
 void
-register_rtse_oid_dissector_handle(const char *oid, dissector_handle_t dissector, int proto, const char *name, gboolean uses_ros)
+register_rtse_oid_dissector_handle(const char *oid, dissector_handle_t dissector, int proto, const char *name, bool uses_ros)
 {
 /* XXX: Note that this fcn is called from proto_reg_handoff in *other* dissectors ... */
 
-  static  dissector_handle_t rtse_handle = NULL;
   static  dissector_handle_t ros_handle = NULL;
 
-  if (rtse_handle == NULL)
-    rtse_handle = find_dissector("rtse");
   if (ros_handle == NULL)
     ros_handle = find_dissector("ros");
-
-  /* save the name - but not used */
-  g_hash_table_insert(oid_table, (gpointer)oid, (gpointer)name);
 
   /* register RTSE with the BER (ACSE) */
   register_ber_oid_dissector_handle(oid, rtse_handle, proto, name);
@@ -135,7 +118,7 @@ register_rtse_oid_dissector_handle(const char *oid, dissector_handle_t dissector
 
     /* and then tell ROS how to dissect the AS*/
     if (dissector != NULL)
-      register_ros_oid_dissector_handle(oid, dissector, proto, name, TRUE);
+      register_ros_oid_dissector_handle(oid, dissector, proto, name, true);
 
   } else {
     /* otherwise we just remember how to dissect the AS */
@@ -151,7 +134,7 @@ call_rtse_oid_callback(const char *oid, tvbuff_t *tvb, int offset, packet_info *
 
     next_tvb = tvb_new_subset_remaining(tvb, offset);
 
-    if ((len = dissector_try_string(rtse_oid_dissector_table, oid, next_tvb, pinfo, tree, data)) == 0) {
+    if ((len = dissector_try_string_with_data(rtse_oid_dissector_table, oid, next_tvb, pinfo, tree, true, data)) == 0) {
         proto_item *item;
         proto_tree *next_tree;
 
@@ -169,7 +152,7 @@ call_rtse_oid_callback(const char *oid, tvbuff_t *tvb, int offset, packet_info *
 }
 
 static int
-call_rtse_external_type_callback(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_)
+call_rtse_external_type_callback(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_)
 {
     const char    *oid = NULL;
 
@@ -206,13 +189,13 @@ dissect_rtse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
     tvbuff_t *next_tvb = NULL;
     tvbuff_t *data_tvb = NULL;
     fragment_head *frag_msg = NULL;
-    guint32 fragment_length;
-    guint32 rtse_id = 0;
-    gboolean data_handled = FALSE;
+    uint32_t fragment_length;
+    uint32_t rtse_id = 0;
+    bool data_handled = false;
     struct SESSION_DATA_STRUCTURE* session;
     conversation_t *conversation = NULL;
     asn1_ctx_t asn1_ctx;
-    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+    asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
     /* do we have application context from the acse dissector? */
     if (data == NULL)
@@ -232,13 +215,11 @@ dissect_rtse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
          (session->spdu_type == SES_MAJOR_SYNC_POINT)))
     {
         /* Use conversation index as fragment id */
-        conversation  = find_conversation (pinfo->num,
-                           &pinfo->src, &pinfo->dst, pinfo->ptype,
-                           pinfo->srcport, pinfo->destport, 0);
+        conversation  = find_conversation_pinfo(pinfo, 0);
         if (conversation != NULL) {
             rtse_id = conversation->conv_index;
         }
-        session->rtse_reassemble = TRUE;
+        session->rtse_reassemble = true;
     }
     if (rtse_reassemble && session->spdu_type == SES_MAJOR_SYNC_POINT) {
         frag_msg = fragment_end_seq_next (&rtse_reassembly_table,
@@ -252,7 +233,7 @@ dissect_rtse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 
     if (rtse_reassemble && session->spdu_type == SES_DATA_TRANSFER) {
         /* strip off the OCTET STRING encoding - including any CONSTRUCTED OCTET STRING */
-        dissect_ber_octet_string(FALSE, &asn1_ctx, tree, tvb, offset, hf_rtse_segment_data, &data_tvb);
+        dissect_ber_octet_string(false, &asn1_ctx, tree, tvb, offset, hf_rtse_segment_data, &data_tvb);
 
         if (data_tvb) {
             fragment_length = tvb_captured_length_remaining (data_tvb, 0);
@@ -261,14 +242,14 @@ dissect_rtse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
             frag_msg = fragment_add_seq_next (&rtse_reassembly_table,
                               data_tvb, 0, pinfo,
                               rtse_id, NULL,
-                              fragment_length, TRUE);
+                              fragment_length, true);
             if (frag_msg && pinfo->num != frag_msg->reassembled_in) {
                 /* Add a "Reassembled in" link if not reassembled in this frame */
                 proto_tree_add_uint (tree, *(rtse_frag_items.hf_reassembled_in),
                              data_tvb, 0, 0, frag_msg->reassembled_in);
             }
-            pinfo->fragmented = TRUE;
-            data_handled = TRUE;
+            pinfo->fragmented = true;
+            data_handled = true;
         } else {
             fragment_length = tvb_captured_length_remaining (tvb, offset);
         }
@@ -279,21 +260,21 @@ dissect_rtse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
         if (next_tvb) {
             /* ROS won't do this for us */
             session->ros_op = (ROS_OP_INVOKE | ROS_OP_ARGUMENT);
-            /*offset=*/dissect_ber_external_type(FALSE, tree, next_tvb, 0, &asn1_ctx, -1, call_rtse_external_type_callback);
+            /*offset=*/dissect_ber_external_type(false, tree, next_tvb, 0, &asn1_ctx, -1, call_rtse_external_type_callback);
             top_tree = NULL;
             /* Return other than 0 to indicate that we handled this packet */
             return 1;
         } else {
             offset = tvb_captured_length (tvb);
         }
-        pinfo->fragmented = FALSE;
-        data_handled = TRUE;
+        pinfo->fragmented = false;
+        data_handled = true;
     }
 
     if (!data_handled) {
         while (tvb_reported_length_remaining(tvb, offset) > 0) {
             old_offset=offset;
-            offset=dissect_rtse_RTSE_apdus(TRUE, tvb, offset, &asn1_ctx, tree, -1);
+            offset=dissect_rtse_RTSE_apdus(true, tvb, offset, &asn1_ctx, tree, -1);
             if (offset == old_offset) {
                 next_tree = proto_tree_add_subtree(tree, tvb, offset, -1,
                                 ett_rtse_unknown, &item, "Unknown RTSE PDU");
@@ -306,17 +287,6 @@ dissect_rtse(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* d
 
     top_tree = NULL;
     return tvb_captured_length(tvb);
-}
-
-static void rtse_reassemble_init (void)
-{
-    reassembly_table_init (&rtse_reassembly_table,
-                   &addresses_reassembly_table_functions);
-}
-
-static void rtse_reassemble_cleanup(void)
-{
-    reassembly_table_destroy(&rtse_reassembly_table);
 }
 
 /*--- proto_register_rtse -------------------------------------------*/
@@ -366,7 +336,7 @@ void proto_register_rtse(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_rtse,
     &ett_rtse_unknown,
     &ett_rtse_fragment,
@@ -385,14 +355,16 @@ void proto_register_rtse(void) {
 
   /* Register protocol */
   proto_rtse = proto_register_protocol(PNAME, PSNAME, PFNAME);
-  register_dissector("rtse", dissect_rtse, proto_rtse);
+  rtse_handle = register_dissector("rtse", dissect_rtse, proto_rtse);
   /* Register fields and subtrees */
   proto_register_field_array(proto_rtse, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
   expert_rtse = expert_register_protocol(proto_rtse);
   expert_register_field_array(expert_rtse, ei, array_length(ei));
-  register_init_routine (&rtse_reassemble_init);
-  register_cleanup_routine (&rtse_reassemble_cleanup);
+
+  reassembly_table_register (&rtse_reassembly_table,
+                   &addresses_reassembly_table_functions);
+
   rtse_module = prefs_register_protocol_subtree("OSI", proto_rtse, NULL);
 
   prefs_register_bool_preference(rtse_module, "reassemble",
@@ -402,10 +374,7 @@ void proto_register_rtse(void) {
                  " \"Allow subdissectors to reassemble TCP streams\""
                  " in the TCP protocol settings.", &rtse_reassemble);
 
-  rtse_oid_dissector_table = register_dissector_table("rtse.oid", "RTSE OID Dissectors", proto_rtse, FT_STRING, BASE_NONE);
-  oid_table=g_hash_table_new(g_str_hash, g_str_equal);
-
-
+  rtse_oid_dissector_table = register_dissector_table("rtse.oid", "RTSE OID Dissectors", proto_rtse, FT_STRING, STRING_CASE_SENSITIVE);
 }
 
 
@@ -416,7 +385,7 @@ void proto_reg_handoff_rtse(void) {
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

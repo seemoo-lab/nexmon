@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,14 +31,6 @@ G_BEGIN_DECLS
 #define G_DBUS_INTERFACE(o)           (G_TYPE_CHECK_INSTANCE_CAST ((o), G_TYPE_DBUS_INTERFACE, GDBusInterface))
 #define G_IS_DBUS_INTERFACE(o)        (G_TYPE_CHECK_INSTANCE_TYPE ((o), G_TYPE_DBUS_INTERFACE))
 #define G_DBUS_INTERFACE_GET_IFACE(o) (G_TYPE_INSTANCE_GET_INTERFACE((o), G_TYPE_DBUS_INTERFACE, GDBusInterfaceIface))
-
-/**
- * GDBusInterface:
- *
- * Base type for D-Bus interfaces.
- *
- * Since: 2.30
- */
 
 typedef struct _GDBusInterfaceIface GDBusInterfaceIface;
 
@@ -64,16 +58,16 @@ struct _GDBusInterfaceIface
   GDBusObject          *(*dup_object) (GDBusInterface      *interface_);
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType                 g_dbus_interface_get_type         (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
+GType                 g_dbus_interface_get_type         (void);
+GIO_AVAILABLE_IN_ALL
 GDBusInterfaceInfo   *g_dbus_interface_get_info         (GDBusInterface      *interface_);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GDBusObject          *g_dbus_interface_get_object       (GDBusInterface      *interface_);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void                  g_dbus_interface_set_object       (GDBusInterface      *interface_,
                                                          GDBusObject         *object);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GDBusObject          *g_dbus_interface_dup_object       (GDBusInterface      *interface_);
 
 G_END_DECLS

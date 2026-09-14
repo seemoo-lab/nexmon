@@ -1,0 +1,16 @@
+SAX.setDocumentLocator()
+SAX.startDocument()
+SAX.internalSubset(root, , )
+SAX.attributeDecl(foo, xml:lang, 1, 1, eng, ...)
+SAX.attributeDecl(foo, bar, 1, 1, <>", ...)
+SAX.externalSubset(root, , )
+SAX.startElement(root)
+SAX.characters(
+  , 3)
+SAX.startElement(foo, xml:lang='ger')
+SAX.characters(Ja, 2)
+SAX.endElement(foo)
+SAX.characters(
+, 1)
+SAX.endElement(root)
+SAX.endDocument()

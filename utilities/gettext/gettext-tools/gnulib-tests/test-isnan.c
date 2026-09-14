@@ -1,9 +1,9 @@
 /* Test of isnand() substitute.
-   Copyright (C) 2007-2016 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Ben Pfaff <blp@cs.stanford.edu>, from code by Bruno
    Haible <bruno@clisp.org>.  */
@@ -32,6 +32,7 @@
 #include "minus-zero.h"
 #include "infinity.h"
 #include "nan.h"
+#include "snan.h"
 #include "macros.h"
 
 static void
@@ -51,26 +52,9 @@ test_float (void)
   ASSERT (!isnan (- Infinityf ()));
   /* Quiet NaN.  */
   ASSERT (isnan (NaNf ()));
-#if defined FLT_EXPBIT0_WORD && defined FLT_EXPBIT0_BIT
+#if HAVE_SNANF
   /* Signalling NaN.  */
-  {
-    #define NWORDSF \
-      ((sizeof (float) + sizeof (unsigned int) - 1) / sizeof (unsigned int))
-    typedef union { float value; unsigned int word[NWORDSF]; } memory_float;
-    memory_float m;
-    m.value = NaNf ();
-# if FLT_EXPBIT0_BIT > 0
-    m.word[FLT_EXPBIT0_WORD] ^= (unsigned int) 1 << (FLT_EXPBIT0_BIT - 1);
-# else
-    m.word[FLT_EXPBIT0_WORD + (FLT_EXPBIT0_WORD < NWORDSF / 2 ? 1 : - 1)]
-      ^= (unsigned int) 1 << (sizeof (unsigned int) * CHAR_BIT - 1);
-# endif
-    if (FLT_EXPBIT0_WORD < NWORDSF / 2)
-      m.word[FLT_EXPBIT0_WORD + 1] |= (unsigned int) 1 << FLT_EXPBIT0_BIT;
-    else
-      m.word[0] |= (unsigned int) 1;
-    ASSERT (isnan (m.value));
-  }
+  ASSERT (isnan (SNaNf ()));
 #endif
 }
 
@@ -91,35 +75,15 @@ test_double (void)
   ASSERT (!isnan (- Infinityd ()));
   /* Quiet NaN.  */
   ASSERT (isnan (NaNd ()));
-#if defined DBL_EXPBIT0_WORD && defined DBL_EXPBIT0_BIT
+#if HAVE_SNAND
   /* Signalling NaN.  */
-  {
-    #define NWORDSD \
-      ((sizeof (double) + sizeof (unsigned int) - 1) / sizeof (unsigned int))
-    typedef union { double value; unsigned int word[NWORDSD]; } memory_double;
-    memory_double m;
-    m.value = NaNd ();
-# if DBL_EXPBIT0_BIT > 0
-    m.word[DBL_EXPBIT0_WORD] ^= (unsigned int) 1 << (DBL_EXPBIT0_BIT - 1);
-# else
-    m.word[DBL_EXPBIT0_WORD + (DBL_EXPBIT0_WORD < NWORDSD / 2 ? 1 : - 1)]
-      ^= (unsigned int) 1 << (sizeof (unsigned int) * CHAR_BIT - 1);
-# endif
-    m.word[DBL_EXPBIT0_WORD + (DBL_EXPBIT0_WORD < NWORDSD / 2 ? 1 : - 1)]
-      |= (unsigned int) 1 << DBL_EXPBIT0_BIT;
-    ASSERT (isnan (m.value));
-  }
+  ASSERT (isnan (SNaNd ()));
 #endif
 }
 
 static void
 test_long_double (void)
 {
-  #define NWORDSL \
-    ((sizeof (long double) + sizeof (unsigned int) - 1) / sizeof (unsigned int))
-  typedef union { unsigned int word[NWORDSL]; long double value; }
-          memory_long_double;
-
   /* Finite values.  */
   ASSERT (!isnan (3.141L));
   ASSERT (!isnan (3.141e30L));
@@ -134,35 +98,16 @@ test_long_double (void)
   ASSERT (!isnan (- Infinityl ()));
   /* Quiet NaN.  */
   ASSERT (isnan (NaNl ()));
-
-#if defined LDBL_EXPBIT0_WORD && defined LDBL_EXPBIT0_BIT
-  /* A bit pattern that is different from a Quiet NaN.  With a bit of luck,
-     it's a Signalling NaN.  */
-  {
-#if defined __powerpc__ && LDBL_MANT_DIG == 106
-    /* This is PowerPC "double double", a pair of two doubles.  Inf and Nan are
-       represented as the corresponding 64-bit IEEE values in the first double;
-       the second is ignored.  Manipulate only the first double.  */
-    #undef NWORDSL
-    #define NWORDSL \
-      ((sizeof (double) + sizeof (unsigned int) - 1) / sizeof (unsigned int))
-#endif
-
-    memory_long_double m;
-    m.value = NaNl ();
-# if LDBL_EXPBIT0_BIT > 0
-    m.word[LDBL_EXPBIT0_WORD] ^= (unsigned int) 1 << (LDBL_EXPBIT0_BIT - 1);
-# else
-    m.word[LDBL_EXPBIT0_WORD + (LDBL_EXPBIT0_WORD < NWORDSL / 2 ? 1 : - 1)]
-      ^= (unsigned int) 1 << (sizeof (unsigned int) * CHAR_BIT - 1);
-# endif
-    m.word[LDBL_EXPBIT0_WORD + (LDBL_EXPBIT0_WORD < NWORDSL / 2 ? 1 : - 1)]
-      |= (unsigned int) 1 << LDBL_EXPBIT0_BIT;
-    ASSERT (isnan (m.value));
-  }
+#if HAVE_SNANL
+  /* Signalling NaN.  */
+  ASSERT (isnan (SNaNl ()));
 #endif
 
 #if ((defined __ia64 && LDBL_MANT_DIG == 64) || (defined __x86_64__ || defined __amd64__) || (defined __i386 || defined __i386__ || defined _I386 || defined _M_IX86 || defined _X86_)) && !HAVE_SAME_LONG_DOUBLE_AS_DOUBLE
+  #define NWORDS \
+    ((sizeof (long double) + sizeof (unsigned int) - 1) / sizeof (unsigned int))
+  typedef union { unsigned int word[NWORDS]; long double value; }
+          memory_long_double;
 /* Representation of an 80-bit 'long double' as an initializer for a sequence
    of 'unsigned int' words.  */
 # ifdef WORDS_BIGENDIAN
@@ -177,41 +122,42 @@ test_long_double (void)
 # endif
   { /* Quiet NaN.  */
     static memory_long_double x =
-      { LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0xC3333333, 0x00000000) };
     ASSERT (isnan (x.value));
   }
   {
     /* Signalling NaN.  */
     static memory_long_double x =
-      { LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x83333333, 0x00000000) };
     ASSERT (isnan (x.value));
   }
   /* isnan should return something for noncanonical values.  */
   { /* Pseudo-NaN.  */
     static memory_long_double x =
-      { LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x40000001, 0x00000000) };
     ASSERT (isnan (x.value) || !isnan (x.value));
   }
   { /* Pseudo-Infinity.  */
     static memory_long_double x =
-      { LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0xFFFF, 0x00000000, 0x00000000) };
     ASSERT (isnan (x.value) || !isnan (x.value));
   }
   { /* Pseudo-Zero.  */
     static memory_long_double x =
-      { LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4004, 0x00000000, 0x00000000) };
     ASSERT (isnan (x.value) || !isnan (x.value));
   }
   { /* Unnormalized number.  */
     static memory_long_double x =
-      { LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x4000, 0x63333333, 0x00000000) };
     ASSERT (isnan (x.value) || !isnan (x.value));
   }
   { /* Pseudo-Denormal.  */
     static memory_long_double x =
-      { LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
+      { .word = LDBL80_WORDS (0x0000, 0x83333333, 0x00000000) };
     ASSERT (isnan (x.value) || !isnan (x.value));
   }
+  #undef NWORDS
 #endif
 }
 
@@ -221,5 +167,5 @@ main ()
   test_float ();
   test_double ();
   test_long_double ();
-  return 0;
+  return test_exit_status;
 }

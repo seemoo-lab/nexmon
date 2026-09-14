@@ -1,4 +1,4 @@
-/* mplog.h
+/** @file
  *
  * File format support for Micropross mplog files
  * Copyright (c) 2016 by Martin Kaiser <martin@kaiser.cx>
@@ -7,27 +7,14 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef _MPLOG_H
 #define _MPLOG_H
 
-#include <glib.h>
 #include <wiretap/wtap.h>
 
-wtap_open_return_val mplog_open(wtap *wth, int *err, gchar **err_info);
+wtap_open_return_val mplog_open(wtap *wth, int *err, char **err_info);
 
 #endif /* _MPLOG_H */

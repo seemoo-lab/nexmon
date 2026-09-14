@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2004, 2007-2016 Free Software Foundation, Inc.
+ * Copyright (C) 2004, 2007-2026 Free Software Foundation, Inc.
  * Written by Bruno Haible and Eric Blake
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
+ * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -13,7 +13,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -58,9 +58,9 @@ main (int argc, char *argv[])
     /* On some platforms, the memchr() functions reads past the first
        occurrence of the byte to be searched, leading to an out-of-bounds
        read access for strstr().
-       See <http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=521737>.
+       See <https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=521737>.
        This is a bug in memchr(), see the Austin Group's clarification
-       <http://www.opengroup.org/austin/docs/austin_454.txt>.  */
+       <https://www.opengroup.org/austin/docs/austin_454.txt>.  */
     const char *fix = "aBaaaaaaaaaaax";
     char *page_boundary = (char *) zerosize_ptr ();
     size_t len = strlen (fix) + 1;
@@ -261,9 +261,8 @@ main (int argc, char *argv[])
       "with_multilib_list\n";
     size_t h_len = strlen (h);
     char *haystack = malloc (h_len + 1);
-    size_t i;
     ASSERT (haystack);
-    for (i = 0; i < h_len - strlen (needle); i++)
+    for (size_t i = 0; i < h_len - strlen (needle); i++)
       {
         const char *p;
         memcpy (haystack, h, h_len + 1);
@@ -275,5 +274,35 @@ main (int argc, char *argv[])
     free (haystack);
   }
 
-  return 0;
+  /* Test case from Yves Bastide.
+     <https://www.openwall.com/lists/musl/2014/04/18/2>  */
+  {
+    const char input[] = "playing play play play always";
+    const char *result = strstr (input, "play play play");
+    ASSERT (result == input + 8);
+  }
+
+  /* Test long needles.  */
+  {
+    size_t m = 1024;
+    char *haystack = (char *) malloc (2 * m + 1);
+    char *needle = (char *) malloc (m + 1);
+    if (haystack != NULL && needle != NULL)
+      {
+        const char *p;
+        haystack[0] = 'x';
+        memset (haystack + 1, ' ', m - 1);
+        memset (haystack + m, 'x', m);
+        haystack[2 * m] = '\0';
+        memset (needle, 'x', m);
+        needle[m] = '\0';
+        p = strstr (haystack, needle);
+        ASSERT (p);
+        ASSERT (p - haystack == m);
+      }
+    free (needle);
+    free (haystack);
+  }
+
+  return test_exit_status;
 }

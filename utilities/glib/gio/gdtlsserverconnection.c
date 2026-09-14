@@ -3,10 +3,12 @@
  * Copyright © 2010 Red Hat, Inc
  * Copyright © 2015 Collabora, Ltd.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,16 +31,13 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gdtlsserverconnection
- * @short_description: DTLS server-side connection
- * @include: gio/gio.h
+ * GDtlsServerConnection:
  *
- * #GDtlsServerConnection is the server-side subclass of #GDtlsConnection,
- * representing a server-side DTLS connection.
+ * `GDtlsServerConnection` is the server-side subclass of
+ * [iface@Gio.DtlsConnection], representing a server-side DTLS connection.
  *
  * Since: 2.48
  */
-
 G_DEFINE_INTERFACE (GDtlsServerConnection, g_dtls_server_connection,
                     G_TYPE_DTLS_CONNECTION)
 
@@ -55,9 +54,7 @@ g_dtls_server_connection_default_init (GDtlsServerConnectionInterface *iface)
    * Since: 2.48
    */
   g_object_interface_install_property (iface,
-                                       g_param_spec_enum ("authentication-mode",
-                                                          P_("Authentication Mode"),
-                                                          P_("The client authentication mode"),
+                                       g_param_spec_enum ("authentication-mode", NULL, NULL,
                                                           G_TYPE_TLS_AUTHENTICATION_MODE,
                                                           G_TLS_AUTHENTICATION_NONE,
                                                           G_PARAM_READWRITE |
@@ -67,7 +64,7 @@ g_dtls_server_connection_default_init (GDtlsServerConnectionInterface *iface)
 /**
  * g_dtls_server_connection_new:
  * @base_socket: the #GDatagramBased to wrap
- * @certificate: (allow-none): the default server certificate, or %NULL
+ * @certificate: (nullable): the default server certificate, or %NULL
  * @error: #GError for error reporting, or %NULL to ignore
  *
  * Creates a new #GDtlsServerConnection wrapping @base_socket.

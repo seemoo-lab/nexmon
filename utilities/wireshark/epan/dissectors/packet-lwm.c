@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *------------------------------------------------------------
 */
 
@@ -96,9 +84,9 @@ void proto_register_lwm(void);
 void proto_reg_handoff_lwm(void);
 
 /* User string with the decryption key. */
-static const gchar *lwmes_key_str = NULL;
-static gboolean     lwmes_key_valid;
-static guint8       lwmes_key[16];
+static const char *lwmes_key_str;
+static bool         lwmes_key_valid;
+static uint8_t      lwmes_key[16];
 
 /* Dissection Routines. */
 static int  dissect_lwm                       (tvbuff_t *, packet_info *, proto_tree *, void *data);
@@ -108,46 +96,48 @@ static int  dissect_lwm_cmd_frame_route_req   (tvbuff_t *, packet_info *, proto_
 static int  dissect_lwm_cmd_frame_route_reply (tvbuff_t *, packet_info *, proto_tree *);
 
 /*  Initialize protocol and registered fields. */
-static int proto_lwm = -1;
+static int proto_lwm;
 
-static int hf_lwm_fcf = -1;
-static int hf_lwm_fcf_ack_req = -1;
-static int hf_lwm_fcf_security = -1;
-static int hf_lwm_fcf_linklocal = -1;
-static int hf_lwm_fcf_multicast = -1;
-static int hf_lwm_fcf_reserved = -1;
-static int hf_lwm_seq = -1;
-static int hf_lwm_src_addr = -1;
-static int hf_lwm_dst_addr = -1;
-static int hf_lwm_src_endp = -1;
-static int hf_lwm_dst_endp = -1;
-static int hf_lwm_multi_nmrad = -1;
-static int hf_lwm_multi_mnmrad = -1;
-static int hf_lwm_multi_mrad = -1;
-static int hf_lwm_multi_mmrad = -1;
-static int hf_lwm_mic = -1;
-static int hf_lwm_cmd = -1;
-static int hf_lwm_cmd_seq = -1;
-static int hf_lwm_cmd_cm = -1;
-static int hf_lwm_cmd_route_src  = -1;
-static int hf_lwm_cmd_route_dst  = -1;
-static int hf_lwm_cmd_route_multi  = -1;
-static int hf_lwm_cmd_linkquality  = -1;
-static int hf_lwm_cmd_forwlinkquality  = -1;
-static int hf_lwm_cmd_revlinkquality  = -1;
+static int hf_lwm_fcf;
+static int hf_lwm_fcf_ack_req;
+static int hf_lwm_fcf_security;
+static int hf_lwm_fcf_linklocal;
+static int hf_lwm_fcf_multicast;
+static int hf_lwm_fcf_reserved;
+static int hf_lwm_seq;
+static int hf_lwm_src_addr;
+static int hf_lwm_dst_addr;
+static int hf_lwm_src_endp;
+static int hf_lwm_dst_endp;
+static int hf_lwm_multi_nmrad;
+static int hf_lwm_multi_mnmrad;
+static int hf_lwm_multi_mrad;
+static int hf_lwm_multi_mmrad;
+static int hf_lwm_mic;
+static int hf_lwm_cmd;
+static int hf_lwm_cmd_seq;
+static int hf_lwm_cmd_cm;
+static int hf_lwm_cmd_route_src;
+static int hf_lwm_cmd_route_dst;
+static int hf_lwm_cmd_route_multi;
+static int hf_lwm_cmd_linkquality;
+static int hf_lwm_cmd_forwlinkquality;
+static int hf_lwm_cmd_revlinkquality;
 
 /* Initialize protocol subtrees. */
-static gint ett_lwm = -1;
-static gint ett_lwm_fcf = -1;
-static gint ett_lwm_cmd_tree = -1;
-static gint ett_lwm_multi_tree = -1;
+static int ett_lwm;
+static int ett_lwm_fcf;
+static int ett_lwm_cmd_tree;
+static int ett_lwm_multi_tree;
 
-static expert_field ei_lwm_mal_error = EI_INIT;
-static expert_field ei_lwm_n_src_broad = EI_INIT;
-static expert_field ei_lwm_mismatch_endp = EI_INIT;
-static expert_field ei_lwm_empty_payload = EI_INIT;
-static expert_field ei_lwm_no_decryption_key = EI_INIT;
-static expert_field ei_lwm_decryption_failed = EI_INIT;
+static expert_field ei_lwm_mal_error;
+static expert_field ei_lwm_n_src_broad;
+static expert_field ei_lwm_mismatch_endp;
+static expert_field ei_lwm_empty_payload;
+static expert_field ei_lwm_no_decryption_key;
+static expert_field ei_lwm_decryption_failed;
+
+static dissector_handle_t lwm_handle;
 
 static const value_string lwm_cmd_names[] = {
     { LWM_CMD_ACK,          "LwMesh ACK" },
@@ -176,19 +166,30 @@ static const value_string lwm_cmd_multi_names[] = {
  *      Boolean value, whether it handles the packet or not.
  *---------------------------------------------------------------
  */
-static gboolean
+static bool
 dissect_lwm_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
+    uint8_t endpt, srcep, dstep;
+
     /* 1) first byte must have bits 0000xxxx */
-    if(tvb_get_guint8(tvb, 0) & LWM_FCF_RESERVED)
-        return (FALSE);
+    if(tvb_get_uint8(tvb, 0) & LWM_FCF_RESERVED)
+        return false;
 
     /* The header should be at least long enough for the base header. */
     if (tvb_reported_length(tvb) < LWM_HEADER_BASE_LEN)
-        return (FALSE);
+        return false;
+
+    /* The endpoints should either both be zero, or both non-zero. */
+    endpt = tvb_get_uint8(tvb, 6);
+    srcep = (endpt & LWM_SRC_ENDP_MASK) >> LWM_SRC_ENDP_OFFSET;
+    dstep = (endpt & LWM_DST_ENDP_MASK) >> LWM_DST_ENDP_OFFSET;
+    if ((srcep == 0) && (dstep != 0))
+        return false;
+    if ((srcep != 0) && (dstep == 0))
+        return false;
 
     dissect_lwm(tvb, pinfo, tree, data);
-    return (TRUE);
+    return true;
 } /* dissect_lwm_heur */
 
 /*FUNCTION:------------------------------------------------------
@@ -206,19 +207,19 @@ dissect_lwm_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
  */
 static int dissect_lwm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    guint       lwm_header_len;
+    unsigned    lwm_header_len;
 
-    guint8      lwm_fcf;
-    gboolean    lwm_fcf_security;
-    gboolean    lwm_fcf_multicast;
+    uint8_t     lwm_fcf;
+    bool        lwm_fcf_security;
+    bool        lwm_fcf_multicast;
 
 
-    guint8      lwm_seq;
-    guint16     lwm_src_addr;
-    guint16     lwm_dst_addr;
-    guint8      lwm_endp_field;
-    guint8      lwm_src_endp;
-    guint8      lwm_dst_endp;
+    uint8_t     lwm_seq;
+    uint16_t    lwm_src_addr;
+    uint16_t    lwm_dst_addr;
+    uint8_t     lwm_endp_field;
+    uint8_t     lwm_src_endp;
+    uint8_t     lwm_dst_endp;
 
     proto_tree *lwm_tree        = NULL;
     proto_item *ti_proto        = NULL;
@@ -245,7 +246,7 @@ static int dissect_lwm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
         lwm_tree = proto_item_add_subtree(ti_proto, ett_lwm);
     }
 
-    col_add_fstr(pinfo->cinfo, COL_INFO, "Lightweight Mesh");
+    col_set_str(pinfo->cinfo, COL_INFO, "Lightweight Mesh");
 
     /*--------------------------------------------------*/
     /*                                                  */
@@ -254,7 +255,7 @@ static int dissect_lwm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     /*--------------------------------------------------*/
 
     /*Frame control fields*/
-    lwm_fcf = tvb_get_guint8(tvb, 0);
+    lwm_fcf = tvb_get_uint8(tvb, 0);
 
     lwm_fcf_security  = (lwm_fcf & LWM_FCF_SEC_EN);
     lwm_fcf_multicast = (lwm_fcf & LWM_FCF_MULTICAST);
@@ -273,7 +274,7 @@ static int dissect_lwm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     }
 
     /*Sequence number*/
-    lwm_seq = tvb_get_guint8(tvb, 1);
+    lwm_seq = tvb_get_uint8(tvb, 1);
     proto_item_append_text(ti_proto, ", Sequence Number: %i", lwm_seq);
     proto_tree_add_uint(lwm_tree, hf_lwm_seq, tvb, 1, 1, lwm_seq);
 
@@ -321,7 +322,7 @@ static int dissect_lwm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
     col_append_fstr(pinfo->cinfo, COL_INFO, ", Nwk_Dst: 0x%04x, Nwk_Src: 0x%04x", lwm_dst_addr, lwm_src_addr);
 
     /*Endpoints*/
-    lwm_endp_field = tvb_get_guint8(tvb, 6);
+    lwm_endp_field = tvb_get_uint8(tvb, 6);
     lwm_src_endp   = (lwm_endp_field & LWM_SRC_ENDP_MASK) >> LWM_SRC_ENDP_OFFSET;
     lwm_dst_endp   = (lwm_endp_field & LWM_DST_ENDP_MASK) >> LWM_DST_ENDP_OFFSET;
 
@@ -354,7 +355,7 @@ static int dissect_lwm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 
         if(tree){
             proto_tree *multi_tree;
-            guint16     lwm_multi_header;
+            uint16_t    lwm_multi_header;
 
             lwm_multi_header =  tvb_get_letohs(tvb, 7);
             multi_tree = proto_tree_add_subtree(lwm_tree, tvb, 7, 2, ett_lwm_multi_tree, NULL, "Multicast Header");
@@ -391,9 +392,9 @@ static int dissect_lwm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
 
     /*Encrypted data*/
     if(lwm_fcf_security){
-        guint rlen;
-        gint  start;
-        guint32 lwm_mic;
+        unsigned rlen;
+        int   start;
+        uint32_t lwm_mic;
 
         /*MIC field*/
         rlen = tvb_reported_length(new_tvb);
@@ -401,48 +402,46 @@ static int dissect_lwm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
         /*An exception will occur if there are not enough bytes for the MIC */
         proto_tree_add_item_ret_uint(lwm_tree, hf_lwm_mic, new_tvb, start, LWM_MIC_LEN, ENC_LITTLE_ENDIAN, &lwm_mic);
 
-#ifdef HAVE_LIBGCRYPT
         if(lwmes_key_valid)
         {
             ieee802154_packet *ieee_packet = NULL;
-            gint payload_length = 0;
-            gint length = 0;
-            gint payload_offset = 0;
-            guint8 block;
+            int payload_length = 0;
+            int length = 0;
+            int payload_offset = 0;
+            uint8_t block;
             tvbuff_t *decrypted_tvb;
             gcry_cipher_hd_t cypher_hd;
-            guint8* vector = NULL;
-            guint8* text =NULL;
-            guint8* text_dec =NULL;
-            guint8 i;
-            guint32 vmic;
-            guint32 nwkSecurityVector[4];
+            uint8_t* vector = NULL;
+            uint8_t* text =NULL;
+            uint8_t* text_dec =NULL;
+            uint8_t i;
+            uint32_t vmic;
+            uint32_t nwkSecurityVector[4];
+            int gcrypt_err;
 
             ieee_packet = (ieee802154_packet *)data;
 
             memset(&nwkSecurityVector, 0, sizeof(nwkSecurityVector));
             nwkSecurityVector[0] = lwm_seq;
-            nwkSecurityVector[1] = ((guint32)lwm_dst_addr<< 16) | lwm_dst_endp;
-            nwkSecurityVector[2]= ((guint32) lwm_src_addr<< 16) | lwm_src_endp;
-            nwkSecurityVector[3] = ((guint32)ieee_packet->dst_pan << 16) | (guint8)lwm_fcf;
+            nwkSecurityVector[1] = ((uint32_t)lwm_dst_addr<< 16) | lwm_dst_endp;
+            nwkSecurityVector[2]= ((uint32_t) lwm_src_addr<< 16) | lwm_src_endp;
+            nwkSecurityVector[3] = ((uint32_t)ieee_packet->dst_pan << 16) | (uint8_t)lwm_fcf;
 
             payload_length=tvb_reported_length(new_tvb) - LWM_MIC_LEN;
 
             /* ECB - Nwk security vector*/
-            text = (guint8 *)tvb_memdup(pinfo->pool, new_tvb, 0, payload_length);
+            text = (uint8_t *)tvb_memdup(pinfo->pool, new_tvb, 0, payload_length);
             payload_offset=0;
 
+            gcrypt_err = gcry_cipher_open(&cypher_hd, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_ECB, 0);
             /*Decrypt the actual data */
             while(payload_length>0)
             {
-                int gcrypt_err;
-
-                gcrypt_err = gcry_cipher_open(&cypher_hd, GCRY_CIPHER_AES128, GCRY_CIPHER_MODE_ECB, 0);
                 if(gcrypt_err == 0) {
-                    gcrypt_err = gcry_cipher_setkey(cypher_hd,(guint8 *)lwmes_key, 16);
+                    gcrypt_err = gcry_cipher_setkey(cypher_hd,(uint8_t *)lwmes_key, 16);
                 }
                 if(gcrypt_err == 0) {
-                    gcrypt_err = gcry_cipher_encrypt(cypher_hd,(guint8 *)nwkSecurityVector,16,(guint8 *)nwkSecurityVector,16);
+                    gcrypt_err = gcry_cipher_encrypt(cypher_hd,(uint8_t *)nwkSecurityVector,16,(uint8_t *)nwkSecurityVector,16);
                 }
 
                 if(gcrypt_err)
@@ -456,19 +455,26 @@ static int dissect_lwm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
                 }
 
                 text_dec = &text[payload_offset];
-                vector = (guint8 *)nwkSecurityVector;
+                vector = (uint8_t *)nwkSecurityVector;
                 block =  (payload_length < 16) ? payload_length : 16;
 
                 for (i = 0; i < block; i++)
                 {
                     text_dec[i] ^= vector[i];
+                    /*
+                     * GCC 12.2.0 gives a false positive Wstringop-overflow warning.
+                     * https://gitlab.com/wireshark/wireshark/-/issues/18383
+                     */
+                    DIAG_OFF_STRINGOP_OVERFLOW()
                     vector[i] ^= text_dec[i];
+                    DIAG_ON_STRINGOP_OVERFLOW()
                 }
 
                 payload_offset += block;
                 payload_length -= block;
-                gcry_cipher_close(cypher_hd);
+                gcry_cipher_reset(cypher_hd);
             }
+            gcry_cipher_close(cypher_hd);
 
             vmic = nwkSecurityVector[0] ^ nwkSecurityVector[1] ^ nwkSecurityVector[2] ^ nwkSecurityVector[3];
             length = tvb_reported_length(new_tvb) - LWM_MIC_LEN;
@@ -479,7 +485,7 @@ static int dissect_lwm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
                 call_data_dissector(decrypted_tvb, pinfo, lwm_tree);
                 /* XXX - needed?
                    add_new_data_source(pinfo, decrypted_tvb, "Decrypted LWmesh Payload"); */
-                col_append_fstr(pinfo->cinfo, COL_INFO, ",  MIC SUCCESS");
+                col_append_str(pinfo->cinfo, COL_INFO, ",  MIC SUCCESS");
 
             }
             else
@@ -501,35 +507,26 @@ static int dissect_lwm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
             tvb_set_reported_length(new_tvb, tvb_reported_length(new_tvb) - LWM_MIC_LEN);
             call_data_dissector(new_tvb, pinfo, lwm_tree);
         }
-#else /* ! HAVE_LIBGCRYPT */
-        col_add_fstr(pinfo->cinfo, COL_INFO,
-                 "Encrypted data (%i byte(s)): libgcrypt not present, cannot decrypt",
-                  tvb_reported_length(new_tvb) - LWM_MIC_LEN);
-
-        expert_add_info(pinfo, lwm_tree, &ei_lwm_no_decryption_key);
-        tvb_set_reported_length(new_tvb, tvb_reported_length(new_tvb) - LWM_MIC_LEN);
-        call_data_dissector(new_tvb, pinfo, lwm_tree);
-#endif /* ! HAVE_LIBGCRYPT */
     }
     /*stack command endpoint 0 and not secured*/
     else if( (lwm_src_endp == 0) && (lwm_dst_endp == 0) ){
         proto_tree *lwm_cmd_tree;
-        guint8      lwm_cmd;
-        guint       len;
+        uint8_t     lwm_cmd;
+        unsigned    len;
+        char       *str_cmd;
 
         /*----------------------------------------------------------------------*/
         /*                                                                      */
         /*  Call command dissector (depends on value of first byte of payload)  */
         /*                                                                      */
         /*----------------------------------------------------------------------*/
-        lwm_cmd = tvb_get_guint8(new_tvb, 0);
+        lwm_cmd = tvb_get_uint8(new_tvb, 0);
+        str_cmd = val_to_str(pinfo->pool, lwm_cmd, lwm_cmd_names, LWM_CMD_UNKNOWN_VAL_STRING);
 
         col_clear(pinfo->cinfo, COL_INFO);  /*XXX: why ?*/
-        col_add_fstr(pinfo->cinfo, COL_INFO, "%s",
-            val_to_str(lwm_cmd, lwm_cmd_names, LWM_CMD_UNKNOWN_VAL_STRING));
+        col_add_str(pinfo->cinfo, COL_INFO, str_cmd);
 
-        lwm_cmd_tree = proto_tree_add_subtree(lwm_tree, new_tvb, 0, -1, ett_lwm_cmd_tree, &ti,
-            val_to_str(lwm_cmd, lwm_cmd_names, LWM_CMD_UNKNOWN_VAL_STRING));
+        lwm_cmd_tree = proto_tree_add_subtree(lwm_tree, new_tvb, 0, -1, ett_lwm_cmd_tree, &ti, str_cmd);
 
         proto_tree_add_uint(lwm_cmd_tree, hf_lwm_cmd, new_tvb, 0, 1, lwm_cmd);
 
@@ -595,10 +592,10 @@ static int dissect_lwm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
  */
 static int dissect_lwm_cmd_frame_ack(tvbuff_t *tvb, packet_info *pinfo, proto_tree *lwm_cmd_tree)
 {
-    guint8 lwm_seq;
+    uint8_t lwm_seq;
 
     /*Get fields*/
-    lwm_seq = tvb_get_guint8(tvb, 1);
+    lwm_seq = tvb_get_uint8(tvb, 1);
 
     col_append_fstr(pinfo->cinfo, COL_INFO, ", Sequence number: %d", lwm_seq);
 
@@ -634,7 +631,7 @@ static int dissect_lwm_cmd_frame_route_err(tvbuff_t *tvb, packet_info *pinfo _U_
         proto_tree_add_item(lwm_cmd_tree, hf_lwm_cmd_route_src, tvb, 1, 2, ENC_LITTLE_ENDIAN);
         ti = proto_tree_add_item(lwm_cmd_tree, hf_lwm_cmd_route_dst, tvb, 3, 2, ENC_LITTLE_ENDIAN);
 
-        if(tvb_get_guint8(tvb, 5) == LWM_CMD_MULTI_ADDR_TRUE){
+        if(tvb_get_uint8(tvb, 5) == LWM_CMD_MULTI_ADDR_TRUE){
             proto_item_append_text(ti, " %s", LWM_MULTI_GROUP_STRING);
         }else{
             proto_item_append_text(ti, " %s", LWM_MULTI_UNICAST_STRING);
@@ -665,12 +662,12 @@ static int dissect_lwm_cmd_frame_route_req(tvbuff_t *tvb, packet_info *pinfo _U_
 {
     if(lwm_cmd_tree){
         proto_item *ti;
-        guint8      lwm_linkqual;
+        uint8_t     lwm_linkqual;
 
         proto_tree_add_item(lwm_cmd_tree, hf_lwm_cmd_route_src, tvb, 1, 2, ENC_LITTLE_ENDIAN);
         ti = proto_tree_add_item(lwm_cmd_tree, hf_lwm_cmd_route_dst, tvb, 3, 2, ENC_LITTLE_ENDIAN);
 
-        if(tvb_get_guint8(tvb, 5) == LWM_CMD_MULTI_ADDR_TRUE){
+        if(tvb_get_uint8(tvb, 5) == LWM_CMD_MULTI_ADDR_TRUE){
             proto_item_append_text(ti, " %s", LWM_MULTI_GROUP_STRING);
         }else{
             proto_item_append_text(ti, " %s", LWM_MULTI_UNICAST_STRING);
@@ -678,7 +675,7 @@ static int dissect_lwm_cmd_frame_route_req(tvbuff_t *tvb, packet_info *pinfo _U_
 
         proto_tree_add_item(lwm_cmd_tree, hf_lwm_cmd_route_multi, tvb, 5, 1, ENC_NA);
 
-        lwm_linkqual  = tvb_get_guint8(tvb, 6);
+        lwm_linkqual  = tvb_get_uint8(tvb, 6);
         ti = proto_tree_add_uint(lwm_cmd_tree, hf_lwm_cmd_linkquality, tvb, 6, 1, lwm_linkqual);
         if(lwm_linkqual == 255){
             proto_item_append_text(ti, " %s", LWM_CMD_LINKQ_STRING);
@@ -707,12 +704,12 @@ static int dissect_lwm_cmd_frame_route_reply(tvbuff_t *tvb, packet_info *pinfo _
 {
     if(lwm_cmd_tree){
         proto_item *ti;
-        guint8      lwm_revlinkqual;
+        uint8_t     lwm_revlinkqual;
 
         proto_tree_add_item(lwm_cmd_tree, hf_lwm_cmd_route_src, tvb, 1, 2, ENC_LITTLE_ENDIAN);
         ti = proto_tree_add_item(lwm_cmd_tree, hf_lwm_cmd_route_dst, tvb, 3, 2, ENC_LITTLE_ENDIAN);
 
-        if(tvb_get_guint8(tvb, 5) == LWM_CMD_MULTI_ADDR_TRUE){
+        if(tvb_get_uint8(tvb, 5) == LWM_CMD_MULTI_ADDR_TRUE){
             proto_item_append_text(ti, " %s", LWM_MULTI_GROUP_STRING);
         }else{
             proto_item_append_text(ti, " %s", LWM_MULTI_UNICAST_STRING);
@@ -721,7 +718,7 @@ static int dissect_lwm_cmd_frame_route_reply(tvbuff_t *tvb, packet_info *pinfo _
         proto_tree_add_item(lwm_cmd_tree, hf_lwm_cmd_route_multi, tvb, 5, 1, ENC_NA);
         proto_tree_add_item(lwm_cmd_tree, hf_lwm_cmd_forwlinkquality, tvb, 6, 1, ENC_NA);
 
-        lwm_revlinkqual = tvb_get_guint8(tvb, 7);
+        lwm_revlinkqual = tvb_get_uint8(tvb, 7);
         ti = proto_tree_add_uint(lwm_cmd_tree, hf_lwm_cmd_revlinkquality, tvb, 7, 1, lwm_revlinkqual);
         if(lwm_revlinkqual == 255){
             proto_item_append_text(ti, " %s", LWM_CMD_LINKQ_STRING);
@@ -797,19 +794,19 @@ void proto_register_lwm(void)
 
         /*Multicast header*/
         { &hf_lwm_multi_nmrad,
-        { "Non-member Radius", "lwm.multi_nmrad", FT_UINT8, BASE_DEC, NULL, 0x0,
+        { "Non-member Radius", "lwm.multi_nmrad", FT_UINT16, BASE_DEC, NULL, 0x0,
         "Specifies remaining radius (number of hops) for Non-members of multicast group.", HFILL }},
 
         { &hf_lwm_multi_mnmrad,
-        { "Maximum Non-member Radius", "lwm.multi_mnmrad", FT_UINT8, BASE_DEC, NULL, 0x0,
+        { "Maximum Non-member Radius", "lwm.multi_mnmrad", FT_UINT16, BASE_DEC, NULL, 0x0,
         "Specifies maximum radius (number of hops) for Non-members of multicast group.", HFILL }},
 
         { &hf_lwm_multi_mrad,
-        { "Member Radius", "lwm.multi_mrad", FT_UINT8, BASE_DEC, NULL, 0x0,
+        { "Member Radius", "lwm.multi_mrad", FT_UINT16, BASE_DEC, NULL, 0x0,
         "Specifies remaining radius (number of hops) for Members of multicast group.", HFILL }},
 
         { &hf_lwm_multi_mmrad,
-        { "Maximum Member Radius", "lwm.multi_mmrad", FT_UINT8, BASE_DEC, NULL, 0x0,
+        { "Maximum Member Radius", "lwm.multi_mmrad", FT_UINT16, BASE_DEC, NULL, 0x0,
         "Specifies maximum radius (number of hops) for Members of multicast group.", HFILL }},
 
 
@@ -869,7 +866,7 @@ void proto_register_lwm(void)
     };
 
     /* Subtrees */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_lwm,
         &ett_lwm_fcf,
         &ett_lwm_multi_tree,
@@ -905,7 +902,7 @@ void proto_register_lwm(void)
             "128-bit decryption key in hexadecimal format", (const char **)&lwmes_key_str);
 
     /*  Register dissector with Wireshark. */
-    register_dissector("lwm", dissect_lwm, proto_lwm);
+    lwm_handle = register_dissector("lwm", dissect_lwm, proto_lwm);
 
 } /* proto_register_lwm */
 
@@ -914,7 +911,8 @@ void proto_register_lwm(void)
  *      proto_reg_handoff_lwm
  *  DESCRIPTION
  *      Registers the lwm dissector with Wireshark.
- *      Will be called during Wireshark startup.
+ *      Will be called during Wireshark startup, and whenever
+ *      preferences are changed.
  *  PARAMETERS
  *      none
  *  RETURNS
@@ -923,22 +921,25 @@ void proto_register_lwm(void)
  */
 void proto_reg_handoff_lwm(void)
 {
+    static bool initialized = false;
     GByteArray      *bytes;
-    gboolean         res;
+    bool             res;
 
+    if (!initialized) {
+        /* Register our dissector with IEEE 802.15.4 */
+        dissector_add_for_decode_as(IEEE802154_PROTOABBREV_WPAN_PANID, lwm_handle);
+        heur_dissector_add(IEEE802154_PROTOABBREV_WPAN, dissect_lwm_heur, "Lightweight Mesh over IEEE 802.15.4", "lwm_wlan", proto_lwm, HEURISTIC_ENABLE);
+
+        initialized = true;
+    }
     /* Convert key to raw bytes */
     bytes = g_byte_array_new();
-    res = hex_str_to_bytes(lwmes_key_str, bytes, FALSE);
+    res = hex_str_to_bytes(lwmes_key_str, bytes, false);
     lwmes_key_valid = (res && bytes->len >= IEEE802154_CIPHER_SIZE);
     if (lwmes_key_valid) {
         memcpy(lwmes_key, bytes->data, IEEE802154_CIPHER_SIZE);
     }
-    g_byte_array_free(bytes, TRUE);
-
-
-    /* Register our dissector with IEEE 802.15.4 */
-    dissector_add_for_decode_as(IEEE802154_PROTOABBREV_WPAN_PANID, find_dissector("lwm"));
-    heur_dissector_add(IEEE802154_PROTOABBREV_WPAN, dissect_lwm_heur, "Lightweight Mesh over IEEE 802.15.4", "lwm_wlan", proto_lwm, HEURISTIC_ENABLE);
+    g_byte_array_free(bytes, true);
 
 } /* proto_reg_handoff_lwm */
 

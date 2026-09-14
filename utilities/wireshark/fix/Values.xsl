@@ -14,7 +14,6 @@ Syntax: xsltproc Values.xsl FIX44.xml
 
 typedef struct _fix_field {
     int      tag;         /* FIX tag */
-    int      hf_id;
     int      type;        /* */
     const void *table;
 } fix_field;
@@ -24,7 +23,7 @@ typedef struct _fix_field {
 </xsl:template>
 
 <!--
-translate(@description,$uppercase,$smallcase)  
+translate(@description,$uppercase,$smallcase)
 -->
 
 <xsl:variable name="smallcase" select="'abcdefghijklmnopqrstuvwxyz'" />
@@ -59,7 +58,7 @@ translate(@description,$uppercase,$smallcase)
 <xsl:template match="fix/messages">
     static const string_string messages_val[] = {<xsl:for-each select="message">
         { "<xsl:value-of select="@msgtype"/>", "<xsl:value-of select="@name"/>" },</xsl:for-each>
-        { "", NULL }
+        { 0, NULL }
     };
 </xsl:template>
 

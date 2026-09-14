@@ -1,0 +1,47 @@
+diff --git a/lib/getlocalename_l-unsafe.c b/lib/getlocalename_l-unsafe.c
+index cb7ae5e5ea..87031ea365 100644
+--- a/lib/getlocalename_l-unsafe.c
++++ b/lib/getlocalename_l-unsafe.c
+@@ -52,6 +52,12 @@
+ 
+ #if LOCALENAME_ENHANCE_LOCALE_FUNCS
+ 
++# if IN_LIBINTL
++#  define BUILDING_LIBINTL 1
++/* Get LIBINTL_SHLIB_EXPORTED.  */
++#  include "libgnuintl.h"
++# endif
++
+ # include "flexmember.h"
+ # include "glthread/lock.h"
+ # include "thread-optim.h"
+@@ -127,6 +133,9 @@ get_locale_t_name (int category, locale_t locale)
+ # endif
+ 
+ /* newlocale() override.  */
++# if IN_LIBINTL
++extern LIBINTL_SHLIB_EXPORTED locale_t newlocale (int, const char *, locale_t);
++# endif
+ locale_t
+ newlocale (int category_mask, const char *name, locale_t base)
+ #undef newlocale
+@@ -331,6 +340,9 @@ newlocale (int category_mask, const char *name, locale_t base)
+ }
+ 
+ /* duplocale() override.  */
++# if IN_LIBINTL
++extern LIBINTL_SHLIB_EXPORTED locale_t duplocale (locale_t);
++# endif
+ locale_t
+ duplocale (locale_t locale)
+ #undef duplocale
+@@ -426,6 +438,9 @@ duplocale (locale_t locale)
+ }
+ 
+ /* freelocale() override.  */
++# if IN_LIBINTL
++extern LIBINTL_SHLIB_EXPORTED void freelocale (locale_t);
++# endif
+ void
+ freelocale (locale_t locale)
+ #undef freelocale

@@ -1,0 +1,19 @@
+#!/bin/sh
+#
+# GNUMAKE wrapper for ndk-build, used on hosts where the NDK has to be steered
+# away from its emulated x86_64 toolchain.
+#
+# ndk-build ends in:  "$GNUMAKE" -O -f build-local.mk "$@"
+# so pointing GNUMAKE here lets us append HOST_ARCH as a make *command-line*
+# variable. That matters: build/core/init.mk derives HOST_TAG64, and from it
+# TOOLCHAIN_ROOT, from HOST_ARCH, but simply exporting HOST_ARCH does not work
+# because build/tools/ndk_bin_common.sh overwrites it with x86_64 before make
+# is ever started. A command-line assignment is immune to that.
+#
+# NDK_NATIVE_HOST_ARCH is set by the caller (utilities/Makefile, setup_env.sh)
+# only once the matching prebuilt/<host tag> toolchain actually exists.
+
+if [ -n "$NDK_NATIVE_HOST_ARCH" ]; then
+    exec make "$@" HOST_ARCH="$NDK_NATIVE_HOST_ARCH"
+fi
+exec make "$@"

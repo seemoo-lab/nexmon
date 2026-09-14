@@ -1,23 +1,11 @@
-/* tap-rpcstat.c
+/* tap-wspstat.c
  * wspstat   2003 Jean-Michel FAYARD
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* This module provides WSP  statistics to tshark.
@@ -36,51 +24,47 @@
 #include <epan/packet_info.h>
 #include <epan/tap.h>
 #include <epan/stat_tap_ui.h>
-#include <epan/value_string.h>
+#include <wsutil/value_string.h>
 #include <epan/dissectors/packet-wsp.h>
+
+#include <wsutil/cmdarg_err.h>
 
 void register_tap_listener_wspstat(void);
 
 /* used to keep track of the stats for a specific PDU type*/
 typedef struct _wsp_pdu_t {
-	const gchar 	*type;
-	guint32		 packets;
+	const char 	*type;
+	uint32_t		 packets;
 } wsp_pdu_t;
 /* used to keep track of SRT statistics */
 typedef struct _wsp_status_code_t {
-	const gchar	*name;
-	guint32		 packets;
+	const char	*name;
+	uint32_t		 packets;
 } wsp_status_code_t;
 /* used to keep track of the statictics for an entire program interface */
 typedef struct _wsp_stats_t {
 	char 		*filter;
 	wsp_pdu_t 	*pdu_stats;
-	guint32	num_pdus;
+	uint32_t	num_pdus;
 	GHashTable	*hash;
 } wspstat_t;
 
 static void
-wsp_reset_hash(gchar *key _U_ , wsp_status_code_t *data, gpointer ptr _U_)
+wsp_reset_hash(char *key _U_ , wsp_status_code_t *data, void *ptr _U_)
 {
 	data->packets = 0;
 }
 static void
-wsp_print_statuscode(gint *key, wsp_status_code_t *data, char *format)
+wsp_print_statuscode(void *key, wsp_status_code_t *data, char *format)
 {
 	if (data && (data->packets != 0))
-		printf(format, *key, data->packets , data->name);
-}
-static void
-wsp_free_hash_table( gpointer key, gpointer value, gpointer user_data _U_ )
-{
-	g_free(key);
-	g_free(value);
+		printf(format, GPOINTER_TO_INT(key), data->packets , data->name);
 }
 static void
 wspstat_reset(void *psp)
 {
 	wspstat_t *sp = (wspstat_t *)psp;
-	guint32 i;
+	uint32_t i;
 
 	for (i=1; i<=sp->num_pdus; i++)
 	{
@@ -89,20 +73,8 @@ wspstat_reset(void *psp)
 	g_hash_table_foreach( sp->hash, (GHFunc)wsp_reset_hash, NULL);
 }
 
-
-/* This callback is invoked whenever the tap system has seen a packet
- * we might be interested in.
- * The function is to be used to only update internal state information
- * in the *tapdata structure, and if there were state changes which requires
- * the window to be redrawn, return 1 and (*draw) will be called sometime
- * later.
- *
- * We didn't apply a filter when we registered so we will be called for
- * ALL packets and not just the ones we are collecting stats for.
- *
- */
-static gint
-pdut2index(gint pdut)
+static int
+pdut2index(int pdut)
 {
 	if (pdut <= 0x09)
 		return pdut;
@@ -115,8 +87,8 @@ pdut2index(gint pdut)
 	}
 	return 0;
 }
-static gint
-index2pdut(gint pdut)
+static int
+index2pdut(int pdut)
 {
 	if (pdut <= 0x09)
 		return pdut;
@@ -126,40 +98,50 @@ index2pdut(gint pdut)
 		return pdut + 81;
 	return 0;
 }
-static int
-wspstat_packet(void *psp, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *pri)
+
+/* This callback is invoked whenever the tap system has seen a packet
+ * we might be interested in.
+ * The function is to be used to only update internal state information
+ * in the *tapdata structure, and if there were state changes which requires
+ * the window to be redrawn, return 1 and (*draw) will be called sometime
+ * later.
+ *
+ * We didn't apply a filter when we registered so we will be called for
+ * ALL packets and not just the ones we are collecting stats for.
+ *
+ */
+static tap_packet_status
+wspstat_packet(void *psp, packet_info *pinfo _U_, epan_dissect_t *edt _U_, const void *pri, tap_flags_t flags _U_)
 {
 	wspstat_t *sp = (wspstat_t *)psp;
 	const wsp_info_value_t *value = (const wsp_info_value_t *)pri;
-	gint idx = pdut2index(value->pdut);
-	int retour = 0;
+	int idx = pdut2index(value->pdut);
+	tap_packet_status retour = TAP_PACKET_DONT_REDRAW;
 
 	if (value->status_code != 0) {
-		gint *key = g_new(gint, 1);
 		wsp_status_code_t *sc;
-		*key = value->status_code ;
 		sc = (wsp_status_code_t *)g_hash_table_lookup(
 				sp->hash,
-				key);
+				GINT_TO_POINTER(value->status_code));
 		if (!sc) {
 			sc = g_new(wsp_status_code_t, 1);
 			sc -> packets = 1;
 			sc -> name = NULL;
 			g_hash_table_insert(
 				sp->hash,
-				key,
+				GINT_TO_POINTER(value->status_code),
 				sc);
 		} else {
 			sc->packets++;
 		}
-		retour = 1;
+		retour = TAP_PACKET_REDRAW;
 	}
 
 
 
 	if (idx != 0) {
 		sp->pdu_stats[idx].packets++;
-		retour = 1;
+		retour = TAP_PACKET_REDRAW;
 	}
 	return retour;
 }
@@ -180,7 +162,7 @@ static void
 wspstat_draw(void *psp)
 {
 	wspstat_t *sp = (wspstat_t *)psp;
-	guint32 i;
+	uint32_t i;
 
 	printf("\n");
 	printf("===================================================================\n");
@@ -188,7 +170,7 @@ wspstat_draw(void *psp)
 	printf("%-23s %9s || %-23s %9s\n", "PDU Type", "Packets", "PDU Type", "Packets");
 	for (i=1; i <= ((sp->num_pdus+1)/2); i++)
 	{
-		guint32 ii = i+sp->num_pdus/2;
+		uint32_t ii = i+sp->num_pdus/2;
 		printf("%-23s %9u", sp->pdu_stats[i ].type, sp->pdu_stats[i ].packets);
 		printf(" || ");
 		if (ii< (sp->num_pdus) )
@@ -199,23 +181,35 @@ wspstat_draw(void *psp)
 	printf("\nStatus code in reply packets\n");
 	printf(		"Status Code    Packets  Description\n");
 	g_hash_table_foreach( sp->hash, (GHFunc) wsp_print_statuscode,
-			(gpointer)"       0x%02X  %9d  %s\n" ) ;
+			(void *)"       0x%02X  %9d  %s\n" ) ;
 	printf("===================================================================\n");
 }
 
+/* This callback is used when tshark wants us to clean up our memory.
+ */
+static void
+wspstat_finish(void *psp)
+{
+	wspstat_t *sp = (wspstat_t *)psp;
+	g_free(sp->pdu_stats);
+	g_free(sp->filter);
+	g_hash_table_destroy(sp->hash);
+	g_free(sp);
+}
+
 /* When called, this function will create a new instance of wspstat.
- * program and version are whick onc-rpc program/version we want to
+ * program and version are which onc-rpc program/version we want to
  * collect statistics for.
  * This function is called from tshark when it parses the -z wsp, arguments
  * and it creates a new instance to store statistics in and registers this
  * new instance for the wsp tap.
  */
-static void
+static bool
 wspstat_init(const char *opt_arg, void *userdata _U_)
 {
 	wspstat_t          *sp;
 	const char         *filter = NULL;
-	guint32             i;
+	uint32_t            i;
 	GString	           *error_string;
 	wsp_status_code_t  *sc;
 	const value_string *wsp_vals_status_p;
@@ -228,54 +222,46 @@ wspstat_init(const char *opt_arg, void *userdata _U_)
 
 
 	sp = g_new(wspstat_t, 1);
-	sp->hash = g_hash_table_new( g_int_hash, g_int_equal);
-	wsp_vals_status_p = VALUE_STRING_EXT_VS_P(&wsp_vals_status_ext);
+	sp->hash = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
+	wsp_vals_status_p = VALUE_STRING_EXT_VS_P(get_external_value_string_ext("wsp_vals_status_ext"));
 	for (i=0; wsp_vals_status_p[i].strptr; i++ )
 	{
-		gint *key;
 		sc = g_new(wsp_status_code_t, 1);
-		key = g_new(gint, 1);
 		sc->packets = 0;
 		sc->name = wsp_vals_status_p[i].strptr;
-		*key = wsp_vals_status_p[i].value;
 		g_hash_table_insert(
 				sp->hash,
-				key,
+				GINT_TO_POINTER(wsp_vals_status_p[i].value),
 				sc);
 	}
 	sp->num_pdus = 16;
 	sp->pdu_stats = g_new(wsp_pdu_t, (sp->num_pdus+1));
-	if (filter) {
-		sp->filter = g_strdup(filter);
-	} else {
-		sp->filter = NULL;
-	}
+	sp->filter = g_strdup(filter);
+
 	for (i=0; i<sp->num_pdus; i++)
 	{
 		sp->pdu_stats[i].packets = 0;
-		sp->pdu_stats[i].type = try_val_to_str_ext( index2pdut( i ), &wsp_vals_pdu_type_ext) ;
+		sp->pdu_stats[i].type = try_val_to_str_ext( index2pdut( i ), get_external_value_string_ext("wsp_vals_pdu_type_ext"));
 	}
 
 	error_string = register_tap_listener(
 			"wsp",
 			sp,
 			filter,
-			0,
+			TL_REQUIRES_NOTHING,
 			wspstat_reset,
 			wspstat_packet,
-			wspstat_draw);
+			wspstat_draw,
+			wspstat_finish);
 	if (error_string) {
 		/* error, we failed to attach to the tap. clean up */
-		g_free(sp->pdu_stats);
-		g_free(sp->filter);
-		g_free(sp);
-		g_hash_table_foreach( sp->hash, (GHFunc) wsp_free_hash_table, NULL ) ;
-		g_hash_table_destroy( sp->hash );
-		fprintf(stderr, "tshark: Couldn't register wsp,stat tap: %s\n",
+		wspstat_finish((void *)sp);
+		cmdarg_err("Couldn't register wsp,stat tap: %s",
 				error_string->str);
 		g_string_free(error_string, TRUE);
-		exit(1);
+		return false;
 	}
+	return true;
 }
 
 static stat_tap_ui wspstat_ui = {
@@ -294,7 +280,7 @@ register_tap_listener_wspstat(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

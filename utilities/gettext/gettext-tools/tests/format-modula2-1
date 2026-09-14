@@ -1,0 +1,68 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test recognition of Modula-2 format strings.
+
+cat <<\EOF > f-m2-1.data
+# Valid: no argument
+"abc%%"
+# Valid: one string argument
+"abc%s"
+# Valid: one character argument
+"abc%c"
+# Valid: one integer argument
+"abc%d"
+# Valid: one unsigned integer argument
+"abc%u"
+# Valid: one unsigned integer argument
+"abc%x"
+# Valid: three arguments
+"abc%c%d%u"
+# Valid: three arguments with width
+"abc%40s%3c%9u"
+# Invalid: unterminated
+"abc%"
+# Valid: one argument with flags
+"abc%-0d"
+# Invalid: flags in wrong order
+"abc%0-d"
+# Invalid: unknown format specifier
+"abc%f"
+# Invalid: precision
+"abc%1.1d"
+# Invalid: unterminated
+"abc%3"
+EOF
+: ${XGETTEXT=xgettext}
+n=0
+while read comment; do
+  read string
+  n=`expr $n + 1`
+  echo "Gettext(${string});" > f-m2-1-$n.in
+  ${XGETTEXT} -L Modula-2 -o f-m2-1-$n.po f-m2-1-$n.in || Exit 1
+  test -f f-m2-1-$n.po || Exit 1
+  fail=
+  if echo "$comment" | grep 'Valid:' > /dev/null; then
+    if grep modula2-format f-m2-1-$n.po > /dev/null; then
+      :
+    else
+      fail=yes
+    fi
+  else
+    if grep modula2-format f-m2-1-$n.po > /dev/null; then
+      fail=yes
+    else
+      :
+    fi
+  fi
+  if test -n "$fail"; then
+    echo "Format string recognition error:" 1>&2
+    cat f-m2-1-$n.in 1>&2
+    echo "Got:" 1>&2
+    cat f-m2-1-$n.po 1>&2
+    Exit 1
+  fi
+  rm -f f-m2-1-$n.in f-m2-1-$n.po
+done < f-m2-1.data
+
+Exit 0

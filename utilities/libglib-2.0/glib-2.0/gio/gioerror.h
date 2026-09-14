@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,6 +29,7 @@
 
 #include <glib.h>
 #include <gio/gioenums.h>
+#include <glib/gfileutils.h>
 
 G_BEGIN_DECLS
 
@@ -38,13 +41,15 @@ G_BEGIN_DECLS
  **/
 #define G_IO_ERROR g_io_error_quark()
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GQuark       g_io_error_quark      (void);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GIOErrorEnum g_io_error_from_errno (gint err_no);
+GIO_AVAILABLE_IN_2_74
+GIOErrorEnum g_io_error_from_file_error (GFileError file_error);
 
 #ifdef G_OS_WIN32
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GIOErrorEnum g_io_error_from_win32_error (gint error_code);
 #endif
 

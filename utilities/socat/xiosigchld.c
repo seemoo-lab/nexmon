@@ -45,38 +45,6 @@ int xiosetsigchild(xiofile_t *xfd, int (*callback)(struct single *)) {
    return 0;
 }
 
-/* exec'd child has died, perform appropriate changes to descriptor */
-/* is async-signal-safe */
-static int sigchld_stream(struct single *file) {
-   /*!! call back to application */
-   file->child.pid = 0;
-   if (file->child.sigchild) {
-      return (*file->child.sigchild)(file);
-   }
-   return 0;
-}
-
-/* return 0 if socket is not responsible for deadchild */
-static int xio_checkchild(xiofile_t *socket, int socknum, pid_t deadchild) {
-   int retval;
-   if (socket != NULL) {
-      if (socket->tag != XIO_TAG_DUAL) {
-	 if (socket->stream.child.pid == deadchild) {
-	    Info2("exec'd process %d on socket %d terminated",
-		  socket->stream.child.pid, socknum);
-	    sigchld_stream(&socket->stream);	/* is async-signal-safe */
-	    return 1;
-	 }
-      } else {
-	 if (retval = xio_checkchild((xiofile_t *)socket->dual.stream[0], socknum, deadchild))
-	    return retval;
-	 else
-	    return xio_checkchild((xiofile_t *)socket->dual.stream[1], socknum, deadchild);
-      }
-   }
-   return 0;
-}
-
 /* this is the "physical" signal handler for SIGCHLD */
 /* the current socat/xio implementation knows two kinds of children:
    exec/system addresses perform a fork: their children are registered and
@@ -93,7 +61,6 @@ void childdied(int signum
    int _errno;
    int status = 0;
    bool wassig = false;
-   int i;
    struct _xiosigchld_child *entry;
 
    diag_in_handler = 1;
@@ -313,4 +280,3 @@ int xiosetchilddied(void) {
 #endif /* !HAVE_SIGACTION */
    return 0;
 }
-

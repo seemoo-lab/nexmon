@@ -1,19 +1,19 @@
 /* xsize.h -- Checked size_t computations.
 
-   Copyright (C) 2003, 2008-2015 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2008-2019 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 2, or (at your option)
+   it under the terms of the GNU Lesser General Public License as published by
+   the Free Software Foundation; either version 2.1, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program; if not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public License
+   along with this program; if not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef _XSIZE_H
 #define _XSIZE_H
@@ -29,6 +29,10 @@
 # include <stdint.h>
 #endif
 
+#ifndef _GL_INLINE_HEADER_BEGIN
+ #error "Please include config.h first."
+#endif
+_GL_INLINE_HEADER_BEGIN
 #ifndef XSIZE_INLINE
 # define XSIZE_INLINE _GL_INLINE
 #endif
@@ -54,7 +58,10 @@
   ((N) <= G_MAXSIZE ? (size_t) (N) : G_MAXSIZE)
 
 /* Sum of two sizes, with overflow check.  */
-static inline size_t
+XSIZE_INLINE size_t
+#if __GNUC__ >= 3
+__attribute__ ((__pure__))
+#endif
 xsum (size_t size1, size_t size2)
 {
   size_t sum = size1 + size2;
@@ -62,21 +69,30 @@ xsum (size_t size1, size_t size2)
 }
 
 /* Sum of three sizes, with overflow check.  */
-static inline size_t
+XSIZE_INLINE size_t
+#if __GNUC__ >= 3
+__attribute__ ((__pure__))
+#endif
 xsum3 (size_t size1, size_t size2, size_t size3)
 {
   return xsum (xsum (size1, size2), size3);
 }
 
 /* Sum of four sizes, with overflow check.  */
-static inline size_t
+XSIZE_INLINE size_t
+#if __GNUC__ >= 3
+__attribute__ ((__pure__))
+#endif
 xsum4 (size_t size1, size_t size2, size_t size3, size_t size4)
 {
   return xsum (xsum (xsum (size1, size2), size3), size4);
 }
 
 /* Maximum of two sizes, with overflow check.  */
-static inline size_t
+XSIZE_INLINE size_t
+#if __GNUC__ >= 3
+__attribute__ ((__pure__))
+#endif
 xmax (size_t size1, size_t size2)
 {
   /* No explicit check is needed here, because for any n:
@@ -97,5 +113,7 @@ xmax (size_t size1, size_t size2)
 /* Check against overflow.  */
 #define size_in_bounds_p(SIZE) \
   ((SIZE) != G_MAXSIZE)
+
+_GL_INLINE_HEADER_END
 
 #endif /* _XSIZE_H */

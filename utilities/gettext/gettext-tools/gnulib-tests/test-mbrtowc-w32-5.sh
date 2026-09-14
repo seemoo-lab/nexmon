@@ -1,4 +1,4 @@
 #!/bin/sh
 
-# Test a CP936 locale.
-./test-mbrtowc-w32${EXEEXT} Chinese_China 936
+# Test a CP932 locale.
+${CHECKER} ./test-mbrtowc-w32${EXEEXT} Japanese_Japan 932

@@ -1,7 +1,18 @@
-@node Translation Intro
-@chapter Notes on the Free Translation Project
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 1995-2026 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
 
-@set STATUS Jun 2014
+@node The original ABOUT-NLS
+@section Notes on the Free Translation Project
+
+@cindex @file{ABOUT-NLS} file
+This section contains the text that was, for a long time, distributed
+as a file named @code{ABOUT-NLS}.
+
+@strong{ NOTE: } This documentation section is outdated.  It it included
+here for historical purposes only.
+
+@set STATUS January 2026
 
 Free software is going international!  The Free Translation Project is
 a way to get maintainers of free software, translators, and users all
@@ -29,7 +40,7 @@ on translations can contact the appropriate team.
 
 
 @node INSTALL Matters
-@section INSTALL Matters
+@subsection INSTALL Matters
 
 Some packages are @dfn{localizable} when properly installed; the
 programs they contain can be made to speak your own native language.
@@ -57,17 +68,31 @@ library and will decide to use it.  If not, you may have to to use the
 look for it.
 
 Internationalized packages usually have many @file{po/@var{ll}.po}
-files, where @var{ll} gives an @w{ISO 639} two-letter code
-identifying the language.  Unless translations have been forbidden
+or @file{po/@var{ll}_@var{CC}.po}
+files, where
+
+@itemize @bullet
+@item
+@var{ll} gives an @w{ISO 639} two-letter code identifying the language.
+For some languages,
+a two-letter code does not exist, and a three-letter code is used instead.
+@item
+The optional @var{CC} is an @w{ISO 3166} two-letter code of a country or
+territory.
+@end itemize
+
+@noindent
+Unless translations have been forbidden
 at @code{configure} time by using the @samp{--disable-nls} switch,
 all available translations are installed together with the package.
 However, the environment variable @code{LINGUAS} may be set, prior
-to configuration, to limit the installed set.  @code{LINGUAS} should
-then contain a space separated list of two-letter codes, stating
-which languages are allowed.
+to configuration, to limit the installed set.
+@code{LINGUAS} should then contain a space separated list of locale names
+(of the form @code{@var{ll}} or @code{@var{ll}_@var{CC}},
+stating which languages or language variants are allowed.
 
 @node Using This Package
-@section Using This Package
+@subsection Using This Package
 
 @c Note: We don't document the locale aliases, because they are less and less
 @c used - locale.alias contains not a single UTF-8 locale and still lists
@@ -79,9 +104,19 @@ only have to set the @code{LANG} environment variable to the appropriate
 @samp{@var{ll}_@var{CC}} combination.  If you happen to have the @code{LC_ALL}
 or some other @code{LC_xxx} environment variables set, you should unset them
 before setting @code{LANG}, otherwise the setting of @code{LANG} will not
-have the desired effect.  Here @samp{@var{ll}} is an
-@w{ISO 639} two-letter language code, and @samp{@var{CC}} is an
-@w{ISO 3166} two-letter country code.  For example, let's suppose that you
+have the desired effect.  Here
+
+@itemize
+@item
+@samp{@var{ll}} is an @w{ISO 639} two-letter language code.
+For some languages,
+a two-letter code does not exist, and a three-letter code is used instead.
+@item
+@samp{@var{CC}} is an @w{ISO 3166} two-letter code of a country or territory.
+@end itemize
+
+@noindent
+For example, let's suppose that you
 speak German and live in Germany.  At the shell prompt, merely execute
 @w{@samp{setenv LANG de_DE}} (in @code{csh}),
 @w{@samp{export LANG; LANG=de_DE}} (in @code{sh}) or
@@ -135,14 +170,14 @@ in this context.
 @c FIXME: The user doesn't care about design justifications. --bruno
 
 @node Translating Teams
-@section Translating Teams
+@subsection Translating Teams
 
 For the Free Translation Project to be a success, we need interested
 people who like their own language and write it well, and who are also
 able to synergize with other translators speaking the same language.
 Each translation team has its own mailing list.  The up-to-date list
 of teams can be found at the Free Translation Project's homepage,
-@file{http://translationproject.org/}, in the "Teams" area.
+@file{https://translationproject.org/}, in the "Teams" area.
 
 If you'd like to volunteer to @emph{work} at translating messages, you
 should become a member of the translating team for your own language.
@@ -167,7 +202,7 @@ the terminology in use.  Proven linguistic skills are praised
 more than programming skills, here.
 
 @node Available Packages
-@section Available Packages
+@subsection Available Packages
 
 Languages are not equally supported in all packages.  The following
 matrix shows the current state of internationalization, as of
@@ -189,11 +224,11 @@ mere existence a PO file and its wide availability in a distribution.
 If @value{STATUS} seems to be old, you may fetch a more recent copy
 of this @file{ABOUT-NLS} file on most GNU archive sites.  The most
 up-to-date matrix with full percentage details can be found at
-@file{http://translationproject.org/extra/matrix.html}.
+@file{https://translationproject.org/extra/matrix.html}.
 
 
 @node Using gettext in own code
-@section Using @code{gettext} in new packages
+@subsection Using @code{gettext} in new packages
 
 If you are writing a freely available program and want to internationalize
 it you are welcome to use GNU @file{gettext} in your package.  Of course

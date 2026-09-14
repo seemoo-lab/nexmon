@@ -13,19 +13,7 @@
  *
  * Copied from packet-quakeworld.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -34,53 +22,56 @@
 #include <epan/prefs.h>
 
 void proto_register_quake2(void);
+void proto_reg_handoff_quake2(void);
 
-static int proto_quake2 = -1;
+static dissector_handle_t quake2_handle;
 
-static int hf_quake2_s2c = -1;
-static int hf_quake2_c2s = -1;
-static int hf_quake2_connectionless = -1;
-static int hf_quake2_game = -1;
-static int hf_quake2_userinfo = -1;
-static int hf_quake2_command = -1;
-static int hf_quake2_connectionless_marker = -1;
-static int hf_quake2_connectionless_text = -1;
-static int hf_quake2_game_seq1 = -1;
-static int hf_quake2_game_rel1 = -1;
-static int hf_quake2_game_seq2 = -1;
-static int hf_quake2_game_rel2 = -1;
-static int hf_quake2_game_qport = -1;
-static int hf_quake2_game_client_command = -1;
-static int hf_quake2_game_server_command = -1;
-static int hf_quake2_game_client_command_move = -1;
-static int hf_quake2_game_client_command_move_chksum = -1;
-static int hf_quake2_game_client_command_move_lframe = -1;
-static int hf_quake2_game_client_command_move_bitfield_angles1 = -1;
-static int hf_quake2_game_client_command_move_bitfield_angles2 = -1;
-static int hf_quake2_game_client_command_move_bitfield_angles3 = -1;
-static int hf_quake2_game_client_command_move_bitfield_movement_fwd = -1;
-static int hf_quake2_game_client_command_move_bitfield_movement_side = -1;
-static int hf_quake2_game_client_command_move_bitfield_movement_up = -1;
-static int hf_quake2_game_client_command_move_bitfield_buttons = -1;
-static int hf_quake2_game_client_command_move_bitfield_impulse = -1;
-static int hf_quake2_game_client_command_move_msec = -1;
-static int hf_quake2_game_client_command_move_lightlevel = -1;
+static int proto_quake2;
 
-static gint ett_quake2 = -1;
-static gint ett_quake2_connectionless = -1;
-static gint ett_quake2_game = -1;
-static gint ett_quake2_game_seq1 = -1;
-static gint ett_quake2_game_seq2 = -1;
-static gint ett_quake2_game_clc = -1;
-static gint ett_quake2_game_svc = -1;
-static gint ett_quake2_game_clc_cmd = -1;
-static gint ett_quake2_game_svc_cmd = -1;
-static gint ett_quake2_game_clc_cmd_move_bitfield = -1;
-static gint ett_quake2_game_clc_cmd_move_moves = -1;
+static int hf_quake2_s2c;
+static int hf_quake2_c2s;
+static int hf_quake2_connectionless;
+static int hf_quake2_game;
+static int hf_quake2_userinfo;
+static int hf_quake2_command;
+static int hf_quake2_connectionless_marker;
+static int hf_quake2_connectionless_text;
+static int hf_quake2_game_seq1;
+static int hf_quake2_game_rel1;
+static int hf_quake2_game_seq2;
+static int hf_quake2_game_rel2;
+static int hf_quake2_game_qport;
+static int hf_quake2_game_client_command;
+static int hf_quake2_game_server_command;
+static int hf_quake2_game_client_command_move;
+static int hf_quake2_game_client_command_move_chksum;
+static int hf_quake2_game_client_command_move_lframe;
+static int hf_quake2_game_client_command_move_bitfield_angles1;
+static int hf_quake2_game_client_command_move_bitfield_angles2;
+static int hf_quake2_game_client_command_move_bitfield_angles3;
+static int hf_quake2_game_client_command_move_bitfield_movement_fwd;
+static int hf_quake2_game_client_command_move_bitfield_movement_side;
+static int hf_quake2_game_client_command_move_bitfield_movement_up;
+static int hf_quake2_game_client_command_move_bitfield_buttons;
+static int hf_quake2_game_client_command_move_bitfield_impulse;
+static int hf_quake2_game_client_command_move_msec;
+static int hf_quake2_game_client_command_move_lightlevel;
+
+static int ett_quake2;
+static int ett_quake2_connectionless;
+static int ett_quake2_game;
+static int ett_quake2_game_seq1;
+static int ett_quake2_game_seq2;
+static int ett_quake2_game_clc;
+static int ett_quake2_game_svc;
+static int ett_quake2_game_clc_cmd;
+static int ett_quake2_game_svc_cmd;
+static int ett_quake2_game_clc_cmd_move_bitfield;
+static int ett_quake2_game_clc_cmd_move_moves;
 
 
-#define PORT_MASTER 27910
-static guint gbl_quake2ServerPort=PORT_MASTER;
+#define PORT_MASTER 27910 /* Not IANA registered */
+static range_t *gbl_quake2ServerPorts;
 
 
 static void
@@ -91,7 +82,7 @@ dissect_quake2_ConnectionlessPacket(tvbuff_t *tvb, packet_info *pinfo _U_,
     int  len;
     int  offset;
 
-    guint32 marker;
+    uint32_t marker;
 
     marker = tvb_get_ntohl(tvb, 0);
     cl_tree = proto_tree_add_subtree(tree, tvb,
@@ -104,7 +95,7 @@ dissect_quake2_ConnectionlessPacket(tvbuff_t *tvb, packet_info *pinfo _U_,
 
     len = tvb_captured_length_remaining(tvb, offset);
     proto_tree_add_item(cl_tree, hf_quake2_connectionless_text,
-            tvb, offset, len, ENC_ASCII|ENC_NA);
+            tvb, offset, len, ENC_ASCII);
     /*offset += len;*/
 
     /* we should analyse the result 'text' a bit further */
@@ -137,17 +128,17 @@ dissect_quake2_client_commands_move(tvbuff_t *tvb, packet_info *pinfo _U_,
 #define BUTTON_USE 2
 #define BUTTON_ANY 128
 
-    guint32 lastframe;
+    uint32_t lastframe;
     int i, offset = 0;
     enum { Q_OFFSET, Q_VALUE, Q_SIZE };
     struct movement {
-        guint8 bits[Q_SIZE];
-        guint16 angles[3][Q_SIZE];
-        gint16 movement[3][Q_SIZE];
-        guint8 buttons[Q_SIZE];
-        guint8 lightlevel[Q_SIZE];
-        guint8 msec[Q_SIZE];
-        guint8 impulse[Q_SIZE];
+        uint8_t bits[Q_SIZE];
+        uint16_t angles[3][Q_SIZE];
+        int16_t movement[3][Q_SIZE];
+        uint8_t buttons[Q_SIZE];
+        uint8_t lightlevel[Q_SIZE];
+        uint8_t msec[Q_SIZE];
+        uint8_t impulse[Q_SIZE];
     } move[MOVES+1];
 
     offset++;
@@ -155,7 +146,7 @@ dissect_quake2_client_commands_move(tvbuff_t *tvb, packet_info *pinfo _U_,
     offset += 4;
 
     for (i=0; i < MOVES; i++) {
-        move[i].bits[Q_VALUE] = tvb_get_guint8(tvb, offset);
+        move[i].bits[Q_VALUE] = tvb_get_uint8(tvb, offset);
         move[i].bits[Q_OFFSET] = offset;
         offset++;
         if (move[i].bits[Q_VALUE] & CM_ANGLE1) {
@@ -189,20 +180,20 @@ dissect_quake2_client_commands_move(tvbuff_t *tvb, packet_info *pinfo _U_,
             offset += 2;
         }
         if (move[i].bits[Q_VALUE] & CM_BUTTONS) {
-            move[i].buttons[Q_VALUE] = tvb_get_guint8(tvb, offset);
+            move[i].buttons[Q_VALUE] = tvb_get_uint8(tvb, offset);
             move[i].buttons[Q_OFFSET] = offset;
             offset++;
         }
         if (move[i].bits[Q_VALUE] & CM_IMPULSE) {
-            move[i].impulse[Q_VALUE] = tvb_get_guint8(tvb, offset);
+            move[i].impulse[Q_VALUE] = tvb_get_uint8(tvb, offset);
             move[i].impulse[Q_OFFSET] = offset;
             offset++;
         }
 
-        move[i].msec[Q_VALUE] = tvb_get_guint8(tvb, offset);
+        move[i].msec[Q_VALUE] = tvb_get_uint8(tvb, offset);
         move[i].msec[Q_OFFSET] = offset;
         offset++;
-        move[i].lightlevel[Q_VALUE] = tvb_get_guint8(tvb, offset);
+        move[i].lightlevel[Q_VALUE] = tvb_get_uint8(tvb, offset);
         move[i].lightlevel[Q_OFFSET] = offset;
         offset++;
     }
@@ -324,11 +315,11 @@ static int
 dissect_quake2_client_commands_uinfo(tvbuff_t *tvb, packet_info *pinfo _U_,
         proto_tree *tree)
 {
-    guint len;
+    unsigned len;
 
     len = tvb_strsize(tvb, 0);
 
-    proto_tree_add_item(tree, hf_quake2_userinfo, tvb, 0, len, ENC_NA|ENC_ASCII);
+    proto_tree_add_item(tree, hf_quake2_userinfo, tvb, 0, len, ENC_ASCII);
 
     return len;
 }
@@ -337,11 +328,11 @@ static int
 dissect_quake2_client_commands_stringcmd(tvbuff_t *tvb, packet_info *pinfo _U_,
         proto_tree *tree)
 {
-    guint len;
+    unsigned len;
 
     len = tvb_strsize(tvb, 0);
 
-    proto_tree_add_item(tree, hf_quake2_command, tvb, 0, len, ENC_NA|ENC_ASCII);
+    proto_tree_add_item(tree, hf_quake2_command, tvb, 0, len, ENC_ASCII);
 
     return len;
 }
@@ -367,20 +358,20 @@ dissect_quake2_client_commands(tvbuff_t *tvb, packet_info *pinfo,
 {
     proto_tree *clc_tree = NULL;
     tvbuff_t   *next_tvb   = NULL;
-    guint8      client_cmd_type;
+    uint8_t     client_cmd_type;
     proto_item *cmd_type_item;
-    guint       rest_length = 0;
+    unsigned    rest_length = 0;
     int         offset      = 0;
 
     do {
-        client_cmd_type = tvb_get_guint8(tvb, offset);
+        client_cmd_type = tvb_get_uint8(tvb, offset);
 
         cmd_type_item = proto_tree_add_uint(tree,
                 hf_quake2_game_client_command, tvb, offset, 1,
                 client_cmd_type);
 
         proto_item_append_text(cmd_type_item, " (%s)",
-                val_to_str(client_cmd_type, names_client_cmd, "%u"));
+                val_to_str(pinfo->pool, client_cmd_type, names_client_cmd, "%u"));
         clc_tree = proto_item_add_subtree(cmd_type_item, ett_quake2_game_clc_cmd);
 
         offset++;
@@ -470,18 +461,18 @@ dissect_quake2_server_commands(tvbuff_t *tvb, packet_info *pinfo,
         proto_tree *tree)
 {
     tvbuff_t   *next_tvb = NULL;
-    guint8      server_cmd_type;
+    uint8_t     server_cmd_type;
     proto_item *cmd_type_item;
-    guint       rest_length = 0;
+    unsigned    rest_length = 0;
     int         offset = 0;
 
-    server_cmd_type = tvb_get_guint8(tvb, offset);
+    server_cmd_type = tvb_get_uint8(tvb, offset);
 
     cmd_type_item = proto_tree_add_uint(tree,
             hf_quake2_game_server_command, tvb, offset, 1, server_cmd_type);
 
     proto_item_append_text(cmd_type_item, " (%s)",
-            val_to_str(server_cmd_type, names_server_cmd, "%u"));
+            val_to_str(pinfo->pool, server_cmd_type, names_server_cmd, "%u"));
 
     offset++;
     rest_length = tvb_reported_length(tvb) - offset;
@@ -560,14 +551,14 @@ dissect_quake2_GamePacket(tvbuff_t *tvb, packet_info *pinfo,
         proto_tree *tree, int direction)
 {
     proto_tree *game_tree;
-    guint32    seq1;
-    guint32    seq2;
+    uint32_t   seq1;
+    uint32_t   seq2;
     int        rel1;
     int        rel2;
     int        offset;
-    guint      rest_length;
+    unsigned   rest_length;
 
-    direction = (pinfo->destport == gbl_quake2ServerPort) ?
+    direction = value_is_in_range(gbl_quake2ServerPorts, pinfo->destport) ?
         DIR_C2S : DIR_S2C;
 
     game_tree = proto_tree_add_subtree(tree, tvb,
@@ -581,7 +572,7 @@ dissect_quake2_GamePacket(tvbuff_t *tvb, packet_info *pinfo,
     if (game_tree) {
         proto_tree *seq1_tree = proto_tree_add_subtree_format(game_tree,
                 tvb, offset, 4, ett_quake2_game_seq1, NULL, "Current Sequence: %u (%s)",
-                seq1, val_to_str(rel1,names_reliable,"%u"));
+                seq1, val_to_str(pinfo->pool, rel1,names_reliable,"%u"));
         proto_tree_add_uint(seq1_tree, hf_quake2_game_seq1,
                 tvb, offset, 4, seq1);
         proto_tree_add_boolean(seq1_tree, hf_quake2_game_rel1,
@@ -595,7 +586,7 @@ dissect_quake2_GamePacket(tvbuff_t *tvb, packet_info *pinfo,
     if (game_tree) {
         proto_tree *seq2_tree = proto_tree_add_subtree_format(game_tree,
                 tvb, offset, 4, ett_quake2_game_seq2, NULL, "Acknowledge Sequence: %u (%s)",
-                seq2, val_to_str(rel2,names_reliable,"%u"));
+                seq2, val_to_str(pinfo->pool, rel2,names_reliable,"%u"));
         proto_tree_add_uint(seq2_tree, hf_quake2_game_seq2,
                 tvb, offset, 4, seq2);
         proto_tree_add_boolean(seq2_tree, hf_quake2_game_rel2,
@@ -605,7 +596,7 @@ dissect_quake2_GamePacket(tvbuff_t *tvb, packet_info *pinfo,
 
     if (direction == DIR_C2S) {
         /* client to server */
-        guint16 qport = tvb_get_letohs(tvb, offset);
+        uint16_t qport = tvb_get_letohs(tvb, offset);
         if (game_tree) {
             proto_tree_add_uint(game_tree, hf_quake2_game_qport,
                     tvb, offset, 2, qport);
@@ -640,11 +631,11 @@ dissect_quake2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
     proto_tree *quake2_tree = NULL;
     int  direction;
 
-    direction = (pinfo->destport == gbl_quake2ServerPort) ?
+    direction = value_is_in_range(gbl_quake2ServerPorts, pinfo->destport) ?
         DIR_C2S : DIR_S2C;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "QUAKE2");
-    col_add_str(pinfo->cinfo, COL_INFO, val_to_str(direction,
+    col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, direction,
                 names_direction, "%u"));
 
     if (tree) {
@@ -657,7 +648,7 @@ dissect_quake2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
                 hf_quake2_s2c :
                 hf_quake2_c2s,
                 tvb, 0, 0, 1,
-                "Direction: %s", val_to_str(direction, names_direction, "%u"));
+                "Direction: %s", val_to_str(pinfo->pool, direction, names_direction, "%u"));
     }
 
     if (tvb_get_ntohl(tvb, 0) == 0xffffffff) {
@@ -681,8 +672,12 @@ dissect_quake2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
     return tvb_captured_length(tvb);
 }
 
-
-void proto_reg_handoff_quake2(void);
+static void
+apply_quake2_prefs(void)
+{
+    /* Port preference used to determine client/server */
+    gbl_quake2ServerPorts = prefs_get_range_value("quake2", "udp.port");
+}
 
 void
 proto_register_quake2(void)
@@ -809,7 +804,7 @@ proto_register_quake2(void)
                 FT_UINT8, BASE_DEC, NULL, 0x0,
                 "Quake II Client Command Move", HFILL }}
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_quake2,
         &ett_quake2_connectionless,
         &ett_quake2_game,
@@ -822,46 +817,27 @@ proto_register_quake2(void)
         &ett_quake2_game_clc_cmd_move_moves,
         &ett_quake2_game_clc_cmd_move_bitfield
     };
-    module_t *quake2_module;
 
-    proto_quake2 = proto_register_protocol("Quake II Network Protocol",
-            "QUAKE2", "quake2");
+    proto_quake2 = proto_register_protocol("Quake II Network Protocol", "QUAKE2", "quake2");
     proto_register_field_array(proto_quake2, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
-    /* Register a configuration option for port */
-    quake2_module = prefs_register_protocol(proto_quake2,
-            proto_reg_handoff_quake2);
-    prefs_register_uint_preference(quake2_module, "udp.port",
-            "Quake II Server UDP Port",
-            "Set the UDP port for the Quake II Server",
-            10, &gbl_quake2ServerPort);
-}
+    /* Register the dissector handle */
+    quake2_handle = register_dissector("quake2", dissect_quake2, proto_quake2);
 
+    /* Register a configuration option for port */
+    prefs_register_protocol(proto_quake2, apply_quake2_prefs);
+}
 
 void
 proto_reg_handoff_quake2(void)
 {
-    static gboolean Initialized=FALSE;
-    static dissector_handle_t quake2_handle;
-    static guint ServerPort;
-
-    if (!Initialized) {
-        quake2_handle = create_dissector_handle(dissect_quake2,
-                proto_quake2);
-        Initialized=TRUE;
-    } else {
-        dissector_delete_uint("udp.port", ServerPort, quake2_handle);
-    }
-
-    /* set port for future deletes */
-    ServerPort=gbl_quake2ServerPort;
-
-    dissector_add_uint("udp.port", gbl_quake2ServerPort, quake2_handle);
+    dissector_add_uint_with_preference("udp.port", PORT_MASTER, quake2_handle);
+    apply_quake2_prefs();
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -4,7 +4,7 @@
 # Some tests for java plural keyword support
 #
 
-cat <<EOF > xg-j-4.java
+cat <<\EOF > xg-j-4.java
 class TestCase {
     public TestCase() {
         Bundle test = Bundle.getBundle();
@@ -18,7 +18,7 @@ ${XGETTEXT} --omit-header --no-location --keyword=ngettext:2,3 \
   -d xg-j-4.tmp xg-j-4.java || Exit 1
 LC_ALL=C tr -d '\r' < xg-j-4.tmp.po > xg-j-4.po || Exit 1
 
-cat <<EOF > xg-j-4.ok
+cat <<\EOF > xg-j-4.ok
 msgid "test 1"
 msgid_plural "plural test"
 msgstr[0] ""

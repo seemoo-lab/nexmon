@@ -1,24 +1,27 @@
 /*
    Copyright (C) 2005 John McCutchan
    Copyright © 2015 Canonical Limited
+   Copyright © 2024 Future Crew LLC
 
-   The Gnome Library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   SPDX-License-Identifier: LGPL-2.1-or-later
 
-   The Gnome Library is distributed in the hope that it will be useful,
+   This library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+
+   This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Library General Public
-   License along with the Gnome Library; see the file COPYING.LIB.  If not,
-   see <http://www.gnu.org/licenses/>.
+   You should have received a copy of the GNU Lesser General Public License
+   along with this library; if not, see <http://www.gnu.org/licenses/>.
 
    Authors:
      Ryan Lortie <desrt@desrt.ca>
      John McCutchan <john@johnmccutchan.com>
+     Gleb Popov <arrowd@FreeBSD.org>
 */
 
 #include "config.h"
@@ -31,6 +34,12 @@
 #include <glib.h>
 #include "inotify-kernel.h"
 #include <sys/inotify.h>
+#ifdef HAVE_SYS_UIO_H
+#include <sys/uio.h>
+#endif
+#ifdef HAVE_SYS_FILIO_H
+#include <sys/filio.h>
+#endif
 #include <glib/glib-unix.h>
 
 #include "glib-private.h"
@@ -91,11 +100,11 @@ typedef struct
 {
   GSource     source;
 
-  GQueue      queue;
+  GQueue      queue;  /* (element-type ik_event_t) */
   gpointer    fd_tag;
   gint        fd;
 
-  GHashTable *unmatched_moves;
+  GHashTable *unmatched_moves;  /* (element-type guint ik_event_t) */
   gboolean    is_bored;
 } InotifyKernelSource;
 
@@ -135,30 +144,32 @@ ik_source_can_dispatch_now (InotifyKernelSource *iks,
   return 0 <= dispatch_time && dispatch_time <= now;
 }
 
-static gsize
+static size_t
 ik_source_read_some_events (InotifyKernelSource *iks,
                             gchar               *buffer,
                             gsize                buffer_len)
 {
   gssize result;
+  int errsv;
 
 again:
   result = read (iks->fd, buffer, buffer_len);
+  errsv = errno;
 
   if (result < 0)
     {
-      if (errno == EINTR)
+      if (errsv == EINTR)
         goto again;
 
-      if (errno == EAGAIN)
+      if (errsv == EAGAIN)
         return 0;
 
-      g_error ("inotify read(): %s", g_strerror (errno));
+      g_error ("inotify read(): %s", g_strerror (errsv));
     }
   else if (result == 0)
     g_error ("inotify unexpectedly hit eof");
 
-  return result;
+  return (size_t) result;
 }
 
 static gchar *
@@ -179,11 +190,13 @@ ik_source_read_all_the_events (InotifyKernelSource *iks,
       gchar *new_buffer;
       guint n_readable;
       gint result;
+      int errsv;
 
       /* figure out how many more bytes there are to read */
       result = ioctl (iks->fd, FIONREAD, &n_readable);
+      errsv = errno;
       if (result != 0)
-        g_error ("inotify ioctl(FIONREAD): %s", g_strerror (errno));
+        g_error ("inotify ioctl(FIONREAD): %s", g_strerror (errsv));
 
       if (n_readable != 0)
         {
@@ -222,6 +235,7 @@ ik_source_dispatch (GSource     *source,
 
   if (iks->is_bored || g_source_query_unix_fd (source, iks->fd_tag))
     {
+#if defined(FILE_MONITOR_BACKEND_INOTIFY)
       gchar stack_buffer[4096];
       gsize buffer_len;
       gchar *buffer;
@@ -261,12 +275,10 @@ ik_source_dispatch (GSource     *source,
             {
               ik_event_t *pair;
 
-              pair = g_hash_table_lookup (iks->unmatched_moves, GUINT_TO_POINTER (event->cookie));
-              if (pair != NULL)
+              if (g_hash_table_steal_extended (iks->unmatched_moves, GUINT_TO_POINTER (event->cookie), NULL, (gpointer*)&pair))
                 {
                   g_assert (!pair->pair);
 
-                  g_hash_table_remove (iks->unmatched_moves, GUINT_TO_POINTER (event->cookie));
                   event->is_second_in_pair = TRUE;
                   event->pair = pair;
                   pair->pair = event;
@@ -304,6 +316,76 @@ ik_source_dispatch (GSource     *source,
 
       if (buffer != stack_buffer)
         g_free (buffer);
+#elif defined(FILE_MONITOR_BACKEND_LIBINOTIFY_KQUEUE)
+      struct iovec *received[5];
+      int num_events = libinotify_direct_readv (iks->fd, received, G_N_ELEMENTS(received), /* no_block=*/ 1);
+
+      if (num_events < 0)
+        {
+          int errsv = errno;
+          g_warning ("Failed to read inotify events: %s", g_strerror (errsv));
+          /* fall through and skip the next few blocks */
+        }
+
+      for (int i = 0; i < num_events; i++)
+        {
+          struct iovec *cur_event = received[i];
+          while (cur_event->iov_base)
+            {
+              struct inotify_event *kevent = (struct inotify_event *) cur_event->iov_base;
+
+              ik_event_t *event;
+
+              event = ik_event_new (kevent, now);
+
+              if (event->mask & IN_MOVED_TO)
+                {
+                  ik_event_t *pair;
+
+                  if (g_hash_table_steal_extended (iks->unmatched_moves, GUINT_TO_POINTER (event->cookie), NULL, (gpointer*)&pair))
+                    {
+                      g_assert (!pair->pair);
+
+                      event->is_second_in_pair = TRUE;
+                      event->pair = pair;
+                      pair->pair = event;
+
+                      cur_event++;
+                      continue;
+                    }
+
+                  interesting = TRUE;
+                }
+              else if (event->mask & IN_MOVED_FROM)
+                {
+                  gboolean new;
+
+                  new = g_hash_table_insert (iks->unmatched_moves, GUINT_TO_POINTER (event->cookie), event);
+                  if G_UNLIKELY (!new)
+                    g_warning ("inotify: got IN_MOVED_FROM event with already-pending cookie %#x", event->cookie);
+
+                  interesting = TRUE;
+                }
+
+              g_queue_push_tail (&iks->queue, event);
+
+              cur_event++;
+            }
+          libinotify_free_iovec (received[i]);
+        }
+
+      if (num_events == 0)
+        {
+          /* We can end up reading nothing if we arrived here due to a
+           * boredom timer but the stream of events stopped meanwhile.
+           *
+           * In that case, we need to switch back to polling the file
+           * descriptor in the usual way.
+           */
+          g_assert (iks->is_bored);
+          interesting = TRUE;
+        }
+#endif
     }
 
   while (ik_source_can_dispatch_now (iks, now))
@@ -332,7 +414,7 @@ ik_source_dispatch (GSource     *source,
    * when the timeout is reached on an unpaired move (if any).
    *
    * If the last event was uninteresting then we will wake up after the
-   * shorter of the boredom sleep or any timeout for a unpaired move.
+   * shorter of the boredom sleep or any timeout for an unpaired move.
    */
   if (interesting)
     {
@@ -346,8 +428,9 @@ ik_source_dispatch (GSource     *source,
     }
   else
     {
-      guint64 dispatch_time = ik_source_get_dispatch_time (iks);
-      guint64 boredom_time = now + BOREDOM_SLEEP_TIME;
+      int64_t dispatch_time = ik_source_get_dispatch_time (iks);
+      int64_t boredom_time = now + BOREDOM_SLEEP_TIME;
+      int64_t ready_time;
 
       if (!iks->is_bored)
         {
@@ -355,10 +438,31 @@ ik_source_dispatch (GSource     *source,
           iks->is_bored = TRUE;
         }
 
-      g_source_set_ready_time (source, MIN (dispatch_time, boredom_time));
+      if (dispatch_time < 0)
+        ready_time = boredom_time;
+      else
+        ready_time = MIN (dispatch_time, boredom_time);
+
+      g_source_set_ready_time (source, ready_time);
     }
 
   return TRUE;
+}
+
+static void
+ik_source_finalize (GSource *source)
+{
+  InotifyKernelSource *iks;
+
+  iks = (InotifyKernelSource *) source;
+
+#if defined(FILE_MONITOR_BACKEND_INOTIFY)
+  close (iks->fd);
+#elif defined(FILE_MONITOR_BACKEND_LIBINOTIFY_KQUEUE)
+  libinotify_direct_close (iks->fd);
+#endif
+
+  iks->fd = -1;
 }
 
 static InotifyKernelSource *
@@ -366,29 +470,49 @@ ik_source_new (gboolean (* callback) (ik_event_t *event))
 {
   static GSourceFuncs source_funcs = {
     NULL, NULL,
-    ik_source_dispatch
-    /* should have a finalize, but it will never happen */
+    ik_source_dispatch,
+    ik_source_finalize,
+    NULL, NULL
   };
   InotifyKernelSource *iks;
   GSource *source;
+  gboolean should_set_nonblock = FALSE;
 
   source = g_source_new (&source_funcs, sizeof (InotifyKernelSource));
   iks = (InotifyKernelSource *) source;
 
-  g_source_set_name (source, "inotify kernel source");
+  g_source_set_static_name (source, "inotify kernel source");
 
   iks->unmatched_moves = g_hash_table_new (NULL, NULL);
-  iks->fd = inotify_init1 (IN_CLOEXEC);
+#if defined(FILE_MONITOR_BACKEND_INOTIFY)
+  iks->fd = inotify_init1 (IN_CLOEXEC | IN_NONBLOCK);
+#elif defined(FILE_MONITOR_BACKEND_LIBINOTIFY_KQUEUE)
+  iks->fd = inotify_init1 (IN_CLOEXEC | IN_NONBLOCK | IN_DIRECT);
+#endif
 
+#ifdef FILE_MONITOR_BACKEND_INOTIFY
   if (iks->fd < 0)
-    iks->fd = inotify_init ();
+    {
+      should_set_nonblock = TRUE;
+      iks->fd = inotify_init ();
+    }
+#endif
 
   if (iks->fd >= 0)
     {
       GError *error = NULL;
 
-      g_unix_set_fd_nonblocking (iks->fd, TRUE, &error);
-      g_assert_no_error (error);
+#ifdef FILE_MONITOR_BACKEND_INOTIFY
+      if (should_set_nonblock)
+        {
+          g_unix_set_fd_nonblocking (iks->fd, TRUE, &error);
+          if (error != NULL)
+            {
+              g_warning ("Error setting FD nonblocking: %s", error->message);
+              g_clear_error (&error);
+            }
+        }
+#endif
 
       iks->fd_tag = g_source_add_unix_fd (source, iks->fd, G_IO_IN);
     }
@@ -403,8 +527,8 @@ ik_source_new (gboolean (* callback) (ik_event_t *event))
 gboolean
 _ik_startup (gboolean (*cb)(ik_event_t *event))
 {
-  if (g_once_init_enter (&inotify_source))
-    g_once_init_leave (&inotify_source, ik_source_new (cb));
+  if (g_once_init_enter_pointer (&inotify_source))
+    g_once_init_leave_pointer (&inotify_source, ik_source_new (cb));
 
   return inotify_source->fd >= 0;
 }

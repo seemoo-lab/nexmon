@@ -1,0 +1,19 @@
+*** gl_linked_list.h.orig
+--- gl_linked_list.h
+***************
+*** 24,30 ****
+  extern "C" {
+  #endif
+
+! extern const struct gl_list_implementation gl_linked_list_implementation;
+  #define GL_LINKED_LIST &gl_linked_list_implementation
+
+  #ifdef __cplusplus
+--- 24,30 ----
+  extern "C" {
+  #endif
+
+! extern DLL_VARIABLE const struct gl_list_implementation gl_linked_list_implementation;
+  #define GL_LINKED_LIST &gl_linked_list_implementation
+
+  #ifdef __cplusplus

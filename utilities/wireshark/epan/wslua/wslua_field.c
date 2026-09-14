@@ -9,27 +9,15 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/dfilter/dfilter.h>
-#include <epan/ftypes/ftypes-int.h>
+#include <epan/ftypes/ftypes.h>
 
-/* WSLUA_MODULE Field Obtaining dissection data */
+/* WSLUA_MODULE Field Obtaining Dissection Data */
 
 #include "wslua.h"
 
@@ -43,17 +31,17 @@ WSLUA_CLASS_DEFINE(FieldInfo,FAIL_ON_NULL_OR_EXPIRED("FieldInfo"));
    or `Field()` before-hand, or it can be called on new fields created by Lua from a `ProtoField`.
  */
 
-static GPtrArray* outstanding_FieldInfo = NULL;
+static GPtrArray* outstanding_FieldInfo;
 
 FieldInfo* push_FieldInfo(lua_State* L, field_info* f) {
     FieldInfo fi = (FieldInfo) g_malloc(sizeof(struct _wslua_field_info));
     fi->ws_fi = f;
-    fi->expired = FALSE;
+    fi->expired = false;
     g_ptr_array_add(outstanding_FieldInfo,fi);
     return pushFieldInfo(L,fi);
 }
 
-CLEAR_OUTSTANDING(FieldInfo,expired,TRUE)
+CLEAR_OUTSTANDING(FieldInfo,expired,true)
 
 /* WSLUA_ATTRIBUTE FieldInfo_len RO The length of this field. */
 WSLUA_METAMETHOD FieldInfo__len(lua_State* L) {
@@ -62,7 +50,7 @@ WSLUA_METAMETHOD FieldInfo__len(lua_State* L) {
        */
     FieldInfo fi = checkFieldInfo(L,1);
 
-    lua_pushnumber(L,fi->ws_fi->length);
+    lua_pushinteger(L,fi->ws_fi->length);
     return 1;
 }
 
@@ -73,7 +61,7 @@ WSLUA_METAMETHOD FieldInfo__unm(lua_State* L) {
        */
     FieldInfo fi = checkFieldInfo(L,1);
 
-    lua_pushnumber(L,fi->ws_fi->start);
+    lua_pushinteger(L,fi->ws_fi->start);
     return 1;
 }
 
@@ -88,38 +76,39 @@ WSLUA_METAMETHOD FieldInfo__call(lua_State* L) {
        instead of just the *value* bytes. That was a bug, and has been changed in 1.11.4.
        Furthermore, it retrieved an `ftypes.GUID` as a `ByteArray`, which is also incorrect.
 
-       If you wish to still get a `ByteArray` of the `TvbRange`, use `FieldInfo:get_range()`
-       to get the `TvbRange`, and then use `Tvb:bytes()` to convert it to a `ByteArray`.
+       If you wish to still get a `ByteArray` of the `TvbRange`, use `fieldinfo.range`
+       to get the `TvbRange`, and then use `tvbrange:bytes()` to convert it to a `ByteArray`.
        */
     FieldInfo fi = checkFieldInfo(L,1);
 
     switch(fi->ws_fi->hfinfo->type) {
         case FT_BOOLEAN:
-                lua_pushboolean(L,(int)fvalue_get_uinteger64(&(fi->ws_fi->value)));
+                lua_pushboolean(L,(int)fvalue_get_uinteger64(fi->ws_fi->value));
                 return 1;
+        case FT_CHAR:
         case FT_UINT8:
         case FT_UINT16:
         case FT_UINT24:
         case FT_UINT32:
         case FT_FRAMENUM:
-                lua_pushnumber(L,(lua_Number)(fvalue_get_uinteger(&(fi->ws_fi->value))));
+                lua_pushinteger(L,(lua_Integer)(fvalue_get_uinteger(fi->ws_fi->value)));
                 return 1;
         case FT_INT8:
         case FT_INT16:
         case FT_INT24:
         case FT_INT32:
-                lua_pushnumber(L,(lua_Number)(fvalue_get_sinteger(&(fi->ws_fi->value))));
+                lua_pushinteger(L,(lua_Integer)(fvalue_get_sinteger(fi->ws_fi->value)));
                 return 1;
         case FT_FLOAT:
         case FT_DOUBLE:
-                lua_pushnumber(L,(lua_Number)(fvalue_get_floating(&(fi->ws_fi->value))));
+                lua_pushnumber(L,(lua_Number)(fvalue_get_floating(fi->ws_fi->value)));
                 return 1;
         case FT_INT64: {
-                pushInt64(L,(Int64)(fvalue_get_sinteger64(&(fi->ws_fi->value))));
+                pushInt64(L,(Int64)(fvalue_get_sinteger64(fi->ws_fi->value)));
                 return 1;
             }
         case FT_UINT64: {
-                pushUInt64(L,fvalue_get_uinteger64(&(fi->ws_fi->value)));
+                pushUInt64(L,fvalue_get_uinteger64(fi->ws_fi->value));
                 return 1;
             }
         case FT_ETHER: {
@@ -155,13 +144,14 @@ WSLUA_METAMETHOD FieldInfo__call(lua_State* L) {
         case FT_ABSOLUTE_TIME:
         case FT_RELATIVE_TIME: {
                 NSTime nstime = (NSTime)g_malloc(sizeof(nstime_t));
-                *nstime = *(NSTime)fvalue_get(&(fi->ws_fi->value));
+                *nstime = *fvalue_get_time(fi->ws_fi->value);
                 pushNSTime(L,nstime);
                 return 1;
             }
         case FT_STRING:
-        case FT_STRINGZ: {
-                gchar* repr = fvalue_to_string_repr(NULL, &fi->ws_fi->value,FTREPR_DISPLAY,BASE_NONE);
+        case FT_STRINGZ:
+        case FT_STRINGZPAD: {
+                char* repr = fvalue_to_string_repr(NULL, fi->ws_fi->value, FTREPR_DISPLAY, BASE_NONE);
                 if (repr)
                 {
                     lua_pushstring(L, repr);
@@ -188,17 +178,22 @@ WSLUA_METAMETHOD FieldInfo__call(lua_State* L) {
         case FT_OID:
             {
                 ByteArray ba = g_byte_array_new();
-                g_byte_array_append(ba, (const guint8 *) fvalue_get(&fi->ws_fi->value),
-                                    fvalue_length(&fi->ws_fi->value));
+                g_byte_array_append(ba, fvalue_get_bytes_data(fi->ws_fi->value),
+                                    (unsigned)fvalue_length2(fi->ws_fi->value));
                 pushByteArray(L,ba);
                 return 1;
             }
         case FT_PROTOCOL:
             {
                 ByteArray ba = g_byte_array_new();
-                tvbuff_t* tvb = (tvbuff_t *) fvalue_get(&fi->ws_fi->value);
-                g_byte_array_append(ba, (const guint8 *)tvb_memdup(wmem_packet_scope(), tvb, 0,
-                                            tvb_captured_length(tvb)), tvb_captured_length(tvb));
+                tvbuff_t* tvb = fvalue_get_protocol(fi->ws_fi->value);
+                uint8_t* raw;
+                if (tvb != NULL) {
+                    raw = (uint8_t *)tvb_memdup(NULL, tvb, 0, tvb_captured_length(tvb));
+                    g_byte_array_append(ba, raw, tvb_captured_length(tvb));
+                    wmem_free(NULL, raw);
+                }
+
                 pushByteArray(L,ba);
                 return 1;
             }
@@ -215,30 +210,22 @@ WSLUA_METAMETHOD FieldInfo__tostring(lua_State* L) {
     /* The string representation of the field. */
     FieldInfo fi = checkFieldInfo(L,1);
 
-    if (fi->ws_fi->value.ftype->val_to_string_repr) {
-        gchar* repr = NULL;
+    char* repr = NULL;
 
-        if (fi->ws_fi->hfinfo->type == FT_PROTOCOL || fi->ws_fi->hfinfo->type == FT_PCRE) {
-            repr = fvalue_to_string_repr(NULL, &fi->ws_fi->value,FTREPR_DFILTER,BASE_NONE);
-        }
-        else {
-            repr = fvalue_to_string_repr(NULL, &fi->ws_fi->value,FTREPR_DISPLAY,fi->ws_fi->hfinfo->display);
-        }
-
-        if (repr) {
-            lua_pushstring(L,repr);
-            /* fvalue_to_string_repr() wmem_alloc's the string's buffer */
-            wmem_free(NULL, repr);
-        }
-        else {
-            lua_pushstring(L,"(unknown)");
-        }
-    }
-    else if (fi->ws_fi->hfinfo->type == FT_NONE) {
-        lua_pushstring(L, "(none)");
+    if (fi->ws_fi->hfinfo->type == FT_PROTOCOL) {
+        repr = fvalue_to_string_repr(NULL, fi->ws_fi->value,FTREPR_DFILTER,BASE_NONE);
     }
     else {
-        lua_pushstring(L,"(n/a)");
+        repr = fvalue_to_string_repr(NULL, fi->ws_fi->value,FTREPR_DISPLAY,fi->ws_fi->hfinfo->display);
+    }
+
+    if (repr) {
+        lua_pushstring(L,repr);
+        /* fvalue_to_string_repr() wmem_alloc's the string's buffer */
+        wmem_free(NULL, repr);
+    }
+    else {
+        lua_pushstring(L,"(unknown)");
     }
 
     return 1;
@@ -248,13 +235,13 @@ WSLUA_METAMETHOD FieldInfo__tostring(lua_State* L) {
 static int FieldInfo_get_display(lua_State* L) {
     /* The display string of this field as seen in GUI. */
     FieldInfo fi = checkFieldInfo(L,1);
-    gchar         label_str[ITEM_LABEL_LENGTH+1];
-    gchar        *label_ptr;
-    gchar        *value_ptr;
+    char          label_str[ITEM_LABEL_LENGTH+1];
+    char         *label_ptr;
+    char         *value_ptr;
 
     if (!fi->ws_fi->rep) {
         label_ptr = label_str;
-        proto_item_fill_label(fi->ws_fi, label_str);
+        proto_item_fill_label(fi->ws_fi, label_str, NULL);
     } else
         label_ptr = fi->ws_fi->rep->representation;
 
@@ -273,15 +260,13 @@ static int FieldInfo_get_display(lua_State* L) {
 }
 
 /* WSLUA_ATTRIBUTE FieldInfo_type RO The internal field type, a number which
-   matches one of the `ftype` values in `init.lua`.
-
-   @since 1.99.8
+   matches one of the `ftype` values.
  */
 static int FieldInfo_get_type(lua_State* L) {
     FieldInfo fi = checkFieldInfo(L,1);
 
     if (fi->ws_fi->hfinfo) {
-        lua_pushnumber(L, fi->ws_fi->hfinfo->type);
+        lua_pushinteger(L, fi->ws_fi->hfinfo->type);
     }
     else {
         lua_pushnil(L);
@@ -292,8 +277,6 @@ static int FieldInfo_get_type(lua_State* L) {
 
 /* WSLUA_ATTRIBUTE FieldInfo_source RO The source `Tvb` object the `FieldInfo` is derived
     from, or nil if there is none.
-
-   @since 1.99.8
  */
 static int FieldInfo_get_source(lua_State* L) {
     FieldInfo fi = checkFieldInfo(L,1);
@@ -308,10 +291,14 @@ static int FieldInfo_get_source(lua_State* L) {
     return 1;
 }
 
-/* WSLUA_ATTRIBUTE FieldInfo_range RO The `TvbRange` covering this field. */
+/* WSLUA_ATTRIBUTE FieldInfo_range RO The `TvbRange` covering the bytes of this field in a Tvb or nil if there is none. */
 static int FieldInfo_get_range(lua_State* L) {
-    /* The `TvbRange` covering this field. */
     FieldInfo fi = checkFieldInfo(L,1);
+
+    if (!fi->ws_fi->ds_tvb) {
+        lua_pushnil(L);
+        return 1;
+    }
 
     if (push_TvbRange (L, fi->ws_fi->ds_tvb, fi->ws_fi->start, fi->ws_fi->length)) {
         return 1;
@@ -329,10 +316,7 @@ static int FieldInfo_get_generated(lua_State* L) {
     return 1;
 }
 
-/* WSLUA_ATTRIBUTE FieldInfo_hidden RO Whether this field was marked as hidden (boolean).
-
-   @since 1.99.8
- */
+/* WSLUA_ATTRIBUTE FieldInfo_hidden RO Whether this field was marked as hidden (boolean). */
 static int FieldInfo_get_hidden(lua_State* L) {
     FieldInfo fi = checkFieldInfo(L,1);
 
@@ -340,10 +324,7 @@ static int FieldInfo_get_hidden(lua_State* L) {
     return 1;
 }
 
-/* WSLUA_ATTRIBUTE FieldInfo_is_url RO Whether this field was marked as being a URL (boolean).
-
-   @since 1.99.8
- */
+/* WSLUA_ATTRIBUTE FieldInfo_is_url RO Whether this field was marked as being a URL (boolean). */
 static int FieldInfo_get_is_url(lua_State* L) {
     FieldInfo fi = checkFieldInfo(L,1);
 
@@ -351,10 +332,7 @@ static int FieldInfo_get_is_url(lua_State* L) {
     return 1;
 }
 
-/* WSLUA_ATTRIBUTE FieldInfo_little_endian RO Whether this field is little-endian encoded (boolean).
-
-   @since 1.99.8
- */
+/* WSLUA_ATTRIBUTE FieldInfo_little_endian RO Whether this field is little-endian encoded (boolean). */
 static int FieldInfo_get_little_endian(lua_State* L) {
     FieldInfo fi = checkFieldInfo(L,1);
 
@@ -362,10 +340,7 @@ static int FieldInfo_get_little_endian(lua_State* L) {
     return 1;
 }
 
-/* WSLUA_ATTRIBUTE FieldInfo_big_endian RO Whether this field is big-endian encoded (boolean).
-
-   @since 1.99.8
- */
+/* WSLUA_ATTRIBUTE FieldInfo_big_endian RO Whether this field is big-endian encoded (boolean). */
 static int FieldInfo_get_big_endian(lua_State* L) {
     FieldInfo fi = checkFieldInfo(L,1);
 
@@ -373,10 +348,7 @@ static int FieldInfo_get_big_endian(lua_State* L) {
     return 1;
 }
 
-/* WSLUA_ATTRIBUTE FieldInfo_name RO The filter name of this field.
-
-   @since 1.99.8
- */
+/* WSLUA_ATTRIBUTE FieldInfo_name RO The filter name of this field. */
 static int FieldInfo_get_name(lua_State* L) {
     /* The filter name of this field. */
     FieldInfo fi = checkFieldInfo(L,1);
@@ -409,7 +381,7 @@ WSLUA_METAMETHOD FieldInfo__le(lua_State* L) {
     if (l->ws_fi->ds_tvb != r->ws_fi->ds_tvb)
         WSLUA_ERROR(FieldInfo__le,"Data source must be the same for both fields");
 
-    if (r->ws_fi->start + r->ws_fi->length <= l->ws_fi->start + l->ws_fi->length) {
+    if (l->ws_fi->start + l->ws_fi->length <= r->ws_fi->start + r->ws_fi->length) {
         lua_pushboolean(L,1);
     } else {
         lua_pushboolean(L,0);
@@ -418,7 +390,7 @@ WSLUA_METAMETHOD FieldInfo__le(lua_State* L) {
 }
 
 WSLUA_METAMETHOD FieldInfo__lt(lua_State* L) {
-    /* Checks whether the end byte of rhs is before the beginning of rhs. */
+    /* Checks whether the end byte of lhs is before the beginning of rhs. */
     FieldInfo l = checkFieldInfo(L,1);
     FieldInfo r = checkFieldInfo(L,2);
 
@@ -427,7 +399,7 @@ WSLUA_METAMETHOD FieldInfo__lt(lua_State* L) {
         return 0;
     }
 
-    if (r->ws_fi->start + r->ws_fi->length < l->ws_fi->start) {
+    if (l->ws_fi->start + l->ws_fi->length <= r->ws_fi->start) {
         lua_pushboolean(L,1);
     } else {
         lua_pushboolean(L,0);
@@ -442,7 +414,7 @@ static int FieldInfo__gc(lua_State* L) {
     if (!fi) return 0;
 
     if (!fi->expired)
-        fi->expired = TRUE;
+        fi->expired = true;
     else
         /* do NOT free fi->ws_fi */
         g_free(fi);
@@ -485,8 +457,7 @@ WSLUA_META FieldInfo_meta[] = {
 };
 
 int FieldInfo_register(lua_State* L) {
-    WSLUA_REGISTER_META(FieldInfo);
-    WSLUA_REGISTER_ATTRIBUTES(FieldInfo);
+    WSLUA_REGISTER_META_WITH_ATTRS(FieldInfo);
     return 0;
 }
 
@@ -500,7 +471,7 @@ WSLUA_FUNCTION wslua_all_field_infos(lua_State* L) {
     */
     GPtrArray* found;
     int items_found = 0;
-    guint i;
+    unsigned i;
 
     if (! lua_tree || ! lua_tree->tree ) {
         WSLUA_ERROR(wslua_all_field_infos,"Cannot be called outside a listener or dissector");
@@ -515,7 +486,7 @@ WSLUA_FUNCTION wslua_all_field_infos(lua_State* L) {
             items_found++;
         }
 
-        g_ptr_array_free(found,TRUE);
+        g_ptr_array_free(found,true);
     }
 
     return items_found;
@@ -523,14 +494,15 @@ WSLUA_FUNCTION wslua_all_field_infos(lua_State* L) {
 
 WSLUA_CLASS_DEFINE(Field,FAIL_ON_NULL("Field"));
 /*
-   A Field extractor to to obtain field values. A `Field` object can only be created *outside* of
+   A Field extractor to obtain field values. A `Field` object can only be created *outside* of
    the callback functions of dissectors, post-dissectors, heuristic-dissectors, and taps.
 
    Once created, it is used *inside* the callback functions, to generate a `FieldInfo` object.
  */
 
-static GPtrArray* wanted_fields = NULL;
-static dfilter_t* wslua_dfilter = NULL;
+/* Array of Field (struct _wslua_header_field_info*) pointers.*/
+static GPtrArray* wanted_fields;
+static dfilter_t* wslua_dfilter;
 
 /* We use a fake dfilter for Lua field extractors, so that
  * epan_dissect_run() will populate the fields.  This won't happen
@@ -546,7 +518,7 @@ void wslua_prime_dfilter(epan_dissect_t *edt) {
 }
 
 /* Check if we have any registered field extractors. */
-gboolean wslua_has_field_extractors(void) {
+bool wslua_has_field_extractors(void) {
     return (wslua_dfilter && dfilter_has_interesting_fields(wslua_dfilter));
 }
 
@@ -561,32 +533,26 @@ gboolean wslua_has_field_extractors(void) {
  * after the fields are primed.
  */
 
-static gboolean fake_tap = FALSE;
+static bool fake_tap;
 void lua_prime_all_fields(proto_tree* tree _U_) {
     GString* fake_tap_filter = g_string_new("frame");
-    guint i;
-    gchar *err_msg;
+    unsigned i;
+    df_error_t *df_err;
 
     for(i=0; i < wanted_fields->len; i++) {
         Field f = (Field)g_ptr_array_index(wanted_fields,i);
-        gchar* name = *((gchar**)f);
 
-        *f = proto_registrar_get_byname(name);
-
-        if (!*f) {
-            report_failure("Could not find field `%s'",name);
-            *f = NULL;
-            g_free(name);
+        f->hfi = proto_registrar_get_byname(f->name);
+        if (!f->hfi) {
+            report_failure("Could not find field `%s'", f->name);
             continue;
         }
 
-        g_free(name);
-
-        g_string_append_printf(fake_tap_filter," || %s",(*f)->abbrev);
-        fake_tap = TRUE;
+        g_string_append_printf(fake_tap_filter, " || %s", f->hfi->abbrev);
+        fake_tap = true;
     }
 
-    g_ptr_array_free(wanted_fields,TRUE);
+    g_ptr_array_free(wanted_fields,true);
     wanted_fields = NULL;
 
     if (fake_tap && fake_tap_filter->len > strlen("frame")) {
@@ -595,14 +561,14 @@ void lua_prime_all_fields(proto_tree* tree _U_) {
                 &fake_tap,
                 fake_tap_filter->str,
                 0, /* XXX - do we need the protocol tree or columns? */
-                NULL, NULL, NULL);
+                NULL, NULL, NULL, NULL);
 
         if (error) {
             report_failure("while registering lua_fake_tap:\n%s",error->str);
             g_string_free(error,TRUE);
-        } else if (!dfilter_compile(fake_tap_filter->str, &wslua_dfilter, &err_msg)) {
-            report_failure("while compiling dfilter \"%s\" for wslua: %s", fake_tap_filter->str, err_msg);
-            g_free(err_msg);
+        } else if (!dfilter_compile(fake_tap_filter->str, &wslua_dfilter, &df_err)) {
+            report_failure("while compiling dfilter \"%s\" for wslua: %s", fake_tap_filter->str, df_err->msg);
+            df_error_free(&df_err);
         }
     }
     g_string_free(fake_tap_filter, TRUE);
@@ -613,7 +579,7 @@ WSLUA_CONSTRUCTOR Field_new(lua_State *L) {
        Create a Field extractor.
        */
 #define WSLUA_ARG_Field_new_FIELDNAME 1 /* The filter name of the field (e.g. ip.addr) */
-    const gchar* name = luaL_checkstring(L,WSLUA_ARG_Field_new_FIELDNAME);
+    const char* name = luaL_checkstring(L,WSLUA_ARG_Field_new_FIELDNAME);
     Field f;
 
     if (!proto_registrar_get_byname(name) && !wslua_is_field_available(L, name)) {
@@ -626,10 +592,10 @@ WSLUA_CONSTRUCTOR Field_new(lua_State *L) {
         return 0;
     }
 
-    f = (Field)g_malloc(sizeof(void*));
-    *f = (header_field_info*)(void*)g_strdup(name); /* cheating */
+    f = (Field)g_new0(struct _wslua_header_field_info, 1);
+    f->name = g_strdup(name);
 
-    g_ptr_array_add(wanted_fields,f);
+    g_ptr_array_add(wanted_fields, f);
 
     pushField(L,f);
     WSLUA_RETURN(1); /* The field extractor */
@@ -638,9 +604,7 @@ WSLUA_CONSTRUCTOR Field_new(lua_State *L) {
 WSLUA_CONSTRUCTOR Field_list(lua_State *L) {
     /* Gets a Lua array table of all registered field filter names.
 
-       NOTE: this is an expensive operation, and should only be used for troubleshooting.
-
-       @since 1.11.3
+       NOTE: This is an expensive operation, and should only be used for troubleshooting.
      */
     void *cookie, *cookie2;
     int i = -1;
@@ -660,34 +624,29 @@ WSLUA_CONSTRUCTOR Field_list(lua_State *L) {
 
             count++;
             lua_pushstring(L,hfinfo->abbrev);
-            lua_rawseti(L,1,count);
+            lua_rawseti(L,-2,count);
         }
     }
 
     WSLUA_RETURN(1); /* The array table of field filter names */
 }
 
-/* the following is used in Field_get_xxx functions later */
+/* the following is used in Field_get_xxx functions later. If called early
+ * (wanted_fields is not NULL), it will try to retrieve information directly.
+ * Otherwise it uses a cached field that was loaded in lua_prime_all_fields. */
 #define GET_HFINFO_MEMBER(luafunc, member)                          \
     if (wanted_fields) {                                            \
-        /* before registration, so it's a gchar** of the abbrev */  \
-        const gchar* name = (const gchar*) *fi;                     \
-        if (name) {                                                 \
-            hfinfo = proto_registrar_get_byname(name);              \
-            if (!hfinfo) {                                          \
-                /* could be a Lua-created field */                  \
-                ProtoField pf = wslua_is_field_available(L, name);  \
-                if (pf) {                                           \
-                    luafunc(L, pf->member);                         \
-                    return 1;                                       \
-                }                                                   \
+        hfinfo = proto_registrar_get_byname(f->name);               \
+        if (!hfinfo) {                                              \
+            /* could be a Lua-created field */                      \
+            ProtoField pf = wslua_is_field_available(L, f->name);   \
+            if (pf) {                                               \
+                luafunc(L, pf->member);                             \
+                return 1;                                           \
             }                                                       \
-        } else {                                                    \
-            luaL_error(L, "Field." #member ": unknown field");      \
-            return 0;                                               \
         }                                                           \
     } else {                                                        \
-        hfinfo = *fi;                                               \
+        hfinfo = f->hfi;                                            \
     }                                                               \
                                                                     \
     if (hfinfo) {                                                   \
@@ -696,12 +655,9 @@ WSLUA_CONSTRUCTOR Field_list(lua_State *L) {
         lua_pushnil(L)
 
 
-/* WSLUA_ATTRIBUTE Field_name RO The filter name of this field, or nil.
-
-   @since 1.99.8
- */
+/* WSLUA_ATTRIBUTE Field_name RO The filter name of this field, or nil. */
 static int Field_get_name(lua_State* L) {
-    Field fi = checkField(L,1);
+    Field f = checkField(L,1);
     header_field_info* hfinfo = NULL;
 
     GET_HFINFO_MEMBER(lua_pushstring, abbrev);
@@ -709,12 +665,9 @@ static int Field_get_name(lua_State* L) {
     return 1;
 }
 
-/* WSLUA_ATTRIBUTE Field_display RO The full display name of this field, or nil.
-
-   @since 1.99.8
- */
+/* WSLUA_ATTRIBUTE Field_display RO The full display name of this field, or nil. */
 static int Field_get_display(lua_State* L) {
-    Field fi = checkField(L,1);
+    Field f = checkField(L,1);
     header_field_info* hfinfo = NULL;
 
     GET_HFINFO_MEMBER(lua_pushstring, name);
@@ -722,15 +675,12 @@ static int Field_get_display(lua_State* L) {
     return 1;
 }
 
-/* WSLUA_ATTRIBUTE Field_type RO The `ftype` of this field, or nil.
-
-   @since 1.99.8
- */
+/* WSLUA_ATTRIBUTE Field_type RO The `ftype` of this field, or nil. */
 static int Field_get_type(lua_State* L) {
-    Field fi = checkField(L,1);
+    Field f = checkField(L,1);
     header_field_info* hfinfo = NULL;
 
-    GET_HFINFO_MEMBER(lua_pushnumber, type);
+    GET_HFINFO_MEMBER(lua_pushinteger, type);
 
     return 1;
 }
@@ -738,7 +688,7 @@ static int Field_get_type(lua_State* L) {
 WSLUA_METAMETHOD Field__call (lua_State* L) {
     /* Obtain all values (see `FieldInfo`) for this field. */
     Field f = checkField(L,1);
-    header_field_info* in = *f;
+    header_field_info* in = f->hfi;
     int items_found = 0;
 
     if (! in) {
@@ -753,7 +703,7 @@ WSLUA_METAMETHOD Field__call (lua_State* L) {
 
     while (in) {
         GPtrArray* found = proto_get_finfo_ptr_array(lua_tree->tree, in->id);
-        guint i;
+        unsigned i;
         if (found) {
             for (i=0; i<found->len; i++) {
                 push_FieldInfo(L, (field_info *) g_ptr_array_index(found,i));
@@ -770,17 +720,28 @@ WSLUA_METAMETHOD Field__tostring(lua_State* L) {
     /* Obtain a string with the field filter name. */
     Field f = checkField(L,1);
 
-    if (wanted_fields) {
-        lua_pushstring(L,*((gchar**)f));
+    if (f->hfi) {
+        /* If a field was found, return the actual field info. */
+        lua_pushstring(L, f->hfi->abbrev);
     } else {
-        lua_pushstring(L,(*f)->abbrev);
+        lua_pushstring(L, f->name);
     }
 
     return 1;
 }
 
-static int Field__gc(lua_State* L _U_) {
-    /* do NOT free Field */
+static int Field__gc(lua_State* L) {
+    Field f = toField(L,1);
+    if (!f) return 0;
+
+    // If out of scope before lua_prime_all_fields is even called, be sure to
+    // remove the pointer to avoid a use-after-free.
+    if (wanted_fields) {
+        g_ptr_array_remove_fast(wanted_fields, f);
+    }
+
+    g_free(f->name);
+    g_free(f);
     return 0;
 }
 
@@ -805,10 +766,15 @@ WSLUA_META Field_meta[] = {
 
 int Field_register(lua_State* L) {
 
+    if (wanted_fields != NULL) {
+        g_ptr_array_unref(wanted_fields);
+    }
     wanted_fields = g_ptr_array_new();
 
-    WSLUA_REGISTER_CLASS(Field);
-    WSLUA_REGISTER_ATTRIBUTES(Field);
+    WSLUA_REGISTER_CLASS_WITH_ATTRS(Field);
+    if (outstanding_FieldInfo != NULL) {
+        g_ptr_array_unref(outstanding_FieldInfo);
+    }
     outstanding_FieldInfo = g_ptr_array_new();
 
     return 0;
@@ -822,14 +788,14 @@ int wslua_deregister_fields(lua_State* L _U_) {
 
     if (fake_tap) {
         remove_tap_listener(&fake_tap);
-        fake_tap = FALSE;
+        fake_tap = false;
     }
 
     return 0;
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

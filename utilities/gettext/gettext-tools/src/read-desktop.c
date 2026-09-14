@@ -1,7 +1,5 @@
 /* Reading Desktop Entry files.
-   Copyright (C) 1995-1998, 2000-2003, 2005-2006, 2008-2009, 2014-2016 Free
-   Software Foundation, Inc.
-   This file was written by Daiki Ueno <ueno@gnu.org>.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,16 +12,14 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Daiki Ueno and Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "read-desktop.h"
-
-#include "xalloc.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -32,28 +28,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "error.h"
-#include "error-progname.h"
+#define SB_NO_APPENDF
+#include <error.h>
 #include "xalloc.h"
 #include "xvasprintf.h"
+#include "string-buffer.h"
 #include "c-ctype.h"
-#include "po-lex.h"
 #include "po-xerror.h"
 #include "gettext.h"
 
 #define _(str) gettext (str)
 
-#define SIZEOF(a) (sizeof(a) / sizeof(a[0]))
-
 /* The syntax of a Desktop Entry file is defined at
-   http://standards.freedesktop.org/desktop-entry-spec/latest/index.html.  */
+   https://standards.freedesktop.org/desktop-entry-spec/latest/index.html.  */
 
 desktop_reader_ty *
 desktop_reader_alloc (desktop_reader_class_ty *method_table)
 {
-  desktop_reader_ty *reader;
-
-  reader = (desktop_reader_ty *) xmalloc (method_table->size);
+  desktop_reader_ty *reader = (desktop_reader_ty *) xmalloc (method_table->size);
   reader->methods = method_table;
   if (method_table->constructor)
     method_table->constructor (reader);
@@ -104,7 +96,7 @@ desktop_reader_handle_blank (desktop_reader_ty *reader, const char *s)
 static const char *real_file_name;
 
 /* File name and line number.  */
-extern lex_pos_ty gram_pos;
+static lex_pos_ty pos;
 
 /* The input file stream.  */
 static FILE *fp;
@@ -113,9 +105,7 @@ static FILE *fp;
 static int
 phase1_getc ()
 {
-  int c;
-
-  c = getc (fp);
+  int c = getc (fp);
 
   if (c == EOF)
     {
@@ -167,7 +157,7 @@ phase2_getc ()
     }
 
   if (c == '\n')
-    gram_pos.line_number++;
+    pos.line_number++;
 
   return c;
 }
@@ -176,7 +166,7 @@ static void
 phase2_ungetc (int c)
 {
   if (c == '\n')
-    --gram_pos.line_number;
+    --pos.line_number;
   if (c != EOF)
     phase2_pushback[phase2_pushback_length++] = c;
 }
@@ -201,6 +191,7 @@ struct token_ty
   char *string;
   const char *value;
   const char *locale;
+  size_t lineno;
 };
 
 /* Free the memory pointed to by a 'struct token_ty'.  */
@@ -215,24 +206,12 @@ free_token (token_ty *tp)
 static void
 desktop_lex (token_ty *tp)
 {
-  static char *buffer;
-  static size_t bufmax;
-  size_t bufpos;
+  struct string_buffer buffer;
 
 #undef APPEND
-#define APPEND(c)                               \
-  do                                            \
-    {                                           \
-      if (bufpos >= bufmax)                     \
-        {                                       \
-          bufmax += 100;                        \
-          buffer = xrealloc (buffer, bufmax);   \
-        }                                       \
-      buffer[bufpos++] = c;                     \
-    }                                           \
-  while (0)
+#define APPEND(c) sb_xappend1 (&buffer, (c))
 
-  bufpos = 0;
+  sb_init (&buffer);
   for (;;)
     {
       int c;
@@ -242,51 +221,51 @@ desktop_lex (token_ty *tp)
       switch (c)
         {
         case EOF:
+          sb_free (&buffer);
           tp->type = token_type_eof;
           return;
 
         case '[':
           {
-            bool non_blank = false;
-
             for (;;)
               {
                 c = phase2_getc ();
-                switch (c)
+                if (c == EOF || c == ']')
+                  break;
+                if (c == '\n')
                   {
-                  default:
-                    /* Group names may contain all ASCII characters
-                       except for '[' and ']' and control characters.  */
-                    if (!(c_isascii (c) && c != '[') && !c_iscntrl (c))
-                      break;
-                    APPEND (c);
-                    continue;
-                  case '\n':
                     po_xerror (PO_SEVERITY_WARNING, NULL,
-                               real_file_name, gram_pos.line_number, 0, false,
+                               real_file_name, pos.line_number - 1, 0, false,
                                _("unterminated group name"));
                     break;
-                  case EOF: case ']':
-                    break;
                   }
-                break;
+                /* Group names may contain all ASCII characters
+                   except for '[' and ']' and control characters.  */
+                if (!(c_isascii (c) && c != '[' && !c_iscntrl (c)))
+                  break;
+                APPEND (c);
               }
             /* Skip until newline.  */
+            bool non_blank = false;
+            size_t non_blank_lineno = 0;
             while (c != '\n' && c != EOF)
               {
                 c = phase2_getc ();
                 if (c == EOF)
                   break;
                 if (!c_isspace (c))
-                  non_blank = true;
+                  {
+                    non_blank = true;
+                    non_blank_lineno = pos.line_number;
+                  }
               }
             if (non_blank)
               po_xerror (PO_SEVERITY_WARNING, NULL,
-                         real_file_name, gram_pos.line_number, 0, false,
+                         real_file_name, non_blank_lineno, 0, false,
                          _("invalid non-blank character"));
             APPEND (0);
             tp->type = token_type_group;
-            tp->string = xstrdup (buffer);
+            tp->string = sb_xdupfree_c (&buffer);
             return;
           }
 
@@ -296,19 +275,13 @@ desktop_lex (token_ty *tp)
             for (;;)
               {
                 c = phase2_getc ();
-                switch (c)
-                  {
-                  default:
-                    APPEND (c);
-                    continue;
-                  case EOF: case '\n':
-                    break;
-                  }
-                break;
+                if (c == EOF || c == '\n')
+                  break;
+                APPEND (c);
               }
             APPEND (0);
             tp->type = token_type_comment;
-            tp->string = xstrdup (buffer);
+            tp->string = sb_xdupfree_c (&buffer);
             return;
           }
 
@@ -328,7 +301,6 @@ desktop_lex (token_ty *tp)
           {
             size_t locale_start;
             bool found_locale = false;
-            size_t value_start;
             for (;;)
               {
                 APPEND (c);
@@ -355,20 +327,14 @@ desktop_lex (token_ty *tp)
                     /* Finish the key part and start the locale part.  */
                     APPEND (0);
                     found_locale = true;
-                    locale_start = bufpos;
+                    locale_start = sd_length (sb_contents (&buffer));
 
                     for (;;)
                       {
                         int c2 = phase2_getc ();
-                        switch (c2)
-                          {
-                          default:
-                            APPEND (c2);
-                            continue;
-                          case EOF: case ']':
-                            break;
-                          }
-                        break;
+                        if (c2 == EOF || c2 == ']')
+                          break;
+                        APPEND (c2);
                       }
                     break;
 
@@ -380,15 +346,16 @@ desktop_lex (token_ty *tp)
               }
             APPEND (0);
 
-            /* Skip any whitespace before '='.  */
+            /* Skip any space before '='.  */
+            size_t before_equals_lineno = pos.line_number;
             for (;;)
               {
                 c = phase2_getc ();
                 switch (c)
                   {
+                  case ' ':
+                    continue;
                   default:
-                    if (c_isspace (c))
-                      continue;
                     phase2_ungetc (c);
                     break;
                   case EOF: case '\n':
@@ -401,8 +368,10 @@ desktop_lex (token_ty *tp)
             if (c != '=')
               {
                 po_xerror (PO_SEVERITY_WARNING, NULL,
-                           real_file_name, gram_pos.line_number, 0, false,
-                           xasprintf (_("missing '=' after \"%s\""), buffer));
+                           real_file_name, before_equals_lineno, 0, false,
+                           xasprintf (_("missing '=' after \"%s\""),
+                                      sb_xcontents_c (&buffer)));
+                sb_free (&buffer);
                 for (;;)
                   {
                     c = phase2_getc ();
@@ -413,24 +382,25 @@ desktop_lex (token_ty *tp)
                 return;
               }
 
-            /* Skip any whitespace after '='.  */
+            /* Skip any space after '='.  */
             for (;;)
               {
                 c = phase2_getc ();
                 switch (c)
                   {
+                  case ' ':
+                    continue;
                   default:
-                    if (c_isspace (c))
-                      continue;
                     phase2_ungetc (c);
                     break;
-                  case EOF: case '\n':
+                  case EOF:
                     break;
                   }
                 break;
               }
 
-            value_start = bufpos;
+            size_t before_value_lineno = pos.line_number;
+            size_t value_start = sd_length (sb_contents (&buffer));
             for (;;)
               {
                 c = phase2_getc ();
@@ -439,15 +409,20 @@ desktop_lex (token_ty *tp)
                 APPEND (c);
               }
             APPEND (0);
+            char *buffer_contents = sb_xdupfree_c (&buffer);
             tp->type = token_type_pair;
-            tp->string = xmemdup (buffer, bufpos);
-            tp->locale = found_locale ? &buffer[locale_start] : NULL;
-            tp->value = &buffer[value_start];
+            tp->string = buffer_contents;
+            /* tp->locale and tp->value are live only as long as tp->string is
+               live.  */
+            tp->locale = found_locale ? &buffer_contents[locale_start] : NULL;
+            tp->value = &buffer_contents[value_start];
+            tp->lineno = before_value_lineno;
             return;
           }
         default:
           {
             bool non_blank = false;
+            size_t non_blank_lineno = 0;
 
             for (;;)
               {
@@ -455,7 +430,10 @@ desktop_lex (token_ty *tp)
                   break;
 
                 if (!c_isspace (c))
-                  non_blank = true;
+                  {
+                    non_blank = true;
+                    non_blank_lineno = pos.line_number;
+                  }
                 else
                   APPEND (c);
 
@@ -464,14 +442,15 @@ desktop_lex (token_ty *tp)
             if (non_blank)
               {
                 po_xerror (PO_SEVERITY_WARNING, NULL,
-                           real_file_name, gram_pos.line_number, 0, false,
+                           real_file_name, non_blank_lineno, 0, false,
                            _("invalid non-blank line"));
+                sb_free (&buffer);
                 tp->type = token_type_other;
                 return;
               }
             APPEND (0);
             tp->type = token_type_blank;
-            tp->string = xstrdup (buffer);
+            tp->string = sb_xdupfree_c (&buffer);
             return;
           }
         }
@@ -485,13 +464,14 @@ desktop_parse (desktop_reader_ty *reader, FILE *file,
 {
   fp = file;
   real_file_name = real_filename;
-  gram_pos.file_name = xstrdup (logical_filename);
-  gram_pos.line_number = 1;
+  pos.file_name = xstrdup (logical_filename);
+  pos.line_number = 1;
 
   for (;;)
     {
       struct token_ty token;
       desktop_lex (&token);
+
       switch (token.type)
         {
         case token_type_eof:
@@ -503,8 +483,14 @@ desktop_parse (desktop_reader_ty *reader, FILE *file,
           desktop_reader_handle_comment (reader, token.string);
           break;
         case token_type_pair:
-          desktop_reader_handle_pair (reader, &gram_pos,
-                                      token.string, token.locale, token.value);
+          {
+            lex_pos_ty token_pos;
+            token_pos.file_name = pos.file_name;
+            token_pos.line_number = token.lineno;
+
+            desktop_reader_handle_pair (reader, &token_pos,
+                                        token.string, token.locale, token.value);
+          }
           break;
         case token_type_blank:
           desktop_reader_handle_blank (reader, token.string);
@@ -518,58 +504,59 @@ desktop_parse (desktop_reader_ty *reader, FILE *file,
  out:
   fp = NULL;
   real_file_name = NULL;
-  gram_pos.line_number = 0;
+  pos.line_number = 0;
 }
 
 char *
 desktop_escape_string (const char *s, bool is_list)
 {
-  char *buffer, *p;
+  char *buffer = XNMALLOC (strlen (s) * 2 + 1, char);
+  {
+    char *p = buffer;
 
-  p = buffer = XNMALLOC (strlen (s) * 2 + 1, char);
+    /* The first character must not be a whitespace.  */
+    if (*s == ' ')
+      {
+        p = stpcpy (p, "\\s");
+        s++;
+      }
+    else if (*s == '\t')
+      {
+        p = stpcpy (p, "\\t");
+        s++;
+      }
 
-  /* The first character must not be a whitespace.  */
-  if (*s == ' ')
-    {
-      p = stpcpy (p, "\\s");
-      s++;
-    }
-  else if (*s == '\t')
-    {
-      p = stpcpy (p, "\\t");
-      s++;
-    }
+    for (;; s++)
+      {
+        if (*s == '\0')
+          {
+            *p = '\0';
+            break;
+          }
 
-  for (;; s++)
-    {
-      if (*s == '\0')
-        {
-          *p = '\0';
-          break;
-        }
-
-      switch (*s)
-        {
-        case '\n':
-          p = stpcpy (p, "\\n");
-          break;
-        case '\r':
-          p = stpcpy (p, "\\r");
-          break;
-        case '\\':
-          if (is_list && *(s + 1) == ';')
-            {
-              p = stpcpy (p, "\\;");
-              s++;
-            }
-          else
-            p = stpcpy (p, "\\\\");
-          break;
-        default:
-          *p++ = *s;
-          break;
-        }
-    }
+        switch (*s)
+          {
+          case '\n':
+            p = stpcpy (p, "\\n");
+            break;
+          case '\r':
+            p = stpcpy (p, "\\r");
+            break;
+          case '\\':
+            if (is_list && *(s + 1) == ';')
+              {
+                p = stpcpy (p, "\\;");
+                s++;
+              }
+            else
+              p = stpcpy (p, "\\\\");
+            break;
+          default:
+            *p++ = *s;
+            break;
+          }
+      }
+  }
 
   return buffer;
 }
@@ -577,52 +564,54 @@ desktop_escape_string (const char *s, bool is_list)
 char *
 desktop_unescape_string (const char *s, bool is_list)
 {
-  char *buffer, *p;
+  char *buffer = XNMALLOC (strlen (s) + 1, char);
+  {
+    char *p = buffer;
+    for (;; s++)
+      {
+        if (*s == '\0')
+          {
+            *p = '\0';
+            break;
+          }
 
-  p = buffer = XNMALLOC (strlen (s) + 1, char);
-  for (;; s++)
-    {
-      if (*s == '\0')
-        {
-          *p = '\0';
-          break;
-        }
+        if (*s == '\\')
+          {
+            s++;
 
-      if (*s == '\\')
-        {
-          s++;
+            if (*s == '\0')
+              {
+                *p = '\0';
+                break;
+              }
 
-          if (*s == '\0')
-            {
-              *p = '\0';
-              break;
-            }
+            switch (*s)
+              {
+              case 's':
+                *p++ = ' ';
+                break;
+              case 'n':
+                *p++ = '\n';
+                break;
+              case 't':
+                *p++ = '\t';
+                break;
+              case 'r':
+                *p++ = '\r';
+                break;
+              case ';':
+                p = stpcpy (p, "\\;");
+                break;
+              default:
+                *p++ = *s;
+                break;
+              }
+          }
+        else
+          *p++ = *s;
+      }
+  }
 
-          switch (*s)
-            {
-            case 's':
-              *p++ = ' ';
-              break;
-            case 'n':
-              *p++ = '\n';
-              break;
-            case 't':
-              *p++ = '\t';
-              break;
-            case 'r':
-              *p++ = '\r';
-              break;
-            case ';':
-              p = stpcpy (p, "\\;");
-              break;
-            default:
-              *p++ = *s;
-              break;
-            }
-        }
-      else
-        *p++ = *s;
-    }
   return buffer;
 }
 
@@ -640,6 +629,8 @@ desktop_add_default_keywords (hash_table *keywords)
   desktop_add_keyword (keywords, "Name", false);
   desktop_add_keyword (keywords, "GenericName", false);
   desktop_add_keyword (keywords, "Comment", false);
+#if 0 /* Icon values are localizable, but not supported by xgettext.  */
   desktop_add_keyword (keywords, "Icon", false);
+#endif
   desktop_add_keyword (keywords, "Keywords", true);
 }

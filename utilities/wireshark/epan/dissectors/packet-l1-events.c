@@ -10,19 +10,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* Edit this file with 4-space tabs */
@@ -35,30 +23,31 @@
 void proto_register_l1_events(void);
 void proto_reg_handoff_l1_events(void);
 
+static dissector_handle_t l1_events_handle;
 /*
  * dissector for line-based text messages from layer 1
  */
 
 /* Filterable header fields */
-static gint proto_l1_events = -1;
+static int proto_l1_events;
 
 /* Subtrees */
-static gint ett_l1_events = -1;
+static int ett_l1_events;
 
 static int
 dissect_l1_events(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_tree	*subtree;
 	proto_item	*ti;
-	gint		offset = 0, next_offset;
-	gint		len;
+	int		offset = 0, next_offset;
+	int		len;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "Layer1");
 	col_set_str(pinfo->cinfo, COL_DEF_SRC,
 			    pinfo->pseudo_header->l1event.uton? "TE" : "NT");
-	len = tvb_find_line_end(tvb, 0, -1, &next_offset, FALSE);
+	len = tvb_find_line_end(tvb, 0, -1, &next_offset, false);
 	if(len>0)
-		col_add_str(pinfo->cinfo, COL_INFO, tvb_format_text(tvb, 0, len));
+		col_add_str(pinfo->cinfo, COL_INFO, tvb_format_text(pinfo->pool, tvb, 0, len));
 
 	if (tree) {
 		ti = proto_tree_add_item(tree, proto_l1_events,
@@ -75,7 +64,7 @@ dissect_l1_events(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 			 * as "iso-10646-ucs-2", or might require other
 			 * special processing.
 			 */
-			len = tvb_find_line_end(tvb, offset, -1, &next_offset, FALSE);
+			len = tvb_find_line_end(tvb, offset, -1, &next_offset, false);
 			if (len == -1)
 				break;
 
@@ -94,28 +83,25 @@ dissect_l1_events(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 void
 proto_register_l1_events(void)
 {
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_l1_events,
 	};
 
 	proto_register_subtree_array(ett, array_length(ett));
 
-	proto_l1_events = proto_register_protocol(
-			"Layer 1 Event Messages", /* Long name */
-			"Layer 1 Events",	  /* Short name */
-			"data-l1-events");		/* Filter name */
+	proto_l1_events = proto_register_protocol("Layer 1 Event Messages", "Layer 1 Events", "data-l1-events");
+
+	l1_events_handle = register_dissector("data-l1-events", dissect_l1_events, proto_l1_events);
 }
 
 void
 proto_reg_handoff_l1_events(void)
 {
-	dissector_handle_t l1_events_handle = create_dissector_handle(dissect_l1_events, proto_l1_events);
-
 	dissector_add_uint("wtap_encap", WTAP_ENCAP_LAYER1_EVENT, l1_events_handle); /* for text msgs from trace files */
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

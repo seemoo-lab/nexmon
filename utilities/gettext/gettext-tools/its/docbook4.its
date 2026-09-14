@@ -1,0 +1,237 @@
+<?xml version="1.0"?>
+<!--
+  Copyright (C) 2010-2018 Shaun McCance
+  Copyright (C) 2024-2026 Free Software Foundation, Inc.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+  Written by Shaun McCance.
+-->
+<its:rules
+    xmlns:its="http://www.w3.org/2005/11/its"
+    xmlns:itst="http://itstool.org/extensions/"
+    xmlns:gt="https://www.gnu.org/s/gettext/ns/its/extensions/1.0"
+    version="2.0">
+
+  <itst:match selector="/book"/>
+  <itst:match selector="/article"/>
+  <itst:match selector="/chapter"/>
+
+  <its:langRule selector="//*[namespace-uri(.) = '']" langPointer="@lang"/>
+
+  <itst:credits appendTo="/book/bookinfo | /article/articleinfo | /chapter/chapterinfo">
+    <othercredit class="translator">
+      <personname>
+        <firstname><itst:value-of select="name"/></firstname>
+      </personname>
+      <email><itst:value-of select="email"/></email>
+    </othercredit>
+    <copyright>
+      <itst:for-each select="years">
+        <year><itst:value-of select="year"/></year>
+      </itst:for-each>
+      <holder><itst:value-of select="name"/></holder>
+    </copyright>
+  </itst:credits>
+
+  <!-- Inline by default, might be overridden -->
+  <its:withinTextRule withinText="yes" selector="//abbrev |
+                                                 //accel |
+                                                 //acronym |
+                                                 //action |
+                                                 //affiliation |
+                                                 //anchor |
+                                                 //application |
+                                                 //arg |
+                                                 //audiodata |
+                                                 //audioobject |
+                                                 //authorinitials |
+                                                 //biblioref |
+                                                 //citation |
+                                                 //citebiblioid |
+                                                 //citerefentry |
+                                                 //citerefentry/manvolnum |
+                                                 //citerefentry/refentrytitle |
+                                                 //citetitle |
+                                                 //city |
+                                                 //classname |
+                                                 //co |
+                                                 //code |
+                                                 //col |
+                                                 //colgroup |
+                                                 //collabname |
+                                                 //command |
+                                                 //computeroutput |
+                                                 //constant |
+                                                 //constraint |
+                                                 //contrib |
+                                                 //country |
+                                                 //database |
+                                                 //date |
+                                                 //email |
+                                                 //emphasis |
+                                                 //envar |
+                                                 //errorcode |
+                                                 //errorname |
+                                                 //errortext |
+                                                 //errortype |
+                                                 //exceptionname |
+                                                 //fax |
+                                                 //filename |
+                                                 //firstname |
+                                                 //firstterm |
+                                                 //footnoteref |
+                                                 //foreignphrase |
+                                                 //funcdef |
+                                                 //funcparams |
+                                                 //function |
+                                                 //glossterm |
+                                                 //group |
+                                                 //guibutton |
+                                                 //guiicon |
+                                                 //guilabel |
+                                                 //guimenu |
+                                                 //guimenuitem |
+                                                 //guisubmenu |
+                                                 //hardware |
+                                                 //holder |
+                                                 //honorific |
+                                                 //imagedata |
+                                                 //imageobject |
+                                                 //imageobjectco |
+                                                 //initializer |
+                                                 //inlineequation |
+                                                 //inlinegraphic |
+                                                 //inlinemediaobject |
+                                                 //interface |
+                                                 //interfacename |
+                                                 //jobtitle |
+                                                 //keycap |
+                                                 //keycode |
+                                                 //keycombo |
+                                                 //keysym |
+                                                 //keyword |
+                                                 //lhs |
+                                                 //lineage |
+                                                 //lineannotation |
+                                                 //link |
+                                                 //literal |
+                                                 //markup |
+                                                 //medialabel |
+                                                 //menuchoice |
+                                                 //methodname |
+                                                 //methodparam |
+                                                 //modifier |
+                                                 //mousebutton |
+                                                 //nonterminal |
+                                                 //olink |
+                                                 //ooclass |
+                                                 //ooexception |
+                                                 //oointerface |
+                                                 //option |
+                                                 //optional |
+                                                 //orgdiv |
+                                                 //orgname |
+                                                 //otheraddr |
+                                                 //othername |
+                                                 //package |
+                                                 //paramdef |
+                                                 //parameter |
+                                                 //personname |
+                                                 //phone |
+                                                 //phrase |
+                                                 //pob |
+                                                 //postcode |
+                                                 //productname |
+                                                 //productnumber |
+                                                 //prompt |
+                                                 //property |
+                                                 //quote |
+                                                 //replaceable |
+                                                 //returnvalue |
+                                                 //revnumber |
+                                                 //revremark |
+                                                 //rhs |
+                                                 //sbr |
+                                                 //sgmltag |
+                                                 //shortaffil |
+                                                 //shortcut |
+                                                 //state |
+                                                 //street |
+                                                 //structfield |
+                                                 //structname |
+                                                 //subscript |
+                                                 //superscript |
+                                                 //surname |
+                                                 //symbol |
+                                                 //systemitem |
+                                                 //termdef |
+                                                 //textobject |
+                                                 //token |
+                                                 //trademark |
+                                                 //type |
+                                                 //ulink |
+                                                 //uri |
+                                                 //userinput |
+                                                 //varargs |
+                                                 //varname |
+                                                 //videodata |
+                                                 //videoobject |
+                                                 //void |
+                                                 //wordasword |
+                                                 //xref |
+                                                 //year "/>
+
+  <!-- Mark footnotes nested, though itstool treats it as "no" -->
+  <its:withinTextRule withinText="nested" selector="//footnote"/>
+
+  <!-- Things with (semi-)structured content -->
+  <its:withinTextRule withinText="no" selector="//confgroup/* | //biblioentry/* | //biblioset/*"/>
+  <its:withinTextRule withinText="yes" selector="//bibliomixed/* | //bibliomset/*"/>
+  <its:withinTextRule withinText="no" selector="//glossentry/*"/>
+  <its:withinTextRule withinText="yes" selector="//indexterm//* |
+                                                 //simplelist[@type = 'inline']/descendant-or-self::*"/>
+
+  <!--
+  We want to break address off into a translation unit because it's
+  supposed to be space-preserving. But because of DocBook wonkiness,
+  address is often just used to provide an email address. In that
+  particular case, just ignore the fact that it's supposed to be a
+  space-preserving translation unit.
+  -->
+  <its:withinTextRule withinText="yes" selector="//address[count(*) = 1 and email]"/>
+  <its:preserveSpaceRule space="preserve" selector="//address[not(count(*) = 1 and email)]"/>
+
+  <!-- Above all else, info is not a text run -->
+  <its:withinTextRule withinText="no" selector="//bookinfo/* | //chapterinfo/* | //articleinfo/*"/>
+
+  <!-- These are always verbatim -->
+  <its:preserveSpaceRule space="preserve" selector="//classsynopsisinfo |
+                                                    //funcsynopsisinfo |
+                                                    //literallayout |
+                                                    //programlisting |
+                                                    //screen |
+                                                    //synopsis "/>
+
+  <!-- Drop editor remarks -->
+  <its:localeFilterRule localeFilterList="" selector="//remark"/>
+
+  <!-- External media files -->
+  <its:externalResourceRefRule externalResourceRefPointer="@fileref"
+                               selector="//audiodata | //imagedata | //videodata"/>
+
+  <!-- Some hacks -->
+  <its:translateRule translate="no" selector="//releaseinfo[@role = 'CVS' and normalize-space(.) = '$Id$']"/>
+  <gt:escapeRule selector="//*" escape="no" unescape-if="xml"/>
+</its:rules>

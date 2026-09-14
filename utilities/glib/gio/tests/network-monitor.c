@@ -2,10 +2,12 @@
  *
  * Copyright 2011 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -15,6 +17,8 @@
  * You should have received a copy of the GNU Lesser General
  * Public License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+
+#include "config.h"
 
 #include "gio.h"
 
@@ -241,7 +245,8 @@ test_default (void)
   m = g_network_monitor_get_default ();
   g_assert (G_IS_NETWORK_MONITOR (m));
 
-  monitor = g_initable_newv (G_TYPE_NETWORK_MONITOR_BASE, 0, NULL, NULL,  &error);
+  monitor = g_object_new (G_TYPE_NETWORK_MONITOR_BASE, NULL);
+  g_initable_init (G_INITABLE (monitor), NULL, &error);
   g_assert_no_error (error);
 
   /* In the default configuration, all addresses are reachable */
@@ -529,6 +534,91 @@ do_watch_network (void)
   g_main_loop_run (loop);
 }
 
+#ifdef HAVE_NETLINK
+static void
+can_reach_loopback_cb (GObject      *source,
+                          GAsyncResult *result,
+                          gpointer      user_data)
+{
+  GMainLoop *loop = user_data;
+  GError *error = NULL;
+  gboolean reachable;
+
+  reachable = g_network_monitor_can_reach_finish (G_NETWORK_MONITOR (source),
+                                                  result, &error);
+  g_assert_no_error (error);
+  g_assert_true (reachable);
+  g_main_loop_quit (loop);
+}
+
+/* Assert that @address is reachable both synchronously and asynchronously (the
+ * async path runs the route lookup on a worker thread). */
+static void
+assert_netlink_can_reach (GNetworkMonitor *monitor,
+                          const char      *address)
+{
+  GSocketAddress *sockaddr;
+  GMainLoop *loop;
+  GError *error = NULL;
+  gboolean reachable;
+
+  sockaddr = g_inet_socket_address_new_from_string (address, 0);
+
+  reachable = g_network_monitor_can_reach (monitor, G_SOCKET_CONNECTABLE (sockaddr),
+                                           NULL, &error);
+  g_assert_no_error (error);
+  g_assert_true (reachable);
+
+  loop = g_main_loop_new (NULL, FALSE);
+  g_network_monitor_can_reach_async (monitor, G_SOCKET_CONNECTABLE (sockaddr),
+                                     NULL, can_reach_loopback_cb, loop);
+  g_main_loop_run (loop);
+  g_main_loop_unref (loop);
+
+  g_object_unref (sockaddr);
+}
+#endif
+
+/* The netlink backend (forced via GIO_USE_NETWORK_MONITOR in main()) resolves
+ * reachability with a per-destination route lookup. A loopback address always
+ * has a route, so it must be reachable. Skipped if netlink was not built, or if
+ * the backend couldn't be selected (e.g. no PF_NETLINK). */
+static void
+test_netlink_can_reach_loopback (void)
+{
+#ifndef HAVE_NETLINK
+  g_test_skip ("Netlink is unavailable");
+#else
+  GNetworkMonitor *monitor = g_network_monitor_get_default ();
+
+  if (g_strcmp0 (G_OBJECT_TYPE_NAME (monitor), "GNetworkMonitorNetlink") != 0)
+    {
+      g_test_skip ("netlink backend unavailable");
+      return;
+    }
+
+  assert_netlink_can_reach (monitor, "127.0.0.1");
+#endif
+}
+
+static void
+test_netlink_can_reach_loopback6 (void)
+{
+#ifndef HAVE_NETLINK
+  g_test_skip ("Netlink is unavailable");
+#else
+  GNetworkMonitor *monitor = g_network_monitor_get_default ();
+
+  if (g_strcmp0 (G_OBJECT_TYPE_NAME (monitor), "GNetworkMonitorNetlink") != 0)
+    {
+      g_test_skip ("netlink backend unavailable");
+      return;
+    }
+
+  assert_netlink_can_reach (monitor, "::1");
+#endif
+}
+
 int
 main (int argc, char **argv)
 {
@@ -542,6 +632,22 @@ main (int argc, char **argv)
 
   g_test_init (&argc, &argv, NULL);
 
+  /* GNetworkMonitor will resolve addresses through a proxy if one is set and a
+   * GIO module is available to handle it. In these tests we deliberately
+   * change the idea of a reachable network to exclude the proxy, which will
+   * lead to negative results. We're not trying to test the proxy-resolving
+   * functionality (that would be for e.g. glib-networking's testsuite), so
+   * let's just use the dummy proxy resolver, which always pretends the
+   * passed-in URL is directly resolvable.
+   */
+  g_setenv ("GIO_USE_PROXY_RESOLVER", "dummy", TRUE);
+
+#ifdef HAVE_NETLINK
+  /* Force the netlink backend so test_netlink_can_reach_loopback exercises it.
+   * The other tests use the base class directly and are backend-agnostic. */
+  g_setenv ("GIO_USE_NETWORK_MONITOR", "netlink", TRUE);
+#endif
+
   init_test (&net127);
   init_test (&net10);
   init_test (&net192);
@@ -554,6 +660,8 @@ main (int argc, char **argv)
   g_test_add_func ("/network-monitor/remove_default", test_remove_default);
   g_test_add_func ("/network-monitor/add_networks", test_add_networks);
   g_test_add_func ("/network-monitor/remove_networks", test_remove_networks);
+  g_test_add_func ("/network-monitor/netlink/can-reach-loopback", test_netlink_can_reach_loopback);
+  g_test_add_func ("/network-monitor/netlink/can-reach-loopback6", test_netlink_can_reach_loopback6);
 
   ret = g_test_run ();
 

@@ -1,0 +1,47 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test heuristic recognition of Tcl format strings like "100% complete".
+
+cat <<\EOF > f-t-3.tcl
+[msgcat::mc "Test 1a is 100% complete"]
+[format [msgcat::mc "Test 1b is 100% complete"), 120]]
+[msgcat::mc "Test 2a from 0% complete to 100% complete"]
+[format [msgcat::mc "Test 2b from 0% complete to 100% complete"), 120, 121]]
+[msgcat::mc "Test 3a of %s is 100% complete"]
+[format [msgcat::mc "Test 3b of %s is 100% complete"), "foo", 120]]
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d f-t-3.tmp f-t-3.tcl || Exit 1
+LC_ALL=C tr -d '\r' < f-t-3.tmp.po > f-t-3.po || Exit 1
+
+cat <<\EOF > f-t-3.ok
+msgid "Test 1a is 100% complete"
+msgstr ""
+
+#, tcl-format
+msgid "Test 1b is 100% complete"
+msgstr ""
+
+msgid "Test 2a from 0% complete to 100% complete"
+msgstr ""
+
+#, tcl-format
+msgid "Test 2b from 0% complete to 100% complete"
+msgstr ""
+
+#, tcl-format
+msgid "Test 3a of %s is 100% complete"
+msgstr ""
+
+#, tcl-format
+msgid "Test 3b of %s is 100% complete"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} f-t-3.ok f-t-3.po
+result=$?
+
+exit $result

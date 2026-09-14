@@ -1,22 +1,10 @@
-/* address_editor_frame.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef ADDRESS_EDITOR_FRAME_H
@@ -25,6 +13,9 @@
 #include "accordion_frame.h"
 
 #include "capture_file.h"
+
+#include <ui/qt/utils/field_information.h>
+#include <ui/qt/utils/proto_node.h>
 
 namespace Ui {
 class AddressEditorFrame;
@@ -45,15 +36,18 @@ public slots:
 
 signals:
     void showNameResolutionPreferences(const QString module_name);
-    void editAddressStatus(const QString &status);
     void redissectPackets();
 
+protected:
+    virtual void showEvent(QShowEvent *event);
+    virtual void keyPressEvent(QKeyEvent *event);
+
 private slots:
+    void displayPreviousUserDefinedHostname();
     void updateWidgets();
     void on_nameResolutionPreferencesToolButton_clicked();
-    void on_addressComboBox_currentIndexChanged(const QString &);
+    void on_addressComboBox_currentIndexChanged(int idx);
     void on_nameLineEdit_textEdited(const QString &);
-    void on_nameLineEdit_returnPressed();
     void on_buttonBox_accepted();
     void on_buttonBox_rejected();
 
@@ -61,20 +55,9 @@ private:
     Ui::AddressEditorFrame *ui;
     capture_file *cap_file_;
 
+    static QString addressToString(const FieldInformation& finfo);
+    static void addAddresses(const ProtoNode& node, QStringList& addresses);
     bool isAddressColumn(struct epan_column_info *cinfo, int column);
 };
 
 #endif // ADDRESS_EDITOR_FRAME_H
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

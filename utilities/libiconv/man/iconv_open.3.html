@@ -1,5 +1,4 @@
-<!-- Creator     : groff version 1.20.1 -->
-<!-- CreationDate: Sun Aug  7 19:49:14 2011 -->
+<!-- Creator     : groff version 1.22.3 -->
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
 "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -85,14 +84,16 @@ CP{1255,1256}, CP862, Mac{Hebrew,Arabic}</p>
 
 <p style="margin-left:22%;">EUC&minus;JP, SHIFT_JIS, CP932,
 ISO&minus;2022&minus;JP, ISO&minus;2022&minus;JP&minus;2,
-ISO&minus;2022&minus;JP&minus;1</p>
+ISO&minus;2022&minus;JP&minus;1,
+ISO-2022&minus;JP&minus;MS</p>
 
 <p style="margin-left:11%;">Chinese</p>
 
 <p style="margin-left:22%;">EUC&minus;CN, HZ, GBK, CP936,
-GB18030, EUC&minus;TW, BIG5, CP950, BIG5&minus;HKSCS,
-BIG5&minus;HKSCS:2004, BIG5&minus;HKSCS:2001,
-BIG5&minus;HKSCS:1999, ISO&minus;2022&minus;CN,
+GB18030, GB18030:2022, EUC&minus;TW, BIG5, CP950,
+BIG5&minus;HKSCS, BIG5&minus;HKSCS:2004,
+BIG5&minus;HKSCS:2001, BIG5&minus;HKSCS:1999,
+ISO&minus;2022&minus;CN,
 ISO&minus;2022&minus;CN&minus;EXT</p>
 
 <table width="100%" border="0" rules="none" frame="void"
@@ -233,6 +234,33 @@ Shift_JISX0213, ISO&minus;2022&minus;JP&minus;3</p>
 <p style="margin-left:22%;">ATARIST,
 RISCOS&minus;LATIN1</p>
 
+<p style="margin-left:11%;">EBCDIC compatible (not ASCII
+compatible, very rarely used)</p>
+
+<p style="margin-left:22%;">European languages: <br>
+
+IBM-{037,273,277,278,280,282,284,285,297,423,500,870,871,875,880},
+<br>
+
+IBM-{905,924,1025,1026,1047,1112,1122,1123,1140,1141,1142,1143},
+<br>
+
+IBM-{1144,1145,1146,1147,1148,1149,1153,1154,1155,1156,1157,1158},
+<br>
+IBM-{1165,1166,4971} <br>
+Semitic languages: <br>
+IBM-{424,425,12712,16804} <br>
+Persian: <br>
+IBM-1097 <br>
+Thai: <br>
+IBM-{838,1160} <br>
+Laotian: <br>
+IBM-1132 <br>
+Vietnamese: <br>
+IBM-{1130,1164} <br>
+Indic languages: <br>
+IBM-1137</p>
+
 <p style="margin-left:11%; margin-top: 1em">The empty
 encoding name &quot;&quot; is equivalent to
 &quot;char&quot;: it denotes the locale dependent character
@@ -246,9 +274,15 @@ it can be approximated through one or several characters
 that look similar to the original character.</p>
 
 <p style="margin-left:11%; margin-top: 1em">When the string
-&quot;//IGNORE&quot; is appended to <i>tocode</i>,
-characters that cannot be represented in the target
-character set will be silently discarded.</p>
+&quot;//IGNORE&quot; is appended to <i>tocode</i>, invalid
+multibyte sequences in the input and characters that cannot
+be represented in the target character set will be silently
+discarded.</p>
+
+<p style="margin-left:11%; margin-top: 1em">When the string
+&quot;//NON_IDENTICAL_DISCARD&quot; is appended to
+<i>tocode</i>, characters that cannot be represented in the
+target character set will be silently discarded.</p>
 
 <p style="margin-left:11%; margin-top: 1em">The resulting
 conversion descriptor can be used with <b>iconv</b> any
@@ -303,7 +337,7 @@ not supported by the implementation.</p></td></tr>
 </h2>
 
 
-<p style="margin-left:11%; margin-top: 1em">POSIX:2001</p>
+<p style="margin-left:11%; margin-top: 1em">POSIX:2024</p>
 
 <h2>SEE ALSO
 <a name="SEE ALSO"></a>

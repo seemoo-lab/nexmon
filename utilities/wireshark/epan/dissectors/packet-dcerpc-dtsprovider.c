@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,19 +20,19 @@
 void proto_register_dtsprovider (void);
 void proto_reg_handoff_dtsprovider (void);
 
-static int proto_dtsprovider = -1;
-static int hf_dtsprovider_opnum = -1;
-/* static int hf_dtsprovider_status = -1; */
+static int proto_dtsprovider;
+static int hf_dtsprovider_opnum;
+/* static int hf_dtsprovider_status; */
 
 
-static gint ett_dtsprovider = -1;
+static int ett_dtsprovider;
 
 
 static e_guid_t uuid_dtsprovider = { 0xbfca1238, 0x628a, 0x11c9, { 0xa0, 0x73, 0x08, 0x00, 0x2b, 0x0d, 0xea, 0x7a } };
-static guint16  ver_dtsprovider = 1;
+static uint16_t ver_dtsprovider = 1;
 
 
-static dcerpc_sub_dissector dtsprovider_dissectors[] = {
+static const dcerpc_sub_dissector dtsprovider_dissectors[] = {
 	{ 0, "ContactProvider", NULL, NULL},
 	{ 1, "ServerRequestProviderTime", NULL, NULL},
 	{ 0, NULL, NULL, NULL }
@@ -64,7 +52,7 @@ proto_register_dtsprovider (void)
 #endif
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_dtsprovider,
 	};
 	proto_dtsprovider = proto_register_protocol ("DCE Distributed Time Service Provider", "DTSPROVIDER", "dtsprovider");
@@ -80,7 +68,7 @@ proto_reg_handoff_dtsprovider (void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

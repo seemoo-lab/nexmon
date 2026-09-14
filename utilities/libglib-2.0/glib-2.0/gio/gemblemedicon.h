@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -38,11 +40,6 @@ G_BEGIN_DECLS
 #define G_IS_EMBLEMED_ICON_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), G_TYPE_EMBLEMED_ICON))
 #define G_EMBLEMED_ICON_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), G_TYPE_EMBLEMED_ICON, GEmblemedIconClass))
 
-/**
- * GEmblemedIcon:
- *
- * An implementation of #GIcon for icons with emblems.
- **/
 typedef struct _GEmblemedIcon        GEmblemedIcon;
 typedef struct _GEmblemedIconClass   GEmblemedIconClass;
 typedef struct _GEmblemedIconPrivate GEmblemedIconPrivate;
@@ -60,20 +57,20 @@ struct _GEmblemedIconClass
   GObjectClass parent_class;
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType  g_emblemed_icon_get_type    (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType  g_emblemed_icon_get_type    (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GIcon *g_emblemed_icon_new         (GIcon         *icon,
                                     GEmblem       *emblem);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GIcon *g_emblemed_icon_get_icon    (GEmblemedIcon *emblemed);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GList *g_emblemed_icon_get_emblems (GEmblemedIcon *emblemed);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void   g_emblemed_icon_add_emblem  (GEmblemedIcon *emblemed,
                                     GEmblem       *emblem);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void   g_emblemed_icon_clear_emblems  (GEmblemedIcon *emblemed);
 
 G_END_DECLS

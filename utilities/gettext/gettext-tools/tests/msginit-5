@@ -1,0 +1,8 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test validation of POT file with non-ASCII messages.
+
+: ${MSGINIT=msginit}
+${MSGINIT} -i "$wabs_srcdir"/testdata/nonascii.pot -l fr --no-translator -o mi-test5.tmp
+test $? = 1 || Exit 1

@@ -1,0 +1,6 @@
+brcmfmac/Module.symvers
+brcmfmac/brcmfmac.ko
+brcmfmac/brcmfmac.mod.c
+brcmfmac/modules.order
+cyfmac43455-sdio-standard.bin
+BUILD_NUMBER

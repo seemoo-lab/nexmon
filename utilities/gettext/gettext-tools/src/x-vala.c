@@ -1,7 +1,5 @@
 /* xgettext Vala backend.
-   Copyright (C) 2013, 2015-2016 Free Software Foundation, Inc.
-
-   This file was written by Daiki Ueno <ueno@gnu.org>, 2013.
+   Copyright (C) 2013-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+/* Written by Peter Miller, Bruno Haible, and Daiki Ueno.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "x-vala.h"
@@ -30,13 +28,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define SB_NO_APPENDF
+#include <error.h>
+#include "attribute.h"
 #include "message.h"
+#include "rc-str-list.h"
 #include "xgettext.h"
-#include "error.h"
-#include "error-progname.h"
+#include "xg-pos.h"
+#include "xg-encoding.h"
+#include "xg-mixed-string.h"
+#include "xg-arglist-context.h"
+#include "xg-arglist-callshape.h"
+#include "xg-arglist-parser.h"
+#include "xg-message.h"
+#include "if-error.h"
 #include "xalloc.h"
 #include "xvasprintf.h"
-#include "hash.h"
+#include "string-buffer.h"
+#include "mem-hash-map.h"
 #include "po-charset.h"
 #include "gettext.h"
 
@@ -45,8 +54,14 @@
 #define SIZEOF(a) (sizeof(a) / sizeof(a[0]))
 
 /* The Vala syntax is defined in the Vala Reference Manual
-   http://www.vala-project.org/doc/vala/.
-   See also vala/valascanner.vala.  */
+   https://gnome.pages.gitlab.gnome.org/vala/manual/index.html.
+   See also vala/valascanner.vala.
+
+   It supports string formatting through functions and methods, namely
+   through the string.printf and string.vprintf methods:
+   <https://valadoc.org/glib-2.0/string.printf.html>
+   <https://valadoc.org/glib-2.0/string.vprintf.html>
+ */
 
 /* ====================== Keyword set customization.  ====================== */
 
@@ -71,18 +86,16 @@ add_keyword (const char *name, hash_table *keywords)
     default_keywords = false;
   else
     {
-      const char *end;
-      struct callshape shape;
-      const char *colon;
-
       if (keywords->table == NULL)
         hash_init (keywords, 100);
 
+      const char *end;
+      struct callshape shape;
       split_keywordspec (name, &end, &shape);
 
       /* The characters between name and end should form a valid C identifier.
          A colon means an invalid parse in split_keywordspec().  */
-      colon = strchr (name, ':');
+      const char *colon = strchr (name, ':');
       if (colon == NULL || colon >= end)
         insert_keyword_callshape (keywords, name, end - name, &shape);
     }
@@ -119,35 +132,74 @@ init_keywords ()
 void
 init_flag_table_vala ()
 {
-  xgettext_record_flag ("dgettext:2:pass-c-format");
-  xgettext_record_flag ("dcgettext:2:pass-c-format");
-  xgettext_record_flag ("ngettext:1:pass-c-format");
-  xgettext_record_flag ("ngettext:2:pass-c-format");
-  xgettext_record_flag ("dngettext:2:pass-c-format");
-  xgettext_record_flag ("dngettext:3:pass-c-format");
-  xgettext_record_flag ("dpgettext:2:pass-c-format");
-  xgettext_record_flag ("dpgettext2:3:pass-c-format");
-  xgettext_record_flag ("_:1:pass-c-format");
-  xgettext_record_flag ("Q_:1:pass-c-format");
-  xgettext_record_flag ("N_:1:pass-c-format");
-  xgettext_record_flag ("NC_:2:pass-c-format");
-
   /* Vala leaves string formatting to Glib functions and thus the
      format string is exactly same as C.  See also
      vapi/glib-2.0.vapi.  */
-  xgettext_record_flag ("printf:1:c-format");
-  xgettext_record_flag ("vprintf:1:c-format");
+
+  xgettext_record_flag ("dgettext:2:pass-c-format!Vala");
+  xgettext_record_flag ("dcgettext:2:pass-c-format!Vala");
+  xgettext_record_flag ("ngettext:1:pass-c-format!Vala");
+  xgettext_record_flag ("ngettext:2:pass-c-format!Vala");
+  xgettext_record_flag ("dngettext:2:pass-c-format!Vala");
+  xgettext_record_flag ("dngettext:3:pass-c-format!Vala");
+  xgettext_record_flag ("dpgettext:2:pass-c-format!Vala");
+  xgettext_record_flag ("dpgettext2:3:pass-c-format!Vala");
+  xgettext_record_flag ("_:1:pass-c-format!Vala");
+  xgettext_record_flag ("Q_:1:pass-c-format!Vala");
+  xgettext_record_flag ("N_:1:pass-c-format!Vala");
+  xgettext_record_flag ("NC_:2:pass-c-format!Vala");
+
+  /* In Vala, vprintf does not exist as a function, only as a method.
+     https://valadoc.org/?q=printf provides this list:
+
+     Method                                             Arguments
+
+     Posix.FILE.printf (posix)                          (string format, ...)
+     Posix.printf (posix)                               (string format, ...)
+     Alsa.Output.printf (alsa)                          (string format, ...)
+     Dazzle.Path.printf (libdazzle-1.0)                 ()
+     Dazzle.ShortcutChordTable.printf (libdazzle-1.0)   ()
+     string.printf (glib-2.0)                           (...)
+     GLib.FileStream.printf (glib-2.0)                  (string format, ...)
+     GLib.StringBuilder.printf (glib-2.0)               (string format, ...)
+     GLib.Variant.Variant.printf (glib-2.0)             (string format, ...)
+     FastCGI.FileStream.printf (fcgi)                   (string format, ...)
+     FastCGI.Stream.printf (fcgi)                       (string format, ...)
+     Purple.Stringref.printf (purple)                   (string format)
+     Gsl.Stream.printf (gsl)                            (string label, string file, int line, string reason)
+     Gsf.Output.printf (libgsf-1)                       (string format, ...)
+     GLib.OutputStream.printf (gio-2.0)                 (out size_t bytes_written, Cancellable? cancellable, string format, ...)
+     TokyoCabinet.XString.printf (tokyocabinet)         (string format, ...)
+     ZLib.GZFileStream.printf (zlib)                    (string format, ...)
+
+     Therefore, whenever the first argument is a string, it may be a format
+     string or a plain string.  We don't know.  Therefore we cannot enable
+     this flag.  Recognition of format strings that occur as a first argument
+     therefore relies on the heuristics.  */
+  /* Override the effect of
+       xgettext_record_flag ("printf:1:c-format");
+     in x-c.c.  */
+  xgettext_record_flag ("printf:1:undecided-c-format!Vala");
+
+  /* In Vala, vprintf does not exist as a function, only as a method.
+     https://valadoc.org/?q=vprintf provides this list:
+
+     Method                                             Arguments
+     string.vprintf (glib-2.0)                          (va_list args)
+     GLib.FileStream.vprintf (glib-2.0)                 (string format, va_list args)
+     GLib.StringBuilder.vprintf (glib-2.0)              (string format, va_list args)
+     FastCGI.FileStream.vprintf (fcgi)                  (string format, va_list args)
+     FastCGI.Stream.vprintf (fcgi)                      (string format, va_list args)
+     Gsf.Output.vprintf (libgsf-1)                      (string format, va_list args)
+     GLib.OutputStream.vprintf (gio-2.0)                (out size_t bytes_written, Cancellable? cancellable, string format, va_list args)
+
+     Therefore, whenever the first argument is a string, it must be a format
+     string.  */
+  xgettext_record_flag ("vprintf:1:c-format!Vala");
 }
 
 
 /* ======================== Reading of characters.  ======================== */
-
-/* Real filename, used in error messages about the input file.  */
-static const char *real_file_name;
-
-/* Logical filename and line number, used to label the extracted messages.  */
-static char *logical_file_name;
-static int line_number;
 
 /* The input file stream.  */
 static FILE *fp;
@@ -253,7 +305,6 @@ static int
 phase2_getc ()
 {
   int c;
-  bool last_was_star;
 
   c = phase1_getc ();
   if (c != '/')
@@ -268,41 +319,43 @@ phase2_getc ()
     case '*':
       /* C comment.  */
       comment_start ();
-      last_was_star = false;
-      for (;;)
-        {
-          c = phase1_getc ();
-          if (c == EOF)
+      {
+        bool last_was_star = false;
+        for (;;)
+          {
+            c = phase1_getc ();
+            if (c == EOF)
+              break;
+            /* We skip all leading white space, but not EOLs.  */
+            if (!(buflen == 0 && (c == ' ' || c == '\t')))
+              comment_add (c);
+            switch (c)
+              {
+              case '\n':
+                comment_line_end (1);
+                comment_start ();
+                last_was_star = false;
+                continue;
+
+              case '*':
+                last_was_star = true;
+                continue;
+
+              case '/':
+                if (last_was_star)
+                  {
+                    comment_line_end (2);
+                    break;
+                  }
+                FALLTHROUGH;
+
+              default:
+                last_was_star = false;
+                continue;
+              }
             break;
-          /* We skip all leading white space, but not EOLs.  */
-          if (!(buflen == 0 && (c == ' ' || c == '\t')))
-            comment_add (c);
-          switch (c)
-            {
-            case '\n':
-              comment_line_end (1);
-              comment_start ();
-              last_was_star = false;
-              continue;
-
-            case '*':
-              last_was_star = true;
-              continue;
-
-            case '/':
-              if (last_was_star)
-                {
-                  comment_line_end (2);
-                  break;
-                }
-              /* FALLTHROUGH */
-
-            default:
-              last_was_star = false;
-              continue;
-            }
-          break;
-        }
+          }
+      }
       last_comment_line = line_number;
       return ' ';
 
@@ -342,10 +395,11 @@ enum token_type_ty
   token_type_rparen,                    /* ) */
   token_type_lbrace,                    /* { */
   token_type_rbrace,                    /* } */
-  token_type_assign,                    /* = += -= *= /= %= <<= >>= &= |= ^= */
+  token_type_assign,                    /* = */
+  token_type_compound_assign,           /* += -= *= /= %= <<= >>= &= |= ^= */
   token_type_return,                    /* return */
   token_type_plus,                      /* + */
-  token_type_arithmetic_operator,       /* - * / % << >> & | ^ */
+  token_type_arithmetic_operator,       /* - * / % << >> & | ^ ~ */
   token_type_equality_test_operator,    /* == < > >= <= != */
   token_type_logic_operator,            /* ! && || */
   token_type_comma,                     /* , */
@@ -355,6 +409,7 @@ enum token_type_ty
   token_type_string_literal,            /* "abc" */
   token_type_string_template,           /* @"abc" */
   token_type_regex_literal,             /* /.../ */
+  token_type_semicolon,                 /* ; */
   token_type_symbol,                    /* if else etc. */
   token_type_other
 };
@@ -364,9 +419,9 @@ typedef struct token_ty token_ty;
 struct token_ty
 {
   token_type_ty type;
-  char *string;         /* for token_type_symbol, token_type_string_literal */
+  char *string;                         /* for token_type_symbol */
+  mixed_string_ty *mixed_string;        /* for token_type_string_literal */
   refcounted_string_list_ty *comment;   /* for token_type_string_literal */
-  enum literalstring_escape_type escape;
   int line_number;
 };
 
@@ -374,10 +429,230 @@ struct token_ty
 static inline void
 free_token (token_ty *tp)
 {
-  if (tp->type == token_type_string_literal || tp->type == token_type_symbol)
+  if (tp->type == token_type_symbol)
     free (tp->string);
   if (tp->type == token_type_string_literal)
-    drop_reference (tp->comment);
+    {
+      mixed_string_free (tp->mixed_string);
+      drop_reference (tp->comment);
+    }
+}
+
+
+/* Return value of get_string_element when EOF is reached.  */
+#define SE_EOF (-1)
+
+/* Replace escape sequences within character strings with their single
+   character equivalents.  */
+#define SE_QUOTES (-3)
+#define SE_QUOTE (-4)
+#define SE_NEWLINE (-5)
+
+/* Convert an UTF-16 or UTF-32 code point to a return value that can be
+   distinguished from a single-byte return value.  */
+#define UNICODE(code) (0x100 + (code))
+
+/* Test a return value of phase7_getuc whether it designates an UTF-16 or
+   UTF-32 code point.  */
+#define IS_UNICODE(p7_result) ((p7_result) >= 0x100)
+
+/* Extract the UTF-16 or UTF-32 code of a return value that satisfies
+   IS_UNICODE.  */
+#define UNICODE_VALUE(p7_result) ((p7_result) - 0x100)
+
+
+static int
+get_string_element ()
+{
+  int c;
+
+  /* Use phase 1, because phase 2 elides comments.  */
+  c = phase1_getc ();
+
+  if (c == EOF)
+    return SE_EOF;
+
+  /* Return a magic newline indicator, so that we can distinguish
+     between the user requesting a newline in the string (e.g. using
+     "\n" or "\012") from the user failing to terminate the string or
+     character constant.  The ANSI C standard says: 3.1.3.4 Character
+     Constants contain "any character except single quote, backslash or
+     newline; or an escape sequence" and 3.1.4 String Literals contain
+     "any character except double quote, backslash or newline; or an
+     escape sequence".
+
+     Most compilers give a fatal error in this case, however gcc is
+     stupidly silent, even though this is a very common typo.  OK, so
+     "gcc --pedantic" will tell me, but that gripes about too much other
+     stuff.  Could I have a "gcc -Wnewline-in-string" option, or
+     better yet a "gcc -fno-newline-in-string" option, please?  Gcc is
+     also inconsistent between string literals and character constants:
+     you may not embed newlines in character constants; try it, you get
+     a useful diagnostic.  --PMiller  */
+  if (c == '\n')
+    return SE_NEWLINE;
+
+  if (c == '"')
+    return SE_QUOTES;
+  if (c == '\'')
+    return SE_QUOTE;
+  if (c != '\\')
+    return c;
+  c = phase1_getc ();
+  switch (c)
+    {
+    default:
+      /* Unknown escape sequences really should be an error, but just
+         ignore them, and let the real compiler complain.  */
+      phase1_ungetc (c);
+      return '\\';
+
+    case '"':
+    case '\'':
+    case '\\':
+    case '$':
+      return c;
+
+    case 'b':
+      return '\b';
+
+    case 'f':
+      return '\f';
+    case 'n':
+      return '\n';
+    case 'r':
+      return '\r';
+    case 't':
+      return '\t';
+    case 'v':
+      return '\v';
+
+    case 'x':
+      c = phase1_getc ();
+      switch (c)
+        {
+        default:
+          phase1_ungetc (c);
+          phase1_ungetc ('x');
+          return '\\';
+
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+        case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+        case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+          break;
+        }
+      {
+        int n = 0;
+        bool overflow = false;
+        for (;;)
+          {
+            switch (c)
+              {
+              default:
+                phase1_ungetc (c);
+                if (overflow)
+                  if_error (IF_SEVERITY_WARNING,
+                            logical_file_name, line_number, (size_t)(-1), false,
+                            _("hexadecimal escape sequence out of range"));
+                return n;
+
+              case '0': case '1': case '2': case '3': case '4':
+              case '5': case '6': case '7': case '8': case '9':
+                if (n < 0x100 / 16)
+                  n = n * 16 + c - '0';
+                else
+                  overflow = true;
+              break;
+
+              case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+                if (n < 0x100 / 16)
+                  n = n * 16 + 10 + c - 'A';
+                else
+                  overflow = true;
+                break;
+
+              case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+                if (n < 0x100 / 16)
+                  n = n * 16 + 10 + c - 'a';
+                else
+                  overflow = true;
+                break;
+              }
+            c = phase1_getc ();
+          }
+      }
+
+    case '0':
+      {
+        int n = 0;
+        for (int j = 0; j < 3; ++j)
+          {
+            n = n * 8 + c - '0';
+            c = phase1_getc ();
+            switch (c)
+              {
+              default:
+                break;
+
+              case '0': case '1': case '2': case '3':
+              case '4': case '5': case '6': case '7':
+                continue;
+              }
+            break;
+          }
+        phase1_ungetc (c);
+        return n;
+      }
+
+    case 'u':
+      {
+        unsigned char buf[8];
+        int j;
+
+        int n = 0;
+        for (j = 0; j < 4; j++)
+          {
+            int c1 = phase1_getc ();
+
+            if (c1 >= '0' && c1 <= '9')
+              n = (n << 4) + (c1 - '0');
+            else if (c1 >= 'A' && c1 <= 'F')
+              n = (n << 4) + (c1 - 'A' + 10);
+            else if (c1 >= 'a' && c1 <= 'f')
+              n = (n << 4) + (c1 - 'a' + 10);
+            else
+              {
+                phase1_ungetc (c1);
+                while (--j >= 0)
+                  phase1_ungetc (buf[j]);
+                phase1_ungetc (c);
+                return '\\';
+              }
+
+            buf[j] = c1;
+          }
+
+        if (n < 0x110000)
+          return UNICODE (n);
+
+        if_error (IF_SEVERITY_WARNING,
+                  logical_file_name, line_number, (size_t)(-1), false,
+                  _("invalid Unicode character"));
+
+        while (--j >= 0)
+          phase1_ungetc (buf[j]);
+        phase1_ungetc (c);
+        return '\\';
+      }
+    }
+}
+
+
+static void
+unget_string_element (int c)
+{
+  phase1_ungetc (c);
 }
 
 
@@ -389,7 +664,7 @@ static token_ty phase3_pushback[2];
 static int phase3_pushback_length;
 
 
-static token_type_ty last_token_type = token_type_other;
+static token_type_ty last_token_type;
 
 static void
 phase3_scan_regex ()
@@ -409,11 +684,9 @@ phase3_scan_regex ()
           }
         if (c == EOF)
           {
-            error_with_progname = false;
-            error (0, 0,
-                   _("%s:%d: warning: regular expression literal terminated too early"),
-                   logical_file_name, line_number);
-            error_with_progname = true;
+            if_error (IF_SEVERITY_WARNING,
+                      logical_file_name, line_number, (size_t)(-1), false,
+                      _("regular expression literal terminated too early"));
             return;
           }
       }
@@ -426,23 +699,8 @@ phase3_scan_regex ()
 static void
 phase3_get (token_ty *tp)
 {
-  static char *buffer;
-  static int bufmax;
-  int bufpos;
-  int last_was_backslash;
-
 #undef APPEND
-#define APPEND(c)                               \
-  do                                            \
-    {                                           \
-      if (bufpos >= bufmax)                     \
-        {                                       \
-          bufmax = 2 * bufmax + 10;             \
-          buffer = xrealloc (buffer, bufmax);   \
-        }                                       \
-      buffer[bufpos++] = c;                     \
-    }                                           \
-  while (0)
+#define APPEND(c) sb_xappend1 (&buffer, (c))
 
   if (phase3_pushback_length)
     {
@@ -453,8 +711,6 @@ phase3_get (token_ty *tp)
 
   for (;;)
     {
-      bool template;
-      bool verbatim;
       int c;
 
       tp->line_number = line_number;
@@ -469,7 +725,7 @@ phase3_get (token_ty *tp)
         case '\n':
           if (last_non_comment_line > last_comment_line)
             savable_comment_reset ();
-          /* FALLTHROUGH */
+          FALLTHROUGH;
         case ' ':
         case '\f':
         case '\t':
@@ -480,8 +736,8 @@ phase3_get (token_ty *tp)
         }
 
       last_non_comment_line = tp->line_number;
-      template = false;
-      verbatim = false;
+      bool template = false;
+      bool verbatim = false;
 
       switch (c)
         {
@@ -494,42 +750,48 @@ phase3_get (token_ty *tp)
         case 'h': case 'i': case 'j': case 'k': case 'l': case 'm': case 'n':
         case 'o': case 'p': case 'q': case 'r': case 's': case 't': case 'u':
         case 'v': case 'w': case 'x': case 'y': case 'z':
-          bufpos = 0;
-          for (;;)
-            {
-              APPEND (c);
-              c = phase2_getc ();
-              switch (c)
-                {
-                case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-                case 'G': case 'H': case 'I': case 'J': case 'K': case 'L':
-                case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R':
-                case 'S': case 'T': case 'U': case 'V': case 'W': case 'X':
-                case 'Y': case 'Z':
-                case '_':
-                case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-                case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
-                case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
-                case 's': case 't': case 'u': case 'v': case 'w': case 'x':
-                case 'y': case 'z':
-                case '0': case '1': case '2': case '3': case '4':
-                case '5': case '6': case '7': case '8': case '9':
-                  continue;
+          {
+            struct string_buffer buffer;
+            sb_init (&buffer);
+            for (;;)
+              {
+                APPEND (c);
+                c = phase2_getc ();
+                switch (c)
+                  {
+                  case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+                  case 'G': case 'H': case 'I': case 'J': case 'K': case 'L':
+                  case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R':
+                  case 'S': case 'T': case 'U': case 'V': case 'W': case 'X':
+                  case 'Y': case 'Z':
+                  case '_':
+                  case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+                  case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
+                  case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
+                  case 's': case 't': case 'u': case 'v': case 'w': case 'x':
+                  case 'y': case 'z':
+                  case '0': case '1': case '2': case '3': case '4':
+                  case '5': case '6': case '7': case '8': case '9':
+                    continue;
 
-                default:
-                  phase2_ungetc (c);
-                  break;
-                }
-              break;
+                  default:
+                    phase2_ungetc (c);
+                    break;
+                  }
+                break;
             }
-          APPEND (0);
-          if (strcmp (buffer, "return") == 0)
-            tp->type = last_token_type = token_type_return;
-          else
-            {
-              tp->string = xstrdup (buffer);
-              tp->type = last_token_type = token_type_symbol;
-            }
+            const char *contents = sb_xcontents_c (&buffer);
+            if (strcmp (contents, "return") == 0)
+              {
+                sb_free (&buffer);
+                tp->type = last_token_type = token_type_return;
+              }
+            else
+              {
+                tp->string = sb_xdupfree_c (&buffer);
+                tp->type = last_token_type = token_type_symbol;
+              }
+          }
           return;
 
         case '.':
@@ -547,84 +809,73 @@ phase3_get (token_ty *tp)
               c = '.';
               break;
             }
-          /* FALLTHROUGH */
+          FALLTHROUGH;
 
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
           /* The preprocessing number token is more "generous" than the C
              number tokens.  This is mostly due to token pasting (another
              thing we can ignore here).  */
-          bufpos = 0;
-          for (;;)
-            {
-              APPEND (c);
-              c = phase2_getc ();
-              switch (c)
-                {
-                case 'e':
-                case 'E':
-                  APPEND (c);
-                  c = phase2_getc ();
-                  if (c != '+' && c != '-')
-                    {
-                      phase2_ungetc (c);
-                      break;
-                    }
-                  continue;
+          {
+            struct string_buffer buffer;
+            sb_init (&buffer);
+            for (;;)
+              {
+                APPEND (c);
+                c = phase2_getc ();
+                switch (c)
+                  {
+                  case 'e':
+                  case 'E':
+                    APPEND (c);
+                    c = phase2_getc ();
+                    if (c != '+' && c != '-')
+                      {
+                        phase2_ungetc (c);
+                        break;
+                      }
+                    continue;
 
-                case 'A': case 'B': case 'C': case 'D':           case 'F':
-                case 'G': case 'H': case 'I': case 'J': case 'K': case 'L':
-                case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R':
-                case 'S': case 'T': case 'U': case 'V': case 'W': case 'X':
-                case 'Y': case 'Z':
-                case 'a': case 'b': case 'c': case 'd':           case 'f':
-                case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
-                case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
-                case 's': case 't': case 'u': case 'v': case 'w': case 'x':
-                case 'y': case 'z':
-                case '0': case '1': case '2': case '3': case '4':
-                case '5': case '6': case '7': case '8': case '9':
-                case '.':
-                  continue;
+                  case 'A': case 'B': case 'C': case 'D':           case 'F':
+                  case 'G': case 'H': case 'I': case 'J': case 'K': case 'L':
+                  case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R':
+                  case 'S': case 'T': case 'U': case 'V': case 'W': case 'X':
+                  case 'Y': case 'Z':
+                  case 'a': case 'b': case 'c': case 'd':           case 'f':
+                  case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
+                  case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
+                  case 's': case 't': case 'u': case 'v': case 'w': case 'x':
+                  case 'y': case 'z':
+                  case '0': case '1': case '2': case '3': case '4':
+                  case '5': case '6': case '7': case '8': case '9':
+                  case '.':
+                    continue;
 
-                default:
-                  phase2_ungetc (c);
-                  break;
-                }
-              break;
-            }
-          APPEND (0);
-          tp->type = last_token_type = token_type_number;
+                  default:
+                    phase2_ungetc (c);
+                    break;
+                  }
+                break;
+              }
+            sb_free (&buffer);
+            tp->type = last_token_type = token_type_number;
+          }
           return;
 
         case '\'':
-          last_was_backslash = false;
           for (;;)
             {
-              c = phase2_getc ();
-              if (last_was_backslash)
+              c = get_string_element ();
+              if (c == SE_NEWLINE)
                 {
-                  last_was_backslash = false;
-                  continue;
-                }
-              switch (c)
-                {
-                case '\\':
-                  last_was_backslash = true;
-                  /* FALLTHROUGH */
-                default:
-                  continue;
-                case '\n':
-                  error_with_progname = false;
-                  error (0, 0, _("%s:%d: warning: unterminated character constant"),
-                         logical_file_name, line_number - 1);
-                  error_with_progname = true;
-                  phase2_ungetc ('\n');
-                  break;
-                case EOF: case '\'':
+                  if_error (IF_SEVERITY_WARNING,
+                            logical_file_name, line_number - 1, (size_t)(-1), false,
+                            _("unterminated character constant"));
+                  unget_string_element ('\n');
                   break;
                 }
-              break;
+              if (c == SE_EOF || c == SE_QUOTE)
+                break;
             }
           tp->type = last_token_type = token_type_character_constant;
           return;
@@ -637,7 +888,7 @@ phase3_get (token_ty *tp)
                """...""" (where ... can include newlines and double quotes)
              String templates.
                @"...", @"""..."""
-          
+
              Note that, with the current implementation string
              templates are not subject to translation, because they are
              inspected at compile time.  For example, the following code
@@ -657,93 +908,99 @@ phase3_get (token_ty *tp)
               return;
             }
           template = true;
-          /* FALLTHROUGH */
+          FALLTHROUGH;
         case '"':
           {
-            int c2 = phase2_getc ();
+            struct mixed_string_buffer msb;
+            {
+              int c2 = phase1_getc ();
+              if (c2 == '"')
+                {
+                  int c3 = phase1_getc ();
+                  if (c3 == '"')
+                    verbatim = true;
+                  else
+                    {
+                      phase1_ungetc (c3);
+                      phase1_ungetc (c2);
+                    }
+                }
+              else
+                phase2_ungetc (c2);
+            }
 
-            if (c2 == '"')
-              {
-                int c3 = phase2_getc ();
-                if (c3 == '"')
-                  verbatim = true;
-                else
-                  {
-                    phase2_ungetc (c3);
-                    phase2_ungetc (c2);
-                  }
-              }
-            else
-              phase2_ungetc (c2);
-
+            /* Start accumulating the string.  */
+            mixed_string_buffer_init (&msb, lc_string,
+                                      logical_file_name, line_number);
             if (verbatim)
-              {
-                bufpos = 0;
-                for (;;)
-                  {
-                    /* Use phase 1, because phase 2 elides comments.  */
-                    c = phase1_getc ();
-                    if (c == EOF)
-                      break;
+              for (;;)
+                {
+                  c = phase1_getc ();
 
-                    if (c == '"')
-                      {
-                        int c2 = phase1_getc ();
-                        if (c2 == '"')
-                          {
-                            int c3 = phase1_getc ();
-                            if (c3 == '"')
-                              break;
-                            phase1_ungetc (c3);
-                          }
-                        phase1_ungetc (c2);
-                      }
-                    APPEND (c);
-                  }
+                  /* Keep line_number in sync.  */
+                  msb.line_number = line_number;
+
+                  if (c == '"')
+                    {
+                      int c2 = phase1_getc ();
+                      if (c2 == '"')
+                        {
+                          int c3 = phase1_getc ();
+                          if (c3 == '"')
+                            break;
+                          phase1_ungetc (c3);
+                        }
+                      phase1_ungetc (c2);
+                    }
+                  if (c == EOF)
+                    break;
+                  mixed_string_buffer_append_char (&msb, c);
+                }
+            else
+              for (;;)
+                {
+                  c = get_string_element ();
+
+                  /* Keep line_number in sync.  */
+                  msb.line_number = line_number;
+
+                  if (c == SE_NEWLINE)
+                    {
+                      if_error (IF_SEVERITY_WARNING,
+                                logical_file_name, line_number - 1, (size_t)(-1), false,
+                                _("unterminated string literal"));
+                      unget_string_element ('\n');
+                      break;
+                    }
+                  if (c == SE_QUOTES)
+                    break;
+                  if (c == SE_EOF)
+                    break;
+                  if (c == SE_QUOTE)
+                    c = '\'';
+                  if (IS_UNICODE (c))
+                    {
+                      assert (UNICODE_VALUE (c) >= 0
+                              && UNICODE_VALUE (c) < 0x110000);
+                      mixed_string_buffer_append_unicode (&msb,
+                                                          UNICODE_VALUE (c));
+                    }
+                  else
+                    mixed_string_buffer_append_char (&msb, c);
+                }
+            /* Done accumulating the string.  */
+            if (template)
+              {
+                tp->type = token_type_string_template;
+                mixed_string_buffer_destroy (&msb);
               }
             else
               {
-                last_was_backslash = false;
-                bufpos = 0;
-                for (;;)
-                  {
-                    c = phase1_getc ();
-                    if (last_was_backslash)
-                      {
-                        last_was_backslash = false;
-                        APPEND (c);
-                        continue;
-                      }
-
-                    switch (c)
-                      {
-                      case '\\':
-                        last_was_backslash = true;
-                        /* FALLTHROUGH */
-                      default:
-                        APPEND (c);
-                        continue;
-
-                      case '\n':
-                        error_with_progname = false;
-                        error (0, 0, _("\
-%s:%d: warning: unterminated string literal"),
-                               logical_file_name, line_number - 1);
-                        error_with_progname = true;
-                        phase1_ungetc ('\n');
-                        break;
-                      case EOF: case '"':
-                        break;
-                      }
-                    break;
-                  }
+                tp->type = token_type_string_literal;
+                tp->mixed_string = mixed_string_buffer_result (&msb);
+                tp->comment = add_reference (savable_comment);
               }
-            APPEND (0);
-            tp->type = last_token_type = template
-              ? token_type_string_template : token_type_string_literal;
-            tp->string = xstrdup (buffer);
-            tp->comment = add_reference (savable_comment);
-            tp->escape = verbatim ? 0 : LET_ANSI_C | LET_UNICODE;
+            last_token_type = tp->type;
             return;
           }
 
@@ -753,6 +1010,7 @@ phase3_get (token_ty *tp)
             case token_type_lparen:
             case token_type_lbrace:
             case token_type_assign:
+            case token_type_compound_assign:
             case token_type_return:
             case token_type_plus:
             case token_type_arithmetic_operator:
@@ -768,7 +1026,7 @@ phase3_get (token_ty *tp)
               {
                 int c2 = phase2_getc ();
                 if (c2 == '=')
-                  tp->type = last_token_type = token_type_assign;
+                  tp->type = last_token_type = token_type_compound_assign;
                 else
                   {
                     phase2_ungetc (c2);
@@ -804,7 +1062,7 @@ phase3_get (token_ty *tp)
                 tp->type = last_token_type = token_type_other;
                 break;
               case '=':
-                tp->type = last_token_type = token_type_assign;
+                tp->type = last_token_type = token_type_compound_assign;
                 break;
               default:
                 phase2_ungetc (c2);
@@ -823,7 +1081,7 @@ phase3_get (token_ty *tp)
                 tp->type = last_token_type = token_type_other;
                 break;
               case '=':
-                tp->type = last_token_type = token_type_assign;
+                tp->type = last_token_type = token_type_compound_assign;
                 break;
               default:
                 phase2_ungetc (c2);
@@ -833,19 +1091,36 @@ phase3_get (token_ty *tp)
             return;
           }
 
+        case '*':
+          {
+            int c2 = phase2_getc ();
+            if (c2 == '=')
+              tp->type = last_token_type = token_type_compound_assign;
+            else
+              {
+                phase2_ungetc (c2);
+                tp->type = last_token_type = token_type_arithmetic_operator;
+              }
+            return;
+          }
+
         case '%':
         case '^':
           {
             int c2 = phase2_getc ();
             if (c2 == '=')
-	      tp->type = last_token_type = token_type_assign;
+	      tp->type = last_token_type = token_type_compound_assign;
             else
               {
                 phase2_ungetc (c2);
-                tp->type = last_token_type = token_type_logic_operator;
+                tp->type = last_token_type = token_type_arithmetic_operator;
               }
             return;
           }
+
+        case '~':
+          tp->type = last_token_type = token_type_arithmetic_operator;
+          return;
 
         case '=':
           {
@@ -878,7 +1153,7 @@ phase3_get (token_ty *tp)
               }
             return;
           }
-          
+
         case '>':
         case '<':
           {
@@ -889,7 +1164,7 @@ phase3_get (token_ty *tp)
               {
                 int c3 = phase2_getc ();
                 if (c3 == '=')
-                  tp->type = last_token_type = token_type_assign;
+                  tp->type = last_token_type = token_type_compound_assign;
                 else
                   {
                     phase2_ungetc (c2);
@@ -904,7 +1179,7 @@ phase3_get (token_ty *tp)
               }
             return;
           }
-          
+
         case ',':
           tp->type = last_token_type = token_type_comma;
           return;
@@ -920,7 +1195,7 @@ phase3_get (token_ty *tp)
             if (c2 == c)
 	      tp->type = last_token_type = token_type_logic_operator;
             else if (c2 == '=')
-	      tp->type = last_token_type = token_type_assign;
+	      tp->type = last_token_type = token_type_compound_assign;
             else
               {
                 phase2_ungetc (c2);
@@ -942,6 +1217,10 @@ phase3_get (token_ty *tp)
             return;
           }
 
+        case ';':
+          tp->type = last_token_type = token_type_semicolon;
+          return;
+
         default:
           tp->type = last_token_type = token_type_other;
           return;
@@ -962,35 +1241,38 @@ phase3_unget (token_ty *tp)
 }
 
 
-/* String concatenation with '+'.  */
+/* 4. String concatenation with '+'.  */
+
+static token_ty phase4_pushback[2];
+static int phase4_pushback_length;
 
 static void
-x_vala_lex (token_ty *tp)
+phase4_get (token_ty *tp)
 {
+  if (phase4_pushback_length)
+    {
+      *tp = phase4_pushback[--phase4_pushback_length];
+      return;
+    }
+
   phase3_get (tp);
   if (tp->type == token_type_string_literal)
     {
-      char *sum = tp->string;
-      size_t sum_len = strlen (sum);
+      mixed_string_ty *sum = tp->mixed_string;
 
       for (;;)
         {
           token_ty token2;
-
           phase3_get (&token2);
+
           if (token2.type == token_type_plus)
             {
               token_ty token3;
-
               phase3_get (&token3);
+
               if (token3.type == token_type_string_literal)
                 {
-                  char *addend = token3.string;
-                  size_t addend_len = strlen (addend);
-
-                  sum = (char *) xrealloc (sum, sum_len + addend_len + 1);
-                  memcpy (sum + sum_len, addend, addend_len + 1);
-                  sum_len += addend_len;
+                  sum = mixed_string_concat_free1 (sum, token3.mixed_string);
 
                   free_token (&token3);
                   free_token (&token2);
@@ -1001,8 +1283,33 @@ x_vala_lex (token_ty *tp)
           phase3_unget (&token2);
           break;
         }
-      tp->string = sum;
+      tp->mixed_string = sum;
     }
+}
+
+static void
+phase4_unget (token_ty *tp)
+{
+  if (tp->type != token_type_eof)
+    {
+      if (phase4_pushback_length == SIZEOF (phase4_pushback))
+        abort ();
+      phase4_pushback[phase4_pushback_length++] = *tp;
+    }
+}
+
+
+static void
+x_vala_lex (token_ty *tp)
+{
+  phase4_get (tp);
+}
+
+/* Supports 2 tokens of pushback.  */
+static void
+x_vala_unlex (token_ty *tp)
+{
+  phase4_unget (tp);
 }
 
 
@@ -1012,8 +1319,13 @@ x_vala_lex (token_ty *tp)
 /* Context lookup table.  */
 static flag_context_list_table_ty *flag_context_list_table;
 
-/* Use the same literalstring_parser provided by the C scanner.  */
-extern struct literalstring_parser literalstring_c;
+
+/* Maximum supported nesting depth.  */
+#define MAX_NESTING_DEPTH 1000
+
+/* Current nesting depth.  */
+static int nesting_depth;
+
 
 /* The file is broken into tokens.  Scan the token stream, looking for
    a keyword, followed by a left paren, followed by a string.  When we
@@ -1030,14 +1342,15 @@ extern struct literalstring_parser literalstring_c;
    We use recursion because the arguments before msgid or between msgid
    and msgid_plural can contain subexpressions of the same form.  */
 
-/* Extract messages until the next balanced closing parenthesis or bracket.
+/* Extract messages until the next balanced closing parenthesis or bracket
+   or the next semicolon.
    Extracted messages are added to MLP.
    DELIM can be either token_type_rparen or token_type_rbracket, or
    token_type_eof to accept both.
    Return true upon eof, false upon closing parenthesis or bracket.  */
 static bool
 extract_balanced (message_list_ty *mlp, token_type_ty delim,
-                  flag_context_ty outer_context,
+                  flag_region_ty *outer_region,
                   flag_context_list_iterator_ty context_iter,
                   struct arglist_parser *argparser)
 {
@@ -1051,9 +1364,10 @@ extract_balanced (message_list_ty *mlp, token_type_ty delim,
   flag_context_list_iterator_ty next_context_iter =
     passthrough_context_list_iterator;
   /* Current context.  */
-  flag_context_ty inner_context =
-    inherited_context (outer_context,
-                       flag_context_list_iterator_advance (&context_iter));
+  flag_context_ty curr_context =
+    flag_context_list_iterator_advance (&context_iter);
+  /* Current region.  */
+  flag_region_ty *inner_region = new_sub_region (outer_region, curr_context);
 
   /* Start state is 0.  */
   state = 0;
@@ -1061,7 +1375,6 @@ extract_balanced (message_list_ty *mlp, token_type_ty delim,
   for (;;)
     {
       token_ty token;
-
       x_vala_lex (&token);
 
       switch (token.type)
@@ -1069,7 +1382,6 @@ extract_balanced (message_list_ty *mlp, token_type_ty delim,
         case token_type_symbol:
           {
             void *keyword_value;
-
             if (hash_find_entry (&keywords, token.string, strlen (token.string),
                                  &keyword_value)
                 == 0)
@@ -1086,17 +1398,45 @@ extract_balanced (message_list_ty *mlp, token_type_ty delim,
                 flag_context_list_table,
                 token.string, strlen (token.string)));
           free (token.string);
-          continue;
+          break;
 
         case token_type_lparen:
+          if (++nesting_depth > MAX_NESTING_DEPTH)
+            if_error (IF_SEVERITY_FATAL_ERROR,
+                      logical_file_name, line_number, (size_t)(-1), false,
+                      _("too many open parentheses"));
           if (extract_balanced (mlp, token_type_rparen,
-                                inner_context, next_context_iter,
+                                inner_region, next_context_iter,
                                 arglist_parser_alloc (mlp,
                                                       state ? next_shapes : NULL)))
             {
               arglist_parser_done (argparser, arg);
+              unref_region (inner_region);
               return true;
             }
+          nesting_depth--;
+          /* Test whether the next tokens are '.' and 'printf' or 'vprintf'.  */
+          {
+            token_ty token2;
+            x_vala_lex (&token2);
+            if (token2.type == token_type_symbol
+                && strcmp (token2.string, ".") == 0)
+              {
+                token_ty token3;
+                x_vala_lex (&token3);
+                if (token3.type == token_type_symbol
+                    && (strcmp (token3.string, "printf") == 0
+                        || strcmp (token3.string, "vprintf") == 0))
+                  {
+                    /* Mark the messages found in the region as c-format
+                       a posteriori.  */
+                    set_format_flag_on_region (inner_region,
+                                               XFORMAT_PRIMARY, yes_according_to_context);
+                  }
+                x_vala_unlex (&token3);
+              }
+            x_vala_unlex (&token2);
+          }
           next_context_iter = null_context_list_iterator;
           state = 0;
           break;
@@ -1105,25 +1445,82 @@ extract_balanced (message_list_ty *mlp, token_type_ty delim,
           if (delim == token_type_rparen || delim == token_type_eof)
             {
               arglist_parser_done (argparser, arg);
+              unref_region (inner_region);
               return false;
             }
 
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         case token_type_comma:
           arg++;
-          inner_context =
-            inherited_context (outer_context,
-                               flag_context_list_iterator_advance (
-                                 &context_iter));
+          unref_region (inner_region);
+          curr_context = flag_context_list_iterator_advance (&context_iter);
+          inner_region = new_sub_region (outer_region, curr_context);
           next_context_iter = passthrough_context_list_iterator;
           state = 0;
-          continue;
+          break;
+
+        case token_type_question:
+          /* In an expression A ? B : C, each of A, B, C is a distinct
+             sub-region, and since the value of A is not the value of entire
+             expression, if later set_format_flag_on_region is called on this
+             region or an ancestor region, it shall not have an effect on the
+             remembered messages of A.  */
+          inner_region->inherit_from_parent_region = false;
+          unref_region (inner_region);
+          inner_region = new_sub_region (outer_region, curr_context);
+          next_context_iter = passthrough_context_list_iterator;
+          state = 0;
+          break;
+
+        case token_type_colon:
+          /* In an expression A ? B : C, each of A, B, C is a distinct
+             sub-region.  */
+          unref_region (inner_region);
+          inner_region = new_sub_region (outer_region, curr_context);
+          next_context_iter = passthrough_context_list_iterator;
+          state = 0;
+          break;
+
+        case token_type_assign:
+          /* In an expression A = B, A and B are distinct sub-regions.
+             The value of B is the value of the entire expression.  */
+          inner_region->inherit_from_parent_region = false;
+          unref_region (inner_region);
+          inner_region = new_sub_region (outer_region, curr_context);
+          next_context_iter = passthrough_context_list_iterator;
+          state = 0;
+          break;
+
+        case token_type_plus:
+        case token_type_arithmetic_operator:
+        case token_type_equality_test_operator:
+        case token_type_logic_operator:
+        case token_type_compound_assign:
+          /* When an expression contains one of these operators, neither the
+             value on the left of the operator nor the value on the right of the
+             operator is string-valued and the value of the entire expression.
+             Therefore, if later set_format_flag_on_region is called on this
+             region or an ancestor region, it shall not have an effect on the
+             remembered messages of this region.  */
+          inner_region->inherit_from_parent_region = false;
+          unref_region (inner_region);
+          inner_region = new_sub_region (outer_region, curr_context);
+          inner_region->inherit_from_parent_region = false;
+          next_context_iter = passthrough_context_list_iterator;
+          state = 0;
+          break;
+
+        case token_type_semicolon:
+          arglist_parser_done (argparser, arg);
+          unref_region (inner_region);
+          return false;
 
         case token_type_eof:
           arglist_parser_done (argparser, arg);
+          unref_region (inner_region);
           return true;
 
         case token_type_string_literal:
@@ -1134,81 +1531,53 @@ extract_balanced (message_list_ty *mlp, token_type_ty delim,
 
             if (extract_all)
               {
-                char *string;
-                refcounted_string_list_ty *comment;
-                const char *encoding;
-
-                string = literalstring_c.parse (token.string, &pos,
-                                                token.escape);
-                free (token.string);
-                token.string = string;
-
-                if (token.comment != NULL)
-                  {
-                    comment = savable_comment_convert_encoding (token.comment,
-                                                                &pos);
-                    drop_reference (token.comment);
-                    token.comment = comment;
-                  }
-
-                /* token.string and token.comment are already converted
-                   to UTF-8.  Prevent further conversion in
-                   remember_a_message.  */
-                encoding = xgettext_current_source_encoding;
-                xgettext_current_source_encoding = po_charset_utf8;
-                remember_a_message (mlp, NULL, token.string, inner_context,
-                                    &pos, NULL, token.comment);
-                xgettext_current_source_encoding = encoding;
+                char *string = mixed_string_contents (token.mixed_string);
+                mixed_string_free (token.mixed_string);
+                remember_a_message (mlp, NULL, string, true, false,
+                                    inner_region, &pos,
+                                    NULL, token.comment, false);
               }
             else
               {
-                /* A string immediately after a symbol means a
-                   function call.  */
+                /* A string immediately after a symbol means a function call.  */
                 if (state)
                   {
                     struct arglist_parser *tmp_argparser;
                     tmp_argparser = arglist_parser_alloc (mlp, next_shapes);
 
-                    arglist_parser_remember_literal (tmp_argparser, 1,
-                                                     token.string,
-                                                     inner_context,
-                                                     pos.file_name,
-                                                     pos.line_number,
-                                                     token.comment,
-                                                     token.escape);
+                    arglist_parser_remember (tmp_argparser, 1,
+                                             token.mixed_string, inner_region,
+                                             pos.file_name, pos.line_number,
+                                             token.comment, false);
                     arglist_parser_done (tmp_argparser, 1);
                   }
                 else
-                  arglist_parser_remember_literal (argparser, arg, token.string,
-                                                   inner_context, pos.file_name,
-                                                   pos.line_number,
-                                                   token.comment,
-                                                   token.escape);
+                  arglist_parser_remember (argparser, arg,
+                                           token.mixed_string, inner_region,
+                                           pos.file_name, pos.line_number,
+                                           token.comment, false);
               }
           }
           drop_reference (token.comment);
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
+
+        case token_type_return:
+          next_context_iter = passthrough_context_list_iterator;
+          state = 0;
+          break;
 
         case token_type_character_constant:
         case token_type_lbrace:
         case token_type_rbrace:
-        case token_type_assign:
-        case token_type_return:
-        case token_type_plus:
-        case token_type_arithmetic_operator:
-        case token_type_equality_test_operator:
-        case token_type_logic_operator:
-        case token_type_question:
-        case token_type_colon:
         case token_type_number:
         case token_type_string_template:
         case token_type_regex_literal:
         case token_type_other:
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         default:
           abort ();
@@ -1229,17 +1598,25 @@ extract_vala (FILE *f,
   logical_file_name = xstrdup (logical_filename);
   line_number = 1;
 
+  phase1_pushback_length = 0;
+
   last_comment_line = -1;
   last_non_comment_line = -1;
 
+  phase3_pushback_length = 0;
+  last_token_type = token_type_other;
+
+  phase4_pushback_length = 0;
+
   flag_context_list_table = flag_table;
+  nesting_depth = 0;
 
   init_keywords ();
 
   /* Eat tokens until eof is seen.  When extract_parenthesized returns
      due to an unbalanced closing parenthesis, just restart it.  */
   while (!extract_balanced (mlp, token_type_eof,
-                            null_context, null_context_list_iterator,
+                            null_context_region (), null_context_list_iterator,
                             arglist_parser_alloc (mlp, NULL)))
     ;
 

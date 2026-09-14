@@ -2,10 +2,12 @@
  * 
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -39,38 +41,38 @@
 #define G_ICON_SERIALIZATION_MAGIC0 ". "
 
 /**
- * SECTION:gicon
- * @short_description: Interface for icons
- * @include: gio/gio.h
+ * GIcon:
  *
- * #GIcon is a very minimal interface for icons. It provides functions
+ * `GIcon` is a very minimal interface for icons. It provides functions
  * for checking the equality of two icons, hashing of icons and
  * serializing an icon to and from strings.
  *
- * #GIcon does not provide the actual pixmap for the icon as this is out 
- * of GIO's scope, however implementations of #GIcon may contain the name 
- * of an icon (see #GThemedIcon), or the path to an icon (see #GLoadableIcon). 
+ * `GIcon` does not provide the actual pixmap for the icon as this is out
+ * of GIO's scope, however implementations of `GIcon` may contain the name
+ * of an icon (see [class@Gio.ThemedIcon]), or the path to an icon
+ * (see [iface@Gio.LoadableIcon]).
  *
- * To obtain a hash of a #GIcon, see g_icon_hash().
+ * To obtain a hash of a `GIcon`, see [method@Gio.Icon.hash].
  *
- * To check if two #GIcons are equal, see g_icon_equal().
+ * To check if two `GIcon`s are equal, see [method@Gio.Icon.equal].
  *
- * For serializing a #GIcon, use g_icon_serialize() and
- * g_icon_deserialize().
+ * For serializing a `GIcon`, use [method@Gio.Icon.serialize] and
+ * [func@Gio.Icon.deserialize].
  *
- * If you want to consume #GIcon (for example, in a toolkit) you must
+ * If you want to consume `GIcon` (for example, in a toolkit) you must
  * be prepared to handle at least the three following cases:
- * #GLoadableIcon, #GThemedIcon and #GEmblemedIcon.  It may also make
- * sense to have fast-paths for other cases (like handling #GdkPixbuf
- * directly, for example) but all compliant #GIcon implementations
- * outside of GIO must implement #GLoadableIcon.
+ * [iface@Gio.LoadableIcon], [class@Gio.ThemedIcon] and [class@Gio.EmblemedIcon].
+ * It may also make sense to have fast-paths for other cases (like handling
+ * [`GdkPixbuf`](https://docs.gtk.org/gdk-pixbuf/class.Pixbuf.html) directly,
+ * for example) but all compliant `GIcon` implementations outside of GIO must
+ * implement [iface@Gio.LoadableIcon].
  *
- * If your application or library provides one or more #GIcon
+ * If your application or library provides one or more `GIcon`
  * implementations you need to ensure that your new implementation also
- * implements #GLoadableIcon.  Additionally, you must provide an
- * implementation of g_icon_serialize() that gives a result that is
- * understood by g_icon_deserialize(), yielding one of the built-in icon
- * types.
+ * implements [iface@Gio.LoadableIcon].  Additionally, you must provide an
+ * implementation of [method@Gio.Icon.serialize] that gives a result that is
+ * understood by [func@Gio.Icon.deserialize], yielding one of the built-in
+ * icon types.
  **/
 
 typedef GIconIface GIconInterface;
@@ -82,14 +84,13 @@ g_icon_default_init (GIconInterface *iface)
 }
 
 /**
- * g_icon_hash:
- * @icon: (not nullable): #gconstpointer to an icon object.
+ * g_icon_hash: (virtual hash)
+ * @icon: (not nullable) (type Gio.Icon): #gconstpointer to an icon object.
  * 
  * Gets a hash for an icon.
  *
- * Virtual: hash
  * Returns: a #guint containing a hash for the @icon, suitable for 
- * use in a #GHashTable or similar data structure.
+ *   use in a #GHashTable or similar data structure.
  **/
 guint
 g_icon_hash (gconstpointer icon)
@@ -104,9 +105,9 @@ g_icon_hash (gconstpointer icon)
 }
 
 /**
- * g_icon_equal:
- * @icon1: (allow-none): pointer to the first #GIcon.
- * @icon2: (allow-none): pointer to the second #GIcon.
+ * g_icon_equal: (virtual equal)
+ * @icon1: (nullable): pointer to the first #GIcon.
+ * @icon2: (nullable): pointer to the second #GIcon.
  * 
  * Checks if two icons are equal.
  * 
@@ -138,7 +139,7 @@ g_icon_to_string_tokenized (GIcon *icon, GString *s)
   GPtrArray *tokens;
   gint version;
   GIconIface *icon_iface;
-  int i;
+  guint i;
 
   g_return_val_if_fail (icon != NULL, FALSE);
   g_return_val_if_fail (G_IS_ICON (icon), FALSE);
@@ -199,10 +200,9 @@ g_icon_to_string_tokenized (GIcon *icon, GString *s)
  *   native, the returned string is the result of g_file_get_uri()
  *   (such as `sftp://path/to/my%20icon.png`).
  * 
- * - If @icon is a #GThemedIcon with exactly one name, the encoding is
- *    simply the name (such as `network-server`).
+ * - If @icon is a #GThemedIcon with exactly one name and no fallbacks,
+ *   the encoding is simply the name (such as `network-server`).
  *
- * Virtual: to_tokens
  * Returns: (nullable): An allocated NUL-terminated UTF8 string or
  * %NULL if @icon can't be serialized. Use g_free() to free.
  *
@@ -237,15 +237,23 @@ g_icon_to_string (GIcon *icon)
     }
   else if (G_IS_THEMED_ICON (icon))
     {
-      const char * const *names;
+      char     **names                 = NULL;
+      gboolean   use_default_fallbacks = FALSE;
 
-      names = g_themed_icon_get_names (G_THEMED_ICON (icon));
+      g_object_get (G_OBJECT (icon),
+                    "names",                 &names,
+                    "use-default-fallbacks", &use_default_fallbacks,
+                    NULL);
+      /* Themed icon initialized with a single name and no fallbacks. */
       if (names != NULL &&
 	  names[0] != NULL &&
 	  names[0][0] != '.' && /* Allowing icons starting with dot would break G_ICON_SERIALIZATION_MAGIC0 */
 	  g_utf8_validate (names[0], -1, NULL) && /* Only return utf8 strings */
-	  names[1] == NULL)
+          names[1] == NULL &&
+          ! use_default_fallbacks)
 	ret = g_strdup (names[0]);
+
+      g_strfreev (names);
     }
 
   if (ret == NULL)
@@ -274,15 +282,19 @@ g_icon_new_from_tokens (char   **tokens,
   GIconIface *icon_iface;
   gint version;
   char *endp;
-  int num_tokens;
-  int i;
+  unsigned int num_tokens;
+  unsigned int i;
 
   icon = NULL;
   klass = NULL;
 
   num_tokens = g_strv_length (tokens);
 
-  if (num_tokens < 1)
+  /* Unfortunately we have to set an upper bound on `num_tokens`, as
+   * `GIcon.from_tokens()` takes the number of tokens as an `int` (for
+   * historical reasons), and that can’t be changed (e.g. to `size_t`) without
+   * breaking API. */
+  if (num_tokens < 1 || num_tokens > INT_MAX)
     {
       g_set_error (error,
                    G_IO_ERROR,
@@ -370,7 +382,7 @@ g_icon_new_from_tokens (char   **tokens,
       g_free (escaped);
     }
   
-  icon = icon_iface->from_tokens (tokens + 1, num_tokens - 1, version, error);
+  icon = icon_iface->from_tokens (tokens + 1, (int) num_tokens - 1, version, error);
 
  out:
   if (klass != NULL)
@@ -458,7 +470,7 @@ g_icon_new_for_string (const gchar   *str,
     g_set_error_literal (error,
                          G_IO_ERROR,
                          G_IO_ERROR_INVALID_ARGUMENT,
-                         _("Can't handle the supplied version of the icon encoding"));
+                         _("Can’t handle the supplied version of the icon encoding"));
 
   return icon;
 }
@@ -488,7 +500,7 @@ g_icon_deserialize_emblem (GVariant *value)
           origin_class = g_type_class_ref (G_TYPE_EMBLEM_ORIGIN);
           origin_value = g_enum_get_value_by_nick (origin_class, origin_nick);
           if (origin_value)
-            emblem = g_emblem_new_with_origin (emblem_icon, origin_value->value);
+            emblem = g_emblem_new_with_origin (emblem_icon, (GEmblemOrigin) origin_value->value);
           g_type_class_unref (origin_class);
         }
 
@@ -550,11 +562,11 @@ g_icon_deserialize_emblemed (GVariant *value)
 
 /**
  * g_icon_deserialize:
- * @value: a #GVariant created with g_icon_serialize()
+ * @value: (transfer none): a #GVariant created with g_icon_serialize()
  *
  * Deserializes a #GIcon previously serialized using g_icon_serialize().
  *
- * Returns: (transfer full): a #GIcon, or %NULL when deserialization fails.
+ * Returns: (nullable) (transfer full): a #GIcon, or %NULL when deserialization fails.
  *
  * Since: 2.38
  */
@@ -636,7 +648,7 @@ g_icon_deserialize (GVariant *value)
 }
 
 /**
- * g_icon_serialize:
+ * g_icon_serialize: (virtual serialize)
  * @icon: a #GIcon
  *
  * Serializes a #GIcon into a #GVariant. An equivalent #GIcon can be retrieved
@@ -645,7 +657,7 @@ g_icon_deserialize (GVariant *value)
  * makes sense to transfer the #GVariant between processes on the same machine,
  * (as opposed to over the network), and within the same file system namespace.
  *
- * Returns: (transfer full): a #GVariant, or %NULL when serialization fails.
+ * Returns: (nullable) (transfer full): a #GVariant, or %NULL when serialization fails. The #GVariant will not be floating.
  *
  * Since: 2.38
  */

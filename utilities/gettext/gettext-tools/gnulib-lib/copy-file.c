@@ -1,10 +1,10 @@
 /* Copying of files.
-   Copyright (C) 2001-2003, 2006-2007, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2001-2003, 2006-2007, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2001.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,7 +13,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 
 #include <config.h>
@@ -28,80 +28,104 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#if HAVE_UTIME || HAVE_UTIMES
-# if HAVE_UTIME_H
-#  include <utime.h>
-# else
-#  include <sys/utime.h>
-# endif
-#endif
-
-#include "error.h"
+#include <error.h>
 #include "ignore-value.h"
 #include "safe-read.h"
 #include "full-write.h"
+#include "stat-time.h"
+#include "utimens.h"
 #include "acl.h"
 #include "binary-io.h"
 #include "quote.h"
 #include "gettext.h"
-#include "xalloc.h"
 
-#define _(str) gettext (str)
+#define _(msgid) dgettext (GNULIB_TEXT_DOMAIN, msgid)
 
 enum { IO_SIZE = 32 * 1024 };
 
-int
-qcopy_file_preserving (const char *src_filename, const char *dest_filename)
+static int
+copy_file_internal (const char *src_filename, const char *dest_filename,
+                    bool preserve)
 {
   int err = 0;
-  int src_fd;
-  struct stat statbuf;
-  int mode;
-  int dest_fd;
-  char *buf = xmalloc (IO_SIZE);
 
-  src_fd = open (src_filename, O_RDONLY | O_BINARY);
+  int src_fd = open (src_filename, O_RDONLY | O_BINARY | O_CLOEXEC);
   if (src_fd < 0)
-    {
-      err = GL_COPY_ERR_OPEN_READ;
-      goto error;
-    }
+    return GL_COPY_ERR_OPEN_READ;
+  struct stat statbuf;
   if (fstat (src_fd, &statbuf) < 0)
     {
       err = GL_COPY_ERR_OPEN_READ;
       goto error_src;
     }
 
-  mode = statbuf.st_mode & 07777;
+  int mode = statbuf.st_mode & 07777;
+  off_t inbytes = S_ISREG (statbuf.st_mode) ? statbuf.st_size : -1;
+  bool empty_regular_file = inbytes == 0;
 
-  dest_fd = open (dest_filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0600);
+  int dest_fd = open (dest_filename,
+                      O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_CLOEXEC,
+                      /* If preserve is true, we must assume that the file may
+                         have confidential contents.  Therefore open it with
+                         mode 0600 and assign the permissions at the end.
+                         If preserve is false, open it with mode 0666 & ~umask.  */
+                      preserve ? 0600 : 0666);
   if (dest_fd < 0)
     {
       err = GL_COPY_ERR_OPEN_BACKUP_WRITE;
       goto error_src;
     }
 
-  /* Copy the file contents.  */
-  for (;;)
+  /* Copy the file contents.  FIXME: Do not copy holes.  */
+  while (0 < inbytes)
     {
-      size_t n_read = safe_read (src_fd, buf, IO_SIZE);
-      if (n_read == SAFE_READ_ERROR)
-        {
-          err = GL_COPY_ERR_READ;
-          goto error_src_dest;
-        }
-      if (n_read == 0)
+      size_t copy_max = -1;
+      copy_max -= copy_max % IO_SIZE;
+      size_t len = inbytes < copy_max ? inbytes : copy_max;
+      ssize_t copied = copy_file_range (src_fd, NULL, dest_fd, NULL, len, 0);
+      if (copied <= 0)
         break;
-
-      if (full_write (dest_fd, buf, n_read) < n_read)
-        {
-          err = GL_COPY_ERR_WRITE;
-          goto error_src_dest;
-        }
+      inbytes -= copied;
     }
 
-  free (buf);
-  buf = NULL; /* To avoid double free in error case.  */
+  /* Finish up with read/write, in case the file was not a regular
+     file, or the file shrank or had I/O errors (in which case find
+     whether it was a read or write error).  Read empty regular files
+     since they might be in /proc with their true sizes unknown until
+     they are read.  */
+  if (inbytes != 0 || empty_regular_file)
+    {
+      char smallbuf[1024];
+      int bufsize = IO_SIZE;
+      char *buf = malloc (bufsize);
+      if (!buf)
+        {
+          buf = smallbuf;
+          bufsize = sizeof smallbuf;
+        }
+
+      while (true)
+        {
+          size_t n_read = safe_read (src_fd, buf, bufsize);
+          if (n_read == 0)
+            break;
+          if (n_read == SAFE_READ_ERROR)
+            {
+              err = GL_COPY_ERR_READ;
+              break;
+            }
+          if (full_write (dest_fd, buf, n_read) < n_read)
+            {
+              err = GL_COPY_ERR_WRITE;
+              break;
+            }
+        }
+
+      if (buf != smallbuf)
+        free (buf);
+      if (err)
+        goto error_src_dest;
+    }
 
 #if !USE_ACL
   if (close (dest_fd) < 0)
@@ -110,50 +134,40 @@ qcopy_file_preserving (const char *src_filename, const char *dest_filename)
       goto error_src;
     }
   if (close (src_fd) < 0)
+    return GL_COPY_ERR_AFTER_READ;
+#endif
+
+  if (preserve)
     {
-      err = GL_COPY_ERR_AFTER_READ;
-      goto error;
-    }
-#endif
+      /* Preserve the access and modification times.  */
+      {
+        struct timespec ts[2];
+        ts[0] = get_stat_atime (&statbuf);
+        ts[1] = get_stat_mtime (&statbuf);
 
-  /* Preserve the access and modification times.  */
-#if HAVE_UTIME
-  {
-    struct utimbuf ut;
-
-    ut.actime = statbuf.st_atime;
-    ut.modtime = statbuf.st_mtime;
-    utime (dest_filename, &ut);
-  }
-#elif HAVE_UTIMES
-  {
-    struct timeval ut[2];
-
-    ut[0].tv_sec = statbuf.st_atime; ut[0].tv_usec = 0;
-    ut[1].tv_sec = statbuf.st_mtime; ut[1].tv_usec = 0;
-    utimes (dest_filename, &ut);
-  }
-#endif
+        utimens (dest_filename, ts);
+      }
 
 #if HAVE_CHOWN
-  /* Preserve the owner and group.  */
-  ignore_value (chown (dest_filename, statbuf.st_uid, statbuf.st_gid));
+      /* Preserve the owner and group.  */
+      ignore_value (chown (dest_filename, statbuf.st_uid, statbuf.st_gid));
 #endif
 
-  /* Preserve the access permissions.  */
+      /* Preserve the access permissions.  */
 #if USE_ACL
-  switch (qcopy_acl (src_filename, src_fd, dest_filename, dest_fd, mode))
-    {
-    case -2:
-      err = GL_COPY_ERR_GET_ACL;
-      goto error_src_dest;
-    case -1:
-      err = GL_COPY_ERR_SET_ACL;
-      goto error_src_dest;
-    }
+      switch (qcopy_acl (src_filename, src_fd, dest_filename, dest_fd, mode))
+        {
+        case -2:
+          err = GL_COPY_ERR_GET_ACL;
+          goto error_src_dest;
+        case -1:
+          err = GL_COPY_ERR_SET_ACL;
+          goto error_src_dest;
+        }
 #else
-  chmod (dest_filename, mode);
+      chmod (dest_filename, mode);
 #endif
+    }
 
 #if USE_ACL
   if (close (dest_fd) < 0)
@@ -162,10 +176,7 @@ qcopy_file_preserving (const char *src_filename, const char *dest_filename)
       goto error_src;
     }
   if (close (src_fd) < 0)
-    {
-      err = GL_COPY_ERR_AFTER_READ;
-      goto error;
-    }
+    return GL_COPY_ERR_AFTER_READ;
 #endif
 
   return 0;
@@ -174,15 +185,25 @@ qcopy_file_preserving (const char *src_filename, const char *dest_filename)
   close (dest_fd);
  error_src:
   close (src_fd);
- error:
-  free (buf);
   return err;
 }
 
-void
-copy_file_preserving (const char *src_filename, const char *dest_filename)
+int
+qcopy_file_preserving (const char *src_filename, const char *dest_filename)
 {
-  switch (qcopy_file_preserving (src_filename, dest_filename))
+  return copy_file_internal (src_filename, dest_filename, true);
+}
+
+int
+copy_file_to (const char *src_filename, const char *dest_filename)
+{
+  return copy_file_internal (src_filename, dest_filename, false);
+}
+
+static void
+handle_error_code (int err, const char *src_filename, const char *dest_filename)
+{
+  switch (err)
     {
     case 0:
       return;
@@ -217,4 +238,24 @@ copy_file_preserving (const char *src_filename, const char *dest_filename)
     default:
       abort ();
     }
+}
+
+void
+xcopy_file_preserving (const char *src_filename, const char *dest_filename)
+{
+  int err = qcopy_file_preserving (src_filename, dest_filename);
+  handle_error_code (err, src_filename, dest_filename);
+}
+
+void
+copy_file_preserving (const char *src_filename, const char *dest_filename)
+{
+  xcopy_file_preserving (src_filename, dest_filename);
+}
+
+void
+xcopy_file_to (const char *src_filename, const char *dest_filename)
+{
+  int err = copy_file_to (src_filename, dest_filename);
+  handle_error_code (err, src_filename, dest_filename);
 }

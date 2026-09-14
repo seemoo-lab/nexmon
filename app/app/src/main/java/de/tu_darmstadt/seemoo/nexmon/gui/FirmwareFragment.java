@@ -247,7 +247,7 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
 
     public void onClickCreateFirmwareBackup() {
         evaluateFirmware();
-        final Command command = new Command(COMMAND_BACKUP_FIRMWARE, "cp " + fwPathEnd + fwNameEnd + " " + sdCardPath + "nexmon/" + fwNameEnd + ".bac") {
+        final Command command = new Command(COMMAND_BACKUP_FIRMWARE, "cp " + shq(fwPathEnd + fwNameEnd) + " " + shq(sdCardPath + "nexmon/" + fwNameEnd + ".bac")) {
 
             @Override
             public void commandOutput(int id, String line) {
@@ -284,7 +284,7 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
 
     public void onClickRestoreFirmwareBackup() {
         evaluateFirmware();
-        Command command = new Command(COMMAND_FIRMWARE_RESTORE, "mount -o rw,remount " + mountPoint, "cp " + sdCardPath + "nexmon/" + fwNameEnd + ".bac " + fwPathEnd + fwNameEnd) {
+        Command command = new Command(COMMAND_FIRMWARE_RESTORE, "mount -o rw,remount " + shq(mountPoint), "cp " + shq(sdCardPath + "nexmon/" + fwNameEnd + ".bac") + " " + shq(fwPathEnd + fwNameEnd)) {
             @Override
             public void commandOutput(int id, String line) {
                 if(id == COMMAND_FIRMWARE_RESTORE)
@@ -337,10 +337,23 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
     }
 
 
+    /**
+     * Single-quote a string so it is one literal argument to /bin/sh. A
+     * user-selected file path (from the file picker) can contain shell
+     * metacharacters; interpolating it unquoted into a command run as root
+     * would let a crafted filename execute arbitrary commands. Any embedded
+     * single quote is closed, escaped, and reopened ('\'').
+     */
+    private static String shq(String s) {
+        if (s == null) s = "";
+        return "'" + s.replace("'", "'\\''") + "'";
+    }
+
     private void copyFile(InputStream in, OutputStream out) throws IOException {
         byte[] buffer = new byte[1024];
-        while (in.read(buffer) != -1) {
-            out.write(buffer);
+        int len;
+        while ((len = in.read(buffer)) != -1) {
+            out.write(buffer, 0, len);
         }
     }
 
@@ -365,9 +378,9 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
 
     private void copyExtractedAsset(String installLocation, String filename) throws TimeoutException, IOException, RootDeniedException {
 
-        RootTools.getShell(true).add(new Command(0, "mount -o rw,remount " + mountPoint,
-                "cp " + sdCardPath + "nexmon/" + filename + " " + installLocation + fwNameEnd,
-                "chmod 755 " + installLocation + fwNameEnd) {
+        RootTools.getShell(true).add(new Command(0, "mount -o rw,remount " + shq(mountPoint),
+                "cp " + shq(sdCardPath + "nexmon/" + filename) + " " + shq(installLocation + fwNameEnd),
+                "chmod 755 " + shq(installLocation + fwNameEnd)) {
 
             @Override
             public void commandOutput(int id, String line) {
@@ -379,7 +392,7 @@ public class FirmwareFragment extends Fragment implements View.OnClickListener {
 
 
     public void onClickPrintFirmwareVersion(String fullPath) {
-        final Command command = new Command(COMMAND_FIRMWARE_VERSION, "strings " + fullPath + " | grep \"CRC:\"") {
+        final Command command = new Command(COMMAND_FIRMWARE_VERSION, "strings " + shq(fullPath) + " | grep 'CRC:'") {
 
             boolean fwidFound = false;
 

@@ -1,0 +1,3 @@
+./test/errors/dup-xml-attr.xml:1: parser error : Attribute xml:lang redefined
+<doc xml:lang="en" xml:lang="de"/>
+                                ^

@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_Q931_H__
@@ -30,8 +18,8 @@
 WS_DLL_PUBLIC void dissect_q931_bearer_capability_ie(tvbuff_t *, int, int,
     proto_tree *);
 
-extern void dissect_q931_cause_ie(tvbuff_t *, int, int,
-    proto_tree *, int, guint8 *,const value_string *);
+extern void dissect_q931_cause_ie(tvbuff_t *, packet_info*, int, int,
+    proto_tree *, int, uint8_t *,const value_string *);
 
 extern void dissect_q931_progress_indicator_ie(tvbuff_t *, int, int,
     proto_tree *);
@@ -45,11 +33,11 @@ extern void dissect_q931_user_user_ie(tvbuff_t *tvb, packet_info *pinfo, int off
 extern value_string_ext q931_cause_location_vals_ext;
 
 typedef struct _q931_packet_info {
-       gchar *calling_number;
-       gchar *called_number;
-       guint8 cause_value;
-       gint32 crv;
-       guint8 message_type;
+       char *calling_number;
+       char *called_number;
+       uint8_t cause_value;
+       int32_t crv;
+       uint8_t message_type;
 } q931_packet_info;
 
 /*
@@ -57,8 +45,8 @@ typedef struct _q931_packet_info {
  * without having to duplicate it. With MSVC and a
  * libwireshark.dll, we need a special declaration.
  */
-WS_DLL_PUBLIC value_string_ext q931_cause_code_vals_ext;
-WS_DLL_PUBLIC const value_string q931_message_type_vals[];
+extern value_string_ext q931_cause_code_vals_ext;
+extern const value_string q931_message_type_vals[];
 
 extern value_string_ext q931_protocol_discriminator_vals_ext;
 extern value_string_ext q931_progress_description_vals_ext;

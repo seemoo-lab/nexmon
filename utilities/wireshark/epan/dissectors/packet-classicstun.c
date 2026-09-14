@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Please refer to RFC 3489 for protocol detail.
  * (supports extra message attributes described in draft-ietf-behave-rfc3489bis-00)
@@ -27,49 +15,61 @@
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/expert.h>
+#include <epan/tfs.h>
 #include <epan/conversation.h>
+#include <wsutil/ws_padding_to.h>
+
 void proto_register_classicstun(void);
 void proto_reg_handoff_classicstun(void);
 
+/* heuristic subdissectors */
+static heur_dissector_list_t heur_subdissector_list;
+
+static dissector_handle_t data_handle;
+
 /* Initialize the protocol and registered fields */
-static int proto_classicstun                          = -1;
+static int proto_classicstun;
 
-static int hf_classicstun_type                        = -1; /* CLASSIC-STUN message header */
-static int hf_classicstun_length                      = -1;
-static int hf_classicstun_id                          = -1;
-static int hf_classicstun_att                         = -1;
-static int hf_classicstun_response_in                 = -1;
-static int hf_classicstun_response_to                 = -1;
-static int hf_classicstun_time                        = -1;
+static int hf_classicstun_type; /* CLASSIC-STUN message header */
+static int hf_classicstun_length;
+static int hf_classicstun_id;
+static int hf_classicstun_att;
+static int hf_classicstun_response_in;
+static int hf_classicstun_response_to;
+static int hf_classicstun_time;
 
 
-static int classicstun_att_type                       = -1; /* CLASSIC-STUN attribute fields */
-static int classicstun_att_length                     = -1;
-static int classicstun_att_value                      = -1;
-static int classicstun_att_family                     = -1;
-static int classicstun_att_ipv4                       = -1;
-static int classicstun_att_ipv6                       = -1;
-static int classicstun_att_port                       = -1;
-static int classicstun_att_change_ip                  = -1;
-static int classicstun_att_change_port                = -1;
-static int classicstun_att_unknown                    = -1;
-static int classicstun_att_error_class                = -1;
-static int classicstun_att_error_number               = -1;
-static int classicstun_att_error_reason               = -1;
-static int classicstun_att_server_string              = -1;
-static int classicstun_att_xor_ipv4                   = -1;
-static int classicstun_att_xor_ipv6                   = -1;
-static int classicstun_att_xor_port                   = -1;
-static int classicstun_att_lifetime                   = -1;
-static int classicstun_att_magic_cookie               = -1;
-static int classicstun_att_bandwidth                  = -1;
-static int classicstun_att_data                       = -1;
-static int classicstun_att_connection_request_binding = -1;
+static int hf_classicstun_att_type; /* CLASSIC-STUN attribute fields */
+static int hf_classicstun_att_length;
+static int hf_classicstun_att_value;
+static int hf_classicstun_att_padding;
+static int hf_classicstun_att_family;
+static int hf_classicstun_att_ipv4;
+static int hf_classicstun_att_ipv6;
+static int hf_classicstun_att_port;
+static int hf_classicstun_att_change_ip;
+static int hf_classicstun_att_change_port;
+static int hf_classicstun_att_unknown;
+static int hf_classicstun_att_error_class;
+static int hf_classicstun_att_error_number;
+static int hf_classicstun_att_error_reason;
+static int hf_classicstun_att_server_string;
+static int hf_classicstun_att_xor_ipv4;
+static int hf_classicstun_att_xor_ipv6;
+static int hf_classicstun_att_xor_port;
+static int hf_classicstun_att_lifetime;
+static int hf_classicstun_att_magic_cookie;
+static int hf_classicstun_att_bandwidth;
+static int hf_classicstun_att_data;
+static int hf_classicstun_att_connection_request_binding;
+
+static expert_field ei_classicstun_att_padding;
 
 /* Structure containing transaction specific information */
 typedef struct _classicstun_transaction_t {
-    guint32  req_frame;
-    guint32  rep_frame;
+    uint32_t req_frame;
+    uint32_t rep_frame;
     nstime_t req_time;
 } classicstun_transaction_t;
 
@@ -136,16 +136,16 @@ typedef struct _classicstun_conv_info_t {
 
 
 /* Initialize the subtree pointers */
-static gint ett_classicstun = -1;
-static gint ett_classicstun_att_type = -1;
-static gint ett_classicstun_att = -1;
+static int ett_classicstun;
+static int ett_classicstun_att_type;
+static int ett_classicstun_att;
 
 
 #define UDP_PORT_STUN   3478
 #define TCP_PORT_STUN   3478
 
 
-#define CLASSICSTUN_HDR_LEN ((guint)20) /* CLASSIC-STUN message header length */
+#define CLASSICSTUN_HDR_LEN ((unsigned)20) /* CLASSIC-STUN message header length */
 #define ATTR_HDR_LEN                 4  /* CLASSIC-STUN attribute header length */
 
 
@@ -210,22 +210,24 @@ dissect_classicstun(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 
     proto_item                *ti;
     proto_item                *ta;
+    proto_item                *length_item;
     proto_tree                *classicstun_tree;
     proto_tree                *att_type_tree;
     proto_tree                *att_tree;
-    guint16                    msg_type;
-    guint16                    msg_length;
+    uint16_t                   msg_type;
+    uint16_t                   msg_length;
     const char                *msg_type_str;
-    guint16                    att_type;
-    guint16                    att_length;
-    guint16                    offset;
-    guint                      len;
-    guint                      i;
+    uint16_t                   att_type;
+    uint16_t                   att_length, clear_port;
+    uint32_t                   clear_ip;
+    uint16_t                   offset;
+    unsigned                   len;
+    unsigned                   i;
     conversation_t            *conversation;
     classicstun_conv_info_t   *classicstun_info;
     classicstun_transaction_t *classicstun_trans;
     wmem_tree_key_t            transaction_id_key[2];
-    guint32                    transaction_id[4];
+    uint32_t                   transaction_id[4];
 
 
     /*
@@ -285,7 +287,7 @@ dissect_classicstun(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
         conversation_add_proto_data(conversation, proto_classicstun, classicstun_info);
     }
 
-    if(!pinfo->fd->flags.visited){
+    if(!pinfo->fd->visited){
         if (((msg_type & CLASS_MASK) >> 4) == REQUEST) {
             /* This is a request */
             classicstun_trans=wmem_new(wmem_file_scope(), classicstun_transaction_t);
@@ -306,7 +308,7 @@ dissect_classicstun(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     }
     if(!classicstun_trans){
         /* create a "fake" pana_trans structure */
-        classicstun_trans=wmem_new(wmem_packet_scope(), classicstun_transaction_t);
+        classicstun_trans=wmem_new(pinfo->pool, classicstun_transaction_t);
         classicstun_trans->req_frame=0;
         classicstun_trans->rep_frame=0;
         classicstun_trans->req_time=pinfo->abs_ts;
@@ -319,242 +321,290 @@ dissect_classicstun(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
     col_add_fstr(pinfo->cinfo, COL_INFO, "Message: %s",
              msg_type_str);
 
-    if (tree) {
-        guint transaction_id_first_word;
+    unsigned transaction_id_first_word;
 
-        ti = proto_tree_add_item(tree, proto_classicstun, tvb, 0, -1, ENC_NA);
+    ti = proto_tree_add_item(tree, proto_classicstun, tvb, 0, -1, ENC_NA);
 
-        classicstun_tree = proto_item_add_subtree(ti, ett_classicstun);
+    classicstun_tree = proto_item_add_subtree(ti, ett_classicstun);
 
-        if (((msg_type & CLASS_MASK) >> 4) == REQUEST) {
-            if (classicstun_trans->rep_frame) {
-                proto_item *it;
-                it=proto_tree_add_uint(classicstun_tree, hf_classicstun_response_in,
-                               tvb, 0, 0,
-                               classicstun_trans->rep_frame);
-                PROTO_ITEM_SET_GENERATED(it);
-            }
+    if (((msg_type & CLASS_MASK) >> 4) == REQUEST) {
+        if (classicstun_trans->rep_frame) {
+            proto_item *it;
+            it=proto_tree_add_uint(classicstun_tree, hf_classicstun_response_in,
+                           tvb, 0, 0,
+                           classicstun_trans->rep_frame);
+            proto_item_set_generated(it);
         }
-        else if ((((msg_type & CLASS_MASK) >> 4) == RESPONSE) ||
-             (((msg_type & CLASS_MASK) >> 4) == ERROR_RESPONSE)) {
-            /* This is a response */
-            if(classicstun_trans->req_frame){
-                proto_item *it;
-                nstime_t ns;
+    }
+    else if ((((msg_type & CLASS_MASK) >> 4) == RESPONSE) ||
+         (((msg_type & CLASS_MASK) >> 4) == ERROR_RESPONSE)) {
+        /* This is a response */
+        if(classicstun_trans->req_frame){
+            proto_item *it;
+            nstime_t ns;
 
-                it=proto_tree_add_uint(classicstun_tree, hf_classicstun_response_to, tvb, 0, 0, classicstun_trans->req_frame);
-                PROTO_ITEM_SET_GENERATED(it);
+            it=proto_tree_add_uint(classicstun_tree, hf_classicstun_response_to, tvb, 0, 0, classicstun_trans->req_frame);
+            proto_item_set_generated(it);
 
-                nstime_delta(&ns, &pinfo->abs_ts, &classicstun_trans->req_time);
-                it=proto_tree_add_time(classicstun_tree, hf_classicstun_time, tvb, 0, 0, &ns);
-                PROTO_ITEM_SET_GENERATED(it);
-            }
-
+            nstime_delta(&ns, &pinfo->abs_ts, &classicstun_trans->req_time);
+            it=proto_tree_add_time(classicstun_tree, hf_classicstun_time, tvb, 0, 0, &ns);
+            proto_item_set_generated(it);
         }
 
-        proto_tree_add_uint(classicstun_tree, hf_classicstun_type, tvb, 0, 2, msg_type);
-        proto_tree_add_uint(classicstun_tree, hf_classicstun_length, tvb, 2, 2, msg_length);
-        proto_tree_add_item(classicstun_tree, hf_classicstun_id, tvb, 4, 16, ENC_NA);
+    }
 
-        /* Remember this (in host order) so we can show clear xor'd addresses */
-        transaction_id_first_word = tvb_get_ntohl(tvb, 4);
+    proto_tree_add_uint(classicstun_tree, hf_classicstun_type, tvb, 0, 2, msg_type);
+    proto_tree_add_uint(classicstun_tree, hf_classicstun_length, tvb, 2, 2, msg_length);
+    proto_tree_add_item(classicstun_tree, hf_classicstun_id, tvb, 4, 16, ENC_NA);
 
-        if (msg_length > 0) {
-            ta = proto_tree_add_item(classicstun_tree, hf_classicstun_att, tvb, CLASSICSTUN_HDR_LEN, msg_length, ENC_NA);
-            att_type_tree = proto_item_add_subtree(ta, ett_classicstun_att_type);
+    /* Remember this (in host order) so we can show clear xor'd addresses */
+    transaction_id_first_word = tvb_get_ntohl(tvb, 4);
 
-            offset = CLASSICSTUN_HDR_LEN;
+    if (msg_length > 0) {
+        ta = proto_tree_add_item(classicstun_tree, hf_classicstun_att, tvb, CLASSICSTUN_HDR_LEN, msg_length, ENC_NA);
+        att_type_tree = proto_item_add_subtree(ta, ett_classicstun_att_type);
 
-            while( msg_length > 0) {
-                att_type = tvb_get_ntohs(tvb, offset); /* Type field in attribute header */
-                att_length = tvb_get_ntohs(tvb, offset+2); /* Length field in attribute header */
+        offset = CLASSICSTUN_HDR_LEN;
 
-                att_tree = proto_tree_add_subtree_format(att_type_tree, tvb, offset,
-                             ATTR_HDR_LEN+att_length, ett_classicstun_att, NULL,
-                             "Attribute: %s",
-                             val_to_str(att_type, attributes, "Unknown (0x%04x)"));
+        unsigned att_length_pad;
 
-                proto_tree_add_uint(att_tree, classicstun_att_type, tvb,
-                            offset, 2, att_type);
-                offset += 2;
-                if (ATTR_HDR_LEN+att_length > msg_length) {
-                    proto_tree_add_uint_format_value(att_tree,
-                                   classicstun_att_length, tvb, offset, 2,
-                                   att_length,
-                                   "%u (bogus, goes past the end of the message)",
-                                   att_length);
+        while( msg_length > 0) {
+            att_type = tvb_get_ntohs(tvb, offset); /* Type field in attribute header */
+            att_length = tvb_get_ntohs(tvb, offset+2); /* Length field in attribute header */
+
+            att_tree = proto_tree_add_subtree_format(att_type_tree, tvb, offset,
+                         ATTR_HDR_LEN+att_length, ett_classicstun_att, NULL,
+                         "Attribute: %s",
+                         val_to_str(pinfo->pool, att_type, attributes, "Unknown (0x%04x)"));
+
+            proto_tree_add_uint(att_tree, hf_classicstun_att_type, tvb,
+                        offset, 2, att_type);
+            offset += 2;
+            if (ATTR_HDR_LEN+att_length > msg_length) {
+                proto_tree_add_uint_format_value(att_tree,
+                               hf_classicstun_att_length, tvb, offset, 2,
+                               att_length,
+                               "%u (bogus, goes past the end of the message)",
+                               att_length);
+                break;
+            }
+            length_item = proto_tree_add_uint(att_tree, hf_classicstun_att_length, tvb,
+                        offset, 2, att_length);
+            offset += 2;
+            switch( att_type ){
+                case MAPPED_ADDRESS:
+                case RESPONSE_ADDRESS:
+                case SOURCE_ADDRESS:
+                case CHANGED_ADDRESS:
+                case REFLECTED_FROM:
+                case ALTERNATE_SERVER:
+                case DESTINATION_ADDRESS:
+                case REMOTE_ADDRESS:
+                    if (att_length < 2)
+                        break;
+                    proto_tree_add_item(att_tree, hf_classicstun_att_family, tvb, offset+1, 1, ENC_BIG_ENDIAN);
+                    if (att_length < 4)
+                        break;
+                    proto_tree_add_item(att_tree, hf_classicstun_att_port, tvb, offset+2, 2, ENC_BIG_ENDIAN);
+                    switch( tvb_get_uint8(tvb, offset+1) ){
+                        case 1:
+                            if (att_length < 8)
+                                break;
+                            proto_tree_add_item(att_tree, hf_classicstun_att_ipv4, tvb, offset+4, 4, ENC_BIG_ENDIAN);
+                            break;
+
+                        case 2:
+                            if (att_length < 20)
+                                break;
+                            proto_tree_add_item(att_tree, hf_classicstun_att_ipv6, tvb, offset+4, 16, ENC_NA);
+                            break;
+                    }
                     break;
+
+                case CHANGE_REQUEST:
+                    if (att_length < 4)
+                        break;
+                    proto_tree_add_item(att_tree, hf_classicstun_att_change_ip, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    proto_tree_add_item(att_tree, hf_classicstun_att_change_port, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    break;
+
+                case USERNAME:
+                case PASSWORD:
+                case MESSAGE_INTEGRITY:
+                case NONCE:
+                case REALM:
+                    if (att_length < 1)
+                        break;
+                    proto_tree_add_item(att_tree, hf_classicstun_att_value, tvb, offset, att_length, ENC_NA);
+                    break;
+
+                case ERROR_CODE:
+                    if (att_length < 3)
+                        break;
+                    proto_tree_add_item(att_tree, hf_classicstun_att_error_class, tvb, offset+2, 1, ENC_BIG_ENDIAN);
+                    if (att_length < 4)
+                        break;
+                    proto_tree_add_item(att_tree, hf_classicstun_att_error_number, tvb, offset+3, 1, ENC_BIG_ENDIAN);
+                    if (att_length < 5)
+                        break;
+                    proto_tree_add_item(att_tree, hf_classicstun_att_error_reason, tvb, offset+4, (att_length-4), ENC_UTF_8);
+                    break;
+
+                case LIFETIME:
+                    if (att_length < 4)
+                        break;
+                    proto_tree_add_item(att_tree, hf_classicstun_att_lifetime, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    break;
+
+                case MAGIC_COOKIE:
+                    if (att_length < 4)
+                        break;
+                    proto_tree_add_item(att_tree, hf_classicstun_att_magic_cookie, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    break;
+
+                case BANDWIDTH:
+                    if (att_length < 4)
+                        break;
+                    proto_tree_add_item(att_tree, hf_classicstun_att_bandwidth, tvb, offset, 4, ENC_BIG_ENDIAN);
+                    break;
+
+                case DATA:
+                    proto_tree_add_item(att_tree, hf_classicstun_att_data, tvb, offset, att_length, ENC_NA);
+
+                    tvbuff_t *next_tvb;
+                    heur_dtbl_entry_t *hdtbl_entry;
+                    next_tvb = tvb_new_subset_length(tvb, offset, att_length);
+
+                    if (!dissector_try_heuristic(heur_subdissector_list, next_tvb, pinfo, att_tree, &hdtbl_entry, NULL)) {
+                        call_dissector_only(data_handle, next_tvb, pinfo, att_tree, NULL);
+                    }
+
+                    break;
+
+                case UNKNOWN_ATTRIBUTES:
+                    for (i = 0; i < att_length; i += 4) {
+                        proto_tree_add_item(att_tree, hf_classicstun_att_unknown, tvb, offset+i, 2, ENC_BIG_ENDIAN);
+                        proto_tree_add_item(att_tree, hf_classicstun_att_unknown, tvb, offset+i+2, 2, ENC_BIG_ENDIAN);
+                    }
+                    break;
+
+                case SERVER:
+                    proto_tree_add_item(att_tree, hf_classicstun_att_server_string, tvb, offset, att_length, ENC_UTF_8);
+                    break;
+
+                case XOR_MAPPED_ADDRESS:
+                    if (att_length < 2)
+                        break;
+                    proto_tree_add_item(att_tree, hf_classicstun_att_family, tvb, offset+1, 1, ENC_BIG_ENDIAN);
+                    if (att_length < 4)
+                        break;
+                    proto_tree_add_item(att_tree, hf_classicstun_att_xor_port, tvb, offset+2, 2, ENC_BIG_ENDIAN);
+
+                    /* Show the port 'in the clear'
+                       XOR (host order) transid with (host order) xor-port.
+                       Add host-order port into tree. */
+                    clear_port = tvb_get_ntohs(tvb, offset+2) ^ (transaction_id_first_word >> 16);
+                    ti = proto_tree_add_uint(att_tree, hf_classicstun_att_port, tvb, offset+2, 2, clear_port);
+                    proto_item_set_generated(ti);
+
+                    switch( tvb_get_uint8(tvb, offset+1) ){
+                        case 1:
+                            if (att_length < 8)
+                                break;
+                            proto_tree_add_item(att_tree, hf_classicstun_att_xor_ipv4, tvb, offset+4, 4, ENC_BIG_ENDIAN);
+
+                            /* Show the address 'in the clear'.
+                               XOR (host order) transid with (host order) xor-address.
+                               Add in network order tree. */
+                            clear_ip = tvb_get_ipv4(tvb, offset+4) ^ g_htonl(transaction_id_first_word);
+                            ti = proto_tree_add_ipv4(att_tree, hf_classicstun_att_ipv4, tvb, offset+4, 4, clear_ip);
+                            proto_item_set_generated(ti);
+                            break;
+
+                        case 2:
+                            if (att_length < 20)
+                                break;
+                            proto_tree_add_item(att_tree, hf_classicstun_att_xor_ipv6, tvb, offset+4, 16, ENC_NA);
+                            break;
+                    }
+                    break;
+
+                case REQUESTED_ADDRESS_TYPE:
+                    if (att_length < 2)
+                        break;
+                    proto_tree_add_item(att_tree, hf_classicstun_att_family, tvb, offset+1, 1, ENC_BIG_ENDIAN);
+                    break;
+
+                case CONNECTION_REQUEST_BINDING:
+                    proto_tree_add_item(att_tree, hf_classicstun_att_connection_request_binding, tvb, offset, att_length, ENC_UTF_8);
+                    break;
+
+                default:
+                    break;
+            }
+            offset += att_length;
+            msg_length -= ATTR_HDR_LEN+att_length;
+            /* RFC 3489 aligns the attributes it defines on 32-bit boundaries
+             * by padding them internally, such that att_length MUST always
+             * be a multiple of 4. As RFC 5389 notes, this mechanism "never
+             * worked for the few attributes that weren't aligned naturally
+             * on 32 bit boundaries," such as USERNAME and PASSWORD. Note that
+             * this dissector dissects some attribute types which were added
+             * (and some later withdrawn) in draft-ietf-behave-rfc3489bis-00;
+             * those also MUST be aligned.
+             *
+             * There exist widely used classic STUN implementations that fail
+             * to pad attributes; some (but not all?) of those use the RFC 5389
+             * padding (introduced in draft-ietf-behave-rfc3489bis-04) whereby
+             * att_length has the attribute length prior to padding and padding
+             * up to 32 bit boundaries is added outside the attribute, despite
+             * not using the Magic Cookie introduced in rfc3489bis-03 that would
+             * cause the RFC 5389 and later dissector to handle the frame.
+             */
+            att_length_pad = WS_PADDING_TO_4(att_length);
+            if (att_length_pad && msg_length) {
+                /* Possible padding. Apply heuristics. */
+                if (msg_length == att_length_pad) {
+                    /* There is exactly enough room for padding, and not enough
+                     * for another attribute (ATTR_HDR_LEN is 4), so assume
+                     * message ending padding. */
+                    expert_add_info(pinfo, length_item, &ei_classicstun_att_padding);
+                    proto_tree_add_uint(att_tree, hf_classicstun_att_padding, tvb, offset, att_length_pad, att_length_pad);
+                    offset += att_length_pad;
+                    msg_length -= att_length_pad;
+                } else if (msg_length >= att_length_pad + ATTR_HDR_LEN) {
+                    /* There is enough room for a next attribute either
+                     * with or without padding. */
+                    if (try_val_to_str(tvb_get_ntohs(tvb, offset), attributes) == NULL &&
+                        try_val_to_str(tvb_get_ntohs(tvb, offset + att_length_pad), attributes)) {
+
+                        /* It looks like a valid attribute assuming padding
+                         * but not without assuming padding. Assume padding. */
+                        expert_add_info(pinfo, length_item, &ei_classicstun_att_padding);
+                        proto_tree_add_uint(att_tree, hf_classicstun_att_padding, tvb, offset, att_length_pad, att_length_pad);
+                        offset += att_length_pad;
+                        msg_length -= att_length_pad;
+                    }
                 }
-                proto_tree_add_uint(att_tree, classicstun_att_length, tvb,
-                            offset, 2, att_length);
-                offset += 2;
-                switch( att_type ){
-                    case MAPPED_ADDRESS:
-                    case RESPONSE_ADDRESS:
-                    case SOURCE_ADDRESS:
-                    case CHANGED_ADDRESS:
-                    case REFLECTED_FROM:
-                    case ALTERNATE_SERVER:
-                    case DESTINATION_ADDRESS:
-                    case REMOTE_ADDRESS:
-                        if (att_length < 2)
-                            break;
-                        proto_tree_add_item(att_tree, classicstun_att_family, tvb, offset+1, 1, ENC_BIG_ENDIAN);
-                        if (att_length < 4)
-                            break;
-                        proto_tree_add_item(att_tree, classicstun_att_port, tvb, offset+2, 2, ENC_BIG_ENDIAN);
-                        switch( tvb_get_guint8(tvb, offset+1) ){
-                            case 1:
-                                if (att_length < 8)
-                                    break;
-                                proto_tree_add_item(att_tree, classicstun_att_ipv4, tvb, offset+4, 4, ENC_BIG_ENDIAN);
-                                break;
-
-                            case 2:
-                                if (att_length < 20)
-                                    break;
-                                proto_tree_add_item(att_tree, classicstun_att_ipv6, tvb, offset+4, 16, ENC_NA);
-                                break;
-                        }
-                        break;
-
-                    case CHANGE_REQUEST:
-                        if (att_length < 4)
-                            break;
-                        proto_tree_add_item(att_tree, classicstun_att_change_ip, tvb, offset, 4, ENC_BIG_ENDIAN);
-                        proto_tree_add_item(att_tree, classicstun_att_change_port, tvb, offset, 4, ENC_BIG_ENDIAN);
-                        break;
-
-                    case USERNAME:
-                    case PASSWORD:
-                    case MESSAGE_INTEGRITY:
-                    case NONCE:
-                    case REALM:
-                        if (att_length < 1)
-                            break;
-                        proto_tree_add_item(att_tree, classicstun_att_value, tvb, offset, att_length, ENC_NA);
-                        break;
-
-                    case ERROR_CODE:
-                        if (att_length < 3)
-                            break;
-                        proto_tree_add_item(att_tree, classicstun_att_error_class, tvb, offset+2, 1, ENC_BIG_ENDIAN);
-                        if (att_length < 4)
-                            break;
-                        proto_tree_add_item(att_tree, classicstun_att_error_number, tvb, offset+3, 1, ENC_BIG_ENDIAN);
-                        if (att_length < 5)
-                            break;
-                        proto_tree_add_item(att_tree, classicstun_att_error_reason, tvb, offset+4, (att_length-4), ENC_UTF_8|ENC_NA);
-                        break;
-
-                    case LIFETIME:
-                        if (att_length < 4)
-                            break;
-                        proto_tree_add_item(att_tree, classicstun_att_lifetime, tvb, offset, 4, ENC_BIG_ENDIAN);
-                        break;
-
-                    case MAGIC_COOKIE:
-                        if (att_length < 4)
-                            break;
-                        proto_tree_add_item(att_tree, classicstun_att_magic_cookie, tvb, offset, 4, ENC_BIG_ENDIAN);
-                        break;
-
-                    case BANDWIDTH:
-                        if (att_length < 4)
-                            break;
-                        proto_tree_add_item(att_tree, classicstun_att_bandwidth, tvb, offset, 4, ENC_BIG_ENDIAN);
-                        break;
-
-                    case DATA:
-                        proto_tree_add_item(att_tree, classicstun_att_data, tvb, offset, att_length, ENC_NA);
-                        break;
-
-                    case UNKNOWN_ATTRIBUTES:
-                        for (i = 0; i < att_length; i += 4) {
-                            proto_tree_add_item(att_tree, classicstun_att_unknown, tvb, offset+i, 2, ENC_BIG_ENDIAN);
-                            proto_tree_add_item(att_tree, classicstun_att_unknown, tvb, offset+i+2, 2, ENC_BIG_ENDIAN);
-                        }
-                        break;
-
-                    case SERVER:
-                        proto_tree_add_item(att_tree, classicstun_att_server_string, tvb, offset, att_length, ENC_UTF_8|ENC_NA);
-                        break;
-
-                    case XOR_MAPPED_ADDRESS:
-                        if (att_length < 2)
-                            break;
-                        proto_tree_add_item(att_tree, classicstun_att_family, tvb, offset+1, 1, ENC_BIG_ENDIAN);
-                        if (att_length < 4)
-                            break;
-                        proto_tree_add_item(att_tree, classicstun_att_xor_port, tvb, offset+2, 2, ENC_BIG_ENDIAN);
-
-                        /* Show the port 'in the clear'
-                           XOR (host order) transid with (host order) xor-port.
-                           Add host-order port into tree. */
-                        ti = proto_tree_add_uint(att_tree, classicstun_att_port, tvb, offset+2, 2,
-                                     tvb_get_ntohs(tvb, offset+2) ^
-                                     (transaction_id_first_word >> 16));
-                        PROTO_ITEM_SET_GENERATED(ti);
-
-                        switch( tvb_get_guint8(tvb, offset+1) ){
-                            case 1:
-                                if (att_length < 8)
-                                    break;
-                                proto_tree_add_item(att_tree, classicstun_att_xor_ipv4, tvb, offset+4, 4, ENC_BIG_ENDIAN);
-
-                                /* Show the address 'in the clear'.
-                                   XOR (host order) transid with (host order) xor-address.
-                                   Add in network order tree. */
-                                ti = proto_tree_add_ipv4(att_tree, classicstun_att_ipv4, tvb, offset+4, 4,
-                                             tvb_get_ipv4(tvb, offset+4) ^ g_htonl(transaction_id_first_word));
-                                PROTO_ITEM_SET_GENERATED(ti);
-                                break;
-
-                            case 2:
-                                if (att_length < 20)
-                                    break;
-                                proto_tree_add_item(att_tree, classicstun_att_xor_ipv6, tvb, offset+4, 16, ENC_NA);
-                                break;
-                        }
-                        break;
-
-                    case REQUESTED_ADDRESS_TYPE:
-                        if (att_length < 2)
-                            break;
-                        proto_tree_add_item(att_tree, classicstun_att_family, tvb, offset+1, 1, ENC_BIG_ENDIAN);
-                        break;
-
-                    case CONNECTION_REQUEST_BINDING:
-                        proto_tree_add_item(att_tree, classicstun_att_connection_request_binding, tvb, offset, att_length, ENC_UTF_8|ENC_NA);
-                        break;
-
-                    default:
-                        break;
-                }
-                offset += att_length;
-                msg_length -= ATTR_HDR_LEN+att_length;
             }
         }
     }
     return tvb_reported_length(tvb);
 }
 
-
-static gboolean
-dissect_classicstun_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool
+dissect_classicstun_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    if (dissect_classicstun(tvb, pinfo, tree, NULL) == 0)
-        return FALSE;
-
-    return TRUE;
+    return dissect_classicstun(tvb, pinfo, tree, data) > 0;
 }
-
 
 
 
 void
 proto_register_classicstun(void)
 {
+    expert_module_t *expert_classicstun;
+
     static hf_register_info hf[] = {
         { &hf_classicstun_type,
             { "Message Type",   "classicstun.type",     FT_UINT16,
@@ -574,11 +624,11 @@ proto_register_classicstun(void)
         },
         { &hf_classicstun_response_in,
             { "Response In", "classicstun.response_in",
-            FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+            FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0,
             "The response to this CLASSICSTUN query is in this frame", HFILL }},
         { &hf_classicstun_response_to,
             { "Request In", "classicstun.response_to",
-            FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+            FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0,
             "This is a response to the CLASSICSTUN Request in this frame", HFILL }},
         { &hf_classicstun_time,
             { "Time", "classicstun.time",
@@ -586,101 +636,111 @@ proto_register_classicstun(void)
             "The time between the Request and the Response", HFILL }},
 
         /* ////////////////////////////////////// */
-        { &classicstun_att_type,
+        { &hf_classicstun_att_type,
             { "Attribute Type", "classicstun.att.type", FT_UINT16,
             BASE_HEX,   VALS(attributes),   0x0,    NULL,   HFILL }
         },
-        { &classicstun_att_length,
+        { &hf_classicstun_att_length,
             { "Attribute Length",   "classicstun.att.length",   FT_UINT16,
             BASE_DEC,   NULL,   0x0,    NULL,   HFILL }
         },
-        { &classicstun_att_value,
+        { &hf_classicstun_att_value,
             { "Value",  "classicstun.att.value",    FT_BYTES,
             BASE_NONE,  NULL,   0x0,    NULL,   HFILL }
         },
-        { &classicstun_att_family,
+        { &hf_classicstun_att_padding,
+            { "Padding",  "classicstun.att.padding",    FT_UINT16,
+            BASE_DEC,   NULL,   0x0,    NULL,   HFILL }
+        },
+        { &hf_classicstun_att_family,
             { "Protocol Family",    "classicstun.att.family",   FT_UINT16,
             BASE_HEX,   VALS(attributes_family),    0x0,    NULL,   HFILL }
         },
-        { &classicstun_att_ipv4,
+        { &hf_classicstun_att_ipv4,
             { "IP",     "classicstun.att.ipv4", FT_IPv4,
             BASE_NONE,  NULL,   0x0,    NULL,   HFILL }
         },
-        { &classicstun_att_ipv6,
+        { &hf_classicstun_att_ipv6,
             { "IP",     "classicstun.att.ipv6", FT_IPv6,
             BASE_NONE,  NULL,   0x0,    NULL,   HFILL }
         },
-        { &classicstun_att_port,
+        { &hf_classicstun_att_port,
             { "Port",   "classicstun.att.port", FT_UINT16,
             BASE_DEC,   NULL,   0x0,    NULL,   HFILL }
         },
-        { &classicstun_att_change_ip,
+        { &hf_classicstun_att_change_ip,
             { "Change IP","classicstun.att.change.ip",  FT_BOOLEAN,
             16,     TFS(&tfs_set_notset),   0x0004, NULL,   HFILL}
         },
-        { &classicstun_att_change_port,
+        { &hf_classicstun_att_change_port,
             { "Change Port","classicstun.att.change.port",  FT_BOOLEAN,
             16,     TFS(&tfs_set_notset),   0x0002, NULL,   HFILL}
         },
-        { &classicstun_att_unknown,
+        { &hf_classicstun_att_unknown,
             { "Unknown Attribute","classicstun.att.unknown",    FT_UINT16,
             BASE_HEX,   NULL,   0x0,    NULL,   HFILL}
         },
-        { &classicstun_att_error_class,
+        { &hf_classicstun_att_error_class,
             { "Error Class","classicstun.att.error.class",  FT_UINT8,
             BASE_DEC,   NULL,   0x07,   NULL,   HFILL}
         },
-        { &classicstun_att_error_number,
+        { &hf_classicstun_att_error_number,
             { "Error Code","classicstun.att.error", FT_UINT8,
             BASE_DEC,   NULL,   0x0,    NULL,   HFILL}
         },
-        { &classicstun_att_error_reason,
+        { &hf_classicstun_att_error_reason,
             { "Error Reason Phase","classicstun.att.error.reason",  FT_STRING,
             BASE_NONE,  NULL,   0x0,    NULL,   HFILL}
         },
-        { &classicstun_att_xor_ipv4,
+        { &hf_classicstun_att_xor_ipv4,
             { "IP (XOR-d)",     "classicstun.att.ipv4-xord",    FT_IPv4,
             BASE_NONE,  NULL,   0x0,    NULL,   HFILL }
         },
-        { &classicstun_att_xor_ipv6,
+        { &hf_classicstun_att_xor_ipv6,
             { "IP (XOR-d)",     "classicstun.att.ipv6-xord",    FT_IPv6,
             BASE_NONE,  NULL,   0x0,    NULL,   HFILL }
         },
-        { &classicstun_att_xor_port,
+        { &hf_classicstun_att_xor_port,
             { "Port (XOR-d)",   "classicstun.att.port-xord",    FT_UINT16,
             BASE_DEC,   NULL,   0x0,    NULL,   HFILL }
         },
-        { &classicstun_att_server_string,
+        { &hf_classicstun_att_server_string,
             { "Server version","classicstun.att.server",    FT_STRING,
             BASE_NONE,  NULL,   0x0,    NULL,   HFILL}
         },
-        { &classicstun_att_lifetime,
+        { &hf_classicstun_att_lifetime,
             { "Lifetime",   "classicstun.att.lifetime", FT_UINT32,
             BASE_DEC,   NULL,   0x0,    NULL,   HFILL }
         },
-        { &classicstun_att_magic_cookie,
+        { &hf_classicstun_att_magic_cookie,
             { "Magic Cookie",   "classicstun.att.magic.cookie", FT_UINT32,
             BASE_HEX,   NULL,   0x0,    NULL,   HFILL }
         },
-        { &classicstun_att_bandwidth,
+        { &hf_classicstun_att_bandwidth,
             { "Bandwidth",  "classicstun.att.bandwidth",    FT_UINT32,
             BASE_DEC,   NULL,   0x0,    NULL,   HFILL }
         },
-        { &classicstun_att_data,
+        { &hf_classicstun_att_data,
             { "Data",   "classicstun.att.data", FT_BYTES,
             BASE_NONE,  NULL,   0x0,    NULL,   HFILL }
         },
-        { &classicstun_att_connection_request_binding,
+        { &hf_classicstun_att_connection_request_binding,
             { "Connection Request Binding", "classicstun.att.connection_request_binding", FT_STRING,
             BASE_NONE,  NULL, 0x0,  NULL,   HFILL }
         },
     };
 
 /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_classicstun,
         &ett_classicstun_att_type,
         &ett_classicstun_att,
+    };
+
+    static ei_register_info ei[] = {
+        { &ei_classicstun_att_padding,
+            { "classicstun.att.padding.assumed", PI_ASSUMPTION, PI_NOTE, "RFC 3489 STUN MUST align attribute lengths to a multiple of 4; assuming RFC 5389 style padding", EXPFILL}
+        }
     };
 
 /* Register the protocol name and description */
@@ -690,9 +750,13 @@ proto_register_classicstun(void)
 /* Required function calls to register the header fields and subtrees used */
     proto_register_field_array(proto_classicstun, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+    expert_classicstun = expert_register_protocol(proto_classicstun);
+    expert_register_field_array(expert_classicstun, ei, array_length(ei));
+
+    /* heuristic subdissectors (used for the DATA field) */
+    heur_subdissector_list = register_heur_dissector_list_with_description("classicstun", "CLASSICSTUN DATA payload", proto_classicstun);
 
     register_dissector("classicstun", dissect_classicstun, proto_classicstun);
-    register_dissector("classicstun-heur", dissect_classicstun_heur, proto_classicstun);
 }
 
 
@@ -704,15 +768,17 @@ proto_reg_handoff_classicstun(void)
 
     classicstun_handle = find_dissector("classicstun");
 
-    dissector_add_uint("tcp.port", TCP_PORT_STUN, classicstun_handle);
-    dissector_add_uint("udp.port", UDP_PORT_STUN, classicstun_handle);
+    dissector_add_uint_with_preference("tcp.port", TCP_PORT_STUN, classicstun_handle);
+    dissector_add_uint_with_preference("udp.port", UDP_PORT_STUN, classicstun_handle);
 #endif
     heur_dissector_add("udp", dissect_classicstun_heur, "Classic STUN over UDP", "classicstun_udp", proto_classicstun, HEURISTIC_ENABLE);
     heur_dissector_add("tcp", dissect_classicstun_heur, "Classic STUN over TCP", "classicstun_tcp", proto_classicstun, HEURISTIC_ENABLE);
+
+    data_handle = find_dissector("data");
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

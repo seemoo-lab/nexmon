@@ -5,41 +5,27 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 #include "packet-tcp.h"
 
 /* Default SCOP Port numbers. */
-#define SCOP_DEFAULT_PORT           17755
-#define SCOP_DEFAULT_PORT_SECURED   17756
+#define SCOP_DEFAULT_PORT_RANGE     "17755-17756"
 
 void proto_register_scop(void);
 
 /* Structure to contain information from the SCoP packet. */
 typedef struct {
-    guint8      transport;
-    guint8      version;
-    guint16     length;
-    gboolean    encrypted;
-    guint8      service;
-    guint8      type;
+    uint8_t     transport;
+    uint8_t     version;
+    uint16_t    length;
+    bool        encrypted;
+    uint8_t     service;
+    uint8_t     type;
 } scop_packet;
 
 /* Header definitions for use with the TCP transport layer. */
@@ -77,18 +63,18 @@ void proto_reg_handoff_scop(void);
 static void dissect_scop_zip       (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
 static void dissect_scop_bridge    (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
 
-static guint get_scop_length(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data);
+static unsigned get_scop_length(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data);
 
 /*  Initialize protocol and registered fields */
-static int proto_scop = -1;
-static int hf_scop_transport = -1;
-static int hf_scop_version = -1;
-static int hf_scop_length = -1;
-static int hf_scop_service = -1;
-static int hf_scop_type = -1;
-static int hf_scop_status = -1;
+static int proto_scop;
+static int hf_scop_transport;
+static int hf_scop_version;
+static int hf_scop_length;
+static int hf_scop_service;
+static int hf_scop_type;
+static int hf_scop_status;
 
-static gint ett_scop = -1;
+static int ett_scop;
 
 static const value_string scop_transports [] = {
     { SCOP_TRANSPORT_UDP,       "UDP Mode 1" },
@@ -117,11 +103,11 @@ static const value_string scop_services [] = {
     { 0, NULL }
 };
 
-static guint32  gPREF_scop_port         = SCOP_DEFAULT_PORT;
-static guint32  gPREF_scop_port_secured = SCOP_DEFAULT_PORT_SECURED;
-
 /*  Dissector handle */
 static dissector_handle_t ieee802154_handle;
+static dissector_handle_t  scop_udp_handle;
+static dissector_handle_t  scop_tcp_handle;
+
 
 /*FUNCTION:------------------------------------------------------
  *  NAME
@@ -143,7 +129,7 @@ dissect_scop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     proto_item  *proto_root;
     proto_tree  *scop_tree;
 
-    guint        offset = 0;
+    unsigned     offset = 0;
     scop_packet  packet;
 
     memset(&packet, 0, sizeof(packet));
@@ -160,12 +146,12 @@ dissect_scop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     scop_tree = proto_item_add_subtree(proto_root, ett_scop);
 
     /* Extract the SCoP Transport type. */
-    packet.transport = tvb_get_guint8(tvb, offset);
+    packet.transport = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(scop_tree, hf_scop_transport, tvb, offset, 1, packet.transport);
     offset += 1;
 
     /* Extract the SCoP Version. */
-    packet.version = tvb_get_guint8(tvb, offset);
+    packet.version = tvb_get_uint8(tvb, offset);
     proto_tree_add_uint(scop_tree, hf_scop_version, tvb, offset, 1, packet.version);
     offset += 1;
 
@@ -182,7 +168,7 @@ dissect_scop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     next_tvb = tvb;
 
     /* Extract the service type. */
-    packet.service = tvb_get_guint8(next_tvb, offset);
+    packet.service = tvb_get_uint8(next_tvb, offset);
     proto_tree_add_uint(scop_tree, hf_scop_service, next_tvb, offset, 1, packet.service);
     offset += 1;
 
@@ -216,10 +202,10 @@ dissect_scop(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
  *      tvbuff_t    *tvb    - pointer to buffer containing the packet.
  *      int         offset  - beginning of packet.
  *  RETURNS
- *      guint               - Length of SCoP packet
+ *      unsigned            - Length of SCoP packet
  *---------------------------------------------------------------
  */
-static guint
+static unsigned
 get_scop_length(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
     /* Byte  0:   Protocol Type.
@@ -246,7 +232,7 @@ get_scop_length(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U
 static int
 dissect_scop_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
-    tcp_dissect_pdus(tvb, pinfo, tree, TRUE, SCOP_HEADER_LENGTH, get_scop_length, dissect_scop, data);
+    tcp_dissect_pdus(tvb, pinfo, tree, true, SCOP_HEADER_LENGTH, get_scop_length, dissect_scop, data);
     return tvb_captured_length(tvb);
 } /* dissect_scop_tcp */
 
@@ -267,9 +253,9 @@ dissect_scop_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 static void
 dissect_scop_zip(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
-    guint       offset = 0;
-    guint8      type = tvb_get_guint8(tvb, offset);
-    guint16     status;
+    unsigned    offset = 0;
+    uint8_t     type = tvb_get_uint8(tvb, offset);
+    uint16_t    status;
 
     /* Display the Packet type*/
     proto_tree_add_uint(tree, hf_scop_type, tvb, offset, 1, type);
@@ -323,8 +309,6 @@ dissect_scop_bridge(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
  */
 void proto_register_scop(void)
 {
-    module_t *scop_module;
-
     static hf_register_info hf[] = {
         { &hf_scop_transport,
         { "Transport Type",         "scop.transport", FT_UINT8, BASE_DEC, VALS(scop_transports), 0x0,
@@ -351,7 +335,7 @@ void proto_register_scop(void)
             "Status of the SCoP Command.", HFILL }}
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_scop
     };
 
@@ -362,20 +346,9 @@ void proto_register_scop(void)
     proto_register_field_array(proto_scop, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
-    /*  Register preferences module */
-    scop_module = prefs_register_protocol(proto_scop, proto_reg_handoff_scop);
-
-    /*  Register preferences */
-    prefs_register_uint_preference(scop_module, "port", "SCoP Port",
-                 "Set the port for SCoP\n",
-                 10, &gPREF_scop_port);
-    prefs_register_uint_preference(scop_module, "port_secure", "SCoP Secured Port",
-                 "Set the port for secured SCoP\n",
-                 10, &gPREF_scop_port_secured);
-
     /*  Register dissector with Wireshark. */
-    register_dissector("scop.udp", dissect_scop, proto_scop);
-    register_dissector("scop.tcp", dissect_scop_tcp, proto_scop);
+    scop_udp_handle = register_dissector("scop.udp", dissect_scop, proto_scop);
+    scop_tcp_handle = register_dissector("scop.tcp", dissect_scop_tcp, proto_scop);
 } /* proto_register_scop() */
 
 /*FUNCTION:------------------------------------------------------
@@ -392,35 +365,14 @@ void proto_register_scop(void)
  */
 void proto_reg_handoff_scop(void)
 {
-    static gboolean inited = FALSE;
-    static guint32  lastPort;
-    static guint32  lastPort_secured;
+    ieee802154_handle   = find_dissector_add_dependency("wpan_nofcs", proto_scop);
 
-    static dissector_handle_t  scop_udp_handle;
-    static dissector_handle_t  scop_tcp_handle;
-
-    if (!inited){
-        scop_udp_handle     = find_dissector("scop.udp");
-        scop_tcp_handle     = find_dissector("scop.tcp");
-        ieee802154_handle   = find_dissector_add_dependency("wpan_nofcs", proto_scop);
-        inited = TRUE;
-    } else {
-        dissector_delete_uint("udp.port", lastPort, scop_udp_handle);
-        dissector_delete_uint("tcp.port", lastPort, scop_tcp_handle);
-        dissector_delete_uint("udp.port", lastPort_secured, scop_udp_handle);
-        dissector_delete_uint("tcp.port", lastPort_secured, scop_tcp_handle);
-    }
-    dissector_add_uint("udp.port", gPREF_scop_port, scop_udp_handle);
-    dissector_add_uint("tcp.port", gPREF_scop_port, scop_tcp_handle);
-    dissector_add_uint("udp.port", gPREF_scop_port_secured, scop_udp_handle);
-    dissector_add_uint("tcp.port", gPREF_scop_port_secured, scop_tcp_handle);
-
-    lastPort         = gPREF_scop_port;
-    lastPort_secured = gPREF_scop_port_secured;
-} /* proto_reg_handoff_scop */
+    dissector_add_uint_range_with_preference("udp.port", SCOP_DEFAULT_PORT_RANGE, scop_udp_handle);
+    dissector_add_uint_range_with_preference("tcp.port", SCOP_DEFAULT_PORT_RANGE, scop_tcp_handle);
+}
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

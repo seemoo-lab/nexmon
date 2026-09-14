@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -29,6 +17,7 @@
 #include <epan/asn1.h>
 #include <epan/prefs.h>
 #include <epan/uat.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-ess.h"
@@ -45,19 +34,19 @@ void proto_reg_handoff_ess(void);
 
 typedef struct _ess_category_attributes_t {
    char *oid;
-   guint lacv;
+   unsigned lacv;
    char *name;
 } ess_category_attributes_t;
 
 static ess_category_attributes_t *ess_category_attributes;
-static guint num_ess_category_attributes;
+static unsigned num_ess_category_attributes;
 
 /* Initialize the protocol and registered fields */
-static int proto_ess = -1;
-static int hf_ess_SecurityCategory_type_OID = -1;
-static int hf_ess_Category_attribute = -1;
+static int proto_ess;
+static int hf_ess_SecurityCategory_type_OID;
+static int hf_ess_Category_attribute;
 
-static gint ett_Category_attributes = -1;
+static int ett_Category_attributes;
 
 #include "packet-ess-hf.c"
 
@@ -95,9 +84,9 @@ ess_free_cb(void *r)
 }
 
 static void
-ess_dissect_attribute (guint32 value, asn1_ctx_t *actx)
+ess_dissect_attribute (uint32_t value, asn1_ctx_t *actx)
 {
-  guint i;
+  unsigned i;
 
   for (i = 0; i < num_ess_category_attributes; i++) {
     ess_category_attributes_t *u = &(ess_category_attributes[i]);
@@ -115,11 +104,11 @@ static void
 ess_dissect_attribute_flags (tvbuff_t *tvb, asn1_ctx_t *actx)
 {
   proto_tree *tree;
-  guint8 *value;
-  guint i;
+  uint8_t *value;
+  unsigned i;
 
   tree = proto_item_add_subtree (actx->created_item, ett_Category_attributes);
-  value = (guint8 *)tvb_memdup (wmem_packet_scope(), tvb, 0, tvb_captured_length (tvb));
+  value = (uint8_t *)tvb_memdup (actx->pinfo->pool, tvb, 0, tvb_captured_length (tvb));
 
   for (i = 0; i < num_ess_category_attributes; i++) {
     ess_category_attributes_t *u = &(ess_category_attributes[i]);
@@ -152,7 +141,7 @@ void proto_register_ess(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
      &ett_Category_attributes,
 #include "packet-ess-ettarr.c"
   };
@@ -167,7 +156,7 @@ void proto_register_ess(void) {
   uat_t *attributes_uat = uat_new("ESS Category Attributes",
                                   sizeof(ess_category_attributes_t),
                                   "ess_category_attributes",
-                                  TRUE,
+                                  true,
                                   &ess_category_attributes,
                                   &num_ess_category_attributes,
                                   UAT_AFFECTS_DISSECTION, /* affects dissection of packets, but not set of named fields */
@@ -175,6 +164,7 @@ void proto_register_ess(void) {
                                   ess_copy_cb,
                                   NULL,
                                   ess_free_cb,
+                                  NULL,
                                   NULL,
                                   attributes_flds);
 

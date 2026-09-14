@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="structelementPriority" kind="struct" language="C++" prot="public">
+    <compoundname>elementPriority</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structelementPriority_1a8f8f80d37794cde9472343e4487ba3eb" prot="public" static="no" mutable="no">
+        <type>const char *</type>
+        <definition>const char* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>elementPriority::name</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/HTMLparser.c" line="1201" column="16" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="1201" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structelementPriority_1acec9ce2df15222151ad66fcb1d74eb9f" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int priority</definition>
+        <argsstring></argsstring>
+        <name>priority</name>
+        <qualifiedname>elementPriority::priority</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/HTMLparser.c" line="1202" column="9" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="1202" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/HTMLparser.c" line="1200" column="1" bodyfile="/builds/GNOME/libxml2/HTMLparser.c" bodystart="1200" bodyend="1203"/>
+    <listofallmembers>
+      <member refid="structelementPriority_1a8f8f80d37794cde9472343e4487ba3eb" prot="public" virt="non-virtual"><scope>elementPriority</scope><name>name</name></member>
+      <member refid="structelementPriority_1acec9ce2df15222151ad66fcb1d74eb9f" prot="public" virt="non-virtual"><scope>elementPriority</scope><name>priority</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

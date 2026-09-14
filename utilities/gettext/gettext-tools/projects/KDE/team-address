@@ -1,6 +1,25 @@
 #!/bin/sh
+#
+# Copyright (C) 2001-2026 Free Software Foundation, Inc.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+# Written by Bruno Haible.
+
 # Print the team's address (to stdout) and output additional instructions
 # (to stderr).
+
 projectsdir="$1"
 progdir="$2"
 catalog="$3"  # e.g. "pt_BR"
@@ -89,7 +108,7 @@ if test -n "$english"; then
      echo "  $url#$anchor"
    fi
    echo "  $url"
-   echo "  http://i18n.kde.org/"
+   echo "  https://l10n.kde.org/"
   ) 1>&2
   address1=`echo "$html" | tr '\012' '|' | sed -n -e 's,^.*>'"$english"'[^<>]*team<\(.*\)$,\1,p' | sed -e "$sed_addnl" | sed -e 2q -e 1d | sed -n -e 's,^.*mailing list\(.*\)$,\1,p' | sed -e 's,</LI>.*,,' | sed -e 's,</A>.*,</A>,' | sed -n -e 's,^.*HREF="\([^"]*\)">[^<>]*</A>.*$,\1,p'`
   case "$address1" in
@@ -107,7 +126,7 @@ else
   (echo "A translation team for your "`if test "$catalog" = "$language"; then echo "language ($language)"; else echo "local dialect ($catalog)"; fi`
    echo "may not exist yet.  Please visit"
    echo "  $url"
-   echo "  http://i18n.kde.org/"
+   echo "  https://l10n.kde.org/"
    echo "and decide whether you want to create a new translation team."
   ) 1>&2
   address=

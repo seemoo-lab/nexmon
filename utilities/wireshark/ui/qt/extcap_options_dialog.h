@@ -1,22 +1,10 @@
-/* extcap_options_dialog.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
@@ -25,14 +13,10 @@
 
 #include <config.h>
 
-#ifdef HAVE_EXTCAP
-
 #include <QWidget>
 #include <QDialog>
 #include <QPushButton>
 #include <QList>
-
-#include "interface_tree.h"
 
 #include "ui/qt/extcap_argument.h"
 
@@ -51,45 +35,36 @@ class ExtcapOptionsDialog : public QDialog
 
 public:
     ~ExtcapOptionsDialog();
-    static ExtcapOptionsDialog * createForDevice(QString &device_name, QWidget *parent = 0);
+    static ExtcapOptionsDialog * createForDevice(QString &device_name, bool startCaptureOnClose, QWidget *parent = 0,
+        QString *option_name = NULL, QString *option_value = NULL);
+
+    ExtcapValueList loadValuesFor(int argNum, QString call, QString parent = "");
 
 private Q_SLOTS:
-    void on_buttonBox_accepted();
-    void on_buttonBox_rejected();
     void on_buttonBox_clicked(QAbstractButton *button);
     void on_buttonBox_helpRequested();
     void updateWidgets();
     void anyValueChanged();
 
 private:
-    explicit ExtcapOptionsDialog(QWidget *parent = 0);
+    explicit ExtcapOptionsDialog(bool startCaptureOnClose, QWidget *parent = 0);
 
     Ui::ExtcapOptionsDialog *ui;
     QString device_name;
-    guint device_idx;
+    QString option_name;  // If using the UI to edit the config of a sub-argument
+    QString option_value;  // If using the UI to edit the config of a sub-argument
+    unsigned device_idx;
+    QIcon defaultValueIcon_;
 
     ExtcapArgumentList extcapArguments;
 
     void loadArguments();
 
     bool saveOptionToCaptureInfo();
+    GHashTable * getArgumentSettings(bool useCallsAsKey = false, bool includeEmptyValues = true);
     void storeValues();
     void resetValues();
+
 };
 
-#endif /* HAVE_EXTCAP */
-
 #endif // EXTCAP_OPTIONS_DIALOG_H
-
-/*
- * Editor modelines
- *
- * Local Variables:
- * c-basic-offset: 4
- * tab-width: 8
- * indent-tabs-mode: nil
- * End:
- *
- * ex: set shiftwidth=4 tabstop=8 expandtab:
- * :indentSize=4:tabSize=8:noTabs=true:
- */

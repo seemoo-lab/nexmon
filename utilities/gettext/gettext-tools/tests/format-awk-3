@@ -1,0 +1,47 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test heuristic recognition of awk format strings like "100% complete".
+
+cat <<\EOF > f-a-3.awk
+dcgettext("Test 1a is 100% complete");
+printf dcgettext("Test 1b is 100% complete"), 120;
+dcgettext("Test 2a from 0% complete to 100% complete");
+printf dcgettext("Test 2b from 0% complete to 100% complete"), 120, 121;
+dcgettext("Test 3a of %s is 100% complete");
+printf dcgettext("Test 3b of %s is 100% complete"), "foo", 120;
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d f-a-3.tmp f-a-3.awk || Exit 1
+LC_ALL=C tr -d '\r' < f-a-3.tmp.po > f-a-3.po || Exit 1
+
+cat <<\EOF > f-a-3.ok
+msgid "Test 1a is 100% complete"
+msgstr ""
+
+#, awk-format
+msgid "Test 1b is 100% complete"
+msgstr ""
+
+msgid "Test 2a from 0% complete to 100% complete"
+msgstr ""
+
+#, awk-format
+msgid "Test 2b from 0% complete to 100% complete"
+msgstr ""
+
+#, awk-format
+msgid "Test 3a of %s is 100% complete"
+msgstr ""
+
+#, awk-format
+msgid "Test 3b of %s is 100% complete"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} f-a-3.ok f-a-3.po
+result=$?
+
+exit $result

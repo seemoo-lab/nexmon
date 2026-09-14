@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -26,61 +14,63 @@
 #include <epan/packet.h>
 #include <epan/to_str.h>
 #include <epan/expert.h>
+#include <epan/unit_strings.h>
 
+#include <wsutil/array.h>
 void proto_register_trmac(void);
 
-static int proto_trmac = -1;
-static int hf_trmac_mv = -1;
-static int hf_trmac_length = -1;
-static int hf_trmac_srcclass = -1;
-static int hf_trmac_dstclass = -1;
-static int hf_trmac_sv_len = -1;
-static int hf_trmac_sv_id = -1;
-static int hf_trmac_errors_iso = -1;
-static int hf_trmac_errors_line = -1;
-static int hf_trmac_errors_internal = -1;
-static int hf_trmac_errors_burst = -1;
-static int hf_trmac_errors_ac = -1;
-static int hf_trmac_errors_abort = -1;
-static int hf_trmac_errors_noniso = -1;
-static int hf_trmac_errors_lost = -1;
-static int hf_trmac_errors_congestion = -1;
-static int hf_trmac_errors_fc = -1;
-static int hf_trmac_errors_freq = -1;
-static int hf_trmac_errors_token = -1;
-static int hf_trmac_naun = -1;
-static int hf_trmac_beacon_type = -1;
-static int hf_trmac_assign_physical_drop_number = -1;
-static int hf_trmac_error_code = -1;
-static int hf_trmac_group_address32 = -1;
-static int hf_trmac_transmit_status_code = -1;
-static int hf_trmac_station_identifier = -1;
-static int hf_trmac_sa_of_last_amp_or_smp_frame = -1;
-static int hf_trmac_error_report_timer_value = -1;
-static int hf_trmac_individual_address_count = -1;
-static int hf_trmac_correlator = -1;
-static int hf_trmac_group_address_ether = -1;
-static int hf_trmac_authorized_access_priority = -1;
-static int hf_trmac_physical_drop_number = -1;
-static int hf_trmac_authorized_function_classes = -1;
-static int hf_trmac_local_ring_number = -1;
-static int hf_trmac_functional_addresses = -1;
+static int proto_trmac;
+static int hf_trmac_mv;
+static int hf_trmac_length;
+static int hf_trmac_srcclass;
+static int hf_trmac_dstclass;
+static int hf_trmac_sv_len;
+static int hf_trmac_sv_id;
+static int hf_trmac_errors_iso;
+static int hf_trmac_errors_line;
+static int hf_trmac_errors_internal;
+static int hf_trmac_errors_burst;
+static int hf_trmac_errors_ac;
+static int hf_trmac_errors_abort;
+static int hf_trmac_errors_noniso;
+static int hf_trmac_errors_lost;
+static int hf_trmac_errors_congestion;
+static int hf_trmac_errors_fc;
+static int hf_trmac_errors_freq;
+static int hf_trmac_errors_token;
+static int hf_trmac_naun;
+static int hf_trmac_beacon_type;
+static int hf_trmac_assign_physical_drop_number;
+static int hf_trmac_error_code;
+static int hf_trmac_group_address32;
+static int hf_trmac_transmit_status_code;
+static int hf_trmac_station_identifier;
+static int hf_trmac_sa_of_last_amp_or_smp_frame;
+static int hf_trmac_error_report_timer_value;
+static int hf_trmac_individual_address_count;
+static int hf_trmac_correlator;
+static int hf_trmac_group_address_ether;
+static int hf_trmac_authorized_access_priority;
+static int hf_trmac_physical_drop_number;
+static int hf_trmac_authorized_function_classes;
+static int hf_trmac_local_ring_number;
+static int hf_trmac_functional_addresses;
 /* Generated from convert_proto_tree_add_text.pl */
-static int hf_trmac_unknown_subvector = -1;
-static int hf_trmac_response_code48 = -1;
-static int hf_trmac_product_instance_id = -1;
-static int hf_trmac_ring_station_version_number = -1;
-static int hf_trmac_wrap_data = -1;
-static int hf_trmac_ring_station_status = -1;
-static int hf_trmac_frame_forward = -1;
-static int hf_trmac_response_code32 = -1;
+static int hf_trmac_unknown_subvector;
+static int hf_trmac_response_code48;
+static int hf_trmac_product_instance_id;
+static int hf_trmac_ring_station_version_number;
+static int hf_trmac_wrap_data;
+static int hf_trmac_ring_station_status;
+static int hf_trmac_frame_forward;
+static int hf_trmac_response_code32;
 
-static gint ett_tr_mac = -1;
-static gint ett_tr_sv = -1;
-static gint ett_tr_ierr_cnt = -1;
-static gint ett_tr_nerr_cnt = -1;
+static int ett_tr_mac;
+static int ett_tr_sv;
+static int ett_tr_ierr_cnt;
+static int ett_tr_nerr_cnt;
 
-static expert_field ei_trmac_sv_len = EI_INIT;
+static expert_field ei_trmac_sv_len;
 
 /* Major Vector */
 static const value_string major_vector_vs[] = {
@@ -96,7 +86,7 @@ static const value_string major_vector_vs[] = {
 	{ 0x0C, "Change Parameters" },
 	{ 0x0D, "Initialize Ring Station" },
 	{ 0x0E, "Request Ring Station Address" },
-	{ 0x0F, "Request Ring Station Address" },
+	{ 0x0F, "Request Ring Station State" },
 	{ 0x10, "Request Ring Station Attachments" },
 	{ 0x20, "Request Initialization" },
 	{ 0x22, "Report Ring Station Address" },
@@ -164,18 +154,18 @@ static const value_string beacon_vs[] = {
 static int
 sv_text(tvbuff_t *tvb, int svoff, packet_info *pinfo, proto_tree *tree)
 {
-	guint	sv_length, sv_id;
-	guint16	beacon_type, ring;
-	guint32	error_report_timer_value;
+	unsigned	sv_length, sv_id;
+	uint16_t	beacon_type, ring;
+	uint32_t	error_report_timer_value;
 
 	proto_tree	*sv_tree, *sv_subtree;
 	proto_item	*sv_item, *len_item, *ti;
 
-	guchar		errors[6];	/* isolating or non-isolating */
+	unsigned char		errors[6];	/* isolating or non-isolating */
 
 	sv_tree = proto_tree_add_subtree(tree, tvb, svoff+0, 1, ett_tr_sv, &sv_item, "Subvector");
 
-	sv_length = tvb_get_guint8(tvb, svoff+0);
+	sv_length = tvb_get_uint8(tvb, svoff+0);
 	len_item = proto_tree_add_item(sv_tree, hf_trmac_sv_len, tvb, svoff+0, 1, ENC_BIG_ENDIAN);
 
 	/* Check the SV length; it must be at least 2, to include
@@ -186,9 +176,9 @@ sv_text(tvbuff_t *tvb, int svoff, packet_info *pinfo, proto_tree *tree)
 		return 0;	/* tells our caller to give up */
 	}
 
-	sv_id = tvb_get_guint8(tvb, svoff+1);
+	sv_id = tvb_get_uint8(tvb, svoff+1);
 	proto_tree_add_item(sv_tree, hf_trmac_sv_id, tvb, svoff+1, 1, ENC_BIG_ENDIAN);
-	proto_item_append_text(sv_item, " (%s)", val_to_str_ext(sv_id, &subvector_vs_ext, "Unknown subvector ID 0x%02X"));
+	proto_item_append_text(sv_item, " (%s)", val_to_str_ext(pinfo->pool, sv_id, &subvector_vs_ext, "Unknown subvector ID 0x%02X"));
 
 	switch(sv_id) {
 		case 0x01: /* Beacon Type */
@@ -200,7 +190,7 @@ sv_text(tvbuff_t *tvb, int svoff, packet_info *pinfo, proto_tree *tree)
 			beacon_type = tvb_get_ntohs(tvb, svoff+2);
 			proto_tree_add_item(sv_tree, hf_trmac_beacon_type, tvb, svoff+2, sv_length-2, ENC_BIG_ENDIAN);
 			proto_item_append_text(sv_item,
-					": %s", val_to_str(beacon_type, beacon_vs, "Illegal value: %d"));
+					": %s", val_to_str(pinfo->pool, beacon_type, beacon_vs, "Illegal value: %d"));
 			break;
 
 		case 0x02: /* Upstream Neighbor's Address */
@@ -211,7 +201,7 @@ sv_text(tvbuff_t *tvb, int svoff, packet_info *pinfo, proto_tree *tree)
 			}
 			proto_tree_add_item(sv_tree, hf_trmac_naun, tvb, svoff+2, sv_length-2, ENC_NA);
 			proto_item_append_text(sv_item, ": %s",
-					tvb_ether_to_str(tvb, svoff+2));
+					tvb_ether_to_str(pinfo->pool, tvb, svoff+2));
 			break;
 
 		case 0x03: /* Local Ring Number */
@@ -245,8 +235,7 @@ sv_text(tvbuff_t *tvb, int svoff, packet_info *pinfo, proto_tree *tree)
 			}
 
 			error_report_timer_value = 10 * tvb_get_ntohs(tvb, svoff+2);
-			proto_tree_add_uint_format_value(sv_tree, hf_trmac_error_report_timer_value, tvb, svoff+2, sv_length-2,
-											error_report_timer_value, "%u ms", error_report_timer_value );
+			proto_tree_add_uint(sv_tree, hf_trmac_error_report_timer_value, tvb, svoff+2, sv_length-2, error_report_timer_value);
 			proto_item_append_text(sv_item,
 				": %u ms", error_report_timer_value );
 			break;
@@ -293,7 +282,7 @@ sv_text(tvbuff_t *tvb, int svoff, packet_info *pinfo, proto_tree *tree)
 			proto_tree_add_item(sv_tree, hf_trmac_sa_of_last_amp_or_smp_frame, tvb, svoff+2, sv_length-2, ENC_NA);
 			proto_item_append_text(sv_item,
 				": %s",
-				tvb_ether_to_str(tvb, svoff+2));
+				tvb_ether_to_str(pinfo->pool, tvb, svoff+2));
 			break;
 
 		case 0x0B: /* Physical Drop Number */
@@ -316,22 +305,22 @@ sv_text(tvbuff_t *tvb, int svoff, packet_info *pinfo, proto_tree *tree)
 			if (sv_length == 4) {
 				proto_tree_add_uint_format_value(sv_tree, hf_trmac_response_code32, tvb, svoff+2, sv_length-2,
 					tvb_get_ntohl(tvb, svoff+2), "0x%04X 0x%02X 0x%02x",
-					tvb_get_ntohs(tvb, svoff+2), tvb_get_guint8(tvb, svoff+4), tvb_get_guint8(tvb, svoff+5));
+					tvb_get_ntohs(tvb, svoff+2), tvb_get_uint8(tvb, svoff+4), tvb_get_uint8(tvb, svoff+5));
 				proto_item_append_text(sv_item,
 					": 0x%04X 0x%02X 0x%02x",
 					tvb_get_ntohs(tvb, svoff+2),
-					tvb_get_guint8(tvb, svoff+4),
-					tvb_get_guint8(tvb, svoff+5));
+					tvb_get_uint8(tvb, svoff+4),
+					tvb_get_uint8(tvb, svoff+5));
 			} else {
 				proto_tree_add_uint64_format_value(sv_tree, hf_trmac_response_code48, tvb, svoff+2, sv_length-2,
 					tvb_get_ntoh48(tvb, svoff+2), "0x%04X 0x%02X 0x%06X",
 					tvb_get_ntohs(tvb, svoff+2),
-					tvb_get_guint8(tvb, svoff+4),
+					tvb_get_uint8(tvb, svoff+4),
 					tvb_get_ntoh24(tvb, svoff+5));
 				proto_item_append_text(sv_item,
 					": 0x%04X 0x%02X 0x%06X",
 					tvb_get_ntohs(tvb, svoff+2),
-					tvb_get_guint8(tvb, svoff+4),
+					tvb_get_uint8(tvb, svoff+4),
 					tvb_get_ntoh24(tvb, svoff+5));
 			}
 			break;
@@ -372,7 +361,7 @@ sv_text(tvbuff_t *tvb, int svoff, packet_info *pinfo, proto_tree *tree)
 			proto_tree_add_item(sv_tree, hf_trmac_station_identifier, tvb, svoff+2, sv_length-2, ENC_NA);
 			proto_item_append_text(sv_item,
 				": %s",
-				tvb_ether_to_str(tvb, svoff+2));
+				tvb_ether_to_str(pinfo->pool, tvb, svoff+2));
 			break;
 
 		case 0x29: /* Ring Station Status */
@@ -404,7 +393,7 @@ sv_text(tvbuff_t *tvb, int svoff, packet_info *pinfo, proto_tree *tree)
 				proto_tree_add_item(sv_tree, hf_trmac_group_address_ether, tvb, svoff+2, sv_length-2, ENC_NA);
 				proto_item_append_text(sv_item,
 					": %s",
-					tvb_ether_to_str(tvb, svoff+2));
+					tvb_ether_to_str(pinfo->pool, tvb, svoff+2));
 			}
 			break;
 
@@ -477,44 +466,43 @@ sv_text(tvbuff_t *tvb, int svoff, packet_info *pinfo, proto_tree *tree)
 static int
 dissect_trmac(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	proto_tree	*mac_tree = NULL;
+	proto_tree	*mac_tree;
 	proto_item	*ti;
-	int		mv_length, sv_offset, sv_additional;
-	guint8		mv_val;
+	int		sv_additional;
+	uint32_t		mv_val, mv_length, sv_offset;
+
+	if (tvb_captured_length(tvb) < 3)
+		return 0;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "TR MAC");
 	col_clear(pinfo->cinfo, COL_INFO);
 
-	mv_val = tvb_get_guint8(tvb, 3);
+	ti = proto_tree_add_item(tree, proto_trmac, tvb, 0, -1, ENC_NA);
+	mac_tree = proto_item_add_subtree(ti, ett_tr_mac);
+
+	proto_tree_add_item_ret_uint(mac_tree, hf_trmac_mv, tvb, 3, 1, ENC_NA, &mv_val);
+	proto_tree_add_item_ret_uint(mac_tree, hf_trmac_length, tvb, 0, 2, ENC_BIG_ENDIAN, &mv_length);
+	proto_item_set_len(ti, mv_length);
+	proto_tree_add_item(mac_tree, hf_trmac_srcclass, tvb, 2, 1, ENC_NA);
+	proto_tree_add_item(mac_tree, hf_trmac_dstclass, tvb, 2, 1, ENC_NA);
 
 	/* Interpret the major vector */
 	col_add_str(pinfo->cinfo, COL_INFO,
-		    val_to_str_ext(mv_val, &major_vector_vs_ext, "Unknown Major Vector: %u"));
+		    val_to_str_ext(pinfo->pool, mv_val, &major_vector_vs_ext, "Unknown Major Vector: %u"));
 
-	if (tree) {
-		mv_length = tvb_get_ntohs(tvb, 0);
-		ti = proto_tree_add_item(tree, proto_trmac, tvb, 0, mv_length, ENC_NA);
-		mac_tree = proto_item_add_subtree(ti, ett_tr_mac);
+	/* interpret the subvectors */
+	sv_offset = 4;
+	while (sv_offset < mv_length) {
+		sv_additional = sv_text(tvb, sv_offset, pinfo, mac_tree);
 
-		proto_tree_add_uint(mac_tree, hf_trmac_mv, tvb, 3, 1, mv_val);
-		proto_tree_add_uint_format_value(mac_tree, hf_trmac_length, tvb, 0, 2, mv_length,
-				"%d bytes", mv_length);
-		proto_tree_add_uint(mac_tree, hf_trmac_srcclass, tvb, 2, 1, tvb_get_guint8(tvb, 2) & 0x0f);
-		proto_tree_add_uint(mac_tree, hf_trmac_dstclass, tvb, 2, 1, tvb_get_guint8(tvb, 2) >> 4 );
-
-		/* interpret the subvectors */
-		sv_offset = 4;
-		while (sv_offset < mv_length) {
-			sv_additional = sv_text(tvb, sv_offset, pinfo, mac_tree);
-
-			/* if this is a bad packet, we could get a 0-length added here,
-			 * looping forever */
-			if (sv_additional > 0)
-				sv_offset += sv_additional;
-			else
-				break;
-		}
+		/* if this is a bad packet, we could get a 0-length added here,
+			* looping forever */
+		if (sv_additional > 0)
+			sv_offset += sv_additional;
+		else
+			break;
 	}
+
 	return tvb_captured_length(tvb);
 }
 
@@ -527,15 +515,15 @@ proto_register_trmac(void)
 			NULL, HFILL }},
 
 		{ &hf_trmac_length,
-		{ "Total Length",			"trmac.length", FT_UINT8, BASE_DEC, NULL, 0x0,
+		{ "Total Length",			"trmac.length", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_byte_bytes), 0x0,
 			NULL, HFILL }},
 
 		{ &hf_trmac_srcclass,
-		{ "Source Class",			"trmac.srcclass", FT_UINT8, BASE_HEX, VALS(classes_vs), 0x0,
+		{ "Source Class",			"trmac.srcclass", FT_UINT8, BASE_HEX, VALS(classes_vs), 0x0F,
 			NULL, HFILL }},
 
 		{ &hf_trmac_dstclass,
-		{ "Destination Class",			"trmac.dstclass", FT_UINT8, BASE_HEX, VALS(classes_vs), 0x0,
+		{ "Destination Class",			"trmac.dstclass", FT_UINT8, BASE_HEX, VALS(classes_vs), 0xF0,
 			NULL, HFILL }},
 
 		{ &hf_trmac_sv_len,
@@ -611,7 +599,7 @@ proto_register_trmac(void)
 			NULL, HFILL }},
 
 		{ &hf_trmac_error_report_timer_value,
-		{ "Error Report Timer Value",		"trmac.error_report_timer_value", FT_UINT16, BASE_DEC, NULL, 0x0,
+		{ "Error Report Timer Value",		"trmac.error_report_timer_value", FT_UINT16, BASE_DEC|BASE_UNIT_STRING, UNS(&units_milliseconds), 0x0,
 			NULL, HFILL }},
 
 		{ &hf_trmac_authorized_function_classes,
@@ -647,7 +635,7 @@ proto_register_trmac(void)
 			NULL, HFILL }},
 
 		{ &hf_trmac_group_address32,
-		{ "Group Address",			"trmac.group_addres32s", FT_UINT32, BASE_HEX, NULL, 0x0,
+		{ "Group Address",			"trmac.group_address32s", FT_UINT32, BASE_HEX, NULL, 0x0,
 			NULL, HFILL }},
 
 		{ &hf_trmac_group_address_ether,
@@ -673,7 +661,7 @@ proto_register_trmac(void)
 		{ &hf_trmac_unknown_subvector, { "Unknown Subvector", "trmac.unknown_subvector", FT_BYTES, BASE_NONE, NULL, 0x0, NULL, HFILL }},
 
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_tr_mac,
 		&ett_tr_sv,
 		&ett_tr_ierr_cnt,
@@ -696,7 +684,7 @@ proto_register_trmac(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

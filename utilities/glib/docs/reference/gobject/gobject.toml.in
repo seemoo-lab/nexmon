@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# Copyright 2023 Matthias Clasen
+# Copyright 2023 Philip Withnall
+
+[library]
+name = "GObject"
+version = "@VERSION@"
+browse_url = "https://gitlab.gnome.org/GNOME/glib/"
+repository_url = "https://gitlab.gnome.org/GNOME/glib.git"
+website_url = "https://www.gtk.org"
+docs_url = "https://docs.gtk.org/gobject/"
+authors = "GLib Development Team"
+license = "LGPL-2.1-or-later"
+description = "The base type system and object class"
+devhelp = true
+search_index = true
+dependencies = ["GLib-2.0"]
+
+  [dependencies."GLib-2.0"]
+  name = "GLib"
+  description = "The base utility library"
+  docs_url = "https://docs.gtk.org/glib/"
+
+related = ["GModule-2.0", "Gio-2.0"]
+
+  [related."GModule-2.0"]
+  name = "GModule"
+  description = "Portable API for dynamically loading modules"
+  docs_url = "https://docs.gtk.org/gmodule/"
+
+  [related."Gio-2.0"]
+  name = "GIO"
+  description = "GObject Interfaces and Objects, Networking, IPC, and I/O"
+  docs_url = "https://docs.gtk.org/gio/"
+
+[theme]
+name = "basic"
+show_index_summary = true
+show_class_hierarchy = true
+
+[source-location]
+base_url = "https://gitlab.gnome.org/GNOME/glib/-/blob/main/"
+
+[extra]
+urlmap_file = "../urlmap.js"
+# The same order will be used when generating the index
+content_files = [
+  "concepts.md",
+  "tutorial.md",
+  "types.md",
+  "signals.md",
+  "floating-refs.md",
+  "boxed.md",
+  "enum-types.md",
+  "gvalue.md",
+  "value-collection.md",
+]
+content_images = [
+  "images/glue.png",
+]
+
+# This is the anonymous union inside GValue; we don't need it
+# as a type, and including it just generates a dummy union
+# definition
+[[object]]
+name = "_Value__data__union"
+hidden = true

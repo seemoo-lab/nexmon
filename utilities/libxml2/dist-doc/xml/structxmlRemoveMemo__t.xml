@@ -1,0 +1,188 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="structxmlRemoveMemo__t" kind="struct" language="C++" prot="public">
+    <compoundname>xmlRemoveMemo_t</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="structxmlRemoveMemo__t_1ab4d9717d86d32f80d1f7168ed954a25f" prot="public" static="no" mutable="no">
+        <type>xmlListPtr</type>
+        <definition>xmlListPtr l</definition>
+        <argsstring></argsstring>
+        <name>l</name>
+        <qualifiedname>xmlRemoveMemo_t::l</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/valid.c" line="2455" column="12" bodyfile="/builds/GNOME/libxml2/valid.c" bodystart="2455" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="structxmlRemoveMemo__t_1a3f27e02c78c16fde564d96ce579fe4b4" prot="public" static="no" mutable="no">
+        <type>xmlAttrPtr</type>
+        <definition>xmlAttrPtr ap</definition>
+        <argsstring></argsstring>
+        <name>ap</name>
+        <qualifiedname>xmlRemoveMemo_t::ap</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/valid.c" line="2456" column="12" bodyfile="/builds/GNOME/libxml2/valid.c" bodystart="2456" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="4">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="5" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlDict</label>
+        <childnode refid="10" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlDictStrings</label>
+        <childnode refid="10" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="5" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="5" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="11">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="11" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlLink</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlList</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>sentinel</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="5" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>xmlRemoveMemo_t</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>l</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>ap</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/valid.c" line="2453" column="1" bodyfile="/builds/GNOME/libxml2/valid.c" bodystart="2454" bodyend="2457"/>
+    <listofallmembers>
+      <member refid="structxmlRemoveMemo__t_1a3f27e02c78c16fde564d96ce579fe4b4" prot="public" virt="non-virtual"><scope>xmlRemoveMemo_t</scope><name>ap</name></member>
+      <member refid="structxmlRemoveMemo__t_1ab4d9717d86d32f80d1f7168ed954a25f" prot="public" virt="non-virtual"><scope>xmlRemoveMemo_t</scope><name>l</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

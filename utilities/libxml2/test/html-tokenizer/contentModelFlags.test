@@ -1,0 +1,48 @@
+0 plaintext 3 12
+<head>&body;
+1 plaintext 3 18
+</plaintext>&body;
+2 xmp 1 9
+foo</xmp>
+3 xmp 2 9
+foo</xmp>
+4 xmp 1 9
+foo</xMp>
+5 xmp 2 9
+foo</xMp>
+6 xmp 1 9
+foo</xmp 
+7 xmp 2 9
+foo</xmp 
+8 xmp 1 8
+foo</xmp
+9 xmp 2 8
+foo</xmp
+10 xmp 1 9
+foo</xmp/
+11 xmp 2 9
+foo</xmp/
+12 xmp 1 9
+foo</xmp<
+13 xmp 2 9
+foo</xmp<
+14 xmp 1 15
+</foo>bar</xmp>
+15 xmp 2 15
+</foo>bar</xmp>
+16 xmp 1 16
+</xmp</xmp</xmp>
+17 xmp 2 16
+</xmp</xmp</xmp>
+18 xmp 1 18
+</foo>bar</xmpaar>
+19 xmp 2 18
+</foo>bar</xmpaar>
+20 xmp 1 15
+foo</xmp></baz>
+21 xmp 2 15
+foo</xmp></baz>
+22 xmp 2 5
+&foo;
+23 textarea 1 4
+&lt;

@@ -1,0 +1,18 @@
+<d:doc xmlns:d="urn:d" xmlns:e="urn:e">
+    <a/><b/>
+    <a/><c/>
+    <a/>
+    <a>
+        <e:e/>
+        <e:e/><b/>
+        <e:e/>
+        <e:e/>
+        <e:e xmlns="urn:g">
+            <x/>
+            <x/>
+            <x e:attr="val"/>
+        </e:e>
+        <e:e/>
+    </a>
+    <a/>
+</d:doc>

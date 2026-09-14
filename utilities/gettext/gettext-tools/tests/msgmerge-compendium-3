@@ -7,7 +7,7 @@
 # the old translation file (mm-c-3.in1) contains the same msgid
 # Why not make use of the translation from the compendium?
 
-cat <<EOF > mm-c-3.in1
+cat <<\EOF > mm-c-3.in1
 #: file.c:123
 msgid "1"
 msgstr "1x"
@@ -17,13 +17,13 @@ msgid "one, two, three"
 msgstr ""
 EOF
 
-cat <<EOF > mm-c-3.com
+cat <<\EOF > mm-c-3.com
 #: file.c:345
 msgid "one, two, three"
 msgstr "1, 2, 3"
 EOF
 
-cat <<EOF > mm-c-3.pot
+cat <<\EOF > mm-c-3.pot
 #: file.c:123
 msgid "1"
 msgstr ""

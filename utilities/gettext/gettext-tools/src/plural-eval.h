@@ -1,6 +1,5 @@
 /* Expression evaluation for plural form selection.
-   Copyright (C) 2005-2006, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <bruno@clisp.org>, 2005.
+   Copyright (C) 2005-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,55 +12,17 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 #ifndef _PLURAL_EVAL_H
 #define _PLURAL_EVAL_H
 
 
-/* Definition of 'struct expression', and
+/* Definition of 'struct expression' and 'struct eval_result', and
    declaration of extract_plural_expression() and plural_eval().  */
 #include "plural-exp.h"
-
-
-/* Protection against signals during plural evaluation.  */
-
-#include <setjmp.h>
-
-/* Some platforms don't have the sigjmp_buf type in <setjmp.h>.  */
-#if defined _MSC_VER || defined __MINGW32__
-/* Native Woe32 API.  */
-# define sigjmp_buf jmp_buf
-# define sigsetjmp(env,savesigs) setjmp (env)
-# define siglongjmp longjmp
-#endif
-
-/* We use siginfo to get precise information about the signal.
-   But siginfo doesn't work on Irix 6.5 and on Cygwin 2005.  */
-#if HAVE_SIGINFO && !defined (__sgi) && !defined (__CYGWIN__)
-# define USE_SIGINFO 1
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* Exit point.  Must be set before calling install_sigfpe_handler().  */
-extern sigjmp_buf sigfpe_exit;
-
-#if USE_SIGINFO
-/* Additional information that is set before sigfpe_exit is invoked.  */
-extern int sigfpe_code;
-#endif
-
-/* Protect against signals during plural evaluation.  Must be called around
-   calls to plural_eval().  Must be called in pairs.  */
-extern void install_sigfpe_handler (void);
-extern void uninstall_sigfpe_handler (void);
-
-#ifdef __cplusplus
-}
-#endif
 
 
 #endif /* _PLURAL_EVAL_H */

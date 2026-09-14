@@ -1,0 +1,225 @@
+<?xml version="1.0"?>
+<!--
+  Copyright (C) 2010-2018 Shaun McCance
+  Copyright (C) 2024-2026 Free Software Foundation, Inc.
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+  Written by Shaun McCance.
+-->
+<its:rules
+    xmlns:its="http://www.w3.org/2005/11/its"
+    xmlns:itst="http://itstool.org/extensions/"
+    xmlns:db="http://docbook.org/ns/docbook"
+    xmlns:gt="https://www.gnu.org/s/gettext/ns/its/extensions/1.0"
+    version="2.0">
+
+  <itst:match selector="/db:*"/>
+
+  <its:langRule selector="//db:*" langPointer="@xml:lang"/>
+
+  <itst:credits appendTo="/db:*/db:info">
+    <db:othercredit class="translator">
+      <db:personname>
+        <db:firstname><itst:value-of select="name"/></db:firstname>
+      </db:personname>
+      <db:email><itst:value-of select="email"/></db:email>
+    </db:othercredit>
+    <db:copyright>
+      <itst:for-each select="years">
+        <db:year><itst:value-of select="year"/></db:year>
+      </itst:for-each>
+      <db:holder><itst:value-of select="name"/></db:holder>
+    </db:copyright>
+  </itst:credits>
+
+  <!-- Inline by default, might be overridden -->
+  <its:withinTextRule withinText="yes"
+                      selector="//db:abbrev |
+                                //db:accel |
+                                //db:acronym |
+                                //db:affiliation |
+                                //db:alt |
+                                //db:anchor |
+                                //db:application |
+                                //db:arg |
+                                //db:audiodata |
+                                //db:audioobject |
+                                //db:authorinitials |
+                                //db:biblioref |
+                                //db:citation |
+                                //db:citebiblioid |
+                                //db:citerefentry |
+                                //db:citerefentry/db:manvolnum |
+                                //db:citerefentry/db:refentrytitle |
+                                //db:citetitle |
+                                //db:city |
+                                //db:classname |
+                                //db:co |
+                                //db:coref |
+                                //db:code |
+                                //db:col |
+                                //db:colgroup |
+                                //db:command |
+                                //db:computeroutput |
+                                //db:constant |
+                                //db:constraint |
+                                //db:contrib |
+                                //db:country |
+                                //db:database |
+                                //db:date |
+                                //db:email |
+                                //db:emphasis |
+                                //db:envar |
+                                //db:errorcode |
+                                //db:errorname |
+                                //db:errortext |
+                                //db:errortype |
+                                //db:exceptionname |
+                                //db:fax |
+                                //db:filename |
+                                //db:firstname |
+                                //db:firstterm |
+                                //db:footnoteref |
+                                //db:foreignphrase |
+                                //db:funcdef |
+                                //db:funcparams |
+                                //db:function |
+                                //db:givenname |
+                                //db:glossterm |
+                                //db:group |
+                                //db:guibutton |
+                                //db:guiicon |
+                                //db:guilabel |
+                                //db:guimenu |
+                                //db:guimenuitem |
+                                //db:guisubmenu |
+                                //db:hardware |
+                                //db:holder |
+                                //db:honorific |
+                                //db:imagedata |
+                                //db:imageobject |
+                                //db:imageobjectco |
+                                //db:initializer |
+                                //db:inlineequation |
+                                //db:inlinemediaobject |
+                                //db:interfacename |
+                                //db:jobtitle |
+                                //db:keycap |
+                                //db:keycode |
+                                //db:keycombo |
+                                //db:keysym |
+                                //db:keyword |
+                                //db:lhs |
+                                //db:lineage |
+                                //db:lineannotation |
+                                //db:link |
+                                //db:literal |
+                                //db:markup |
+                                //db:menuchoice |
+                                //db:methodname |
+                                //db:methodparam |
+                                //db:modifier |
+                                //db:mousebutton |
+                                //db:multimediaparam |
+                                //db:nonterminal |
+                                //db:olink |
+                                //db:ooclass |
+                                //db:ooexception |
+                                //db:oointerface |
+                                //db:option |
+                                //db:optional |
+                                //db:org |
+                                //db:orgdiv |
+                                //db:orgname |
+                                //db:otheraddr |
+                                //db:othername |
+                                //db:package |
+                                //db:paramdef |
+                                //db:parameter |
+                                //db:personname |
+                                //db:phone |
+                                //db:phrase |
+                                //db:pob |
+                                //db:postcode |
+                                //db:productname |
+                                //db:productnumber |
+                                //db:prompt |
+                                //db:property |
+                                //db:quote |
+                                //db:replaceable |
+                                //db:returnvalue |
+                                //db:revnumber |
+                                //db:revremark |
+                                //db:rhs |
+                                //db:sbr |
+                                //db:shortaffil |
+                                //db:shortcut |
+                                //db:state |
+                                //db:street |
+                                //db:subscript |
+                                //db:superscript |
+                                //db:surname |
+                                //db:symbol |
+                                //db:systemitem |
+                                //db:tag |
+                                //db:termdef |
+                                //db:textobject |
+                                //db:token |
+                                //db:trademark |
+                                //db:type |
+                                //db:uri |
+                                //db:userinput |
+                                //db:varargs |
+                                //db:varname |
+                                //db:videodata |
+                                //db:videoobject |
+                                //db:void |
+                                //db:wordasword |
+                                //db:xref |
+                                //db:year "/>
+
+  <!-- Mark footnotes nested, though itstool treats it as "no" -->
+  <its:withinTextRule withinText="nested" selector="//db:footnote"/>
+
+  <!-- Things with (semi-)structured content -->
+  <its:withinTextRule withinText="no" selector="//db:confgroup/* | //db:biblioentry/* | db:biblioset/*"/>
+  <its:withinTextRule withinText="yes" selector="//db:bibliomixed/* | //db:bibliomset/*"/>
+  <its:withinTextRule withinText="no" selector="//db:glossentry/*"/>
+  <its:withinTextRule withinText="yes" selector="//db:indexterm//* |
+                                                 //db:simplelist[@type = 'inline']/descendant-or-self::*"/>
+
+  <!-- Above all else, info is not a text run -->
+  <its:withinTextRule withinText="no" selector="//db:info/*"/>
+
+  <!-- These are always verbatim -->
+  <its:preserveSpaceRule space="preserve" selector="//db:address |
+                                                    //db:classsynopsisinfo |
+                                                    //db:funcsynopsisinfo |
+                                                    //db:literallayout |
+                                                    //db:programlisting |
+                                                    //db:screen |
+                                                    //db:synopsis "/>
+
+  <!-- Drop editor remarks -->
+  <its:localeFilterRule localeFilterList="" selector="//db:remark"/>
+
+  <!-- External media files -->
+  <its:externalResourceRefRule externalResourceRefPointer="@fileref"
+                               selector="//db:audiodata | //db:imagedata | //db:videodata"/>
+
+  <!-- Some hacks -->
+  <its:translateRule translate="no" selector="//db:releaseinfo[@role = 'CVS' and normalize-space(.) = '$Id$']"/>
+  <gt:escapeRule selector="//db:*" escape="no" unescape-if="xml"/>
+</its:rules>

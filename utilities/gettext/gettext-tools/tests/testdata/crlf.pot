@@ -1,0 +1,5 @@
+#: .\edu\templates\edu\home.html:69
+#: .\edu\templates\edu\music_country.html:34
+#, python-format
+msgid "Hi"
+msgstr ""

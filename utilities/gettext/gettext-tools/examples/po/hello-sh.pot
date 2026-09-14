@@ -7,8 +7,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: hello-sh 0\n"
-"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"POT-Creation-Date: 2016-06-11 22:08+0900\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2025-10-01 13:28+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,11 +17,16 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: hello-sh/hello.sh:14
+#: hello-sh/hello-1.sh:14 hello-sh/hello-2.sh:12 hello-sh/hello-3.sh:12
 msgid "Hello, world!"
 msgstr ""
 
-#: hello-sh/hello.sh:17
+#: hello-sh/hello-1.sh:17
 #, sh-format
 msgid "This program is running as process number $pid."
+msgstr ""
+
+#: hello-sh/hello-2.sh:15 hello-sh/hello-3.sh:15
+#, sh-printf-format
+msgid "This program is running as process number %u."
 msgstr ""

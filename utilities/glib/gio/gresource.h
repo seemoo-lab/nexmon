@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -45,7 +47,7 @@ G_BEGIN_DECLS
  * error domains.
  */
 #define G_RESOURCE_ERROR (g_resource_error_quark ())
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GQuark g_resource_error_quark (void);
 
 typedef struct _GStaticResource GStaticResource;
@@ -59,34 +61,34 @@ struct _GStaticResource {
   gpointer padding;
 };
 
-GLIB_AVAILABLE_IN_2_32
-GType         g_resource_get_type            (void) G_GNUC_CONST;
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
+GType         g_resource_get_type            (void);
+GIO_AVAILABLE_IN_2_32
 GResource *   g_resource_new_from_data       (GBytes                *data,
 					      GError               **error);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GResource *   g_resource_ref                 (GResource             *resource);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 void          g_resource_unref               (GResource             *resource);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GResource *   g_resource_load                (const gchar           *filename,
 					      GError               **error);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GInputStream *g_resource_open_stream         (GResource             *resource,
 					      const char            *path,
 					      GResourceLookupFlags   lookup_flags,
 					      GError               **error);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GBytes *      g_resource_lookup_data         (GResource             *resource,
 					      const char            *path,
 					      GResourceLookupFlags   lookup_flags,
 					      GError               **error);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 char **       g_resource_enumerate_children  (GResource             *resource,
 					      const char            *path,
 					      GResourceLookupFlags   lookup_flags,
 					      GError               **error);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 gboolean      g_resource_get_info            (GResource             *resource,
 					      const char            *path,
 					      GResourceLookupFlags   lookup_flags,
@@ -94,35 +96,41 @@ gboolean      g_resource_get_info            (GResource             *resource,
 					      guint32               *flags,
 					      GError               **error);
 
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 void          g_resources_register           (GResource             *resource);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 void          g_resources_unregister         (GResource             *resource);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GInputStream *g_resources_open_stream        (const char            *path,
 					      GResourceLookupFlags   lookup_flags,
 					      GError               **error);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GBytes *      g_resources_lookup_data        (const char            *path,
 					      GResourceLookupFlags   lookup_flags,
 					      GError               **error);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 char **       g_resources_enumerate_children (const char            *path,
 					      GResourceLookupFlags   lookup_flags,
 					      GError               **error);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 gboolean      g_resources_get_info           (const char            *path,
 					      GResourceLookupFlags   lookup_flags,
 					      gsize                 *size,
 					      guint32               *flags,
 					      GError               **error);
 
+GIO_AVAILABLE_IN_2_84
+gboolean      g_resource_has_children        (GResource             *resource,
+                                              const char            *path);
+GIO_AVAILABLE_IN_2_84
+gboolean      g_resources_has_children       (const char            *path);
 
-GLIB_AVAILABLE_IN_2_32
+
+GIO_AVAILABLE_IN_2_32
 void          g_static_resource_init          (GStaticResource *static_resource);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 void          g_static_resource_fini          (GStaticResource *static_resource);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 GResource    *g_static_resource_get_resource  (GStaticResource *static_resource);
 
 G_END_DECLS

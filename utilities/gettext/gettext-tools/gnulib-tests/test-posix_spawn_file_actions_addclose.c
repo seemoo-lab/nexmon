@@ -1,9 +1,9 @@
 /* Test posix_spawn_file_actions_addclose() function.
-   Copyright (C) 2011-2016 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -54,11 +54,18 @@ main (void)
     errno = 0;
     ASSERT (posix_spawn_file_actions_addclose (&actions, -1) == EBADF);
   }
+  /* This behaviour is not mandated by POSIX, following
+     <https://austingroupbugs.net/view.php?id=418>,
+     but happens to pass on all platforms except musl libc, NetBSD, Cygwin.  */
+#if !(defined MUSL_LIBC || defined __NetBSD__ || defined __CYGWIN__)
   {
     int bad_fd = big_fd ();
     errno = 0;
     ASSERT (posix_spawn_file_actions_addclose (&actions, bad_fd) == EBADF);
   }
+#endif
 
-  return 0;
+  posix_spawn_file_actions_destroy (&actions);
+
+  return test_exit_status;
 }

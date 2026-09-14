@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,48 +19,50 @@
 void proto_register_gift(void);
 void proto_reg_handoff_gift(void);
 
-#define TCP_PORT_GIFT 1213
+static dissector_handle_t gift_handle;
 
-static int proto_gift = -1;
-static int hf_gift_response = -1;
-static int hf_gift_request = -1;
-static int hf_gift_response_cmd = -1;
-static int hf_gift_response_arg = -1;
-static int hf_gift_request_cmd = -1;
-static int hf_gift_request_arg = -1;
+#define TCP_PORT_GIFT 1213 /* Not IANA registered */
 
-static gint ett_gift = -1;
-static gint ett_gift_cmd = -1;
+static int proto_gift;
+static int hf_gift_response;
+static int hf_gift_request;
+static int hf_gift_response_cmd;
+static int hf_gift_response_arg;
+static int hf_gift_request_cmd;
+static int hf_gift_request_arg;
+
+static int ett_gift;
+static int ett_gift_cmd;
 
 static int
 dissect_gift(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_item	*ti, *hidden_item;
 	proto_tree	*gift_tree, *cmd_tree;
-	gboolean	is_request;
-	gint            offset = 0;
-	const guchar    *line;
-	gint            next_offset;
+	bool	is_request;
+	int             offset = 0;
+	const unsigned char    *line;
+	int             next_offset;
 	int             linelen;
 	int             tokenlen;
-	const guchar    *next_token;
+	const unsigned char    *next_token;
 
 	/* set "Protocol" column text */
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "giFT");
 
 	/* determine whether it is a request to or response from the server */
 	if (pinfo->match_uint == pinfo->destport)
-		is_request = TRUE;
+		is_request = true;
 	else
-		is_request = FALSE;
+		is_request = false;
 
-	linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, FALSE);
+	linelen = tvb_find_line_end(tvb, offset, -1, &next_offset, false);
 	line = tvb_get_ptr(tvb, offset, linelen);
 
 	/* set "Info" column text */
 	col_add_fstr(pinfo->cinfo, COL_INFO, "%s: %s",
 			     is_request ? "Request" : "Response",
-			     format_text(line, linelen));
+			     format_text(pinfo->pool, line, linelen));
 
 	/* if tree != NULL, build protocol tree */
 	if (tree) {
@@ -80,11 +70,11 @@ dissect_gift(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 		gift_tree = proto_item_add_subtree(ti, ett_gift);
 
 		if (is_request) {
-			hidden_item = proto_tree_add_boolean(gift_tree, hf_gift_request, tvb, 0, 0, TRUE);
+			hidden_item = proto_tree_add_boolean(gift_tree, hf_gift_request, tvb, 0, 0, true);
 		} else {
-			hidden_item = proto_tree_add_boolean(gift_tree, hf_gift_response, tvb, 0, 0, TRUE);
+			hidden_item = proto_tree_add_boolean(gift_tree, hf_gift_response, tvb, 0, 0, true);
 		}
-		PROTO_ITEM_SET_HIDDEN(hidden_item);
+		proto_item_set_hidden(hidden_item);
 
 		ti = proto_tree_add_format_text(gift_tree, tvb, offset, next_offset - offset);
 		cmd_tree = proto_item_add_subtree(ti, ett_gift_cmd);
@@ -93,12 +83,12 @@ dissect_gift(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 		if (tokenlen != 0) {
 			if (is_request) {
 				proto_tree_add_string(cmd_tree, hf_gift_request_cmd, tvb, offset,
-						    tokenlen, format_text(line, tokenlen));
+						    tokenlen, format_text(pinfo->pool, line, tokenlen));
 			} else {
 				proto_tree_add_string(cmd_tree, hf_gift_response_cmd, tvb, offset,
-						    tokenlen, format_text(line, tokenlen));
+						    tokenlen, format_text(pinfo->pool, line, tokenlen));
 			}
-			offset += (gint) (next_token - line);
+			offset += (int) (next_token - line);
 			linelen -= (int) (next_token - line);
 			line = next_token;
 		}
@@ -106,10 +96,10 @@ dissect_gift(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 		if (linelen != 0) {
 			if (is_request) {
 				proto_tree_add_string(cmd_tree, hf_gift_request_arg, tvb, offset,
-						    linelen, format_text(line, linelen));
+						    linelen, format_text(pinfo->pool, line, linelen));
 			} else {
 				proto_tree_add_string(cmd_tree, hf_gift_response_arg, tvb, offset,
-						    linelen, format_text(line, linelen));
+						    linelen, format_text(pinfo->pool, line, linelen));
 			}
 		}
 	}
@@ -121,10 +111,10 @@ proto_register_gift(void)
 {
 	static hf_register_info hf[] = {
 		{ &hf_gift_response,
-			{ "Response", "gift.response", FT_BOOLEAN, BASE_NONE, NULL, 0x0, "TRUE if giFT response", HFILL }
+			{ "Response", "gift.response", FT_BOOLEAN, BASE_NONE, NULL, 0x0, "true if giFT response", HFILL }
 		},
 		{ &hf_gift_request,
-			{ "Request", "gift.request", FT_BOOLEAN, BASE_NONE, NULL, 0x0, "TRUE if giFT request", HFILL }
+			{ "Request", "gift.request", FT_BOOLEAN, BASE_NONE, NULL, 0x0, "true if giFT request", HFILL }
 		},
 		{ &hf_gift_response_cmd,
 			{ "Response Command", "gift.response_cmd", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
@@ -140,7 +130,7 @@ proto_register_gift(void)
 		},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_gift,
 		&ett_gift_cmd,
 	};
@@ -150,19 +140,18 @@ proto_register_gift(void)
 
 	proto_register_field_array(proto_gift, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+
+	gift_handle = register_dissector("gift", dissect_gift, proto_gift);
 }
 
 void
 proto_reg_handoff_gift(void)
 {
-	dissector_handle_t gift_handle;
-
-	gift_handle = create_dissector_handle(dissect_gift, proto_gift);
-	dissector_add_uint("tcp.port", TCP_PORT_GIFT, gift_handle);
+	dissector_add_uint_with_preference("tcp.port", TCP_PORT_GIFT, gift_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

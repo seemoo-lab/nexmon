@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -39,30 +27,38 @@
 void proto_register_hdcp2(void);
 void proto_reg_handoff_hdcp2(void);
 
-static int proto_hdcp2 = -1;
+static int proto_hdcp2;
 
-static gint ett_hdcp2 = -1;
-static gint ett_hdcp2_cert = -1;
+static int ett_hdcp2;
+static int ett_hdcp2_cert;
 
-static int hf_hdcp2_msg_id = -1;
-static int hf_hdcp2_r_tx = -1;
-static int hf_hdcp2_repeater = -1;
-static int hf_hdcp2_cert_rcv_id = -1;
-static int hf_hdcp2_cert_n = -1;
-static int hf_hdcp2_cert_e = -1;
-static int hf_hdcp2_cert_rcv_sig = -1;
-static int hf_hdcp2_e_kpub_km = -1;
-static int hf_hdcp2_e_kh_km = -1;
-static int hf_hdcp2_m = -1;
-static int hf_hdcp2_r_rx = -1;
-static int hf_hdcp2_h_prime = -1;
-static int hf_hdcp2_r_n = -1;
-static int hf_hdcp2_l_prime = -1;
-static int hf_hdcp2_e_dkey_ks = -1;
-static int hf_hdcp2_r_iv = -1;
-static int hf_hdcp2_reserved = -1;
+static int hf_hdcp2_msg_id;
+static int hf_hdcp2_r_tx;
+static int hf_hdcp2_repeater;
+static int hf_hdcp2_cert_rcv_id;
+static int hf_hdcp2_cert_n;
+static int hf_hdcp2_cert_e;
+static int hf_hdcp2_cert_rcv_sig;
+static int hf_hdcp2_e_kpub_km;
+static int hf_hdcp2_e_kh_km;
+static int hf_hdcp2_m;
+static int hf_hdcp2_r_rx;
+static int hf_hdcp2_h_prime;
+static int hf_hdcp2_r_n;
+static int hf_hdcp2_l_prime;
+static int hf_hdcp2_e_dkey_ks;
+static int hf_hdcp2_r_iv;
+static int hf_hdcp2_reserved;
+static int hf_hdcp2_tx_length;
+static int hf_hdcp2_tx_version;
+static int hf_hdcp2_tx_loc_precompute;
+static int hf_hdcp2_rx_length;
+static int hf_hdcp2_rx_version;
+static int hf_hdcp2_rx_loc_precompute;
 
-static expert_field ei_hdcp2_reserved_0 = EI_INIT;
+static expert_field ei_hdcp2_reserved_0;
+static expert_field ei_hdcp2_version_not_2;
+static expert_field ei_hdcp2_length;
 
 
 #define ID_AKE_INIT              2
@@ -75,6 +71,8 @@ static expert_field ei_hdcp2_reserved_0 = EI_INIT;
 #define ID_LC_INIT               9
 #define ID_LC_SEND_L_PRIME      10
 #define ID_SKE_SEND_EKS         11
+#define ID_AKE_TRANSMITTER_INFO 19
+#define ID_AKE_RECEIVER_INFO    20
 #define ID_MAX                  31
 
 #define RCV_ID_LEN    5  /* all lengths are in bytes */
@@ -82,11 +80,16 @@ static expert_field ei_hdcp2_reserved_0 = EI_INIT;
 #define E_LEN         3
 #define RCV_SIG_LEN 384
 
+#define MSG_FIELD_TRANSMITTER_INFO_LENGTH 6
+#define MSG_FIELD_RECEIVER_INFO_LENGTH    6
+
 #define CERT_RX_LEN   (RCV_ID_LEN + N_LEN + E_LEN + 2 + RCV_SIG_LEN)
 
 static const value_string hdcp2_msg_id[] = {
     { ID_AKE_INIT,              "AKE_Init" },
+    { ID_AKE_TRANSMITTER_INFO,  "AKE_Transmitter_Info" },
     { ID_AKE_SEND_CERT,         "AKE_Send_Cert" },
+    { ID_AKE_RECEIVER_INFO,     "AKE_Receiver_Info" },
     { ID_AKE_NO_STORED_KM,      "AKE_No_Stored_km" },
     { ID_AKE_STORED_KM,         "AKE_Stored_km" },
     { ID_AKE_SEND_RRX,          "AKE_Send_rrx" },
@@ -99,15 +102,17 @@ static const value_string hdcp2_msg_id[] = {
 };
 
 typedef struct _msg_info_t {
-    guint8  id;
-    guint16 len;  /* number of bytes following initial msg_id field */
+    uint8_t id;
+    uint16_t len;  /* number of bytes following initial msg_id field */
 } msg_info_t;
 
-static GHashTable *msg_table = NULL;
+static wmem_map_t *msg_table;
 
 static const msg_info_t msg_info[] = {
     { ID_AKE_INIT,               8 },
+    { ID_AKE_TRANSMITTER_INFO,   5 },
     { ID_AKE_SEND_CERT,        1+CERT_RX_LEN },
+    { ID_AKE_RECEIVER_INFO,      5 },
     { ID_AKE_NO_STORED_KM,     128 },
     { ID_AKE_STORED_KM,         32 },
     { ID_AKE_SEND_RRX,           8 },
@@ -125,22 +130,22 @@ dissect_hdcp2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
     msg_info_t *mi;
     proto_item *pi;
     proto_tree *hdcp_tree, *cert_tree;
-    guint8 msg_id;
-    gboolean repeater;
-    guint16 reserved;
+    uint8_t msg_id, version;
+    bool repeater, loc_precomp;
+    uint16_t reserved, length;
     ptvcursor_t *cursor;
 
     /* do the plausibility checks before setting up anything */
 
-    /* make sure that tvb_get_guint8() won't throw an exception */
+    /* make sure that tvb_get_uint8() won't throw an exception */
     if (tvb_captured_length(tvb) < 1)
         return 0;
-    msg_id = tvb_get_guint8(tvb, 0);
+    msg_id = tvb_get_uint8(tvb, 0);
     if (msg_id > ID_MAX)
         return 0;
 
-    mi = (msg_info_t *)g_hash_table_lookup(msg_table,
-            GUINT_TO_POINTER((guint)msg_id));
+    mi = (msg_info_t *)wmem_map_lookup(msg_table,
+            GUINT_TO_POINTER((unsigned)msg_id));
     /* 1 -> start after msg_id byte */
     if (!mi || mi->len!=tvb_reported_length_remaining(tvb, 1))
         return 0;
@@ -151,20 +156,45 @@ dissect_hdcp2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
     pi = proto_tree_add_protocol_format(tree, proto_hdcp2,
             tvb, 0, tvb_reported_length(tvb), "HDCP2");
     hdcp_tree = proto_item_add_subtree(pi, ett_hdcp2);
-    cursor = ptvcursor_new(hdcp_tree, tvb, 0);
+    cursor = ptvcursor_new(pinfo->pool, hdcp_tree, tvb, 0);
 
-    col_append_fstr(pinfo->cinfo, COL_INFO, "%s",
-                    val_to_str(msg_id, hdcp2_msg_id, "unknown (0x%x)"));
+    col_append_str(pinfo->cinfo, COL_INFO,
+                    val_to_str(pinfo->pool, msg_id, hdcp2_msg_id, "unknown (0x%x)"));
     ptvcursor_add(cursor, hf_hdcp2_msg_id, 1, ENC_BIG_ENDIAN);
 
     switch (msg_id) {
         case ID_AKE_INIT:
             ptvcursor_add(cursor, hf_hdcp2_r_tx, 8, ENC_BIG_ENDIAN);
             break;
-        case ID_AKE_SEND_CERT:
-            repeater = ((tvb_get_guint8(tvb, ptvcursor_current_offset(cursor))
+        case ID_AKE_TRANSMITTER_INFO:
+            length = tvb_get_ntohs(tvb, ptvcursor_current_offset(cursor));
+            pi = proto_tree_add_item(ptvcursor_tree(cursor),
+                    hf_hdcp2_tx_length, tvb, ptvcursor_current_offset(cursor),
+                    2, ENC_BIG_ENDIAN);
+            if (length < MSG_FIELD_TRANSMITTER_INFO_LENGTH) {
+                expert_add_info_format(pinfo, pi, &ei_hdcp2_length,
+                        "Length must be at least %d",
+                        MSG_FIELD_TRANSMITTER_INFO_LENGTH);
+            }
+            ptvcursor_advance(cursor, 2);
+            version = tvb_get_uint8(tvb, ptvcursor_current_offset(cursor));
+            pi = proto_tree_add_item(ptvcursor_tree(cursor),
+                    hf_hdcp2_tx_version, tvb, ptvcursor_current_offset(cursor),
+                    1, ENC_BIG_ENDIAN);
+            if (version != 2) {
+                expert_add_info(pinfo, pi, &ei_hdcp2_version_not_2);
+            }
+            ptvcursor_advance(cursor, 1);
+            loc_precomp = ((tvb_get_ntohs(tvb, ptvcursor_current_offset(cursor))
                         & 0x01) == 0x01);
-            col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "%s",
+            col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
+                    loc_precomp ? "locality precompute" : "no locality precompute");
+            ptvcursor_add(cursor, hf_hdcp2_tx_loc_precompute, 2, ENC_BIG_ENDIAN);
+            break;
+        case ID_AKE_SEND_CERT:
+            repeater = ((tvb_get_uint8(tvb, ptvcursor_current_offset(cursor))
+                        & 0x01) == 0x01);
+            col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
                     repeater ? "repeater" : "no repeater");
             ptvcursor_add(cursor, hf_hdcp2_repeater, 1, ENC_BIG_ENDIAN);
             cert_tree = ptvcursor_add_text_with_subtree(cursor, CERT_RX_LEN,
@@ -175,12 +205,37 @@ dissect_hdcp2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
             reserved = tvb_get_ntohs(tvb, ptvcursor_current_offset(cursor));
             pi = proto_tree_add_item(cert_tree, hf_hdcp2_reserved, tvb,
                         ptvcursor_current_offset(cursor), 2, ENC_BIG_ENDIAN);
-            if (reserved != 0) {
+            if ((reserved & 0xEFFF) != 0) {
                 expert_add_info(pinfo, pi, &ei_hdcp2_reserved_0);
             }
             ptvcursor_advance(cursor, 2);
             ptvcursor_add(cursor, hf_hdcp2_cert_rcv_sig, RCV_SIG_LEN, ENC_NA);
             ptvcursor_pop_subtree(cursor);
+            break;
+        case ID_AKE_RECEIVER_INFO:
+            length = tvb_get_ntohs(tvb, ptvcursor_current_offset(cursor));
+            pi = proto_tree_add_item(ptvcursor_tree(cursor),
+                    hf_hdcp2_rx_length, tvb, ptvcursor_current_offset(cursor),
+                    2, ENC_BIG_ENDIAN);
+            if (length < MSG_FIELD_RECEIVER_INFO_LENGTH) {
+                expert_add_info_format(pinfo, pi, &ei_hdcp2_length,
+                        "Length must be at least %d",
+                        MSG_FIELD_RECEIVER_INFO_LENGTH);
+            }
+            ptvcursor_advance(cursor, 2);
+            version = tvb_get_uint8(tvb, ptvcursor_current_offset(cursor));
+            pi = proto_tree_add_item(ptvcursor_tree(cursor),
+                    hf_hdcp2_rx_version, tvb, ptvcursor_current_offset(cursor),
+                    1, ENC_BIG_ENDIAN);
+            if (version != 2) {
+                expert_add_info(pinfo, pi, &ei_hdcp2_version_not_2);
+            }
+            ptvcursor_advance(cursor, 1);
+            loc_precomp = ((tvb_get_ntohs(tvb, ptvcursor_current_offset(cursor))
+                        & 0x01) == 0x01);
+            col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
+                    loc_precomp ? "locality precompute" : "no locality precompute");
+            ptvcursor_add(cursor, hf_hdcp2_rx_loc_precompute, 2, ENC_BIG_ENDIAN);
             break;
         case ID_AKE_NO_STORED_KM:
             ptvcursor_add(cursor, hf_hdcp2_e_kpub_km, 128, ENC_NA);
@@ -216,12 +271,17 @@ dissect_hdcp2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U
     return tvb_reported_length(tvb);
 }
 
+static bool
+dissect_hdcp2_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    return dissect_hdcp2(tvb, pinfo, tree, data) > 0;
+}
 
 
 void
 proto_register_hdcp2(void)
 {
-    guint i;
+    unsigned i;
 
     static hf_register_info hf[] = {
         { &hf_hdcp2_msg_id,
@@ -274,34 +334,52 @@ proto_register_hdcp2(void)
                 NULL, 0, NULL, HFILL } },
         { &hf_hdcp2_reserved,
             { "Reserved", "hdcp2.reserved", FT_UINT16, BASE_HEX,
-                NULL, 0, NULL, HFILL } }
+                NULL, 0, NULL, HFILL } },
+        { &hf_hdcp2_tx_length,
+            { "LENGTH", "hdcp2.txinf_len", FT_UINT16, BASE_DEC,
+                NULL, 0, NULL, HFILL } },
+        { &hf_hdcp2_tx_version,
+            { "VERSION", "hdcp2.txinf_ver", FT_UINT8, BASE_DEC,
+                NULL, 0, NULL, HFILL } },
+        { &hf_hdcp2_tx_loc_precompute,
+            { "Locality Precompute", "hdcp2.txinf_cap", FT_BOOLEAN, 16,
+                NULL, 0x0001, NULL, HFILL } },
+        { &hf_hdcp2_rx_length,
+            { "LENGTH", "hdcp2.rxinf_len", FT_UINT16, BASE_DEC,
+                NULL, 0, NULL, HFILL } },
+        { &hf_hdcp2_rx_version,
+            { "VERSION", "hdcp2.rxinf_ver", FT_UINT8, BASE_DEC,
+                NULL, 0, NULL, HFILL } },
+        { &hf_hdcp2_rx_loc_precompute,
+            { "Locality Precompute", "hdcp2.rxinf_cap", FT_BOOLEAN, 16,
+                NULL, 0x0001, NULL, HFILL } },
 
 };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_hdcp2,
-        &ett_hdcp2_cert
+        &ett_hdcp2_cert,
     };
 
     static ei_register_info ei[] = {
         { &ei_hdcp2_reserved_0, { "hdcp2.reserved.not0", PI_PROTOCOL, PI_WARN, "reserved bytes must be set to 0x0", EXPFILL }},
+        { &ei_hdcp2_version_not_2, { "hdcp2.version.not2", PI_PROTOCOL, PI_WARN, "version must be set to 0x2", EXPFILL }},
+        { &ei_hdcp2_length, { "hdcp2.length.invalid", PI_PROTOCOL, PI_WARN, "Invalid length", EXPFILL }},
     };
 
     module_t *hdcp2_module;
     expert_module_t* expert_hdcp2;
 
-    msg_table = g_hash_table_new(g_direct_hash, g_direct_equal);
+    msg_table = wmem_map_new(wmem_epan_scope(), g_direct_hash, g_direct_equal);
     for(i=0; i<array_length(msg_info); i++) {
-        g_hash_table_insert(msg_table,
-                GUINT_TO_POINTER((guint)msg_info[i].id),
-                (gpointer)(&msg_info[i]));
+        wmem_map_insert(msg_table,
+                GUINT_TO_POINTER((unsigned)msg_info[i].id),
+                (void *)(&msg_info[i]));
     }
 
-    proto_hdcp2 = proto_register_protocol(
-            "High bandwidth Digital Content Protection version 2",
-            "HDCP2", "hdcp2");
+    proto_hdcp2 = proto_register_protocol("High bandwidth Digital Content Protection version 2", "HDCP2", "hdcp2");
 
-    hdcp2_module = prefs_register_protocol(proto_hdcp2, proto_reg_handoff_hdcp2);
+    hdcp2_module = prefs_register_protocol_obsolete(proto_hdcp2);
     prefs_register_obsolete_preference(hdcp2_module, "enable");
 
     proto_register_field_array(proto_hdcp2, hf, array_length(hf));
@@ -315,17 +393,17 @@ proto_register_hdcp2(void)
 void
 proto_reg_handoff_hdcp2(void)
 {
-    static gboolean prefs_initialized = FALSE;
+    static bool prefs_initialized = false;
 
     if (!prefs_initialized) {
-        heur_dissector_add ("tcp", dissect_hdcp2, "HDCP2 over TCP", "hdcp2_tcp", proto_hdcp2, HEURISTIC_DISABLE);
+        heur_dissector_add ("tcp", dissect_hdcp2_heur, "HDCP2 over TCP", "hdcp2_tcp", proto_hdcp2, HEURISTIC_DISABLE);
 
-        prefs_initialized = TRUE;
+        prefs_initialized = true;
     }
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

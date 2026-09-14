@@ -10,11 +10,11 @@ msgid ""
 msgstr ""
 "Project-Id-Version: gettext-runtime 0.18\n"
 "Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"POT-Creation-Date: 2016-06-11 22:08+0900\n"
+"POT-Creation-Date: 2010-05-09 13:18+0200\n"
 "PO-Revision-Date: 2010-05-24 13:00+0700\n"
 "Last-Translator: Arif E. Nugroho <arif_endro@yahoo.com>\n"
 "Language-Team: Indonesian <translation-team-id@lists.sourceforge.net>\n"
-"Language: id\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=ISO-8859-1\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -23,77 +23,72 @@ msgstr ""
 msgid "write error"
 msgstr "kesalahan penulisan"
 
-#: gnulib-lib/error.c:191
+#: gnulib-lib/error.c:181
 msgid "Unknown system error"
 msgstr "Kesalahan sistem tak dikenal"
 
-#: gnulib-lib/getopt.c:575 gnulib-lib/getopt.c:604
-#, fuzzy, c-format
-msgid "%s: option '%s' is ambiguous; possibilities:"
-msgstr "%s: pilihan '%s' rancu\n"
-
-#: gnulib-lib/getopt.c:619
+#: gnulib-lib/getopt.c:527 gnulib-lib/getopt.c:543
 #, c-format
 msgid "%s: option '%s' is ambiguous\n"
 msgstr "%s: pilihan '%s' rancu\n"
 
-#: gnulib-lib/getopt.c:654 gnulib-lib/getopt.c:658
+#: gnulib-lib/getopt.c:576 gnulib-lib/getopt.c:580
 #, c-format
 msgid "%s: option '--%s' doesn't allow an argument\n"
 msgstr "%s: pilihan '--%s' tidak membolehkan argumen\n"
 
-#: gnulib-lib/getopt.c:667 gnulib-lib/getopt.c:672
+#: gnulib-lib/getopt.c:589 gnulib-lib/getopt.c:594
 #, c-format
 msgid "%s: option '%c%s' doesn't allow an argument\n"
 msgstr "%s: pilihan '%c%s' tidak membolehkan argumen\n"
 
-#: gnulib-lib/getopt.c:715 gnulib-lib/getopt.c:734
+#: gnulib-lib/getopt.c:637 gnulib-lib/getopt.c:656
 #, c-format
 msgid "%s: option '--%s' requires an argument\n"
 msgstr "%s: pilihan '--%s' memerlukan sebuah argumen\n"
 
-#: gnulib-lib/getopt.c:772 gnulib-lib/getopt.c:775
+#: gnulib-lib/getopt.c:694 gnulib-lib/getopt.c:697
 #, c-format
 msgid "%s: unrecognized option '--%s'\n"
 msgstr "%s: pilihan tak dikenal '--%s'\n"
 
-#: gnulib-lib/getopt.c:783 gnulib-lib/getopt.c:786
+#: gnulib-lib/getopt.c:705 gnulib-lib/getopt.c:708
 #, c-format
 msgid "%s: unrecognized option '%c%s'\n"
 msgstr "%s: pilihan tak dikenal '%c%s'\n"
 
-#: gnulib-lib/getopt.c:835 gnulib-lib/getopt.c:838
+#: gnulib-lib/getopt.c:757 gnulib-lib/getopt.c:760
 #, c-format
 msgid "%s: invalid option -- '%c'\n"
 msgstr "%s: pilihan tidak valid -- '%c'\n"
 
-#: gnulib-lib/getopt.c:891 gnulib-lib/getopt.c:908 gnulib-lib/getopt.c:1118
-#: gnulib-lib/getopt.c:1136
+#: gnulib-lib/getopt.c:810 gnulib-lib/getopt.c:827 gnulib-lib/getopt.c:1035
+#: gnulib-lib/getopt.c:1053
 #, c-format
 msgid "%s: option requires an argument -- '%c'\n"
 msgstr "%s: pilihan membutuhkan sebuah argumen -- '%c'\n"
 
-#: gnulib-lib/getopt.c:964 gnulib-lib/getopt.c:980
+#: gnulib-lib/getopt.c:883 gnulib-lib/getopt.c:899
 #, c-format
 msgid "%s: option '-W %s' is ambiguous\n"
 msgstr "%s: pilihan '-W %s' rancu\n"
 
-#: gnulib-lib/getopt.c:1004 gnulib-lib/getopt.c:1022
+#: gnulib-lib/getopt.c:923 gnulib-lib/getopt.c:941
 #, c-format
 msgid "%s: option '-W %s' doesn't allow an argument\n"
 msgstr "%s: pilihan '-W %s' tidak membolehkan sebuah argumen\n"
 
-#: gnulib-lib/getopt.c:1043 gnulib-lib/getopt.c:1061
+#: gnulib-lib/getopt.c:962 gnulib-lib/getopt.c:980
 #, c-format
 msgid "%s: option '-W %s' requires an argument\n"
 msgstr "%s: pilihan '-W %s' memerlukan sebuah argumen\n"
 
-#: gnulib-lib/xmalloc.c:38
+#: gnulib-lib/xmalloc.c:37
 #, c-format
 msgid "memory exhausted"
 msgstr "kehabisan memori"
 
-#: src/envsubst.c:112 src/gettext.c:134 src/ngettext.c:123
+#: src/envsubst.c:112 src/gettext.c:133 src/ngettext.c:123
 #, c-format, no-wrap
 msgid ""
 "Copyright (C) %s Free Software Foundation, Inc.\n"
@@ -106,7 +101,7 @@ msgstr ""
 "Ini adalah piranti lunak bebas: anda bebas untuk mengubah dan meredistribusikannya.\n"
 "TIDAK ADA GARANSI, sampai batas yang diijinkan oleh hukum yang berlaku.\n"
 
-#: src/envsubst.c:118 src/gettext.c:140 src/ngettext.c:129
+#: src/envsubst.c:118 src/gettext.c:139 src/ngettext.c:129
 #, c-format
 msgid "Written by %s.\n"
 msgstr "Ditulis oleh %s.\n"
@@ -116,19 +111,19 @@ msgstr "Ditulis oleh %s.\n"
 msgid "Bruno Haible"
 msgstr "Bruno Haible"
 
-#: src/envsubst.c:127 src/gettext.c:158 src/ngettext.c:141
+#: src/envsubst.c:127 src/gettext.c:157 src/ngettext.c:141
 #, c-format
 msgid "too many arguments"
 msgstr "terlalu banyak argumen"
 
-#: src/envsubst.c:138 src/gettext.c:168 src/ngettext.c:153
+#: src/envsubst.c:138 src/gettext.c:167 src/ngettext.c:153
 #, c-format
 msgid "missing arguments"
 msgstr "Argumen hilang"
 
-#: src/envsubst.c:171 src/gettext.c:239 src/ngettext.c:207
-#, fuzzy, c-format
-msgid "Try '%s --help' for more information.\n"
+#: src/envsubst.c:171 src/gettext.c:238 src/ngettext.c:207
+#, c-format
+msgid "Try `%s --help' for more information.\n"
 msgstr "Coba `%s --help' untuk informasi lebih jauh.\n"
 
 #: src/envsubst.c:176
@@ -197,7 +192,7 @@ msgstr ""
 #. for this package.  Please add _another line_ saying
 #. "Report translation bugs to <...>\n" with the address for translation
 #. bugs (typically your translation team's web or email address).
-#: src/envsubst.c:219 src/gettext.c:280 src/ngettext.c:245
+#: src/envsubst.c:219 src/gettext.c:279 src/ngettext.c:245
 msgid "Report bugs to <bug-gnu-gettext@gnu.org>.\n"
 msgstr "Laporkan kesalahan ke <bug-gnu-gettext@gnu.org>.\n"
 
@@ -211,11 +206,11 @@ msgid "standard input"
 msgstr "standard input"
 
 #. This is a proper name. See the gettext manual, section Names.
-#: src/gettext.c:140 src/ngettext.c:129
+#: src/gettext.c:139 src/ngettext.c:129
 msgid "Ulrich Drepper"
 msgstr "Ulrich Drepper"
 
-#: src/gettext.c:244
+#: src/gettext.c:243
 #, c-format, no-wrap
 msgid ""
 "Usage: %s [OPTION] [[TEXTDOMAIN] MSGID]\n"
@@ -224,12 +219,12 @@ msgstr ""
 "Pemakaian: %s [PILIHAN] [[TEXTDOMAIN] ID-PESAN]\n"
 "atau:    %s [PILIHAN] -s [ID-PESAN]...\n"
 
-#: src/gettext.c:250
+#: src/gettext.c:249
 #, c-format, no-wrap
 msgid "Display native language translation of a textual message.\n"
 msgstr "Tampilkan terjemahan bahasa asli pesan tekstual.\n"
 
-#: src/gettext.c:254
+#: src/gettext.c:253
 #, c-format, no-wrap
 msgid ""
 "  -d, --domain=TEXTDOMAIN   retrieve translated messages from TEXTDOMAIN\n"
@@ -250,14 +245,14 @@ msgstr ""
 "  [TEXTDOMAIN] ID-PESAN     mengambil pesan terjemahan yang sesuai\n"
 "                            untuk ID-PESAN dari TEXTDOMAIN\n"
 
-#: src/gettext.c:265
-#, fuzzy, c-format, no-wrap
+#: src/gettext.c:264
+#, c-format, no-wrap
 msgid ""
 "If the TEXTDOMAIN parameter is not given, the domain is determined from the\n"
 "environment variable TEXTDOMAIN.  If the message catalog is not found in the\n"
 "regular directory, another location can be specified with the environment\n"
 "variable TEXTDOMAINDIR.\n"
-"When used with the -s option the program behaves like the 'echo' command.\n"
+"When used with the -s option the program behaves like the `echo' command.\n"
 "But it does not simply copy its arguments to stdout.  Instead those messages\n"
 "found in the selected catalog are translated.\n"
 "Standard search directory: %s\n"
@@ -328,12 +323,9 @@ msgstr ""
 # )
 #~ msgid ""
 #~ "Copyright (C) %s Free Software Foundation, Inc.\n"
-#~ "This is free software; see the source for copying conditions.  There is "
-#~ "NO\n"
-#~ "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR "
-#~ "PURPOSE.\n"
+#~ "This is free software; see the source for copying conditions.  There is NO\n"
+#~ "warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"
 #~ msgstr ""
 #~ "Hak Cipta (C) %s Free Software Foundation, Inc.\n"
-#~ "Ini adalah free software; lihat source untuk kondisi penyalinan. Tidak "
-#~ "ada\n"
+#~ "Ini adalah free software; lihat source untuk kondisi penyalinan. Tidak ada\n"
 #~ "jaminan; bahkan untuk PENJUALAN atau KESESUAIAN UNTUK TUJUAN TERTENTU.\n"

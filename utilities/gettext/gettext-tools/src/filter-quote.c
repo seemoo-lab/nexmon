@@ -1,6 +1,5 @@
 /* Convert ASCII quotations to Unicode quotations.
-   Copyright (C) 2014-2016 Free Software Foundation, Inc.
-   Written by Daiki Ueno <ueno@gnu.org>, 2014.
+   Copyright (C) 2014-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Daiki Ueno.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "filters.h"
@@ -101,13 +100,9 @@ convert_ascii_quote_to_unicode (const char *input, size_t input_len,
                                 char **output_p, size_t *output_len_p,
                                 bool bold)
 {
-  const char *p;
-  size_t quote_count;
-  struct result result;
-
   /* Count the number of quotation characters.  */
-  quote_count = 0;
-  for (p = input; p < input + input_len; p++)
+  size_t quote_count = 0;
+  for (const char *p = input; p < input + input_len; p++)
     {
       size_t len;
 
@@ -121,6 +116,7 @@ convert_ascii_quote_to_unicode (const char *input, size_t input_len,
     }
 
   /* Large enough.  */
+  struct result result;
   result.output = XNMALLOC (input_len - quote_count
                             + (bold ? 7 : 3) * quote_count + 1,
                             char);

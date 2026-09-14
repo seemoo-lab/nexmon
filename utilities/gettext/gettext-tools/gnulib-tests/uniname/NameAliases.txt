@@ -1,11 +1,54 @@
-# NameAliases-8.0.0.txt
-# Date: 2014-11-19, 01:30:00 GMT [KW, LI]
+# UNICODE LICENSE V3
+#
+# COPYRIGHT AND PERMISSION NOTICE
+#
+# Copyright © 1991-2024 Unicode, Inc.
+#
+# NOTICE TO USER: Carefully read the following legal agreement. BY
+# DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING DATA FILES, AND/OR
+# SOFTWARE, YOU UNEQUIVOCALLY ACCEPT, AND AGREE TO BE BOUND BY, ALL OF THE
+# TERMS AND CONDITIONS OF THIS AGREEMENT. IF YOU DO NOT AGREE, DO NOT
+# DOWNLOAD, INSTALL, COPY, DISTRIBUTE OR USE THE DATA FILES OR SOFTWARE.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of data files and any associated documentation (the "Data Files") or
+# software and any associated documentation (the "Software") to deal in the
+# Data Files or Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, and/or sell
+# copies of the Data Files or Software, and to permit persons to whom the
+# Data Files or Software are furnished to do so, provided that either (a)
+# this copyright and permission notice appear with all copies of the Data
+# Files or Software, or (b) this copyright and permission notice appear in
+# associated Documentation.
+#
+# THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+# KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF
+# THIRD PARTY RIGHTS.
+#
+# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE
+# BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES,
+# OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+# WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+# ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA
+# FILES OR SOFTWARE.
+#
+# Except as contained in this notice, the name of a copyright holder shall
+# not be used in advertising or otherwise to promote the sale, use or other
+# dealings in these Data Files or Software without prior written
+# authorization of the copyright holder.
+
+# NameAliases-17.0.0.txt
+# Date: 2025-04-23
+# © 2025 Unicode®, Inc.
+# Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+# For terms of use and license, see https://www.unicode.org/terms_of_use.html
+#
+# Unicode Character Database
+# For documentation, see https://www.unicode.org/reports/tr44/
 #
 # This file is a normative contributory data file in the
 # Unicode Character Database.
-#
-# Copyright (c) 2005-2014 Unicode, Inc.
-# For terms of use, see http://www.unicode.org/terms_of_use.html
 #
 # This file defines the formal name aliases for Unicode characters.
 #
@@ -38,7 +81,7 @@
 # control codes (which for historical reasons have no Unicode character name)
 # or for format characters.
 #
-# For documentation, see NamesList.html and http://www.unicode.org/reports/tr44/
+# For documentation, see NamesList.html and https://www.unicode.org/reports/tr44/
 #
 # FORMAT
 #
@@ -133,6 +176,7 @@
 0018;CAN;abbreviation
 0019;END OF MEDIUM;control
 0019;EOM;abbreviation
+0019;EM;abbreviation
 001A;SUBSTITUTE;control
 001A;SUB;abbreviation
 001B;ESCAPE;control
@@ -161,7 +205,7 @@
 # (and corresponding abbreviations) for these code
 # points are included here because these names leaked
 # out from the draft documents and were published in
-# at least one RFC whose names for code points was
+# at least one RFC whose names for code points were
 # implemented in Perl regex expressions.
 
 0080;PADDING CHARACTER;figment
@@ -252,6 +296,7 @@
 01A2;LATIN CAPITAL LETTER GHA;correction
 01A3;LATIN SMALL LETTER GHA;correction
 034F;CGJ;abbreviation
+0616;ARABIC SMALL HIGH LIGATURE ALEF WITH YEH BARREE;correction
 061C;ALM;abbreviation
 0709;SYRIAC SUBLINEAR COLON SKEWED LEFT;correction
 0CDE;KANNADA LETTER LLLA;correction
@@ -260,10 +305,16 @@
 0EA3;LAO LETTER RO;correction
 0EA5;LAO LETTER LO;correction
 0FD0;TIBETAN MARK BKA- SHOG GI MGO RGYAN;correction
+11EC;HANGUL JONGSEONG YESIEUNG-KIYEOK;correction
+11ED;HANGUL JONGSEONG YESIEUNG-SSANGKIYEOK;correction
+11EE;HANGUL JONGSEONG SSANGYESIEUNG;correction
+11EF;HANGUL JONGSEONG YESIEUNG-KHIEUKH;correction
 180B;FVS1;abbreviation
 180C;FVS2;abbreviation
 180D;FVS3;abbreviation
 180E;MVS;abbreviation
+180F;FVS4;abbreviation
+1BBD;SUNDANESE LETTER ARCHAIC I;correction
 200B;ZWSP;abbreviation
 200C;ZWNJ;abbreviation
 200D;ZWJ;abbreviation
@@ -287,7 +338,7 @@
 2B7A;LEFTWARDS TRIANGLE-HEADED ARROW WITH DOUBLE VERTICAL STROKE;correction
 2B7C;RIGHTWARDS TRIANGLE-HEADED ARROW WITH DOUBLE VERTICAL STROKE;correction
 A015;YI SYLLABLE ITERATION MARK;correction
-FE18;PRESENTATION FORM FOR VERTICAL RIGHT WHITE LENTICULAR BRACKET;correction
+AA6E;MYANMAR LETTER KHAMTI LLA;correction
 FE00;VS1;abbreviation
 FE01;VS2;abbreviation
 FE02;VS3;abbreviation
@@ -304,12 +355,26 @@ FE0C;VS13;abbreviation
 FE0D;VS14;abbreviation
 FE0E;VS15;abbreviation
 FE0F;VS16;abbreviation
+FE18;PRESENTATION FORM FOR VERTICAL RIGHT WHITE LENTICULAR BRACKET;correction
 FEFF;BYTE ORDER MARK;alternate
 FEFF;BOM;abbreviation
 FEFF;ZWNBSP;abbreviation
 122D4;CUNEIFORM SIGN NU11 TENU;correction
 122D5;CUNEIFORM SIGN NU11 OVER NU11 BUR OVER BUR;correction
+12327;CUNEIFORM SIGN KALAM;correction
+1680B;BAMUM LETTER PHASE-A MAEMGBIEE;correction
+16881;BAMUM LETTER PHASE-B PUNGGAAM;correction
+1688E;BAMUM LETTER PHASE-B NGGOM;correction
+168DC;BAMUM LETTER PHASE-C SHETFON;correction
+1697D;BAMUM LETTER PHASE-E NGGOP;correction
+16E56;MEDEFAIDRIN CAPITAL LETTER H;correction
+16E57;MEDEFAIDRIN CAPITAL LETTER NG;correction
+16E76;MEDEFAIDRIN SMALL LETTER H;correction
+16E77;MEDEFAIDRIN SMALL LETTER NG;correction
+1B001;HENTAIGANA LETTER E-1;correction
 1D0C5;BYZANTINE MUSICAL SYMBOL FTHORA SKLIRON CHROMA VASIS;correction
+1E899;MENDE KIKAKUI SYLLABLE M172 MBO;correction
+1E89A;MENDE KIKAKUI SYLLABLE M174 MBOO;correction
 E0100;VS17;abbreviation
 E0101;VS18;abbreviation
 E0102;VS19;abbreviation

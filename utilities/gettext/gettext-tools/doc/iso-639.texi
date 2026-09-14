@@ -29,13 +29,13 @@ Belarusian.
 @item bg
 Bulgarian.
 @item bh
-Bihari.
+Bihari languages.
 @item bi
 Bislama.
 @item bm
 Bambara.
 @item bn
-Bengali; Bangla.
+Bengali.
 @item bo
 Tibetan.
 @item br
@@ -43,7 +43,7 @@ Breton.
 @item bs
 Bosnian.
 @item ca
-Catalan.
+Catalan; Valencian.
 @item ce
 Chechen.
 @item ch
@@ -55,7 +55,7 @@ Cree.
 @item cs
 Czech.
 @item cu
-Church Slavic.
+Church Slavic; Old Slavonic; Church Slavonic; Old Bulgarian; Old Church Slavonic.
 @item cv
 Chuvash.
 @item cy
@@ -65,19 +65,19 @@ Danish.
 @item de
 German.
 @item dv
-Divehi; Maldivian.
+Divehi; Dhivehi; Maldivian.
 @item dz
-Dzongkha; Bhutani.
+Dzongkha.
 @item ee
-@'Ew@'e.
+Ewe.
 @item el
-Greek.
+Greek, Modern (1453-).
 @item en
 English.
 @item eo
 Esperanto.
 @item es
-Spanish.
+Spanish; Castilian.
 @item et
 Estonian.
 @item eu
@@ -89,7 +89,7 @@ Fulah.
 @item fi
 Finnish.
 @item fj
-Fijian; Fiji.
+Fijian.
 @item fo
 Faroese.
 @item fr
@@ -99,7 +99,7 @@ Western Frisian.
 @item ga
 Irish.
 @item gd
-Scottish Gaelic.
+Gaelic; Scottish Gaelic.
 @item gl
 Galician.
 @item gn
@@ -111,7 +111,7 @@ Manx.
 @item ha
 Hausa.
 @item he
-Hebrew (formerly iw).
+Hebrew.
 @item hi
 Hindi.
 @item ho
@@ -127,9 +127,9 @@ Armenian.
 @item hz
 Herero.
 @item ia
-Interlingua.
+Interlingua (International Auxiliary Language Association).
 @item id
-Indonesian (formerly in).
+Indonesian.
 @item ie
 Interlingue; Occidental.
 @item ig
@@ -137,7 +137,7 @@ Igbo.
 @item ii
 Sichuan Yi; Nuosu.
 @item ik
-Inupiak; Inupiaq.
+Inupiak.
 @item io
 Ido.
 @item is
@@ -163,7 +163,7 @@ Kazakh.
 @item kl
 Kalaallisut; Greenlandic.
 @item km
-Central Khmer; Cambodian.
+Central Khmer.
 @item kn
 Kannada.
 @item ko
@@ -179,25 +179,25 @@ Komi.
 @item kw
 Cornish.
 @item ky
-Kirghiz.
+Kirghiz; Kyrgyz.
 @item la
 Latin.
 @item lb
-Letzeburgesch; Luxembourgish.
+Luxembourgish; Letzeburgesch.
 @item lg
 Ganda.
 @item li
-Limburgish; Limburger; Limburgan.
+Limburgan; Limburger; Limburgish.
 @item ln
 Lingala.
 @item lo
-Lao; Laotian.
+Lao.
 @item lt
 Lithuanian.
 @item lu
 Luba-Katanga.
 @item lv
-Latvian; Lettish.
+Latvian.
 @item mg
 Malagasy.
 @item mh
@@ -210,8 +210,6 @@ Macedonian.
 Malayalam.
 @item mn
 Mongolian.
-@item mo
-Moldavian.
 @item mr
 Marathi.
 @item ms
@@ -223,31 +221,31 @@ Burmese.
 @item na
 Nauru.
 @item nb
-Norwegian Bokm@aa{}l.
+Bokm@aa{}l, Norwegian; Norwegian Bokm@aa{}l.
 @item nd
-Ndebele, North.
+Ndebele, North; North Ndebele.
 @item ne
 Nepali.
 @item ng
 Ndonga.
 @item nl
-Dutch.
+Dutch; Flemish.
 @item nn
-Norwegian Nynorsk.
+Norwegian Nynorsk; Nynorsk, Norwegian.
 @item no
 Norwegian.
 @item nr
-Ndebele, South.
+Ndebele, South; South Ndebele.
 @item nv
 Navajo; Navaho.
 @item ny
 Chichewa; Nyanja.
 @item oc
-Occitan; Proven@,{c}al.
+Occitan (post 1500); Proven@,{c}al.
 @item oj
 Ojibwa.
 @item om
-(Afan) Oromo.
+Oromo.
 @item or
 Oriya.
 @item os
@@ -259,7 +257,7 @@ Pali.
 @item pl
 Polish.
 @item ps
-Pashto; Pushto.
+Pushto; Pashto.
 @item pt
 Portuguese.
 @item qu
@@ -267,9 +265,9 @@ Quechua.
 @item rm
 Romansh.
 @item rn
-Rundi; Kirundi.
+Rundi.
 @item ro
-Romanian.
+Romanian; Moldavian; Moldovan.
 @item ru
 Russian.
 @item rw
@@ -283,7 +281,7 @@ Sindhi.
 @item se
 Northern Sami.
 @item sg
-Sango; Sangro.
+Sango.
 @item si
 Sinhala; Sinhalese.
 @item sk
@@ -301,9 +299,9 @@ Albanian.
 @item sr
 Serbian.
 @item ss
-Swati; Siswati.
+Swati.
 @item st
-Sesotho; Sotho, Southern.
+Sotho, Southern.
 @item su
 Sundanese.
 @item sv
@@ -325,9 +323,9 @@ Turkmen.
 @item tl
 Tagalog.
 @item tn
-Tswana; Setswana.
+Tswana.
 @item to
-Tonga.
+Tonga (Tonga Islands).
 @item tr
 Turkish.
 @item ts
@@ -339,7 +337,7 @@ Twi.
 @item ty
 Tahitian.
 @item ug
-Uighur.
+Uighur; Uyghur.
 @item uk
 Ukrainian.
 @item ur
@@ -351,7 +349,7 @@ Venda.
 @item vi
 Vietnamese.
 @item vo
-Volap@"{u}k; Volapuk.
+Volap@"{u}k.
 @item wa
 Walloon.
 @item wo
@@ -359,11 +357,11 @@ Wolof.
 @item xh
 Xhosa.
 @item yi
-Yiddish (formerly ji).
+Yiddish.
 @item yo
 Yoruba.
 @item za
-Zhuang.
+Zhuang; Chuang.
 @item zh
 Chinese.
 @item zu

@@ -1,0 +1,320 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlXPathCompExpr" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlXPathCompExpr</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlXPathCompExpr_1adfbda717a0c93c03bd532b01afff8023" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int nbStep</definition>
+        <argsstring></argsstring>
+        <name>nbStep</name>
+        <qualifiedname>_xmlXPathCompExpr::nbStep</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xpath.c" line="899" column="9" bodyfile="/builds/GNOME/libxml2/xpath.c" bodystart="899" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathCompExpr_1a68defcf610c5210aa9a2b73fb4de6fbe" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int maxStep</definition>
+        <argsstring></argsstring>
+        <name>maxStep</name>
+        <qualifiedname>_xmlXPathCompExpr::maxStep</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xpath.c" line="900" column="9" bodyfile="/builds/GNOME/libxml2/xpath.c" bodystart="900" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathCompExpr_1ab84504f3df1b4e3e269c5d6ea952d8e2" prot="public" static="no" mutable="no">
+        <type>xmlXPathStepOp *</type>
+        <definition>xmlXPathStepOp* steps</definition>
+        <argsstring></argsstring>
+        <name>steps</name>
+        <qualifiedname>_xmlXPathCompExpr::steps</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xpath.c" line="901" column="20" bodyfile="/builds/GNOME/libxml2/xpath.c" bodystart="901" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathCompExpr_1a72e27dee31b1c4c6a504fbed29542d97" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int last</definition>
+        <argsstring></argsstring>
+        <name>last</name>
+        <qualifiedname>_xmlXPathCompExpr::last</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xpath.c" line="902" column="9" bodyfile="/builds/GNOME/libxml2/xpath.c" bodystart="902" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathCompExpr_1a2aab67da8dcedd4bc9daf906cab04f75" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* expr</definition>
+        <argsstring></argsstring>
+        <name>expr</name>
+        <qualifiedname>_xmlXPathCompExpr::expr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xpath.c" line="903" column="13" bodyfile="/builds/GNOME/libxml2/xpath.c" bodystart="903" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlXPathCompExpr_1a2f89a426c195c2ad019b65e822791a21" prot="public" static="no" mutable="no">
+        <type>xmlDictPtr</type>
+        <definition>xmlDictPtr dict</definition>
+        <argsstring></argsstring>
+        <name>dict</name>
+        <qualifiedname>_xmlXPathCompExpr::dict</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xpath.c" line="904" column="16" bodyfile="/builds/GNOME/libxml2/xpath.c" bodystart="904" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="8">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="11">
+        <label>_xmlDict</label>
+        <childnode refid="12" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="12">
+        <label>_xmlDictStrings</label>
+        <childnode refid="12" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="17">
+        <label>_xmlError</label>
+        <link refid="struct__xmlError"/>
+      </node>
+      <node id="13">
+        <label>_xmlHashTable</label>
+        <childnode refid="14" relation="usage">
+          <edgelabel>table</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="16">
+        <label>_xmlNodeSet</label>
+        <link refid="struct__xmlNodeSet"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>nodeTab</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="7" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlXPathCompExpr</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>steps</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlXPathContext</label>
+        <link refid="struct__xmlXPathContext"/>
+        <childnode refid="5" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>debugNode</edgelabel>
+          <edgelabel>here</edgelabel>
+          <edgelabel>node</edgelabel>
+          <edgelabel>origin</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>funcHash</edgelabel>
+          <edgelabel>nsHash</edgelabel>
+          <edgelabel>varHash</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>namespaces</edgelabel>
+          <edgelabel>tmpNsList</edgelabel>
+        </childnode>
+        <childnode refid="15" relation="usage">
+          <edgelabel>varLookupFunc</edgelabel>
+        </childnode>
+        <childnode refid="17" relation="usage">
+          <edgelabel>error</edgelabel>
+          <edgelabel>lastError</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="15">
+        <label>_xmlXPathObject</label>
+        <link refid="struct__xmlXPathObject"/>
+        <childnode refid="16" relation="usage">
+          <edgelabel>nodesetval</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlXPathParserContext</label>
+        <link refid="struct__xmlXPathParserContext"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+        <childnode refid="15" relation="usage">
+          <edgelabel>value</edgelabel>
+          <edgelabel>valueTab</edgelabel>
+        </childnode>
+        <childnode refid="1" relation="usage">
+          <edgelabel>comp</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>ancestor</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlXPathStepOp</label>
+        <childnode refid="3" relation="usage">
+          <edgelabel>cache</edgelabel>
+        </childnode>
+      </node>
+      <node id="14">
+        <label>xmlHashEntry</label>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xpath.c" line="898" column="1" bodyfile="/builds/GNOME/libxml2/xpath.c" bodystart="898" bodyend="908"/>
+    <listofallmembers>
+      <member refid="struct__xmlXPathCompExpr_1a2f89a426c195c2ad019b65e822791a21" prot="public" virt="non-virtual"><scope>_xmlXPathCompExpr</scope><name>dict</name></member>
+      <member refid="struct__xmlXPathCompExpr_1a2aab67da8dcedd4bc9daf906cab04f75" prot="public" virt="non-virtual"><scope>_xmlXPathCompExpr</scope><name>expr</name></member>
+      <member refid="struct__xmlXPathCompExpr_1a72e27dee31b1c4c6a504fbed29542d97" prot="public" virt="non-virtual"><scope>_xmlXPathCompExpr</scope><name>last</name></member>
+      <member refid="struct__xmlXPathCompExpr_1a68defcf610c5210aa9a2b73fb4de6fbe" prot="public" virt="non-virtual"><scope>_xmlXPathCompExpr</scope><name>maxStep</name></member>
+      <member refid="struct__xmlXPathCompExpr_1adfbda717a0c93c03bd532b01afff8023" prot="public" virt="non-virtual"><scope>_xmlXPathCompExpr</scope><name>nbStep</name></member>
+      <member refid="struct__xmlXPathCompExpr_1ab84504f3df1b4e3e269c5d6ea952d8e2" prot="public" virt="non-virtual"><scope>_xmlXPathCompExpr</scope><name>steps</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

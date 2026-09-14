@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<doc xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="http://example.invalid/file.xml">
+    <xi:fallback><p>Network access is not allowed</p></xi:fallback>
+  </xi:include>
+</doc>

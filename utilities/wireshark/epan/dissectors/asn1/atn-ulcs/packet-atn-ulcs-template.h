@@ -5,28 +5,14 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #ifndef PACKET_ATN_ULCS_H
 #define PACKET_ATN_ULCS_H
 
-#include <config.h>
+#include <epan/packet.h>
 
-#include "packet.h"
-
-#include <epan/wmem/wmem.h>
+#include <epan/wmem_scopes.h>
 
 enum msg_type {
     um,
@@ -47,18 +33,18 @@ enum ae_qualifier {
 };
 
 typedef struct atn_conversation_t {
-    gint ae_qualifier; /* A/G application type  */
+    int ae_qualifier; /* A/G application type  */
 } atn_conversation_t;
 
 atn_conversation_t * create_atn_conversation(
     address*,
-    guint16,
+    uint16_t,
     address*,
     atn_conversation_t*);
 
 atn_conversation_t * find_atn_conversation(
     address*,
-    guint16,
+    uint16_t,
     address*);
 
 /* struct for conversation data reconstruction used in AARQ and AARE */
@@ -67,22 +53,22 @@ atn_conversation_t * find_atn_conversation(
 /* if AARQ/AARQ is contained within CR/CC only src_ref is present in CR */
 /* while CC provides src_ref and dstref */
 typedef struct aarq_data_t {
-    gboolean aarq_pending; /* flag tells whether AARQ/sequence is pending (true)  */
+    bool aarq_pending; /* flag tells whether AARQ/sequence is pending (true)  */
                            /* required not to mix up different AARQ/AARE sequences */
-                           /* during simoultanous establishment of transport connections */
+                           /* during simultaneous establishment of transport connections */
                            /* i.e. GND facility initialises cpcstart and cmcontact at the same time */
     atn_conversation_t* cv; /* pointer to AARQ conversation */
 } aarq_data_t;
 
 wmem_tree_t *get_atn_conversation_tree(void);
 
-guint32 get_aircraft_24_bit_address_from_nsap(packet_info *);
+uint32_t get_aircraft_24_bit_address_from_nsap(packet_info *);
 int check_heur_msg_type(packet_info *);
 
 #endif
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

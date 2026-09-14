@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "response_time_delay_dialog.h"
@@ -28,31 +16,33 @@
 
 #include <QTreeWidget>
 
-#include "qt_ui_utils.h"
-#include "wireshark_application.h"
+#include <ui/qt/utils/qt_ui_utils.h>
+#include "main_application.h"
 
 static QHash<const QString, register_rtd_t *> cfg_str_to_rtd_;
 
 extern "C" {
-static void
+static bool
 rtd_init(const char *args, void*) {
     QStringList args_l = QString(args).split(',');
     if (args_l.length() > 1) {
-        QString rtd = QString("%1,%2").arg(args_l[0]).arg(args_l[1]);
+        QString rtd = QStringLiteral("%1,%2").arg(args_l[0]).arg(args_l[1]);
         QString filter;
         if (args_l.length() > 2) {
             filter = QStringList(args_l.mid(2)).join(",");
         }
-        wsApp->emitTapParameterSignal(rtd, filter, NULL);
+        mainApp->emitTapParameterSignal(rtd, filter, NULL);
     }
+
+    return true;
 }
 }
 
-void register_response_time_delay_tables(gpointer data, gpointer)
+bool register_response_time_delay_tables(const void *, void *value, void*)
 {
-    register_rtd_t *rtd = (register_rtd_t*)data;
+    register_rtd_t *rtd = (register_rtd_t*)value;
     const char* short_name = proto_get_protocol_short_name(find_protocol_by_id(get_rtd_proto_id(rtd)));
-    const char *cfg_abbr = rtd_table_get_tap_string(rtd);
+    char *cfg_abbr = rtd_table_get_tap_string(rtd);
 
     cfg_str_to_rtd_[cfg_abbr] = rtd;
     TapParameterDialog::registerDialog(
@@ -61,6 +51,8 @@ void register_response_time_delay_tables(gpointer data, gpointer)
                 REGISTER_STAT_GROUP_RESPONSE_TIME,
                 rtd_init,
                 ResponseTimeDelayDialog::createRtdDialog);
+    g_free(cfg_abbr);
+    return false;
 }
 
 enum {
@@ -72,7 +64,7 @@ enum {
     col_min_frame_,
     col_max_frame_,
     col_open_requests,
-    col_discarded_reponses_,
+    col_discarded_responses_,
     col_repeated_requests_,
     col_repeated_responses_
 };
@@ -101,7 +93,7 @@ public:
         setText(col_min_frame_, QString::number(timestat_->rtd->min_num));
         setText(col_max_frame_, QString::number(timestat_->rtd->max_num));
         setText(col_open_requests, QString::number(timestat_->open_req_num));
-        setText(col_discarded_reponses_, QString::number(timestat_->disc_rsp_num));
+        setText(col_discarded_responses_, QString::number(timestat_->disc_rsp_num));
         setText(col_repeated_requests_, QString::number(timestat_->req_dup_num));
         setText(col_repeated_responses_, QString::number(timestat_->rsp_dup_num));
 
@@ -131,7 +123,7 @@ public:
             return timestat_->rtd->max_num < other_row->timestat_->rtd->max_num;
         case col_open_requests:
             return timestat_->open_req_num < other_row->timestat_->open_req_num;
-        case col_discarded_reponses_:
+        case col_discarded_responses_:
             return timestat_->disc_rsp_num < other_row->timestat_->disc_rsp_num;
         case col_repeated_requests_:
             return timestat_->req_dup_num < other_row->timestat_->req_dup_num;
@@ -211,7 +203,7 @@ void ResponseTimeDelayDialog::tapReset(void *rtdd_ptr)
     ResponseTimeDelayDialog *rtd_dlg = static_cast<ResponseTimeDelayDialog *>(rtdd->user_data);
     if (!rtd_dlg) return;
 
-    reset_rtd_table(&rtdd->stat_table, NULL, NULL);
+    reset_rtd_table(&rtdd->stat_table);
     rtd_dlg->statsTreeWidget()->clear();
     rtd_dlg->addRtdTable(&rtdd->stat_table);
 }
@@ -251,7 +243,7 @@ void ResponseTimeDelayDialog::fillTree()
                           tapReset,
                           get_rtd_packet_func(rtd_),
                           tapDraw)) {
-        free_rtd_table(&rtd_data.stat_table, NULL, NULL);
+        free_rtd_table(&rtd_data.stat_table);
         reject(); // XXX Stay open instead?
         return;
     }
@@ -266,7 +258,7 @@ void ResponseTimeDelayDialog::fillTree()
     statsTreeWidget()->setSortingEnabled(true);
 
     removeTapListeners();
-    free_rtd_table(&rtd_data.stat_table, NULL, NULL);
+    free_rtd_table(&rtd_data.stat_table);
 }
 
 QList<QVariant> ResponseTimeDelayDialog::treeItemData(QTreeWidgetItem *ti) const

@@ -6,51 +6,44 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License along
- * with this program; if not, write to the Free Software Foundation, Inc.,
- * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
+#include "packet-mp2t.h"
 #include "packet-mpeg-sect.h"
 #include "packet-mpeg-descriptor.h"
 
 void proto_register_mpeg_pmt(void);
 void proto_reg_handoff_mpeg_pmt(void);
 
-static int proto_mpeg_pmt = -1;
-static int hf_mpeg_pmt_program_number = -1;
-static int hf_mpeg_pmt_reserved1 = -1;
-static int hf_mpeg_pmt_version_number = -1;
-static int hf_mpeg_pmt_current_next_indicator = -1;
-static int hf_mpeg_pmt_section_number = -1;
-static int hf_mpeg_pmt_last_section_number = -1;
-static int hf_mpeg_pmt_reserved2 = -1;
-static int hf_mpeg_pmt_pcr_pid = -1;
-static int hf_mpeg_pmt_reserved3 = -1;
-static int hf_mpeg_pmt_program_info_length = -1;
+static int proto_mpeg_pmt;
+static int hf_mpeg_pmt_program_number;
+static int hf_mpeg_pmt_reserved1;
+static int hf_mpeg_pmt_version_number;
+static int hf_mpeg_pmt_current_next_indicator;
+static int hf_mpeg_pmt_section_number;
+static int hf_mpeg_pmt_last_section_number;
+static int hf_mpeg_pmt_reserved2;
+static int hf_mpeg_pmt_pcr_pid;
+static int hf_mpeg_pmt_reserved3;
+static int hf_mpeg_pmt_program_info_length;
 
 
-static int hf_mpeg_pmt_stream_type = -1;
-static int hf_mpeg_pmt_stream_reserved1 = -1;
-static int hf_mpeg_pmt_stream_elementary_pid = -1;
-static int hf_mpeg_pmt_stream_reserved2 = -1;
-static int hf_mpeg_pmt_stream_es_info_length = -1;
+static int hf_mpeg_pmt_stream_type;
+static int hf_mpeg_pmt_stream_reserved1;
+static int hf_mpeg_pmt_stream_elementary_pid;
+static int hf_mpeg_pmt_stream_reserved2;
+static int hf_mpeg_pmt_stream_es_info_length;
 
-static gint ett_mpeg_pmt = -1;
-static gint ett_mpeg_pmt_stream = -1;
+static int ett_mpeg_pmt;
+static int ett_mpeg_pmt_stream;
+
+static dissector_handle_t mpeg_pmt_handle;
 
 #define MPEG_PMT_RESERVED1_MASK                   0xC0
 #define MPEG_PMT_VERSION_NUMBER_MASK              0x3E
@@ -67,15 +60,6 @@ static gint ett_mpeg_pmt_stream = -1;
 #define MPEG_PMT_STREAM_RESERVED2_MASK          0xF000
 #define MPEG_PMT_STREAM_ES_INFO_LENGTH_MASK     0x0FFF
 
-
-static const value_string mpeg_pmt_cur_next_vals[] = {
-
-    { 0x0, "Not yet applicable" },
-    { 0x1, "Currently applicable" },
-
-    { 0x0, NULL }
-
-};
 
 static const value_string mpeg_pmt_stream_type_vals[] = {
     { 0x00, "ITU-T | ISO/IEC Reserved" },
@@ -106,8 +90,36 @@ static const value_string mpeg_pmt_stream_type_vals[] = {
     { 0x19, "Metadata carried in ISO/IEC 13818-6 Synchronized Download Protocol" },
     { 0x1A, "IPMP stream (defined in ISO/IEC 13818-11, MPEG-2 IPMP)" },
     { 0x1B, "AVC video stream as defined in ITU-T Rec. H.264 | ISO/IEC 14496-10 Video" },
+    { 0x1C, "ISO/IEC 14496-3 Audio, without using any additional transport syntax, such as DST, ALS and SLS" },
+    { 0x1D, "ISO/IEC 14496-17 Text" },
+    { 0x1E, "Auxiliary video stream as defined in ISO/IEC 23002-3" },
+    { 0x1F, "SVC video sub-bitstream of an AVC video stream conforming to one or more profiles defined in Annex G of Rec. ITU-T H.264 | ISO/IEC 14496-10" },
+    { 0x20, "MVC video sub-bitstream of an AVC video stream conforming to one or more profiles defined in Annex H of Rec. ITU-T H.264 | ISO/IEC 14496-10" },
+    { 0x21, "Video stream conforming to one or more profiles as defined in Rec. ITU-T T.800 | ISO/IEC 15444-1" },
+    { 0x22, "Additional view Rec. ITU-T H.262 | ISO/IEC 13818-2 video stream for service-compatible stereoscopic 3D services" },
+    { 0x23, "Additional view Rec. ITU-T H.264 | ISO/IEC 14496-10 video stream conforming to one or more profiles defined in Annex A for service-compatible stereoscopic 3D services" },
     { 0x24, "ITU-T Rec. H.265 and ISO/IEC 23008-2 (Ultra HD video) in a packetized stream" },
+    { 0x25, "HEVC temporal video subset of an HEVC video stream conforming to one or more profiles defined in Annex A of Rec. ITU-T H.265 | ISO/IEC 23008-2" },
+    { 0x26, "MVCD video sub-bitstream of an AVC video stream conforming to one or more profiles defined in Annex I of Rec. ITU-T H.264 | ISO/IEC 14496-10" },
+    { 0x27, "Timeline and External Media Information Stream" },
+    { 0x28, "HEVC enhancement sub-partition which includes TemporalId 0 of an HEVC video stream where all NALs units contained in the stream conform to one or more profiles defined in Annex G of Rec. ITU-T H.265 | ISO/IEC 23008-2" },
+    { 0x29, "HEVC temporal enhancement sub-partition of an HEVC video stream where all NAL units contained in the stream conform to one or more profiles defined in Annex G of Rec. ITU-T H.265 | ISO/IEC  23008-2" },
+    { 0x2A, "HEVC enhancement sub-partition which includes TemporalId 0 of an HEVC video stream where all NAL units contained in the stream conform to one or more profiles defined in Annex H of Rec. ITU-T  H.265 | ISO/IEC 23008-2" },
+    { 0x2B, "HEVC temporal enhancement sub-partition of an HEVC video stream where all NAL units contained in the stream conform to one or more profiles defined in Annex H of Rec. ITU-T H.265 | ISO/IEC  23008-2" },
+    { 0x2C, "Green access units carried in MPEG-2 sections" },
+    { 0x2D, "ISO/IEC 23008-3 Audio with MHAS transport syntax – main stream" },
+    { 0x2E, "ISO/IEC 23008-3 Audio with MHAS transport syntax – auxiliary stream" },
+    { 0x2F, "Quality access units carried in sections" },
+    { 0x30, "Media Orchestration Access Units carried in sections" },
+    { 0x31, "Substream of a Rec. ITU-T H.265 | ISO/IEC 23008 2 video stream that contains a Motion Constrained Tile Set, parameter sets, slice headers or a combination thereof." },
+    { 0x32, "JPEG XS video stream conforming to ISO/IEC 21122-2" },
+    { 0x33, "VVC video stream or a VVC temporal video sub-bitstream conforming to one or more profiles defined in Annex A of Rec. ITU-T H.266 | ISO/IEC 23090-3" },
+    { 0x34, "VVC temporal video subset of a VVC video stream conforming to one or more profiles defined in Annex A of Rec. ITU-T H.266 | ISO/IEC 23090-3" },
+    { 0x35, "EVC video stream or an EVC temporal video sub-bitstream conforming to one or more profiles defined in ISO/IEC 23094-1" },
+    { 0x36, "LCEVC video stream conforming to one or more profiles defined in ISO/IEC 23094-2" },
     { 0x7F, "IPMP stream" },
+    { 0x81, "ATSC A/52 Audio" },
+    { 0x86, "SCTE-35 Splice Information" },
     { 0xA1, "ETV-AM BIF Data Stream" },
     { 0xC0, "ETV-AM EISS Signaling" },
     { 0x00, NULL }
@@ -118,9 +130,11 @@ static int
 dissect_mpeg_pmt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
 
-    guint   offset = 0, length = 0;
-    guint   prog_info_len, es_info_len;
-    guint16 pid;
+    unsigned   offset = 0, length = 0;
+    unsigned   prog_info_len, es_info_len;
+    uint32_t stream_type;
+    uint16_t pid;
+    bool current;
 
     proto_item *ti;
     proto_tree *mpeg_pmt_tree;
@@ -141,7 +155,7 @@ dissect_mpeg_pmt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
 
     proto_tree_add_item(mpeg_pmt_tree, hf_mpeg_pmt_reserved1, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(mpeg_pmt_tree, hf_mpeg_pmt_version_number, tvb, offset, 1, ENC_BIG_ENDIAN);
-    proto_tree_add_item(mpeg_pmt_tree, hf_mpeg_pmt_current_next_indicator, tvb, offset, 1, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_boolean(mpeg_pmt_tree, hf_mpeg_pmt_current_next_indicator, tvb, offset, 1, ENC_BIG_ENDIAN, &current);
     offset += 1;
 
     proto_tree_add_item(mpeg_pmt_tree, hf_mpeg_pmt_section_number, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -159,7 +173,7 @@ dissect_mpeg_pmt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
     proto_tree_add_item(mpeg_pmt_tree, hf_mpeg_pmt_program_info_length, tvb, offset, 2, ENC_BIG_ENDIAN);
     offset += 2;
 
-    offset += proto_mpeg_descriptor_loop_dissect(tvb, offset, prog_info_len, mpeg_pmt_tree);
+    offset += proto_mpeg_descriptor_loop_dissect(tvb, pinfo, offset, prog_info_len, mpeg_pmt_tree);
 
     while (offset < length) {
 
@@ -169,7 +183,10 @@ dissect_mpeg_pmt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
         mpeg_pmt_stream_tree = proto_tree_add_subtree_format(mpeg_pmt_tree, tvb, offset, 5 + es_info_len,
                             ett_mpeg_pmt_stream, NULL, "Stream PID=0x%04hx", pid);
 
-        proto_tree_add_item(mpeg_pmt_stream_tree, hf_mpeg_pmt_stream_type,      tvb, offset, 1, ENC_BIG_ENDIAN);
+        proto_tree_add_item_ret_uint(mpeg_pmt_stream_tree, hf_mpeg_pmt_stream_type,      tvb, offset, 1, ENC_BIG_ENDIAN, &stream_type);
+        if (current) {
+            mp2t_add_stream_type(pinfo, pid, stream_type);
+        }
         offset += 1;
 
         proto_tree_add_item(mpeg_pmt_stream_tree, hf_mpeg_pmt_stream_reserved1,     tvb, offset, 2, ENC_BIG_ENDIAN);
@@ -180,7 +197,7 @@ dissect_mpeg_pmt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
         proto_tree_add_item(mpeg_pmt_stream_tree, hf_mpeg_pmt_stream_es_info_length,    tvb, offset, 2, ENC_BIG_ENDIAN);
         offset += 2;
 
-        offset += proto_mpeg_descriptor_loop_dissect(tvb, offset, es_info_len, mpeg_pmt_stream_tree);
+        offset += proto_mpeg_descriptor_loop_dissect(tvb, pinfo, offset, es_info_len, mpeg_pmt_stream_tree);
     }
 
     offset += packet_mpeg_sect_crc(tvb, pinfo, mpeg_pmt_tree, 0, offset);
@@ -213,7 +230,7 @@ proto_register_mpeg_pmt(void)
 
         { &hf_mpeg_pmt_current_next_indicator, {
             "Current/Next Indicator", "mpeg_pmt.cur_next_ind",
-            FT_UINT8, BASE_HEX, VALS(mpeg_pmt_cur_next_vals), MPEG_PMT_CURRENT_NEXT_INDICATOR_MASK, NULL, HFILL
+            FT_BOOLEAN, 8, TFS(&tfs_current_not_yet), MPEG_PMT_CURRENT_NEXT_INDICATOR_MASK, NULL, HFILL
         } },
 
         { &hf_mpeg_pmt_section_number, {
@@ -243,7 +260,7 @@ proto_register_mpeg_pmt(void)
 
         { &hf_mpeg_pmt_program_info_length, {
             "Program Info Length", "mpeg_pmt.prog_info_len",
-            FT_UINT16, BASE_HEX, NULL, MPEG_PMT_PROGRAM_INFO_LENGTH_MASK, NULL, HFILL
+            FT_UINT16, BASE_DEC, NULL, MPEG_PMT_PROGRAM_INFO_LENGTH_MASK, NULL, HFILL
         } },
 
 
@@ -269,12 +286,12 @@ proto_register_mpeg_pmt(void)
 
         { &hf_mpeg_pmt_stream_es_info_length, {
             "ES Info Length", "mpeg_pmt.stream.es_info_len",
-            FT_UINT16, BASE_HEX, NULL, MPEG_PMT_STREAM_ES_INFO_LENGTH_MASK, NULL, HFILL
+            FT_UINT16, BASE_DEC, NULL, MPEG_PMT_STREAM_ES_INFO_LENGTH_MASK, NULL, HFILL
         } },
 
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_mpeg_pmt,
         &ett_mpeg_pmt_stream,
     };
@@ -284,22 +301,18 @@ proto_register_mpeg_pmt(void)
     proto_register_field_array(proto_mpeg_pmt, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
-    register_dissector("mpeg_pmt", dissect_mpeg_pmt, proto_mpeg_pmt);
+    mpeg_pmt_handle = register_dissector("mpeg_pmt", dissect_mpeg_pmt, proto_mpeg_pmt);
 }
 
 
 void
 proto_reg_handoff_mpeg_pmt(void)
 {
-    dissector_handle_t mpeg_pmt_handle;
-
-    mpeg_pmt_handle = find_dissector("mpeg_pmt");
-
     dissector_add_uint("mpeg_sect.tid", MPEG_PMT_TID, mpeg_pmt_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

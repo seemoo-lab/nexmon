@@ -3,19 +3,7 @@
  * Dissector for the CAST Client Control Protocol
  *   (The "D-Channel"-Protocol for Cisco Systems' IP-Phones)
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* This implementation is based on a draft version of the 3.0
@@ -26,20 +14,23 @@
 
 #include <epan/packet.h>
 #include <epan/prefs.h>
+#include <epan/tfs.h>
 
 #include "packet-tcp.h"
 
-#define TCP_PORT_CAST 4224
+#define TCP_PORT_CAST 4224 /* Not IANA registered */
 
 void proto_register_cast(void);
 void proto_reg_handoff_cast(void);
+
+static dissector_handle_t cast_handle;
 
 /* I will probably need this again when I change things
  * to function pointers, but let me use the existing
  * infrastructure for now
  *
  * typedef struct {
- *   guint32 id;
+ *   uint32_t id;
  *   char   *name;
  * } message_id_t;
  */
@@ -123,8 +114,7 @@ static const value_string  message_id[] = {
 };
 
 static const value_string  audioCodecTypes[] = {
-  {1  , "G711"},
-  {1  , "G729"},
+  {1  , "G711/G729"},
   {2  , "GSM"},
   {3  , "G723"},
   {4  , "G722"},
@@ -282,116 +272,116 @@ static const value_string cast_callSecurityStatusTypes[] = {
 
 
 /* Initialize the protocol and registered fields */
-static int proto_cast          = -1;
-static int hf_cast_data_length = -1;
-static int hf_cast_reserved    = -1;
-static int hf_cast_messageid   = -1;
-static int hf_cast_version   = -1;
-static int hf_cast_ORCStatus = -1;
-static int hf_cast_ipAddress = -1;
-static int hf_cast_portNumber = -1;
-static int hf_cast_passThruPartyID = -1;
-static int hf_cast_callIdentifier = -1;
-static int hf_cast_conferenceID = -1;
-static int hf_cast_payloadType = -1;
-static int hf_cast_lineInstance = -1;
-static int hf_cast_payloadCapability = -1;
-static int hf_cast_isConferenceCreator = -1;
-static int hf_cast_payload_rfc_number = -1;
-static int hf_cast_videoCapCount = -1;
-static int hf_cast_dataCapCount = -1;
-static int hf_cast_RTPPayloadFormat = -1;
-static int hf_cast_customPictureFormatCount = -1;
-static int hf_cast_pictureWidth = -1;
-static int hf_cast_pictureHeight = -1;
-static int hf_cast_pixelAspectRatio = -1;
-static int hf_cast_clockConversionCode = -1;
-static int hf_cast_clockDivisor = -1;
-static int hf_cast_activeStreamsOnRegistration = -1;
-static int hf_cast_maxBW = -1;
-static int hf_cast_serviceResourceCount = -1;
-static int hf_cast_layoutCount = -1;
-static int hf_cast_layout = -1;
-static int hf_cast_maxConferences = -1;
-static int hf_cast_activeConferenceOnRegistration = -1;
-static int hf_cast_transmitOrReceive = -1;
-static int hf_cast_levelPreferenceCount = -1;
-static int hf_cast_transmitPreference = -1;
-static int hf_cast_format = -1;
-static int hf_cast_maxBitRate = -1;
-static int hf_cast_minBitRate = -1;
-static int hf_cast_MPI = -1;
-static int hf_cast_serviceNumber = -1;
-static int hf_cast_temporalSpatialTradeOffCapability = -1;
-static int hf_cast_stillImageTransmission = -1;
-static int hf_cast_h263_capability_bitfield = -1;
-static int hf_cast_annexNandWFutureUse = -1;
-static int hf_cast_modelNumber = -1;
-static int hf_cast_bandwidth = -1;
-static int hf_cast_protocolDependentData = -1;
-static int hf_cast_DSCPValue = -1;
-static int hf_cast_serviceNum = -1;
-/* static int hf_cast_precedenceValue = -1; */
-static int hf_cast_maxStreams = -1;
-static int hf_cast_millisecondPacketSize = -1;
-static int hf_cast_echoCancelType = -1;
-static int hf_cast_g723BitRate = -1;
-static int hf_cast_bitRate = -1;
-static int hf_cast_pictureFormatCount = -1;
-static int hf_cast_confServiceNum = -1;
-static int hf_cast_miscCommandType = -1;
-static int hf_cast_temporalSpatialTradeOff = -1;
-static int hf_cast_firstGOB = -1;
-static int hf_cast_numberOfGOBs = -1;
-static int hf_cast_firstMB = -1;
-static int hf_cast_numberOfMBs = -1;
-static int hf_cast_pictureNumber = -1;
-static int hf_cast_longTermPictureIndex = -1;
-static int hf_cast_recoveryReferencePictureCount = -1;
-static int hf_cast_calledParty = -1;
-static int hf_cast_privacy = -1;
-static int hf_cast_precedenceLv = -1;
-static int hf_cast_precedenceDm = -1;
-static int hf_cast_callState = -1;
-static int hf_cast_callingPartyName = -1;
-static int hf_cast_callingParty = -1;
-static int hf_cast_calledPartyName = -1;
-static int hf_cast_callType = -1;
-static int hf_cast_originalCalledPartyName = -1;
-static int hf_cast_originalCalledParty = -1;
-static int hf_cast_lastRedirectingPartyName = -1;
-static int hf_cast_lastRedirectingParty = -1;
-static int hf_cast_cgpnVoiceMailbox = -1;
-static int hf_cast_cdpnVoiceMailbox = -1;
-static int hf_cast_originalCdpnVoiceMailbox = -1;
-static int hf_cast_lastRedirectingVoiceMailbox = -1;
-static int hf_cast_originalCdpnRedirectReason = -1;
-static int hf_cast_lastRedirectingReason = -1;
-static int hf_cast_callInstance = -1;
-static int hf_cast_callSecurityStatus = -1;
-static int hf_cast_partyPIRestrictionBits_CallingPartyName = -1;
-static int hf_cast_partyPIRestrictionBits_CallingPartyNumber = -1;
-static int hf_cast_partyPIRestrictionBits_CalledPartyName = -1;
-static int hf_cast_partyPIRestrictionBits_CalledPartyNumber = -1;
-static int hf_cast_partyPIRestrictionBits_OriginalCalledPartyName = -1;
-static int hf_cast_partyPIRestrictionBits_OriginalCalledPartyNumber = -1;
-static int hf_cast_partyPIRestrictionBits_LastRedirectPartyName = -1;
-static int hf_cast_partyPIRestrictionBits_LastRedirectPartyNumber = -1;
-static int hf_cast_directoryNumber = -1;
-static int hf_cast_requestorIpAddress = -1;
-static int hf_cast_stationIpAddress = -1;
-static int hf_cast_stationFriendlyName = -1;
-static int hf_cast_stationGUID = -1;
-static int hf_cast_audio = -1;
+static int proto_cast;
+static int hf_cast_data_length;
+static int hf_cast_reserved;
+static int hf_cast_messageid;
+static int hf_cast_version;
+static int hf_cast_ORCStatus;
+static int hf_cast_ipAddress;
+static int hf_cast_portNumber;
+static int hf_cast_passThruPartyID;
+static int hf_cast_callIdentifier;
+static int hf_cast_conferenceID;
+static int hf_cast_payloadType;
+static int hf_cast_lineInstance;
+static int hf_cast_payloadCapability;
+static int hf_cast_isConferenceCreator;
+static int hf_cast_payload_rfc_number;
+static int hf_cast_videoCapCount;
+static int hf_cast_dataCapCount;
+static int hf_cast_RTPPayloadFormat;
+static int hf_cast_customPictureFormatCount;
+static int hf_cast_pictureWidth;
+static int hf_cast_pictureHeight;
+static int hf_cast_pixelAspectRatio;
+static int hf_cast_clockConversionCode;
+static int hf_cast_clockDivisor;
+static int hf_cast_activeStreamsOnRegistration;
+static int hf_cast_maxBW;
+static int hf_cast_serviceResourceCount;
+static int hf_cast_layoutCount;
+static int hf_cast_layout;
+static int hf_cast_maxConferences;
+static int hf_cast_activeConferenceOnRegistration;
+static int hf_cast_transmitOrReceive;
+static int hf_cast_levelPreferenceCount;
+static int hf_cast_transmitPreference;
+static int hf_cast_format;
+static int hf_cast_maxBitRate;
+static int hf_cast_minBitRate;
+static int hf_cast_MPI;
+static int hf_cast_serviceNumber;
+static int hf_cast_temporalSpatialTradeOffCapability;
+static int hf_cast_stillImageTransmission;
+static int hf_cast_h263_capability_bitfield;
+static int hf_cast_annexNandWFutureUse;
+static int hf_cast_modelNumber;
+static int hf_cast_bandwidth;
+static int hf_cast_protocolDependentData;
+static int hf_cast_DSCPValue;
+static int hf_cast_serviceNum;
+/* static int hf_cast_precedenceValue; */
+static int hf_cast_maxStreams;
+static int hf_cast_millisecondPacketSize;
+static int hf_cast_echoCancelType;
+static int hf_cast_g723BitRate;
+static int hf_cast_bitRate;
+static int hf_cast_pictureFormatCount;
+static int hf_cast_confServiceNum;
+static int hf_cast_miscCommandType;
+static int hf_cast_temporalSpatialTradeOff;
+static int hf_cast_firstGOB;
+static int hf_cast_numberOfGOBs;
+static int hf_cast_firstMB;
+static int hf_cast_numberOfMBs;
+static int hf_cast_pictureNumber;
+static int hf_cast_longTermPictureIndex;
+static int hf_cast_recoveryReferencePictureCount;
+static int hf_cast_calledParty;
+static int hf_cast_privacy;
+static int hf_cast_precedenceLv;
+static int hf_cast_precedenceDm;
+static int hf_cast_callState;
+static int hf_cast_callingPartyName;
+static int hf_cast_callingParty;
+static int hf_cast_calledPartyName;
+static int hf_cast_callType;
+static int hf_cast_originalCalledPartyName;
+static int hf_cast_originalCalledParty;
+static int hf_cast_lastRedirectingPartyName;
+static int hf_cast_lastRedirectingParty;
+static int hf_cast_cgpnVoiceMailbox;
+static int hf_cast_cdpnVoiceMailbox;
+static int hf_cast_originalCdpnVoiceMailbox;
+static int hf_cast_lastRedirectingVoiceMailbox;
+static int hf_cast_originalCdpnRedirectReason;
+static int hf_cast_lastRedirectingReason;
+static int hf_cast_callInstance;
+static int hf_cast_callSecurityStatus;
+static int hf_cast_partyPIRestrictionBits_CallingPartyName;
+static int hf_cast_partyPIRestrictionBits_CallingPartyNumber;
+static int hf_cast_partyPIRestrictionBits_CalledPartyName;
+static int hf_cast_partyPIRestrictionBits_CalledPartyNumber;
+static int hf_cast_partyPIRestrictionBits_OriginalCalledPartyName;
+static int hf_cast_partyPIRestrictionBits_OriginalCalledPartyNumber;
+static int hf_cast_partyPIRestrictionBits_LastRedirectPartyName;
+static int hf_cast_partyPIRestrictionBits_LastRedirectPartyNumber;
+static int hf_cast_directoryNumber;
+static int hf_cast_requestorIpAddress;
+static int hf_cast_stationIpAddress;
+static int hf_cast_stationFriendlyName;
+static int hf_cast_stationGUID;
+static int hf_cast_audio;
 
 
 
 /* Initialize the subtree pointers */
-static gint ett_cast          = -1;
-static gint ett_cast_tree     = -1;
+static int ett_cast;
+static int ett_cast_tree;
 
 /* desegmentation of SCCP */
-static gboolean cast_desegment = TRUE;
+static bool cast_desegment = true;
 
 /* Dissect a single CAST PDU */
 static int
@@ -400,14 +390,14 @@ dissect_cast_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
   int offset = 0;
 
   /* Header fields */
-  guint32 hdr_data_length;
-  guint32 hdr_marker;
-  guint32 data_messageid;
-  const gchar *messageid_str;
-  /*  guint32 data_size; */
+  uint32_t hdr_data_length;
+  uint32_t hdr_marker;
+  uint32_t data_messageid;
+  const char *messageid_str;
+  /*  uint32_t data_size; */
 
-  guint i = 0;
-  guint t = 0;
+  unsigned i = 0;
+  unsigned t = 0;
   int count;
   int val;
 
@@ -431,7 +421,7 @@ dissect_cast_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
     proto_tree_add_uint(cast_tree, hf_cast_reserved, tvb, offset+4, 4, hdr_marker);
   }
 
-  messageid_str = val_to_str(data_messageid, message_id, "0x%08X (Unknown)");
+  messageid_str = val_to_str(pinfo->pool, data_messageid, message_id, "0x%08X (Unknown)");
 
   col_add_str(pinfo->cinfo, COL_INFO, messageid_str);
 
@@ -777,13 +767,13 @@ dissect_cast_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 
     case 0x10 :    /* CallInfo */
       i = offset+12;
-      proto_tree_add_item(cast_tree, hf_cast_callingPartyName, tvb, i, StationMaxNameSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_callingPartyName, tvb, i, StationMaxNameSize, ENC_ASCII);
       i += StationMaxNameSize;
-      proto_tree_add_item(cast_tree, hf_cast_callingParty, tvb, i, StationMaxDirnumSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_callingParty, tvb, i, StationMaxDirnumSize, ENC_ASCII);
       i += StationMaxDirnumSize;
-      proto_tree_add_item(cast_tree, hf_cast_calledPartyName, tvb, i, StationMaxNameSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_calledPartyName, tvb, i, StationMaxNameSize, ENC_ASCII);
       i += StationMaxNameSize;
-      proto_tree_add_item(cast_tree, hf_cast_calledParty, tvb, i, StationMaxDirnumSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_calledParty, tvb, i, StationMaxDirnumSize, ENC_ASCII);
       i += StationMaxDirnumSize;
       proto_tree_add_item(cast_tree, hf_cast_lineInstance, tvb, i, 4, ENC_LITTLE_ENDIAN);
       i += 4;
@@ -791,25 +781,25 @@ dissect_cast_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
       i += 4;
       proto_tree_add_item(cast_tree, hf_cast_callType, tvb, i, 4, ENC_LITTLE_ENDIAN);
       i += 4;
-      proto_tree_add_item(cast_tree, hf_cast_originalCalledPartyName, tvb, i, StationMaxNameSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_originalCalledPartyName, tvb, i, StationMaxNameSize, ENC_ASCII);
       i += StationMaxNameSize;
-      proto_tree_add_item(cast_tree, hf_cast_originalCalledParty, tvb, i, StationMaxDirnumSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_originalCalledParty, tvb, i, StationMaxDirnumSize, ENC_ASCII);
       i += StationMaxDirnumSize;
-      proto_tree_add_item(cast_tree, hf_cast_lastRedirectingPartyName, tvb, i, StationMaxNameSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_lastRedirectingPartyName, tvb, i, StationMaxNameSize, ENC_ASCII);
       i += StationMaxNameSize;
-      proto_tree_add_item(cast_tree, hf_cast_lastRedirectingParty, tvb, i, StationMaxDirnumSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_lastRedirectingParty, tvb, i, StationMaxDirnumSize, ENC_ASCII);
       i += StationMaxDirnumSize;
       proto_tree_add_item(cast_tree, hf_cast_originalCdpnRedirectReason, tvb, i, 4, ENC_LITTLE_ENDIAN);
       i += 4;
       proto_tree_add_item(cast_tree, hf_cast_lastRedirectingReason, tvb, i, 4, ENC_LITTLE_ENDIAN);
       i += 4;
-      proto_tree_add_item(cast_tree, hf_cast_cgpnVoiceMailbox, tvb, i, StationMaxDirnumSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_cgpnVoiceMailbox, tvb, i, StationMaxDirnumSize, ENC_ASCII);
       i += StationMaxDirnumSize;
-      proto_tree_add_item(cast_tree, hf_cast_cdpnVoiceMailbox, tvb, i, StationMaxDirnumSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_cdpnVoiceMailbox, tvb, i, StationMaxDirnumSize, ENC_ASCII);
       i += StationMaxDirnumSize;
-      proto_tree_add_item(cast_tree, hf_cast_originalCdpnVoiceMailbox, tvb, i, StationMaxDirnumSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_originalCdpnVoiceMailbox, tvb, i, StationMaxDirnumSize, ENC_ASCII);
       i += StationMaxDirnumSize;
-      proto_tree_add_item(cast_tree, hf_cast_lastRedirectingVoiceMailbox, tvb, i, StationMaxDirnumSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_lastRedirectingVoiceMailbox, tvb, i, StationMaxDirnumSize, ENC_ASCII);
       i += StationMaxDirnumSize;
       proto_tree_add_item(cast_tree, hf_cast_callInstance, tvb, i, 4, ENC_LITTLE_ENDIAN);
       i += 4;
@@ -836,7 +826,7 @@ dissect_cast_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
       break;
 
     case 0x13 :    /* MakeCall */
-      proto_tree_add_item(cast_tree, hf_cast_calledParty, tvb, offset+12, StationMaxDirnumSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_calledParty, tvb, offset+12, StationMaxDirnumSize, ENC_ASCII);
       proto_tree_add_item(cast_tree, hf_cast_lineInstance, tvb, offset+16, 4, ENC_LITTLE_ENDIAN);
       break;
 
@@ -917,22 +907,22 @@ dissect_cast_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 
     case 0x90 :    /* RemoteInfoRequest */
       i = offset+12;
-      proto_tree_add_item(cast_tree, hf_cast_stationFriendlyName, tvb, i, StationMaxNameSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_stationFriendlyName, tvb, i, StationMaxNameSize, ENC_ASCII);
       i += StationMaxNameSize;
-      proto_tree_add_item(cast_tree, hf_cast_stationGUID, tvb, i, StationMaxNameSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_stationGUID, tvb, i, StationMaxNameSize, ENC_ASCII);
       i += StationMaxNameSize;
       proto_tree_add_item(cast_tree, hf_cast_requestorIpAddress, tvb, i, 4, ENC_LITTLE_ENDIAN);
       break;
 
     case 0x91 :    /* RemoteInfoResponse */
       i = offset+12;
-      proto_tree_add_item(cast_tree, hf_cast_stationFriendlyName, tvb, i, StationMaxNameSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_stationFriendlyName, tvb, i, StationMaxNameSize, ENC_ASCII);
       i += StationMaxNameSize;
-      proto_tree_add_item(cast_tree, hf_cast_stationGUID, tvb, i, StationMaxNameSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_stationGUID, tvb, i, StationMaxNameSize, ENC_ASCII);
       i += StationMaxNameSize;
       proto_tree_add_item(cast_tree, hf_cast_stationIpAddress, tvb, i, 4, ENC_LITTLE_ENDIAN);
       i += 4;
-      proto_tree_add_item(cast_tree, hf_cast_directoryNumber, tvb, i, StationMaxNameSize, ENC_ASCII|ENC_NA);
+      proto_tree_add_item(cast_tree, hf_cast_directoryNumber, tvb, i, StationMaxNameSize, ENC_ASCII);
       break;
 
 
@@ -998,10 +988,10 @@ dissect_cast_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data
 }
 
 /* Get the length of a single CAST PDU */
-static guint
+static unsigned
 get_cast_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
-  guint32 hdr_data_length;
+  uint32_t hdr_data_length;
 
   /*
    * Get the length of the CAST packet.
@@ -1023,8 +1013,8 @@ dissect_cast(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
    * CAST-Packet: {Header(Size, Reserved)|Data(MessageID, Message-Data)}
    */
   /* Header fields */
-  guint32 hdr_data_length;
-  guint32 hdr_marker;
+  uint32_t hdr_data_length;
+  uint32_t hdr_marker;
 
   /* check, if this is really an SKINNY packet, they start with a length + 0 */
 
@@ -1360,7 +1350,7 @@ proto_register_cast(void)
     { &hf_cast_maxStreams,
       { "MaxStreams", "cast.maxStreams",
         FT_UINT32, BASE_DEC, NULL, 0x0,
-        "32 bit unsigned integer indicating the maximum number of simultansous RTP duplex streams that the client can handle.",
+        "32 bit unsigned integer indicating the maximum number of simultaneous RTP duplex streams that the client can handle.",
         HFILL }
     },
 
@@ -1588,49 +1578,49 @@ proto_register_cast(void)
 
     { &hf_cast_partyPIRestrictionBits_CallingPartyName,
       { "RestrictCallingPartyName", "cast.partyPIRestrictionBits.CallingPartyName",
-        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x01,
+        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000001,
         NULL, HFILL }
     },
 
     { &hf_cast_partyPIRestrictionBits_CallingPartyNumber,
       { "RestrictCallingPartyNumber", "cast.partyPIRestrictionBits.CallingPartyNumber",
-        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x02,
+        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000002,
         NULL, HFILL }
     },
 
     { &hf_cast_partyPIRestrictionBits_CalledPartyName,
       { "RestrictCalledPartyName", "cast.partyPIRestrictionBits.CalledPartyName",
-        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x04,
+        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000004,
         NULL, HFILL }
     },
 
     { &hf_cast_partyPIRestrictionBits_CalledPartyNumber,
       { "RestrictCalledPartyNumber", "cast.partyPIRestrictionBits.CalledPartyNumber",
-        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x08,
+        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000008,
         NULL, HFILL }
     },
 
     { &hf_cast_partyPIRestrictionBits_OriginalCalledPartyName,
       { "RestrictOriginalCalledPartyName", "cast.partyPIRestrictionBits.OriginalCalledPartyName",
-        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x10,
+        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000010,
         NULL, HFILL }
     },
 
     { &hf_cast_partyPIRestrictionBits_OriginalCalledPartyNumber,
       { "RestrictOriginalCalledPartyNumber", "cast.partyPIRestrictionBits.OriginalCalledPartyNumber",
-        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x20,
+        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000020,
         NULL, HFILL }
     },
 
     { &hf_cast_partyPIRestrictionBits_LastRedirectPartyName,
       { "RestrictLastRedirectPartyName", "cast.partyPIRestrictionBits.LastRedirectPartyName",
-        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x40,
+        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000040,
         NULL, HFILL }
     },
 
     { &hf_cast_partyPIRestrictionBits_LastRedirectPartyNumber,
       { "RestrictLastRedirectPartyNumber", "cast.partyPIRestrictionBits.LastRedirectPartyNumber",
-        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x80,
+        FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00000080,
         NULL, HFILL }
     },
 
@@ -1681,7 +1671,7 @@ proto_register_cast(void)
   };
 
   /* Setup protocol subtree array */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_cast,
     &ett_cast_tree,
   };
@@ -1701,19 +1691,18 @@ proto_register_cast(void)
     "Whether the CAST dissector should reassemble messages spanning multiple TCP segments."
     " To use this option, you must also enable \"Allow subdissectors to reassemble TCP streams\" in the TCP protocol settings.",
     &cast_desegment);
+
+  cast_handle = register_dissector("cast", dissect_cast, proto_cast);
 }
 
 void
 proto_reg_handoff_cast(void)
 {
-  dissector_handle_t cast_handle;
-
-  cast_handle = create_dissector_handle(dissect_cast, proto_cast);
-  dissector_add_uint("tcp.port", TCP_PORT_CAST, cast_handle);
+  dissector_add_uint_with_preference("tcp.port", TCP_PORT_CAST, cast_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

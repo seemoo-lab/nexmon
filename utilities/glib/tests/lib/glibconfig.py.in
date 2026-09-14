@@ -1,0 +1,29 @@
+# Copyright 2025 Simon McVittie
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
+import os
+from pathlib import Path
+
+
+if "G_TEST_BUILDDIR" in os.environ:
+    # During build-time testing, we search the build tree.
+    # We can't use the value of G_TEST_BUILDDIR here because we don't
+    # know how deeply nested the current build directory is.
+    project_build_root = Path(__file__).resolve().parent.parent.parent
+
+    # Where to find GLib-2.0.gir, etc. as a list of Path, highest priority first
+    GIR_XML_SEARCH_PATHS = [
+        project_build_root / "girepository" / "introspection",
+    ]
+
+else:
+    # During as-installed testing, we search the final paths.
+
+    # This is a subset of the search path from girparser.c locate_gir(),
+    # with only the directories that are part of GLib's prefix,
+    # excluding XDG_DATA_HOME, XDG_DATA_DIRS and the hard-coded
+    # /usr/share fallback
+    GIR_XML_SEARCH_PATHS = [
+        Path(r"@glib_girdir@"),
+        Path(r"@glib_datadir@") / r"@gir_suffix@",
+    ]

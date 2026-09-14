@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,20 +16,22 @@
 void proto_register_lpd(void);
 void proto_reg_handoff_lpd(void);
 
+static dissector_handle_t lpd_handle;
+
 #define TCP_PORT_PRINTER		515
 
-static int proto_lpd = -1;
-static int hf_lpd_response = -1;
-static int hf_lpd_request = -1;
-static int hf_lpd_client_code = -1;
-static int hf_lpd_printer_option = -1;
-static int hf_lpd_response_code = -1;
+static int proto_lpd;
+static int hf_lpd_response;
+static int hf_lpd_request;
+static int hf_lpd_client_code;
+static int hf_lpd_printer_option;
+static int hf_lpd_response_code;
 
-static gint ett_lpd = -1;
+static int ett_lpd;
 
 enum lpr_type { request, response, unknown };
 
-static gint find_printer_string(tvbuff_t *tvb, int offset);
+static int find_printer_string(tvbuff_t *tvb, int offset);
 
 /* This information comes from the LPRng HOWTO, which also describes
 	RFC 1179. http://www.astart.com/lprng/LPRng-HOWTO.html */
@@ -71,14 +61,14 @@ dissect_lpd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	proto_tree	*lpd_tree;
 	proto_item	*ti, *hidden_item;
 	enum lpr_type	lpr_packet_type;
-	guint8		code;
-	gint		printer_len;
+	uint8_t		code;
+	int		printer_len;
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, "LPD");
 	col_clear(pinfo->cinfo, COL_INFO);
 
 	/* rfc1179 states that all responses are 1 byte long */
-	code = tvb_get_guint8(tvb, 0);
+	code = tvb_get_uint8(tvb, 0);
 	if (tvb_reported_length(tvb) == 1) {
 		lpr_packet_type = response;
 	}
@@ -90,7 +80,7 @@ dissect_lpd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 	}
 
 	if (lpr_packet_type == request && code !=0) {
-		col_add_str(pinfo->cinfo, COL_INFO, val_to_str(code, lpd_client_code, "Unknown client code: %u"));
+		col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, code, lpd_client_code, "Unknown client code: %u"));
 	}
 	else if (lpr_packet_type == response) {
 		col_set_str(pinfo->cinfo, COL_INFO, "LPD response");
@@ -104,20 +94,20 @@ dissect_lpd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
 		if (lpr_packet_type == response) {
 		  hidden_item = proto_tree_add_boolean(lpd_tree, hf_lpd_response,
-		  				tvb, 0, 0, TRUE);
+						tvb, 0, 0, true);
 		} else {
 		  hidden_item = proto_tree_add_boolean(lpd_tree, hf_lpd_request,
-		  				tvb, 0, 0, TRUE);
+						tvb, 0, 0, true);
 		}
-		PROTO_ITEM_SET_HIDDEN(hidden_item);
+		proto_item_set_hidden(hidden_item);
 
 		if (lpr_packet_type == request) {
 			printer_len = find_printer_string(tvb, 1);
 
 			if (code <= 9 && printer_len != -1) {
 				proto_tree_add_uint_format(lpd_tree, hf_lpd_client_code, tvb, 0, 1, code,
-					"%s", val_to_str(code, lpd_client_code, "Unknown client code: %u"));
-				proto_tree_add_item(lpd_tree, hf_lpd_printer_option, tvb, 1, printer_len, ENC_ASCII|ENC_NA);
+					"%s", val_to_str(pinfo->pool, code, lpd_client_code, "Unknown client code: %u"));
+				proto_tree_add_item(lpd_tree, hf_lpd_printer_option, tvb, 1, printer_len, ENC_ASCII);
 			}
 			else {
 				call_data_dissector(tvb, pinfo, lpd_tree);
@@ -139,15 +129,15 @@ dissect_lpd(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 }
 
 
-static gint
+static int
 find_printer_string(tvbuff_t *tvb, int offset)
 {
 	int	i;
 
 	/* try to find end of string, either '\n' or '\0' */
-	i = tvb_find_guint8(tvb, offset, -1, '\0');
+	i = tvb_find_uint8(tvb, offset, -1, '\0');
 	if (i == -1)
-		i = tvb_find_guint8(tvb, offset, -1, '\n');
+		i = tvb_find_uint8(tvb, offset, -1, '\n');
 	if (i == -1)
 		return -1;
 	return i - offset;	/* length of string */
@@ -161,12 +151,12 @@ proto_register_lpd(void)
 		{ &hf_lpd_response,
 		  { "Response",           "lpd.response",
 		    FT_BOOLEAN, BASE_NONE, NULL, 0x0,
-		    "TRUE if LPD response", HFILL }},
+		    "true if LPD response", HFILL }},
 
 		{ &hf_lpd_request,
 		  { "Request",            "lpd.request",
 		    FT_BOOLEAN, BASE_NONE, NULL, 0x0,
-		    "TRUE if LPD request", HFILL }},
+		    "true if LPD request", HFILL }},
 
 		{ &hf_lpd_client_code,
 		  { "Client code",            "lpd.client_code",
@@ -183,11 +173,12 @@ proto_register_lpd(void)
 		    FT_UINT8, BASE_DEC, VALS(lpd_server_code), 0x0,
 		    NULL, HFILL }},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_lpd,
 	};
 
 	proto_lpd = proto_register_protocol("Line Printer Daemon Protocol", "LPD", "lpd");
+	lpd_handle = register_dissector("lpd", dissect_lpd, proto_lpd);
 	proto_register_field_array(proto_lpd, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 }
@@ -195,14 +186,11 @@ proto_register_lpd(void)
 void
 proto_reg_handoff_lpd(void)
 {
-	dissector_handle_t lpd_handle;
-
-	lpd_handle = create_dissector_handle(dissect_lpd, proto_lpd);
-	dissector_add_uint("tcp.port", TCP_PORT_PRINTER, lpd_handle);
+	dissector_add_uint_with_preference("tcp.port", TCP_PORT_PRINTER, lpd_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

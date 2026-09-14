@@ -5,3 +5,7 @@ log
 gen
 *.o
 *.elf
+BUILD_NUMBER
+ucode_compressed.c
+templateram.c
+*.bin

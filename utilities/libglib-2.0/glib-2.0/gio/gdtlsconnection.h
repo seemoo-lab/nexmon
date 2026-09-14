@@ -3,10 +3,12 @@
  * Copyright © 2010 Red Hat, Inc.
  * Copyright © 2015 Collabora, Ltd.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -45,6 +47,9 @@ typedef struct _GDtlsConnectionInterface GDtlsConnectionInterface;
  * @shutdown: Shut down one or both directions of the connection.
  * @shutdown_async: Start an asynchronous shutdown operation.
  * @shutdown_finish: Finish an asynchronous shutdown operation.
+ * @set_advertised_protocols: Set APLN protocol list (Since: 2.60)
+ * @get_negotiated_protocol: Get ALPN-negotiated protocol (Since: 2.60)
+ * @get_binding_data: Retrieve TLS channel binding data (Since: 2.66)
  *
  * Virtual method table for a #GDtlsConnection implementation.
  *
@@ -89,70 +94,83 @@ struct _GDtlsConnectionInterface
   gboolean (*shutdown_finish)    (GDtlsConnection       *conn,
                                   GAsyncResult          *result,
                                   GError               **error);
+
+  void (*set_advertised_protocols)        (GDtlsConnection     *conn,
+                                           const gchar * const *protocols);
+  const gchar *(*get_negotiated_protocol) (GDtlsConnection     *conn);
+
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+  gboolean  (*get_binding_data)  (GDtlsConnection         *conn,
+                                  GTlsChannelBindingType   type,
+                                  GByteArray              *data,
+                                  GError                 **error);
+G_GNUC_END_IGNORE_DEPRECATIONS
 };
 
-GLIB_AVAILABLE_IN_2_48
-GType                 g_dtls_connection_get_type                    (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_2_48
+GType                 g_dtls_connection_get_type                    (void);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 void                  g_dtls_connection_set_database                (GDtlsConnection       *conn,
                                                                      GTlsDatabase          *database);
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 GTlsDatabase         *g_dtls_connection_get_database                (GDtlsConnection       *conn);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 void                  g_dtls_connection_set_certificate             (GDtlsConnection       *conn,
                                                                      GTlsCertificate       *certificate);
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 GTlsCertificate      *g_dtls_connection_get_certificate             (GDtlsConnection       *conn);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 void                  g_dtls_connection_set_interaction             (GDtlsConnection       *conn,
                                                                      GTlsInteraction       *interaction);
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 GTlsInteraction      *g_dtls_connection_get_interaction             (GDtlsConnection       *conn);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 GTlsCertificate      *g_dtls_connection_get_peer_certificate        (GDtlsConnection       *conn);
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 GTlsCertificateFlags  g_dtls_connection_get_peer_certificate_errors (GDtlsConnection       *conn);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 void                  g_dtls_connection_set_require_close_notify    (GDtlsConnection       *conn,
                                                                      gboolean               require_close_notify);
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 gboolean              g_dtls_connection_get_require_close_notify    (GDtlsConnection       *conn);
 
-GLIB_AVAILABLE_IN_2_48
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+GIO_DEPRECATED_IN_2_60
 void                  g_dtls_connection_set_rehandshake_mode        (GDtlsConnection       *conn,
                                                                      GTlsRehandshakeMode    mode);
-GLIB_AVAILABLE_IN_2_48
+GIO_DEPRECATED_IN_2_60
 GTlsRehandshakeMode   g_dtls_connection_get_rehandshake_mode        (GDtlsConnection       *conn);
+G_GNUC_END_IGNORE_DEPRECATIONS
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 gboolean              g_dtls_connection_handshake                   (GDtlsConnection       *conn,
                                                                      GCancellable          *cancellable,
                                                                      GError               **error);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 void                  g_dtls_connection_handshake_async             (GDtlsConnection       *conn,
                                                                      int                    io_priority,
                                                                      GCancellable          *cancellable,
                                                                      GAsyncReadyCallback    callback,
                                                                      gpointer               user_data);
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 gboolean              g_dtls_connection_handshake_finish            (GDtlsConnection       *conn,
                                                                      GAsyncResult          *result,
                                                                      GError               **error);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 gboolean              g_dtls_connection_shutdown                    (GDtlsConnection       *conn,
                                                                      gboolean               shutdown_read,
                                                                      gboolean               shutdown_write,
                                                                      GCancellable          *cancellable,
                                                                      GError               **error);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 void                  g_dtls_connection_shutdown_async              (GDtlsConnection       *conn,
                                                                      gboolean               shutdown_read,
                                                                      gboolean               shutdown_write,
@@ -160,32 +178,53 @@ void                  g_dtls_connection_shutdown_async              (GDtlsConnec
                                                                      GCancellable          *cancellable,
                                                                      GAsyncReadyCallback    callback,
                                                                      gpointer               user_data);
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 gboolean              g_dtls_connection_shutdown_finish             (GDtlsConnection       *conn,
                                                                      GAsyncResult          *result,
                                                                      GError               **error);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 gboolean              g_dtls_connection_close                       (GDtlsConnection       *conn,
                                                                      GCancellable          *cancellable,
                                                                      GError               **error);
 
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 void                  g_dtls_connection_close_async                 (GDtlsConnection       *conn,
                                                                      int                    io_priority,
                                                                      GCancellable          *cancellable,
                                                                      GAsyncReadyCallback    callback,
                                                                      gpointer               user_data);
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 gboolean              g_dtls_connection_close_finish                (GDtlsConnection       *conn,
                                                                      GAsyncResult          *result,
                                                                      GError               **error);
 
 /*< protected >*/
-GLIB_AVAILABLE_IN_2_48
+GIO_AVAILABLE_IN_2_48
 gboolean              g_dtls_connection_emit_accept_certificate     (GDtlsConnection       *conn,
                                                                      GTlsCertificate       *peer_cert,
                                                                      GTlsCertificateFlags   errors);
+GIO_AVAILABLE_IN_2_60
+void                  g_dtls_connection_set_advertised_protocols    (GDtlsConnection     *conn,
+                                                                     const gchar * const *protocols);
+
+GIO_AVAILABLE_IN_2_60
+const gchar *          g_dtls_connection_get_negotiated_protocol     (GDtlsConnection    *conn);
+
+G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+GIO_AVAILABLE_IN_2_66
+gboolean              g_dtls_connection_get_channel_binding_data    (GDtlsConnection         *conn,
+                                                                     GTlsChannelBindingType   type,
+                                                                     GByteArray              *data,
+                                                                     GError                 **error);
+G_GNUC_END_IGNORE_DEPRECATIONS
+
+GIO_AVAILABLE_IN_2_70
+GTlsProtocolVersion   g_dtls_connection_get_protocol_version        (GDtlsConnection       *conn);
+
+GIO_AVAILABLE_IN_2_70
+gchar *               g_dtls_connection_get_ciphersuite_name        (GDtlsConnection       *conn);
+
 G_END_DECLS
 
 #endif /* __G_DTLS_CONNECTION_H__ */

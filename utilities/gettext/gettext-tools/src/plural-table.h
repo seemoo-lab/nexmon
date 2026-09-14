@@ -1,6 +1,5 @@
 /* Table of known plural form expressions.
-   Copyright (C) 2001-2003, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2002.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,7 +12,9 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 #ifndef _PLURAL_TABLE_H
 #define _PLURAL_TABLE_H
@@ -27,7 +28,7 @@ struct plural_table_entry
   const char *value;
 };
 
-extern DLL_VARIABLE struct plural_table_entry plural_table[];
-extern DLL_VARIABLE const size_t plural_table_size;
+extern LIBGETTEXTSRC_DLL_VARIABLE struct plural_table_entry plural_table[];
+extern LIBGETTEXTSRC_DLL_VARIABLE const size_t plural_table_size;
 
 #endif /* _PLURAL_TABLE_H */

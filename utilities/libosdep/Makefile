@@ -1,5 +1,10 @@
+all: libs/armeabi/libosdep.a
+
 libs/armeabi/libosdep.a: Android.mk
 	$(NDK_ROOT)/ndk-build NDK_APPLICATION_MK=`pwd`/Application.mk NDK_APP_OUT=. TARGET_PLATFORM=android-21
+
+install:
+	@echo "nothing to install ..."
 
 clean:
 	rm -Rf libs

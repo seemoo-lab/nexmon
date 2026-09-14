@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * Credits:
  *
@@ -27,8 +15,8 @@
 
 #include "config.h"
 
-#include <glib.h>
 #include <wsutil/crc32.h>
+#include <wsutil/zlib_compat.h>
 
 #define CRC32_ACCUMULATE(c,d,table) (c=(c>>8)^(table)[(c^(d))&0xFF])
 
@@ -42,7 +30,7 @@
 /*                                                               */
 /*    Width   : 4 bytes.                                         */
 /*    Poly    : 0x1EDC6F41L                                      */
-/*    Reverse : TRUE.                                            */
+/*    Reverse : true.                                            */
 /*                                                               */
 /* For more information on the Rocksoft^tm Model CRC Algorithm,  */
 /* see the document titled "A Painless Guide to CRC Error        */
@@ -53,7 +41,7 @@
 /*****************************************************************/
 #define CRC32C(c,d) CRC32_ACCUMULATE(c,d,crc32c_table)
 
-static const guint32 crc32c_table[256] = {
+static const uint32_t crc32c_table[256] = {
 		0x00000000U, 0xF26B8303U, 0xE13B70F7U, 0x1350F3F4U, 0xC79A971FU,
 		0x35F1141CU, 0x26A1E7E8U, 0xD4CA64EBU, 0x8AD958CFU, 0x78B2DBCCU,
 		0x6BE22838U, 0x9989AB3BU, 0x4D43CFD0U, 0xBF284CD3U, 0xAC78BF27U,
@@ -115,7 +103,7 @@ static const guint32 crc32c_table[256] = {
  *  x^32 + x^26 + x^23 + x^22 + x^16 + x^12 + x^11 + x^10 + x^8 +
  *      x^7 + x^5 + x^4 + x^2 + x + 1
  */
-static const guint32 crc32_ccitt_table[256] = {
+static const uint32_t crc32_ccitt_table[256] = {
 	0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
 	0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4,
 	0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07,
@@ -182,7 +170,7 @@ static const guint32 crc32_ccitt_table[256] = {
  *
  * NOTE: this is also used for ATM AAL5.
  */
-static const guint32 crc32_mpeg2_table[256] = {
+static const uint32_t crc32_mpeg2_table[256] = {
 		0x00000000, 0x04c11db7, 0x09823b6e, 0x0d4326d9, 0x130476dc, 0x17c56b6b,
 		0x1a864db2, 0x1e475005, 0x2608edb8, 0x22c9f00f, 0x2f8ad6d6, 0x2b4bcb61,
 		0x350c9b64, 0x31cd86d3, 0x3c8ea00a, 0x384fbdbd, 0x4c11db70, 0x48d0c6c7,
@@ -229,7 +217,7 @@ static const guint32 crc32_mpeg2_table[256] = {
 };
 
 /* This table was compiled using the polynom: 0x0AA725CF*/
-static const guint32 crc32_0AA725CF_reverse[] = {
+static const uint32_t crc32_0AA725CF_reverse[] = {
 		0x00000000U, 0xCEAA95CEU, 0x7A1CE13DU, 0xB4B674F3U,
 		0xF439C27AU, 0x3A9357B4U, 0x8E252347U, 0x408FB689U,
 		0x0F3A4E55U, 0xC190DB9BU, 0x7526AF68U, 0xBB8C3AA6U,
@@ -296,22 +284,91 @@ static const guint32 crc32_0AA725CF_reverse[] = {
 		0x53E8BE29U, 0x9D422BE7U, 0x29F45F14U, 0xE75ECADAU
 };
 
-guint32
-crc32c_table_lookup (guchar pos)
+/* This table was compiled using the polynom: 0x5D6DCB */
+static const uint32_t crc32_5D6DCB[] =
+{
+		0x00000000, 0x005d6dcb, 0x00badb96, 0x00e7b65d,
+		0x0028dae7, 0x0075b72c, 0x00920171, 0x00cf6cba,
+		0x0051b5ce, 0x000cd805, 0x00eb6e58, 0x00b60393,
+		0x00796f29, 0x002402e2, 0x00c3b4bf, 0x009ed974,
+		0x00a36b9c, 0x00fe0657, 0x0019b00a, 0x0044ddc1,
+		0x008bb17b, 0x00d6dcb0, 0x00316aed, 0x006c0726,
+		0x00f2de52, 0x00afb399, 0x004805c4, 0x0015680f,
+		0x00da04b5, 0x0087697e, 0x0060df23, 0x003db2e8,
+		0x001bbaf3, 0x0046d738, 0x00a16165, 0x00fc0cae,
+		0x00336014, 0x006e0ddf, 0x0089bb82, 0x00d4d649,
+		0x004a0f3d, 0x001762f6, 0x00f0d4ab, 0x00adb960,
+		0x0062d5da, 0x003fb811, 0x00d80e4c, 0x00856387,
+		0x00b8d16f, 0x00e5bca4, 0x00020af9, 0x005f6732,
+		0x00900b88, 0x00cd6643, 0x002ad01e, 0x0077bdd5,
+		0x00e964a1, 0x00b4096a, 0x0053bf37, 0x000ed2fc,
+		0x00c1be46, 0x009cd38d, 0x007b65d0, 0x0026081b,
+		0x003775e6, 0x006a182d, 0x008dae70, 0x00d0c3bb,
+		0x001faf01, 0x0042c2ca, 0x00a57497, 0x00f8195c,
+		0x0066c028, 0x003bade3, 0x00dc1bbe, 0x00817675,
+		0x004e1acf, 0x00137704, 0x00f4c159, 0x00a9ac92,
+		0x00941e7a, 0x00c973b1, 0x002ec5ec, 0x0073a827,
+		0x00bcc49d, 0x00e1a956, 0x00061f0b, 0x005b72c0,
+		0x00c5abb4, 0x0098c67f, 0x007f7022, 0x00221de9,
+		0x00ed7153, 0x00b01c98, 0x0057aac5, 0x000ac70e,
+		0x002ccf15, 0x0071a2de, 0x00961483, 0x00cb7948,
+		0x000415f2, 0x00597839, 0x00bece64, 0x00e3a3af,
+		0x007d7adb, 0x00201710, 0x00c7a14d, 0x009acc86,
+		0x0055a03c, 0x0008cdf7, 0x00ef7baa, 0x00b21661,
+		0x008fa489, 0x00d2c942, 0x00357f1f, 0x006812d4,
+		0x00a77e6e, 0x00fa13a5, 0x001da5f8, 0x0040c833,
+		0x00de1147, 0x00837c8c, 0x0064cad1, 0x0039a71a,
+		0x00f6cba0, 0x00aba66b, 0x004c1036, 0x00117dfd,
+		0x006eebcc, 0x00338607, 0x00d4305a, 0x00895d91,
+		0x0046312b, 0x001b5ce0, 0x00fceabd, 0x00a18776,
+		0x003f5e02, 0x006233c9, 0x00858594, 0x00d8e85f,
+		0x001784e5, 0x004ae92e, 0x00ad5f73, 0x00f032b8,
+		0x00cd8050, 0x0090ed9b, 0x00775bc6, 0x002a360d,
+		0x00e55ab7, 0x00b8377c, 0x005f8121, 0x0002ecea,
+		0x009c359e, 0x00c15855, 0x0026ee08, 0x007b83c3,
+		0x00b4ef79, 0x00e982b2, 0x000e34ef, 0x00535924,
+		0x0075513f, 0x00283cf4, 0x00cf8aa9, 0x0092e762,
+		0x005d8bd8, 0x0000e613, 0x00e7504e, 0x00ba3d85,
+		0x0024e4f1, 0x0079893a, 0x009e3f67, 0x00c352ac,
+		0x000c3e16, 0x005153dd, 0x00b6e580, 0x00eb884b,
+		0x00d63aa3, 0x008b5768, 0x006ce135, 0x00318cfe,
+		0x00fee044, 0x00a38d8f, 0x00443bd2, 0x00195619,
+		0x00878f6d, 0x00dae2a6, 0x003d54fb, 0x00603930,
+		0x00af558a, 0x00f23841, 0x00158e1c, 0x0048e3d7,
+		0x00599e2a, 0x0004f3e1, 0x00e345bc, 0x00be2877,
+		0x007144cd, 0x002c2906, 0x00cb9f5b, 0x0096f290,
+		0x00082be4, 0x0055462f, 0x00b2f072, 0x00ef9db9,
+		0x0020f103, 0x007d9cc8, 0x009a2a95, 0x00c7475e,
+		0x00faf5b6, 0x00a7987d, 0x00402e20, 0x001d43eb,
+		0x00d22f51, 0x008f429a, 0x0068f4c7, 0x0035990c,
+		0x00ab4078, 0x00f62db3, 0x00119bee, 0x004cf625,
+		0x00839a9f, 0x00def754, 0x00394109, 0x00642cc2,
+		0x004224d9, 0x001f4912, 0x00f8ff4f, 0x00a59284,
+		0x006afe3e, 0x003793f5, 0x00d025a8, 0x008d4863,
+		0x00139117, 0x004efcdc, 0x00a94a81, 0x00f4274a,
+		0x003b4bf0, 0x0066263b, 0x00819066, 0x00dcfdad,
+		0x00e14f45, 0x00bc228e, 0x005b94d3, 0x0006f918,
+		0x00c995a2, 0x0094f869, 0x00734e34, 0x002e23ff,
+		0x00b0fa8b, 0x00ed9740, 0x000a211d, 0x00574cd6,
+		0x0098206c, 0x00c54da7, 0x0022fbfa, 0x007f9631
+};
+
+uint32_t
+crc32c_table_lookup (unsigned char pos)
 {
 	return crc32c_table[pos];
 }
 
-guint32
-crc32_ccitt_table_lookup (guchar pos)
+uint32_t
+crc32_ccitt_table_lookup (unsigned char pos)
 {
 	return crc32_ccitt_table[pos];
 }
 
-guint32
-crc32c_calculate(const void *buf, int len, guint32 crc)
+uint32_t
+crc32c_calculate(const void *buf, int len, uint32_t crc)
 {
-	const guint8 *p = (const guint8 *)buf;
+	const uint8_t *p = (const uint8_t *)buf;
 	crc = CRC32C_SWAP(crc);
 	while (len-- > 0) {
 		CRC32C(crc, *p++);
@@ -319,10 +376,10 @@ crc32c_calculate(const void *buf, int len, guint32 crc)
 	return CRC32C_SWAP(crc);
 }
 
-guint32
-crc32c_calculate_no_swap(const void *buf, int len, guint32 crc)
+uint32_t
+crc32c_calculate_no_swap(const void *buf, int len, uint32_t crc)
 {
-	const guint8 *p = (const guint8 *)buf;
+	const uint8_t *p = (const uint8_t *)buf;
 	while (len-- > 0) {
 		CRC32C(crc, *p++);
 	}
@@ -330,29 +387,33 @@ crc32c_calculate_no_swap(const void *buf, int len, guint32 crc)
 	return crc;
 }
 
-guint32
-crc32_ccitt(const guint8 *buf, guint len)
+uint32_t
+crc32_ccitt(const uint8_t *buf, unsigned len)
 {
 	return (crc32_ccitt_seed(buf, len, CRC32_CCITT_SEED));
 }
 
-guint32
-crc32_ccitt_seed(const guint8 *buf, guint len, guint32 seed)
+uint32_t
+crc32_ccitt_seed(const uint8_t *buf, unsigned len, uint32_t seed)
 {
-	guint i;
-	guint32 crc32 = seed;
+#if defined (HAVE_ZLIB) || defined (HAVE_ZLIBNG)
+	return (unsigned)ZLIB_PREFIX(crc32)(~seed, buf, len);
+#else /* USE_ZLIB_OR_ZLIBNG */
+	unsigned i;
+	uint32_t crc32 = seed;
 
 	for (i = 0; i < len; i++)
 		CRC32_ACCUMULATE(crc32, buf[i], crc32_ccitt_table);
 
 	return ( ~crc32 );
+#endif /* USE_ZLIB_OR_ZLIBNG */
 }
 
-guint32
-crc32_mpeg2_seed(const guint8 *buf, guint len, guint32 seed)
+uint32_t
+crc32_mpeg2_seed(const uint8_t *buf, unsigned len, uint32_t seed)
 {
-	guint i;
-	guint32 crc32;
+	unsigned i;
+	uint32_t crc32;
 
 	crc32 = seed;
 
@@ -362,20 +423,37 @@ crc32_mpeg2_seed(const guint8 *buf, guint len, guint32 seed)
 	return ( crc32 );
 }
 
-guint32
-crc32_0x0AA725CF_seed(const guint8 *buf, guint len, guint32 seed)
+uint32_t
+crc32_0x0AA725CF_seed(const uint8_t *buf, unsigned len, uint32_t seed)
 {
-	guint crc32;
+	unsigned crc32;
 
-	crc32 = (guint)seed;
+	crc32 = (unsigned)seed;
 	while( len-- != 0 )
 		CRC32_ACCUMULATE(crc32, *buf++, crc32_0AA725CF_reverse);
 
-	return (guint32)crc32;
+	return (uint32_t)crc32;
 }
 
+uint32_t
+crc32_0x5D6DCB_seed(const uint8_t *buf, unsigned len, uint32_t seed)
+{
+	uint32_t crc = seed;
+	if (len > 0)
+	{
+		while (len-- > 0)
+		{
+			uint8_t data = *buf++;
+			/* XOR data with CRC2, look up result, then XOR that with CRC; */
+			crc = crc32_5D6DCB[((crc >> 16) ^ data) & 0xff] ^ (crc << 8);
+		}
+	}
+	return (crc & 0x00ffffff);
+}
+
+
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

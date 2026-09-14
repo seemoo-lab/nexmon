@@ -1,0 +1,6 @@
+<?xml version='1.0'?>
+<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema' xmlns:r='urn:remote'>
+  <xs:import namespace='urn:remote'
+             schemaLocation='http://example.invalid/imported.xsd'/>
+  <xs:element name='doc' type='r:RemoteType'/>
+</xs:schema>

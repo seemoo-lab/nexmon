@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2011 Collabora, Ltd.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -76,41 +78,41 @@ struct _GTlsPasswordClass
   gpointer padding[4];
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType             g_tls_password_get_type            (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType             g_tls_password_get_type            (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GTlsPassword *    g_tls_password_new                 (GTlsPasswordFlags  flags,
                                                       const gchar       *description);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const guchar *    g_tls_password_get_value           (GTlsPassword      *password,
                                                       gsize             *length);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void              g_tls_password_set_value           (GTlsPassword      *password,
                                                       const guchar      *value,
                                                       gssize             length);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void              g_tls_password_set_value_full      (GTlsPassword      *password,
                                                       guchar            *value,
                                                       gssize             length,
                                                       GDestroyNotify     destroy);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GTlsPasswordFlags g_tls_password_get_flags           (GTlsPassword      *password);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void              g_tls_password_set_flags           (GTlsPassword      *password,
                                                       GTlsPasswordFlags  flags);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const gchar*      g_tls_password_get_description     (GTlsPassword      *password);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void              g_tls_password_set_description     (GTlsPassword      *password,
                                                       const gchar       *description);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 const gchar *     g_tls_password_get_warning         (GTlsPassword      *password);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void              g_tls_password_set_warning         (GTlsPassword      *password,
                                                       const gchar       *warning);
 

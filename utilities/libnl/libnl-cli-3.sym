@@ -1,0 +1,129 @@
+# The linker version script controls which symbols are exported.
+# Version tags that correspond to past releases group the symbols
+# that were part of that release. Hence, such a version tag is sealed
+# and MUST not be extended.
+# Any new symbols MUST only be added to the bottom of the file, in
+# the version tag for the next upcoming release.
+libnl_3 {
+global:
+	nl_cli_addr_alloc;
+	nl_cli_addr_parse;
+	nl_cli_addr_parse_broadcast;
+	nl_cli_addr_parse_dev;
+	nl_cli_addr_parse_family;
+	nl_cli_addr_parse_label;
+	nl_cli_addr_parse_local;
+	nl_cli_addr_parse_peer;
+	nl_cli_addr_parse_preferred;
+	nl_cli_addr_parse_scope;
+	nl_cli_addr_parse_valid;
+	nl_cli_alloc_cache;
+	nl_cli_alloc_socket;
+	nl_cli_class_alloc;
+	nl_cli_class_alloc_cache;
+	nl_cli_cls_alloc;
+	nl_cli_cls_alloc_cache;
+	nl_cli_cls_parse_ematch;
+	nl_cli_cls_parse_proto;
+	nl_cli_confirm;
+	nl_cli_connect;
+	nl_cli_ct_alloc;
+	nl_cli_ct_alloc_cache;
+	nl_cli_ct_parse_dst;
+	nl_cli_ct_parse_dst_port;
+	nl_cli_ct_parse_family;
+	nl_cli_ct_parse_id;
+	nl_cli_ct_parse_mark;
+	nl_cli_ct_parse_protocol;
+	nl_cli_ct_parse_src;
+	nl_cli_ct_parse_src_port;
+	nl_cli_ct_parse_status;
+	nl_cli_ct_parse_tcp_state;
+	nl_cli_ct_parse_timeout;
+	nl_cli_ct_parse_use;
+	nl_cli_ct_parse_zone;
+	nl_cli_exp_alloc;
+	nl_cli_exp_alloc_cache;
+	nl_cli_exp_parse_class;
+	nl_cli_exp_parse_dst;
+	nl_cli_exp_parse_dst_port;
+	nl_cli_exp_parse_family;
+	nl_cli_exp_parse_flags;
+	nl_cli_exp_parse_fn;
+	nl_cli_exp_parse_helper_name;
+	nl_cli_exp_parse_icmp_code;
+	nl_cli_exp_parse_icmp_id;
+	nl_cli_exp_parse_icmp_type;
+	nl_cli_exp_parse_id;
+	nl_cli_exp_parse_l4protonum;
+	nl_cli_exp_parse_nat_dir;
+	nl_cli_exp_parse_src;
+	nl_cli_exp_parse_src_port;
+	nl_cli_exp_parse_timeout;
+	nl_cli_exp_parse_zone;
+	nl_cli_fatal;
+	nl_cli_link_alloc;
+	nl_cli_link_alloc_cache;
+	nl_cli_link_alloc_cache_family;
+	nl_cli_link_parse_family;
+	nl_cli_link_parse_ifalias;
+	nl_cli_link_parse_ifindex;
+	nl_cli_link_parse_mtu;
+	nl_cli_link_parse_name;
+	nl_cli_link_parse_txqlen;
+	nl_cli_link_parse_weight;
+	nl_cli_load_module;
+	nl_cli_neigh_alloc;
+	nl_cli_neigh_parse_dev;
+	nl_cli_neigh_parse_dst;
+	nl_cli_neigh_parse_family;
+	nl_cli_neigh_parse_lladdr;
+	nl_cli_neigh_parse_state;
+	nl_cli_parse_dumptype;
+	nl_cli_parse_u32;
+	nl_cli_print_version;
+	nl_cli_qdisc_alloc;
+	nl_cli_route_alloc;
+	nl_cli_route_alloc_cache;
+	nl_cli_route_parse_dst;
+	nl_cli_route_parse_family;
+	nl_cli_route_parse_iif;
+	nl_cli_route_parse_metric;
+	nl_cli_route_parse_nexthop;
+	nl_cli_route_parse_pref_src;
+	nl_cli_route_parse_prio;
+	nl_cli_route_parse_protocol;
+	nl_cli_route_parse_scope;
+	nl_cli_route_parse_src;
+	nl_cli_route_parse_table;
+	nl_cli_route_parse_type;
+	nl_cli_rule_alloc;
+	nl_cli_rule_alloc_cache;
+	nl_cli_rule_parse_family;
+	nl_cli_tc_lookup;
+	nl_cli_tc_parse_dev;
+	nl_cli_tc_parse_handle;
+	nl_cli_tc_parse_kind;
+	nl_cli_tc_parse_linktype;
+	nl_cli_tc_parse_mpu;
+	nl_cli_tc_parse_mtu;
+	nl_cli_tc_parse_overhead;
+	nl_cli_tc_parse_parent;
+	nl_cli_tc_register;
+	nl_cli_tc_unregister;
+local:
+	*;
+};
+
+libnl_3_2_28 {
+global:
+	nl_cli_alloc_cache_flags;
+	nl_cli_link_alloc_cache_flags;
+	nl_cli_link_alloc_cache_family_flags;
+} libnl_3;
+
+libnl_3_8 {
+global:
+	nl_cli_nh_alloc;
+	nl_cli_nh_alloc_cache;
+} libnl_3_2_28;

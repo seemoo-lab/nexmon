@@ -1,0 +1,2 @@
+./test/schemas/list0_0.xml:5: Schemas validity error : Element 'string': This element is not expected.
+./test/schemas/list0_0.xml fails to validate

@@ -1,3 +1,7 @@
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 1995-2025 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
+
 @pindex msggrep
 @cindex @code{msggrep} program, usage
 @example
@@ -45,7 +49,8 @@ or if it is @samp{-}.
 @example
   [-N @var{sourcefile}]... [-M @var{domainname}]...
   [-J @var{msgctxt-pattern}] [-K @var{msgid-pattern}] [-T @var{msgstr-pattern}]
-  [-C @var{comment-pattern}]
+  [-C @var{comment-pattern}] [-X @var{extracted-comment-pattern}]
+  [-W @var{workflow-flag}] [-S @var{sticky-flag}]
 @end example
 
 A message is selected if
@@ -59,7 +64,11 @@ A message is selected if
 @item or if @samp{-T} is given and its translation (msgstr) matches
 @var{msgstr-pattern},
 @item or if @samp{-C} is given and the translator's comment matches
-@var{comment-pattern}.
+@var{comment-pattern},
+@item or if @samp{-X} is given and the extracted comment matches
+@var{extracted-comment-pattern},
+@item or if @samp{-W} is given and its flags contain @var{workflow-flag},
+@item or if @samp{-S} is given and its flags contain @var{sticky-flag}.
 @end itemize
 
 When more than one selection criterion is specified, the set of selected
@@ -145,6 +154,20 @@ Obtain @var{pattern} from @var{file}.
 @opindex -i@r{, @code{msggrep} option}
 @opindex --ignore-case@r{, @code{msggrep} option}
 Ignore case distinctions.
+
+@item -W @var{workflow-flag}
+@itemx --workflow-flag=@var{workflow-flag}
+@opindex -W@r{, @code{msggrep} option}
+@opindex --workflow-flag@r{, @code{msggrep} option}
+Select messages with @var{workflow-flag}.
+Workflow flags are defined in @ref{Workflow flags}.
+
+@item -S @var{sticky-flag}
+@itemx --sticky-flag=@var{sticky-flag}
+@opindex -S@r{, @code{msggrep} option}
+@opindex --sticky-flag@r{, @code{msggrep} option}
+Select messages with @var{sticky-flag}.
+Sticky flags are defined in @ref{Sticky flags}.
 
 @item -v
 @itemx --invert-match

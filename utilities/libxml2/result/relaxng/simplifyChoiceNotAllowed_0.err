@@ -1,0 +1,3 @@
+./test/relaxng/simplifyChoiceNotAllowed_0.xml:7: element notAllowed: Relax-NG validity error : Did not expect element notAllowed there
+./test/relaxng/simplifyChoiceNotAllowed_0.xml:13: element notAllowed: Relax-NG validity error : Did not expect element notAllowed there
+./test/relaxng/simplifyChoiceNotAllowed_0.xml fails to validate

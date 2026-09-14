@@ -1,10 +1,12 @@
 /*
  * Copyright © 2011 Canonical Ltd.
  *
- * This library is free software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * licence, or (at your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -22,15 +24,12 @@
 #include "gmenumodel.h"
 
 #include "glibintl.h"
+#include "gmarshal-internal.h"
 
 /**
- * SECTION:gmenumodel
- * @title: GMenuModel
- * @short_description: An abstract class representing the contents of a menu
- * @include: gio/gio.h
- * @see_also: #GActionGroup
+ * GMenuModel:
  *
- * #GMenuModel represents the contents of a menu -- an ordered list of
+ * `GMenuModel` represents the contents of a menu — an ordered list of
  * menu items. The items are associated with actions, which can be
  * activated through them. Items can be grouped in sections, and may
  * have submenus associated with them. Both items and sections usually
@@ -38,20 +37,22 @@
  * the associated action (ie whether it is stateful, and what kind of
  * state it has) can influence the representation of the item.
  *
- * The conceptual model of menus in #GMenuModel is hierarchical:
- * sections and submenus are again represented by #GMenuModels.
+ * The conceptual model of menus in `GMenuModel` is hierarchical:
+ * sections and submenus are again represented by `GMenuModel`s.
  * Menus themselves do not define their own roles. Rather, the role
- * of a particular #GMenuModel is defined by the item that references
- * it (or, in the case of the 'root' menu, is defined by the context
+ * of a particular `GMenuModel` is defined by the item that references
+ * it (or, in the case of the ‘root’ menu, is defined by the context
  * in which it is used).
  *
  * As an example, consider the visible portions of this menu:
  *
- * ## An example menu # {#menu-example}
+ * ## An example menu
  *
  * ![](menu-example.png)
  *
- * There are 8 "menus" visible in the screenshot: one menubar, two
+ * While this kind of deeply nested menu is no longer considered good UI
+ * practice, it serves as a good example of the concepts in `GMenuModel`.
+ * There are 8 ‘menus’ visible in the screenshot: one menubar, two
  * submenus and 5 sections:
  *
  * - the toplevel menubar (containing 4 items)
@@ -63,17 +64,20 @@
  * - the Sources section (containing 2 items)
  * - the Markup section (containing 2 items)
  *
- * The [example][menu-model] illustrates the conceptual connection between
+ * The [example](#a-menu-example) illustrates the conceptual connection between
  * these 8 menus. Each large block in the figure represents a menu and the
  * smaller blocks within the large block represent items in that menu. Some
  * items contain references to other menus.
  *
- * ## A menu example # {#menu-model}
+ * ## A menu example
  *
- * ![](menu-model.png)
+ * <picture>
+ *   <source srcset="menu-model-dark.svg" media="(prefers-color-scheme: dark)">
+ *   <img src="menu-model-light.svg" alt="menu model">
+ * </picture>
  *
- * Notice that the separators visible in the [example][menu-example]
- * appear nowhere in the [menu model][menu-model]. This is because
+ * Notice that the separators visible in the [example](#an-example-menu)
+ * appear nowhere in the [menu model](#a-menu-example). This is because
  * separators are not explicitly represented in the menu model. Instead,
  * a separator is inserted between any two non-empty sections of a menu.
  * Section items can have labels just like any other item. In that case,
@@ -82,41 +86,43 @@
  * The motivation for this abstract model of application controls is
  * that modern user interfaces tend to make these controls available
  * outside the application. Examples include global menus, jumplists,
- * dash boards, etc. To support such uses, it is necessary to 'export'
+ * dash boards, etc. To support such uses, it is necessary to ‘export’
  * information about actions and their representation in menus, which
- * is exactly what the [GActionGroup exporter][gio-GActionGroup-exporter]
- * and the [GMenuModel exporter][gio-GMenuModel-exporter] do for
- * #GActionGroup and #GMenuModel. The client-side counterparts to
- * make use of the exported information are #GDBusActionGroup and
- * #GDBusMenuModel.
+ * is exactly what the action group exporter and the menu model exporter do for
+ * [iface@Gio.ActionGroup] and [class@Gio.MenuModel]. The client-side
+ * counterparts to make use of the exported information are
+ * [class@Gio.DBusActionGroup] and [class@Gio.DBusMenuModel].
  *
- * The API of #GMenuModel is very generic, with iterators for the
- * attributes and links of an item, see g_menu_model_iterate_item_attributes()
- * and g_menu_model_iterate_item_links(). The 'standard' attributes and
- * link types have predefined names: %G_MENU_ATTRIBUTE_LABEL,
- * %G_MENU_ATTRIBUTE_ACTION, %G_MENU_ATTRIBUTE_TARGET, %G_MENU_LINK_SECTION
- * and %G_MENU_LINK_SUBMENU.
+ * The API of `GMenuModel` is very generic, with iterators for the
+ * attributes and links of an item, see
+ * [method@Gio.MenuModel.iterate_item_attributes] and
+ * [method@Gio.MenuModel.iterate_item_links]. The ‘standard’ attributes and
+ * link types have predefined names: `G_MENU_ATTRIBUTE_LABEL`,
+ * `G_MENU_ATTRIBUTE_ACTION`, `G_MENU_ATTRIBUTE_TARGET`, `G_MENU_LINK_SECTION`
+ * and `G_MENU_LINK_SUBMENU`.
  *
- * Items in a #GMenuModel represent active controls if they refer to
+ * Items in a `GMenuModel` represent active controls if they refer to
  * an action that can get activated when the user interacts with the
- * menu item. The reference to the action is encoded by the string id
- * in the %G_MENU_ATTRIBUTE_ACTION attribute. An action id uniquely
+ * menu item. The reference to the action is encoded by the string ID
+ * in the `G_MENU_ATTRIBUTE_ACTION` attribute. An action ID uniquely
  * identifies an action in an action group. Which action group(s) provide
  * actions depends on the context in which the menu model is used.
  * E.g. when the model is exported as the application menu of a
- * #GtkApplication, actions can be application-wide or window-specific
- * (and thus come from two different action groups). By convention, the
- * application-wide actions have names that start with "app.", while the
- * names of window-specific actions start with "win.".
+ * [`GtkApplication`](https://docs.gtk.org/gtk4/class.Application.html),
+ * actions can be application-wide or window-specific (and thus come from
+ * two different action groups). By convention, the application-wide actions
+ * have names that start with `app.`, while the names of window-specific
+ * actions start with `win.`.
  *
  * While a wide variety of stateful actions is possible, the following
  * is the minimum that is expected to be supported by all users of exported
  * menu information:
+ *
  * - an action with no parameter type and no state
  * - an action with no parameter type and boolean state
  * - an action with string parameter type and string state
  *
- * ## Stateless 
+ * ## Stateless
  *
  * A stateless action typically corresponds to an ordinary menu item.
  *
@@ -124,12 +130,12 @@
  *
  * ## Boolean State
  *
- * An action with a boolean state will most typically be used with a "toggle"
- * or "switch" menu item. The state can be set directly, but activating the
+ * An action with a boolean state will most typically be used with a ‘toggle’
+ * or ‘switch’ menu item. The state can be set directly, but activating the
  * action (with no parameter) results in the state being toggled.
  *
  * Selecting a toggle menu item will activate the action. The menu item should
- * be rendered as "checked" when the state is true.
+ * be rendered as ‘checked’ when the state is true.
  *
  * ## String Parameter and State
  *
@@ -141,15 +147,8 @@
  * Radio menu items, in addition to being associated with the action, will
  * have a target value. Selecting that menu item will result in activation
  * of the action with the target value as the parameter. The menu item should
- * be rendered as "selected" when the state of the action is equal to the
+ * be rendered as ‘selected’ when the state of the action is equal to the
  * target value of the menu item.
- */
-
-/**
- * GMenuModel:
- *
- * #GMenuModel is an opaque structure type.  You must access it using the
- * functions below.
  *
  * Since: 2.32
  */
@@ -308,7 +307,7 @@ g_menu_model_real_iterate_item_attributes (GMenuModel *model,
   else
     {
       g_critical ("GMenuModel implementation '%s' doesn't override iterate_item_attributes() "
-                  "and fails to return sane values from get_item_attributes()",
+                  "and fails to return valid values from get_item_attributes()",
                   G_OBJECT_TYPE_NAME (model));
       result = NULL;
     }
@@ -372,7 +371,7 @@ g_menu_model_real_iterate_item_links (GMenuModel *model,
   else
     {
       g_critical ("GMenuModel implementation '%s' doesn't override iterate_item_links() "
-                  "and fails to return sane values from get_item_links()",
+                  "and fails to return valid values from get_item_links()",
                   G_OBJECT_TYPE_NAME (model));
       result = NULL;
     }
@@ -428,7 +427,7 @@ g_menu_model_class_init (GMenuModelClass *class)
    * @removed: the number of items removed
    * @added: the number of items added
    *
-   * Emitted when a change has occured to the menu.
+   * Emitted when a change has occurred to the menu.
    *
    * The only changes that can occur to a menu is that items are removed
    * or added.  Items may not change (except by being removed and added
@@ -442,7 +441,7 @@ g_menu_model_class_init (GMenuModelClass *class)
    *
    * As an example, if the menu contains items a, b, c, d (in that
    * order) and the signal (2, 1, 3) occurs then the new composition of
-   * the menu will be a, b, _, _, _, d (with each _ representing some
+   * the menu will be a, b, \_, \_, \_, d (with each _ representing some
    * new item).
    *
    * Signal handlers may query the model (particularly the added items)
@@ -452,8 +451,12 @@ g_menu_model_class_init (GMenuModelClass *class)
   g_menu_model_items_changed_signal =
     g_signal_new (I_("items-changed"), G_TYPE_MENU_MODEL,
                   G_SIGNAL_RUN_LAST, 0, NULL, NULL,
-                  g_cclosure_marshal_generic, G_TYPE_NONE,
+                  _g_cclosure_marshal_VOID__INT_INT_INT,
+                  G_TYPE_NONE,
                   3, G_TYPE_INT, G_TYPE_INT, G_TYPE_INT);
+  g_signal_set_va_marshaller (g_menu_model_items_changed_signal,
+                              G_TYPE_FROM_CLASS (class),
+                              _g_cclosure_marshal_VOID__INT_INT_INTv);
 }
 
 /**
@@ -521,7 +524,7 @@ g_menu_model_iterate_item_attributes (GMenuModel *model,
  * @model: a #GMenuModel
  * @item_index: the index of the item
  * @attribute: the attribute to query
- * @expected_type: (allow-none): the expected type of the attribute, or
+ * @expected_type: (nullable): the expected type of the attribute, or
  *     %NULL
  *
  * Queries the item at position @item_index in @model for the attribute
@@ -536,7 +539,7 @@ g_menu_model_iterate_item_attributes (GMenuModel *model,
  * If the attribute does not exist, or does not match the expected type
  * then %NULL is returned.
  *
- * Returns: (transfer full): the value of the attribute
+ * Returns: (nullable) (transfer full): the value of the attribute
  *
  * Since: 2.32
  */
@@ -643,7 +646,7 @@ g_menu_model_iterate_item_links (GMenuModel *model,
  * If the link exists, the linked #GMenuModel is returned.  If the link
  * does not exist, %NULL is returned.
  *
- * Returns: (transfer full): the linked #GMenuModel, or %NULL
+ * Returns: (nullable) (transfer full): the linked #GMenuModel, or %NULL
  *
  * Since: 2.32
  */
@@ -702,8 +705,8 @@ G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (GMenuAttributeIter, g_menu_attribute_iter, 
 /**
  * g_menu_attribute_iter_get_next:
  * @iter: a #GMenuAttributeIter
- * @out_name: (out) (allow-none) (transfer none): the type of the attribute
- * @value: (out) (allow-none) (transfer full): the attribute value
+ * @out_name: (out) (optional) (transfer none): the type of the attribute
+ * @value: (out) (optional) (transfer full): the attribute value
  *
  * This function combines g_menu_attribute_iter_next() with
  * g_menu_attribute_iter_get_name() and g_menu_attribute_iter_get_value().
@@ -858,8 +861,8 @@ G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (GMenuLinkIter, g_menu_link_iter, G_TYPE_OBJ
 /**
  * g_menu_link_iter_get_next:
  * @iter: a #GMenuLinkIter
- * @out_link: (out) (allow-none) (transfer none): the name of the link
- * @value: (out) (allow-none) (transfer full): the linked #GMenuModel
+ * @out_link: (out) (optional) (transfer none): the name of the link
+ * @value: (out) (optional) (transfer full): the linked #GMenuModel
  *
  * This function combines g_menu_link_iter_next() with
  * g_menu_link_iter_get_name() and g_menu_link_iter_get_value().

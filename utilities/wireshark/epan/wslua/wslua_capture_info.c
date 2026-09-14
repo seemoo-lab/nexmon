@@ -10,25 +10,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
+#include "config.h"
 
 #include "wslua_file_common.h"
 
 #include <epan/addr_resolv.h>
-#include <wiretap/pcapng.h>
 
 
 /* WSLUA_CONTINUE_MODULE File */
@@ -39,17 +27,15 @@ WSLUA_CLASS_DEFINE(CaptureInfo,FAIL_ON_NULL_OR_EXPIRED("CaptureInfo"));
     A `CaptureInfo` object, passed into Lua as an argument by `FileHandler` callback
     function `read_open()`, `read()`, `seek_read()`, `seq_read_close()`, and `read_close()`.
     This object represents capture file data and meta-data (data about the
-    capture file) being read into Wireshark/Tshark.
+    capture file) being read into Wireshark/TShark.
 
     This object's fields can be written-to by Lua during the read-based function callbacks.
     In other words, when the Lua plugin's `FileHandler.read_open()` function is invoked, a
     `CaptureInfo` object will be passed in as one of the arguments, and its fields
     should be written to by your Lua code to tell Wireshark about the capture.
-
-    @since 1.11.3
  */
 
-CaptureInfo* push_CaptureInfo(lua_State* L, wtap *wth, const gboolean first_time) {
+CaptureInfo* push_CaptureInfo(lua_State* L, wtap *wth, const bool first_time) {
     CaptureInfo f;
 
     if (!wth) {
@@ -60,7 +46,7 @@ CaptureInfo* push_CaptureInfo(lua_State* L, wtap *wth, const gboolean first_time
     f = (CaptureInfo) g_malloc0(sizeof(struct _wslua_captureinfo));
     f->wth = wth;
     f->wdh = NULL;
-    f->expired = FALSE;
+    f->expired = false;
 
     if (first_time) {
         /* XXX: need to do this? */
@@ -80,8 +66,8 @@ WSLUA_METAMETHOD CaptureInfo__tostring(lua_State* L) {
         lua_pushstring(L,"CaptureInfo pointer is NULL!");
     } else {
         wtap *wth = fi->wth;
-        lua_pushfstring(L, "CaptureInfo: file_type_subtype=%d, snapshot_length=%d, pkt_encap=%d, file_tsprec='%s'",
-            wth->file_type_subtype, wth->snapshot_length, wth->phdr.pkt_encap, wth->file_tsprec);
+        lua_pushfstring(L, "CaptureInfo: file_type_subtype=%d, snapshot_length=%d, file_encap=%d, file_tsprec=%d",
+            wth->file_type_subtype, wth->snapshot_length, wth->file_encap, wth->file_tsprec);
     }
 
     WSLUA_RETURN(1); /* String of debug information. */
@@ -90,32 +76,31 @@ WSLUA_METAMETHOD CaptureInfo__tostring(lua_State* L) {
 
 static int CaptureInfo__gc(lua_State* L) {
     CaptureInfo fc = toCaptureInfo(L,1);
-    if (fc)
-        g_free(fc);
+    g_free(fc);
     return 0;
 }
 
 /* WSLUA_ATTRIBUTE CaptureInfo_encap RW The packet encapsulation type for the whole file.
 
-    See `wtap_encaps` in `init.lua` for available types.  Set to `wtap_encaps.PER_PACKET` if packets can
+    See `wtap_encaps` for available types.  Set to `wtap_encaps.PER_PACKET` if packets can
     have different types, then later set `FrameInfo.encap` for each packet during `read()`/`seek_read()`.
  */
-WSLUA_ATTRIBUTE_NAMED_NUMBER_GETTER(CaptureInfo,encap,wth->file_encap);
-WSLUA_ATTRIBUTE_NAMED_NUMBER_SETTER(CaptureInfo,encap,wth->file_encap,int);
+WSLUA_ATTRIBUTE_NAMED_INTEGER_GETTER(CaptureInfo,encap,wth->file_encap);
+WSLUA_ATTRIBUTE_NAMED_INTEGER_SETTER(CaptureInfo,encap,wth->file_encap,int);
 
 /* WSLUA_ATTRIBUTE CaptureInfo_time_precision RW The precision of the packet timestamps in the file.
 
-    See `wtap_file_tsprec` in `init.lua` for available precisions.
+    See `wtap_file_tsprec` for available precisions.
  */
-WSLUA_ATTRIBUTE_NAMED_NUMBER_GETTER(CaptureInfo,time_precision,wth->file_tsprec);
-WSLUA_ATTRIBUTE_NAMED_NUMBER_SETTER(CaptureInfo,time_precision,wth->file_tsprec,int);
+WSLUA_ATTRIBUTE_NAMED_INTEGER_GETTER(CaptureInfo,time_precision,wth->file_tsprec);
+WSLUA_ATTRIBUTE_NAMED_INTEGER_SETTER(CaptureInfo,time_precision,wth->file_tsprec,int);
 
 /* WSLUA_ATTRIBUTE CaptureInfo_snapshot_length RW The maximum packet length that could be recorded.
 
-    Setting it to `0` means unknown.  Wireshark cannot handle anything bigger than 65535 bytes.
+    Setting it to `0` means unknown.
  */
-WSLUA_ATTRIBUTE_NAMED_NUMBER_GETTER(CaptureInfo,snapshot_length,wth->snapshot_length);
-WSLUA_ATTRIBUTE_NAMED_NUMBER_SETTER(CaptureInfo,snapshot_length,wth->snapshot_length,guint);
+WSLUA_ATTRIBUTE_NAMED_INTEGER_GETTER(CaptureInfo,snapshot_length,wth->snapshot_length);
+WSLUA_ATTRIBUTE_NAMED_INTEGER_SETTER(CaptureInfo,snapshot_length,wth->snapshot_length,unsigned);
 
 /* WSLUA_ATTRIBUTE CaptureInfo_comment RW A string comment for the whole capture file,
     or nil if there is no `comment`. */
@@ -145,7 +130,11 @@ WSLUA_ATTRIBUTE_NAMED_OPT_BLOCK_STRING_SETTER(CaptureInfo,user_app,wth->shb_hdrs
 
     For example, if the capture file identifies one resolved IPv4 address of 1.2.3.4 to `foo.com`, then you must set
     `CaptureInfo.hosts` to a table of:
-    @code { ipv4_addresses = { { addr = "\01\02\03\04", name = "foo.com" } } } @endcode
+
+    [source,lua]
+    ----
+    { ipv4_addresses = { { addr = "\01\02\03\04", name = "foo.com" } } }
+    ----
 
     Note that either the `ipv4_addresses` or the `ipv6_addresses` table, or both, may be empty or nil.
     */
@@ -156,8 +145,8 @@ static int CaptureInfo_set_hosts(lua_State* L) {
     const char *name = NULL;
     size_t addr_len = 0;
     size_t name_len = 0;
-    guint32 v4_addr = 0;
-    struct e_in6_addr v6_addr = { {0} };
+    uint32_t v4_addr = 0;
+    ws_in6_addr v6_addr = { {0} };
 
     if (!wth->add_new_ipv4 || !wth->add_new_ipv6) {
         return luaL_error(L, "CaptureInfo wtap has no IPv4 or IPv6 name resolution");
@@ -176,30 +165,30 @@ static int CaptureInfo_set_hosts(lua_State* L) {
         while (lua_next(L, -2) != 0) {
             /* 'key' (at index -2) and 'value' (at index -1) */
             if (!lua_istable(L,-1)) {
-                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addreses table */
+                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addresses table */
                 return luaL_error(L, "CaptureInfo.host ipv4_addresses table does not contain a table");
             }
 
             lua_getfield(L, -1, "addr");
             if (!lua_isstring(L,-1)) {
-                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addreses table */
+                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addresses table */
                 return luaL_error(L, "CaptureInfo.host ipv4_addresses table's table does not contain an 'addr' field");
             }
             addr = luaL_checklstring(L,-1,&addr_len);
             if (addr_len != 4) {
-                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addreses table */
+                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addresses table */
                 return luaL_error(L, "CaptureInfo.host ipv4_addresses 'addr' value is not 4 bytes long");
             }
             memcpy(&v4_addr, addr, 4);
 
             lua_getfield(L, -1, "name");
             if (!lua_isstring(L,-1)) {
-                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addreses table */
+                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addresses table */
                 return luaL_error(L, "CaptureInfo.host ipv4_addresses table's table does not contain an 'addr' field");
             }
             name = luaL_checklstring(L,-1,&name_len);
 
-            wth->add_new_ipv4(v4_addr, name);
+            wth->add_new_ipv4(v4_addr, name, false);
 
             /* removes 'value'; keeps 'key' for next iteration */
             lua_pop(L, 1);
@@ -219,30 +208,30 @@ static int CaptureInfo_set_hosts(lua_State* L) {
         while (lua_next(L, -2) != 0) {
             /* 'key' (at index -2) and 'value' (at index -1) */
             if (!lua_istable(L,-1)) {
-                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addreses table */
+                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addresses table */
                 return luaL_error(L, "CaptureInfo.host ipv6_addresses table does not contain a table");
             }
 
             lua_getfield(L, -1, "addr");
             if (!lua_isstring(L,-1)) {
-                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addreses table */
+                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addresses table */
                 return luaL_error(L, "CaptureInfo.host ipv6_addresses table's table does not contain an 'addr' field");
             }
             addr = luaL_checklstring(L,-1,&addr_len);
             if (addr_len != 16) {
-                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addreses table */
+                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addresses table */
                 return luaL_error(L, "CaptureInfo.host ipv6_addresses 'addr' value is not 16 bytes long");
             }
             memcpy(&v6_addr, addr, 16);
 
             lua_getfield(L, -1, "name");
             if (!lua_isstring(L,-1)) {
-                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addreses table */
+                lua_pop(L, 3); /* remove whatever it is, the key, and the ipv4_addresses table */
                 return luaL_error(L, "CaptureInfo.host ipv6_addresses table's table does not contain an 'addr' field");
             }
             name = luaL_checklstring(L,-1,&name_len);
 
-            wth->add_new_ipv6((const void *)(&v6_addr), name);
+            wth->add_new_ipv6((const void *)(&v6_addr), name, false);
 
             /* removes 'value'; keeps 'key' for next iteration */
             lua_pop(L, 1);
@@ -301,8 +290,7 @@ WSLUA_META CaptureInfo_meta[] = {
 };
 
 int CaptureInfo_register(lua_State* L) {
-    WSLUA_REGISTER_META(CaptureInfo);
-    WSLUA_REGISTER_ATTRIBUTES(CaptureInfo);
+    WSLUA_REGISTER_META_WITH_ATTRS(CaptureInfo);
     return 0;
 }
 
@@ -313,14 +301,12 @@ WSLUA_CLASS_DEFINE(CaptureInfoConst,FAIL_ON_NULL_OR_EXPIRED("CaptureInfoConst"))
     function `write_open()`.
 
     This object represents capture file data and meta-data (data about the
-    capture file) for the current capture in Wireshark/Tshark.
+    capture file) for the current capture in Wireshark/TShark.
 
     This object's fields are read-from when used by `write_open` function callback.
     In other words, when the Lua plugin's FileHandler `write_open` function is invoked, a
     `CaptureInfoConst` object will be passed in as one of the arguments, and its fields
     should be read from by your Lua code to get data about the capture that needs to be written.
-
-    @since 1.11.3
  */
 
 CaptureInfoConst* push_CaptureInfoConst(lua_State* L, wtap_dumper *wdh) {
@@ -334,7 +320,7 @@ CaptureInfoConst* push_CaptureInfoConst(lua_State* L, wtap_dumper *wdh) {
     f = (CaptureInfoConst) g_malloc0(sizeof(struct _wslua_captureinfo));
     f->wth = NULL;
     f->wdh = wdh;
-    f->expired = FALSE;
+    f->expired = false;
     return pushCaptureInfoConst(L,f);
 }
 
@@ -346,26 +332,26 @@ WSLUA_METAMETHOD CaptureInfoConst__tostring(lua_State* L) {
         lua_pushstring(L,"CaptureInfoConst pointer is NULL!");
     } else {
         wtap_dumper *wdh = fi->wdh;
-        lua_pushfstring(L, "CaptureInfoConst: file_type_subtype=%d, snaplen=%d, encap=%d, compressed=%d, file_tsprec='%s'",
-            wdh->file_type_subtype, wdh->snaplen, wdh->encap, wdh->compressed, wdh->tsprecision);
+        lua_pushfstring(L, "CaptureInfoConst: file_type_subtype=%d, snaplen=%d, encap=%d, compression_type=%d",
+            wdh->file_type_subtype, wdh->snaplen, wdh->file_encap, wdh->compression_type);
     }
 
     WSLUA_RETURN(1); /* String of debug information. */
 }
 
 /* WSLUA_ATTRIBUTE CaptureInfoConst_type RO The file type. */
-WSLUA_ATTRIBUTE_NAMED_NUMBER_GETTER(CaptureInfoConst,type,wdh->file_type_subtype);
+WSLUA_ATTRIBUTE_NAMED_INTEGER_GETTER(CaptureInfoConst,type,wdh->file_type_subtype);
 
 /* WSLUA_ATTRIBUTE CaptureInfoConst_snapshot_length RO The maximum packet length that is actually recorded (vs. the original
     length of any given packet on-the-wire). A value of `0` means the snapshot length is unknown or there is no one
     such length for the whole file. */
-WSLUA_ATTRIBUTE_NAMED_NUMBER_GETTER(CaptureInfoConst,snapshot_length,wdh->snaplen);
+WSLUA_ATTRIBUTE_NAMED_INTEGER_GETTER(CaptureInfoConst,snapshot_length,wdh->snaplen);
 
 /* WSLUA_ATTRIBUTE CaptureInfoConst_encap RO The packet encapsulation type for the whole file.
 
-    See `wtap_encaps` in init.lua for available types.  It is set to `wtap_encaps.PER_PACKET` if packets can
+    See `wtap_encaps` for available types.  It is set to `wtap_encaps.PER_PACKET` if packets can
     have different types, in which case each Frame identifies its type, in `FrameInfo.packet_encap`. */
-WSLUA_ATTRIBUTE_NAMED_NUMBER_GETTER(CaptureInfoConst,encap,wdh->encap);
+WSLUA_ATTRIBUTE_NAMED_INTEGER_GETTER(CaptureInfoConst,encap,wdh->file_encap);
 
 /* WSLUA_ATTRIBUTE CaptureInfoConst_comment RW A comment for the whole capture file, if the
     `wtap_presence_flags.COMMENTS` was set in the presence flags; nil if there is no comment. */
@@ -389,7 +375,11 @@ WSLUA_ATTRIBUTE_NAMED_OPT_BLOCK_STRING_GETTER(CaptureInfoConst,user_app,wth->shb
 
     For example, if the current capture has one resolved IPv4 address of 1.2.3.4 to `foo.com`, then getting
     `CaptureInfoConst.hosts` will get a table of:
-    @code { ipv4_addresses = { { addr = "\01\02\03\04", name = "foo.com" } }, ipv6_addresses = { } } @endcode
+
+    [source,lua]
+    ----
+    { ipv4_addresses = { { addr = "\01\02\03\04", name = "foo.com" } }, ipv6_addresses = { } }
+    ----
 
     Note that either the `ipv4_addresses` or the `ipv6_addresses` table, or both, may be empty, however they will not
     be nil. */
@@ -484,8 +474,7 @@ static int CaptureInfoConst_set_private_table(lua_State* L) {
 
 static int CaptureInfoConst__gc(lua_State* L) {
     CaptureInfoConst fi = toCaptureInfoConst(L,1);
-    if (fi)
-        g_free(fi);
+    g_free(fi);
     return 0;
 }
 
@@ -508,14 +497,13 @@ WSLUA_META CaptureInfoConst_meta[] = {
 };
 
 int CaptureInfoConst_register(lua_State* L) {
-    WSLUA_REGISTER_META(CaptureInfoConst);
-    WSLUA_REGISTER_ATTRIBUTES(CaptureInfoConst);
+    WSLUA_REGISTER_META_WITH_ATTRS(CaptureInfoConst);
     return 0;
 }
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

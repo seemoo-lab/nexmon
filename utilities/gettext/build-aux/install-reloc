@@ -1,11 +1,11 @@
 #!/bin/sh
 # install-reloc - install a program including a relocating wrapper
-# Copyright (C) 2003-2016 Free Software Foundation, Inc.
+# Copyright (C) 2003-2026 Free Software Foundation, Inc.
 # Written by Bruno Haible <bruno@clisp.org>, 2003.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -14,50 +14,104 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# Usage 1:
-#   install-reloc -- library_path_var library_path_value prefix destdir \
-#                    compile_command srcdir builddir config_h_dir exeext \
-#                    strip_command \
-#                    install_command... destprog
-# where
-#   - library_path_var is the platform dependent runtime library path variable
-#   - library_path_value is a colon separated list of directories that contain
-#     the libraries at installation time (use this instead of -rpath)
-#   - prefix is the base directory at installation time
-#   - destdir is a string that is prepended to all file names at installation
-#     time; it is already prepended to destprog but not to library_path_value
-#     and prefix
-#   - compile_command is a C compiler compilation and linking command
-#   - srcdir is the directory where to find relocwrapper.c and its dependencies
-#   - builddir is the directory where to find built dependencies (namely,
-#     alloca.h and stdbool.h)
-#   - config_h_dir is the directory where to find config.h
-#   - exeext is platform dependent suffix of executables
-#   - strip_command is the command for stripping executables, or : if no
-#     stripping is desired
-#   - install_command is the install command line, excluding the final destprog
-#   - destprog is the destination program name
-# Usage 2:
-#   env RELOC_LIBRARY_PATH_VAR=library_path_var \
-#       RELOC_LIBRARY_PATH_VALUE=library_path_value \
-#       RELOC_PREFIX=prefix \
-#       RELOC_DESTDIR=destdir \
-#       RELOC_COMPILE_COMMAND=compile_command \
-#       RELOC_SRCDIR=srcdir \
-#       RELOC_BUILDDIR=builddir \
-#       RELOC_CONFIG_H_DIR=config_h_dir \
-#       RELOC_EXEEXT=exeext \
-#       RELOC_STRIP_PROG=strip_command \
-#       RELOC_INSTALL_PROG=install_command... \
-#   install-reloc prog1 ... destprog
-#   where destprog is either the destination program name (when only one program
-#   is specified) or the destination directory for all programs.
-# install-reloc renames destprog to destprog.bin and installs a relocating
-# wrapper in the place of destprog.
+# func_usage
+# outputs to stdout the --help usage message.
+func_usage ()
+{
+  echo "\
+Usage 1:
+  install-reloc -- library_path_var library_path_value prefix destdir \\
+                   compile_command srcdir builddir config_h_dir exeext \\
+                   strip_command \\
+                   install_command... destprog
+where
+  - library_path_var is the platform dependent runtime library path variable
+  - library_path_value is a colon separated list of directories that contain
+    the libraries at installation time (use this instead of -rpath)
+  - prefix is the base directory at installation time
+  - destdir is a string that is prepended to all file names at installation
+    time; it is already prepended to destprog but not to library_path_value
+    and prefix
+  - compile_command is a C compiler compilation and linking command
+  - srcdir is the directory where to find relocwrapper.c and its dependencies
+  - builddir is the directory where to find built dependencies (namely,
+    alloca.h and stdbool.h)
+  - config_h_dir is the directory where to find config.h
+  - exeext is platform dependent suffix of executables
+  - strip_command is the command for stripping executables, or : if no
+    stripping is desired
+  - install_command is the install command line, excluding the final destprog
+  - destprog is the destination program name
+Usage 2:
+  env RELOC_LIBRARY_PATH_VAR=library_path_var \\
+      RELOC_LIBRARY_PATH_VALUE=library_path_value \\
+      RELOC_PREFIX=prefix \\
+      RELOC_DESTDIR=destdir \\
+      RELOC_COMPILE_COMMAND=compile_command \\
+      RELOC_SRCDIR=srcdir \\
+      RELOC_BUILDDIR=builddir \\
+      RELOC_CONFIG_H_DIR=config_h_dir \\
+      RELOC_EXEEXT=exeext \\
+      RELOC_STRIP_PROG=strip_command \\
+      RELOC_INSTALL_PROG=install_command... \\
+  install-reloc prog1 ... destprog
+  where destprog is either the destination program name (when only one program
+  is specified) or the destination directory for all programs.
+Usage 3:
+  install-reloc OPTION
 
-progname=$0
+Renames destprog to destprog.bin and installs a relocating wrapper
+in the place of destprog.
+
+Options:
+      --help           print this help and exit
+      --version        print version information and exit
+
+Send patches and bug reports to <bug-gnulib@gnu.org>."
+}
+
+# func_version
+# outputs to stdout the --version message.
+func_version ()
+{
+  echo "install-reloc (GNU gnulib, module relocatable-prog-wrapper)"
+  echo "Copyright (C) 2026 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law."
+  echo
+  printf 'Written by %s.\n' "Bruno Haible"
+}
+
+# func_fatal_error message
+# outputs to stderr a fatal error message, and terminates the program.
+func_fatal_error ()
+{
+  echo "install-reloc: *** $1" 1>&2
+  echo "install-reloc: *** Stop." 1>&2
+  exit 1
+}
+
+# Command-line option processing.
+if test $# -eq 1; then
+  case "$1" in
+    --help | --hel | --he | --h )
+      func_usage
+      exit 0 ;;
+   --version | --versio | --versi | --vers | --ver | --ve | --v )
+      func_version
+      exit 0 ;;
+    -- )      # Usage 1
+      break ;;
+    -* )
+      func_fatal_error "unrecognized option: $1"
+      ;;
+    * )       # Usage 2
+      break ;;
+  esac
+fi
 
 if test $# -ge 12 && test "x$1" = "x--"; then
   # Get fixed position arguments.
@@ -99,10 +153,7 @@ else
     strip_prog=$RELOC_STRIP_PROG
     install_prog=$RELOC_INSTALL_PROG # including the "-c" option
   else
-    echo "Usage: $0 -- library_path_var library_path_value prefix destdir" \
-         "compile_command srcdir builddir config_h_dir exeext" \
-         "strip_command" \
-         "install_command... destprog" 1>&2
+    func_usage 1>&2
     exit 1
   fi
 fi
@@ -138,7 +189,9 @@ fi
 # Outputs a command and runs it.
 func_verbose ()
 {
-  echo "$@"
+  # Make it easy to copy&paste the printed command into a shell in most cases,
+  # by escaping '\\', '"', and '$'. This is not perfect, just good enough.
+  echo "$@" | sed -e 's/\([\\"$]\)/\\\1/g'
   "$@"
 }
 
@@ -184,9 +237,9 @@ fi
 test -n "$library_path_var" || exit 0
 
 libdirs=
-save_IFS="$IFS"; IFS=":"
+saved_IFS="$IFS"; IFS=":"
 for dir in $library_path_value; do
-  IFS="$save_IFS"
+  IFS="$saved_IFS"
   if test -n "$dir"; then
     case "$libdirs" in
       *"\"$dir\""*) ;; # remove duplicate
@@ -194,7 +247,7 @@ for dir in $library_path_value; do
     esac
   fi
 done
-IFS="$save_IFS"
+IFS="$saved_IFS"
 # If there are no library directories to add at runtime, we don't need a
 # wrapper.
 test -n "$libdirs" || exit 0
@@ -232,20 +285,26 @@ func_create_wrapper ()
                "$srcdir"/areadlink.c \
                "$srcdir"/careadlinkat.c \
                "$srcdir"/allocator.c \
-               "$srcdir"/strerror-override.c \
-               "$srcdir"/stat.c \
-               "$srcdir"/lstat.c \
                "$srcdir"/readlink.c \
+               "$srcdir"/stat.c \
+               "$srcdir"/stat-time.c \
                "$srcdir"/canonicalize-lgpl.c \
+               "$srcdir"/malloc/scratch_buffer_grow.c \
+               "$srcdir"/malloc/scratch_buffer_grow_preserve.c \
+               "$srcdir"/malloc/scratch_buffer_set_array_size.c \
+               "$srcdir"/malloc.c \
+               "$srcdir"/realloc.c \
+               "$srcdir"/free.c \
+               "$srcdir"/mempcpy.c \
+               "$srcdir"/rawmemchr.c \
                "$srcdir"/malloca.c \
                "$srcdir"/relocatable.c \
                "$srcdir"/setenv.c \
-               "$srcdir"/strerror.c \
                "$srcdir"/c-ctype.c \
                -o "$destprog.wrapper$exeext"
   rc=$?
   # Clean up object files left over in the current directory by the native C
-  # compilers on Solaris, HP-UX, OSF/1, IRIX.
+  # compilers on Solaris, HP-UX.
   rm -f relocwrapper.o \
         progname.o \
         progreloc.o \
@@ -253,11 +312,19 @@ func_create_wrapper ()
         careadlinkat.o \
         allocator.o \
         readlink.o \
+        stat.o \
         canonicalize-lgpl.o \
+        scratch_buffer_grow.o \
+        scratch_buffer_grow_preserve.o \
+        scratch_buffer_set_array_size.o \
+        malloc.o \
+        realloc.o \
+        free.o \
+        mempcpy.o \
+        rawmemchr.o \
         malloca.o \
         relocatable.o \
         setenv.o \
-        strerror.o \
         c-ctype.o
   test $rc = 0 || exit $?
   # Clean up debugging information left over by the native C compiler on MacOS X.

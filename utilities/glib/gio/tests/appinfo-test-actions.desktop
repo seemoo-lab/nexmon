@@ -5,12 +5,12 @@ Exec=true
 
 [Desktop Action frob]
 Name=Frobnicate
-Exec=touch frob
+Exec=sh -c '[ -d "$G_TEST_TMPDIR" ] && touch "$G_TEST_TMPDIR/frob"'
 
 [Desktop Action tweak]
 Name=Tweak
-Exec=touch tweak
+Exec=sh -c '[ -d "$G_TEST_TMPDIR" ] && touch "$G_TEST_TMPDIR/tweak"'
 
 [Desktop Action twiddle]
 Name=Twiddle
-Exec=touch twiddle
+Exec=sh -c '[ -d "$G_TEST_TMPDIR" ] && touch "$G_TEST_TMPDIR/twiddle"'

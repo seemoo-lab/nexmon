@@ -1,0 +1,4 @@
+./test/errors/doctype2.xml:1: parser error : Space required after 'DOCTYPE'
+<!DOCTYPEdoc>
+         ^
+./test/errors/doctype2.xml : failed to parse

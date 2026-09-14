@@ -1,10 +1,10 @@
 /* Compile a C# program.
-   Copyright (C) 2003, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2003, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2003.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,12 +13,15 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef _CSHARPCOMP_H
 #define _CSHARPCOMP_H
 
-#include <stdbool.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Compile a set of C# source files to bytecode.
    sources is an array of source file names, including resource files.
@@ -36,5 +39,10 @@ extern bool compile_csharp_class (const char * const *sources,
                                   const char *output_file,
                                   bool optimize, bool debug,
                                   bool verbose);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _CSHARPCOMP_H */

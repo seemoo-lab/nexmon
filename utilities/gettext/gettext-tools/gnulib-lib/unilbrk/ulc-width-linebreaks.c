@@ -1,19 +1,27 @@
 /* Line breaking of strings.
-   Copyright (C) 2001-2003, 2006-2016 Free Software Foundation, Inc.
+   Copyright (C) 2001-2003, 2006-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2001.
 
-   This program is free software: you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published
-   by the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software.
+   It is dual-licensed under "the GNU LGPLv3+ or the GNU GPLv2+".
+   You can redistribute it and/or modify it under either
+     - the terms of the GNU Lesser General Public License as published
+       by the Free Software Foundation, either version 3, or (at your
+       option) any later version, or
+     - the terms of the GNU General Public License as published by the
+       Free Software Foundation; either version 2, or (at your option)
+       any later version, or
+     - the same dual license "the GNU LGPLv3+ or the GNU GPLv2+".
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   Lesser General Public License and the GNU General Public License
+   for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public
+   License and of the GNU General Public License along with this
+   program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -25,6 +33,8 @@
 
 #include "c-ctype.h"
 #include "uniconv.h"
+#include "unilbrk/internal.h"
+#include "unilbrk/lbrktables.h"
 #include "unilbrk/ulc-common.h"
 
 /* Line breaking of a string in an arbitrary encoding.
@@ -40,16 +50,16 @@
    but this is not backed by an RFC.  So we use UTF-8. It supports
    characters up to \U7FFFFFFF and is unambiguously defined.  */
 
-int
-ulc_width_linebreaks (const char *s, size_t n,
-                      int width, int start_column, int at_end_columns,
-                      const char *o, const char *encoding,
-                      char *p)
+static int
+ulc_width_linebreaks_internal (const char *s, size_t n,
+                               int width, int start_column, int at_end_columns,
+                               const char *o, const char *encoding, int cr,
+                               char *p)
 {
   if (n > 0)
     {
       if (is_utf8_encoding (encoding))
-        return u8_width_linebreaks ((const uint8_t *) s, n, width, start_column, at_end_columns, o, encoding, p);
+        return u8_width_linebreaks_internal ((const uint8_t *) s, n, width, start_column, at_end_columns, o, encoding, cr, p);
       else
         {
           /* Convert the string to UTF-8 and build a translation table
@@ -58,11 +68,10 @@ ulc_width_linebreaks (const char *s, size_t n,
 
           if (offsets != NULL)
             {
-              uint8_t *t;
               size_t m;
-
-              t = u8_conv_from_encoding (encoding, iconveh_question_mark,
-                                         s, n, offsets, NULL, &m);
+              uint8_t *t =
+                u8_conv_from_encoding (encoding, iconveh_question_mark,
+                                       s, n, offsets, NULL, &m);
               if (t != NULL)
                 {
                   char *memory =
@@ -72,25 +81,23 @@ ulc_width_linebreaks (const char *s, size_t n,
                     {
                       char *q = (char *) memory;
                       char *o8 = (o != NULL ? (char *) (q + m) : NULL);
-                      int res_column;
-                      size_t i;
 
                       /* Translate the overrides to the UTF-8 string.  */
                       if (o != NULL)
                         {
                           memset (o8, UC_BREAK_UNDEFINED, m);
-                          for (i = 0; i < n; i++)
+                          for (size_t i = 0; i < n; i++)
                             if (offsets[i] != (size_t)(-1))
                               o8[offsets[i]] = o[i];
                         }
 
                       /* Determine the line breaks of the UTF-8 string.  */
-                      res_column =
-                        u8_width_linebreaks (t, m, width, start_column, at_end_columns, o8, encoding, q);
+                      int res_column =
+                        u8_width_linebreaks_internal (t, m, width, start_column, at_end_columns, o8, encoding, cr, q);
 
                       /* Translate the result back to the original string.  */
                       memset (p, UC_BREAK_PROHIBITED, n);
-                      for (i = 0; i < n; i++)
+                      for (size_t i = 0; i < n; i++)
                         if (offsets[i] != (size_t)(-1))
                           p[i] = q[offsets[i]];
 
@@ -108,7 +115,7 @@ ulc_width_linebreaks (const char *s, size_t n,
           if (is_all_ascii (s, n))
             {
               /* ASCII is a subset of UTF-8.  */
-              return u8_width_linebreaks ((const uint8_t *) s, n, width, start_column, at_end_columns, o, encoding, p);
+              return u8_width_linebreaks_internal ((const uint8_t *) s, n, width, start_column, at_end_columns, o, encoding, cr, p);
             }
 #endif
           /* We have a non-ASCII string and cannot convert it.
@@ -119,9 +126,16 @@ ulc_width_linebreaks (const char *s, size_t n,
             const char *s_end = s + n;
             while (s < s_end)
               {
-                *p = ((o != NULL && *o == UC_BREAK_MANDATORY) || *s == '\n'
+                *p = ((o != NULL && *o == UC_BREAK_MANDATORY)
+                      || *s == '\n'
                       ? UC_BREAK_MANDATORY
-                      : UC_BREAK_PROHIBITED);
+                      : ((o != NULL && *o == UC_BREAK_CR_BEFORE_LF)
+                         || (cr >= 0
+                             && *s == '\r'
+                             && s + 1 < s_end
+                             && *(s + 1) == '\n')
+                         ? UC_BREAK_CR_BEFORE_LF
+                         : UC_BREAK_PROHIBITED));
                 s++;
                 p++;
                 if (o != NULL)
@@ -132,6 +146,35 @@ ulc_width_linebreaks (const char *s, size_t n,
         }
     }
   return start_column;
+}
+
+#if defined IN_LIBUNISTRING
+/* For backward compatibility with older versions of libunistring.  */
+
+# undef ulc_width_linebreaks
+
+int
+ulc_width_linebreaks (const char *s, size_t n,
+                      int width, int start_column, int at_end_columns,
+                      const char *o, const char *encoding,
+                      char *p)
+{
+  return ulc_width_linebreaks_internal (s, n,
+                                        width, start_column, at_end_columns,
+                                        o, encoding, -1, p);
+}
+
+#endif
+
+int
+ulc_width_linebreaks_v2 (const char *s, size_t n,
+                         int width, int start_column, int at_end_columns,
+                         const char *o, const char *encoding,
+                         char *p)
+{
+  return ulc_width_linebreaks_internal (s, n,
+                                        width, start_column, at_end_columns,
+                                        o, encoding, LBP_CR, p);
 }
 
 
@@ -149,7 +192,6 @@ read_file (FILE *stream)
   char *buf = NULL;
   int alloc = 0;
   int size = 0;
-  int count;
 
   while (! feof (stream))
     {
@@ -165,7 +207,7 @@ read_file (FILE *stream)
               exit (1);
             }
         }
-      count = fread (buf + size, 1, BUFSIZE, stream);
+      int count = fread (buf + size, 1, BUFSIZE, stream);
       if (count == 0)
         {
           if (ferror (stream))
@@ -199,11 +241,10 @@ main (int argc, char * argv[])
       char *input = read_file (stdin);
       int length = strlen (input);
       char *breaks = malloc (length);
-      int i;
 
-      ulc_width_linebreaks (input, length, width, 0, 0, NULL, locale_charset (), breaks);
+      ulc_width_linebreaks_v2 (input, length, width, 0, 0, NULL, locale_charset (), breaks);
 
-      for (i = 0; i < length; i++)
+      for (int i = 0; i < length; i++)
         {
           switch (breaks[i])
             {
@@ -211,6 +252,8 @@ main (int argc, char * argv[])
               putc ('\n', stdout);
               break;
             case UC_BREAK_MANDATORY:
+              break;
+            case UC_BREAK_CR_BEFORE_LF:
               break;
             case UC_BREAK_PROHIBITED:
               break;

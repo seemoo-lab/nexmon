@@ -1,10 +1,12 @@
 /* GObject - GLib Type, Object, Parameter and Signal Library
  * Copyright (C) 2009 Benjamin Otte <otte@gnome.org>
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -17,13 +19,14 @@
 
 #include "config.h"
 
+#include "../glib/gvalgrind.h"
 #include <string.h>
 
 #include "gatomicarray.h"
 
 /* A GAtomicArray is a growable, mutable array of data
  * generally of the form of a header of a specific size and
- * then a array of items of a fixed size.
+ * then an array of items of a fixed size.
  *
  * It is possible to do lock-less read transactions from the
  * array without any protection against other reads or writes,
@@ -73,10 +76,16 @@ freelist_alloc (gsize size, gboolean reuse)
 	}
     }
 
-  real_size = sizeof (gsize) + MAX (size, sizeof (FreeListNode));
+  real_size = sizeof (GAtomicArrayMetadata) + MAX (size, sizeof (FreeListNode));
   mem = g_slice_alloc (real_size);
-  mem = ((char *) mem) + sizeof (gsize);
+  mem = ((char *) mem) + sizeof (GAtomicArrayMetadata);
   G_ATOMIC_ARRAY_DATA_SIZE (mem) = size;
+
+#if ENABLE_VALGRIND
+  VALGRIND_MALLOCLIKE_BLOCK (mem, real_size - sizeof (GAtomicArrayMetadata),
+                             FALSE, FALSE);
+#endif
+
   return mem;
 }
 
@@ -155,11 +164,18 @@ _g_atomic_array_update (GAtomicArray *array,
   guint8 *old;
 
   G_LOCK (array);
-  old = g_atomic_pointer_get (&array->data);
+  old = g_atomic_pointer_exchange (&array->data, new_data);
 
+#ifdef G_DISABLE_ASSERT
+  if (old && G_ATOMIC_ARRAY_DATA_SIZE (new_data) < G_ATOMIC_ARRAY_DATA_SIZE (old))
+    {
+      g_atomic_pointer_set (&array->data, old);
+      g_return_if_reached ();
+    }
+#else
   g_assert (old == NULL || G_ATOMIC_ARRAY_DATA_SIZE (old) <= G_ATOMIC_ARRAY_DATA_SIZE (new_data));
+#endif
 
-  g_atomic_pointer_set (&array->data, new_data);
   if (old)
     freelist_free (old);
   G_UNLOCK (array);

@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,43 +31,18 @@
 #include "config.h"
 
 /* we know we are deprecated here, no need for warnings */
+#ifndef GLIB_DISABLE_DEPRECATION_WARNINGS
 #define GLIB_DISABLE_DEPRECATION_WARNINGS
+#endif
 
 #include "gcompletion.h"
 
 #include <glib/gstrfuncs.h>
 #include <glib/gmessages.h>
+#include <glib/gstdio.h>
 #include <glib/gunicode.h>
 
 #include <string.h>
-
-/**
- * SECTION:completion
- * @title: Automatic String Completion
- * @short_description: support for automatic completion using a group
- *                     of target strings
- *
- * #GCompletion provides support for automatic completion of a string
- * using any group of target strings. It is typically used for file
- * name completion as is common in many UNIX shells.
- *
- * A #GCompletion is created using g_completion_new(). Target items are
- * added and removed with g_completion_add_items(),
- * g_completion_remove_items() and g_completion_clear_items(). A
- * completion attempt is requested with g_completion_complete() or
- * g_completion_complete_utf8(). When no longer needed, the
- * #GCompletion is freed with g_completion_free().
- *
- * Items in the completion can be simple strings (e.g. filenames), or
- * pointers to arbitrary data structures. If data structures are used
- * you must provide a #GCompletionFunc in g_completion_new(), which
- * retrieves the item's string from the data structure. You can change
- * the way in which strings are compared by setting a different
- * #GCompletionStrncmpFunc in g_completion_set_compare().
- *
- * GCompletion has been marked as deprecated, since this API is rarely
- * used and not very actively maintained.
- **/
 
 /**
  * GCompletion:
@@ -78,18 +55,41 @@
  * @strncmp_func: The function to use when comparing strings.  Use
  *                g_completion_set_compare() to modify this function.
  *
- * The data structure used for automatic completion.
+ * `GCompletion` provides support for automatic completion of a string
+ * using any group of target strings. It is typically used for file
+ * name completion as is common in many UNIX shells.
+ *
+ * A `GCompletion` is created using [func@GLib.Completion.new]. Target items are
+ * added and removed with [method@GLib.Completion.add_items],
+ * [method@GLib.Completion.remove_items] and
+ * [method@GLib.Completion.clear_items]. A completion attempt is requested with
+ * [method@GLib.Completion.complete] or [method@GLib.Completion.complete_utf8].
+ * When no longer needed, the `GCompletion` is freed with
+ * [method@GLib.Completion.free].
+ *
+ * Items in the completion can be simple strings (e.g. filenames), or
+ * pointers to arbitrary data structures. If data structures are used
+ * you must provide a [type@GLib.CompletionFunc] in [func@GLib.Completion.new],
+ * which retrieves the item’s string from the data structure. You can change
+ * the way in which strings are compared by setting a different
+ * [type@GLib.CompletionStrncmpFunc] in [method@GLib.Completion.set_compare].
+ *
+ * `GCompletion` has been marked as deprecated, since this API is rarely
+ * used and not very actively maintained.
+ *
+ * Deprecated: 2.26: Rarely used API
  **/
 
 /**
  * GCompletionFunc:
- * @Param1: the completion item.
+ * @item: the completion item.
  *
  * Specifies the type of the function passed to g_completion_new(). It
  * should return the string corresponding to the given target item.
  * This is used when you use data structures as #GCompletion items.
  *
  * Returns: the string corresponding to the item.
+ * Deprecated: 2.26: Rarely used API
  **/
 
 /**
@@ -106,6 +106,7 @@
  *          the first @n bytes of @s1 is found, respectively, to be
  *          less than, to match, or to be greater than the first @n
  *          bytes of @s2.
+ * Deprecated: 2.26: Rarely used API
  **/
 
 static void completion_check_cache (GCompletion* cmp,
@@ -120,6 +121,7 @@ static void completion_check_cache (GCompletion* cmp,
  * Creates a new #GCompletion.
  *
  * Returns: the new #GCompletion.
+ * Deprecated: 2.26: Rarely used API
  **/
 GCompletion* 
 g_completion_new (GCompletionFunc func)
@@ -461,14 +463,15 @@ main (int   argc,
   
   if (argc < 3)
     {
-      g_warning ("Usage: %s filename prefix1 [prefix2 ...]\n", argv[0]);
+      g_warning ("Usage: %s filename prefix1 [prefix2 ...]",
+                 (argc > 0) ? argv[0] : "gcompletion");
       return 1;
     }
   
-  file = fopen (argv[1], "r");
+  file = g_fopen (argv[1], "re");
   if (!file)
     {
-      g_warning ("Cannot open %s\n", argv[1]);
+      g_warning ("Cannot open %s", argv[1]);
       return 1;
     }
   

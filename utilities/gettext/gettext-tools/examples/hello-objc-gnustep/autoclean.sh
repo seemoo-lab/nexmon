@@ -6,7 +6,7 @@
 
 make distclean
 
+rm -f po/fetch-po
 rm -f po/remove-potcdate.sed
-rm -f po/remove-potcdate.sin
 rm -f po/*.pot
 rm -rf *.lproj

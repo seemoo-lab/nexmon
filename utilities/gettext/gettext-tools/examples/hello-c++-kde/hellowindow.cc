@@ -1,5 +1,5 @@
 // Example for use of GNU gettext.
-// Copyright (C) 2003, 2015-2016 Free Software Foundation, Inc.
+// Copyright (C) 2003 Free Software Foundation, Inc.
 // This file is published under the GNU General Public License.
 
 #if HAVE_CONFIG_H
@@ -25,7 +25,12 @@
 #include <qhbox.h>
 
 /* Get getpid() declaration.  */
-#if HAVE_UNISTD_H
+#if defined _WIN32 && !defined __CYGWIN__
+/* native Windows API */
+# include <process.h>
+# define getpid _getpid
+#else
+/* POSIX API */
 # include <unistd.h>
 #endif
 

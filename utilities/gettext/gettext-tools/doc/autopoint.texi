@@ -1,3 +1,7 @@
+@c This file is part of the GNU gettext manual.
+@c Copyright (C) 1995-2019 Free Software Foundation, Inc.
+@c See the file gettext.texi for copying conditions.
+
 @pindex autopoint
 @cindex @code{autopoint} program, usage
 @example
@@ -65,5 +69,5 @@ package's @file{configure} script and by @code{autoheader} to create the
 package's @file{config.h.in} include file template.
 
 The name @samp{autopoint} is an abbreviation of @samp{auto-po-intl-m4};
-the tool copies or updates mostly files in the @file{po}, @file{intl},
-@file{m4} directories.
+in earlier versions, the tool copied or updated mostly files in the @file{po},
+@file{intl}, @file{m4} directories.

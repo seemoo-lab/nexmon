@@ -1,12 +1,6 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * netlink/route/route.h	Routes
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
- * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
+ * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  */
 
 #ifndef NETLINK_ROUTE_H_
@@ -24,7 +18,12 @@
 extern "C" {
 #endif
 
-/* flags */
+/**
+ * @ingroup route
+ * When passed to rtnl_route_alloc_cache() the cache will
+ * correspond to the contents of the routing cache instead
+ * of the actual routes.
+ */
 #define ROUTE_CACHE_CONTENT	1
 
 struct rtnl_route;
@@ -49,10 +48,12 @@ extern int	rtnl_route_alloc_cache(struct nl_sock *, int, int,
 				       struct nl_cache **);
 
 extern void	rtnl_route_get(struct rtnl_route *);
-extern void	rtnl_route_put(struct rtnl_route *);
 
 extern int	rtnl_route_parse(struct nlmsghdr *, struct rtnl_route **);
 extern int	rtnl_route_build_msg(struct nl_msg *, struct rtnl_route *);
+
+extern int	rtnl_route_lookup(struct nl_sock *sk, struct nl_addr *dst,
+				  struct rtnl_route **result);
 
 extern int	rtnl_route_build_add_request(struct rtnl_route *, int,
 					     struct nl_msg **);
@@ -90,6 +91,11 @@ extern struct nl_addr *rtnl_route_get_pref_src(struct rtnl_route *);
 extern void	rtnl_route_set_iif(struct rtnl_route *, int);
 extern int	rtnl_route_get_iif(struct rtnl_route *);
 extern int	rtnl_route_get_src_len(struct rtnl_route *);
+extern void	rtnl_route_set_ttl_propagate(struct rtnl_route *route,
+					     uint8_t ttl_prop);
+extern int	rtnl_route_get_ttl_propagate(struct rtnl_route *route);
+extern void	rtnl_route_set_nhid(struct rtnl_route *, uint32_t);
+extern uint32_t	rtnl_route_get_nhid(struct rtnl_route *);
 
 extern void	rtnl_route_add_nexthop(struct rtnl_route *,
 				       struct rtnl_nexthop *);

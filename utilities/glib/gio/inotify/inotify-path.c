@@ -5,19 +5,20 @@
    Copyright (C) 2006 John McCutchan
    Copyright (C) 2009 Codethink Limited
 
-   The Gnome Library is free software; you can redistribute it and/or
-   modify it under the terms of the GNU Library General Public License as
-   published by the Free Software Foundation; either version 2 of the
-   License, or (at your option) any later version.
+   SPDX-License-Identifier: LGPL-2.1-or-later
 
-   The Gnome Library is distributed in the hope that it will be useful,
+   This library is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Lesser General Public
+   License as published by the Free Software Foundation; either
+   version 2.1 of the License, or (at your option) any later version.
+
+   This library is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   Library General Public License for more details.
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU Library General Public
-   License along with the Gnome Library; see the file COPYING.LIB.  If not,
-   see <http://www.gnu.org/licenses/>.
+   You should have received a copy of the GNU Lesser General Public License
+   along with this library; if not, see <http://www.gnu.org/licenses/>.
 
    Authors:
 		 John McCutchan <john@johnmccutchan.com>
@@ -209,6 +210,7 @@ ip_watched_file_free (ip_watched_file_t *file)
   g_assert (file->subs == NULL);
   g_free (file->filename);
   g_free (file->path);
+  g_free (file);
 }
 
 static void
@@ -410,7 +412,7 @@ ip_watched_dir_new (const char *path,
 static void
 ip_watched_dir_free (ip_watched_dir_t *dir)
 {
-  g_assert_cmpint (g_hash_table_size (dir->files_hash), ==, 0);
+  g_assert (g_hash_table_size (dir->files_hash) == 0);
   g_assert (dir->subs == NULL);
   g_free (dir->path);
   g_hash_table_unref (dir->files_hash);
@@ -480,7 +482,7 @@ ip_event_dispatch (GList      *dir_list,
 	   */
 	  if (sub->hardlinks)
 	    {
-	      event->mask &= ~IP_INOTIFY_FILE_MASK;
+	      event->mask &= (guint32) ~IP_INOTIFY_FILE_MASK;
 	      if (!event->mask)
 		continue;
 	    }
@@ -533,8 +535,9 @@ ip_event_callback (ik_event_t *event)
   GList* dir_list = NULL;
   GList *file_list = NULL;
 
-  /* We can ignore the IGNORED events */
-  if (event->mask & IN_IGNORED)
+  /* We can ignore the IGNORED events. Likewise, if the event queue overflowed,
+   * there is not much we can do to recover. */
+  if (event->mask & (IN_IGNORED | IN_Q_OVERFLOW))
     {
       _ik_event_free (event);
       return TRUE;

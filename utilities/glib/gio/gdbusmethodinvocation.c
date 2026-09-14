@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -38,17 +40,18 @@
 #include "glibintl.h"
 
 /**
- * SECTION:gdbusmethodinvocation
- * @short_description: Object for handling remote calls
- * @include: gio/gio.h
+ * GDBusMethodInvocation:
  *
- * Instances of the #GDBusMethodInvocation class are used when
+ * Instances of the `GDBusMethodInvocation` class are used when
  * handling D-Bus method calls. It provides a way to asynchronously
  * return results and errors.
  *
- * The normal way to obtain a #GDBusMethodInvocation object is to receive
- * it as an argument to the handle_method_call() function in a
- * #GDBusInterfaceVTable that was passed to g_dbus_connection_register_object().
+ * The normal way to obtain a `GDBusMethodInvocation` object is to receive
+ * it as an argument to the `handle_method_call()` function in a
+ * [type@Gio.DBusInterfaceVTable] that was passed to
+ * [method@Gio.DBusConnection.register_object].
+ *
+ * Since: 2.26
  */
 
 typedef struct _GDBusMethodInvocationClass GDBusMethodInvocationClass;
@@ -66,14 +69,6 @@ struct _GDBusMethodInvocationClass
   GObjectClass parent_class;
 };
 
-/**
- * GDBusMethodInvocation:
- *
- * The #GDBusMethodInvocation structure contains only private data and
- * should only be accessed using the provided API.
- *
- * Since: 2.26
- */
 struct _GDBusMethodInvocation
 {
   /*< private >*/
@@ -92,7 +87,7 @@ struct _GDBusMethodInvocation
   gpointer         user_data;
 };
 
-G_DEFINE_TYPE (GDBusMethodInvocation, g_dbus_method_invocation, G_TYPE_OBJECT);
+G_DEFINE_TYPE (GDBusMethodInvocation, g_dbus_method_invocation, G_TYPE_OBJECT)
 
 static void
 g_dbus_method_invocation_finalize (GObject *object)
@@ -105,6 +100,8 @@ g_dbus_method_invocation_finalize (GObject *object)
   g_free (invocation->method_name);
   if (invocation->method_info)
       g_dbus_method_info_unref (invocation->method_info);
+  if (invocation->property_info)
+      g_dbus_property_info_unref (invocation->property_info);
   g_object_unref (invocation->connection);
   g_object_unref (invocation->message);
   g_variant_unref (invocation->parameters);
@@ -131,7 +128,10 @@ g_dbus_method_invocation_init (GDBusMethodInvocation *invocation)
  *
  * Gets the bus name that invoked the method.
  *
- * Returns: A string. Do not free, it is owned by @invocation.
+ * This can return %NULL if not specified by the caller, e.g. on peer-to-peer
+ * connections.
+ *
+ * Returns: (nullable): A string. Do not free, it is owned by @invocation.
  *
  * Since: 2.26
  */
@@ -165,12 +165,17 @@ g_dbus_method_invocation_get_object_path (GDBusMethodInvocation *invocation)
  *
  * Gets the name of the D-Bus interface the method was invoked on.
  *
+ * This can be `NULL` if it was not specified by the sender. See
+ * [callback@Gio.DBusInterfaceMethodCallFunc] or the
+ * [D-Bus Specification](https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-types-method)
+ * for details on when this can happen and how it should be handled.
+ *
  * If this method call is a property Get, Set or GetAll call that has
  * been redirected to the method call handler then
  * "org.freedesktop.DBus.Properties" will be returned.  See
  * #GDBusInterfaceVTable for more information.
  *
- * Returns: A string. Do not free, it is owned by @invocation.
+ * Returns: (nullable): A string. Do not free, it is owned by @invocation.
  *
  * Since: 2.26
  */
@@ -192,7 +197,7 @@ g_dbus_method_invocation_get_interface_name (GDBusMethodInvocation *invocation)
  * returned.  See g_dbus_method_invocation_get_property_info() and
  * #GDBusInterfaceVTable for more information.
  *
- * Returns: A #GDBusMethodInfo or %NULL. Do not free, it is owned by @invocation.
+ * Returns: (nullable): A #GDBusMethodInfo or %NULL. Do not free, it is owned by @invocation.
  *
  * Since: 2.26
  */
@@ -219,7 +224,7 @@ g_dbus_method_invocation_get_method_info (GDBusMethodInvocation *invocation)
  *
  * If the call was GetAll, %NULL will be returned.
  *
- * Returns: (transfer none): a #GDBusPropertyInfo or %NULL
+ * Returns: (nullable) (transfer none): a #GDBusPropertyInfo or %NULL
  *
  * Since: 2.38
  */
@@ -273,7 +278,8 @@ g_dbus_method_invocation_get_connection (GDBusMethodInvocation *invocation)
  * descriptor passing, that cannot be properly expressed in the
  * #GVariant API.
  *
- * See this [server][gdbus-server] and [client][gdbus-unix-fd-client]
+ * See this [server][class@Gio.DBusConnection#an-example-d-bus-server]
+ * and [client][class@Gio.DBusConnection#an-example-for-file-descriptor-passing]
  * for an example of how to use this low-level API to send and receive
  * UNIX file descriptors.
  *
@@ -325,12 +331,12 @@ g_dbus_method_invocation_get_user_data (GDBusMethodInvocation *invocation)
 
 /* < internal >
  * _g_dbus_method_invocation_new:
- * @sender: (allow-none): The bus name that invoked the method or %NULL if @connection is not a bus connection.
+ * @sender: (nullable): The bus name that invoked the method or %NULL if @connection is not a bus connection.
  * @object_path: The object path the method was invoked on.
  * @interface_name: The name of the D-Bus interface the method was invoked on.
  * @method_name: The name of the method that was invoked.
- * @method_info: (allow-none): Information about the method call or %NULL.
- * @property_info: (allow-none): Information about the property or %NULL.
+ * @method_info: (nullable): Information about the method call or %NULL.
+ * @property_info: (nullable): Information about the property or %NULL.
  * @connection: The #GDBusConnection the method was invoked on.
  * @message: The D-Bus message as a #GDBusMessage.
  * @parameters: The parameters as a #GVariant tuple.
@@ -395,14 +401,7 @@ g_dbus_method_invocation_return_value_internal (GDBusMethodInvocation *invocatio
   g_return_if_fail ((parameters == NULL) || g_variant_is_of_type (parameters, G_VARIANT_TYPE_TUPLE));
 
   if (g_dbus_message_get_flags (invocation->message) & G_DBUS_MESSAGE_FLAGS_NO_REPLY_EXPECTED)
-    {
-      if (parameters != NULL)
-        {
-          g_variant_ref_sink (parameters);
-          g_variant_unref (parameters);
-        }
-      goto out;
-    }
+    goto out;
 
   if (parameters == NULL)
     parameters = g_variant_new_tuple (NULL, 0);
@@ -418,7 +417,7 @@ g_dbus_method_invocation_return_value_internal (GDBusMethodInvocation *invocatio
         {
           gchar *type_string = g_variant_type_dup_string (type);
 
-          g_warning ("Type of return value is incorrect: expected '%s', got '%s''",
+          g_warning ("Type of return value is incorrect: expected '%s', got '%s'",
 		     type_string, g_variant_get_type_string (parameters));
           g_variant_type_free (type);
           g_free (type_string);
@@ -429,7 +428,9 @@ g_dbus_method_invocation_return_value_internal (GDBusMethodInvocation *invocatio
 
   /* property_info is only non-NULL if set that way from
    * GDBusConnection, so this must be the case of async property
-   * handling on either 'Get', 'Set' or 'GetAll'.
+   * handling on either 'Get' or 'Set'.
+   *
+   * property_info is NULL for 'GetAll'.
    */
   if (invocation->property_info != NULL)
     {
@@ -459,21 +460,6 @@ g_dbus_method_invocation_return_value_internal (GDBusMethodInvocation *invocatio
           g_variant_unref (nested);
         }
 
-      else if (g_str_equal (invocation->method_name, "GetAll"))
-        {
-          if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(a{sv})")))
-            {
-              g_warning ("Type of return value for property 'GetAll' call should be '(a{sv})' but got '%s'",
-                         g_variant_get_type_string (parameters));
-              goto out;
-            }
-
-          /* Could iterate the list of properties and make sure that all
-           * of them are actually on the interface and with the correct
-           * types, but let's not do that for now...
-           */
-        }
-
       else if (g_str_equal (invocation->method_name, "Set"))
         {
           if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE_UNIT))
@@ -486,6 +472,21 @@ g_dbus_method_invocation_return_value_internal (GDBusMethodInvocation *invocatio
 
       else
         g_assert_not_reached ();
+    }
+  else if (g_str_equal (invocation->interface_name, DBUS_INTERFACE_PROPERTIES) &&
+           g_str_equal (invocation->method_name, "GetAll"))
+    {
+      if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(a{sv})")))
+        {
+          g_warning ("Type of return value for property 'GetAll' call should be '(a{sv})' but got '%s'",
+                     g_variant_get_type_string (parameters));
+          goto out;
+        }
+
+      /* Could iterate the list of properties and make sure that all
+       * of them are actually on the interface and with the correct
+       * types, but let's not do that for now...
+       */
     }
 
   if (G_UNLIKELY (_g_dbus_debug_return ()))
@@ -506,7 +507,7 @@ g_dbus_method_invocation_return_value_internal (GDBusMethodInvocation *invocatio
     }
 
   reply = g_dbus_message_new_method_reply (invocation->message);
-  g_dbus_message_set_body (reply, parameters);
+  g_dbus_message_set_body (reply, g_steal_pointer (&parameters));
 
 #ifdef G_OS_UNIX
   if (fd_list != NULL)
@@ -523,20 +524,47 @@ g_dbus_method_invocation_return_value_internal (GDBusMethodInvocation *invocatio
   g_object_unref (reply);
 
  out:
+  if (parameters != NULL)
+    {
+      g_variant_ref_sink (parameters);
+      g_variant_unref (parameters);
+    }
+
   g_object_unref (invocation);
 }
 
 /**
  * g_dbus_method_invocation_return_value:
  * @invocation: (transfer full): A #GDBusMethodInvocation.
- * @parameters: (allow-none): A #GVariant tuple with out parameters for the method or %NULL if not passing any parameters.
+ * @parameters: (nullable): A #GVariant tuple with out parameters for the method or %NULL if not passing any parameters.
  *
  * Finishes handling a D-Bus method call by returning @parameters.
  * If the @parameters GVariant is floating, it is consumed.
  *
- * It is an error if @parameters is not of the right format.
+ * It is an error if @parameters is not of the right format: it must be a tuple
+ * containing the out-parameters of the D-Bus method. Even if the method has a
+ * single out-parameter, it must be contained in a tuple. If the method has no
+ * out-parameters, @parameters may be %NULL or an empty tuple.
  *
- * This method will free @invocation, you cannot use it afterwards.
+ * |[<!-- language="C" -->
+ * GDBusMethodInvocation *invocation = some_invocation;
+ * g_autofree gchar *result_string = NULL;
+ * g_autoptr (GError) error = NULL;
+ *
+ * result_string = calculate_result (&error);
+ *
+ * if (error != NULL)
+ *   g_dbus_method_invocation_return_gerror (invocation, error);
+ * else
+ *   g_dbus_method_invocation_return_value (invocation,
+ *                                          g_variant_new ("(s)", result_string));
+ *
+ * // Do not free @invocation here; returning a value does that
+ * ]|
+ *
+ * This method will take ownership of @invocation. See
+ * #GDBusInterfaceVTable for more information about the ownership of
+ * @invocation.
  *
  * Since 2.48, if the method call requested for a reply not to be sent
  * then this call will sink @parameters and free @invocation, but
@@ -556,14 +584,16 @@ g_dbus_method_invocation_return_value (GDBusMethodInvocation *invocation,
 /**
  * g_dbus_method_invocation_return_value_with_unix_fd_list:
  * @invocation: (transfer full): A #GDBusMethodInvocation.
- * @parameters: (allow-none): A #GVariant tuple with out parameters for the method or %NULL if not passing any parameters.
- * @fd_list: (allow-none): A #GUnixFDList or %NULL.
+ * @parameters: (nullable): A #GVariant tuple with out parameters for the method or %NULL if not passing any parameters.
+ * @fd_list: (nullable): A #GUnixFDList or %NULL.
  *
  * Like g_dbus_method_invocation_return_value() but also takes a #GUnixFDList.
  *
  * This method is only available on UNIX.
  *
- * This method will free @invocation, you cannot use it afterwards.
+ * This method will take ownership of @invocation. See
+ * #GDBusInterfaceVTable for more information about the ownership of
+ * @invocation.
  *
  * Since: 2.30
  */
@@ -599,7 +629,9 @@ g_dbus_method_invocation_return_value_with_unix_fd_list (GDBusMethodInvocation *
  * always register errors with g_dbus_error_register_error()
  * or use g_dbus_method_invocation_return_dbus_error().
  *
- * This method will free @invocation, you cannot use it afterwards.
+ * This method will take ownership of @invocation. See
+ * #GDBusInterfaceVTable for more information about the ownership of
+ * @invocation.
  *
  * Since 2.48, if the method call requested for a reply not to be sent
  * then this call will free @invocation but otherwise do nothing (as per
@@ -639,7 +671,9 @@ g_dbus_method_invocation_return_error (GDBusMethodInvocation *invocation,
  * Like g_dbus_method_invocation_return_error() but intended for
  * language bindings.
  *
- * This method will free @invocation, you cannot use it afterwards.
+ * This method will take ownership of @invocation. See
+ * #GDBusInterfaceVTable for more information about the ownership of
+ * @invocation.
  *
  * Since: 2.26
  */
@@ -672,7 +706,9 @@ g_dbus_method_invocation_return_error_valist (GDBusMethodInvocation *invocation,
  *
  * Like g_dbus_method_invocation_return_error() but without printf()-style formatting.
  *
- * This method will free @invocation, you cannot use it afterwards.
+ * This method will take ownership of @invocation. See
+ * #GDBusInterfaceVTable for more information about the ownership of
+ * @invocation.
  *
  * Since: 2.26
  */
@@ -700,7 +736,9 @@ g_dbus_method_invocation_return_error_literal (GDBusMethodInvocation *invocation
  * Like g_dbus_method_invocation_return_error() but takes a #GError
  * instead of the error domain, error code and message.
  *
- * This method will free @invocation, you cannot use it afterwards.
+ * This method will take ownership of @invocation. See
+ * #GDBusInterfaceVTable for more information about the ownership of
+ * @invocation.
  *
  * Since: 2.26
  */
@@ -729,7 +767,9 @@ g_dbus_method_invocation_return_gerror (GDBusMethodInvocation *invocation,
  * Like g_dbus_method_invocation_return_gerror() but takes ownership
  * of @error so the caller does not need to free it.
  *
- * This method will free @invocation, you cannot use it afterwards.
+ * This method will take ownership of @invocation. See
+ * #GDBusInterfaceVTable for more information about the ownership of
+ * @invocation.
  *
  * Since: 2.30
  */
@@ -751,7 +791,9 @@ g_dbus_method_invocation_take_error (GDBusMethodInvocation *invocation,
  *
  * Finishes handling a D-Bus method call by returning an error.
  *
- * This method will free @invocation, you cannot use it afterwards.
+ * This method will take ownership of @invocation. See
+ * #GDBusInterfaceVTable for more information about the ownership of
+ * @invocation.
  *
  * Since: 2.26
  */

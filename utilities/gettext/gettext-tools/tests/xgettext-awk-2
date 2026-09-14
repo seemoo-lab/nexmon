@@ -17,7 +17,7 @@ ${XGETTEXT} --add-comments --omit-header --no-location --keyword=_ \
   -d xg-a-2.tmp xg-a-2.awk || Exit 1
 LC_ALL=C tr -d '\r' < xg-a-2.tmp.po > xg-a-2.po || Exit 1
 
-cat <<EOF > xg-a-2.ok
+cat <<\EOF > xg-a-2.ok
 #. a
 #. b
 #. c

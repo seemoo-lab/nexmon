@@ -1,10 +1,12 @@
 /* GLIB - Library of useful routines for C programming
  * Copyright (C) 1995-1997  Peter Mattis, Spencer Kimball and Josh MacDonald
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -34,56 +36,10 @@
 #include "gslice.h"
 
 /**
- * SECTION:linked_lists_single
- * @title: Singly-Linked Lists
- * @short_description: linked lists that can be iterated in one direction
- *
- * The #GSList structure and its associated functions provide a
- * standard singly-linked list data structure.
- *
- * Each element in the list contains a piece of data, together with a
- * pointer which links to the next element in the list. Using this
- * pointer it is possible to move through the list in one direction
- * only (unlike the [double-linked lists][glib-Doubly-Linked-Lists],
- * which allow movement in both directions).
- *
- * The data contained in each element can be either integer values, by
- * using one of the [Type Conversion Macros][glib-Type-Conversion-Macros],
- * or simply pointers to any type of data.
- *
- * List elements are allocated from the [slice allocator][glib-Memory-Slices],
- * which is more efficient than allocating elements individually.
- *
- * Note that most of the #GSList functions expect to be passed a
- * pointer to the first element in the list. The functions which insert
- * elements return the new start of the list, which may have changed.
- *
- * There is no function to create a #GSList. %NULL is considered to be
- * the empty list so you simply set a #GSList* to %NULL.
- *
- * To add elements, use g_slist_append(), g_slist_prepend(),
- * g_slist_insert() and g_slist_insert_sorted().
- *
- * To remove elements, use g_slist_remove().
- *
- * To find elements in the list use g_slist_last(), g_slist_next(),
- * g_slist_nth(), g_slist_nth_data(), g_slist_find() and
- * g_slist_find_custom().
- *
- * To find the index of an element use g_slist_position() and
- * g_slist_index().
- *
- * To call a function for each element in the list use
- * g_slist_foreach().
- *
- * To free the entire list, use g_slist_free().
- **/
-
-/**
  * GSList:
  * @data: holds the element's data, which can be a pointer to any kind
  *        of data, or any integer value using the
- *        [Type Conversion Macros][glib-Type-Conversion-Macros]
+ *        [Type Conversion Macros](conversion-macros.html#conversion-macros)
  * @next: contains the link to the next element in the list.
  *
  * The #GSList struct is used for each element in the singly-linked
@@ -95,6 +51,8 @@
  * @slist: an element in a #GSList.
  *
  * A convenience macro to get the next element in a #GSList.
+ * Note that it is considered perfectly acceptable to access
+ * @slist->next directly.
  *
  * Returns: the next element, or %NULL if there are no more elements.
  **/
@@ -120,7 +78,7 @@ g_slist_alloc (void)
 
 /**
  * g_slist_free:
- * @list: a #GSList
+ * @list: the first link of a #GSList
  *
  * Frees all of the memory used by a #GSList.
  * The freed elements are returned to the slice allocator.
@@ -128,6 +86,13 @@ g_slist_alloc (void)
  * If list elements contain dynamically-allocated memory,
  * you should either use g_slist_free_full() or free them manually
  * first.
+ *
+ * It can be combined with g_steal_pointer() to ensure the list head pointer
+ * is not left dangling:
+ * |[<!-- language="C" -->
+ * GSList *list_of_borrowed_things = …;  /<!-- -->* (transfer container) *<!-- -->/
+ * g_slist_free (g_steal_pointer (&list_of_borrowed_things));
+ * ]|
  */
 void
 g_slist_free (GSList *list)
@@ -157,11 +122,23 @@ g_slist_free_1 (GSList *list)
 
 /**
  * g_slist_free_full:
- * @list: a pointer to a #GSList
+ * @list: the first link of a #GSList
  * @free_func: the function to be called to free each element's data
  *
  * Convenience method, which frees all the memory used by a #GSList, and
  * calls the specified destroy function on every element's data.
+ *
+ * @free_func must not modify the list (eg, by removing the freed
+ * element from it).
+ *
+ * It can be combined with g_steal_pointer() to ensure the list head pointer
+ * is not left dangling ­— this also has the nice property that the head pointer
+ * is cleared before any of the list elements are freed, to prevent double frees
+ * from @free_func:
+ * |[<!-- language="C" -->
+ * GSList *list_of_owned_things = …;  /<!-- -->* (transfer full) (element-type GObject) *<!-- -->/
+ * g_slist_free_full (g_steal_pointer (&list_of_owned_things), g_object_unref);
+ * ]|
  *
  * Since: 2.28
  **/
@@ -175,13 +152,13 @@ g_slist_free_full (GSList         *list,
 
 /**
  * g_slist_append:
- * @list: a #GSList
+ * @list: (nullable): a #GSList
  * @data: the data for the new element
  *
  * Adds a new element on to the end of the list.
  *
- * The return value is the new start of the list, which may
- * have changed, so make sure you store the new value.
+ * Note that the return value is the new start of the list
+ * if @list was empty; make sure you store the new value.
  *
  * Note that g_slist_append() has to traverse the entire list
  * to find the end, which is inefficient when adding multiple
@@ -201,7 +178,7 @@ g_slist_free_full (GSList         *list,
  * number_list = g_slist_append (number_list, GINT_TO_POINTER (14));
  * ]|
  *
- * Returns: the new start of the #GSList
+ * Returns: either @list or the new start of the #GSList if @list was %NULL
  */
 GSList*
 g_slist_append (GSList   *list,
@@ -228,13 +205,13 @@ g_slist_append (GSList   *list,
 
 /**
  * g_slist_prepend:
- * @list: a #GSList
+ * @list: (nullable): a #GSList
  * @data: the data for the new element
  *
  * Adds a new element on to the start of the list.
  *
- * The return value is the new start of the list, which
- * may have changed, so make sure you store the new value.
+ * Note that the return value is the new start of the list, 
+ * which will have changed, so make sure you store the new value.
  *
  * |[<!-- language="C" --> 
  * // Notice that it is initialized to the empty list.
@@ -243,7 +220,8 @@ g_slist_append (GSList   *list,
  * list = g_slist_prepend (list, "first");
  * ]|
  *
- * Returns: the new start of the #GSList
+ * Returns: a pointer to the newly prepended element, 
+ * which is the new start of the #GSList
  */
 GSList*
 g_slist_prepend (GSList   *list,
@@ -260,7 +238,7 @@ g_slist_prepend (GSList   *list,
 
 /**
  * g_slist_insert:
- * @list: a #GSList
+ * @list: (nullable): a #GSList
  * @data: the data for the new element
  * @position: the position to insert the element.
  *     If this is negative, or is larger than the number
@@ -269,7 +247,7 @@ g_slist_prepend (GSList   *list,
  *
  * Inserts a new element into the list at the given position.
  *
- * Returns: the new start of the #GSList
+ * Returns: the (possibly changed) start of the #GSList
  */
 GSList*
 g_slist_insert (GSList   *list,
@@ -311,7 +289,7 @@ g_slist_insert (GSList   *list,
 
 /**
  * g_slist_insert_before:
- * @slist: a #GSList
+ * @slist: (nullable): a #GSList
  * @sibling: node to insert @data before
  * @data: data to put in the newly-inserted node
  *
@@ -384,6 +362,32 @@ g_slist_concat (GSList *list1, GSList *list2)
   return list1;
 }
 
+static GSList*
+_g_slist_remove_data (GSList        *list,
+                      gconstpointer  data,
+                      gboolean       all)
+{
+  GSList *tmp = NULL;
+  GSList **previous_ptr = &list;
+
+  while (*previous_ptr)
+    {
+      tmp = *previous_ptr;
+      if (tmp->data == data)
+        {
+          *previous_ptr = tmp->next;
+          g_slist_free_1 (tmp);
+          if (!all)
+            break;
+        }
+      else
+        {
+          previous_ptr = &tmp->next;
+        }
+    }
+
+  return list;
+}
 /**
  * g_slist_remove:
  * @list: a #GSList
@@ -399,26 +403,7 @@ GSList*
 g_slist_remove (GSList        *list,
                 gconstpointer  data)
 {
-  GSList *tmp, *prev = NULL;
-
-  tmp = list;
-  while (tmp)
-    {
-      if (tmp->data == data)
-        {
-          if (prev)
-            prev->next = tmp->next;
-          else
-            list = tmp->next;
-
-          g_slist_free_1 (tmp);
-          break;
-        }
-      prev = tmp;
-      tmp = prev->next;
-    }
-
-  return list;
+  return _g_slist_remove_data (list, data, FALSE);
 }
 
 /**
@@ -437,58 +422,27 @@ GSList*
 g_slist_remove_all (GSList        *list,
                     gconstpointer  data)
 {
-  GSList *tmp, *prev = NULL;
-
-  tmp = list;
-  while (tmp)
-    {
-      if (tmp->data == data)
-        {
-          GSList *next = tmp->next;
-
-          if (prev)
-            prev->next = next;
-          else
-            list = next;
-
-          g_slist_free_1 (tmp);
-          tmp = next;
-        }
-      else
-        {
-          prev = tmp;
-          tmp = prev->next;
-        }
-    }
-
-  return list;
+  return _g_slist_remove_data (list, data, TRUE);
 }
 
 static inline GSList*
 _g_slist_remove_link (GSList *list,
                       GSList *link)
 {
-  GSList *tmp;
-  GSList *prev;
+  GSList *tmp = NULL;
+  GSList **previous_ptr = &list;
 
-  prev = NULL;
-  tmp = list;
-
-  while (tmp)
+  while (*previous_ptr)
     {
+      tmp = *previous_ptr;
       if (tmp == link)
         {
-          if (prev)
-            prev->next = tmp->next;
-          if (list == tmp)
-            list = list->next;
-
+          *previous_ptr = tmp->next;
           tmp->next = NULL;
           break;
         }
 
-      prev = tmp;
-      tmp = tmp->next;
+      previous_ptr = &tmp->next;
     }
 
   return list;
@@ -568,7 +522,7 @@ g_slist_copy (GSList *list)
 /**
  * g_slist_copy_deep:
  * @list: a #GSList
- * @func: a copy function used to copy every element in the list
+ * @func: (scope call): a copy function used to copy every element in the list
  * @user_data: user data passed to the copy function @func, or #NULL
  *
  * Makes a full (deep) copy of a #GSList.
@@ -576,9 +530,11 @@ g_slist_copy (GSList *list)
  * In contrast with g_slist_copy(), this function uses @func to make a copy of
  * each list element, in addition to copying the list container itself.
  *
- * @func, as a #GCopyFunc, takes two arguments, the data to be copied and a user
- * pointer. It's safe to pass #NULL as user_data, if the copy function takes only
- * one argument.
+ * @func, as a #GCopyFunc, takes two arguments, the data to be copied
+ * and a @user_data pointer. On common processor architectures, it's safe to
+ * pass %NULL as @user_data if the copy function takes only one argument. You
+ * may get compiler warnings from this though if compiling with GCC’s
+ * `-Wcast-function-type` warning.
  *
  * For instance, if @list holds a list of GObjects, you can do:
  * |[<!-- language="C" --> 
@@ -590,7 +546,7 @@ g_slist_copy (GSList *list)
  * g_slist_free_full (another_list, g_object_unref);
  * ]|
  *
- * Returns: a full copy of @list, use #g_slist_free_full to free it
+ * Returns: a full copy of @list, use g_slist_free_full() to free it
  *
  * Since: 2.34
  */
@@ -722,7 +678,7 @@ g_slist_find (GSList        *list,
  * g_slist_find_custom:
  * @list: a #GSList
  * @data: user data passed to the function
- * @func: the function to call for each element.
+ * @func: (scope call): the function to call for each element.
  *     It should return 0 when the desired element is found
  *
  * Finds an element in a #GSList, using a supplied function to
@@ -862,10 +818,13 @@ g_slist_length (GSList *list)
 /**
  * g_slist_foreach:
  * @list: a #GSList
- * @func: the function to call with each element's data
+ * @func: (scope call): the function to call with each element's data
  * @user_data: user data to pass to the function
  *
  * Calls a function for each element of a #GSList.
+ *
+ * It is safe for @func to remove the element from @list, but it must
+ * not modify any part of the list after that element.
  */
 void
 g_slist_foreach (GSList   *list,
@@ -938,7 +897,7 @@ g_slist_insert_sorted_real (GSList   *list,
  * g_slist_insert_sorted:
  * @list: a #GSList
  * @data: the data for the new element
- * @func: the function to compare elements in the list.
+ * @func: (scope call): the function to compare elements in the list.
  *     It should return a number > 0 if the first parameter
  *     comes after the second parameter in the sort order.
  *
@@ -959,7 +918,7 @@ g_slist_insert_sorted (GSList       *list,
  * g_slist_insert_sorted_with_data:
  * @list: a #GSList
  * @data: the data for the new element
- * @func: the function to compare elements in the list.
+ * @func: (scope call): the function to compare elements in the list.
  *     It should return a number > 0 if the first parameter
  *     comes after the second parameter in the sort order.
  * @user_data: data to pass to comparison function
@@ -1044,13 +1003,14 @@ g_slist_sort_real (GSList   *list,
 /**
  * g_slist_sort:
  * @list: a #GSList
- * @compare_func: the comparison function used to sort the #GSList.
+ * @compare_func: (scope call): the comparison function used to sort the #GSList.
  *     This function is passed the data from 2 elements of the #GSList
  *     and should return 0 if they are equal, a negative value if the
  *     first element comes before the second, or a positive value if
  *     the first element comes after the second.
  *
- * Sorts a #GSList using the given comparison function.
+ * Sorts a #GSList using the given comparison function. The algorithm
+ * used is a stable sort.
  *
  * Returns: the start of the sorted #GSList
  */
@@ -1064,7 +1024,7 @@ g_slist_sort (GSList       *list,
 /**
  * g_slist_sort_with_data:
  * @list: a #GSList
- * @compare_func: comparison function
+ * @compare_func: (scope call): comparison function
  * @user_data: data to pass to comparison function
  *
  * Like g_slist_sort(), but the sort function accepts a user data argument.
@@ -1077,4 +1037,33 @@ g_slist_sort_with_data (GSList           *list,
                         gpointer          user_data)
 {
   return g_slist_sort_real (list, (GFunc) compare_func, user_data);
+}
+
+/**
+ * g_clear_slist: (skip)
+ * @slist_ptr: (not nullable): a #GSList return location
+ * @destroy: (nullable): the function to pass to g_slist_free_full() or %NULL to not free elements
+ *
+ * Clears a pointer to a #GSList, freeing it and, optionally, freeing its elements using @destroy.
+ *
+ * @slist_ptr must be a valid pointer. If @slist_ptr points to a null #GSList, this does nothing.
+ *
+ * Since: 2.64
+ */
+void
+(g_clear_slist) (GSList         **slist_ptr,
+                 GDestroyNotify   destroy)
+{
+  GSList *slist;
+
+  slist = *slist_ptr;
+  if (slist)
+    {
+      *slist_ptr = NULL;
+
+      if (destroy)
+        g_slist_free_full (slist, destroy);
+      else
+        g_slist_free (slist);
+    }
 }

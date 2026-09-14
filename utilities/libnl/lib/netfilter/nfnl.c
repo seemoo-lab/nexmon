@@ -1,18 +1,12 @@
+/* SPDX-License-Identifier: LGPL-2.1-only */
 /*
- * lib/netfilter/nfnl.c		Netfilter Netlink
- *
- *	This library is free software; you can redistribute it and/or
- *	modify it under the terms of the GNU Lesser General Public
- *	License as published by the Free Software Foundation version 2.1
- *	of the License.
- *
- * Copyright (c) 2003-2008 Thomas Graf <tgraf@suug.ch>
+ * Copyright (c) 2003-2012 Thomas Graf <tgraf@suug.ch>
  * Copyright (c) 2007 Philip Craig <philipc@snapgear.com>
  * Copyright (c) 2007 Secure Computing Corporation
  */
 
 /**
- * @defgroup nfnl Netfilter Netlink
+ * @defgroup nfnl Netfilter Library (libnl-nf)
  *
  * @par Message Format
  * @code
@@ -61,9 +55,16 @@
  * @{
  */
 
-#include <netlink-local.h>
+#include "nl-default.h"
+
+#include <linux/netfilter/nfnetlink.h>
+
 #include <netlink/netlink.h>
 #include <netlink/netfilter/nfnl.h>
+#include <netlink/data.h>
+#include <netlink/msg.h>
+
+#include "nl-aux-core/nl-core.h"
 
 /**
  * @name Socket Creating
@@ -102,7 +103,8 @@ int nfnl_connect(struct nl_sock *sk)
  * @arg family		nfnetlink address family
  * @arg res_id		nfnetlink resource id
  *
- * @return Newly allocated netlink message or NULL.
+ * @return 0 on success or a negative error code. Due to a bug, this function
+ * returns the number of bytes sent. Treat any non-negative number as success.
  */
 int nfnl_send_simple(struct nl_sock *sk, uint8_t subsys_id, uint8_t type,
 		     int flags, uint8_t family, uint16_t res_id)

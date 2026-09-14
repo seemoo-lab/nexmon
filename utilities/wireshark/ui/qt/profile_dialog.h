@@ -1,31 +1,23 @@
-/* profile_dialog.h
+/** @file
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PROFILE_DIALOG_H
 #define PROFILE_DIALOG_H
 
-#include "geometry_state_dialog.h"
+#include "config.h"
 
-class QPushButton;
-class QTreeWidgetItem;
+#include <ui/qt/geometry_state_dialog.h>
+#include <ui/qt/models/profile_model.h>
+#include <ui/qt/widgets/profile_tree_view.h>
+
+#include <QPushButton>
+#include <QTreeWidgetItem>
 
 namespace Ui {
 class ProfileDialog;
@@ -36,26 +28,67 @@ class ProfileDialog : public GeometryStateDialog
     Q_OBJECT
 
 public:
-    enum ProfileAction { ShowProfiles, NewProfile, EditCurrentProfile, DeleteCurrentProfile };
+    enum ProfileAction {
+        ShowProfiles, NewProfile, ImportZipProfile, ImportDirProfile,
+        ExportSingleProfile, ExportAllProfiles, EditCurrentProfile, DeleteCurrentProfile
+    };
 
-    explicit ProfileDialog(QWidget *parent = 0);
+    explicit ProfileDialog(QWidget *parent = Q_NULLPTR);
     ~ProfileDialog();
     int execAction(ProfileAction profile_action);
 
+    /**
+     * @brief Select the profile with the given name.
+     *
+     * If the profile name is empty, the currently selected profile will be chosen instead.
+     * If the chosen profile is invalid, the first row will be chosen.
+     *
+     * @param profile the name of the profile to be selected
+     */
+    void selectProfile(QString profile = QString());
+
+protected:
+    virtual void keyPressEvent(QKeyEvent *event);
 
 private:
-    void updateWidgets();
     Ui::ProfileDialog *pd_ui_;
     QPushButton *ok_button_;
+    QPushButton *import_button_;
+#if defined(HAVE_MINIZIP) || defined(HAVE_MINIZIPNG)
+    QPushButton *export_button_;
+    QAction *export_selected_entry_;
+#endif
+    ProfileModel *model_;
+    ProfileSortModel *sort_model_;
+
+    void updateWidgets();
+    void resetTreeView();
+
+    void finishImport(QFileInfo fi, int count, int skipped, QStringList import);
 
 private slots:
-    void on_profileTreeWidget_currentItemChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
-    void on_newToolButton_clicked();
-    void on_deleteToolButton_clicked();
-    void on_copyToolButton_clicked();
-    void on_buttonBox_accepted();
-    void on_buttonBox_helpRequested();
-    void editingFinished();
+    void currentItemChanged(const QModelIndex & c = QModelIndex(), const QModelIndex & p = QModelIndex());
+#if defined(HAVE_MINIZIP) || defined(HAVE_MINIZIPNG)
+    void exportProfiles(bool exportAllPersonalProfiles = false);
+    void importFromZip();
+#endif
+    void importFromDirectory();
+
+    void newToolButtonClicked();
+    void deleteToolButtonClicked();
+    void copyToolButtonClicked();
+    void buttonBoxAccepted();
+    void buttonBoxRejected();
+    void buttonBoxHelpRequested();
+    void dataChanged(const QModelIndex &);
+
+    void filterChanged(const QString &);
+
+    void selectionChanged();
+    QModelIndexList selectedProfiles();
+
+    // QWidget interface
+
 };
 
 #endif // PROFILE_DIALOG_H

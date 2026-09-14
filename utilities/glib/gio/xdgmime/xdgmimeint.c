@@ -6,25 +6,11 @@
  * Copyright (C) 2003  Red Hat, Inc.
  * Copyright (C) 2003  Jonathan Blandford <jrb@alum.mit.edu>
  *
- * Licensed under the Academic Free License version 2.0
- * Or under the following terms:
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * SPDX-License-Identifier: LGPL-2.1-or-later or AFL-2.0
  */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include <config.h>
 #endif
 
 #include "xdgmimeint.h"
@@ -129,7 +115,7 @@ _xdg_ucs4_to_lower (xdg_unichar_t source)
 }
 
 int
-_xdg_utf8_validate (const char *source)
+_xdg_utf8_validate (const char *source __attribute__((unused)))
 {
   /* FIXME: actually write */
   return TRUE;
@@ -187,3 +173,18 @@ _xdg_reverse_ucs4 (xdg_unichar_t *source, int len)
     }
 }
 
+const char *
+_xdg_binary_or_text_fallback(const void *data, size_t len)
+{
+  unsigned char *chardata;
+  size_t i;
+
+  chardata = (unsigned char *) data;
+  for (i = 0; i < 128 && i < len; ++i)
+    {
+       if (chardata[i] < 32 && chardata[i] != 9 && chardata[i] != 10 && chardata[i] != 13)
+         return XDG_MIME_TYPE_UNKNOWN; /* binary data */
+    }
+
+  return XDG_MIME_TYPE_TEXTPLAIN;
+}

@@ -2,10 +2,12 @@
  *
  * Copyright © 2013 Canonical Limited
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -31,16 +33,13 @@
 
 
 /**
- * SECTION:gbytesicon
- * @short_description: An icon stored in memory as a GBytes
- * @include: gio/gio.h
- * @see_also: #GIcon, #GLoadableIcon, #GBytes
+ * GBytesIcon:
  *
- * #GBytesIcon specifies an image held in memory in a common format (usually
- * png) to be used as icon.
+ * `GBytesIcon` specifies an image held in memory in a common format (usually
+ * PNG) to be used as icon.
  *
  * Since: 2.38
- **/
+ */
 
 typedef GObjectClass GBytesIconClass;
 
@@ -128,9 +127,7 @@ g_bytes_icon_class_init (GBytesIconClass *klass)
    * The bytes containing the icon.
    */
   g_object_class_install_property (gobject_class, PROP_BYTES,
-                                   g_param_spec_boxed ("bytes",
-                                                       P_("bytes"),
-                                                       P_("The bytes containing the icon"),
+                                   g_param_spec_boxed ("bytes", NULL, NULL,
                                                        G_TYPE_BYTES,
                                                        G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 }
@@ -146,8 +143,11 @@ g_bytes_icon_init (GBytesIcon *bytes)
  *
  * Creates a new icon for a bytes.
  *
+ * This cannot fail, but loading and interpreting the bytes may fail later on
+ * (for example, if g_loadable_icon_load() is called) if the image is invalid.
+ *
  * Returns: (transfer full) (type GBytesIcon): a #GIcon for the given
- *   @bytes, or %NULL on error.
+ *   @bytes.
  *
  * Since: 2.38
  **/
@@ -165,7 +165,7 @@ g_bytes_icon_new (GBytes *bytes)
  *
  * Gets the #GBytes associated with the given @icon.
  *
- * Returns: (transfer none): a #GBytes, or %NULL.
+ * Returns: (transfer none): a #GBytes.
  *
  * Since: 2.38
  **/
@@ -238,6 +238,7 @@ g_bytes_icon_load_async (GLoadableIcon       *icon,
   GTask *task;
 
   task = g_task_new (icon, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_bytes_icon_load_async);
   g_task_return_pointer (task, g_memory_input_stream_new_from_bytes (bytes_icon->bytes), g_object_unref);
   g_object_unref (task);
 }

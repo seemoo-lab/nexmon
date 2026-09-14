@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef __PACKET_MPEG_SECT_H__
@@ -46,11 +34,13 @@
 #define DVB_EIT_TID_MAX         0x6F /* packet-dvb-eit.c */
 #define DVB_TDT_TID             0x70 /* packet-dvb-tdt.c */
 #define DVB_TOT_TID             0x73 /* packet-dvb-tot.c */
+#define DVB_SIT_TID             0x7f /* packet-dvb-sit.c */
 
 /* From ETSI TS 102 899 */
 #define DVB_AIT_TID             0x74 /* packet-dvb-ait.c */
 
 /* From ETSI EN 301 192 */
+/* Duplicates / implementation of DSMCC_TID_PRIVATE */
 #define DVB_DATA_MPE_TID        0x3E /* packet-dvb-data-mpe.c */
 
 /* From OC-SP-ETV-AM 1.0-IO5 */
@@ -64,36 +54,39 @@
 #define PACKET_MPEG_SECT_PI__LENGTH	3
 #define PACKET_MPEG_SECT_PI__SIZE	4
 
+/* Per-packet proto_data */
+#define MPEG_SECT_TID_KEY       0
+
 /* convert a byte that contains two 4bit BCD digits into a decimal value */
 #define MPEG_SECT_BCD44_TO_DEC(x)  ((((x)&0xf0) >> 4) * 10 + ((x)&0x0f))
 
 /*
  * Used to read a date provided in MJD format into a utc_time structure
  */
-extern gint
-packet_mpeg_sect_mjd_to_utc_time(tvbuff_t *tvb, gint offset, nstime_t *utc_time);
+extern int
+packet_mpeg_sect_mjd_to_utc_time(tvbuff_t *tvb, int offset, nstime_t *utc_time);
 
 /*
  *  Used to process the 'standard' mpeg section header that is described below
  *  and populate the data into the tree
  */
-extern guint
-packet_mpeg_sect_header(tvbuff_t *tvb, guint offset,
-			proto_tree *tree, guint *sect_len, gboolean *ssi);
+extern unsigned
+packet_mpeg_sect_header(tvbuff_t *tvb, unsigned offset,
+			proto_tree *tree, unsigned *sect_len, bool *ssi);
 
 /*
  *  Used to return all the values & items for 'strict' processing of the
  *  sub-dissectors that make use of this dissector
  */
-extern guint
-packet_mpeg_sect_header_extra(tvbuff_t *tvb, guint offset, proto_tree *tree,
-				guint *sect_len, guint *reserved, gboolean *ssi,
+extern unsigned
+packet_mpeg_sect_header_extra(tvbuff_t *tvb, unsigned offset, proto_tree *tree,
+				unsigned *sect_len, unsigned *reserved, bool *ssi,
 				proto_item **items);
 
 /*
- *  Used to process the mpeg CRC information & report erorrs found with it.
+ *  Used to process the mpeg CRC information & report errors found with it.
  */
-extern guint
+extern unsigned
 packet_mpeg_sect_crc(tvbuff_t *tvb, packet_info *pinfo,
-						proto_tree *tree, guint start, guint end);
+						proto_tree *tree, unsigned start, unsigned end);
 #endif

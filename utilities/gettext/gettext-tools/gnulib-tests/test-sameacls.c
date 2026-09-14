@@ -1,9 +1,9 @@
 /* Test whether two files have the same ACLs.
-   Copyright (C) 2008-2016 Free Software Foundation, Inc.
+   Copyright (C) 2008-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2008.  */
 
@@ -33,7 +33,6 @@
 # include <aclv.h>
 #endif
 
-#include "progname.h"
 #include "read-file.h"
 #include "xalloc.h"
 #include "macros.h"
@@ -43,8 +42,6 @@ main (int argc, char *argv[])
 {
   const char *file1;
   const char *file2;
-
-  set_program_name (argv[0]);
 
   ASSERT (argc == 3);
 
@@ -58,14 +55,14 @@ main (int argc, char *argv[])
     size_t size2;
     char *contents2;
 
-    contents1 = read_file (file1, &size1);
+    contents1 = read_file (file1, 0, &size1);
     if (contents1 == NULL)
       {
         fprintf (stderr, "error reading file %s: errno = %d\n", file1, errno);
         fflush (stderr);
         abort ();
       }
-    contents2 = read_file (file2, &size2);
+    contents2 = read_file (file2, 0, &size2);
     if (contents2 == NULL)
       {
         fprintf (stderr, "error reading file %s: errno = %d\n", file2, errno);
@@ -87,6 +84,9 @@ main (int argc, char *argv[])
         fflush (stderr);
         abort ();
       }
+
+    free (contents2);
+    free (contents1);
   }
 
   /* Compare the access permissions of the two files, including ACLs.  */
@@ -115,7 +115,7 @@ main (int argc, char *argv[])
       }
   }
   {
-#if HAVE_ACL_GET_FILE /* Linux, FreeBSD, Mac OS X, IRIX, Tru64 */
+#if HAVE_ACL_GET_FILE /* Linux, FreeBSD, Mac OS X */
     static const int types[] =
       {
         ACL_TYPE_ACCESS
@@ -123,9 +123,8 @@ main (int argc, char *argv[])
         , ACL_TYPE_EXTENDED
 # endif
       };
-    int t;
 
-    for (t = 0; t < sizeof (types) / sizeof (types[0]); t++)
+    for (int t = 0; t < sizeof (types) / sizeof (types[0]); t++)
       {
         int type = types[t];
         acl_t acl1;
@@ -221,6 +220,12 @@ main (int argc, char *argv[])
                 return 1;
               }
           }
+        acl_free (text2);
+        if (acl2 != (acl_t)NULL)
+          acl_free (acl2);
+        acl_free (text1);
+        if (acl1 != (acl_t)NULL)
+          acl_free (acl1);
       }
 #elif HAVE_FACL && defined GETACL /* Solaris, Cygwin, not HP-UX */
   int count1;
@@ -255,7 +260,6 @@ main (int argc, char *argv[])
     {
       aclent_t *entries1 = XNMALLOC (count1, aclent_t);
       aclent_t *entries2 = XNMALLOC (count2, aclent_t);
-      int i;
 
       if (count1 > 0 && acl (file1, GETACL, count1, entries1) < count1)
         {
@@ -269,7 +273,7 @@ main (int argc, char *argv[])
           fflush (stderr);
           abort ();
         }
-      for (i = 0; i < count1; i++)
+      for (int i = 0; i < count1; i++)
         {
           if (entries1[i].a_type != entries2[i].a_type)
             {
@@ -290,6 +294,8 @@ main (int argc, char *argv[])
               return 1;
             }
         }
+      free (entries2);
+      free (entries1);
     }
 # ifdef ACE_GETACL
   count1 = acl (file1, ACE_GETACLCNT, 0, NULL);
@@ -314,7 +320,6 @@ main (int argc, char *argv[])
     ace_t *entries1 = XNMALLOC (count1, ace_t);
     ace_t *entries2 = XNMALLOC (count2, ace_t);
     int ret;
-    int i;
 
     ret = acl (file1, ACE_GETACL, count1, entries1);
     if (ret < 0 && errno == EINVAL)
@@ -342,7 +347,7 @@ main (int argc, char *argv[])
         return 1;
       }
 
-    for (i = 0; i < count1; i++)
+    for (int i = 0; i < count1; i++)
       {
         if (entries1[i].a_type != entries2[i].a_type)
           {
@@ -369,6 +374,8 @@ main (int argc, char *argv[])
             return 1;
           }
       }
+    free (entries2);
+    free (entries1);
   }
 # endif
 #elif HAVE_GETACL /* HP-UX */
@@ -406,7 +413,6 @@ main (int argc, char *argv[])
     {
       struct acl_entry *entries1 = XNMALLOC (count1, struct acl_entry);
       struct acl_entry *entries2 = XNMALLOC (count2, struct acl_entry);
-      int i;
 
       if (getacl (file1, count1, entries1) < count1)
         {
@@ -420,7 +426,7 @@ main (int argc, char *argv[])
           fflush (stderr);
           abort ();
         }
-      for (i = 0; i < count1; i++)
+      for (int i = 0; i < count1; i++)
         {
           if (entries1[i].uid != entries2[i].uid)
             {
@@ -441,6 +447,8 @@ main (int argc, char *argv[])
               return 1;
             }
         }
+      free (entries2);
+      free (entries1);
     }
 
 # if HAVE_ACLV_H /* HP-UX >= 11.11 */
@@ -479,7 +487,6 @@ main (int argc, char *argv[])
     {
       struct acl *entries1 = XNMALLOC (count1, struct acl);
       struct acl *entries2 = XNMALLOC (count2, struct acl);
-      int i;
 
       if (acl ((char *) file1, ACL_GET, count1, entries1) < count1)
         {
@@ -493,7 +500,7 @@ main (int argc, char *argv[])
           fflush (stderr);
           abort ();
         }
-      for (i = 0; i < count1; i++)
+      for (int i = 0; i < count1; i++)
         {
           if (entries1[i].a_type != entries2[i].a_type)
             {
@@ -514,6 +521,8 @@ main (int argc, char *argv[])
               return 1;
             }
         }
+      free (entries2);
+      free (entries1);
     }
 # endif
 #elif HAVE_ACLX_GET /* AIX */
@@ -655,7 +664,6 @@ main (int argc, char *argv[])
     {
       struct acl *entries1 = XNMALLOC (count1, struct acl);
       struct acl *entries2 = XNMALLOC (count2, struct acl);
-      int i;
 
       if (acl ((char *) file1, ACL_GET, count1, entries1) < count1)
         {
@@ -669,7 +677,7 @@ main (int argc, char *argv[])
           fflush (stderr);
           abort ();
         }
-      for (i = 0; i < count1; i++)
+      for (int i = 0; i < count1; i++)
         {
           if (entries1[i].a_type != entries2[i].a_type)
             {
@@ -690,9 +698,11 @@ main (int argc, char *argv[])
               return 1;
             }
         }
+      free (entries2);
+      free (entries1);
     }
 #endif
   }
 
-  return 0;
+  return test_exit_status;
 }

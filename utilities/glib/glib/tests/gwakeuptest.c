@@ -1,12 +1,5 @@
 #include <glib.h>
 #include <glib/gwakeup.h>
-#ifdef G_OS_UNIX
-#include <unistd.h>
-#endif
-
-#ifdef _WIN32
-static void alarm (int sec) { }
-#endif
 
 static gboolean
 check_signaled (GWakeup *wakeup)
@@ -31,9 +24,6 @@ test_semantics (void)
 {
   GWakeup *wakeup;
   gint i;
-
-  /* prevent the test from deadlocking */
-  alarm (60);
 
   wakeup = g_wakeup_new ();
   g_assert (!check_signaled (wakeup));
@@ -66,9 +56,6 @@ test_semantics (void)
   g_assert (!check_signaled (wakeup));
 
   g_wakeup_free (wakeup);
-
-  /* cancel the alarm */
-  alarm (0);
 }
 
 struct token
@@ -92,7 +79,7 @@ struct context
 static struct context contexts[NUM_THREADS];
 static GThread *threads[NUM_THREADS];
 static GWakeup *last_token_wakeup;
-static volatile gint tokens_alive;
+static gint tokens_alive;  /* (atomic) */
 
 static void
 context_init (struct context *ctx)
@@ -116,19 +103,22 @@ context_clear (struct context *ctx)
 static void
 context_quit (struct context *ctx)
 {
-  ctx->quit = TRUE;
+  g_atomic_int_set (&ctx->quit, TRUE);
   g_wakeup_signal (ctx->wakeup);
 }
 
 static struct token *
-context_pop_token (struct context *ctx)
+context_try_pop_token (struct context *ctx)
 {
-  struct token *token;
+  struct token *token = NULL;
 
   g_mutex_lock (&ctx->lock);
-  token = ctx->pending_tokens->data;
-  ctx->pending_tokens = g_slist_delete_link (ctx->pending_tokens,
-                                             ctx->pending_tokens);
+  if (ctx->pending_tokens != NULL)
+    {
+      token = ctx->pending_tokens->data;
+      ctx->pending_tokens = g_slist_delete_link (ctx->pending_tokens,
+                                                 ctx->pending_tokens);
+    }
   g_mutex_unlock (&ctx->lock);
 
   return token;
@@ -188,17 +178,15 @@ static gpointer
 thread_func (gpointer data)
 {
   struct context *ctx = data;
+  struct token *token;
 
-  while (!ctx->quit)
+  while (!g_atomic_int_get (&ctx->quit))
     {
       wait_for_signaled (ctx->wakeup);
       g_wakeup_acknowledge (ctx->wakeup);
 
-      while (ctx->pending_tokens)
+      while ((token = context_try_pop_token (ctx)) != NULL)
         {
-          struct token *token;
-
-          token = context_pop_token (ctx);
           g_assert (token->owner == ctx);
           dispatch_token (token);
         }
@@ -211,9 +199,6 @@ static void
 test_threaded (void)
 {
   gint i;
-
-  /* make sure we don't block forever */
-  alarm (60);
 
   /* simple mainloop test based on GWakeup.
    *
@@ -251,9 +236,6 @@ test_threaded (void)
     }
 
   g_wakeup_free (last_token_wakeup);
-
-  /* cancel alarm */
-  alarm (0);
 }
 
 int

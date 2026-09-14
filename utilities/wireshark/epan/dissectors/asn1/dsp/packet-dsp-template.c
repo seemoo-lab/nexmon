@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,6 +16,7 @@
 #include <epan/prefs.h>
 #include <epan/oids.h>
 #include <epan/asn1.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-acse.h"
@@ -48,24 +37,19 @@
 void proto_register_dsp(void);
 void proto_reg_handoff_dsp(void);
 
-static guint global_dsp_tcp_port = 102;
-static dissector_handle_t tpkt_handle;
-static void prefs_register_dsp(void); /* forward declaration for use in preferences registration */
-
-
 /* Initialize the protocol and registered fields */
-static int proto_dsp = -1;
+static int proto_dsp;
 
 #include "packet-dsp-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_dsp = -1;
+static int ett_dsp;
 #include "packet-dsp-ett.c"
 
-static expert_field ei_dsp_unsupported_opcode = EI_INIT;
-static expert_field ei_dsp_unsupported_errcode = EI_INIT;
-static expert_field ei_dsp_unsupported_pdu = EI_INIT;
-static expert_field ei_dsp_zero_pdu = EI_INIT;
+static expert_field ei_dsp_unsupported_opcode;
+static expert_field ei_dsp_unsupported_errcode;
+static expert_field ei_dsp_unsupported_pdu;
+static expert_field ei_dsp_zero_pdu;
 
 #include "packet-dsp-fn.c"
 
@@ -82,7 +66,7 @@ dissect_dsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* da
 	proto_item *item;
 	proto_tree *tree;
 	struct SESSION_DATA_STRUCTURE* session;
-	int (*dsp_dissector)(gboolean implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) = NULL;
+	int (*dsp_dissector)(bool implicit_tag _U_, tvbuff_t *tvb, int offset, asn1_ctx_t *actx, proto_tree *tree, int hf_index _U_) = NULL;
 	const char *dsp_op_name;
 	asn1_ctx_t asn1_ctx;
 
@@ -91,7 +75,7 @@ dissect_dsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* da
 		return 0;
 	session  = (struct SESSION_DATA_STRUCTURE*)data;
 
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
 
 	item = proto_tree_add_item(parent_tree, proto_dsp, tvb, 0, -1, ENC_NA);
 	tree = proto_item_add_subtree(item, ett_dsp);
@@ -254,7 +238,7 @@ dissect_dsp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *parent_tree, void* da
 
 	  while (tvb_reported_length_remaining(tvb, offset) > 0){
 	    old_offset=offset;
-	    offset=(*dsp_dissector)(FALSE, tvb, offset, &asn1_ctx, tree, -1);
+	    offset=(*dsp_dissector)(false, tvb, offset, &asn1_ctx, tree, -1);
 	    if(offset == old_offset){
 	      proto_tree_add_expert(tree, pinfo, &ei_dsp_zero_pdu, tvb, offset, -1);
 	      break;
@@ -276,7 +260,7 @@ void proto_register_dsp(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_dsp,
 #include "packet-dsp-ettarr.c"
   };
@@ -303,13 +287,13 @@ void proto_register_dsp(void) {
 
   /* Register our configuration options for DSP, particularly our port */
 
-  dsp_module = prefs_register_protocol_subtree("OSI/X.500", proto_dsp, prefs_register_dsp);
+  dsp_module = prefs_register_protocol_subtree("OSI/X.500", proto_dsp, NULL);
 
-  prefs_register_uint_preference(dsp_module, "tcp.port", "DSP TCP Port",
-				 "Set the port for DSP operations (if other"
-				 " than the default of 102)",
-				 10, &global_dsp_tcp_port);
+  prefs_register_obsolete_preference(dsp_module, "tcp.port");
 
+  prefs_register_static_text_preference(dsp_module, "tcp_port_info",
+            "The TCP ports used by the DSP protocol should be added to the TPKT preference \"TPKT TCP ports\", or by selecting \"TPKT\" as the \"Transport\" protocol in the \"Decode As\" dialog.",
+            "DSP TCP Port preference moved information");
 
 }
 
@@ -324,28 +308,7 @@ void proto_reg_handoff_dsp(void) {
 
   /* ABSTRACT SYNTAXES */
 
-  /* remember the tpkt handler for change in preferences */
-  tpkt_handle = find_dissector("tpkt");
-
   /* Register DSP with ROS (with no use of RTSE) */
-  register_ros_oid_dissector_handle("2.5.9.2", dsp_handle, 0, "id-as-directory-system", FALSE);
-
-}
-
-static void
-prefs_register_dsp(void)
-{
-  static guint tcp_port = 0;
-
-  /* de-register the old port */
-  /* port 102 is registered by TPKT - don't undo this! */
-  if((tcp_port > 0) && (tcp_port != 102) && tpkt_handle)
-    dissector_delete_uint("tcp.port", tcp_port, tpkt_handle);
-
-  /* Set our port number for future use */
-  tcp_port = global_dsp_tcp_port;
-
-  if((tcp_port > 0) && (tcp_port != 102) && tpkt_handle)
-    dissector_add_uint("tcp.port", global_dsp_tcp_port, tpkt_handle);
+  register_ros_oid_dissector_handle("2.5.9.2", dsp_handle, 0, "id-as-directory-system", false);
 
 }

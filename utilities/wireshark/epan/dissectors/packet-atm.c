@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -26,115 +14,112 @@
 #include <epan/capture_dissectors.h>
 #include <wsutil/pint.h>
 #include <epan/oui.h>
-#include <epan/addr_resolv.h>
 #include <epan/ppptypes.h>
 #include <epan/expert.h>
 #include <epan/crc10-tvb.h>
 #include <epan/crc32-tvb.h>
 #include <epan/decode_as.h>
+#include <epan/tfs.h>
 
 #include "packet-atm.h"
 #include "packet-snmp.h"
-#include "packet-eth.h"
-#include "packet-tr.h"
-#include "packet-llc.h"
 #include <epan/prefs.h>
 #include "packet-pw-atm.h"
 
 void proto_register_atm(void);
 void proto_reg_handoff_atm(void);
 
-static int proto_atm = -1;
-static int hf_atm_aal = -1;
-static int hf_atm_gfc = -1;
-static int hf_atm_vpi = -1;
-static int hf_atm_vci = -1;
-static int hf_atm_cid = -1;
-static int hf_atm_reserved = -1;
-static int proto_atm_lane = -1;
-static int proto_ilmi = -1;
-static int proto_aal1 = -1;
-static int proto_aal3_4 = -1;
-static int proto_oamaal = -1;
+static int proto_atm;
+static int hf_atm_aal;
+static int hf_atm_gfc;
+static int hf_atm_vpi;
+static int hf_atm_vci;
+static int hf_atm_cid;
+static int hf_atm_reserved;
+static int proto_atm_lane;
+static int proto_ilmi;
+static int proto_aal1;
+static int proto_aal3_4;
+static int proto_oamaal;
 
-static int hf_atm_le_client_client = -1;
-static int hf_atm_lan_destination_tag = -1;
-static int hf_atm_lan_destination_mac = -1;
-static int hf_atm_le_control_tlv_type = -1;
-static int hf_atm_le_control_tlv_length = -1;
-static int hf_atm_lan_destination_route_desc = -1;
-static int hf_atm_lan_destination_lan_id = -1;
-static int hf_atm_lan_destination_bridge_num = -1;
-static int hf_atm_source_atm = -1;
-static int hf_atm_target_atm = -1;
-static int hf_atm_le_configure_join_frame_lan_type = -1;
-static int hf_atm_le_configure_join_frame_max_frame_size = -1;
-static int hf_atm_le_configure_join_frame_num_tlvs = -1;
-static int hf_atm_le_configure_join_frame_elan_name_size = -1;
-static int hf_atm_le_configure_join_frame_elan_name = -1;
-static int hf_atm_le_registration_frame_num_tlvs = -1;
-static int hf_atm_le_arp_frame_num_tlvs = -1;
-static int hf_atm_le_verify_frame_num_tlvs = -1;
-static int hf_atm_le_control_marker = -1;
-static int hf_atm_le_control_protocol = -1;
-static int hf_atm_le_control_version = -1;
-static int hf_atm_le_control_opcode = -1;
-static int hf_atm_le_control_status = -1;
-static int hf_atm_le_control_transaction_id = -1;
-static int hf_atm_le_control_requester_lecid = -1;
-static int hf_atm_le_control_flags = -1;
-static int hf_atm_le_control_flag_v2_capable = -1;
-static int hf_atm_le_control_flag_selective_multicast = -1;
-static int hf_atm_le_control_flag_v2_required = -1;
-static int hf_atm_le_control_flag_proxy = -1;
-static int hf_atm_le_control_flag_exclude_explorer_frames = -1;
-static int hf_atm_le_control_flag_address = -1;
-static int hf_atm_le_control_topology_change = -1;
-static int hf_atm_traffic_type = -1;
-static int hf_atm_traffic_vcmx = -1;
-static int hf_atm_traffic_lane = -1;
-static int hf_atm_traffic_ipsilon = -1;
-static int hf_atm_cells = -1;
-static int hf_atm_aal5_uu = -1;
-static int hf_atm_aal5_cpi = -1;
-static int hf_atm_aal5_len = -1;
-static int hf_atm_aal5_crc = -1;
-static int hf_atm_payload_type = -1;
-static int hf_atm_cell_loss_priority = -1;
-static int hf_atm_header_error_check = -1;
-static int hf_atm_channel = -1;
-static int hf_atm_aa1_csi = -1;
-static int hf_atm_aa1_seq_count = -1;
-static int hf_atm_aa1_crc = -1;
-static int hf_atm_aa1_parity = -1;
-static int hf_atm_aa1_payload = -1;
-static int hf_atm_aal3_4_seg_type = -1;
-static int hf_atm_aal3_4_seq_num = -1;
-static int hf_atm_aal3_4_multiplex_id = -1;
-static int hf_atm_aal3_4_information = -1;
-static int hf_atm_aal3_4_length_indicator = -1;
-static int hf_atm_aal3_4_crc = -1;
-static int hf_atm_aal_oamcell_type = -1;
-static int hf_atm_aal_oamcell_type_fm = -1;
-static int hf_atm_aal_oamcell_type_pm = -1;
-static int hf_atm_aal_oamcell_type_ad = -1;
-static int hf_atm_aal_oamcell_type_ft = -1;
-static int hf_atm_aal_oamcell_func_spec = -1;
-static int hf_atm_aal_oamcell_crc = -1;
-static int hf_atm_padding = -1;
+static int hf_atm_le_client_client;
+static int hf_atm_lan_destination_tag;
+static int hf_atm_lan_destination_mac;
+static int hf_atm_le_control_tlv_type;
+static int hf_atm_le_control_tlv_length;
+static int hf_atm_lan_destination_route_desc;
+static int hf_atm_lan_destination_lan_id;
+static int hf_atm_lan_destination_bridge_num;
+static int hf_atm_source_atm;
+static int hf_atm_target_atm;
+static int hf_atm_le_configure_join_frame_lan_type;
+static int hf_atm_le_configure_join_frame_max_frame_size;
+static int hf_atm_le_configure_join_frame_num_tlvs;
+static int hf_atm_le_configure_join_frame_elan_name_size;
+static int hf_atm_le_configure_join_frame_elan_name;
+static int hf_atm_le_registration_frame_num_tlvs;
+static int hf_atm_le_arp_frame_num_tlvs;
+static int hf_atm_le_verify_frame_num_tlvs;
+static int hf_atm_le_control_marker;
+static int hf_atm_le_control_protocol;
+static int hf_atm_le_control_version;
+static int hf_atm_le_control_opcode;
+static int hf_atm_le_control_status;
+static int hf_atm_le_control_transaction_id;
+static int hf_atm_le_control_requester_lecid;
+static int hf_atm_le_control_flags;
+static int hf_atm_le_control_flag_v2_capable;
+static int hf_atm_le_control_flag_selective_multicast;
+static int hf_atm_le_control_flag_v2_required;
+static int hf_atm_le_control_flag_proxy;
+static int hf_atm_le_control_flag_exclude_explorer_frames;
+static int hf_atm_le_control_flag_address;
+static int hf_atm_le_control_topology_change;
+static int hf_atm_traffic_type;
+static int hf_atm_traffic_vcmx;
+static int hf_atm_traffic_lane;
+static int hf_atm_traffic_ipsilon;
+static int hf_atm_cells;
+static int hf_atm_aal5_uu;
+static int hf_atm_aal5_cpi;
+static int hf_atm_aal5_len;
+static int hf_atm_aal5_crc;
+static int hf_atm_payload_type;
+static int hf_atm_cell_loss_priority;
+static int hf_atm_header_error_check;
+static int hf_atm_channel;
+static int hf_atm_aa1_csi;
+static int hf_atm_aa1_seq_count;
+static int hf_atm_aa1_crc;
+static int hf_atm_aa1_parity;
+static int hf_atm_aa1_payload;
+static int hf_atm_aal3_4_seg_type;
+static int hf_atm_aal3_4_seq_num;
+static int hf_atm_aal3_4_multiplex_id;
+static int hf_atm_aal3_4_information;
+static int hf_atm_aal3_4_length_indicator;
+static int hf_atm_aal3_4_crc;
+static int hf_atm_aal_oamcell_type;
+static int hf_atm_aal_oamcell_type_fm;
+static int hf_atm_aal_oamcell_type_pm;
+static int hf_atm_aal_oamcell_type_ad;
+static int hf_atm_aal_oamcell_type_ft;
+static int hf_atm_aal_oamcell_func_spec;
+static int hf_atm_aal_oamcell_crc;
+static int hf_atm_padding;
 
-static gint ett_atm = -1;
-static gint ett_atm_lane = -1;
-static gint ett_atm_lane_lc_lan_dest = -1;
-static gint ett_atm_lane_lc_lan_dest_rd = -1;
-static gint ett_atm_lane_lc_flags = -1;
-static gint ett_atm_lane_lc_tlv = -1;
-static gint ett_ilmi = -1;
-static gint ett_aal1 = -1;
-static gint ett_aal3_4 = -1;
-static gint ett_oamaal = -1;
+static int ett_atm;
+static int ett_atm_lane;
+static int ett_atm_lane_lc_lan_dest;
+static int ett_atm_lane_lc_lan_dest_rd;
+static int ett_atm_lane_lc_flags;
+static int ett_atm_lane_lc_tlv;
+static int ett_ilmi;
+static int ett_aal1;
+static int ett_aal3_4;
+static int ett_oamaal;
 
-static expert_field ei_atm_reassembly_failed = EI_INIT;
+static expert_field ei_atm_reassembly_failed;
 
 static dissector_handle_t atm_handle;
 static dissector_handle_t atm_untruncated_handle;
@@ -148,15 +133,17 @@ static dissector_handle_t ppp_handle;
 static dissector_handle_t eth_maybefcs_handle;
 static dissector_handle_t ip_handle;
 
-static gboolean dissect_lanesscop = FALSE;
+static bool dissect_lanesscop;
 
 static dissector_table_t atm_type_aal2_table;
 static dissector_table_t atm_type_aal5_table;
+static dissector_table_t atm_cell_payload_vpi_vci_table;
+static dissector_table_t atm_reassembled_vpi_vci_table;
 
 /*
  * See
  *
- *      http://www.atmforum.org/atmforum/specs/approved.html
+ *      https://www.broadband-forum.org/index.php?option=com_sppagebuilder&view=page&id=185
  *
  * for a number of ATM Forum specifications, e.g. the LAN Emulation
  * over ATM 1.0 spec, whence I got most of this.
@@ -285,7 +272,7 @@ dissect_lan_destination(tvbuff_t *tvb, int offset, const char *type, proto_tree 
 {
   proto_item *td;
   proto_tree *dest_tree;
-  guint16     tag;
+  uint16_t    tag;
   proto_tree *rd_tree;
 
   dest_tree = proto_tree_add_subtree_format(tree, tvb, offset, 8,
@@ -365,18 +352,18 @@ static const value_string le_tlv_type_vals[] = {
 };
 
 static void
-dissect_le_control_tlvs(tvbuff_t *tvb, int offset, guint num_tlvs,
+dissect_le_control_tlvs(tvbuff_t *tvb, packet_info* pinfo, int offset, unsigned num_tlvs,
                         proto_tree *tree)
 {
-  guint32     tlv_type;
-  guint8      tlv_length;
+  uint32_t    tlv_type;
+  uint8_t     tlv_length;
   proto_tree *tlv_tree;
 
   while (num_tlvs != 0) {
     tlv_type = tvb_get_ntohl(tvb, offset);
-    tlv_length = tvb_get_guint8(tvb, offset+4);
+    tlv_length = tvb_get_uint8(tvb, offset+4);
     tlv_tree = proto_tree_add_subtree_format(tree, tvb, offset, 5+tlv_length, ett_atm_lane_lc_tlv, NULL,
-                                                "TLV type: %s", val_to_str(tlv_type, le_tlv_type_vals, "Unknown (0x%08x)"));
+                                                "TLV type: %s", val_to_str(pinfo->pool, tlv_type, le_tlv_type_vals, "Unknown (0x%08x)"));
     proto_tree_add_item(tlv_tree, hf_atm_le_control_tlv_type, tvb, offset, 4, ENC_BIG_ENDIAN);
     proto_tree_add_item(tlv_tree, hf_atm_le_control_tlv_length, tvb, offset+4, 1, ENC_BIG_ENDIAN);
     offset += 5+tlv_length;
@@ -385,10 +372,10 @@ dissect_le_control_tlvs(tvbuff_t *tvb, int offset, guint num_tlvs,
 }
 
 static void
-dissect_le_configure_join_frame(tvbuff_t *tvb, int offset, proto_tree *tree)
+dissect_le_configure_join_frame(tvbuff_t *tvb, packet_info* pinfo, int offset, proto_tree *tree)
 {
-  guint8 num_tlvs;
-  guint8 name_size;
+  uint8_t num_tlvs;
+  uint8_t name_size;
 
   dissect_lan_destination(tvb, offset, "Source", tree);
   offset += 8;
@@ -405,11 +392,11 @@ dissect_le_configure_join_frame(tvbuff_t *tvb, int offset, proto_tree *tree)
   proto_tree_add_item(tree, hf_atm_le_configure_join_frame_max_frame_size, tvb, offset, 1, ENC_NA);
   offset += 1;
 
-  num_tlvs = tvb_get_guint8(tvb, offset);
+  num_tlvs = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tree, hf_atm_le_configure_join_frame_num_tlvs, tvb, offset, 1, ENC_NA);
   offset += 1;
 
-  name_size = tvb_get_guint8(tvb, offset);
+  name_size = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tree, hf_atm_le_configure_join_frame_elan_name_size, tvb, offset, 1, ENC_NA);
   offset += 1;
 
@@ -423,13 +410,13 @@ dissect_le_configure_join_frame(tvbuff_t *tvb, int offset, proto_tree *tree)
   }
   offset += 32;
 
-  dissect_le_control_tlvs(tvb, offset, num_tlvs, tree);
+  dissect_le_control_tlvs(tvb, pinfo, offset, num_tlvs, tree);
 }
 
 static void
-dissect_le_registration_frame(tvbuff_t *tvb, int offset, proto_tree *tree)
+dissect_le_registration_frame(tvbuff_t *tvb, packet_info* pinfo, int offset, proto_tree *tree)
 {
-  guint8 num_tlvs;
+  uint8_t num_tlvs;
 
   dissect_lan_destination(tvb, offset, "Source", tree);
   offset += 8;
@@ -443,20 +430,20 @@ dissect_le_registration_frame(tvbuff_t *tvb, int offset, proto_tree *tree)
   proto_tree_add_item(tree, hf_atm_reserved, tvb, offset, 2, ENC_NA);
   offset += 2;
 
-  num_tlvs = tvb_get_guint8(tvb, offset);
+  num_tlvs = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tree, hf_atm_le_registration_frame_num_tlvs, tvb, offset, 1, ENC_NA);
   offset += 1;
 
   proto_tree_add_item(tree, hf_atm_reserved, tvb, offset, 53, ENC_NA);
   offset += 53;
 
-  dissect_le_control_tlvs(tvb, offset, num_tlvs, tree);
+  dissect_le_control_tlvs(tvb, pinfo, offset, num_tlvs, tree);
 }
 
 static void
-dissect_le_arp_frame(tvbuff_t *tvb, int offset, proto_tree *tree)
+dissect_le_arp_frame(tvbuff_t *tvb, packet_info* pinfo, int offset, proto_tree *tree)
 {
-  guint8 num_tlvs;
+  uint8_t num_tlvs;
 
   dissect_lan_destination(tvb, offset, "Source", tree);
   offset += 8;
@@ -470,7 +457,7 @@ dissect_le_arp_frame(tvbuff_t *tvb, int offset, proto_tree *tree)
   proto_tree_add_item(tree, hf_atm_reserved, tvb, offset, 2, ENC_NA);
   offset += 2;
 
-  num_tlvs = tvb_get_guint8(tvb, offset);
+  num_tlvs = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tree, hf_atm_le_arp_frame_num_tlvs, tvb, offset, 1, ENC_NA);
   offset += 1;
 
@@ -483,18 +470,18 @@ dissect_le_arp_frame(tvbuff_t *tvb, int offset, proto_tree *tree)
   proto_tree_add_item(tree, hf_atm_reserved, tvb, offset, 32, ENC_NA);
   offset += 32;
 
-  dissect_le_control_tlvs(tvb, offset, num_tlvs, tree);
+  dissect_le_control_tlvs(tvb, pinfo, offset, num_tlvs, tree);
 }
 
 static void
-dissect_le_verify_frame(tvbuff_t *tvb, int offset, proto_tree *tree)
+dissect_le_verify_frame(tvbuff_t *tvb, packet_info* pinfo, int offset, proto_tree *tree)
 {
-  guint8 num_tlvs;
+  uint8_t num_tlvs;
 
   proto_tree_add_item(tree, hf_atm_reserved, tvb, offset, 38, ENC_NA);
   offset += 38;
 
-  num_tlvs = tvb_get_guint8(tvb, offset);
+  num_tlvs = tvb_get_uint8(tvb, offset);
   proto_tree_add_item(tree, hf_atm_le_verify_frame_num_tlvs, tvb, offset, 1, ENC_NA);
   offset += 1;
 
@@ -507,7 +494,7 @@ dissect_le_verify_frame(tvbuff_t *tvb, int offset, proto_tree *tree)
   proto_tree_add_item(tree, hf_atm_reserved, tvb, offset, 32, ENC_NA);
   offset += 32;
 
-  dissect_le_control_tlvs(tvb, offset, num_tlvs, tree);
+  dissect_le_control_tlvs(tvb, pinfo, offset, num_tlvs, tree);
 }
 
 static int
@@ -542,7 +529,7 @@ dissect_le_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
   int         offset    = 0;
   proto_item *tf;
   proto_tree *flags_tree;
-  guint16     opcode;
+  uint16_t    opcode;
 
   col_set_str(pinfo->cinfo, COL_INFO, "LE Control");
 
@@ -567,7 +554,7 @@ dissect_le_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 
   opcode = tvb_get_ntohs(tvb, offset);
   col_append_fstr(pinfo->cinfo, COL_INFO, ": %s",
-                  val_to_str(opcode, le_control_opcode_vals,
+                  val_to_str(pinfo->pool, opcode, le_control_opcode_vals,
                              "Unknown opcode (0x%04X)"));
 
   if (tree) {
@@ -602,7 +589,7 @@ dissect_le_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     case LE_CONFIGURE_RESPONSE:
       proto_tree_add_item(flags_tree, hf_atm_le_control_flag_v2_capable, tvb, offset, 2, ENC_BIG_ENDIAN);
       offset += 2;
-      dissect_le_configure_join_frame(tvb, offset, lane_tree);
+      dissect_le_configure_join_frame(tvb, pinfo, offset, lane_tree);
       break;
 
     case LE_JOIN_REQUEST:
@@ -618,7 +605,7 @@ dissect_le_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
       proto_tree_add_item(flags_tree, hf_atm_le_control_flag_exclude_explorer_frames, tvb, offset, 2, ENC_BIG_ENDIAN);
 
       offset += 2;
-      dissect_le_configure_join_frame(tvb, offset, lane_tree);
+      dissect_le_configure_join_frame(tvb, pinfo, offset, lane_tree);
       break;
 
     case LE_REGISTER_REQUEST:
@@ -626,7 +613,7 @@ dissect_le_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     case LE_UNREGISTER_REQUEST:
     case LE_UNREGISTER_RESPONSE:
       offset += 2;
-      dissect_le_registration_frame(tvb, offset, lane_tree);
+      dissect_le_registration_frame(tvb, pinfo, offset, lane_tree);
       break;
 
     case LE_ARP_REQUEST:
@@ -636,7 +623,7 @@ dissect_le_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
         proto_tree_add_item(flags_tree, hf_atm_le_control_flag_address, tvb, offset, 2, ENC_BIG_ENDIAN);
       }
       offset += 2;
-      dissect_le_arp_frame(tvb, offset, lane_tree);
+      dissect_le_arp_frame(tvb, pinfo, offset, lane_tree);
       break;
 
     case LE_TOPOLOGY_REQUEST:
@@ -648,7 +635,7 @@ dissect_le_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     case LE_VERIFY_REQUEST:
     case LE_VERIFY_RESPONSE:
       offset += 2;
-      dissect_le_verify_frame(tvb, offset, lane_tree);
+      dissect_le_verify_frame(tvb, pinfo, offset, lane_tree);
       break;
 
     case LE_FLUSH_REQUEST:
@@ -660,8 +647,8 @@ dissect_le_control(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
   }
 }
 
-static gboolean
-capture_lane(const guchar *pd, int offset _U_,
+static bool
+capture_lane(const unsigned char *pd, int offset _U_,
     int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header)
 {
   /* Is it LE Control, 802.3, 802.5, or "none of the above"? */
@@ -717,7 +704,7 @@ dissect_lane(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 static int
 dissect_ilmi(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-  return dissect_snmp_pdu(tvb, 0, pinfo, tree, proto_ilmi, ett_ilmi, FALSE);
+  return dissect_snmp_pdu(tvb, 0, pinfo, tree, proto_ilmi, ett_ilmi, false);
 }
 
 /* AAL types */
@@ -786,28 +773,28 @@ static const value_string ipsilon_type_vals[] = {
   { 0,                NULL }
 };
 
-static gboolean
-capture_atm(const guchar *pd, int offset,
+static bool
+capture_atm(const unsigned char *pd, int offset,
     int len, capture_packet_info_t *cpinfo, const union wtap_pseudo_header *pseudo_header)
 {
   if (pseudo_header->atm.aal == AAL_5) {
     return try_capture_dissector("atm.aal5.type", pseudo_header->atm.type, pd, offset, len, cpinfo, pseudo_header);
   }
-  return FALSE;
+  return false;
 }
 
 static void
 dissect_reassembled_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-    proto_item *atm_ti, proto_tree *atm_tree, gboolean truncated,
-    struct atm_phdr *atm_info, gboolean pseudowire_mode)
+    proto_item *atm_ti, proto_tree *atm_tree, bool truncated,
+    struct atm_phdr *atm_info, bool pseudowire_mode)
 {
-  guint     length, reported_length;
-  guint16   aal5_length;
+  unsigned  length, reported_length;
+  uint16_t  aal5_length;
   int       pad_length;
   tvbuff_t *next_tvb;
-  guint32   crc;
-  guint32   calc_crc;
-  gboolean  decoded;
+  uint32_t  crc;
+  uint32_t  calc_crc;
+  bool      decoded;
 
   /*
    * This is reassembled traffic, so the cell headers are missing;
@@ -939,8 +926,18 @@ dissect_reassembled_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
       }
     }
   }
+  /*
+   * First check whether custom dissection table
+   * was set up to dissect this VPI+VCI combination
+   */
+  if (dissector_try_uint_with_data(atm_reassembled_vpi_vci_table,
+                             ((atm_info->vpi) << 16) | atm_info->vci,
+                             next_tvb, pinfo, tree, true, atm_info))
+  {
+    return;
+  }
 
-  decoded = FALSE;
+  decoded = false;
   /*
    * Don't try to dissect the payload of PDUs with a reassembly
    * error.
@@ -950,21 +947,21 @@ dissect_reassembled_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
   case AAL_SIGNALLING:
     if (!(atm_info->flags & ATM_REASSEMBLY_ERROR)) {
       call_dissector(sscop_handle, next_tvb, pinfo, tree);
-      decoded = TRUE;
+      decoded = true;
     }
     break;
 
   case AAL_5:
     if (!(atm_info->flags & ATM_REASSEMBLY_ERROR)) {
-      if (dissector_try_uint_new(atm_type_aal5_table, atm_info->type, next_tvb, pinfo, tree, TRUE, atm_info))
+      if (dissector_try_uint_with_data(atm_type_aal5_table, atm_info->type, next_tvb, pinfo, tree, true, atm_info))
       {
-        decoded = TRUE;
+        decoded = true;
       }
       else
       {
         if (tvb_reported_length(next_tvb) > 7) /* sizeof(octet) */
         {
-          guint8 octet[8];
+          uint8_t octet[8];
           tvb_memcpy(next_tvb, octet, 0, sizeof(octet));
 
           if (octet[0] == 0xaa
@@ -972,14 +969,14 @@ dissect_reassembled_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
            && octet[2] == 0x03) /* LLC SNAP as per RFC2684 */
           {
             call_dissector(llc_handle, next_tvb, pinfo, tree);
-            decoded = TRUE;
+            decoded = true;
           }
-          else if ((pntoh16(octet) & 0xff) == PPP_IP)
+          else if ((pntohu16(octet) & 0xff) == PPP_IP)
           {
             call_dissector(ppp_handle, next_tvb, pinfo, tree);
-            decoded = TRUE;
+            decoded = true;
           }
-          else if (pntoh16(octet) == 0x00)
+          else if (pntohu16(octet) == 0x00)
           {
             /*
              * Assume VC multiplexed bridged Ethernet.
@@ -994,7 +991,7 @@ dissect_reassembled_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
             proto_tree_add_item(tree, hf_atm_padding, tvb, 0, 2, ENC_NA);
             next_tvb = tvb_new_subset_remaining(tvb, 2);
             call_dissector(eth_maybefcs_handle, next_tvb, pinfo, tree);
-            decoded = TRUE;
+            decoded = true;
           }
           else if (octet[2] == 0x03    && /* NLPID */
                   ((octet[3] == 0xcc   || /* IPv4  */
@@ -1004,7 +1001,7 @@ dissect_reassembled_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
           {
             /* assume network interworking with FR 2 byte header */
             call_dissector(fr_handle, next_tvb, pinfo, tree);
-            decoded = TRUE;
+            decoded = true;
           }
           else if (octet[4] == 0x03    && /* NLPID */
                   ((octet[5] == 0xcc   || /* IPv4  */
@@ -1014,13 +1011,13 @@ dissect_reassembled_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
           {
             /* assume network interworking with FR 4 byte header */
             call_dissector(fr_handle, next_tvb, pinfo, tree);
-            decoded = TRUE;
+            decoded = true;
           }
           else if (((octet[0] & 0xf0)== 0x40) ||
                    ((octet[0] & 0xf0) == 0x60))
           {
             call_dissector(ip_handle, next_tvb, pinfo, tree);
-            decoded = TRUE;
+            decoded = true;
           }
         }
       }
@@ -1050,7 +1047,7 @@ dissect_reassembled_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
       if (dissector_try_uint(atm_type_aal2_table, atm_info->type, next_tvb, pinfo, tree))
       {
-        decoded = TRUE;
+        decoded = true;
       }
     }
     break;
@@ -1079,7 +1076,7 @@ dissect_reassembled_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
  */
 #define COSET_LEADER    0x055               /* x^6 + x^4 + x^2 + 1  */
 
-static const guint8 syndrome_table[256] = {
+static const uint8_t syndrome_table[256] = {
   0x00, 0x07, 0x0e, 0x09, 0x1c, 0x1b, 0x12, 0x15,
   0x38, 0x3f, 0x36, 0x31, 0x24, 0x23, 0x2a, 0x2d,
   0x70, 0x77, 0x7e, 0x79, 0x6c, 0x6b, 0x62, 0x65,
@@ -1253,9 +1250,9 @@ static const int err_posn_table[256] = {
  * and, if so, where the error was, if it was correctable.
  */
 static int
-get_header_err(const guint8 *cell_header)
+get_header_err(const uint8_t *cell_header)
 {
-  register guint8 syndrome;
+  register uint8_t syndrome;
   register int    i, err_posn;
 
   syndrome = 0;
@@ -1327,14 +1324,27 @@ static const value_string ft_ad_vals[] = {
 
 static void
 dissect_atm_cell_payload(tvbuff_t *tvb, int offset, packet_info *pinfo,
-                         proto_tree *tree, guint aal, gboolean fill_columns)
+                         proto_tree *tree, unsigned aal, bool fill_columns,
+                         struct atm_phdr *atm_info)
 {
   proto_tree *aal_tree;
   proto_item *ti;
-  guint8      octet;
-  gint        length;
-  guint16     aal3_4_hdr, crc10;
+  uint8_t     octet;
+  int         length;
+  uint16_t    aal3_4_hdr, crc10;
   tvbuff_t   *next_tvb;
+
+  next_tvb = tvb_new_subset_remaining(tvb, offset);
+  /*
+   * First check whether custom dissection table
+   * was set up to dissect this VPI+VCI combination
+   */
+  if (dissector_try_uint_with_data(atm_cell_payload_vpi_vci_table,
+                             ((atm_info->vpi) << 16) | atm_info->vci,
+                             next_tvb, pinfo, tree, true, atm_info))
+  {
+    return;
+  }
 
   switch (aal) {
 
@@ -1343,7 +1353,7 @@ dissect_atm_cell_payload(tvbuff_t *tvb, int offset, packet_info *pinfo,
     col_clear(pinfo->cinfo, COL_INFO);
     ti = proto_tree_add_item(tree, proto_aal1, tvb, offset, -1, ENC_NA);
     aal_tree = proto_item_add_subtree(ti, ett_aal1);
-    octet = tvb_get_guint8(tvb, offset);
+    octet = tvb_get_uint8(tvb, offset);
 
     proto_tree_add_item(aal_tree, hf_atm_aa1_csi, tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_tree_add_item(aal_tree, hf_atm_aa1_seq_count, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -1366,7 +1376,7 @@ dissect_atm_cell_payload(tvbuff_t *tvb, int offset, packet_info *pinfo,
     aal_tree = proto_item_add_subtree(ti, ett_aal3_4);
     aal3_4_hdr = tvb_get_ntohs(tvb, offset);
     col_add_fstr(pinfo->cinfo, COL_INFO, "%s, sequence number = %u",
-                 val_to_str(aal3_4_hdr >> 14, st_vals, "Unknown (%u)"),
+                 val_to_str(pinfo->pool, aal3_4_hdr >> 14, st_vals, "Unknown (%u)"),
                  (aal3_4_hdr >> 10) & 0xF);
     proto_tree_add_item(aal_tree, hf_atm_aal3_4_seg_type, tvb, offset, 2, ENC_BIG_ENDIAN);
     proto_tree_add_item(aal_tree, hf_atm_aal3_4_seq_num, tvb, offset, 2, ENC_BIG_ENDIAN);
@@ -1392,11 +1402,11 @@ dissect_atm_cell_payload(tvbuff_t *tvb, int offset, packet_info *pinfo,
     }
     ti = proto_tree_add_item(tree, proto_oamaal, tvb, offset, -1, ENC_NA);
     aal_tree = proto_item_add_subtree(ti, ett_oamaal);
-    octet = tvb_get_guint8(tvb, offset);
+    octet = tvb_get_uint8(tvb, offset);
     if (fill_columns)
     {
-      col_add_fstr(pinfo->cinfo, COL_INFO, "%s",
-                   val_to_str(octet >> 4, oam_type_vals, "Unknown (%u)"));
+      col_add_str(pinfo->cinfo, COL_INFO,
+                   val_to_str(pinfo->pool, octet >> 4, oam_type_vals, "Unknown (%u)"));
     }
 
     proto_tree_add_item(aal_tree, hf_atm_aal_oamcell_type, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -1441,8 +1451,8 @@ dissect_atm_cell_payload(tvbuff_t *tvb, int offset, packet_info *pinfo,
  * OAM F4 is VCI 3 or 4 and PT 0X0.
  * OAM F5 is PT 10X.
  */
-gboolean
-atm_is_oam_cell(const guint16 vci, const guint8 pt)
+bool
+atm_is_oam_cell(const uint16_t vci, const uint8_t pt)
 {
   return  (((vci == 3 || vci == 4) && ((pt & 0x5) == 0))
            || ((pt & 0x6) == 0x4));
@@ -1451,14 +1461,15 @@ atm_is_oam_cell(const guint16 vci, const guint8 pt)
 
 static void
 dissect_atm_cell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-                 proto_tree *atm_tree, guint aal, gboolean nni,
-                 gboolean crc_stripped)
+                 proto_tree *atm_tree, unsigned aal, bool nni,
+                 bool crc_stripped, const struct atm_phdr *atm_info)
 {
   int         offset;
   proto_item *ti;
-  guint8      octet, pt;
+  uint8_t     octet, pt;
   int         err;
-  guint16     vpi, vci;
+  uint16_t    vpi, vci;
+  struct atm_phdr atm_info_local;
 
   if (!nni) {
     /*
@@ -1478,10 +1489,10 @@ dissect_atm_cell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
      * |   HEC (CRC)   |
      * +-+-+-+-+-+-+-+-+
      */
-    octet = tvb_get_guint8(tvb, 0);
+    octet = tvb_get_uint8(tvb, 0);
     proto_tree_add_item(atm_tree, hf_atm_gfc, tvb, 0, 1, ENC_NA);
     vpi = (octet & 0xF) << 4;
-    octet = tvb_get_guint8(tvb, 1);
+    octet = tvb_get_uint8(tvb, 1);
     vpi |= octet >> 4;
     proto_tree_add_uint(atm_tree, hf_atm_vpi, tvb, 0, 2, vpi);
   } else {
@@ -1502,17 +1513,17 @@ dissect_atm_cell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
      * |   HEC (CRC)   |
      * +-+-+-+-+-+-+-+-+
      */
-    octet = tvb_get_guint8(tvb, 0);
+    octet = tvb_get_uint8(tvb, 0);
     vpi = octet << 4;
-    octet = tvb_get_guint8(tvb, 1);
+    octet = tvb_get_uint8(tvb, 1);
     vpi |= (octet & 0xF0) >> 4;
     proto_tree_add_uint(atm_tree, hf_atm_vpi, tvb, 0, 2, vpi);
   }
 
   vci = (octet & 0x0F) << 12;
-  octet = tvb_get_guint8(tvb, 2);
+  octet = tvb_get_uint8(tvb, 2);
   vci |= octet << 4;
-  octet = tvb_get_guint8(tvb, 3);
+  octet = tvb_get_uint8(tvb, 3);
   vci |= octet >> 4;
   proto_tree_add_uint(atm_tree, hf_atm_vci, tvb, 1, 3, vci);
   pt = (octet >> 1) & 0x7;
@@ -1524,7 +1535,7 @@ dissect_atm_cell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
      * FF: parse the Header Error Check (HEC).
      */
     ti = proto_tree_add_item(atm_tree, hf_atm_header_error_check, tvb, 4, 1, ENC_BIG_ENDIAN);
-    err = get_header_err((const guint8*)tvb_memdup(wmem_packet_scope(), tvb, 0, 5));
+    err = get_header_err((const uint8_t*)tvb_memdup(pinfo->pool, tvb, 0, 5));
     if (err == NO_ERROR_DETECTED)
       proto_item_append_text(ti, " (correct)");
     else if (err == UNCORRECTIBLE_ERROR)
@@ -1552,12 +1563,33 @@ dissect_atm_cell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     }
   }
 
-  dissect_atm_cell_payload(tvb, offset, pinfo, tree, aal, TRUE);
+  memset(&atm_info_local, 0, sizeof(atm_info_local));
+  if (atm_info) {
+    atm_info_local.flags = atm_info->flags;
+    atm_info_local.aal = atm_info->aal;
+    atm_info_local.type = atm_info->type;
+    atm_info_local.subtype = atm_info->subtype;
+    atm_info_local.vpi = atm_info->vpi;
+    atm_info_local.vci = atm_info->vci;
+    atm_info_local.aal2_cid = atm_info->aal2_cid;
+    atm_info_local.channel = atm_info->channel;
+    atm_info_local.cells = atm_info->cells;
+    atm_info_local.aal5t_u2u = atm_info->aal5t_u2u;
+    atm_info_local.aal5t_len = atm_info->aal5t_len;
+    atm_info_local.aal5t_chksum = atm_info->aal5t_chksum;
+  } else {
+    atm_info_local.aal = aal;
+    atm_info_local.type = pt;
+    atm_info_local.vpi = vpi;
+    atm_info_local.vci = vci;
+  }
+
+  dissect_atm_cell_payload(tvb, offset, pinfo, tree, aal, true, &atm_info_local);
 }
 
 static int
 dissect_atm_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
-    gboolean truncated, struct atm_phdr *atm_info, gboolean pseudowire_mode)
+    bool truncated, struct atm_phdr *atm_info, bool pseudowire_mode)
 {
   proto_tree *atm_tree        = NULL;
   proto_item *atm_ti          = NULL;
@@ -1588,11 +1620,11 @@ dissect_atm_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
   if (atm_info->aal == AAL_5) {
     col_add_fstr(pinfo->cinfo, COL_INFO, "AAL5 %s",
-                 val_to_str(atm_info->type, aal5_hltype_vals,
+                 val_to_str(pinfo->pool, atm_info->type, aal5_hltype_vals,
                             "Unknown traffic type (%u)"));
   } else {
     col_add_str(pinfo->cinfo, COL_INFO,
-                val_to_str(atm_info->aal, aal_vals,
+                val_to_str(pinfo->pool, atm_info->aal, aal_vals,
                            "Unknown AAL (%u)"));
   }
 
@@ -1609,7 +1641,7 @@ dissect_atm_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
     proto_tree_add_uint_format_value(atm_tree, hf_atm_aal, tvb, 0, 0,
                                      atm_info->aal,
                                      "%s",
-                                     val_to_str(atm_info->aal, aal_vals,
+                                     val_to_str(pinfo->pool, atm_info->aal, aal_vals,
                                                 "Unknown AAL (%u)"));
   }
   if (atm_info->flags & ATM_RAW_CELL) {
@@ -1620,8 +1652,8 @@ dissect_atm_common(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
       proto_item_set_len(atm_ti, 5);
     }
     dissect_atm_cell(tvb, pinfo, tree, atm_tree,
-                     atm_info->aal, FALSE,
-                     atm_info->flags & ATM_NO_HEC);
+                     atm_info->aal, false,
+                     atm_info->flags & ATM_NO_HEC, atm_info);
   } else {
     /* This is a reassembled PDU. */
 
@@ -1645,7 +1677,7 @@ dissect_atm_truncated(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void 
 
   DISSECTOR_ASSERT(atm_info != NULL);
 
-  return dissect_atm_common(tvb, pinfo, tree, TRUE, atm_info, FALSE);
+  return dissect_atm_common(tvb, pinfo, tree, true, atm_info, false);
 }
 
 static int
@@ -1655,7 +1687,7 @@ dissect_atm_pw_truncated(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
 
   DISSECTOR_ASSERT(atm_info != NULL);
 
-  return dissect_atm_common(tvb, pinfo, tree, TRUE, atm_info, TRUE);
+  return dissect_atm_common(tvb, pinfo, tree, true, atm_info, true);
 }
 
 static int
@@ -1665,7 +1697,7 @@ dissect_atm_untruncated(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 
   DISSECTOR_ASSERT(atm_info != NULL);
 
-  return dissect_atm_common(tvb, pinfo, tree, FALSE, atm_info, FALSE);
+  return dissect_atm_common(tvb, pinfo, tree, false, atm_info, false);
 }
 
 static int
@@ -1675,7 +1707,7 @@ dissect_atm_pw_untruncated(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 
   DISSECTOR_ASSERT(atm_info != NULL);
 
-  return dissect_atm_common(tvb, pinfo, tree, FALSE, atm_info, TRUE);
+  return dissect_atm_common(tvb, pinfo, tree, false, atm_info, true);
 }
 
 static int
@@ -1689,31 +1721,34 @@ dissect_atm_oam_cell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
   atm_ti   = proto_tree_add_item(tree, proto_atm, tvb, 0, 0, ENC_NA);
   atm_tree = proto_item_add_subtree(atm_ti, ett_atm);
 
-  dissect_atm_cell(tvb, pinfo, tree, atm_tree, AAL_OAMCELL, FALSE, FALSE);
+  dissect_atm_cell(tvb, pinfo, tree, atm_tree, AAL_OAMCELL, false, false, NULL);
   return tvb_reported_length(tvb);
 }
 
 static int
 dissect_atm_pw_oam_cell(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data)
 {
-  const pwatm_private_data_t *pwpd = (const pwatm_private_data_t *)data;
+  struct pw_atm_phdr *pw_atm_info = (struct pw_atm_phdr *)data;
+
+  DISSECTOR_ASSERT(pw_atm_info != NULL);
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "ATM");
 
   dissect_atm_cell_payload(tvb, 0, pinfo, tree, AAL_OAMCELL,
-                           pwpd->enable_fill_columns_by_atm_dissector);
+                           pw_atm_info->enable_fill_columns_by_atm_dissector,
+                           &pw_atm_info->info);
 
   return tvb_reported_length(tvb);
 }
 
-static void atm_prompt(packet_info *pinfo _U_, gchar* result)
+static void atm_prompt(packet_info *pinfo _U_, char* result)
 {
-  g_snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "Decode AAL2 traffic as");
+  snprintf(result, MAX_DECODE_AS_PROMPT_LEN, "Decode AAL2 traffic as");
 }
 
-static gpointer atm_value(packet_info *pinfo)
+static void *atm_value(packet_info *pinfo)
 {
-  return GUINT_TO_POINTER((guint)pinfo->pseudo_header->atm.type);
+  return GUINT_TO_POINTER((unsigned)pinfo->pseudo_header->atm.type);
 }
 
 void
@@ -1727,7 +1762,7 @@ proto_register_atm(void)
       { "GFC",          "atm.GFC", FT_UINT8, BASE_DEC, NULL, 0xF0,
         NULL, HFILL }},
     { &hf_atm_vpi,
-      { "VPI",          "atm.vpi", FT_UINT8, BASE_DEC, NULL, 0x0,
+      { "VPI",          "atm.vpi", FT_UINT16, BASE_DEC, NULL, 0x0,
         NULL, HFILL }},
 
     { &hf_atm_vci,
@@ -1932,7 +1967,7 @@ proto_register_atm(void)
       { "Function-specific information", "atm.aal_oamcell.func_spec", FT_BYTES, BASE_NONE, NULL, 0x0,
         NULL, HFILL }},
     { &hf_atm_aal_oamcell_crc,
-      { "CRC-10", "atm.aal_oamcell.crc", FT_UINT16, BASE_HEX, NULL, 0x3FF,
+      { "CRC-10", "atm.aal_oamcell.crc", FT_UINT16, BASE_HEX, NULL, 0x03FF,
         NULL, HFILL }},
     { &hf_atm_padding,
       { "Padding", "atm.padding", FT_BYTES, BASE_NONE, NULL, 0x0,
@@ -1940,7 +1975,7 @@ proto_register_atm(void)
 
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_atm,
     &ett_ilmi,
     &ett_aal1,
@@ -1963,7 +1998,7 @@ proto_register_atm(void)
   /* Decode As handling */
   static build_valid_func atm_da_build_value[1] = {atm_value};
   static decode_as_value_t atm_da_values = {atm_prompt, 1, atm_da_build_value};
-  static decode_as_t atm_da = {"atm", "Network", "atm.aal2.type", 1, 0, &atm_da_values, NULL, NULL,
+  static decode_as_t atm_da = {"atm", "atm.aal2.type", 1, 0, &atm_da_values, NULL, NULL,
                                 decode_as_default_populate_list, decode_as_default_reset, decode_as_default_change, NULL};
 
   proto_atm    = proto_register_protocol("Asynchronous Transfer Mode", "ATM", "atm");
@@ -1979,8 +2014,12 @@ proto_register_atm(void)
 
   proto_atm_lane = proto_register_protocol("ATM LAN Emulation", "ATM LANE", "lane");
 
-  atm_type_aal2_table = register_dissector_table("atm.aal2.type", "ATM AAL_2 type subdissector", proto_atm, FT_UINT32, BASE_DEC);
-  atm_type_aal5_table = register_dissector_table("atm.aal5.type", "ATM AAL_5 type subdissector", proto_atm, FT_UINT32, BASE_DEC);
+  atm_type_aal2_table = register_dissector_table("atm.aal2.type", "ATM AAL_2 type", proto_atm, FT_UINT32, BASE_DEC);
+  atm_type_aal5_table = register_dissector_table("atm.aal5.type", "ATM AAL_5 type", proto_atm, FT_UINT32, BASE_DEC);
+  atm_cell_payload_vpi_vci_table = register_dissector_table("atm.cell_payload.vpi_vci", "ATM Cell Payload VPI VCI",
+                                                            proto_atm, FT_UINT32, BASE_DEC);
+  atm_reassembled_vpi_vci_table = register_dissector_table("atm.reassembled.vpi_vci", "ATM Reassembled VPI VCI",
+                                                           proto_atm, FT_UINT32, BASE_DEC);
 
   register_capture_dissector_table("atm.aal5.type", "ATM AAL_5");
   register_capture_dissector_table("atm_lane", "ATM LAN Emulation");
@@ -1994,7 +2033,7 @@ proto_register_atm(void)
 
   atm_module = prefs_register_protocol ( proto_atm, NULL );
   prefs_register_bool_preference(atm_module, "dissect_lane_as_sscop", "Dissect LANE as SSCOP",
-                                 "Autodection between LANE and SSCOP is hard. As default LANE is preferred",
+                                 "Autodetection between LANE and SSCOP is hard. As default LANE is preferred",
                                  &dissect_lanesscop);
   prefs_register_obsolete_preference(atm_module, "unknown_aal2_type");
 
@@ -2004,6 +2043,8 @@ proto_register_atm(void)
 void
 proto_reg_handoff_atm(void)
 {
+  capture_dissector_handle_t atm_cap_handle;
+
   /*
    * Get handles for the Ethernet, Token Ring, Frame Relay, LLC,
    * SSCOP, LANE, and ILMI dissectors.
@@ -2023,12 +2064,15 @@ proto_reg_handoff_atm(void)
 
   dissector_add_uint("wtap_encap", WTAP_ENCAP_ATM_PDUS_UNTRUNCATED,
                 atm_untruncated_handle);
-  register_capture_dissector("wtap_encap", WTAP_ENCAP_ATM_PDUS, capture_atm, proto_atm);
-  register_capture_dissector("atm.aal5.type", TRAF_LANE, capture_lane, proto_atm_lane);
+
+  atm_cap_handle = create_capture_dissector_handle(capture_atm, proto_atm);
+  capture_dissector_add_uint("wtap_encap", WTAP_ENCAP_ATM_PDUS, atm_cap_handle);
+  atm_cap_handle = create_capture_dissector_handle(capture_lane, proto_atm_lane);
+  capture_dissector_add_uint("atm.aal5.type", TRAF_LANE, atm_cap_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

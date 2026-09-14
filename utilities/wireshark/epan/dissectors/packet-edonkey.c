@@ -16,19 +16,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -38,153 +26,169 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
+#include <epan/exceptions.h>
 #include "packet-edonkey.h"
 #include "packet-tcp.h"
 
 void proto_reg_handoff_edonkey(void);
 
-static int proto_edonkey = -1;
+static dissector_handle_t edonkey_tcp_handle;
+static dissector_handle_t edonkey_udp_handle;
 
-static int hf_edonkey_message  = -1;
-static int hf_edonkey_protocol = -1;
-static int hf_edonkey_message_length = -1;
-static int hf_edonkey_message_type = -1;
-static int hf_edonkey_client_hash = -1;
-static int hf_edonkey_server_hash = -1;
-static int hf_edonkey_file_hash = -1;
-static int hf_edonkey_client_id = -1;
-static int hf_edonkey_metatag_namesize = -1;
-static int hf_edonkey_metatag_type = -1;
-static int hf_edonkey_metatag = -1;
-static int hf_edonkey_metatag_name = -1;
-static int hf_edonkey_metatag_id = -1;
-static int hf_edonkey_ip = -1;
-static int hf_edonkey_port = -1;
-static int hf_edonkey_hash = -1;
-static int hf_edonkey_part_count = -1;
-static int hf_edonkey_file_status = -1;
-static int hf_edonkey_directory = -1;
-static int hf_edonkey_string = -1;
-static int hf_edonkey_string_length = -1;
-static int hf_edonkey_fileinfo = -1;
-static int hf_edonkey_clientinfo = -1;
-static int hf_edonkey_serverinfo = -1;
-static int hf_emule_aich_partnum = -1;
-static int hf_emule_aich_root_hash = -1;
-static int hf_emule_aich_hash_entry = -1;
-static int hf_emule_aich_hash_id = -1;
-static int hf_emule_aich_hash = -1;
-static int hf_emule_multipacket_entry = -1;
-static int hf_emule_multipacket_opcode = -1;
-static int hf_emule_source_count = -1;
-static int hf_emule_zlib = -1;
-static int hf_emule_public_key = -1;
-static int hf_emule_signature = -1;
-static int hf_emule_sourceOBFU = -1;
-static int hf_overnet_peer = -1;
+static int proto_edonkey;
 
-static int hf_edonkey_unparsed_data_length = -1;
-static int hf_kademlia = -1;
-static int hf_kademlia_search_condition = -1;
-static int hf_kademlia_search_condition_argument_uint32 = -1;
-static int hf_kademlia_search_condition_argument_uint64 = -1;
-/* static int hf_kademlia_unparsed_data_length = -1; */
-static int hf_kademlia_peer = -1;
-static int hf_kademlia_peer_id = -1;
-static int hf_kademlia_hash = -1;
-static int hf_kademlia_file_id = -1;
-static int hf_kademlia_keyword_hash = -1;
-static int hf_kademlia_recipients_id = -1;
-static int hf_kademlia_sender_id = -1;
-static int hf_kademlia_target_id = -1;
-static int hf_kademlia_distance = -1;
-static int hf_kademlia_version = -1;
-static int hf_kademlia_peertype = -1;
-static int hf_kademlia_tag_float = -1;
-static int hf_kademlia_tag_uint64 = -1;
-static int hf_kademlia_tag_uint32 = -1;
-static int hf_kademlia_tag_ipv4 = -1;
-static int hf_kademlia_tag_uint16 = -1;
-static int hf_kademlia_tag_uint8 = -1;
-static int hf_kademlia_tag_hash = -1;
-static int hf_kademlia_tag_bsob = -1;
-static int hf_kademlia_tag_string = -1;
-static int hf_kademlia_udp_port = -1;
-static int hf_kademlia_tcp_port = -1;
-static int hf_kademlia_ip = -1;
-static int hf_kademlia_tag_name = -1;
-static int hf_kademlia_tag_name_length = -1;
-static int hf_kademlia_tag_type = -1;
-static int hf_kademlia_request_type = -1;
-static int hf_kademlia_search_expression_type = -1;
-static int hf_kademlia_search_bool_op = -1;
+static int hf_edonkey_message;
+static int hf_edonkey_protocol;
+static int hf_edonkey_message_length;
+static int hf_edonkey_message_type;
+static int hf_edonkey_client_hash;
+static int hf_edonkey_server_hash;
+static int hf_edonkey_file_hash;
+static int hf_edonkey_client_id;
+static int hf_edonkey_metatag_namesize;
+static int hf_edonkey_metatag_type;
+static int hf_edonkey_metatag;
+static int hf_edonkey_metatag_name;
+static int hf_edonkey_metatag_id;
+static int hf_edonkey_ip;
+static int hf_edonkey_port;
+static int hf_edonkey_hash;
+static int hf_edonkey_part_count;
+static int hf_edonkey_file_status;
+static int hf_edonkey_directory;
+static int hf_edonkey_string;
+static int hf_edonkey_string_length;
+static int hf_edonkey_fileinfo;
+static int hf_edonkey_clientinfo;
+static int hf_edonkey_serverinfo;
+static int hf_edonkey_tcp_flags;
+static int hf_edonkey_aux_port;
+static int hf_edonkey_server_reported_ip;
+static int hf_edonkey_soft_limit_files;
+static int hf_edonkey_hard_limit_files;
+static int hf_edonkey_number_of_lowid_users;
+static int hf_edonkey_udp_flags;
+static int hf_edonkey_udp_obfuscation_port;
+static int hf_edonkey_tcp_obfuscation_port;
+static int hf_edonkey_server_udp_key;
+static int hf_emule_aich_partnum;
+static int hf_emule_aich_root_hash;
+static int hf_emule_aich_hash_entry;
+static int hf_emule_aich_hash_id;
+static int hf_emule_aich_hash;
+static int hf_emule_multipacket_entry;
+static int hf_emule_multipacket_opcode;
+static int hf_emule_source_count;
+static int hf_emule_zlib;
+static int hf_emule_public_key;
+static int hf_emule_signature;
+static int hf_emule_sourceOBFU;
+static int hf_overnet_peer;
+
+static int hf_edonkey_unparsed_data_length;
+static int hf_kademlia;
+static int hf_kademlia_search_condition;
+static int hf_kademlia_search_condition_argument_uint32;
+static int hf_kademlia_search_condition_argument_uint64;
+/* static int hf_kademlia_unparsed_data_length; */
+static int hf_kademlia_peer;
+static int hf_kademlia_peer_id;
+static int hf_kademlia_hash;
+static int hf_kademlia_file_id;
+static int hf_kademlia_keyword_hash;
+static int hf_kademlia_recipients_id;
+static int hf_kademlia_sender_id;
+static int hf_kademlia_target_id;
+static int hf_kademlia_distance;
+static int hf_kademlia_version;
+static int hf_kademlia_peertype;
+static int hf_kademlia_tag_float;
+static int hf_kademlia_tag_uint64;
+static int hf_kademlia_tag_uint32;
+static int hf_kademlia_tag_ipv4;
+static int hf_kademlia_tag_uint16;
+static int hf_kademlia_tag_uint8;
+static int hf_kademlia_tag_hash;
+static int hf_kademlia_tag_bsob;
+static int hf_kademlia_tag_string;
+static int hf_kademlia_udp_port;
+static int hf_kademlia_tcp_port;
+static int hf_kademlia_ip;
+static int hf_kademlia_tag_name;
+static int hf_kademlia_tag_name_length;
+static int hf_kademlia_tag_type;
+static int hf_kademlia_request_type;
+static int hf_kademlia_search_expression_type;
+static int hf_kademlia_search_bool_op;
 
 /* Generated from convert_proto_tree_add_text.pl */
-static int hf_edonkey_list_size = -1;
-static int hf_edonkey_meta_tag_value_revision = -1;
-static int hf_edonkey_meta_tag_value_uint = -1;
-static int hf_edonkey_boolean_array_length = -1;
-static int hf_edonkey_blob_length = -1;
-static int hf_edonkey_kademlia_string = -1;
-static int hf_emule_public_key_length = -1;
-static int hf_emule_signature_length = -1;
-static int hf_edonkey_obfuscation_settings = -1;
-static int hf_edonkey_start_offset = -1;
-static int hf_edonkey_start_offset_64 = -1;
-static int hf_edonkey_end_offset = -1;
-static int hf_edonkey_end_offset_64 = -1;
-static int hf_edonkey_emule_file_length = -1;
-static int hf_edonkey_overnet_peer_type = -1;
-static int hf_edonkey_more_search_file_results = -1;
-static int hf_edonkey_file_size = -1;
-static int hf_edonkey_large_file_size = -1;
-static int hf_edonkey_number_of_users = -1;
-static int hf_edonkey_number_of_files = -1;
-static int hf_edonkey_message_data = -1;
-static int hf_edonkey_emule_version = -1;
-static int hf_edonkey_emule_queue_ranking = -1;
-static int hf_edonkey_emule_ident_state = -1;
-static int hf_edonkey_emule_rndchallenge = -1;
-static int hf_edonkey_emule_sig_ip_used = -1;
-static int hf_edonkey_packed_length = -1;
-static int hf_edonkey_compressed_message_data = -1;
-static int hf_edonkey_challenge = -1;
-static int hf_edonkey_max_number_of_users = -1;
-static int hf_edonkey_search_type = -1;
-static int hf_edonkey_search_range_min = -1;
-static int hf_edonkey_search_range_max = -1;
-static int hf_edonkey_kademlia_uload = -1;
-static int hf_edonkey_kademlia_start_position = -1;
-static int hf_edonkey_kademlia_filesize = -1;
-static int hf_edonkey_kademlia_restrictive = -1;
-static int hf_edonkey_broken_compressed_data = -1;
-static int hf_edonkey_search_limit = -1;
-static int hf_edonkey_search_limit_type = -1;
-static int hf_edonkey_search_ops = -1;
-static int hf_edonkey_user_hash_length = -1;
+static int hf_edonkey_list_size;
+static int hf_edonkey_meta_tag_value_revision;
+static int hf_edonkey_meta_tag_value_uint;
+static int hf_edonkey_boolean_array_length;
+static int hf_edonkey_blob_length;
+static int hf_edonkey_kademlia_string;
+static int hf_emule_public_key_length;
+static int hf_emule_signature_length;
+static int hf_edonkey_obfuscation_settings;
+static int hf_edonkey_start_offset;
+static int hf_edonkey_start_offset_64;
+static int hf_edonkey_end_offset;
+static int hf_edonkey_end_offset_64;
+static int hf_edonkey_emule_file_length;
+static int hf_edonkey_overnet_peer_type;
+static int hf_edonkey_more_search_file_results;
+static int hf_edonkey_file_size;
+static int hf_edonkey_large_file_size;
+static int hf_edonkey_number_of_users;
+static int hf_edonkey_number_of_files;
+static int hf_edonkey_message_data;
+static int hf_edonkey_emule_version;
+static int hf_edonkey_emule_queue_ranking;
+static int hf_edonkey_emule_ident_state;
+static int hf_edonkey_emule_rndchallenge;
+static int hf_edonkey_emule_sig_ip_used;
+static int hf_edonkey_packed_length;
+static int hf_edonkey_compressed_message_data;
+static int hf_edonkey_challenge;
+static int hf_edonkey_max_number_of_users;
+static int hf_edonkey_search_type;
+static int hf_edonkey_search_range_min;
+static int hf_edonkey_search_range_max;
+static int hf_edonkey_kademlia_uload;
+static int hf_edonkey_kademlia_start_position;
+static int hf_edonkey_kademlia_filesize;
+static int hf_edonkey_kademlia_restrictive;
+static int hf_edonkey_broken_compressed_data;
+static int hf_edonkey_search_limit;
+static int hf_edonkey_search_limit_type;
+static int hf_edonkey_search_ops;
+static int hf_edonkey_user_hash_length;
 
-static gint ett_kademlia_tag = -1;
-static gint ett_edonkey_listitem = -1;
-static gint ett_kademlia_search_expression = -1;
-static gint ett_edonkey = -1;
-static gint ett_edonkey_message = -1;
-static gint ett_edonkey_metatag = -1;
-static gint ett_edonkey_search = -1;
-static gint ett_edonkey_fileinfo = -1;
-static gint ett_edonkey_serverinfo = -1;
-static gint ett_edonkey_clientinfo = -1;
-static gint ett_emule_aichhash = -1;
-static gint ett_emule_multipacket = -1;
-static gint ett_emule_zlib = -1;
-static gint ett_overnet_peer = -1;
-static gint ett_emule_sourceOBFU = -1;
+static int ett_kademlia_tag;
+static int ett_edonkey_listitem;
+static int ett_kademlia_search_expression;
+static int ett_edonkey;
+static int ett_edonkey_message;
+static int ett_edonkey_metatag;
+static int ett_edonkey_search;
+static int ett_edonkey_fileinfo;
+static int ett_edonkey_serverinfo;
+static int ett_edonkey_clientinfo;
+static int ett_emule_aichhash;
+static int ett_emule_multipacket;
+static int ett_emule_zlib;
+static int ett_overnet_peer;
+static int ett_emule_sourceOBFU;
 
-static expert_field ei_kademlia_tag_type = EI_INIT;
-static expert_field ei_kademlia_search_expression_type = EI_INIT;
+static expert_field ei_kademlia_tag_type;
+static expert_field ei_kademlia_search_expression_type;
 
+#define EDONKEY_TCP_PORT_RANGE "4661-4663" /* Not IANA registered */
+#define EDONKEY_UDP_PORT_RANGE "4665,4672" /* Not IANA registered */
 
 /* desegmentation of eDonkey over TCP */
-static gboolean edonkey_desegment = TRUE;
+static bool edonkey_desegment = true;
 
 static const value_string kademlia_msgs[] = {
     { KADEMLIA2_BOOTSTRAP_REQ        ,"KADEMLIA2_BOOTSTRAP_REQ"      },
@@ -585,7 +589,7 @@ static int dissect_edonkey_list(tvbuff_t *tvb, packet_info *pinfo,
                                 int  (*item_dissector)(tvbuff_t  *, packet_info *, int, proto_tree *))
 {
     /* <List> ::= <List Size> <Item>* */
-    guint32 listnum, i;
+    uint32_t listnum, i;
     proto_tree *subtree;
     proto_item* ti;
     proto_item* list_ti;
@@ -596,7 +600,7 @@ static int dissect_edonkey_list(tvbuff_t *tvb, packet_info *pinfo,
     switch (listnum_length) {
         case -1:
         case 1:
-            listnum = tvb_get_guint8(tvb, offset);
+            listnum = tvb_get_uint8(tvb, offset);
             break;
 
         case -2:
@@ -637,6 +641,9 @@ static int dissect_edonkey_list(tvbuff_t *tvb, packet_info *pinfo,
 
         /* dissect one list element */
         offset = (*item_dissector)(tvb, pinfo, offset, subtree);
+        if (offset <= item_start_offset) {
+            THROW(ReportedBoundsError);
+        }
         /* Set the container node length */
         proto_item_set_len( ti, offset - item_start_offset );
     }
@@ -646,9 +653,9 @@ static int dissect_edonkey_list(tvbuff_t *tvb, packet_info *pinfo,
     return offset;
 }
 
-static gint lookup_str_index(gchar* str, gint length, const value_string *vs)
+static int lookup_str_index(char* str, int length, const value_string *vs)
 {
-    gint i = 0;
+    int i = 0;
 
     if (str == NULL) return -1;
 
@@ -661,13 +668,13 @@ static gint lookup_str_index(gchar* str, gint length, const value_string *vs)
     return -1;
 }
 
-static guint8 edonkey_metatag_name_get_type(tvbuff_t *tvb, gint start, gint length, guint8 special_tagtype)
+static uint8_t edonkey_metatag_name_get_type(tvbuff_t *tvb, packet_info* pinfo, int start, int length, uint8_t special_tagtype)
 {
-    guint8 *tag_name;
+    uint8_t *tag_name;
 
     if (try_val_to_str(special_tagtype, edonkey_special_tags) == NULL) {
-        gint idx;
-        tag_name = tvb_get_string_enc(wmem_packet_scope(), tvb, start, length, ENC_ASCII|ENC_NA);
+        int idx;
+        tag_name = tvb_get_string_enc(pinfo->pool, tvb, start, length, ENC_ASCII|ENC_NA);
         idx = lookup_str_index(tag_name, length, edonkey_special_tags);
         if (idx < 0)
             return EDONKEY_STAG_UNKNOWN;
@@ -678,12 +685,17 @@ static guint8 edonkey_metatag_name_get_type(tvbuff_t *tvb, gint start, gint leng
 }
 
 static proto_item* edonkey_tree_add_metatag_name(proto_tree *tree, tvbuff_t *tvb,
-                                                 gint start, gint length, guint8 special_tagtype)
+                                                 int start, int length, uint8_t special_tagtype)
 {
-    const gchar *tag_name;
+    const char *tag_name;
+
+    /*
+     * XXX - what, in the *protocol*, distinguishes integral from string
+     * tag names?  Name length > 1 means "string"?  Something else?
+     */
     tag_name = try_val_to_str(special_tagtype, edonkey_special_tags);
     if (tag_name == NULL) {
-        return proto_tree_add_item(tree, hf_edonkey_metatag_name, tvb, start, length, ENC_ASCII|ENC_NA);
+        return proto_tree_add_item(tree, hf_edonkey_metatag_name, tvb, start, length, ENC_ASCII);
     }
     else {
         return proto_tree_add_uint_format(tree, hf_edonkey_metatag_id, tvb, start, length,
@@ -710,7 +722,7 @@ static int dissect_kademlia_search_condition(tvbuff_t *tvb, packet_info *pinfo _
                                    int offset, proto_tree *tree )
 {
     proto_item * ti;
-    guint16 value = tvb_get_guint8(tvb, offset);
+    uint16_t value = tvb_get_uint8(tvb, offset);
     ti = proto_tree_add_item( tree, hf_kademlia_search_condition, tvb, offset, 1, ENC_BIG_ENDIAN );
     proto_item_append_text(ti, " [%s]", val_to_str_const( value, kademlia_search_conds, "Unknown") );
 
@@ -718,28 +730,28 @@ static int dissect_kademlia_search_condition(tvbuff_t *tvb, packet_info *pinfo _
 }
 
 /* Dissects the eDonkey meta tag */
-static int dissect_edonkey_metatag(tvbuff_t *tvb, packet_info *pinfo _U_,
+static int dissect_edonkey_metatag(tvbuff_t *tvb, packet_info *pinfo,
                                    int offset, proto_tree *tree)
 {
-    /* <Meta Tag> ::= <Tag Type (guint8)> <Tag Name> <Tag> */
-    /* <Tag Name> ::= <Tag Name Size (guint16)> <Special Tag> || <String> */
+    /* <Meta Tag> ::= <Tag Type (uint8_t)> <Tag Name> <Tag> */
+    /* <Tag Name> ::= <Tag Name Size (uint16_t)> <Special Tag> || <String> */
     /* <Tag Name> ::= <Special Tag> iff Tag Type had the top bit set */
     proto_item *ti;
     proto_tree *metatag_tree;
-    guint8 real_tag_type, tag_type, special_tagtype, trans_tagtype;
-    guint16 tag_name_size, string_length, array_length;
-    guint32 tag_length, blob_length;
+    uint8_t real_tag_type, tag_type, special_tagtype, trans_tagtype;
+    uint16_t tag_name_size, string_length, array_length;
+    uint32_t tag_length, blob_length;
     int tag_offset;
 
-    real_tag_type = tag_type = tvb_get_guint8(tvb, offset);
+    real_tag_type = tag_type = tvb_get_uint8(tvb, offset);
     if (tag_type & EDONKEY_MTAG_SHORTNAME) {
         real_tag_type &= ~EDONKEY_MTAG_SHORTNAME;
         tag_name_size = 1;
-        special_tagtype = tvb_get_guint8(tvb, offset+1);
+        special_tagtype = tvb_get_uint8(tvb, offset+1);
         tag_length = 2;
     } else {
         tag_name_size = tvb_get_letohs(tvb, offset+1);
-        special_tagtype = tvb_get_guint8(tvb, offset+3);
+        special_tagtype = tvb_get_uint8(tvb, offset+3);
         tag_length = 3 + tag_name_size;
     }
 
@@ -760,7 +772,7 @@ static int dissect_edonkey_metatag(tvbuff_t *tvb, packet_info *pinfo _U_,
             break;
 
         case EDONKEY_MTAG_STRING:
-            /* <Tag> ::= <Length (guint16)> <String> */
+            /* <Tag> ::= <Length (uint16_t)> <String> */
             string_length = tvb_get_letohs(tvb, tag_offset);
             tag_length += 2+string_length;
             ti = proto_tree_add_item(tree, hf_edonkey_metatag, tvb, offset, tag_length, ENC_NA);
@@ -770,11 +782,11 @@ static int dissect_edonkey_metatag(tvbuff_t *tvb, packet_info *pinfo _U_,
                 proto_tree_add_uint(metatag_tree, hf_edonkey_metatag_namesize, tvb, offset+1, 2, tag_name_size);
             edonkey_tree_add_metatag_name(metatag_tree, tvb, tag_offset-tag_name_size, tag_name_size, special_tagtype);
             proto_tree_add_uint(metatag_tree, hf_edonkey_string_length, tvb, tag_offset, 2, string_length);
-            proto_tree_add_item(metatag_tree, hf_edonkey_string, tvb, tag_offset+2, string_length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(metatag_tree, hf_edonkey_string, tvb, tag_offset+2, string_length, ENC_ASCII);
             break;
 
         case EDONKEY_MTAG_DWORD:
-            /* <Tag> ::= guint32 */
+            /* <Tag> ::= uint32_t */
             tag_length += 4;
             ti = proto_tree_add_item(tree, hf_edonkey_metatag, tvb, offset, tag_length, ENC_NA);
             metatag_tree = proto_item_add_subtree(ti, ett_edonkey_metatag);
@@ -782,7 +794,7 @@ static int dissect_edonkey_metatag(tvbuff_t *tvb, packet_info *pinfo _U_,
             if (tag_type==real_tag_type)
                 proto_tree_add_uint(metatag_tree, hf_edonkey_metatag_namesize, tvb, offset+1, 2, tag_name_size);
             edonkey_tree_add_metatag_name(metatag_tree, tvb, tag_offset-tag_name_size, tag_name_size, special_tagtype);
-            trans_tagtype = edonkey_metatag_name_get_type(tvb, offset+3, tag_name_size, special_tagtype);
+            trans_tagtype = edonkey_metatag_name_get_type(tvb, pinfo, offset+3, tag_name_size, special_tagtype);
             if (trans_tagtype == EDONKEY_STAG_IP) {
                 proto_tree_add_item(metatag_tree, hf_edonkey_ip, tvb, tag_offset, 4, ENC_BIG_ENDIAN);
             }
@@ -806,7 +818,7 @@ static int dissect_edonkey_metatag(tvbuff_t *tvb, packet_info *pinfo _U_,
             break;
 
         case EDONKEY_MTAG_WORD:
-            /* <Tag> ::= guint16 */
+            /* <Tag> ::= uint16_t */
             tag_length += 2;
             ti = proto_tree_add_item(tree, hf_edonkey_metatag, tvb, offset, tag_length, ENC_NA);
             metatag_tree = proto_item_add_subtree(ti, ett_edonkey_metatag);
@@ -819,7 +831,7 @@ static int dissect_edonkey_metatag(tvbuff_t *tvb, packet_info *pinfo _U_,
             break;
 
         case EDONKEY_MTAG_BYTE:
-            /* <Tag> ::= guint8 */
+            /* <Tag> ::= uint8_t */
             tag_length += 1;
             ti = proto_tree_add_item(tree, hf_edonkey_metatag, tvb, offset, tag_length, ENC_NA);
             metatag_tree = proto_item_add_subtree(ti, ett_edonkey_metatag);
@@ -827,11 +839,11 @@ static int dissect_edonkey_metatag(tvbuff_t *tvb, packet_info *pinfo _U_,
             if (tag_type==real_tag_type)
                 proto_tree_add_uint(metatag_tree, hf_edonkey_metatag_namesize, tvb, offset+1, 2, tag_name_size);
             edonkey_tree_add_metatag_name(metatag_tree, tvb, tag_offset-tag_name_size, tag_name_size, special_tagtype);
-            proto_tree_add_item(metatag_tree, hf_edonkey_meta_tag_value_uint, tvb, tag_offset, 1, ENC_NA);
+            proto_tree_add_item(metatag_tree, hf_edonkey_meta_tag_value_uint, tvb, tag_offset, 1, ENC_LITTLE_ENDIAN);
             break;
 
         case EDONKEY_MTAG_BOOL:
-            /* <Tag> ::= <Bool (guint8)> */
+            /* <Tag> ::= <Bool (uint8_t)> */
             tag_length += 1;
             ti = proto_tree_add_item(tree, hf_edonkey_metatag, tvb, offset, tag_length, ENC_NA);
             metatag_tree = proto_item_add_subtree(ti, ett_edonkey_metatag);
@@ -839,11 +851,11 @@ static int dissect_edonkey_metatag(tvbuff_t *tvb, packet_info *pinfo _U_,
             if (tag_type==real_tag_type)
                 proto_tree_add_uint(metatag_tree, hf_edonkey_metatag_namesize, tvb, offset+1, 2, tag_name_size);
             edonkey_tree_add_metatag_name(metatag_tree, tvb, tag_offset-tag_name_size, tag_name_size, special_tagtype);
-            proto_tree_add_item(metatag_tree, hf_edonkey_meta_tag_value_uint, tvb, tag_offset, 1, ENC_NA);
+            proto_tree_add_item(metatag_tree, hf_edonkey_meta_tag_value_uint, tvb, tag_offset, 1, ENC_LITTLE_ENDIAN);
             break;
 
         case EDONKEY_MTAG_BOOL_ARRAY:
-            /* <Tag> ::= <Length (guint16)> <BoolArray> */
+            /* <Tag> ::= <Length (uint16_t)> <BoolArray> */
             array_length = tvb_get_letohs(tvb, tag_offset);
             /*
              * This is allegedly what the protocol uses, rather than the
@@ -862,7 +874,7 @@ static int dissect_edonkey_metatag(tvbuff_t *tvb, packet_info *pinfo _U_,
             break;
 
         case EDONKEY_MTAG_BLOB:
-            /* <Tag> ::= <Length (guint32)> <BLOB> */
+            /* <Tag> ::= <Length (uint32_t)> <BLOB> */
             blob_length = tvb_get_letohl(tvb, tag_offset);
             tag_length += 4+blob_length;
             ti = proto_tree_add_item(tree, hf_edonkey_metatag, tvb, offset, tag_length, ENC_NA);
@@ -871,7 +883,7 @@ static int dissect_edonkey_metatag(tvbuff_t *tvb, packet_info *pinfo _U_,
             if (tag_type==real_tag_type)
                 proto_tree_add_uint(metatag_tree, hf_edonkey_metatag_namesize, tvb, offset+1, 2, tag_name_size);
             edonkey_tree_add_metatag_name(metatag_tree, tvb, tag_offset-tag_name_size, tag_name_size, special_tagtype);
-            proto_tree_add_item(metatag_tree, hf_edonkey_blob_length, tvb, tag_offset, 2, ENC_LITTLE_ENDIAN);
+            proto_tree_add_item(metatag_tree, hf_edonkey_blob_length, tvb, tag_offset, 4, ENC_LITTLE_ENDIAN);
             break;
 
         case EDONKEY_MTAG_BSOB:
@@ -889,7 +901,7 @@ static int dissect_edonkey_metatag(tvbuff_t *tvb, packet_info *pinfo _U_,
                 if (real_tag_type==tag_type)
                     proto_tree_add_uint(metatag_tree, hf_edonkey_metatag_namesize, tvb, offset+1, 2, tag_name_size);
                 edonkey_tree_add_metatag_name(metatag_tree, tvb, tag_offset-tag_name_size, tag_name_size, special_tagtype);
-                proto_tree_add_item(metatag_tree, hf_edonkey_string, tvb, tag_offset, string_length, ENC_ASCII|ENC_NA);
+                proto_tree_add_item(metatag_tree, hf_edonkey_string, tvb, tag_offset, string_length, ENC_ASCII);
 
             } else {
                 /* Unknown tag type - actual tag length is also unknown */
@@ -912,7 +924,7 @@ static int dissect_edonkey_address(tvbuff_t *tvb, packet_info *pinfo _U_,
                                    int offset, proto_tree *tree)
 {
     /* <Address> ::= <IP> <Port> */
-    /*    guint32 ip = tvb_get_letohl(tvb, offset);
+    /*    uint32_t ip = tvb_get_letohl(tvb, offset);
           proto_tree_add_ipv4(tree, hf_edonkey_ip, tvb, offset, 4, ip); */
     proto_tree_add_item(tree, hf_edonkey_ip, tvb, offset, 4, ENC_BIG_ENDIAN);
     proto_tree_add_item(tree, hf_edonkey_port, tvb, offset+4, 2, ENC_LITTLE_ENDIAN);
@@ -956,28 +968,28 @@ static int dissect_kademlia_address(tvbuff_t *tvb, packet_info *pinfo,
     return offset;
 }
 
-static int dissect_kademlia_tagname(tvbuff_t *tvb, packet_info *pinfo _U_,
-                                    int offset, proto_tree *tree, const gchar** outputTagName, const gchar** outputExtendedTagName)
+static int dissect_kademlia_tagname(tvbuff_t *tvb, packet_info *pinfo,
+                                    int offset, proto_tree *tree, const char** outputTagName, const char** outputExtendedTagName)
 {
-    /* <String> ::= <String length (guint16)> DATA */
-    const gchar * tagname;
-    const gchar * tag_full_name = NULL;
-    guint8 tagname_value;
+    /* <String> ::= <String length (uint16_t)> DATA */
+    const char * tagname;
+    const char * tag_full_name = NULL;
+    uint8_t tagname_value;
     proto_item *ti, *hidden_item;
 
-    guint16 string_length = tvb_get_letohs(tvb, offset);
+    uint16_t string_length = tvb_get_letohs(tvb, offset);
 
     proto_tree_add_uint(tree, hf_kademlia_tag_name_length, tvb, offset, 2, string_length);
 
     hidden_item = proto_tree_add_uint(tree, hf_edonkey_string_length, tvb, offset, 2, string_length);
-    PROTO_ITEM_SET_HIDDEN(hidden_item);
+    proto_item_set_hidden(hidden_item);
 
-    tagname = tvb_get_string_enc(wmem_packet_scope(), tvb, offset + 2, string_length, ENC_ASCII|ENC_NA);
+    tagname = tvb_get_string_enc(pinfo->pool, tvb, offset + 2, string_length, ENC_ASCII|ENC_NA);
 
     tag_full_name = "UnknownTagName";
 
     if ( tagname && string_length == 1 ) {
-        tagname_value = *(const guint8*)tagname;
+        tagname_value = *(const uint8_t*)tagname;
         /* lookup tagname */
         tag_full_name = val_to_str_const( tagname_value, kademlia_tags, tag_full_name );
     }
@@ -997,13 +1009,13 @@ static int dissect_kademlia_tagname(tvbuff_t *tvb, packet_info *pinfo _U_,
 static int dissect_kademlia_string(tvbuff_t *tvb, packet_info *pinfo _U_,
                                     int offset, proto_tree *tree)
 {
-    /* <String> ::= <String length (guint16)> DATA */
-    guint16 string_length = tvb_get_letohs(tvb, offset);
+    /* <String> ::= <String length (uint16_t)> DATA */
+    uint16_t string_length = tvb_get_letohs(tvb, offset);
 
     proto_tree_add_uint(tree, hf_edonkey_string_length, tvb, offset, 2, string_length);
 
     /* TODO: ASCII or UTF-8? */
-    proto_tree_add_item(tree, hf_edonkey_kademlia_string, tvb, offset+2, string_length, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(tree, hf_edonkey_kademlia_string, tvb, offset+2, string_length, ENC_ASCII);
 
     return offset+2+string_length;
 }
@@ -1012,7 +1024,7 @@ static int dissect_kademlia_string(tvbuff_t *tvb, packet_info *pinfo _U_,
 static int dissect_edonkey_address_list(tvbuff_t *tvb, packet_info *pinfo,
                                         int offset,  proto_tree *tree)
 {
-    /* <Address List> ::= <List Size (guint8)> <Address>* */
+    /* <Address List> ::= <List Size (uint8_t)> <Address>* */
     return dissect_edonkey_list(tvb, pinfo, offset, tree, 1, "Address", dissect_edonkey_address);
 }
 
@@ -1038,7 +1050,7 @@ static int dissect_edonkey_file_hash(tvbuff_t *tvb, packet_info *pinfo _U_,
 static int dissect_edonkey_public_key(tvbuff_t *tvb, packet_info *pinfo _U_,
                                      int offset, proto_tree *tree)
 {
-    guint8 length = tvb_get_guint8(tvb, offset);
+    uint8_t length = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(tree, hf_emule_public_key_length, tvb, offset, 1, ENC_NA);
     offset++;
     proto_tree_add_item(tree, hf_emule_public_key, tvb, offset, length, ENC_NA);
@@ -1049,34 +1061,34 @@ static int dissect_edonkey_public_key(tvbuff_t *tvb, packet_info *pinfo _U_,
 static int dissect_edonkey_signature(tvbuff_t *tvb, packet_info *pinfo _U_,
                                      int offset, proto_tree *tree)
 {
-    guint8 length = tvb_get_guint8(tvb, offset);
+    uint8_t length = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(tree, hf_emule_signature_length, tvb, offset, 1, ENC_NA);
     offset++;
     proto_tree_add_item(tree, hf_emule_signature, tvb, offset, length, ENC_NA);
     return offset + length;
 }
 
-static const char *kademlia_hash(tvbuff_t *tvb, int offset) {
-    guint32 hash[4];
+static const char *kademlia_hash(wmem_allocator_t *scope, tvbuff_t *tvb, int offset) {
+    uint32_t hash[4];
     int i;
 
     for (i = 0; i < 4; i++)
         hash[i] = tvb_get_letohl(tvb, offset + i*4);
 
-    return wmem_strdup_printf(wmem_packet_scope(),
+    return wmem_strdup_printf(scope,
               "%08X%08X%08X%08X", hash[0], hash[1], hash[2], hash[3]);
 }
 
-static int dissect_kademlia_hash_hidden(tvbuff_t *tvb, packet_info *pinfo _U_,
+static int dissect_kademlia_hash_hidden(tvbuff_t *tvb, packet_info *pinfo,
                                         int offset, proto_tree *tree) {
     proto_item *hidden_item;
     const char *hash;
 
-    hash = kademlia_hash(tvb, offset);
+    hash = kademlia_hash(pinfo->pool, tvb, offset);
 
     /* <File hash> ::= HASH (16 word MD4 digest) */
     hidden_item = proto_tree_add_string(tree, hf_kademlia_hash, tvb, offset, 16, hash);
-    PROTO_ITEM_SET_HIDDEN(hidden_item);
+    proto_item_set_hidden(hidden_item);
 
     return offset+16;
 }
@@ -1086,7 +1098,7 @@ static int dissect_kademlia_hash(tvbuff_t *tvb, packet_info *pinfo,
                                  int offset, proto_tree *tree, int *value_ptr) {
     const char *hash;
 
-    hash = kademlia_hash(tvb, offset);
+    hash = kademlia_hash(pinfo->pool, tvb, offset);
 
     /* <File hash> ::= HASH (16 word MD4 digest) */
     proto_tree_add_string(tree, *value_ptr, tvb, offset, 16, hash);
@@ -1094,16 +1106,16 @@ static int dissect_kademlia_hash(tvbuff_t *tvb, packet_info *pinfo,
     return dissect_kademlia_hash_hidden(tvb, pinfo, offset, tree);
 }
 
-static int dissect_kademlia_tag_hash_hidden(tvbuff_t *tvb, packet_info *pinfo _U_,
+static int dissect_kademlia_tag_hash_hidden(tvbuff_t *tvb, packet_info *pinfo,
                                         int offset, proto_tree *tree) {
     proto_item *hidden_item;
     const char *hash;
 
-    hash = kademlia_hash(tvb, offset);
+    hash = kademlia_hash(pinfo->pool, tvb, offset);
 
     /* <File hash> ::= HASH (16 word MD4 digest) */
     hidden_item = proto_tree_add_string(tree, hf_kademlia_tag_hash, tvb, offset, 16, hash);
-    PROTO_ITEM_SET_HIDDEN(hidden_item);
+    proto_item_set_hidden(hidden_item);
 
     return offset+16;
 }
@@ -1112,38 +1124,38 @@ static int dissect_kademlia_tag_hash(tvbuff_t *tvb, packet_info *pinfo,
                                  int offset, proto_tree *tree) {
     const char *hash;
 
-    hash = kademlia_hash(tvb, offset);
+    hash = kademlia_hash(pinfo->pool, tvb, offset);
 
     /* <File hash> ::= HASH (16 word MD4 digest) */
     proto_tree_add_string(tree, hf_kademlia_hash, tvb, offset, 16, hash);
     return dissect_kademlia_tag_hash_hidden( tvb, pinfo, offset, tree );
 }
 
-static int dissect_kademlia_tag_bsob(tvbuff_t *tvb, packet_info *pinfo _U_,
-                                 int offset, proto_tree *tree, const gchar** string_value )
+static int dissect_kademlia_tag_bsob(tvbuff_t *tvb, packet_info *pinfo,
+                                 int offset, proto_tree *tree, const char** string_value )
 {
-    guint16 bsob_length;
+    uint16_t bsob_length;
 
-    bsob_length = tvb_get_guint8(tvb, offset);
-    *string_value = tvb_bytes_to_str(wmem_packet_scope(), tvb, offset + 1, bsob_length );
+    bsob_length = tvb_get_uint8(tvb, offset);
+    *string_value = tvb_bytes_to_str(pinfo->pool, tvb, offset + 1, bsob_length );
 
     proto_tree_add_item(tree, hf_kademlia_tag_bsob, tvb, offset + 1, bsob_length, ENC_NA);
     return offset + 1 + bsob_length;
 }
 
 
-static int dissect_kademlia_tag_string(tvbuff_t *tvb, packet_info *pinfo _U_,
-                                 int offset, proto_tree *tree, const guint8** string_value)
+static int dissect_kademlia_tag_string(tvbuff_t *tvb, packet_info *pinfo,
+                                 int offset, proto_tree *tree, const uint8_t** string_value)
 {
     proto_item *hidden_item;
-    guint16 string_length = tvb_get_letohs(tvb, offset);
+    uint16_t string_length = tvb_get_letohs(tvb, offset);
 
     hidden_item = proto_tree_add_uint(tree, hf_edonkey_string_length, tvb, offset, 2, string_length);
-    PROTO_ITEM_SET_HIDDEN(hidden_item);
-    hidden_item = proto_tree_add_item_ret_string(tree, hf_edonkey_string, tvb, offset + 2, string_length, ENC_ASCII|ENC_NA, wmem_packet_scope(), string_value);
-    PROTO_ITEM_SET_HIDDEN(hidden_item);
+    proto_item_set_hidden(hidden_item);
+    hidden_item = proto_tree_add_item_ret_string(tree, hf_edonkey_string, tvb, offset + 2, string_length, ENC_ASCII|ENC_NA, pinfo->pool, string_value);
+    proto_item_set_hidden(hidden_item);
 
-    proto_tree_add_item(tree, hf_kademlia_tag_string, tvb, offset + 2, string_length, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(tree, hf_kademlia_tag_string, tvb, offset + 2, string_length, ENC_ASCII);
     return offset + 2 + string_length;
 }
 
@@ -1151,7 +1163,7 @@ static int dissect_kademlia_tag_string(tvbuff_t *tvb, packet_info *pinfo _U_,
 static int dissect_edonkey_hash_list(tvbuff_t *tvb, packet_info *pinfo,
                                      int offset,  proto_tree *tree)
 {
-    /* <Hash List> ::= <File Hash> <List Size (guint16)> <Hash>* */
+    /* <Hash List> ::= <File Hash> <List Size (uint16_t)> <Hash>* */
     offset = dissect_edonkey_file_hash(tvb, pinfo, offset, tree);
     return dissect_edonkey_list(tvb, pinfo, offset, tree, 2, "Hash", dissect_edonkey_hash);
 }
@@ -1160,7 +1172,7 @@ static int dissect_edonkey_hash_list(tvbuff_t *tvb, packet_info *pinfo,
 static int dissect_edonkey_metatag_list(tvbuff_t *tvb, packet_info *pinfo,
                                         int offset, proto_tree *tree)
 {
-    /* <Meta Tag List> ::= <List Size (guint32)> <Meta tag>* */
+    /* <Meta Tag List> ::= <List Size (uint32_t)> <Meta tag>* */
     return dissect_edonkey_list(tvb, pinfo, offset, tree, 4, "Meta Tag", dissect_edonkey_metatag);
 }
 
@@ -1168,10 +1180,10 @@ static int dissect_edonkey_metatag_list(tvbuff_t *tvb, packet_info *pinfo,
 static int dissect_edonkey_string(tvbuff_t *tvb, packet_info *pinfo _U_,
                                   int offset, proto_tree *tree)
 {
-    /* <String> ::= <String length (guint16)> DATA */
-    guint16 string_length = tvb_get_letohs(tvb, offset);
+    /* <String> ::= <String length (uint16_t)> DATA */
+    uint16_t string_length = tvb_get_letohs(tvb, offset);
     proto_tree_add_uint(tree, hf_edonkey_string_length, tvb, offset, 2, string_length);
-    proto_tree_add_item(tree, hf_edonkey_string, tvb, offset+2, string_length, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(tree, hf_edonkey_string, tvb, offset+2, string_length, ENC_ASCII);
     return offset+2+string_length;
 }
 
@@ -1180,9 +1192,9 @@ static int dissect_edonkey_directory(tvbuff_t *tvb, packet_info *pinfo _U_,
                                      int offset, proto_tree *tree)
 {
     /* <Directory> ::= <String> */
-    guint16 string_length = tvb_get_letohs(tvb, offset);
+    uint16_t string_length = tvb_get_letohs(tvb, offset);
     proto_tree_add_uint(tree, hf_edonkey_string_length, tvb, offset, 2, string_length);
-    proto_tree_add_item(tree, hf_edonkey_directory, tvb, offset+2, string_length, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(tree, hf_edonkey_directory, tvb, offset+2, string_length, ENC_ASCII);
     return offset+2+string_length;
 }
 
@@ -1198,7 +1210,7 @@ static int dissect_edonkey_file_name(tvbuff_t *tvb, packet_info *pinfo,
 static int dissect_edonkey_file_status(tvbuff_t *tvb, packet_info *pinfo _U_,
                                        int offset, proto_tree *tree)
 {
-    guint16 partcount, arrlen;
+    uint16_t partcount, arrlen;
 
     /* <File Status> ::= <Part Count> <Part Status> */
     partcount = tvb_get_letohs(tvb, offset);
@@ -1216,7 +1228,7 @@ static int dissect_edonkey_file_status(tvbuff_t *tvb, packet_info *pinfo _U_,
 static int dissect_edonkey_directory_list(tvbuff_t *tvb, packet_info *pinfo,
                                           int offset,  proto_tree *tree)
 {
-    /* <Directory List> ::= <List Size (guint32)> <Directory>* */
+    /* <Directory List> ::= <List Size (uint32_t)> <Directory>* */
     return dissect_edonkey_list(tvb, pinfo, offset, tree, 4, "Directory", dissect_edonkey_directory);
 }
 
@@ -1245,7 +1257,7 @@ static int dissect_emule_sourceOBFU(tvbuff_t *tvb, packet_info *pinfo,
 
     proto_item *ti;
     proto_tree *sourceOBFU_tree;
-    guint8 settings = tvb_get_guint8(tvb, offset+6);
+    uint8_t settings = tvb_get_uint8(tvb, offset+6);
     /* Add subtree for client info */
     ti = proto_tree_add_item(tree, hf_emule_sourceOBFU, tvb, offset, 7 + ((settings & 0x80) ? 16 : 0), ENC_NA);
     sourceOBFU_tree = proto_item_add_subtree(ti, ett_emule_sourceOBFU);
@@ -1270,16 +1282,16 @@ static int dissect_emule_sourceOBFU_list(tvbuff_t *tvb, packet_info *pinfo,
 
 /* Dissects the eDonkey client ID */
 static int dissect_edonkey_client_id(tvbuff_t *tvb, packet_info *pinfo _U_,
-                                     int offset, proto_tree *tree, gboolean fileinfo)
+                                     int offset, proto_tree *tree, bool fileinfo)
 {
     proto_item *ti;
-    /* <Client ID> ::= guint32 */
-    /*    guint32 ip = tvb_get_letohl(tvb, offset);
+    /* <Client ID> ::= uint32_t */
+    /*    uint32_t ip = tvb_get_letohl(tvb, offset);
           proto_tree_add_ipv4(tree, hf_edonkey_client_id, tvb, offset, 4, ip); */
     ti = proto_tree_add_item(tree, hf_edonkey_client_id, tvb, offset, 4, ENC_BIG_ENDIAN);
     if (fileinfo) {
-        guint32 ip = tvb_get_letohl(tvb, offset);
-        guint16 port = tvb_get_letohs(tvb, offset+4);
+        uint32_t ip = tvb_get_letohl(tvb, offset);
+        uint16_t port = tvb_get_letohs(tvb, offset+4);
         if (ip==0xfcfcfcfc && port==0xfcfc) {
             proto_item_append_text(ti, " (myself, incomplete file)");
         } else if (ip==0xfbfbfbfb && port==0xfbfb) {
@@ -1293,7 +1305,7 @@ static int dissect_edonkey_client_id(tvbuff_t *tvb, packet_info *pinfo _U_,
 static int dissect_edonkey_port(tvbuff_t *tvb, packet_info *pinfo _U_,
                                 int offset, proto_tree *tree)
 {
-    /* <Port> ::= guint16 */
+    /* <Port> ::= uint16_t */
     proto_tree_add_item(tree, hf_edonkey_port, tvb, offset, 2, ENC_LITTLE_ENDIAN);
     return offset+2;
 }
@@ -1302,7 +1314,7 @@ static int dissect_edonkey_port(tvbuff_t *tvb, packet_info *pinfo _U_,
 static int dissect_edonkey_start_offset(tvbuff_t *tvb, packet_info *pinfo _U_,
                                         int offset, proto_tree *tree)
 {
-    /* <Start Offset> ::= guint32 */
+    /* <Start Offset> ::= uint32_t */
     proto_tree_add_item(tree, hf_edonkey_start_offset, tvb, offset, 4, ENC_LITTLE_ENDIAN);
     return offset+4;
 }
@@ -1310,7 +1322,7 @@ static int dissect_edonkey_start_offset(tvbuff_t *tvb, packet_info *pinfo _U_,
 static int dissect_edonkey_start_offset_64(tvbuff_t *tvb, packet_info *pinfo _U_,
                                            int offset, proto_tree *tree)
 {
-    /* <Start Offset> ::= guint64 */
+    /* <Start Offset> ::= uint64_t */
     proto_tree_add_item(tree, hf_edonkey_start_offset_64, tvb, offset, 8, ENC_LITTLE_ENDIAN);
     return offset+8;
 }
@@ -1319,7 +1331,7 @@ static int dissect_edonkey_start_offset_64(tvbuff_t *tvb, packet_info *pinfo _U_
 static int dissect_edonkey_end_offset(tvbuff_t *tvb, packet_info *pinfo _U_,
                                       int offset, proto_tree *tree)
 {
-    /* <End Offset> ::= guint32 */
+    /* <End Offset> ::= uint32_t */
     proto_tree_add_item(tree, hf_edonkey_end_offset, tvb, offset, 4, ENC_LITTLE_ENDIAN);
     return offset+4;
 }
@@ -1327,7 +1339,7 @@ static int dissect_edonkey_end_offset(tvbuff_t *tvb, packet_info *pinfo _U_,
 static int dissect_edonkey_end_offset_64(tvbuff_t *tvb, packet_info *pinfo _U_,
                                          int offset, proto_tree *tree)
 {
-    /* <End Offset> ::= guint64 */
+    /* <End Offset> ::= uint64_t */
     proto_tree_add_item(tree, hf_edonkey_end_offset_64, tvb, offset, 8, ENC_LITTLE_ENDIAN);
     return offset+8;
 }
@@ -1343,7 +1355,7 @@ static int dissect_edonkey_client_info(tvbuff_t *tvb, packet_info *pinfo,
     ti = proto_tree_add_item(tree, hf_edonkey_clientinfo, tvb, offset, 0, ENC_NA);
     clientinfo_tree = proto_item_add_subtree(ti, ett_edonkey_clientinfo);
     offset = dissect_edonkey_client_hash(tvb, pinfo, offset, clientinfo_tree);
-    offset = dissect_edonkey_client_id(tvb, pinfo, offset, clientinfo_tree, FALSE);
+    offset = dissect_edonkey_client_id(tvb, pinfo, offset, clientinfo_tree, false);
     offset = dissect_edonkey_port(tvb, pinfo, offset, clientinfo_tree);
     offset = dissect_edonkey_metatag_list(tvb, pinfo, offset, clientinfo_tree);
     return offset;
@@ -1353,7 +1365,7 @@ static int dissect_edonkey_client_info(tvbuff_t *tvb, packet_info *pinfo,
 static int dissect_edonkey_client_info_list(tvbuff_t *tvb, packet_info *pinfo,
                                             int offset,  proto_tree *tree)
 {
-    /* <Client Info List> ::= <List Size (guint32)> <Client Info>* */
+    /* <Client Info List> ::= <List Size (uint32_t)> <Client Info>* */
     return dissect_edonkey_list(tvb, pinfo, offset, tree, 4, "Client Info", dissect_edonkey_client_info);
 }
 
@@ -1386,7 +1398,7 @@ static int dissect_edonkey_file_info(tvbuff_t *tvb, packet_info *pinfo,
     startoff = offset;
     fileinfo_tree = proto_item_add_subtree(ti, ett_edonkey_fileinfo);
     offset = dissect_edonkey_file_hash(tvb, pinfo, offset, fileinfo_tree);
-    offset = dissect_edonkey_client_id(tvb, pinfo, offset, fileinfo_tree, TRUE);
+    offset = dissect_edonkey_client_id(tvb, pinfo, offset, fileinfo_tree, true);
     offset = dissect_edonkey_port(tvb, pinfo, offset, fileinfo_tree);
     offset = dissect_edonkey_metatag_list(tvb, pinfo, offset, fileinfo_tree);
     proto_item_set_len(ti, offset-startoff);
@@ -1397,7 +1409,7 @@ static int dissect_edonkey_file_info(tvbuff_t *tvb, packet_info *pinfo,
 static int dissect_edonkey_file_info_list(tvbuff_t *tvb, packet_info *pinfo,
                                           int offset,  proto_tree *tree)
 {
-    /* <File Info List> ::= <List Size (guint32)> <File Info>* */
+    /* <File Info List> ::= <List Size (uint32_t)> <File Info>* */
     return dissect_edonkey_list(tvb, pinfo, offset, tree, 4, "File Info", dissect_edonkey_file_info);
 }
 
@@ -1406,7 +1418,7 @@ static int dissect_edonkey_file_info_list(tvbuff_t *tvb, packet_info *pinfo,
 static int dissect_emule_address_list(tvbuff_t *tvb, packet_info *pinfo,
                                       int offset,  proto_tree *tree)
 {
-    /* <Address List> ::= <List Size (guint16)> <Address>* */
+    /* <Address List> ::= <List Size (uint16_t)> <Address>* */
     return dissect_edonkey_list(tvb, pinfo, offset, tree, 2, "Address", dissect_edonkey_address);
 }
 
@@ -1421,7 +1433,7 @@ static int dissect_emule_aich_root_hash(tvbuff_t *tvb, packet_info *pinfo _U_,
 static int dissect_emule_aich_hash_list_entry(tvbuff_t *tvb, packet_info *pinfo _U_,
                                               int offset, proto_tree *tree)
 {
-    guint16 hashid;
+    uint16_t hashid;
     proto_item *ti;
     proto_tree *aichhash_tree;
     /* <AICH Hash List Entry> ::= <AICH Hash ID> <AICH Hash> */
@@ -1437,16 +1449,16 @@ static int dissect_emule_aich_hash_list_entry(tvbuff_t *tvb, packet_info *pinfo 
 static int dissect_emule_aich_hash_list(tvbuff_t *tvb, packet_info *pinfo,
                                         int offset, proto_tree *tree)
 {
-    /* <AICH Hash List> ::= <List Size (guint16)> < <AICH Hash ID> <AICH Hash> >* */
+    /* <AICH Hash List> ::= <List Size (uint16_t)> < <AICH Hash ID> <AICH Hash> >* */
     return dissect_edonkey_list(tvb, pinfo, offset, tree, 2, "AICH Hash", dissect_emule_aich_hash_list_entry);
 }
 
 static int dissect_emule_multipacket(tvbuff_t *tvb, packet_info *pinfo,
                                      int offset, int eoffset, proto_tree *tree, int isext)
 {
-    guint8 opcode, nextop;
-    guint16 namelen, partcount, arrlen, oplen;
-    guint32 sourcecount;
+    uint8_t opcode, nextop;
+    uint16_t namelen, partcount, arrlen, oplen;
+    uint32_t sourcecount;
     proto_item *ti;
     proto_tree *mp_tree;
 
@@ -1460,7 +1472,7 @@ static int dissect_emule_multipacket(tvbuff_t *tvb, packet_info *pinfo,
     }
 
     while (offset<eoffset) {
-        opcode = tvb_get_guint8(tvb, offset);
+        opcode = tvb_get_uint8(tvb, offset);
 
         switch (opcode) {
             case EDONKEY_MSG_FILE_STATUS_REQUEST:
@@ -1478,7 +1490,7 @@ static int dissect_emule_multipacket(tvbuff_t *tvb, packet_info *pinfo,
                 oplen = 1;
 
                 if (offset+2<eoffset) {
-                    nextop = tvb_get_guint8(tvb, offset+1);
+                    nextop = tvb_get_uint8(tvb, offset+1);
                     if (nextop!=EDONKEY_MSG_FILE_STATUS_REQUEST &&
                         nextop!=EMULE_MSG_SOURCES_REQUEST &&
                         nextop!=EMULE_MSG_AICHFILEHASH_REQUEST) {
@@ -1489,7 +1501,7 @@ static int dissect_emule_multipacket(tvbuff_t *tvb, packet_info *pinfo,
                             oplen += 2+arrlen;
 
                             if (offset+2+arrlen+2<eoffset) {
-                                nextop = tvb_get_guint8(tvb, offset+2+arrlen+1);
+                                nextop = tvb_get_uint8(tvb, offset+2+arrlen+1);
                                 if (nextop!=EDONKEY_MSG_FILE_STATUS_REQUEST &&
                                     nextop!=EMULE_MSG_SOURCES_REQUEST &&
                                     nextop!=EMULE_MSG_AICHFILEHASH_REQUEST) {
@@ -1578,7 +1590,7 @@ static int dissect_emule_multipacket(tvbuff_t *tvb, packet_info *pinfo,
 static int dissect_overnet_peertype(tvbuff_t *tvb, packet_info *pinfo _U_,
                                     int offset, proto_tree *tree)
 {
-    /* <Peer type> ::= guint8 */
+    /* <Peer type> ::= uint8_t */
     proto_tree_add_item(tree, hf_edonkey_overnet_peer_type, tvb, offset, 1, ENC_NA);
     return offset+1;
 }
@@ -1655,21 +1667,23 @@ static int dissect_kademlia2_peer(tvbuff_t *tvb, packet_info *pinfo,
 
 
 /* Dissects the eDonkey search query */
+// NOLINTNEXTLINE(misc-no-recursion)
 static int dissect_edonkey_search_query(tvbuff_t *tvb, packet_info *pinfo,
                                         int offset, proto_tree *tree)
 {
     /* <Search Query> ::= <Search Type> <Search> */
     proto_item *ti;
     proto_tree *search_tree;
-    guint8 search_type, special_tagtype;
-    guint16 tag_name_size, string_length;
-    guint32 search_length;
+    uint8_t search_type, special_tagtype;
+    uint16_t tag_name_size, string_length;
+    uint32_t search_length;
     int string_offset, tag_name_offset;
 
-    search_type = tvb_get_guint8(tvb, offset);
+    search_type = tvb_get_uint8(tvb, offset);
     search_length = 1;
     ti = proto_tree_add_uint(tree, hf_edonkey_search_type, tvb, offset, 1, search_type);
 
+    increment_dissection_depth(pinfo);
     switch (search_type)
     {
         case EDONKEY_SEARCH_BOOL:
@@ -1700,7 +1714,7 @@ static int dissect_edonkey_search_query(tvbuff_t *tvb, packet_info *pinfo,
 
             /* Add query info */
             proto_tree_add_uint(search_tree, hf_edonkey_string_length, tvb, string_offset, 2, string_length);
-            proto_tree_add_item(search_tree, hf_edonkey_string, tvb, string_offset+2, string_length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(search_tree, hf_edonkey_string, tvb, string_offset+2, string_length, ENC_ASCII);
             offset += search_length;
             break;
 
@@ -1712,7 +1726,7 @@ static int dissect_edonkey_search_query(tvbuff_t *tvb, packet_info *pinfo,
 
             tag_name_offset = offset + search_length;
             tag_name_size = tvb_get_letohs(tvb, tag_name_offset);
-            special_tagtype = tvb_get_guint8(tvb, tag_name_offset+2);
+            special_tagtype = tvb_get_uint8(tvb, tag_name_offset+2);
             search_length += 2 + tag_name_size;
 
             /* Add subtree for search entry */
@@ -1721,19 +1735,19 @@ static int dissect_edonkey_search_query(tvbuff_t *tvb, packet_info *pinfo,
 
             /* Add query info */
             proto_tree_add_uint(search_tree, hf_edonkey_string_length, tvb, string_offset, 2, string_length);
-            proto_tree_add_item(search_tree, hf_edonkey_string, tvb, string_offset+2, string_length, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(search_tree, hf_edonkey_string, tvb, string_offset+2, string_length, ENC_ASCII);
             proto_tree_add_uint(search_tree, hf_edonkey_metatag_namesize, tvb, tag_name_offset, 2, tag_name_size);
             edonkey_tree_add_metatag_name(search_tree, tvb, tag_name_offset+2, tag_name_size, special_tagtype);
             offset += search_length;
             break;
 
         case EDONKEY_SEARCH_LIMIT:
-            /* <Search> ::=  <Limit (guint32)> <Minmax> <Meta tag Name> */
+            /* <Search> ::=  <Limit (uint32_t)> <Minmax> <Meta tag Name> */
             search_length += 5; /* 4 bytes for the limit, one for the minmax */
 
             tag_name_offset = offset + search_length;
             tag_name_size = tvb_get_letohs(tvb, tag_name_offset);
-            special_tagtype = tvb_get_guint8(tvb, tag_name_offset+2);
+            special_tagtype = tvb_get_uint8(tvb, tag_name_offset+2);
             search_length += 2 + tag_name_size;
 
             /* Add subtree for search entry */
@@ -1754,16 +1768,17 @@ static int dissect_edonkey_search_query(tvbuff_t *tvb, packet_info *pinfo,
             offset += search_length;
             break;
     }
+    decrement_dissection_depth(pinfo);
 
     return offset;
 }
 
-static void dissect_edonkey_tcp_message(guint8 msg_type,
+static void dissect_edonkey_tcp_message(uint8_t msg_type,
                                         tvbuff_t *tvb, packet_info *pinfo,
                                         int offset, int length, proto_tree *tree)
 {
     int msg_end, bytes_remaining;
-    guint8  helloClient;
+    uint8_t helloClient;
 
     bytes_remaining = tvb_reported_length_remaining(tvb, offset);
     if ((length < 0) || (length > bytes_remaining)) length = bytes_remaining;
@@ -1780,7 +1795,7 @@ static void dissect_edonkey_tcp_message(guint8 msg_type,
                of mistake, we check also 6th and 15h byte of UserHash -
                they have constant value. The best way would be to process
                whole packet to check it. */
-            helloClient = (tvb_get_guint8(tvb, offset) == 0x10 && tvb_get_guint8(tvb, offset + 6) == 0x0E && tvb_get_guint8(tvb, offset + 15) == 0x6F);
+            helloClient = (tvb_get_uint8(tvb, offset) == 0x10 && tvb_get_uint8(tvb, offset + 6) == 0x0E && tvb_get_uint8(tvb, offset + 15) == 0x6F);
             if (helloClient) {
                 proto_tree_add_uint(tree, hf_edonkey_user_hash_length, tvb, offset, 1, 16);
                 offset += 1;
@@ -1825,7 +1840,7 @@ static void dissect_edonkey_tcp_message(guint8 msg_type,
         case EDONKEY_MSG_GET_SOURCES:         /* Get Sources: <File Hash> <Size> <Size 64> */
         case EDONKEY_MSG_GET_SOURCES_OBFU:    /* Get Sources: <File Hash> <Size> <Size 64> */
             {
-                guint32 fileSize;
+                uint32_t fileSize;
                 proto_item* ti;
                 offset = dissect_edonkey_file_hash(tvb, pinfo, offset, tree);
                 fileSize = tvb_get_letohl(tvb, offset);
@@ -1860,13 +1875,30 @@ static void dissect_edonkey_tcp_message(guint8 msg_type,
 
         case EDONKEY_MSG_CLIENT_CB_REQ:  /* Client Callback Request: <Client ID> */
         case EDONKEY_MSG_CALLBACK_FAIL:  /* Callback Fail:           <Client ID> */
-        case EDONKEY_MSG_ID_CHANGE:      /* ID Change:               <Client ID> */
-            offset = dissect_edonkey_client_id(tvb, pinfo, offset, tree, FALSE);
+            offset = dissect_edonkey_client_id(tvb, pinfo, offset, tree, false);
+            break;
+
+        case EDONKEY_MSG_ID_CHANGE:      /* ID Change: <Client ID> [<TCP Flags>] [<Aux Port>] [<Server IP> <Obfu Port>] */
+            offset = dissect_edonkey_client_id(tvb, pinfo, offset, tree, false);
+            if (length >= 8) {
+                proto_tree_add_item(tree, hf_edonkey_tcp_flags, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+            }
+            if (length >= 12) {
+                proto_tree_add_item(tree, hf_edonkey_aux_port, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+            }
+            if (length >= 20) {
+                proto_tree_add_item(tree, hf_edonkey_server_reported_ip, tvb, offset, 4, ENC_BIG_ENDIAN);
+                offset += 4;
+                proto_tree_add_item(tree, hf_edonkey_tcp_obfuscation_port, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+            }
             break;
 
         case EDONKEY_MSG_NEW_CLIENT_ID:  /* New Client ID: <Client ID> <Client ID> */
-            offset = dissect_edonkey_client_id(tvb, pinfo, offset, tree, FALSE);
-            offset = dissect_edonkey_client_id(tvb, pinfo, offset, tree, FALSE);
+            offset = dissect_edonkey_client_id(tvb, pinfo, offset, tree, false);
+            offset = dissect_edonkey_client_id(tvb, pinfo, offset, tree, false);
             break;
 
         case EDONKEY_MSG_SERVER_MESSAGE: /* Server Message: <String> */
@@ -1952,12 +1984,12 @@ static void dissect_edonkey_tcp_message(guint8 msg_type,
     return;
 }
 
-static void dissect_emule_tcp_message(guint8 msg_type,
+static void dissect_emule_tcp_message(uint8_t msg_type,
                                       tvbuff_t *tvb, packet_info *pinfo,
                                       int offset, int length, proto_tree *tree)
 {
     int msg_end, bytes_remaining;
-    guint16 partnum;
+    uint16_t partnum;
 
     bytes_remaining = tvb_reported_length_remaining(tvb, offset);
     if ((length < 0) || (length > bytes_remaining)) length = bytes_remaining;
@@ -1972,7 +2004,7 @@ static void dissect_emule_tcp_message(guint8 msg_type,
             dissect_edonkey_metatag_list(tvb, pinfo, offset+2, tree);
             break;
 
-        case EMULE_MSG_QUEUE_RANKING: /* eMule Queue Ranking: <eMule Rank (guint16)> */
+        case EMULE_MSG_QUEUE_RANKING: /* eMule Queue Ranking: <eMule Rank (uint16_t)> */
             proto_tree_add_item(tree, hf_edonkey_emule_queue_ranking, tvb, offset, 2, ENC_LITTLE_ENDIAN);
             break;
 
@@ -2013,7 +2045,7 @@ static void dissect_emule_tcp_message(guint8 msg_type,
             /* offset = dissect_emule_challenge(tvb, pinfo, offset, tree); */
             /* break; */
 
-        case EMULE_MSG_DATA_COMPRESSED: /* Data Compressed: <File Hash> <Start Offset> <Length (guint32)> <DATA> */
+        case EMULE_MSG_DATA_COMPRESSED: /* Data Compressed: <File Hash> <Start Offset> <Length (uint32_t)> <DATA> */
             offset = dissect_edonkey_file_hash(tvb, pinfo, offset, tree);
             offset = dissect_edonkey_start_offset(tvb, pinfo, offset, tree);
             proto_tree_add_item(tree, hf_edonkey_packed_length, tvb, offset, 4, ENC_LITTLE_ENDIAN);
@@ -2024,7 +2056,7 @@ static void dissect_emule_tcp_message(guint8 msg_type,
             }
             break;
 
-        case EMULE_MSG_DATA_COMPRESSED_64: /* Data Compressed: <File Hash> <Start Offset (guint64)> <Length (guint32)> <DATA> */
+        case EMULE_MSG_DATA_COMPRESSED_64: /* Data Compressed: <File Hash> <Start Offset (uint64_t)> <Length (uint32_t)> <DATA> */
             offset = dissect_edonkey_file_hash(tvb, pinfo, offset, tree);
             offset = dissect_edonkey_start_offset_64(tvb, pinfo, offset, tree);
             proto_tree_add_item(tree, hf_edonkey_packed_length, tvb, offset, 4, ENC_LITTLE_ENDIAN);
@@ -2091,12 +2123,12 @@ static void dissect_emule_tcp_message(guint8 msg_type,
     return;
 }
 
-static int dissect_edonkey_udp_message(guint8 msg_type,
+static int dissect_edonkey_udp_message(uint8_t msg_type,
                                         tvbuff_t *tvb, packet_info *pinfo,
                                         int offset, int length, proto_tree *tree)
 {
     int msg_end, bytes_remaining;
-    guint16 ischal;
+    uint16_t ischal;
 
     bytes_remaining = tvb_reported_length_remaining(tvb, offset);
     if ((length < 0) || (length > bytes_remaining)) length = bytes_remaining;
@@ -2108,11 +2140,11 @@ static int dissect_edonkey_udp_message(guint8 msg_type,
         /* EDonkey UDP Messages */
         case EDONKEY_MSG_UDP_CALLBACK_REQUEST: /* Callback Request: <Address> <Client ID> */
             offset = dissect_edonkey_address(tvb, pinfo, offset, tree);
-            offset = dissect_edonkey_client_id(tvb, pinfo, offset, tree, FALSE);
+            offset = dissect_edonkey_client_id(tvb, pinfo, offset, tree, false);
             break;
 
         case EDONKEY_MSG_UDP_CALLBACK_FAIL: /* Callback Fail: <Client ID> */
-            offset = dissect_edonkey_client_id(tvb, pinfo, offset, tree, FALSE);
+            offset = dissect_edonkey_client_id(tvb, pinfo, offset, tree, false);
             break;
 
         case EDONKEY_MSG_UDP_GET_SERVER_INFO: /* Get Server Info: <Challenge> */
@@ -2157,12 +2189,12 @@ static int dissect_edonkey_udp_message(guint8 msg_type,
             offset = dissect_edonkey_address_list(tvb, pinfo, offset, tree);
             break;
 
-        case EDONKEY_MSG_UDP_SERVER_STATUS_REQUEST:  /* Server Status Request: <guint32> */
+        case EDONKEY_MSG_UDP_SERVER_STATUS_REQUEST:  /* Server Status Request: <uint32_t> */
             proto_tree_add_item(tree, hf_edonkey_challenge, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             offset += 4;
             break;
 
-        case EDONKEY_MSG_UDP_SERVER_STATUS:  /* Server Status: <guint32> <Nusers> <Nfiles> <Nusersmax> */
+        case EDONKEY_MSG_UDP_SERVER_STATUS:  /* Server Status: <uint32_t> <Nusers> <Nfiles> [<Nusersmax>] [<NsoftFiles> <NhardFiles>] [<UDPFlags>] [<NlowIdUsers>] [<UDPObfuscationPort> <TCPObfuscationPort> <ServerUDPKey>] */
             proto_tree_add_item(tree, hf_edonkey_challenge, tvb, offset, 4, ENC_LITTLE_ENDIAN);
             offset += 4;
             proto_tree_add_item(tree, hf_edonkey_number_of_users, tvb, offset, 4, ENC_LITTLE_ENDIAN);
@@ -2170,6 +2202,28 @@ static int dissect_edonkey_udp_message(guint8 msg_type,
             offset += 8;
             if (offset < msg_end) {
                 proto_tree_add_item(tree, hf_edonkey_max_number_of_users, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+            }
+            if (offset + 8 <= msg_end) {
+                proto_tree_add_item(tree, hf_edonkey_soft_limit_files, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+                proto_tree_add_item(tree, hf_edonkey_hard_limit_files, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+            }
+            if (offset + 4 <= msg_end) {
+                proto_tree_add_item(tree, hf_edonkey_udp_flags, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+            }
+            if (offset + 4 <= msg_end) {
+                proto_tree_add_item(tree, hf_edonkey_number_of_lowid_users, tvb, offset, 4, ENC_LITTLE_ENDIAN);
+                offset += 4;
+            }
+            if (offset + 8 <= msg_end) {
+                proto_tree_add_item(tree, hf_edonkey_udp_obfuscation_port, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+                offset += 2;
+                proto_tree_add_item(tree, hf_edonkey_tcp_obfuscation_port, tvb, offset, 2, ENC_LITTLE_ENDIAN);
+                offset += 2;
+                proto_tree_add_item(tree, hf_edonkey_server_udp_key, tvb, offset, 4, ENC_LITTLE_ENDIAN);
                 offset += 4;
             }
             break;
@@ -2180,24 +2234,24 @@ static int dissect_edonkey_udp_message(guint8 msg_type,
             offset = dissect_overnet_peer(tvb, pinfo, offset, tree);
             break;
 
-        case OVERNET_MSG_UDP_CONNECT_REPLY:    /* Connect Reply: <guint16 Peer List> */
+        case OVERNET_MSG_UDP_CONNECT_REPLY:    /* Connect Reply: <uint16_t Peer List> */
             offset = dissect_edonkey_list(tvb, pinfo, offset, tree, 2, "Overnet Peer", dissect_overnet_peer);
             break;
 
-        case OVERNET_MSG_UDP_SEARCH:    /* Search: <search type (guint8)> <Hash> */
+        case OVERNET_MSG_UDP_SEARCH:    /* Search: <search type (uint8_t)> <Hash> */
             proto_tree_add_item(tree, hf_edonkey_search_type, tvb, offset, 1, ENC_NA);
             offset = dissect_edonkey_hash(tvb, pinfo, offset+1, tree);
             break;
 
         case OVERNET_MSG_UDP_SEARCH_INFO:
-            /* Search Info: <Hash> <search type (guint8)> <min (guint16)> <max (guint16)>*/
+            /* Search Info: <Hash> <search type (uint8_t)> <min (uint16_t)> <max (uint16_t)>*/
             offset = dissect_edonkey_hash(tvb, pinfo, offset, tree);
             proto_tree_add_item(tree, hf_edonkey_search_type, tvb, offset, 1, ENC_NA);
             proto_tree_add_item(tree, hf_edonkey_search_range_min, tvb, offset+1, 2, ENC_LITTLE_ENDIAN);
             proto_tree_add_item(tree, hf_edonkey_search_range_max, tvb, offset+3, 2, ENC_LITTLE_ENDIAN);
             break;
 
-        case OVERNET_MSG_UDP_SEARCH_NEXT:    /* Search Next: <Hash> <guint8 Peer List> */
+        case OVERNET_MSG_UDP_SEARCH_NEXT:    /* Search Next: <Hash> <uint8_t Peer List> */
             offset = dissect_edonkey_hash(tvb, pinfo, offset, tree);
             offset = dissect_edonkey_list(tvb, pinfo, offset, tree, 1, "Overnet Peer", dissect_overnet_peer);
             break;
@@ -2222,7 +2276,7 @@ static int dissect_edonkey_udp_message(guint8 msg_type,
             break;
 
         case OVERNET_MSG_UDP_IP_QUERY_ANSWER:  /* IP Query Answer: <IP> */
-            offset = dissect_edonkey_client_id(tvb, pinfo, offset, tree, FALSE);
+            offset = dissect_edonkey_client_id(tvb, pinfo, offset, tree, false);
             break;
 
         case OVERNET_MSG_UDP_IDENTIFY_REPLY:  /* Identify Reply: <Contact (sender)> */
@@ -2235,13 +2289,13 @@ static int dissect_edonkey_udp_message(guint8 msg_type,
             proto_tree_add_item(tree, hf_edonkey_port, tvb, offset, 2, ENC_LITTLE_ENDIAN);
             break;
 
-        case OVERNET_MSG_UDP_FIREWALL_CONNECTION:      /* Firewall Connnection  Ack: <Hash> <TCP Port> */
+        case OVERNET_MSG_UDP_FIREWALL_CONNECTION:      /* Firewall Connection  Ack: <Hash> <TCP Port> */
             offset = dissect_edonkey_client_hash(tvb, pinfo, offset, tree);
             proto_tree_add_item(tree, hf_edonkey_port, tvb, offset, 2, ENC_LITTLE_ENDIAN);
             break;
 
-        case OVERNET_MSG_UDP_FIREWALL_CONNECTION_ACK:  /* Firewall Connnection  Ack: <Hash> */
-        case OVERNET_MSG_UDP_FIREWALL_CONNECTION_NACK: /* Firewall Connnection NAck: <Hash> */
+        case OVERNET_MSG_UDP_FIREWALL_CONNECTION_ACK:  /* Firewall Connection  Ack: <Hash> */
+        case OVERNET_MSG_UDP_FIREWALL_CONNECTION_NACK: /* Firewall Connection NAck: <Hash> */
             offset = dissect_edonkey_client_hash(tvb, pinfo, offset, tree);
             break;
 
@@ -2254,7 +2308,7 @@ static int dissect_edonkey_udp_message(guint8 msg_type,
     return offset;
 }
 
-static int dissect_emule_udp_message(guint8 msg_type,
+static int dissect_emule_udp_message(uint8_t msg_type,
                                       tvbuff_t *tvb, packet_info *pinfo,
                                       int offset, int length, proto_tree *tree)
 {
@@ -2326,9 +2380,9 @@ static int dissect_kademlia2_peer_list_1byte(tvbuff_t *tvb, packet_info *pinfo,
 static int dissect_kademlia_tag(tvbuff_t *tvb, packet_info *pinfo,
                                 int offset, proto_tree *tree)
 {
-    guint8 type;
-    guint8 tag_type;
-    const gchar *str_type;
+    uint8_t type;
+    uint8_t tag_type;
+    const char *str_type;
     proto_item *ti;
     proto_item* tag_node;
     proto_tree *subtree;
@@ -2339,23 +2393,23 @@ static int dissect_kademlia_tag(tvbuff_t *tvb, packet_info *pinfo,
     /* tag_node length is adjusted at the end of this function */
     subtree = proto_tree_add_subtree( tree, tvb, offset, 1, ett_kademlia_tag, &tag_node, "Tag " );
 
-    type = tvb_get_guint8( tvb, offset );
+    type = tvb_get_uint8( tvb, offset );
     str_type = val_to_str_const(type, kademlia_tag_types, "Unknown" );
 
     ti_tagtype = proto_tree_add_item( subtree, hf_kademlia_tag_type, tvb, offset, 1, ENC_LITTLE_ENDIAN );
     offset += 1;
 
     {
-        const gchar *tagname_string;
-        const gchar *tagname_extended_string;
+        const char *tagname_string;
+        const char *tagname_extended_string;
 
         /* Read tagname */
-        tag_type = tvb_get_guint8( tvb, offset+2 );
+        tag_type = tvb_get_uint8( tvb, offset+2 );
         offset = dissect_kademlia_tagname( tvb, pinfo, offset, subtree, &tagname_string, &tagname_extended_string );
         if ( strlen( tagname_string ) == 1 ) {
-            const guint8 tagname_guint = *(const guint8*)tagname_string;
+            const uint8_t tagname_uint = *(const uint8_t*)tagname_string;
 
-            proto_item_append_text( tag_node, " 0x%02X [%s] = ", tagname_guint, tagname_extended_string );
+            proto_item_append_text( tag_node, " 0x%02X [%s] = ", tagname_uint, tagname_extended_string );
         }
         else
             proto_item_append_text( tag_node, " \"%s\" [%s] = ", tagname_string, tagname_extended_string );
@@ -2365,12 +2419,12 @@ static int dissect_kademlia_tag(tvbuff_t *tvb, packet_info *pinfo,
     switch( type )
     {
         case KADEMLIA_TAGTYPE_HASH:
-            proto_item_append_text( tag_node, "%s", tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, 16 ));
+            proto_item_append_text( tag_node, "%s", tvb_bytes_to_str(pinfo->pool, tvb, offset, 16 ));
             offset = dissect_kademlia_tag_hash( tvb, pinfo, offset, subtree );
             break;
         case KADEMLIA_TAGTYPE_STRING:
             {
-                const guint8* value;
+                const uint8_t* value;
                 offset = dissect_kademlia_tag_string( tvb, pinfo, offset, subtree, &value );
 
                 proto_item_append_text( tag_node, "\"%s\"", value );
@@ -2378,10 +2432,10 @@ static int dissect_kademlia_tag(tvbuff_t *tvb, packet_info *pinfo,
             break;
         case KADEMLIA_TAGTYPE_UINT8:
             {
-                guint8 value;
+                uint8_t value;
                 ti = proto_tree_add_item( subtree, hf_kademlia_tag_uint8, tvb, offset, 1, ENC_LITTLE_ENDIAN);
 
-                value = tvb_get_guint8( tvb, offset );
+                value = tvb_get_uint8( tvb, offset );
                 proto_item_append_text( tag_node, "%u (0x%02X)", value, value );
                 switch (tag_type) {
                     case KADEMLIA_TAG_SOURCETYPE:
@@ -2398,7 +2452,7 @@ static int dissect_kademlia_tag(tvbuff_t *tvb, packet_info *pinfo,
             break;
         case KADEMLIA_TAGTYPE_UINT16:
             {
-                guint16 value;
+                uint16_t value;
                 proto_tree_add_item( subtree, hf_kademlia_tag_uint16, tvb, offset, 2, ENC_LITTLE_ENDIAN);
 
                 value = tvb_get_letohs( tvb, offset );
@@ -2409,18 +2463,18 @@ static int dissect_kademlia_tag(tvbuff_t *tvb, packet_info *pinfo,
             break;
         case KADEMLIA_TAGTYPE_UINT64:
             {
-                guint64 value;
+                uint64_t value;
                 proto_tree_add_item( subtree, hf_kademlia_tag_uint64, tvb, offset, 8, ENC_LITTLE_ENDIAN);
 
                 value = tvb_get_letoh64( tvb, offset );
-                proto_item_append_text( tag_node, "%" G_GINT64_MODIFIER "u (0x%08" G_GINT64_MODIFIER "X)", value, value );
+                proto_item_append_text( tag_node, "%" PRIu64 " (0x%08" PRIX64 ")", value, value );
 
                 offset += 8;
             }
             break;
         case KADEMLIA_TAGTYPE_UINT32:
            {
-                guint32 value;
+                uint32_t value;
                 /* show ip as dotted decimal */
                 switch( tag_type) {
                     case KADEMLIA_TAG_SERVERIP:
@@ -2458,7 +2512,7 @@ static int dissect_kademlia_tag(tvbuff_t *tvb, packet_info *pinfo,
             break;
         case KADEMLIA_TAGTYPE_BSOB:
             {
-                const gchar* value;
+                const char* value;
                 offset = dissect_kademlia_tag_bsob( tvb, pinfo, offset, subtree, &value );
                 proto_item_append_text( tag_node, "%s", value );
             }
@@ -2509,6 +2563,7 @@ static int dissect_kademlia_search_result(tvbuff_t *tvb, packet_info *pinfo,
     return dissect_kademlia_taglist( tvb, pinfo, offset, tree );
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 static int dissect_kademlia_search_expression_tree(tvbuff_t *tvb, packet_info *pinfo,
                                           int offset, proto_tree *tree)
 {
@@ -2516,10 +2571,11 @@ static int dissect_kademlia_search_expression_tree(tvbuff_t *tvb, packet_info *p
     proto_item* ti;
 
     item_start_offset = offset;
-    op = tvb_get_guint8(tvb, offset);
+    op = tvb_get_uint8(tvb, offset);
     ti = proto_tree_add_uint(tree, hf_kademlia_search_expression_type, tvb, offset, 1, op);
     tree = proto_item_add_subtree( ti, ett_kademlia_search_expression );
     ++offset;
+    increment_dissection_depth(pinfo);
     switch( op ) {
         case 0: /* Bool op */
             proto_tree_add_item(tree, hf_kademlia_search_bool_op, tvb, offset, 1, ENC_NA );
@@ -2555,6 +2611,7 @@ static int dissect_kademlia_search_expression_tree(tvbuff_t *tvb, packet_info *p
         default:
             expert_add_info_format(pinfo, ti, &ei_kademlia_search_expression_type, "NOT DECODED op %x", op );
     }
+    decrement_dissection_depth(pinfo);
     proto_item_set_len( ti, offset - item_start_offset );
     return offset;
 }
@@ -2578,7 +2635,7 @@ static int dissect_kademlia_uload( tvbuff_t *tvb, packet_info *pinfo _U_,
     return offset +1;
 
 }
-static int dissect_kademlia_udp_message(guint8 msg_type,
+static int dissect_kademlia_udp_message(uint8_t msg_type,
                                          tvbuff_t *tvb, packet_info *pinfo,
                                          int offset, int length, proto_tree *tree)
 {
@@ -2590,7 +2647,7 @@ static int dissect_kademlia_udp_message(guint8 msg_type,
     if (length <= 0) return offset;
 
     hidden_item = proto_tree_add_item(tree, hf_kademlia, tvb, offset, 1, ENC_BIG_ENDIAN);
-    PROTO_ITEM_SET_HIDDEN(hidden_item);
+    proto_item_set_hidden(hidden_item);
 
     msg_end = offset + length;
 
@@ -2658,13 +2715,13 @@ static int dissect_kademlia_udp_message(guint8 msg_type,
         case KADEMLIA2_REQ:
             {
                 int type;
-                guint8 target_id[16];
-                guint8 recipients_id[16];
+                uint8_t target_id[16];
+                uint8_t recipients_id[16];
                 proto_item *ti;
                 int i, j, k, l;
                 char binarray[129];
 
-                type = tvb_get_guint8(tvb, offset);
+                type = tvb_get_uint8(tvb, offset);
                 ti = proto_tree_add_uint_format_value(tree, hf_kademlia_request_type, tvb, offset, 1, type, "0x%02x", type );
                 proto_item_append_text(ti, "%s", val_to_str_const(type, kademlia_parameter, " Unknown"));
                 offset +=1;
@@ -2673,7 +2730,7 @@ static int dissect_kademlia_udp_message(guint8 msg_type,
                 for (i=0; i<4; i++) {
                   for (j=3; j>=0; j--) {
                     l = (j+4*i);
-                    target_id[l] = tvb_get_guint8(tvb, offset + abs(8*i-(l-3)));
+                    target_id[l] = tvb_get_uint8(tvb, offset + abs(8*i-(l-3)));
                   }
                 }
 
@@ -2683,7 +2740,7 @@ static int dissect_kademlia_udp_message(guint8 msg_type,
                 for (i=0; i<4; i++) {
                   for (j=3; j>=0; j--) {
                     l = (j+4*i);
-                    recipients_id[l] = tvb_get_guint8(tvb, offset + abs(8*i-(l-3)));
+                    recipients_id[l] = tvb_get_uint8(tvb, offset + abs(8*i-(l-3)));
                   }
                 }
 
@@ -2744,7 +2801,7 @@ static int dissect_kademlia_udp_message(guint8 msg_type,
                 /* Target (16bytes) */
                 offset = dissect_kademlia_hash(tvb, pinfo, offset, tree, &hf_kademlia_target_id);
                 /* Restrictive (1 byte) 0/1 */
-                restrictive = tvb_get_guint8(tvb, offset);
+                restrictive = tvb_get_uint8(tvb, offset);
                 proto_tree_add_item(tree, hf_edonkey_kademlia_restrictive, tvb, offset, 1, ENC_NA);
                 offset +=1;
 
@@ -2776,17 +2833,17 @@ static int dissect_kademlia_udp_message(guint8 msg_type,
             }
         case KADEMLIA_PUBLISH_REQ: /*   0x40    // <HASH (key) [16]> <CNT1 [2]> (<HASH (target) [16]> <CNT2 [2]> <META>*(CNT2))*(CNT1) */
             {
-                guint8 tagname_value=0, taglist_size, type;
+                uint8_t tagname_value=0, taglist_size, type;
                 int i=1, j=34;
 
                 /* check if TAG_SOURCETYPE is set */
-                taglist_size = tvb_get_guint8(tvb, offset + j);
+                taglist_size = tvb_get_uint8(tvb, offset + j);
                 j++;
 
                 while(i <= taglist_size) {
-                  type = tvb_get_guint8(tvb, offset + j);
+                  type = tvb_get_uint8(tvb, offset + j);
                   j +=3;
-                  tagname_value = tvb_get_guint8(tvb, offset + j);
+                  tagname_value = tvb_get_uint8(tvb, offset + j);
                   if (tagname_value == 0xff)
                     i = taglist_size;
                   j++;
@@ -2796,7 +2853,7 @@ static int dissect_kademlia_udp_message(guint8 msg_type,
                         break;
                     case KADEMLIA_TAGTYPE_STRING:
                     {
-                        guint16 string_length = tvb_get_letohs(tvb, offset+j);
+                        uint16_t string_length = tvb_get_letohs(tvb, offset+j);
                         j += 2 + string_length;
                         break;
                     }
@@ -2815,7 +2872,7 @@ static int dissect_kademlia_udp_message(guint8 msg_type,
                         break;
                     case KADEMLIA_TAGTYPE_BSOB:
                     {
-                      guint16 bsob_length = tvb_get_guint8(tvb, offset);
+                      uint16_t bsob_length = tvb_get_uint8(tvb, offset);
                       j += 1 + bsob_length;
                       break;
                     }
@@ -2846,17 +2903,17 @@ static int dissect_kademlia_udp_message(guint8 msg_type,
     return offset;
 }
 
-static int dissect_kademlia_udp_compressed_message(guint8 msg_type,
+static int dissect_kademlia_udp_compressed_message(uint8_t msg_type,
                                                     tvbuff_t *tvb, packet_info *pinfo,
                                                     int offset, int length, proto_tree *tree)
 {
     tvbuff_t *tvbraw = NULL;
 
 
-    tvbraw = tvb_child_uncompress(tvb, tvb, offset, length);
+    tvbraw = tvb_child_uncompress_zlib(tvb, tvb, offset, length);
 
     if (tvbraw) {
-        guint32 raw_length;
+        uint32_t raw_length;
 
         raw_length = tvb_captured_length( tvbraw );
         add_new_data_source(pinfo, tvbraw, "Decompressed Data");
@@ -2870,10 +2927,10 @@ static int dissect_kademlia_udp_compressed_message(guint8 msg_type,
 }
 
 
-static guint get_edonkey_tcp_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
+static unsigned get_edonkey_tcp_pdu_len(packet_info *pinfo _U_, tvbuff_t *tvb,
                                      int offset, void *data _U_)
 {
-    guint32 msg_len;
+    uint32_t msg_len;
 
     /*
      * Get the length of the eDonkey packet.
@@ -2892,10 +2949,10 @@ static int dissect_edonkey_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree
     proto_item *ti;
     proto_tree *edonkey_tree, *edonkey_msg_tree = NULL, *emule_zlib_tree = NULL;
     int offset;
-    guint8 protocol, msg_type;
-    guint32 msg_len;
-    const gchar *protocol_name, *message_name;
-    void  (*dissector)(guint8, tvbuff_t*, packet_info*, int, int, proto_tree*);
+    uint8_t protocol, msg_type;
+    uint32_t msg_len;
+    const char *protocol_name, *message_name;
+    void  (*dissector)(uint8_t, tvbuff_t*, packet_info*, int, int, proto_tree*);
     tvbuff_t *tvbraw = NULL;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "eDonkey");
@@ -2904,7 +2961,7 @@ static int dissect_edonkey_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree
     edonkey_tree = proto_item_add_subtree(ti, ett_edonkey);
 
     offset = 0;
-    protocol = tvb_get_guint8(tvb, offset);
+    protocol = tvb_get_uint8(tvb, offset);
     msg_len = tvb_get_letohl(tvb, offset+1);
 
     protocol_name = val_to_str_const(protocol, edonkey_protocols, "Unknown");
@@ -2925,7 +2982,7 @@ static int dissect_edonkey_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree
     /* Skip past the EDONKEY Header */
     offset += EDONKEY_TCP_HEADER_LENGTH;
 
-    msg_type = tvb_get_guint8(tvb, offset);
+    msg_type = tvb_get_uint8(tvb, offset);
     switch (protocol) {
         case EDONKEY_PROTO_EDONKEY:
             message_name =  val_to_str_const(msg_type, edonkey_tcp_msgs, "Unknown");
@@ -2945,12 +3002,12 @@ static int dissect_edonkey_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree
              * stream.
              */
             message_name = val_to_str_const(msg_type, edonkey_tcp_msgs, "Unknown");
-            tvbraw = tvb_child_uncompress(tvb, tvb, offset+1, msg_len-1);
+            tvbraw = tvb_child_uncompress_zlib(tvb, tvb, offset+1, msg_len-1);
             if (tvbraw) {
               dissector = dissect_edonkey_tcp_message;
               break;
             }
-
+            /* FALL THROUGH */
         default:
             message_name = "Unknown";
             dissector = NULL;
@@ -2980,13 +3037,13 @@ static int dissect_edonkey_tcp_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree
 
 static int dissect_edonkey_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
-    guint8 protocol;
+    uint8_t protocol;
 
     /* An eDonkey TCP packet is at least 5 bytes long msg type + length */
     if (!tvb_bytes_exist(tvb, 0, EDONKEY_TCP_HEADER_LENGTH))
         return 0;
 
-    protocol = tvb_get_guint8(tvb, 0);
+    protocol = tvb_get_uint8(tvb, 0);
     if (try_val_to_str(protocol, edonkey_protocols) == NULL)
         return 0; /* Not a known protocol */
 
@@ -3003,14 +3060,14 @@ static int dissect_edonkey_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
     proto_item *ti;
     proto_tree *edonkey_tree = NULL, *edonkey_msg_tree = NULL;
     int offset = 0;
-    guint8 protocol, msg_type;
-    const gchar *protocol_name, *message_name;
+    uint8_t protocol, msg_type;
+    const char *protocol_name, *message_name;
 
     /* An eDonkey UDP packet is at least 2 bytes long */
     if (!tvb_bytes_exist(tvb, 0, EDONKEY_UDP_HEADER_LENGTH))
         return 0;
 
-    protocol = tvb_get_guint8(tvb, offset);
+    protocol = tvb_get_uint8(tvb, offset);
     if (try_val_to_str(protocol, edonkey_protocols) == NULL)
         return 0; /* Not a known protocol */
 
@@ -3023,7 +3080,7 @@ static int dissect_edonkey_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 
     offset = 0;
     /* eDonkey UDP message - Assume that there is one message per packet */
-    msg_type = tvb_get_guint8(tvb, offset+1);
+    msg_type = tvb_get_uint8(tvb, offset+1);
     protocol_name = val_to_str_const(protocol, edonkey_protocols, "Unknown");
 
     if (protocol == EDONKEY_PROTO_KADEMLIA || protocol == EDONKEY_PROTO_KADEMLIA_COMP
@@ -3085,9 +3142,9 @@ static int dissect_edonkey_udp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
 }
 
 static void
-edonkey_fmt_revision(gchar *result, guint32 revision )
+edonkey_fmt_revision(char *result, uint32_t revision )
 {
-   g_snprintf( result, ITEM_LABEL_LENGTH, "%u.%u", (guint16)(revision & 0xFFFF), (guint16)(( revision & 0xFFFF0000 ) >> 16) );
+   snprintf( result, ITEM_LABEL_LENGTH, "%u.%u", (uint16_t)(revision & 0xFFFF), (uint16_t)(( revision & 0xFFFF0000 ) >> 16) );
 }
 
 void proto_register_edonkey(void) {
@@ -3134,7 +3191,7 @@ void proto_register_edonkey(void) {
                 FT_UINT8, BASE_HEX, NULL, 0, "eDonkey Meta Tag ID", HFILL } },
         { &hf_edonkey_metatag_name,
             { "Meta Tag Name", "edonkey.metatag.name",
-                FT_STRING, STR_ASCII, NULL, 0, "eDonkey Meta Tag Name", HFILL } },
+                FT_STRING, BASE_NONE, NULL, 0, "eDonkey Meta Tag Name", HFILL } },
         { &hf_edonkey_metatag_namesize,
             { "Meta Tag Name Size", "edonkey.metatag.namesize",
                 FT_UINT16, BASE_DEC, NULL, 0, "eDonkey Meta Tag Name Size", HFILL } },
@@ -3143,7 +3200,7 @@ void proto_register_edonkey(void) {
                 FT_BYTES, BASE_NONE, NULL, 0, "eDonkey Hash", HFILL } },
         { &hf_edonkey_string,
             { "String", "edonkey.string",
-                FT_STRING, STR_ASCII, NULL, 0, "eDonkey String", HFILL } },
+                FT_STRING, BASE_NONE, NULL, 0, "eDonkey String", HFILL } },
         { &hf_edonkey_string_length,
             { "String Length", "edonkey.string_length",
                 FT_UINT16, BASE_DEC, NULL, 0, "eDonkey String Length", HFILL } },
@@ -3155,7 +3212,7 @@ void proto_register_edonkey(void) {
                 FT_BYTES, BASE_NONE, NULL, 0, "eDonkey File Status", HFILL } },
         { &hf_edonkey_directory,
             { "Directory", "edonkey.directory",
-                FT_STRING, STR_ASCII, NULL, 0, "eDonkey Directory", HFILL } },
+                FT_STRING, BASE_NONE, NULL, 0, "eDonkey Directory", HFILL } },
         { &hf_edonkey_fileinfo,
             { "eDonkey File Info", "edonkey.fileinfo",
                 FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL } },
@@ -3215,28 +3272,28 @@ void proto_register_edonkey(void) {
                 FT_NONE, BASE_NONE, NULL, 0, NULL, HFILL } },
         { &hf_kademlia_peer_id,
             { "Peer ID", "edonkey.kademlia.peer.id",
-                FT_STRING, STR_ASCII, NULL, 0, "Kademlia Peer ID", HFILL } },
+                FT_STRING, BASE_NONE, NULL, 0, "Kademlia Peer ID", HFILL } },
         { &hf_kademlia_hash,
             { "Kademlia Hash", "edonkey.kademlia.hash",
-                FT_STRING, STR_ASCII, NULL, 0, NULL, HFILL } },
+                FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
         { &hf_kademlia_file_id,
             { "File ID", "edonkey.kademlia.file.id",
-                FT_STRING, STR_ASCII, NULL, 0, "Kademlia File ID", HFILL } },
+                FT_STRING, BASE_NONE, NULL, 0, "Kademlia File ID", HFILL } },
         { &hf_kademlia_keyword_hash,
             { "Keyword Hash", "edonkey.kademlia.keyword.hash",
-                FT_STRING, STR_ASCII, NULL, 0, "Kademlia Keyword Hash", HFILL } },
+                FT_STRING, BASE_NONE, NULL, 0, "Kademlia Keyword Hash", HFILL } },
         { &hf_kademlia_recipients_id,
             { "Recipient's ID", "edonkey.kademlia.recipients.id",
-                FT_STRING, STR_ASCII, NULL, 0, "Kademlia Recipient's ID", HFILL } },
+                FT_STRING, BASE_NONE, NULL, 0, "Kademlia Recipient's ID", HFILL } },
         { &hf_kademlia_sender_id,
             { "Sender ID", "edonkey.kademlia.sender.id",
-                FT_STRING, STR_ASCII, NULL, 0, "Kademlia Sender ID", HFILL } },
+                FT_STRING, BASE_NONE, NULL, 0, "Kademlia Sender ID", HFILL } },
         { &hf_kademlia_target_id,
             { "Target ID", "edonkey.kademlia.target.id",
-                FT_STRING, STR_ASCII, NULL, 0, "Kademlia Target ID", HFILL } },
+                FT_STRING, BASE_NONE, NULL, 0, "Kademlia Target ID", HFILL } },
         { &hf_kademlia_distance,
             { "XOR Distance", "edonkey.kademlia.distance",
-                FT_STRING, STR_ASCII, NULL, 0, "Kademlia XOR Distance", HFILL } },
+                FT_STRING, BASE_NONE, NULL, 0, "Kademlia XOR Distance", HFILL } },
         { &hf_kademlia_version,
             { "Kad Version", "edonkey.kademlia.version",
                 FT_UINT8, BASE_DEC_HEX, VALS(kademlia_versions), 0, NULL, HFILL } },
@@ -3260,22 +3317,31 @@ void proto_register_edonkey(void) {
                 FT_UINT8, BASE_DEC_HEX, NULL, 0, "UINT8 Tag Value", HFILL } },
         { &hf_kademlia_tag_hash,
             { "Tag Value (HASH)", "edonkey.kademlia.tag.value.hash",
-                FT_BYTES, BASE_NONE, NULL, 0, "HASH Tag Value", HFILL } },
+                FT_STRING, BASE_NONE, NULL, 0, "HASH Tag Value", HFILL } },
         { &hf_kademlia_tag_string,
             { "Tag Value (String)", "edonkey.kademlia.tag.value.string",
-                FT_STRING, STR_ASCII, NULL, 0, "String Tag Value", HFILL } },
+                FT_STRING, BASE_NONE, NULL, 0, "String Tag Value", HFILL } },
         { &hf_kademlia_tag_bsob,
             { "Tag Value (BSOB)", "edonkey.kademlia.tag.value.bsob",
                 FT_BYTES, BASE_NONE, NULL, 0, "BSOB Tag Value", HFILL } },
         { &hf_kademlia_udp_port,
             { "UDP Port", "edonkey.kademlia.udp_port",
-                FT_UINT16, BASE_DEC, NULL, 0, "Kademlia UDP Port", HFILL } },
+                FT_UINT16, BASE_PT_UDP, NULL, 0, "Kademlia UDP Port", HFILL } },
         { &hf_kademlia_ip,
             { "IP", "edonkey.kademlia.ip",
                 FT_IPv4, BASE_NONE, NULL, 0, "eDonkey IP", HFILL } },
         { &hf_kademlia_tcp_port,
             { "TCP Port", "edonkey.kademlia.tcp_port",
-                FT_UINT16, BASE_DEC, NULL, 0, "Kademlia TCP Port", HFILL } },
+                FT_UINT16, BASE_PT_TCP, NULL, 0, "Kademlia TCP Port", HFILL } },
+        { &hf_edonkey_tcp_flags,
+            { "TCP Flags", "edonkey.tcp_flags",
+                FT_UINT32, BASE_HEX, NULL, 0, "eDonkey TCP Flags (ID Change)", HFILL } },
+        { &hf_edonkey_aux_port,
+            { "Auxiliary Port", "edonkey.aux_port",
+                FT_UINT32, BASE_DEC, NULL, 0, "eDonkey Auxiliary Port (Value) (ID Change)", HFILL } },
+        { &hf_edonkey_server_reported_ip,
+            { "Server Reported IP", "edonkey.server_reported_ip",
+                FT_IPv4, BASE_NONE, NULL, 0, "eDonkey Server Reported IP (ID Change)", HFILL } },
 #if 0
         { &hf_kademlia_unparsed_data_length,
             { "Kademlia unparsed data length", "edonkey.kademlia.unparsed",
@@ -3311,13 +3377,34 @@ void proto_register_edonkey(void) {
         { &hf_edonkey_unparsed_data_length,
             { "eDonkey unparsed data length", "edonkey.unparsed",
                 FT_UINT32, BASE_DEC_HEX, NULL, 0, "eDonkey trailing or unparsed data length", HFILL } },
-
+        { &hf_edonkey_hard_limit_files, 
+            { "Hard limit on number of files", "edonkey.hard_limit_files", 
+                FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+        { &hf_edonkey_soft_limit_files, 
+            { "Soft limit on number of files", "edonkey.soft_limit_files", 
+                FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+        { &hf_edonkey_number_of_lowid_users, 
+            { "Number of LowID Users", "edonkey.number_of_lowid_users", 
+                FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+        { &hf_edonkey_udp_flags, 
+            { "Server UDP Support Flags", "edonkey.udp_flags", 
+                FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }},
+        { &hf_edonkey_tcp_obfuscation_port, 
+            { "TCP Obfuscation Port", "edonkey.tcp_obfuscation_port", 
+                FT_UINT16, BASE_PT_TCP, NULL, 0x0, NULL, HFILL }},
+        { &hf_edonkey_udp_obfuscation_port, 
+            { "UDP Obfuscation Port", "edonkey.udp_obfuscation_port", 
+                FT_UINT16, BASE_PT_UDP, NULL, 0x0, NULL, HFILL }},
+        { &hf_edonkey_server_udp_key, 
+            { "Server UDP Key", "edonkey.server_udp_key", 
+                FT_UINT32, BASE_HEX, NULL, 0x0, NULL, HFILL }},
+      
       /* Generated from convert_proto_tree_add_text.pl */
       { &hf_edonkey_list_size, { "List Size", "edonkey.list_size", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
       { &hf_edonkey_meta_tag_value_revision, { "Meta Tag Value", "edonkey.meta_tag_value.revision", FT_UINT32, BASE_CUSTOM, CF_FUNC(edonkey_fmt_revision), 0x0, NULL, HFILL }},
       { &hf_edonkey_meta_tag_value_uint, { "Meta Tag Value", "edonkey.meta_tag_value.uint", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
       { &hf_edonkey_boolean_array_length, { "Boolean Array Length", "edonkey.boolean_array_length", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }},
-      { &hf_edonkey_blob_length, { "BLOB Length", "edonkey.blob_length", FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }},
+      { &hf_edonkey_blob_length, { "BLOB Length", "edonkey.blob_length", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
       { &hf_edonkey_kademlia_string, { "String", "edonkey.kademlia_string", FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }},
       { &hf_emule_public_key_length, { "Public key length", "edonkey.emule.public_key_length", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }},
       { &hf_emule_signature_length, { "Signature length", "edonkey.emule.signature_length", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }},
@@ -3328,7 +3415,7 @@ void proto_register_edonkey(void) {
       { &hf_edonkey_end_offset_64, { "End Offset", "edonkey.end_offset64", FT_UINT64, BASE_DEC, NULL, 0x0, NULL, HFILL }},
       { &hf_edonkey_emule_file_length, { "File Length", "edonkey.emule.file_length", FT_UINT64, BASE_DEC, NULL, 0x0, NULL, HFILL }},
       { &hf_edonkey_overnet_peer_type, { "Peer Type", "edonkey.overnet_peer_type", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }},
-      { &hf_edonkey_more_search_file_results, { "More", "edonkey.more_search_file_results", FT_BOOLEAN, 8, TFS(&tfs_true_false), 0x0, NULL, HFILL }},
+      { &hf_edonkey_more_search_file_results, { "More", "edonkey.more_search_file_results", FT_BOOLEAN, BASE_NONE, NULL, 0x0, NULL, HFILL }},
       { &hf_edonkey_file_size, { "File size", "edonkey.file_size", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
       { &hf_edonkey_large_file_size, { "Large file size", "edonkey.large_file_size", FT_UINT64, BASE_DEC, NULL, 0x0, NULL, HFILL }},
       { &hf_edonkey_number_of_users, { "Number of Users", "edonkey.number_of_users", FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }},
@@ -3357,7 +3444,7 @@ void proto_register_edonkey(void) {
       { &hf_edonkey_user_hash_length, { "User hash length", "edonkey.user_hash_length", FT_UINT8, BASE_DEC, NULL, 0x0, NULL, HFILL }},
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_edonkey,
         &ett_edonkey_message,
         &ett_edonkey_metatag,
@@ -3390,6 +3477,9 @@ void proto_register_edonkey(void) {
     expert_edonkey = expert_register_protocol(proto_edonkey);
     expert_register_field_array(expert_edonkey, ei, array_length(ei));
 
+    edonkey_tcp_handle = register_dissector("edonkey.tcp", dissect_edonkey_tcp, proto_edonkey);
+    edonkey_udp_handle = register_dissector("edonkey.udp", dissect_edonkey_udp, proto_edonkey);
+
     edonkey_module = prefs_register_protocol(proto_edonkey, NULL);
     prefs_register_bool_preference(edonkey_module, "desegment",
                                    "Reassemble eDonkey messages spanning multiple TCP segments",
@@ -3400,22 +3490,12 @@ void proto_register_edonkey(void) {
 
 void proto_reg_handoff_edonkey(void) {
 
-    dissector_handle_t edonkey_tcp_handle;
-    dissector_handle_t edonkey_udp_handle;
-
-    edonkey_tcp_handle = create_dissector_handle(dissect_edonkey_tcp, proto_edonkey);
-    edonkey_udp_handle = create_dissector_handle(dissect_edonkey_udp, proto_edonkey);
-
-    dissector_add_uint("tcp.port", 4661, edonkey_tcp_handle);
-    dissector_add_uint("tcp.port", 4662, edonkey_tcp_handle);
-    dissector_add_uint("tcp.port", 4663, edonkey_tcp_handle);
-    dissector_add_uint("udp.port", 4665, edonkey_udp_handle);
-    dissector_add_uint("udp.port", 4672, edonkey_udp_handle);
-
+    dissector_add_uint_range_with_preference("tcp.port", EDONKEY_TCP_PORT_RANGE, edonkey_tcp_handle);
+    dissector_add_uint_range_with_preference("udp.port", EDONKEY_UDP_PORT_RANGE, edonkey_udp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

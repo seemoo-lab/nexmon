@@ -1,7 +1,5 @@
 /* xgettext awk backend.
-   Copyright (C) 2002-2003, 2005-2009, 2015-2016 Free Software Foundation, Inc.
-
-   This file was written by Bruno Haible <haible@clisp.cons.org>, 2002.
+   Copyright (C) 2002-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include "config.h"
-#endif
+/* Written by Bruno Haible.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "x-awk.h"
@@ -29,14 +27,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define SB_NO_APPENDF
+#include <error.h>
+#include "attribute.h"
 #include "message.h"
 #include "xgettext.h"
-#include "error.h"
-#include "error-progname.h"
+#include "xg-pos.h"
+#include "xg-mixed-string.h"
+#include "xg-arglist-context.h"
+#include "xg-arglist-callshape.h"
+#include "xg-arglist-parser.h"
+#include "xg-message.h"
+#include "if-error.h"
 #include "xalloc.h"
+#include "string-buffer.h"
 #include "gettext.h"
 
 #define _(s) gettext(s)
+
+#define SIZEOF(a) (sizeof(a) / sizeof(a[0]))
 
 
 /* The awk syntax is defined in the gawk manual page and documentation.
@@ -66,18 +75,16 @@ x_awk_keyword (const char *name)
     default_keywords = false;
   else
     {
-      const char *end;
-      struct callshape shape;
-      const char *colon;
-
       if (keywords.table == NULL)
         hash_init (&keywords, 100);
 
+      const char *end;
+      struct callshape shape;
       split_keywordspec (name, &end, &shape);
 
       /* The characters between name and end should form a valid C identifier.
          A colon means an invalid parse in split_keywordspec().  */
-      colon = strchr (name, ':');
+      const char *colon = strchr (name, ':');
       if (colon == NULL || colon >= end)
         insert_keyword_callshape (&keywords, name, end - name, &shape);
     }
@@ -109,13 +116,6 @@ init_flag_table_awk ()
 
 
 /* ======================== Reading of characters.  ======================== */
-
-/* Real filename, used in error messages about the input file.  */
-static const char *real_file_name;
-
-/* Logical filename and line number, used to label the extracted messages.  */
-static char *logical_file_name;
-static int line_number;
 
 /* The input file stream.  */
 static FILE *fp;
@@ -168,40 +168,25 @@ phase1_ungetc (int c)
 static int
 phase2_getc ()
 {
-  static char *buffer;
-  static size_t bufmax;
-  size_t buflen;
-  int lineno;
   int c;
 
   c = phase1_getc ();
   if (c == '#')
     {
-      buflen = 0;
-      lineno = line_number;
+      struct string_buffer buffer;
+      sb_init (&buffer);
+      int lineno = line_number;
       for (;;)
         {
           c = phase1_getc ();
           if (c == '\n' || c == EOF)
             break;
           /* We skip all leading white space, but not EOLs.  */
-          if (!(buflen == 0 && (c == ' ' || c == '\t')))
-            {
-              if (buflen >= bufmax)
-                {
-                  bufmax = 2 * bufmax + 10;
-                  buffer = xrealloc (buffer, bufmax);
-                }
-              buffer[buflen++] = c;
-            }
+          if (!(sd_length (sb_contents (&buffer)) == 0
+                && (c == ' ' || c == '\t')))
+            sb_xappend1 (&buffer, c);
         }
-      if (buflen >= bufmax)
-        {
-          bufmax = 2 * bufmax + 10;
-          buffer = xrealloc (buffer, bufmax);
-        }
-      buffer[buflen] = '\0';
-      savable_comment_add (buffer);
+      savable_comment_add (sb_xdupfree_c (&buffer));
       last_comment_line = lineno;
     }
   return c;
@@ -242,13 +227,13 @@ struct token_ty
 };
 
 
-/* 7. Replace escape sequences within character strings with their
+/* Replace escape sequences within character strings with their
    single character equivalents.  */
 
-#define P7_QUOTES (1000 + '"')
+#define SE_QUOTES (1000 + '"')
 
 static int
-phase7_getc ()
+get_string_element ()
 {
   int c;
 
@@ -260,7 +245,7 @@ phase7_getc ()
       if (c == EOF || c == '\n')
         break;
       if (c == '"')
-        return P7_QUOTES;
+        return SE_QUOTES;
       if (c != '\\')
         return c;
       c = phase1_getc ();
@@ -337,16 +322,15 @@ phase7_getc ()
     }
 
   phase1_ungetc (c);
-  error_with_progname = false;
-  error (0, 0, _("%s:%d: warning: unterminated string"), logical_file_name,
-         line_number);
-  error_with_progname = true;
-  return P7_QUOTES;
+  if_error (IF_SEVERITY_WARNING,
+            logical_file_name, line_number, (size_t)(-1), false,
+            _("unterminated string"));
+  return SE_QUOTES;
 }
 
 
 /* Free the memory pointed to by a 'struct token_ty'.  */
-static inline void
+MAYBE_UNUSED static inline void
 free_token (token_ty *tp)
 {
   switch (tp->type)
@@ -375,16 +359,22 @@ free_token (token_ty *tp)
    in between.  */
 static bool prefer_division_over_regexp;
 
+static token_ty phase3_pushback[1];
+static int phase3_pushback_length;
+
 static void
-x_awk_lex (token_ty *tp)
+phase3_get (token_ty *tp)
 {
-  static char *buffer;
-  static int bufmax;
-  int bufpos;
-  int c;
+  if (phase3_pushback_length)
+    {
+      *tp = phase3_pushback[--phase3_pushback_length];
+      return;
+    }
 
   for (;;)
     {
+      int c;
+
       tp->line_number = line_number;
       c = phase2_getc ();
 
@@ -402,7 +392,7 @@ x_awk_lex (token_ty *tp)
              FIXME: Newlines after any of ',' '{' '?' ':' '||' '&&' 'do' 'else'
              does *not* introduce a fresh statement.  */
           prefer_division_over_regexp = false;
-          /* FALLTHROUGH */
+          FALLTHROUGH;
         case '\t':
         case ' ':
           /* Ignore whitespace and comments.  */
@@ -429,7 +419,7 @@ x_awk_lex (token_ty *tp)
                 return;
               }
           }
-          /* FALLTHROUGH */
+          FALLTHROUGH;
         case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
         case 'G': case 'H': case 'I': case 'J': case 'K': case 'L':
         case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R':
@@ -444,97 +434,87 @@ x_awk_lex (token_ty *tp)
         case '0': case '1': case '2': case '3': case '4':
         case '5': case '6': case '7': case '8': case '9':
           /* Symbol, or part of a number.  */
-          bufpos = 0;
-          for (;;)
-            {
-              if (bufpos >= bufmax)
-                {
-                  bufmax = 2 * bufmax + 10;
-                  buffer = xrealloc (buffer, bufmax);
-                }
-              buffer[bufpos++] = c;
-              c = phase2_getc ();
-              switch (c)
-                {
-                case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
-                case 'G': case 'H': case 'I': case 'J': case 'K': case 'L':
-                case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R':
-                case 'S': case 'T': case 'U': case 'V': case 'W': case 'X':
-                case 'Y': case 'Z':
-                case '_':
-                case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
-                case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
-                case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
-                case 's': case 't': case 'u': case 'v': case 'w': case 'x':
-                case 'y': case 'z':
-                case '0': case '1': case '2': case '3': case '4':
-                case '5': case '6': case '7': case '8': case '9':
-                  continue;
-                default:
-                  if (bufpos == 1 && buffer[0] == '_' && c == '"')
+          {
+            struct string_buffer buffer;
+            sb_init (&buffer);
+            for (;;)
+              {
+                sb_xappend1 (&buffer, c);
+                c = phase2_getc ();
+                switch (c)
+                  {
+                  case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
+                  case 'G': case 'H': case 'I': case 'J': case 'K': case 'L':
+                  case 'M': case 'N': case 'O': case 'P': case 'Q': case 'R':
+                  case 'S': case 'T': case 'U': case 'V': case 'W': case 'X':
+                  case 'Y': case 'Z':
+                  case '_':
+                  case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
+                  case 'g': case 'h': case 'i': case 'j': case 'k': case 'l':
+                  case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
+                  case 's': case 't': case 'u': case 'v': case 'w': case 'x':
+                  case 'y': case 'z':
+                  case '0': case '1': case '2': case '3': case '4':
+                  case '5': case '6': case '7': case '8': case '9':
+                    continue;
+                  default:
                     {
-                      tp->type = token_type_i18nstring;
-                      goto case_string;
+                      string_desc_t contents = sb_contents (&buffer);
+                      if (sd_length (contents) == 1
+                          && sd_char_at (contents, 0) == '_'
+                          && c == '"')
+                        {
+                          sb_free (&buffer);
+                          tp->type = token_type_i18nstring;
+                          goto case_string;
+                        }
                     }
-                  phase2_ungetc (c);
-                  break;
-                }
-              break;
-            }
-          if (bufpos >= bufmax)
-            {
-              bufmax = 2 * bufmax + 10;
-              buffer = xrealloc (buffer, bufmax);
-            }
-          buffer[bufpos] = '\0';
-          tp->string = xstrdup (buffer);
-          tp->type = token_type_symbol;
-          /* Most identifiers can be variable names; after them we must
-             interpret '/' as division operator.  But for awk's builtin
-             keywords we have three cases:
-             (a) Must interpret '/' as division operator. "length".
-             (b) Must interpret '/' as start of a regular expression.
-                 "do", "exit", "print", "printf", "return".
-             (c) '/' after this keyword in invalid anyway. All others.
-             I used the following script for the distinction.
-                for k in $awk_keywords; do
-                  echo; echo $k; awk "function foo () { $k / 10 }" < /dev/null
-                done
-           */
-          if (strcmp (buffer, "do") == 0
-              || strcmp (buffer, "exit") == 0
-              || strcmp (buffer, "print") == 0
-              || strcmp (buffer, "printf") == 0
-              || strcmp (buffer, "return") == 0)
-            prefer_division_over_regexp = false;
-          else
-            prefer_division_over_regexp = true;
+                    phase2_ungetc (c);
+                    break;
+                  }
+                break;
+              }
+            tp->string = sb_xdupfree_c (&buffer);
+            tp->type = token_type_symbol;
+            /* Most identifiers can be variable names; after them we must
+               interpret '/' as division operator.  But for awk's builtin
+               keywords we have three cases:
+               (a) Must interpret '/' as division operator. "length".
+               (b) Must interpret '/' as start of a regular expression.
+                   "do", "exit", "print", "printf", "return".
+               (c) '/' after this keyword in invalid anyway. All others.
+               I used the following script for the distinction.
+                  for k in $awk_keywords; do
+                    echo; echo $k; awk "function foo () { $k / 10 }" < /dev/null
+                  done
+             */
+            if (strcmp (tp->string, "do") == 0
+                || strcmp (tp->string, "exit") == 0
+                || strcmp (tp->string, "print") == 0
+                || strcmp (tp->string, "printf") == 0
+                || strcmp (tp->string, "return") == 0)
+              prefer_division_over_regexp = false;
+            else
+              prefer_division_over_regexp = true;
+          }
           return;
 
         case '"':
           tp->type = token_type_string;
         case_string:
-          bufpos = 0;
-          for (;;)
-            {
-              c = phase7_getc ();
-              if (c == EOF || c == P7_QUOTES)
-                break;
-              if (bufpos >= bufmax)
-                {
-                  bufmax = 2 * bufmax + 10;
-                  buffer = xrealloc (buffer, bufmax);
-                }
-              buffer[bufpos++] = c;
-            }
-          if (bufpos >= bufmax)
-            {
-              bufmax = 2 * bufmax + 10;
-              buffer = xrealloc (buffer, bufmax);
-            }
-          buffer[bufpos] = '\0';
-          tp->string = xstrdup (buffer);
-          prefer_division_over_regexp = true;
+          {
+            struct string_buffer buffer;
+            sb_init (&buffer);
+            for (;;)
+              {
+                c = get_string_element ();
+                if (c == EOF || c == SE_QUOTES)
+                  break;
+                sb_xappend1 (&buffer, c);
+              }
+            tp->string = sb_xdupfree_c (&buffer);
+            prefer_division_over_regexp = true;
+          }
           return;
 
         case '(':
@@ -588,10 +568,9 @@ x_awk_lex (token_ty *tp)
                   if (c == EOF || c == '\n')
                     {
                       phase1_ungetc (c);
-                      error_with_progname = false;
-                      error (0, 0, _("%s:%d: warning: unterminated regular expression"),
-                             logical_file_name, line_number);
-                      error_with_progname = true;
+                      if_error (IF_SEVERITY_WARNING,
+                                logical_file_name, line_number, (size_t)(-1), false,
+                                _("unterminated regular expression"));
                       break;
                     }
                   else if (c == '[')
@@ -646,7 +625,7 @@ x_awk_lex (token_ty *tp)
               prefer_division_over_regexp = false;
               return;
             }
-          /* FALLTHROUGH */
+          FALLTHROUGH;
 
         default:
           /* We could carefully recognize each of the 2 and 3 character
@@ -659,12 +638,70 @@ x_awk_lex (token_ty *tp)
     }
 }
 
+/* Supports only one pushback token.  */
+static void
+phase3_unget (token_ty *tp)
+{
+  if (tp->type != token_type_eof)
+    {
+      if (phase3_pushback_length == SIZEOF (phase3_pushback))
+        abort ();
+      phase3_pushback[phase3_pushback_length++] = *tp;
+    }
+}
+
+
+/* 8. Concatenate adjacent string literals to form single string literals.  */
+
+/* Concatenates two strings, and frees the first argument.  */
+static char *
+string_concat_free1 (char *s1, const char *s2)
+{
+  size_t len1 = strlen (s1);
+  size_t len2 = strlen (s2);
+  size_t len = len1 + len2 + 1;
+  char *result = XNMALLOC (len, char);
+  memcpy (result, s1, len1);
+  memcpy (result + len1, s2, len2 + 1);
+  free (s1);
+  return result;
+}
+
+static void
+phase4_get (token_ty *tp)
+{
+  phase3_get (tp);
+  if (tp->type != token_type_string)
+    return;
+  for (;;)
+    {
+      token_ty tmp;
+      phase3_get (&tmp);
+
+      if (tmp.type != token_type_string)
+        {
+          phase3_unget (&tmp);
+          return;
+        }
+
+      tp->string = string_concat_free1 (tp->string, tmp.string);
+      free_token (&tmp);
+    }
+}
+
 
 /* ========================= Extracting strings.  ========================== */
 
 
 /* Context lookup table.  */
 static flag_context_list_table_ty *flag_context_list_table;
+
+
+/* Maximum supported nesting depth.  */
+#define MAX_NESTING_DEPTH 1000
+
+/* Current nesting depth.  */
+static int nesting_depth;
 
 
 /* The file is broken into tokens.  Scan the token stream, looking for
@@ -687,7 +724,7 @@ static flag_context_list_table_ty *flag_context_list_table;
    Return true upon eof, false upon closing parenthesis.  */
 static bool
 extract_parenthesized (message_list_ty *mlp,
-                       flag_context_ty outer_context,
+                       flag_region_ty *outer_region,
                        flag_context_list_iterator_ty context_iter,
                        struct arglist_parser *argparser)
 {
@@ -703,9 +740,9 @@ extract_parenthesized (message_list_ty *mlp,
   /* Context iterator that will be used if the next token is a '('.  */
   flag_context_list_iterator_ty next_context_iter =
     passthrough_context_list_iterator;
-  /* Current context.  */
-  flag_context_ty inner_context =
-    inherited_context (outer_context,
+  /* Current region.  */
+  flag_region_ty *inner_region =
+    inheriting_region (outer_region,
                        flag_context_list_iterator_advance (&context_iter));
 
   /* Start state is 0.  */
@@ -714,16 +751,15 @@ extract_parenthesized (message_list_ty *mlp,
   for (;;)
     {
       token_ty token;
-
-      x_awk_lex (&token);
+      phase4_get (&token);
 
       if (next_is_argument && token.type != token_type_lparen)
         {
           /* An argument list starts, even though there is no '('.  */
           context_iter = next_context_iter;
-          outer_context = inner_context;
-          inner_context =
-            inherited_context (outer_context,
+          assign_region (outer_region, inner_region);
+          inner_region =
+            inheriting_region (outer_region,
                                flag_context_list_iterator_advance (
                                  &context_iter));
         }
@@ -733,7 +769,6 @@ extract_parenthesized (message_list_ty *mlp,
         case token_type_symbol:
           {
             void *keyword_value;
-
             if (hash_find_entry (&keywords, token.string, strlen (token.string),
                                  &keyword_value)
                 == 0)
@@ -753,35 +788,43 @@ extract_parenthesized (message_list_ty *mlp,
                 flag_context_list_table,
                 token.string, strlen (token.string)));
           free (token.string);
-          continue;
+          break;
 
         case token_type_lparen:
-          if (extract_parenthesized (mlp, inner_context, next_context_iter,
+          if (++nesting_depth > MAX_NESTING_DEPTH)
+            if_error (IF_SEVERITY_FATAL_ERROR,
+                      logical_file_name, line_number, (size_t)(-1), false,
+                      _("too many open parentheses"));
+          if (extract_parenthesized (mlp, inner_region, next_context_iter,
                                      arglist_parser_alloc (mlp,
                                                            state ? next_shapes : NULL)))
             {
               arglist_parser_done (argparser, arg);
+              unref_region (inner_region);
               return true;
             }
+          nesting_depth--;
           next_is_argument = false;
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         case token_type_rparen:
           arglist_parser_done (argparser, arg);
+          unref_region (inner_region);
           return false;
 
         case token_type_comma:
           arg++;
-          inner_context =
-            inherited_context (outer_context,
+          unref_region (inner_region);
+          inner_region =
+            inheriting_region (outer_region,
                                flag_context_list_iterator_advance (
                                  &context_iter));
           next_is_argument = false;
           next_context_iter = passthrough_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         case token_type_string:
           {
@@ -790,18 +833,25 @@ extract_parenthesized (message_list_ty *mlp,
             pos.line_number = token.line_number;
 
             if (extract_all)
-              remember_a_message (mlp, NULL, token.string, inner_context, &pos,
-                                  NULL, savable_comment);
+              remember_a_message (mlp, NULL, token.string, false, false,
+                                  inner_region, &pos,
+                                  NULL, savable_comment, false);
             else
-              arglist_parser_remember (argparser, arg, token.string,
-                                       inner_context,
-                                       pos.file_name, pos.line_number,
-                                       savable_comment);
+              {
+                mixed_string_ty *ms =
+                  mixed_string_alloc_simple (token.string, lc_string,
+                                             pos.file_name, pos.line_number);
+                free (token.string);
+                arglist_parser_remember (argparser, arg, ms,
+                                         inner_region,
+                                         pos.file_name, pos.line_number,
+                                         savable_comment, false);
+              }
           }
           next_is_argument = false;
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         case token_type_i18nstring:
           {
@@ -809,41 +859,44 @@ extract_parenthesized (message_list_ty *mlp,
             pos.file_name = logical_file_name;
             pos.line_number = token.line_number;
 
-            remember_a_message (mlp, NULL, token.string, inner_context, &pos,
-                                NULL, savable_comment);
+            remember_a_message (mlp, NULL, token.string, false, false,
+                                inner_region, &pos,
+                                NULL, savable_comment, false);
           }
           next_is_argument = false;
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         case token_type_semicolon:
           /* An argument list ends, and a new statement begins.  */
           /* FIXME: Should handle newline that acts as statement separator
              in the same way.  */
-          /* FIXME: Instead of resetting outer_context here, it may be better
+          /* FIXME: Instead of resetting outer_region here, it may be better
              to recurse in the next_is_argument handling above, waiting for
              the next semicolon or other statement terminator.  */
-          outer_context = null_context;
+          outer_region = null_context_region ();
           context_iter = null_context_list_iterator;
           next_is_argument = false;
           next_context_iter = passthrough_context_list_iterator;
-          inner_context =
-            inherited_context (outer_context,
+          unref_region (inner_region);
+          inner_region =
+            inheriting_region (outer_region,
                                flag_context_list_iterator_advance (
                                  &context_iter));
           state = 0;
-          continue;
+          break;
 
         case token_type_eof:
           arglist_parser_done (argparser, arg);
+          unref_region (inner_region);
           return true;
 
         case token_type_other:
           next_is_argument = false;
           next_context_iter = null_context_list_iterator;
           state = 0;
-          continue;
+          break;
 
         default:
           abort ();
@@ -869,14 +922,16 @@ extract_awk (FILE *f,
   last_non_comment_line = -1;
 
   prefer_division_over_regexp = false;
+  phase3_pushback_length = 0;
 
   flag_context_list_table = flag_table;
+  nesting_depth = 0;
 
   init_keywords ();
 
   /* Eat tokens until eof is seen.  When extract_parenthesized returns
      due to an unbalanced closing parenthesis, just restart it.  */
-  while (!extract_parenthesized (mlp, null_context, null_context_list_iterator,
+  while (!extract_parenthesized (mlp, null_context_region (), null_context_list_iterator,
                                  arglist_parser_alloc (mlp, NULL)))
     ;
 

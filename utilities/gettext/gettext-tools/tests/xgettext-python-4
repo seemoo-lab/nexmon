@@ -1,7 +1,7 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test Python support: --add-comments option.
+# Test Python support: --add-comments option, string concatenation.
 
 cat <<\EOF > xg-py-4.py
 # a
@@ -17,7 +17,7 @@ ${XGETTEXT} --add-comments --omit-header --no-location --keyword=_ \
   -d xg-py-4.tmp xg-py-4.py || Exit 1
 LC_ALL=C tr -d '\r' < xg-py-4.tmp.po > xg-py-4.po || Exit 1
 
-cat <<EOF > xg-py-4.ok
+cat <<\EOF > xg-py-4.ok
 #. a
 #. b
 #. c

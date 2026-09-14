@@ -44,16 +44,42 @@
 #include <nexioctls.h>          // ioctls added in the nexmon patch
 #include <version.h>            // version information
 #include <argprintf.h>          // allows to execute argprintf to print into the arg buffer
+#include <capabilities.h>
 
 #define NULL 0
 
-int 
+/* Keep the D11 core awake and the TX path un-muted for monitor-mode TX.
+ * With mpc left at 1, the core powers down once the STA goes idle and an
+ * injected frame is accounted as PACKET_OUTGOING in the host pcap while the
+ * radio never actually keys. */
+static void
+inject_radio_up(struct wlc_info *wlc)
+{
+    int z = 0;
+    int txpwr = 127;
+
+    set_mpc(wlc, 0);
+    wlc_ioctl(wlc, WLC_SET_PM, &z, 4, 0);
+    wlc_ioctl(wlc, WLC_SET_TXPWR, &txpwr, 4, 0);
+    wlc_enable_mac(wlc);
+}
+
+int
 wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
 {
     int ret = IOCTL_ERROR;
     argprintf_init(arg, len);
 
     switch(cmd) {
+        case NEX_GET_CAPABILITIES:
+        {
+            if (len == 4) {
+                memcpy(arg, &capabilities, 4);
+                ret = IOCTL_SUCCESS;
+            }
+            break;
+        }
+
         case 510:
         {
             argprintf("%s\n", __FUNCTION__);
@@ -82,6 +108,11 @@ wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
         default:
             ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
     }
+
+    /* Once monitor mode is actually on, force the radio into a state that
+     * can transmit. Done after the ioctl so it is not undone by it. */
+    if (cmd == WLC_SET_MONITOR && arg && len >= 4 && *(int *) arg)
+        inject_radio_up(wlc);
 
     return ret;
 }

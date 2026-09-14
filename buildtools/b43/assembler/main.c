@@ -216,7 +216,7 @@ static bool is_valid_imm(struct assembler_context *ctx,
 
 	/* First create a mask with all possible bits for
 	 * an immediate value unset. */
-	mask = (~0 << immediate_size) & 0xFFFF;
+	mask = (~0u << immediate_size) & 0xFFFF;
 	/* Is the sign bit of the immediate set? */
 	if (imm & (1 << (immediate_size - 1))) {
 		/* Yes, so all bits above that must also

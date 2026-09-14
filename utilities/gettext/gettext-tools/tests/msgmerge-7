@@ -1,75 +1,49 @@
 #! /bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test multi-domain handling.
+# Test pseudo-comments containing filenames that start with a digit.
 
-cat <<\EOF > mm-test7.po
-domain "foo-de"
+cat <<\EOF > mm-test7.pot
 msgid ""
-msgstr "Content-Type: text/plain; charset=ISO-8859-1\n"
+msgstr ""
+"Project-Id-Version: GNU gettext 0.11.5\n"
+"POT-Creation-Date: 2002-08-20 15:24+0200\n"
+"PO-Revision-Date: 2002-12-02 07:05+0100\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-# Das ist ein Kommentar.
-msgid "hello"
-msgstr "Hallo"
-
-# Noch einer.
-msgid "bye"
-msgstr "Tsch��"
-
-domain "foo-fr"
-msgid ""
-msgstr "Content-Type: text/plain; charset=ISO-8859-1\n"
-
-# Ceci est un commentaire.
-msgid "hello"
-msgstr "Salut"
-
-# Encore un.
-msgid "bye"
-msgstr "A bient�t"
+#: 123.c:134
+#, c-format
+msgid "invalid argument `%s' for `%s'"
+msgstr "ungültiges Argument »%s« für »%s«"
 EOF
 
-cat <<EOF > mm-test7.pot
-domain "foo-de"
-msgid "Hello"
-msgstr ""
-domain "foo-fr"
-msgid "Hello"
+cat <<\EOF > mm-test7.po
+#: 123.c:134
+#, c-format
+msgid "invalid argument `%s' for `%s'"
 msgstr ""
 EOF
 
 : ${MSGMERGE=msgmerge}
-${MSGMERGE} -q -o mm-test7.tmp mm-test7.po mm-test7.pot || Exit 1
+${MSGMERGE} -q -o mm-test7.tmp mm-test7.pot mm-test7.po || Exit 1
 LC_ALL=C tr -d '\r' < mm-test7.tmp > mm-test7.out || Exit 1
 
 cat <<\EOF > mm-test7.ok
-domain "foo-de"
-
 msgid ""
-msgstr "Content-Type: text/plain; charset=ISO-8859-1\n"
+msgstr ""
+"Project-Id-Version: GNU gettext 0.11.5\n"
+"POT-Creation-Date: 2002-08-20 15:24+0200\n"
+"PO-Revision-Date: 2002-12-02 07:05+0100\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-# Das ist ein Kommentar.
-#, fuzzy
-msgid "Hello"
-msgstr "Hallo"
-
-# Noch einer.
-#~ msgid "bye"
-#~ msgstr "Tsch��"
-
-domain "foo-fr"
-
-msgid ""
-msgstr "Content-Type: text/plain; charset=ISO-8859-1\n"
-
-# Ceci est un commentaire.
-#, fuzzy
-msgid "Hello"
-msgstr "Salut"
-
-# Encore un.
-#~ msgid "bye"
-#~ msgstr "A bient�t"
+#: 123.c:134
+#, c-format
+msgid "invalid argument `%s' for `%s'"
+msgstr "ungültiges Argument »%s« für »%s«"
 EOF
 
 : ${DIFF=diff}

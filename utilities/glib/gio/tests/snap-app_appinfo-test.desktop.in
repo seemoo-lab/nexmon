@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: CC0-1.0
+# SPDX-FileCopyrightText: 2025 Marco Trevisan (Treviño)
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Snap Test
+X-SnapInstanceName=snap-app
+X-SnapAppName=appinfo-test
+X-SnapCommonID=org.gio.snap-app.appinfo-test
+DBusActivatable=false
+Exec=@installed_tests_dir@/snapinfo-test %U
+StartupNotify=true

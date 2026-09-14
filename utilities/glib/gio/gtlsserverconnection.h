@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -32,14 +34,6 @@ G_BEGIN_DECLS
 #define G_IS_TLS_SERVER_CONNECTION(inst)            (G_TYPE_CHECK_INSTANCE_TYPE ((inst), G_TYPE_TLS_SERVER_CONNECTION))
 #define G_TLS_SERVER_CONNECTION_GET_INTERFACE(inst) (G_TYPE_INSTANCE_GET_INTERFACE ((inst), G_TYPE_TLS_SERVER_CONNECTION, GTlsServerConnectionInterface))
 
-/**
- * GTlsServerConnection:
- *
- * TLS server-side connection. This is the server-side implementation
- * of a #GTlsConnection.
- *
- * Since: 2.28
- */
 typedef struct _GTlsServerConnectionInterface GTlsServerConnectionInterface;
 
 /**
@@ -56,10 +50,10 @@ struct _GTlsServerConnectionInterface
 
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType                 g_tls_server_connection_get_type                 (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType                 g_tls_server_connection_get_type                 (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GIOStream *           g_tls_server_connection_new                      (GIOStream        *base_io_stream,
 									GTlsCertificate  *certificate,
 									GError          **error);

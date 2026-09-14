@@ -50,9 +50,13 @@
       <arg direction="in" type="a{s(ii)}" name="dict_s_to_pairs" />
       <arg direction="in" type="(iss)" name="a_struct" />
       <arg direction="in" type="as" name="array_of_strings" />
+      <arg direction="out" type="as" name="ret_array_of_strings" />
       <arg direction="in" type="ao" name="array_of_objpaths" />
+      <arg direction="out" type="ao" name="ret_array_of_objpaths" />
       <arg direction="in" type="ag" name="array_of_signatures" />
+      <arg direction="out" type="ag" name="ret_array_of_signatures" />
       <arg direction="in" type="aay" name="array_of_bytestrings" />
+      <arg direction="out" type="aay" name="ret_array_of_bytestrings" />
       <arg direction="out" type="ay" name="result" />
     </method>
 
@@ -102,6 +106,12 @@
     <property name="FinallyNormalName" type="s" access="readwrite"/>
     <property name="ReadonlyProperty" type="s" access="read"/>
     <property name="WriteonlyProperty" type="s" access="write"/>
+    <property name="quiet" type="s" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="false"/>
+    </property>
+    <property name="quiet_too" type="s" access="readwrite">
+      <annotation name="org.freedesktop.DBus.Property.EmitsChangedSignal" value="const"/>
+    </property>
 
     <!-- unset properties -->
     <property name="unset_i" type="i" access="readwrite"/>
@@ -465,11 +475,20 @@
   </interface>
   <unknownTag/>
 
-  <interface name="FDPassing">
+  <interface name="test.FDPassing">
     <method name="HelloFD">
       <annotation name="org.gtk.GDBus.C.UnixFD" value="1"/>
       <arg name="greeting" direction="in" type="s"/>
       <arg name="response" direction="out" type="s"/>
+    </method>
+    <method name="NoAnnotation">
+      <arg name="greeting" direction="in" type="h"/>
+      <arg name="greeting_locale" direction="in" type="s"/>
+      <arg name="response" direction="out" type="h"/>
+      <arg name="response_locale" direction="out" type="s"/>
+    </method>
+    <method name="NoAnnotationNested">
+      <arg name="files" type="a{sh}" direction="in"/>
     </method>
   </interface>
 

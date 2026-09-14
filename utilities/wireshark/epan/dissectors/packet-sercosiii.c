@@ -14,19 +14,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-13 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -34,6 +22,8 @@
 #include <epan/packet.h>
 #include <epan/expert.h>
 #include <epan/etypes.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 
 #define MAX_SERCOS_DEVICES (512)
 #define MAX_SERCOS_ADDRESS (511)
@@ -48,109 +38,111 @@
 void proto_register_sercosiii(void);
 void proto_reg_handoff_sercosiii(void);
 
+static dissector_handle_t siii_handle;
+
 /* Initialize the protocol and registered fields */
-static gint proto_siii = -1;
+static int proto_siii;
 
 /* Initialize the subtree pointers */
-static gint ett_siii = -1;
-static gint ett_siii_header = -1;
-static gint ett_siii_mst = -1;
-static gint ett_siii_mst_teltype = -1;
-static gint ett_siii_mst_phase = -1;
-static gint ett_siii_mdt = -1;
-static gint ett_siii_mdt_svc = -1;
-static gint ett_siii_mdt_devctrls = -1;
-static gint ett_siii_mdt_version = -1;
-static gint ett_siii_mdt_svc_channel = -1;
-static gint ett_siii_mdt_dev_control = -1;
-static gint ett_siii_mdt_devctrl = -1;
-static gint ett_siii_mdt_svcctrl = -1;
-static gint ett_siii_mdt_svcinfo = -1;
-static gint ett_siii_at_svcstat = -1;
-static gint ett_siii_at_svcinfo = -1;
-static gint ett_siii_mdt_svch_data_error_info = -1;
-static gint ett_siii_mdt_svch_data = -1;
-static gint ett_siii_at_devstatus = -1;
-static gint ett_siii_at_sercosaddress = -1;
-static gint ett_siii_at = -1;
-static gint ett_siii_at_svc = -1;
-static gint ett_siii_at_sercos_address = -1;
-static gint ett_siii_at_devstats = -1;
-static gint ett_siii_at_svc_channel = -1;
-static gint ett_siii_at_dev_status = -1;
-static gint ett_siii_mdt_hp = -1;
-static gint ett_siii_at_hp = -1;
-static gint ett_siii_mdt_hp_ctrl = -1;
-static gint ett_siii_mdt_hp_info = -1;
-static gint ett_siii_at_hp_stat = -1;
-static gint ett_siii_at_hp_info = -1;
-static gint ett_siii_recognized_devices = -1;
+static int ett_siii;
+static int ett_siii_header;
+static int ett_siii_mst;
+static int ett_siii_mst_teltype;
+static int ett_siii_mst_phase;
+static int ett_siii_mdt;
+static int ett_siii_mdt_svc;
+static int ett_siii_mdt_devctrls;
+static int ett_siii_mdt_version;
+static int ett_siii_mdt_svc_channel;
+static int ett_siii_mdt_dev_control;
+static int ett_siii_mdt_devctrl;
+static int ett_siii_mdt_svcctrl;
+static int ett_siii_mdt_svcinfo;
+static int ett_siii_at_svcstat;
+static int ett_siii_at_svcinfo;
+static int ett_siii_mdt_svch_data_error_info;
+static int ett_siii_mdt_svch_data;
+static int ett_siii_at_devstatus;
+static int ett_siii_at_sercosaddress;
+static int ett_siii_at;
+static int ett_siii_at_svc;
+static int ett_siii_at_sercos_address;
+static int ett_siii_at_devstats;
+static int ett_siii_at_svc_channel;
+static int ett_siii_at_dev_status;
+static int ett_siii_mdt_hp;
+static int ett_siii_at_hp;
+static int ett_siii_mdt_hp_ctrl;
+static int ett_siii_mdt_hp_info;
+static int ett_siii_at_hp_stat;
+static int ett_siii_at_hp_info;
+static int ett_siii_recognized_devices;
 
-static gint hf_siii_mdt_version = -1;
-static gint hf_siii_mdt_version_initprocvers = -1;
-static gint hf_siii_mdt_version_num_mdt_at_cp1_2 = -1;
-static gint hf_siii_mdt_version_switch_off_sercos_telegrams = -1;
-static gint hf_siii_mdt_version_fast_cp_switch = -1;
-static gint hf_siii_mdt_version_transmission_of_communication_parameters_mdt0_cp0 = -1;
-static gint hf_siii_mdt_dev_control_top_control = -1;
-static gint hf_siii_at_dev_control_ident = -1;
-static gint hf_siii_mdt_dev_control_change_topology = -1;
-static gint hf_siii_mdt_dev_control = -1;
-static gint hf_siii_mst_channel = -1;
-static gint hf_siii_mst_type = -1;
-static gint hf_siii_mst_cyclecntvalid = -1;
-static gint hf_siii_mst_telno = -1;
-static gint hf_siii_mst_phase = -1;
-static gint hf_siii_mst_cyclecnt = -1;
-static gint hf_siii_mst_crc32 = -1;
-static gint hf_siii_mdt_svch_dbe = -1;
-static gint hf_siii_mdt_svch_eot = -1;
-static gint hf_siii_mdt_svch_rw = -1;
-static gint hf_siii_mdt_svch_mhs = -1;
-static gint hf_siii_mdt_svch_info = -1;
-static gint hf_siii_at_svch_valid = -1;
-static gint hf_siii_at_svch_error = -1;
-static gint hf_siii_at_svch_busy = -1;
-static gint hf_siii_at_svch_ahs = -1;
-static gint hf_siii_at_svch_info = -1;
-static gint hf_siii_mdt_svch_idn = -1;
-static gint hf_siii_mdt_svch_ctrl = -1;
-static gint hf_siii_at_svch_stat = -1;
-/* static gint hf_siii_svch_data_telofs_telno = -1; */
-/* static gint hf_siii_svch_data_telofs_mdt_at = -1; */
-/* static gint hf_siii_svch_data_telofs_offset = -1; */
-/* static gint hf_siii_svch_data_proccmd_proccmdexec = -1; */
-/* static gint hf_siii_svch_data_proccmd_proccmd = -1; */
-static gint hf_siii_at_cp0_support_functions = -1;
-static gint hf_siii_at_cp0_device_address = -1;
-static gint hf_siii_at_dev_status = -1;
-static gint hf_siii_at_dev_status_commwarning = -1;
-static gint hf_siii_at_dev_status_change_topology = -1;
-static gint hf_siii_at_dev_status_top_status = -1;
-static gint hf_siii_at_dev_status_inactive_port_status = -1;
-static gint hf_siii_at_dev_status_errorconnection = -1;
-static gint hf_siii_at_dev_status_slave_valid = -1;
-static gint hf_siii_at_dev_status_proc_command_change = -1;
-static gint hf_siii_at_dev_status_parameterization_level_active = -1;
-static gint hf_siii_mdt_hotplug_address = -1;
-static gint hf_siii_mdt_hp_ctrl = -1;
-static gint hf_siii_mdt_hp_info = -1;
-static gint hf_siii_at_hotplug_address = -1;
-static gint hf_siii_at_hp_stat = -1;
-static gint hf_siii_at_hp_info = -1;
-static gint hf_siii_mdt_hotplug_control_param = -1;
-static gint hf_siii_mdt_hotplug_control_svc_switch = -1;
-static gint hf_siii_at_hotplug_status_param = -1;
-static gint hf_siii_at_hotplug_status_hp0_finished = -1;
-static gint hf_siii_at_hotplug_status_error = -1;
-static gint hf_siii_service_channels = -1;
-static gint hf_siii_device_controls = -1;
-static gint hf_siii_device_status = -1;
-static gint hf_siii_idn_code = -1;
-static gint hf_siii_at_cp0_num_devices = -1;
-static gint hf_siii_at_cp0_sercos_address = -1;
+static int hf_siii_mdt_version;
+static int hf_siii_mdt_version_initprocvers;
+static int hf_siii_mdt_version_num_mdt_at_cp1_2;
+static int hf_siii_mdt_version_switch_off_sercos_telegrams;
+static int hf_siii_mdt_version_fast_cp_switch;
+static int hf_siii_mdt_version_transmission_of_communication_parameters_mdt0_cp0;
+static int hf_siii_mdt_dev_control_top_control;
+static int hf_siii_at_dev_control_ident;
+static int hf_siii_mdt_dev_control_change_topology;
+static int hf_siii_mdt_dev_control;
+static int hf_siii_mst_channel;
+static int hf_siii_mst_type;
+static int hf_siii_mst_cyclecntvalid;
+static int hf_siii_mst_telno;
+static int hf_siii_mst_phase;
+static int hf_siii_mst_cyclecnt;
+static int hf_siii_mst_crc32;
+static int hf_siii_mdt_svch_dbe;
+static int hf_siii_mdt_svch_eot;
+static int hf_siii_mdt_svch_rw;
+static int hf_siii_mdt_svch_mhs;
+static int hf_siii_mdt_svch_info;
+static int hf_siii_at_svch_valid;
+static int hf_siii_at_svch_error;
+static int hf_siii_at_svch_busy;
+static int hf_siii_at_svch_ahs;
+static int hf_siii_at_svch_info;
+static int hf_siii_mdt_svch_idn;
+static int hf_siii_mdt_svch_ctrl;
+static int hf_siii_at_svch_stat;
+/* static int hf_siii_svch_data_telofs_telno; */
+/* static int hf_siii_svch_data_telofs_mdt_at; */
+/* static int hf_siii_svch_data_telofs_offset; */
+/* static int hf_siii_svch_data_proccmd_proccmdexec; */
+/* static int hf_siii_svch_data_proccmd_proccmd; */
+static int hf_siii_at_cp0_support_functions;
+static int hf_siii_at_cp0_device_address;
+static int hf_siii_at_dev_status;
+static int hf_siii_at_dev_status_commwarning;
+static int hf_siii_at_dev_status_change_topology;
+static int hf_siii_at_dev_status_top_status;
+static int hf_siii_at_dev_status_inactive_port_status;
+static int hf_siii_at_dev_status_errorconnection;
+static int hf_siii_at_dev_status_slave_valid;
+static int hf_siii_at_dev_status_proc_command_change;
+static int hf_siii_at_dev_status_parameterization_level_active;
+static int hf_siii_mdt_hotplug_address;
+static int hf_siii_mdt_hp_ctrl;
+static int hf_siii_mdt_hp_info;
+static int hf_siii_at_hotplug_address;
+static int hf_siii_at_hp_stat;
+static int hf_siii_at_hp_info;
+static int hf_siii_mdt_hotplug_control_param;
+static int hf_siii_mdt_hotplug_control_svc_switch;
+static int hf_siii_at_hotplug_status_param;
+static int hf_siii_at_hotplug_status_hp0_finished;
+static int hf_siii_at_hotplug_status_error;
+static int hf_siii_service_channels;
+static int hf_siii_device_controls;
+static int hf_siii_device_status;
+static int hf_siii_idn_code;
+static int hf_siii_at_cp0_num_devices;
+static int hf_siii_at_cp0_sercos_address;
 
-static expert_field ei_siii_cp_unknown = EI_INIT;
+static expert_field ei_siii_cp_unknown;
 
 
 /* Allow heuristic dissection */
@@ -519,7 +511,7 @@ static const value_string siii_mdt_idn_text[]=
   {IDN(0,0,0,0, 417), "Positioning velocity threshold in modulo mode"},
   {IDN(0,0,0,0, 418), "Target position window in modulo mode"},
   {IDN(0,0,0,0, 419), "Positioning acknowledge"},
-  {IDN(0,0,0,0, 420), "Activate parametrization level procedure command (PL)"},
+  {IDN(0,0,0,0, 420), "Activate parameterization level procedure command (PL)"},
   {IDN(0,0,0,0, 422), "Exit parameterization level procedure command"},
   {IDN(0,0,0,0, 423), "IDN-list of invalid data for parameterization level"},
   {IDN(0,0,0,0, 426), "Measuring data allocation 1"},
@@ -808,7 +800,7 @@ static void dissect_siii_mdt_hp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
 {
   proto_tree *subtree;
 
-  static const int * ctrl_fields[] = {
+  static int * const ctrl_fields[] = {
     &hf_siii_mdt_hotplug_control_svc_switch,
     &hf_siii_mdt_hotplug_control_param,
     NULL
@@ -826,7 +818,7 @@ static void dissect_siii_mdt_hp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
 
 static void dissect_siii_mdt_devctrl(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-  static const int * ctrl_fields[] = {
+  static int * const ctrl_fields[] = {
     &hf_siii_at_dev_control_ident,
     &hf_siii_mdt_dev_control_change_topology,
     &hf_siii_mdt_dev_control_top_control,
@@ -837,12 +829,12 @@ static void dissect_siii_mdt_devctrl(tvbuff_t *tvb, packet_info *pinfo _U_, prot
                                    ett_siii_mdt_devctrl, ctrl_fields, ENC_LITTLE_ENDIAN);
 }
 
-static void dissect_siii_mdt_svc(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, guint devno _U_) /* devno will be needed in later versions */
+static void dissect_siii_mdt_svc(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned devno _U_) /* devno will be needed in later versions */
 {
   proto_tree *subtree;
   proto_item *ti;
 
-  static const int * svch_fields[] = {
+  static int * const svch_fields[] = {
     &hf_siii_mdt_svch_dbe, /* data block element */
     &hf_siii_mdt_svch_eot, /* end of transmission */
     &hf_siii_mdt_svch_rw,  /* read or write */
@@ -850,8 +842,8 @@ static void dissect_siii_mdt_svc(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tr
     NULL
   };
 
-  guint16 svc_ctrl = tvb_get_letohs(tvb, 0); /* service channel header */
-  guint8  svc_dbe  = (svc_ctrl>>3) & 7;      /* accessed data block element */
+  uint16_t svc_ctrl = tvb_get_letohs(tvb, 0); /* service channel header */
+  uint8_t svc_dbe  = (svc_ctrl>>3) & 7;      /* accessed data block element */
 
   proto_tree_add_bitmask(tree, tvb, 0, hf_siii_mdt_svch_ctrl,
                                    ett_siii_mdt_svcctrl, svch_fields, ENC_LITTLE_ENDIAN);
@@ -868,7 +860,7 @@ static void dissect_siii_mdt_svc(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tr
 
 static void dissect_siii_mdt_cp0(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-  static const int * version_fields[] = {
+  static int * const version_fields[] = {
     &hf_siii_mdt_version_switch_off_sercos_telegrams,
     &hf_siii_mdt_version_fast_cp_switch,
     &hf_siii_mdt_version_transmission_of_communication_parameters_mdt0_cp0,
@@ -881,12 +873,12 @@ static void dissect_siii_mdt_cp0(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tr
                                    ett_siii_mdt_version, version_fields, ENC_LITTLE_ENDIAN);
 }
 
-static void dissect_siii_mdt_cp1_2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint telno)
+static void dissect_siii_mdt_cp1_2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned telno)
 {
-  guint     devstart = telno * SERCOS_SLAVE_GROUP_SIZE; /* MDT0: slaves 0-127; MDT1: slaves 128-255; ... */
+  unsigned  devstart = telno * SERCOS_SLAVE_GROUP_SIZE; /* MDT0: slaves 0-127; MDT1: slaves 128-255; ... */
   tvbuff_t *tvb_n;
 
-  guint idx;
+  unsigned idx;
   proto_tree *subtree;
   proto_tree *subtree_svc;
   proto_tree *subtree_devctrl;
@@ -910,9 +902,9 @@ static void dissect_siii_mdt_cp1_2(tvbuff_t *tvb, packet_info *pinfo, proto_tree
   }
 }
 
-static void dissect_siii_mdt_cp3_4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint telno)
+static void dissect_siii_mdt_cp3_4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned telno)
 {
-  /* guint devstart _U_ = telno * SERCOS_SLAVE_GROUP_SIZE; */
+  /* unsigned devstart _U_ = telno * SERCOS_SLAVE_GROUP_SIZE; */
 
   if (0 == telno) /* dissect hotplug field in MDT0 only */
     dissect_siii_mdt_hp(tvb, pinfo, tree);
@@ -930,13 +922,13 @@ static void dissect_siii_mdt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
   proto_tree *subtree;
   tvbuff_t   *tvb_n;
 
-  guint       t_phase;
-  guint       telno;
+  unsigned    t_phase;
+  unsigned    telno;
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "SIII MDT");
 
-  t_phase = (tvb_get_guint8(tvb, 1)&0x8F); /* read communication phase out of SERCOS III header */
-  telno   = (tvb_get_guint8(tvb, 0) & 0xF); /* read number of MDT out of SERCOS III header */
+  t_phase = (tvb_get_uint8(tvb, 1)&0x8F); /* read communication phase out of SERCOS III header */
+  telno   = (tvb_get_uint8(tvb, 0) & 0xF); /* read number of MDT out of SERCOS III header */
 
   if (t_phase & 0x80) /* communication phase switching in progress */
   {
@@ -978,9 +970,9 @@ static void dissect_siii_mdt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
 }
 
 
-static void dissect_siii_at_svc(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, guint devno _U_) /* devno will be used in later versions */
+static void dissect_siii_at_svc(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, unsigned devno _U_) /* devno will be used in later versions */
 {
-  static const int * svch_fields[] = {
+  static int * const svch_fields[] = {
     &hf_siii_at_svch_valid,
     &hf_siii_at_svch_error,
     &hf_siii_at_svch_busy,
@@ -996,7 +988,7 @@ static void dissect_siii_at_svc(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
 
 static void dissect_siii_at_devstat(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-  static const int * status[] = {
+  static int * const status[] = {
     &hf_siii_at_dev_status_commwarning,
     &hf_siii_at_dev_status_change_topology,
     &hf_siii_at_dev_status_top_status,
@@ -1016,7 +1008,7 @@ static void dissect_siii_at_hp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree
 {
   proto_tree *subtree;
 
-  static const int * status[] = {
+  static int * const status[] = {
     &hf_siii_at_hotplug_status_error,
     &hf_siii_at_hotplug_status_hp0_finished,
     &hf_siii_at_hotplug_status_param,
@@ -1034,9 +1026,9 @@ static void dissect_siii_at_hp(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree
 
 static void dissect_siii_at_cp0(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree)
 {
-  guint16     seqcnt;           /* sequence counter */
-  guint16     tfield;           /* topology field for sercos addresses */
-  guint16     i;
+  uint16_t    seqcnt;           /* sequence counter */
+  uint16_t    tfield;           /* topology field for sercos addresses */
+  uint16_t    i;
   proto_tree *subtree, *subtree2;
   proto_item* ti;
 
@@ -1065,12 +1057,12 @@ static void dissect_siii_at_cp0(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tre
   }
 }
 
-static void dissect_siii_at_cp1_2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint telno)
+static void dissect_siii_at_cp1_2(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned telno)
 {
-  guint     devstart = telno * SERCOS_SLAVE_GROUP_SIZE; /* AT0: slaves 0-127; AT1: slaves 128-255; ... */
+  unsigned  devstart = telno * SERCOS_SLAVE_GROUP_SIZE; /* AT0: slaves 0-127; AT1: slaves 128-255; ... */
   tvbuff_t *tvb_n;
 
-  guint idx;
+  unsigned idx;
 
   proto_tree *subtree;
   proto_tree *subtree_svc;
@@ -1094,7 +1086,7 @@ static void dissect_siii_at_cp1_2(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
   }
 }
 
-static void dissect_siii_at_cp3_4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint telno)
+static void dissect_siii_at_cp3_4(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned telno)
 {
   if (0 == telno) /* dissect hotplug field in AT0 only */
     dissect_siii_at_hp(tvb, pinfo, tree);
@@ -1112,11 +1104,11 @@ static void dissect_siii_at(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
   proto_tree *subtree;
   tvbuff_t   *tvb_n;
 
-  guint8      phase;
-  guint       telno;
+  uint8_t     phase;
+  unsigned    telno;
 
-  phase = (tvb_get_guint8(tvb, 1)&0x8F); /* read communication phase out of SERCOS III header*/
-  telno = (tvb_get_guint8(tvb, 0) & 0xF); /* read number of AT out of SERCOS III header */
+  phase = (tvb_get_uint8(tvb, 1)&0x8F); /* read communication phase out of SERCOS III header*/
+  telno = (tvb_get_uint8(tvb, 0) & 0xF); /* read number of AT out of SERCOS III header */
 
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "SIII AT");
 
@@ -1166,10 +1158,10 @@ dissect_siii(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 {
   proto_item *ti;
   proto_tree *siii_tree;
-  guint       type;
-  const char *tel_ch   = "?";
-  const char *tel_type = "?";
-  guint       tel_no   = 0;
+  unsigned    type;
+  const char *tel_ch;
+  const char *tel_type;
+  unsigned    tel_no   = 0;
   heur_dtbl_entry_t *hdtbl_entry;
 
   /* setup columns */
@@ -1185,7 +1177,7 @@ dissect_siii(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
     return tvb_captured_length(tvb);
 
   /* check what we got on our hand */
-  type = tvb_get_guint8(tvb, 0);
+  type = tvb_get_uint8(tvb, 0);
   if (type & 0x80) /* primary or secondary channel */
     tel_ch = "S";
   else
@@ -1214,9 +1206,9 @@ dissect_siii(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_
 }
 
 static void
-sercosiii_idn_code_format( gchar *result, guint32 svc_info )
+sercosiii_idn_code_format( char *result, uint32_t svc_info )
 {
-   g_snprintf( result, ITEM_LABEL_LENGTH, "%c-%u-%04d.%d.%d",
+   snprintf( result, ITEM_LABEL_LENGTH, "%c-%u-%04d.%d.%d",
        ((0xFFFF & svc_info)>>15)?'P':'S', /* private or sercos IDN */
       (svc_info>>12)&7,                  /* parameter record */
       (svc_info&4095),                   /* IDN */
@@ -1236,28 +1228,28 @@ proto_register_sercosiii(void)
     },
     { &hf_siii_mdt_version_num_mdt_at_cp1_2,
       { "Number of MDTs and ATS in CP1 and CP2", "siii.mdt.version.num_mdt_at_cp1_2",
-      FT_UINT32, BASE_HEX, VALS(siii_mdt_version_num_mdtat_cp1_2_text), 0x30000,
+      FT_UINT32, BASE_HEX, VALS(siii_mdt_version_num_mdtat_cp1_2_text), 0x00030000,
       NULL, HFILL }
     },
     { &hf_siii_mdt_version_transmission_of_communication_parameters_mdt0_cp0,
       { "Transmission of Communication parameters", "siii.mdt.version.mdt0_cp0_transm_comm_parameter",
-      FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x100000,
+      FT_BOOLEAN, 32, TFS(&tfs_yes_no), 0x00100000,
       NULL, HFILL }
     },
     { &hf_siii_mdt_version_fast_cp_switch,
       { "Fast CP switch", "siii.mdt.version.mdt0_cp0_fast_cp_switch",
-      FT_BOOLEAN, 32, TFS(&siii_mdt_version_fast_cp_switch_text), 0x200000,
+      FT_BOOLEAN, 32, TFS(&siii_mdt_version_fast_cp_switch_text), 0x00200000,
       NULL, HFILL }
     },
 
     { &hf_siii_mdt_version_switch_off_sercos_telegrams,
       { "Switch off Sercos III telegrams", "siii.mdt.version.mdt0_cp0_switch_off_sercos_telegram",
-      FT_BOOLEAN, 32, TFS(&siii_switch_off_sercos_telegram_text), 0x400000,
+      FT_BOOLEAN, 32, TFS(&siii_switch_off_sercos_telegram_text), 0x00400000,
       NULL, HFILL }
     },
     { &hf_siii_mdt_version_initprocvers,
       { "Initialization Procedure Version Number", "siii.mdt.version.initprocvers",
-      FT_BOOLEAN, 32, TFS(&siii_mdt_version_initprocvers_text), 0xFF00,
+      FT_BOOLEAN, 32, TFS(&siii_mdt_version_initprocvers_text), 0x0000FF00,
       NULL, HFILL }
     },
 
@@ -1369,37 +1361,37 @@ proto_register_sercosiii(void)
     },
     { &hf_siii_mdt_svch_dbe,
       { "Data block element", "siii.mdt.svch.dbe",
-      FT_UINT16, BASE_DEC, VALS(siii_mdt_svch_dbe_text), 0x38,
+      FT_UINT16, BASE_DEC, VALS(siii_mdt_svch_dbe_text), 0x0038,
       NULL, HFILL }
     },
     { &hf_siii_mdt_svch_eot,
       {"End of element transmission", "siii.mdt.svch.eot",
-      FT_BOOLEAN, 16, TFS(&siii_mdt_svch_eot_text), 0x04,
+      FT_BOOLEAN, 16, TFS(&siii_mdt_svch_eot_text), 0x0004,
       NULL, HFILL }
     },
     { &hf_siii_mdt_svch_rw,
       {"Read/Write", "siii.mdt.svch.rw",
-      FT_BOOLEAN, 16, TFS(&siii_mdt_svch_rw_text), 0x02,
+      FT_BOOLEAN, 16, TFS(&siii_mdt_svch_rw_text), 0x0002,
       NULL, HFILL }
     },
     { &hf_siii_mdt_svch_mhs,
       {"Master Handshake", "siii.mdt.svch.mhs",
-      FT_UINT16, BASE_DEC, NULL, 0x01,
+      FT_UINT16, BASE_DEC, NULL, 0x0001,
       NULL, HFILL }
     },
     { &hf_siii_at_svch_valid,
       { "SVC process", "siii.mdt.svch.proc",
-      FT_BOOLEAN, 16, TFS(&tfs_valid_not_valid), 0x08,
+      FT_BOOLEAN, 16, TFS(&tfs_valid_not_valid), 0x0008,
       NULL, HFILL }
     },
     { &hf_siii_at_svch_error,
       {"SVC Error", "siii.mdt.svch.error",
-      FT_BOOLEAN, 16, TFS(&siii_at_svch_error_text), 0x04,
+      FT_BOOLEAN, 16, TFS(&siii_at_svch_error_text), 0x0004,
       NULL, HFILL }
     },
     { &hf_siii_at_svch_busy,
       {"Busy", "siii.mdt.svch.busy",
-      FT_BOOLEAN, 16, TFS(&siii_at_svch_busy_text), 0x02,
+      FT_BOOLEAN, 16, TFS(&siii_at_svch_busy_text), 0x0002,
       NULL, HFILL }
     },
     { &hf_siii_at_svch_ahs,
@@ -1448,7 +1440,7 @@ proto_register_sercosiii(void)
         NULL, HFILL }
     },
     { &hf_siii_mst_type,
-      { "Telegram Type" , "siii.type",
+      { "Telegram Type", "siii.type",
         FT_UINT8, BASE_DEC, VALS(siii_mst_type_text), 0x40,
         NULL, HFILL }
     },
@@ -1515,23 +1507,23 @@ proto_register_sercosiii(void)
     },
     { &hf_siii_mdt_hotplug_control_svc_switch,
       {"Switch to SVC", "siii.mdt.hp.switch",
-        FT_UINT16, BASE_DEC, VALS(siii_mdt_hotplug_control_svc_switch_text), 0x100,
+      FT_UINT16, BASE_DEC, VALS(siii_mdt_hotplug_control_svc_switch_text), 0x0100,
         NULL, HFILL }
     },
 
     { &hf_siii_at_hotplug_status_param,
       {"Parameter Received", "siii.at.hp.parameter",
-        FT_UINT16, BASE_DEC, VALS(siii_mdt_hotplug_status_ackcode_text), 0xFF,
+      FT_UINT16, BASE_DEC, VALS(siii_mdt_hotplug_status_ackcode_text), 0x00FF,
         NULL, HFILL }
     },
     { &hf_siii_at_hotplug_status_hp0_finished,
       {"HP/SVC", "siii.at.hp.hp0_finished",
-        FT_UINT16, BASE_DEC, NULL, 0x100,
+      FT_UINT16, BASE_DEC, NULL, 0x0100,
         NULL, HFILL }
     },
     { &hf_siii_at_hotplug_status_error,
       {"Error", "siii.at.hp.error",
-        FT_UINT16, BASE_DEC, VALS(siii_at_hotplug_status_error_text), 0x200,
+      FT_UINT16, BASE_DEC, VALS(siii_at_hotplug_status_error_text), 0x0200,
         NULL, HFILL }
     },
     { &hf_siii_service_channels,
@@ -1567,7 +1559,7 @@ proto_register_sercosiii(void)
   };
 
   /* Setup protocol subtree array */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_siii,
     &ett_siii_header,
 
@@ -1619,10 +1611,10 @@ proto_register_sercosiii(void)
   proto_siii = proto_register_protocol("SERCOS III V1.1",
       "SERCOS III V1.1", "siii");
 
-  register_dissector("sercosiii", dissect_siii, proto_siii);
+  siii_handle = register_dissector("sercosiii", dissect_siii, proto_siii);
 
   /* subdissector code */
-  heur_subdissector_list = register_heur_dissector_list("sercosiii", proto_siii);
+  heur_subdissector_list = register_heur_dissector_list_with_description("sercosiii", "SERCOS III payload pre-check", proto_siii);
 
   /* Required function calls to register the header fields and subtrees used */
   proto_register_field_array(proto_siii, hf, array_length(hf));
@@ -1634,9 +1626,6 @@ proto_register_sercosiii(void)
 void
 proto_reg_handoff_sercosiii(void)
 {
-  dissector_handle_t siii_handle;
-
-  siii_handle = create_dissector_handle(dissect_siii, proto_siii);
   dissector_add_uint("ethertype", ETHERTYPE_SERCOS, siii_handle);
 }
 

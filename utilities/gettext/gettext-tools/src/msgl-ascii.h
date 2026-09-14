@@ -1,6 +1,5 @@
 /* Message list test for ASCII character set.
-   Copyright (C) 2001-2003, 2005, 2015-2016 Free Software Foundation, Inc.
-   Written by Bruno Haible <haible@clisp.cons.org>, 2001.
+   Copyright (C) 2001-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -13,11 +12,14 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Bruno Haible.  */
 
 #ifndef _MSGL_ASCII_H
 #define _MSGL_ASCII_H
 
+#include "string-desc.h"
 #include "message.h"
 
 #include <stdbool.h>
@@ -31,13 +33,15 @@ extern "C" {
 extern bool
        is_ascii_string (const char *string);
 extern bool
-       is_ascii_string_list (string_list_ty *slp);
+       is_ascii_string_desc (string_desc_t string);
 extern bool
-       is_ascii_message (message_ty *mp);
+       is_ascii_string_list (const string_list_ty *slp);
 extern bool
-       is_ascii_message_list (message_list_ty *mlp);
+       is_ascii_message (const message_ty *mp);
 extern bool
-       is_ascii_msgdomain_list (msgdomain_list_ty *mdlp);
+       is_ascii_message_list (const message_list_ty *mlp);
+extern bool
+       is_ascii_msgdomain_list (const msgdomain_list_ty *mdlp);
 
 
 #ifdef __cplusplus

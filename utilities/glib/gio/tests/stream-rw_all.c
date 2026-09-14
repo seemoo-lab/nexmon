@@ -1,10 +1,12 @@
 /*
  * Copyright © 2014 Canonical Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -42,7 +44,7 @@ static void
 wait_for_read (gboolean success,
                gsize    read)
 {
-  g_assert (!got_read_done);
+  g_assert_false (got_read_done);
   expected_read_success = success;
   expected_read = read;
 
@@ -74,7 +76,7 @@ static void
 wait_for_write (gboolean success,
                 gsize    written)
 {
-  g_assert (!got_write_done);
+  g_assert_false (got_write_done);
   expected_write_success = success;
   expected_written = written;
 
@@ -108,7 +110,7 @@ test_write_all_async_memory (void)
   g_output_stream_write_all_async (ms, "0123456789", 10, 0, NULL, write_done, NULL);
   wait_for_write (FALSE, 0);
 
-  g_assert (!memcmp (b, "012345678901234567890123", 24));
+  g_assert_cmpint (memcmp (b, "012345678901234567890123", 24), ==, 0);
 
   g_object_unref (ms);
 }
@@ -117,23 +119,23 @@ static void
 test_read_all_async_memory (void)
 {
   GInputStream *ms;
-  gchar b[24] = "0123456789ABCDEFGHIJ!@#$";
+  gchar b[] = "0123456789ABCDEFGHIJ!@#$";
   gchar buf[10];
 
-  ms = g_memory_input_stream_new_from_data (b, sizeof b, NULL);
+  ms = g_memory_input_stream_new_from_data (b, strlen (b), NULL);
 
   g_input_stream_read_all_async (ms, buf, 10, 0, NULL, read_done, NULL);
   wait_for_read (TRUE, 10);
-  g_assert (!memcmp (buf, "0123456789", 10));
+  g_assert_cmpint (memcmp (buf, "0123456789", 10), ==, 0);
 
   g_input_stream_read_all_async (ms, buf, 10, 0, NULL, read_done, NULL);
   wait_for_read (TRUE, 10);
-  g_assert (!memcmp (buf, "ABCDEFGHIJ", 10));
+  g_assert_cmpint (memcmp (buf, "ABCDEFGHIJ", 10), ==, 0);
 
   /* partial read... */
   g_input_stream_read_all_async (ms, buf, 10, 0, NULL, read_done, NULL);
   wait_for_read (TRUE, 4);
-  g_assert (!memcmp (buf, "!@#$", 4));
+  g_assert_cmpint (memcmp (buf, "!@#$", 4), ==, 0);
 
   /* EOF */
   g_input_stream_read_all_async (ms, buf, 10, 0, NULL, read_done, NULL);
@@ -144,6 +146,7 @@ test_read_all_async_memory (void)
 
 #ifdef G_OS_UNIX
 #include <errno.h>
+#include <glib-unix.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <gio/gunixinputstream.h>
@@ -163,13 +166,12 @@ test_read_write_all_async_pipe (void)
 
   {
     gint sv[2];
-    gint s;
 
-    s = socketpair (AF_UNIX, SOCK_STREAM, 0, sv);
-    g_assert (s == 0);
+    g_unix_open_pipe (sv, O_CLOEXEC | O_NONBLOCK, &error);
+    g_assert_no_error (error);
 
-    out = g_unix_output_stream_new (sv[0], TRUE);
-    in = g_unix_input_stream_new (sv[1], TRUE);
+    out = g_unix_output_stream_new (sv[1], TRUE);
+    in = g_unix_input_stream_new (sv[0], TRUE);
   }
 
   /* Try to fill up the buffer */
@@ -178,7 +180,7 @@ test_read_write_all_async_pipe (void)
     {
       s = g_output_stream_write (out, wbuf, sizeof wbuf, NULL, &error);
       g_assert_no_error (error);
-      g_assert (s > 0);
+      g_assert_cmpint (s, >, 0);
       in_flight += s;
     }
 
@@ -187,7 +189,7 @@ test_read_write_all_async_pipe (void)
   g_output_stream_write_all_async (out, "0123456789", 10, 0, cancellable, write_done, NULL);
   while (g_main_context_iteration (NULL, FALSE))
     ;
-  g_assert (!got_write_done);
+  g_assert_false (got_write_done);
 
   /* Cancel that to make sure it works */
   g_cancellable_cancel (cancellable);
@@ -198,7 +200,7 @@ test_read_write_all_async_pipe (void)
   g_output_stream_write_all_async (out, "0123456789", 10, 0, NULL, write_done, NULL);
   while (g_main_context_iteration (NULL, FALSE))
     ;
-  g_assert (!got_write_done);
+  g_assert_false (got_write_done);
 
   /* Now drain as much as we originally put in the buffer to make it
    * block -- this will unblock the writer.
@@ -207,7 +209,7 @@ test_read_write_all_async_pipe (void)
     {
       s = g_input_stream_read (in, rbuf, MIN (sizeof wbuf, in_flight), NULL, &error);
       g_assert_no_error (error);
-      g_assert (s > 0);
+      g_assert_cmpint (s, >, 0);
       in_flight -= s;
     }
 
@@ -219,7 +221,7 @@ test_read_write_all_async_pipe (void)
   /* The write is surely finished by now */
   wait_for_write (TRUE, 10);
   /* ...but the read will not yet be satisfied */
-  g_assert (!got_read_done);
+  g_assert_false (got_read_done);
 
   /* Feed the read more than it asked for; this really should not block
    * since the buffer is so small...

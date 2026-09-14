@@ -2,6 +2,8 @@
  * Copyright (C) 2013 Red Hat, Inc
  * Author: Matthias Clasen
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -21,6 +23,19 @@
  */
 
 #include <gio/gio.h>
+#include <glibconfig.h>
+
+#ifdef G_OS_WIN32
+  #ifdef _MSC_VER
+    #define MODULE_FILENAME(x) "" x ".dll"
+  #else
+    #define MODULE_FILENAME(x) "lib" x ".dll"
+  #endif
+#elif defined(__APPLE__)
+  #define MODULE_FILENAME(x) "lib" x ".dylib"
+#else
+  #define MODULE_FILENAME(x) "lib" x ".so"
+#endif
 
 static void
 test_extension_point (void)
@@ -73,9 +88,20 @@ test_extension_point (void)
   g_assert (g_io_extension_get_priority (ext) == 10);
 }
 
+#define INHERIT_ALL (G_TEST_SUBPROCESS_INHERIT_STDIN | \
+                     G_TEST_SUBPROCESS_INHERIT_STDOUT | \
+                     G_TEST_SUBPROCESS_INHERIT_STDERR)
+
 static void
 test_module_scan_all (void)
 {
+#ifdef GLIB_STATIC_COMPILATION
+  /* The plugin module is statically linked with a separate copy
+   * of GLib so g_io_extension_point_implement won't work. */
+  g_test_skip ("GIOExtensionPoint with dynamic modules isn't supported in static builds.");
+  return;
+#endif
+
   if (g_test_subprocess ())
     {
       GIOExtensionPoint *ep;
@@ -83,7 +109,6 @@ test_module_scan_all (void)
       GList *list;
       ep = g_io_extension_point_register ("test-extension-point");
       g_io_modules_scan_all_in_directory (g_test_get_filename (G_TEST_BUILT, "modules", NULL));
-      g_io_modules_scan_all_in_directory (g_test_get_filename (G_TEST_BUILT, "modules/.libs", NULL));
       list = g_io_extension_point_get_extensions (ep);
       g_assert_cmpint (g_list_length (list), ==, 2);
       ext = list->data;
@@ -92,13 +117,19 @@ test_module_scan_all (void)
       g_assert_cmpstr (g_io_extension_get_name (ext), ==, "test-a");
       return;
     }
-  g_test_trap_subprocess (NULL, 0, 7);
+  g_test_trap_subprocess (NULL, 0, INHERIT_ALL);
   g_test_trap_assert_passed ();
 }
 
 static void
 test_module_scan_all_with_scope (void)
 {
+#ifdef GLIB_STATIC_COMPILATION
+  /* Disabled for the same reason as test_module_scan_all. */
+  g_test_skip ("GIOExtensionPoint with dynamic modules isn't supported in static builds.");
+  return;
+#endif
+
   if (g_test_subprocess ())
     {
       GIOExtensionPoint *ep;
@@ -108,10 +139,8 @@ test_module_scan_all_with_scope (void)
 
       ep = g_io_extension_point_register ("test-extension-point");
       scope = g_io_module_scope_new (G_IO_MODULE_SCOPE_BLOCK_DUPLICATES);
-      g_io_module_scope_block (scope, "libtestmoduleb." G_MODULE_SUFFIX);
+      g_io_module_scope_block (scope, MODULE_FILENAME ("testmoduleb"));
       g_io_modules_scan_all_in_directory_with_scope (g_test_get_filename (G_TEST_BUILT, "modules", NULL), scope);
-      list = g_io_extension_point_get_extensions (ep);
-      g_io_modules_scan_all_in_directory_with_scope (g_test_get_filename (G_TEST_BUILT, "modules/.libs", NULL), scope);
       list = g_io_extension_point_get_extensions (ep);
       g_assert_cmpint (g_list_length (list), ==, 1);
       ext = list->data;
@@ -119,7 +148,7 @@ test_module_scan_all_with_scope (void)
       g_io_module_scope_free (scope);
       return;
     }
-  g_test_trap_subprocess (NULL, 0, 7);
+  g_test_trap_subprocess (NULL, 0, INHERIT_ALL);
   g_test_trap_assert_passed ();
 }
 

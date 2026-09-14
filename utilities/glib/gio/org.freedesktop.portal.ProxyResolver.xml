@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<!--
+ Copyright (C) 2016 Red Hat, Inc.
+
+ This library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 2 of the License, or (at your option) any later version.
+
+ This library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+
+ You should have received a copy of the GNU Lesser General Public
+ License along with this library. If not, see <http://www.gnu.org/licenses/>.
+
+ Author: Matthias Clasen <mclasen@redhat.com>
+-->
+<node name="/" xmlns:doc="http://www.freedesktop.org/dbus/1.0/doc.dtd">
+  <!--
+      org.freedesktop.portal.ProxyResolver:
+      @short_description: Proxy information
+
+      The ProxyResolver interface provides network proxy information to sandboxed
+      applications. It is not a portal in the strict sense, since it does not involve
+      user interaction. Applications are expected to use this interface indirectly,
+      via a library API such as the GLib GProxyResolver interface.
+
+      This documentation describes version 1 of this interface.
+  -->
+  <interface name="org.freedesktop.portal.ProxyResolver">
+    <!--
+        Lookup:
+        @uri: Destination to connect to
+        @proxies: List of proxy uris
+
+        Looks up which proxy to use to connect to @uri. The returned
+        proxy uri are of the form 'protocol://[user[:password]@host:port'.
+        The protocol can be http, rtsp, socks or another proxying protocol.
+        'direct://' is used when no proxy is needed.
+    -->
+    <method name="Lookup">
+      <arg type="s" name="uri" direction="in"/>
+      <arg type="as" name="proxies" direction="out"/>
+    </method>
+    <property name="version" type="u" access="read"/>
+  </interface>
+</node>

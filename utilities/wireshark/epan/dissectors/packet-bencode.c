@@ -8,19 +8,7 @@
  *
  * Copied from packet-pop.c
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -31,32 +19,32 @@
 
 void proto_register_bencode(void);
 
-static int proto_bencode = -1;
+static int proto_bencode;
 
-static gint hf_bencode_str_length     = -1;
-static gint hf_bencode_str            = -1;
-static gint hf_bencode_int            = -1;
-static gint hf_bencode_dict           = -1;
-static gint hf_bencode_dict_entry     = -1;
-static gint hf_bencode_list           = -1;
-static gint hf_bencode_truncated_data = -1;
+static int hf_bencode_str_length;
+static int hf_bencode_str;
+static int hf_bencode_int;
+static int hf_bencode_dict;
+static int hf_bencode_dict_entry;
+static int hf_bencode_list;
+static int hf_bencode_truncated_data;
 
-static gint ett_bencode_dict = -1;
-static gint ett_bencode_dict_entry = -1;
-static gint ett_bencode_list = -1;
+static int ett_bencode_dict;
+static int ett_bencode_dict_entry;
+static int ett_bencode_list;
 
-static expert_field ei_bencode_str        = EI_INIT;
-static expert_field ei_bencode_str_length = EI_INIT;
-static expert_field ei_bencode_int        = EI_INIT;
-static expert_field ei_bencode_nest       = EI_INIT;
-static expert_field ei_bencode_dict_key   = EI_INIT;
-static expert_field ei_bencode_dict_value = EI_INIT;
-static expert_field ei_bencode_invalid    = EI_INIT;
+static expert_field ei_bencode_str;
+static expert_field ei_bencode_str_length;
+static expert_field ei_bencode_int;
+static expert_field ei_bencode_nest;
+static expert_field ei_bencode_dict_key;
+static expert_field ei_bencode_dict_value;
+static expert_field ei_bencode_invalid;
 
 static int dissect_bencoding_str(tvbuff_t *tvb, packet_info *pinfo,
                                  int offset, int length, proto_tree *tree, proto_item *ti, int treeadd)
 {
-   guint8 ch;
+   uint8_t ch;
    int stringlen = 0, nextstringlen;
    int used;
    int izero = 0;
@@ -69,7 +57,7 @@ static int dissect_bencoding_str(tvbuff_t *tvb, packet_info *pinfo,
    used = 0;
 
    while (length >= 1) {
-      ch = tvb_get_guint8(tvb, offset + used);
+      ch = tvb_get_uint8(tvb, offset + used);
       length--;
       used++;
 
@@ -80,17 +68,15 @@ static int dissect_bencoding_str(tvbuff_t *tvb, packet_info *pinfo,
          }
          if (tree) {
             proto_tree_add_uint(tree, hf_bencode_str_length, tvb, offset, used, stringlen);
-            proto_tree_add_item(tree, hf_bencode_str, tvb, offset + used, stringlen, ENC_ASCII|ENC_NA);
+            proto_tree_add_item(tree, hf_bencode_str, tvb, offset + used, stringlen, ENC_ASCII);
 
             if (treeadd == 1) {
                proto_item_append_text(ti, " Key: %s",
-                                      format_text((guchar *)tvb_memdup(wmem_packet_scope(),
-                                                                       tvb, offset + used, stringlen), stringlen));
+                                      tvb_format_text(pinfo->pool, tvb, offset + used, stringlen));
             }
             if (treeadd == 2) {
                proto_item_append_text(ti, "  Value: %s",
-                                      format_text((guchar *)tvb_memdup(wmem_packet_scope(),
-                                                                       tvb, offset + used, stringlen), stringlen));
+                                      tvb_format_text(pinfo->pool, tvb, offset + used, stringlen));
             }
          }
          return used + stringlen;
@@ -119,11 +105,11 @@ static int dissect_bencoding_str(tvbuff_t *tvb, packet_info *pinfo,
 static int dissect_bencoding_int(tvbuff_t *tvb, packet_info *pinfo,
                                  int offset, int length, proto_tree *tree, proto_item *ti, int treeadd)
 {
-   gint32 ival  = 0;
+   int32_t ival  = 0;
    int    neg   = 0;
    int    izero = 0;
    int    used;
-   guint8 ch;
+   uint8_t ch;
 
    if (length<3) {
       proto_tree_add_expert(tree, pinfo, &ei_bencode_int, tvb, offset, length);
@@ -134,7 +120,7 @@ static int dissect_bencoding_int(tvbuff_t *tvb, packet_info *pinfo,
    used = 1;
 
    while (length >= 1) {
-      ch = tvb_get_guint8(tvb, offset + used);
+      ch = tvb_get_uint8(tvb, offset + used);
       length--;
       used++;
 
@@ -177,10 +163,11 @@ static int dissect_bencoding_int(tvbuff_t *tvb, packet_info *pinfo,
    return -1;
 }
 
+// NOLINTNEXTLINE(misc-no-recursion)
 static int dissect_bencoding_rec(tvbuff_t *tvb, packet_info *pinfo,
                                  int offset, int length, proto_tree *tree, int level, proto_item *treei, int treeadd)
 {
-   guint8 op;
+   uint8_t op;
    int oplen = 0, op1len, op2len;
    int used;
 
@@ -196,10 +183,8 @@ static int dissect_bencoding_rec(tvbuff_t *tvb, packet_info *pinfo,
       return length;
    }
 
-   op = tvb_get_guint8(tvb, offset);
-   oplen = dissect_bencoding_rec(tvb, pinfo, offset, length, NULL, level + 1, NULL, 0);
-   if (oplen < 0)
-      oplen = length;
+   op = tvb_get_uint8(tvb, offset);
+   oplen = length;
 
    switch (op) {
    case 'd':
@@ -210,7 +195,7 @@ static int dissect_bencoding_rec(tvbuff_t *tvb, packet_info *pinfo,
       length--;
 
       while (length >= 1) {
-         op = tvb_get_guint8(tvb, offset + used);
+         op = tvb_get_uint8(tvb, offset + used);
 
          if (op == 'e') {
             return used + 1;
@@ -223,8 +208,12 @@ static int dissect_bencoding_rec(tvbuff_t *tvb, packet_info *pinfo,
          }
 
          op2len = -1;
-         if ((length - op1len) > 2)
+         if ((length - op1len) > 2) {
+            increment_dissection_depth(pinfo);
             op2len = dissect_bencoding_rec(tvb, pinfo, offset + used + op1len, length - op1len, NULL, level + 1, NULL, 0);
+            decrement_dissection_depth(pinfo);
+         }
+
          if (op2len < 0) {
             proto_tree_add_expert(dtree, pinfo, &ei_bencode_dict_value, tvb, offset + used + op1len, -1);
             return op2len;
@@ -234,13 +223,15 @@ static int dissect_bencoding_rec(tvbuff_t *tvb, packet_info *pinfo,
          itree = proto_item_add_subtree(ti, ett_bencode_dict_entry);
 
          dissect_bencoding_str(tvb, pinfo, offset + used, length, itree, ti, 1);
+         increment_dissection_depth(pinfo);
          dissect_bencoding_rec(tvb, pinfo, offset + used + op1len, length - op1len, itree, level + 1, ti, 2);
+         decrement_dissection_depth(pinfo);
 
          used   += op1len + op2len;
          length -= op1len + op2len;
       }
 
-      proto_tree_add_item(dtree, hf_bencode_truncated_data, tvb, offset + used, -1, ENC_NA);
+      proto_tree_add_item(dtree, hf_bencode_truncated_data, tvb, offset + used, length ? -1 : 0, ENC_NA);
       return -1;
 
    case 'l':
@@ -250,19 +241,25 @@ static int dissect_bencoding_rec(tvbuff_t *tvb, packet_info *pinfo,
       used = 1;
       length--;
 
+      increment_dissection_depth(pinfo);
       while (length >= 1) {
-         op = tvb_get_guint8(tvb, offset + used);
+         op = tvb_get_uint8(tvb, offset + used);
 
          if (op == 'e') {
             return used + 1;
          }
 
          oplen = dissect_bencoding_rec(tvb, pinfo, offset + used, length, itree, level + 1, ti, 0);
-         if (oplen < 1) return oplen;
+
+         if (oplen < 1) {
+            decrement_dissection_depth(pinfo);
+            return oplen;
+         }
 
          used   += oplen;
          length -= oplen;
       }
+      decrement_dissection_depth(pinfo);
 
       proto_tree_add_item(itree, hf_bencode_truncated_data, tvb, offset + used, -1, ENC_NA);
       return -1;
@@ -314,7 +311,7 @@ proto_register_bencode(void)
       },
    };
 
-   static gint *ett[] = {
+   static int *ett[] = {
       &ett_bencode_dict,
       &ett_bencode_dict_entry,
       &ett_bencode_list,
@@ -341,7 +338,7 @@ proto_register_bencode(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 3

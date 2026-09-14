@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -44,12 +32,12 @@ real_free(tvbuff_t *tvb)
 		/*
 		 * XXX - do this with a union?
 		 */
-		real_tvb->free_cb((gpointer)tvb->real_data);
+		real_tvb->free_cb((void *)tvb->real_data);
 	}
 }
 
-static guint
-real_offset(const tvbuff_t *tvb _U_, const guint counter)
+static unsigned
+real_offset(const tvbuff_t *tvb _U_, const unsigned counter)
 {
 	return counter;
 }
@@ -61,13 +49,13 @@ static const struct tvb_ops tvb_real_ops = {
 	real_offset,          /* offset */
 	NULL,                 /* get_ptr */
 	NULL,                 /* memcpy */
-	NULL,                 /* find_guint8 */
-	NULL,                 /* pbrk_guint8 */
+	NULL,                 /* find_uint8 */
+	NULL,                 /* pbrk_uint8 */
 	NULL,                 /* clone */
 };
 
 tvbuff_t *
-tvb_new_real_data(const guint8* data, const guint length, const gint reported_length)
+tvb_new_real_data(const uint8_t* data, const unsigned length, const int reported_length)
 {
 	tvbuff_t *tvb;
 	struct tvb_real *real_tvb;
@@ -76,10 +64,11 @@ tvb_new_real_data(const guint8* data, const guint length, const gint reported_le
 
 	tvb = tvb_new(&tvb_real_ops);
 
-	tvb->real_data       = data;
-	tvb->length          = length;
-	tvb->reported_length = reported_length;
-	tvb->initialized     = TRUE;
+	tvb->real_data           = data;
+	tvb->length              = length;
+	tvb->reported_length     = reported_length;
+	tvb->contained_length    = reported_length;
+	tvb->initialized         = true;
 
 	/*
 	 * This is the top-level real tvbuff for this data source,
@@ -114,7 +103,7 @@ tvb_set_child_real_data_tvbuff(tvbuff_t *parent, tvbuff_t *child)
 }
 
 tvbuff_t *
-tvb_new_child_real_data(tvbuff_t *parent, const guint8* data, const guint length, const gint reported_length)
+tvb_new_child_real_data(tvbuff_t *parent, const uint8_t* data, const unsigned length, const int reported_length)
 {
 	tvbuff_t *tvb = tvb_new_real_data(data, length, reported_length);
 
@@ -124,7 +113,7 @@ tvb_new_child_real_data(tvbuff_t *parent, const guint8* data, const guint length
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

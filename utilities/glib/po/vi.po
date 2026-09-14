@@ -4613,6 +4613,102 @@ msgstr[0] "%s byte"
 msgid "%.1f KB"
 msgstr "%.1f KB"
 
+msgctxt "full month name with day"
+msgid "January"
+msgstr "Tháng giêng"
+
+msgctxt "full month name with day"
+msgid "February"
+msgstr "Tháng hai"
+
+msgctxt "full month name with day"
+msgid "March"
+msgstr "Tháng ba"
+
+msgctxt "full month name with day"
+msgid "April"
+msgstr "Tháng tư"
+
+msgctxt "full month name with day"
+msgid "May"
+msgstr "Tháng năm"
+
+msgctxt "full month name with day"
+msgid "June"
+msgstr "Tháng sáu"
+
+msgctxt "full month name with day"
+msgid "July"
+msgstr "Tháng bảy"
+
+msgctxt "full month name with day"
+msgid "August"
+msgstr "Tháng tám"
+
+msgctxt "full month name with day"
+msgid "September"
+msgstr "Tháng chín"
+
+msgctxt "full month name with day"
+msgid "October"
+msgstr "Tháng mười"
+
+msgctxt "full month name with day"
+msgid "November"
+msgstr "Tháng mười một"
+
+msgctxt "full month name with day"
+msgid "December"
+msgstr "Tháng mười hai"
+
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "Th1"
+
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "Th2"
+
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "Th3"
+
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "Th4"
+
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "Th5"
+
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "Th6"
+
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "Th7"
+
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "Th8"
+
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "Th9"
+
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "Th10"
+
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "Th11"
+
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "Th12"
+
 #~ msgid "Unable to find default local directory monitor type"
 #~ msgstr "Không tìm thấy kiểu theo dõi thư mục cục bộ mặc định"
 

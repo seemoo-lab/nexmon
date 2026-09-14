@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* see packet-dcom.c for details about DCOM */
@@ -32,29 +20,29 @@
 void proto_register_remunk(void);
 void proto_reg_handoff_remunk(void);
 
-static int hf_remunk_opnum = -1;
+static int hf_remunk_opnum;
 
 
-static int hf_remunk_refs = -1;
-static int hf_remunk_iids = -1;
+static int hf_remunk_refs;
+static int hf_remunk_iids;
 
-/* static int hf_remunk_flags = -1; */
-static int hf_remunk_qiresult = -1;
+/* static int hf_remunk_flags; */
+static int hf_remunk_qiresult;
 
-static gint ett_remunk_reminterfaceref = -1;
-static int hf_remunk_reminterfaceref = -1;
-static int hf_remunk_interface_refs = -1;
-static int hf_remunk_public_refs = -1;
-static int hf_remunk_private_refs = -1;
-
-
-static gint ett_remunk_rqi_result = -1;
+static int ett_remunk_reminterfaceref;
+static int hf_remunk_reminterfaceref;
+static int hf_remunk_interface_refs;
+static int hf_remunk_public_refs;
+static int hf_remunk_private_refs;
 
 
-static gint ett_remunk = -1;
+static int ett_remunk_rqi_result;
+
+
+static int ett_remunk;
 static e_guid_t uuid_remunk = { 0x00000131, 0x0000, 0x0000, { 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46 } };
-static guint16  ver_remunk = 0;
-static int proto_remunk = -1;
+static uint16_t ver_remunk;
+static int proto_remunk;
 
 static e_guid_t ipid_remunk = { 0x00000131, 0x1234, 0x5678, { 0xCA, 0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46 } };
 
@@ -64,27 +52,27 @@ static e_guid_t ipid_remunk = { 0x00000131, 0x1234, 0x5678, { 0xCA, 0xFE, 0x00, 
 /* win2000 registry tells us: 0x00000143 IRemUnknown2 (7 methods) */
 /* There is some evidence, that the DCOM documentation is wrong, so using 143 for IRemUnknown2 now. */
 
-static gint ett_remunk2 = -1;
+static int ett_remunk2;
 static e_guid_t uuid_remunk2 = { 0x00000143, 0x0000, 0x0000, { 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46 } };
-static guint16  ver_remunk2 = 0;
-static int proto_remunk2 = -1;
+static uint16_t ver_remunk2;
+static int proto_remunk2;
 
 
 typedef struct remunk_remqueryinterface_call_s {
-    guint        iid_count;
+    unsigned     iid_count;
     e_guid_t    *iids;
 } remunk_remqueryinterface_call_t;
 
 
 static int
 dissect_remunk_remqueryinterface_rqst(tvbuff_t *tvb, int offset,
-                                      packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+                                      packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
     e_guid_t     ipid;
-    guint32      u32Refs;
-    guint16      u16IIDs;
-    guint32      u32ArraySize;
-    guint32      u32ItemIdx;
+    uint32_t     u32Refs;
+    uint16_t     u16IIDs;
+    uint32_t     u32ArraySize;
+    uint32_t     u32ItemIdx;
     e_guid_t     iid;
     remunk_remqueryinterface_call_t *call;
 
@@ -127,20 +115,20 @@ dissect_remunk_remqueryinterface_rqst(tvbuff_t *tvb, int offset,
 
 static int
 dissect_remunk_remqueryinterface_resp(tvbuff_t *tvb, int offset,
-                                      packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+                                      packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32      u32Pointer;
-    guint32      u32ArraySize;
-    guint32      u32ItemIdx;
+    uint32_t     u32Pointer;
+    uint32_t     u32ArraySize;
+    uint32_t     u32ItemIdx;
     proto_item  *sub_item;
     proto_tree  *sub_tree;
-    guint32      u32HResult;
-    guint32      u32SubStart;
+    uint32_t     u32HResult;
+    uint32_t     u32SubStart;
     e_guid_t     iid;
     e_guid_t     iid_null = DCERPC_UUID_NULL;
     remunk_remqueryinterface_call_t *call = (remunk_remqueryinterface_call_t *)di->call_data->private_data;
-    guint64      oxid;
-    guint64      oid;
+    uint64_t     oxid;
+    uint64_t     oid;
     e_guid_t     ipid;
 
 
@@ -187,12 +175,12 @@ dissect_remunk_remqueryinterface_resp(tvbuff_t *tvb, int offset,
         /* update subtree */
         proto_item_append_text(sub_item, "[%u]: %s",
                                u32ItemIdx,
-                               val_to_str(u32HResult, dcom_hresult_vals, "Unknown (0x%08x)") );
+                               val_to_str(pinfo->pool, u32HResult, dcom_hresult_vals, "Unknown (0x%08x)") );
         proto_item_set_len(sub_item, offset - u32SubStart);
 
         /* update column info now */
         col_append_fstr(pinfo->cinfo, COL_INFO, " %s[%u]",
-                        val_to_str(u32HResult, dcom_hresult_vals, "Unknown (0x%08x)"),
+                        val_to_str(pinfo->pool, u32HResult, dcom_hresult_vals, "Unknown (0x%08x)"),
                         u32ItemIdx);
         u32ItemIdx++;
     }
@@ -203,7 +191,7 @@ dissect_remunk_remqueryinterface_resp(tvbuff_t *tvb, int offset,
 
     /* update column info now */
     col_append_fstr(pinfo->cinfo, COL_INFO, " -> %s",
-                    val_to_str(u32HResult, dcom_hresult_vals, "Unknown (0x%08x)"));
+                    val_to_str(pinfo->pool, u32HResult, dcom_hresult_vals, "Unknown (0x%08x)"));
 
     return offset;
 }
@@ -211,18 +199,18 @@ dissect_remunk_remqueryinterface_resp(tvbuff_t *tvb, int offset,
 
 static int
 dissect_remunk_remrelease_rqst(tvbuff_t *tvb, int offset,
-                               packet_info *pinfo, proto_tree *tree, dcerpc_info *di, guint8 *drep)
+                               packet_info *pinfo, proto_tree *tree, dcerpc_info *di, uint8_t *drep)
 {
-    guint32      u32Pointer;
-    guint32      u32IntRefs;
-    guint32      u32ItemIdx;
+    uint32_t     u32Pointer;
+    uint32_t     u32IntRefs;
+    uint32_t     u32ItemIdx;
     e_guid_t     ipid;
-    guint32      u32PublicRefs;
-    guint32      u32PrivateRefs;
-    const gchar *pszFormat;
+    uint32_t     u32PublicRefs;
+    uint32_t     u32PrivateRefs;
+    const char *pszFormat;
     proto_item  *sub_item;
     proto_tree  *sub_tree;
-    guint32      u32SubStart;
+    uint32_t     u32SubStart;
 
 
     offset = dissect_dcom_this(tvb, offset, pinfo, tree, di, drep);
@@ -260,7 +248,7 @@ dissect_remunk_remrelease_rqst(tvbuff_t *tvb, int offset,
         /* update subtree */
         proto_item_append_text(sub_item, "[%u]: IPID=%s, PublicRefs=%u, PrivateRefs=%u",
                                u32ItemIdx,
-                               guids_resolve_guid_to_str(&ipid),
+                               guids_resolve_guid_to_str(&ipid, pinfo->pool),
                                u32PublicRefs, u32PrivateRefs);
         proto_item_set_len(sub_item, offset - u32SubStart);
 
@@ -283,7 +271,7 @@ dissect_remunk_remrelease_rqst(tvbuff_t *tvb, int offset,
 
 
 /* sub dissector table of IRemUnknown interface */
-static dcerpc_sub_dissector remunk_dissectors[] = {
+static const dcerpc_sub_dissector remunk_dissectors[] = {
     { 0, "QueryInterface", NULL, NULL },
     { 1, "AddRef", NULL, NULL },
     { 2, "Release", NULL, NULL },
@@ -295,7 +283,7 @@ static dcerpc_sub_dissector remunk_dissectors[] = {
 };
 
 /* sub dissector table of IRemUnknown2 interface */
-static dcerpc_sub_dissector remunk2_dissectors[] = {
+static const dcerpc_sub_dissector remunk2_dissectors[] = {
     { 0, "QueryInterface", NULL, NULL },
     { 1, "AddRef", NULL, NULL },
     { 2, "Release", NULL, NULL },
@@ -337,7 +325,7 @@ proto_register_remunk (void)
           { "PrivateRefs", "remunk.private_refs",  FT_UINT32, BASE_DEC, NULL, 0x0, NULL, HFILL }}
     };
 
-    static gint *ett_remunk_array[] = {
+    static int *ett_remunk_array[] = {
         &ett_remunk,
         &ett_remunk_rqi_result,
         &ett_remunk2,
@@ -370,7 +358,7 @@ proto_reg_handoff_remunk (void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

@@ -1,18 +1,26 @@
 /* Association between Unicode characters and their names.
-   Copyright (C) 2000-2002, 2005-2007, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2000-2002, 2005-2007, 2009-2026 Free Software Foundation, Inc.
 
-   This program is free software: you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published
-   by the Free Software Foundation; either version 3 of the License, or
-   (at your option) any later version.
+   This file is free software.
+   It is dual-licensed under "the GNU LGPLv3+ or the GNU GPLv2+".
+   You can redistribute it and/or modify it under either
+     - the terms of the GNU Lesser General Public License as published
+       by the Free Software Foundation, either version 3, or (at your
+       option) any later version, or
+     - the terms of the GNU General Public License as published by the
+       Free Software Foundation; either version 2, or (at your option)
+       any later version, or
+     - the same dual license "the GNU LGPLv3+ or the GNU GPLv2+".
 
-   This program is distributed in the hope that it will be useful,
+   This file is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   Lesser General Public License and the GNU General Public License
+   for more details.
 
-   You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   You should have received a copy of the GNU Lesser General Public
+   License and of the GNU General Public License along with this
+   program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -20,10 +28,11 @@
 #include "uniname.h"
 
 #include <assert.h>
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "attribute.h"
 
 #define SIZEOF(a) (sizeof(a) / sizeof(a[0]))
 
@@ -56,10 +65,6 @@
 static const char *
 unicode_name_word (unsigned int index, unsigned int *lengthp)
 {
-  unsigned int i1;
-  unsigned int i2;
-  unsigned int i;
-
   assert (index < UNICODE_CHARNAME_NUM_WORDS);
 
   /* Binary search for i with
@@ -68,8 +73,8 @@ unicode_name_word (unsigned int index, unsigned int *lengthp)
        index < unicode_name_by_length[i+1].ind_offset
    */
 
-  i1 = 0;
-  i2 = SIZEOF (unicode_name_by_length) - 1;
+  unsigned int i1 = 0;
+  unsigned int i2 = SIZEOF (unicode_name_by_length) - 1;
   while (i2 - i1 > 1)
     {
       unsigned int i = (i1 + i2) >> 1;
@@ -78,7 +83,7 @@ unicode_name_word (unsigned int index, unsigned int *lengthp)
       else
         i2 = i;
     }
-  i = i1;
+  unsigned int i = i1;
   assert (unicode_name_by_length[i].ind_offset <= index
           && index < unicode_name_by_length[i+1].ind_offset);
   *lengthp = i;
@@ -88,7 +93,7 @@ unicode_name_word (unsigned int index, unsigned int *lengthp)
 
 /* Looks up the index of a word.  */
 static int
-unicode_name_word_lookup (const char *word, unsigned int length)
+unicode_name_word_lookup (const char *word, size_t length)
 {
   if (length > 0 && length < SIZEOF (unicode_name_by_length) - 1)
     {
@@ -230,22 +235,17 @@ unicode_character_name (ucs4_t c, char *buf)
   if (c >= 0xAC00 && c <= 0xD7A3)
     {
       /* Special case for Hangul syllables. Keeps the tables small.  */
-      char *ptr;
-      unsigned int tmp;
-      unsigned int index1;
-      unsigned int index2;
-      unsigned int index3;
-      const char *q;
 
-      /* buf needs to have at least 16 + 7 bytes here.  */
+      /* buf needs to have at least 16 + 7 + 1 bytes here.  */
       memcpy (buf, "HANGUL SYLLABLE ", 16);
-      ptr = buf + 16;
+      char *ptr = buf + 16;
 
-      tmp = c - 0xAC00;
-      index3 = tmp % 28; tmp = tmp / 28;
-      index2 = tmp % 21; tmp = tmp / 21;
-      index1 = tmp;
+      unsigned int tmp = c - 0xAC00;
+      unsigned int index3 = tmp % 28; tmp = tmp / 28;
+      unsigned int index2 = tmp % 21; tmp = tmp / 21;
+      unsigned int index1 = tmp;
 
+      const char *q;
       q = jamo_initial_short_name[index1];
       while (*q != '\0')
         *ptr++ = *q++;
@@ -263,14 +263,12 @@ unicode_character_name (ucs4_t c, char *buf)
     {
       /* Special case for CJK compatibility ideographs. Keeps the tables
          small.  */
-      char *ptr;
-      int i;
 
-      /* buf needs to have at least 28 + 5 bytes here.  */
+      /* buf needs to have at least 28 + 5 + 1 bytes here.  */
       memcpy (buf, "CJK COMPATIBILITY IDEOGRAPH-", 28);
-      ptr = buf + 28;
+      char *ptr = buf + 28;
 
-      for (i = (c < 0x10000 ? 12 : 16); i >= 0; i -= 4)
+      for (int i = (c < 0x10000 ? 12 : 16); i >= 0; i -= 4)
         {
           unsigned int x = (c >> i) & 0xf;
           *ptr++ = (x < 10 ? '0' : 'A' - 10) + x;
@@ -283,8 +281,8 @@ unicode_character_name (ucs4_t c, char *buf)
       /* Special case for variation selectors. Keeps the tables
          small.  */
 
-      /* buf needs to have at least 19 + 3 bytes here.  */
-      sprintf (buf, "VARIATION SELECTOR-%d",
+      /* buf needs to have at least 19 + 3 + 1 bytes here.  */
+      sprintf (buf, "VARIATION SELECTOR-%u",
                c <= 0xFE0F ? c - 0xFE00 + 1 : c - 0xE0100 + 17);
       return buf;
     }
@@ -331,7 +329,8 @@ unicode_character_name (ucs4_t c, char *buf)
       if (words != NULL)
         {
           /* Found it in unicode_index_to_name. Now concatenate the words.  */
-          /* buf needs to have at least UNICODE_CHARNAME_MAX_LENGTH bytes.  */
+          /* buf needs to have at least UNICODE_CHARNAME_MAX_LENGTH + 1
+             bytes.  */
           char *ptr = buf;
           for (;;)
             {
@@ -357,7 +356,7 @@ unicode_character_name (ucs4_t c, char *buf)
 ucs4_t
 unicode_name_character (const char *name)
 {
-  unsigned int len = strlen (name);
+  size_t len = strlen (name);
   if (len > 1 && len <= UNICODE_CHARNAME_MAX_LENGTH)
     {
       /* Test for "word1 word2 ..." syntax.  */
@@ -406,218 +405,212 @@ unicode_name_character (const char *name)
                   }
               }
           }
-          /* Convert the constituents to uint16_t words.  */
-          uint16_t words[UNICODE_CHARNAME_MAX_WORDS];
-          uint16_t *wordptr = words;
           {
-            const char *p1 = buf;
-            for (;;)
-              {
+            /* Convert the constituents to uint16_t words.  */
+            uint16_t words[UNICODE_CHARNAME_MAX_WORDS];
+            uint16_t *wordptr = words;
+            {
+              const char *p1 = buf;
+              for (;;)
                 {
-                  int word;
-                  const char *p2 = p1;
-                  while (p2 < ptr && *p2 != ' ')
-                    p2++;
-                  word = unicode_name_word_lookup (p1, p2 - p1);
-                  if (word < 0)
-                    break;
-                  if (wordptr == &words[UNICODE_CHARNAME_MAX_WORDS])
-                    break;
-                  *wordptr++ = word;
-                  if (p2 == ptr)
-                    goto filled_words;
-                  p1 = p2 + 1;
-                }
-                /* Special case for Hangul syllables. Keeps the tables small. */
-                if (wordptr == &words[2]
-                    && words[0] == UNICODE_CHARNAME_WORD_HANGUL
-                    && words[1] == UNICODE_CHARNAME_WORD_SYLLABLE)
                   {
-                    /* Split the last word [p1..ptr) into three parts:
-                         1) [BCDGHJKMNPRST]
-                         2) [AEIOUWY]
-                         3) [BCDGHIJKLMNPST]
-                     */
-                    const char *p2;
-                    const char *p3;
-                    const char *p4;
-
-                    p2 = p1;
-                    while (p2 < ptr
-                           && (*p2 == 'B' || *p2 == 'C' || *p2 == 'D'
-                               || *p2 == 'G' || *p2 == 'H' || *p2 == 'J'
-                               || *p2 == 'K' || *p2 == 'M' || *p2 == 'N'
-                               || *p2 == 'P' || *p2 == 'R' || *p2 == 'S'
-                               || *p2 == 'T'))
+                    const char *p2 = p1;
+                    while (p2 < ptr && *p2 != ' ')
                       p2++;
-                    p3 = p2;
-                    while (p3 < ptr
-                           && (*p3 == 'A' || *p3 == 'E' || *p3 == 'I'
-                               || *p3 == 'O' || *p3 == 'U' || *p3 == 'W'
-                               || *p3 == 'Y'))
-                      p3++;
-                    p4 = p3;
-                    while (p4 < ptr
-                           && (*p4 == 'B' || *p4 == 'C' || *p4 == 'D'
-                               || *p4 == 'G' || *p4 == 'H' || *p4 == 'I'
-                               || *p4 == 'J' || *p4 == 'K' || *p4 == 'L'
-                               || *p4 == 'M' || *p4 == 'N' || *p4 == 'P'
-                               || *p4 == 'S' || *p4 == 'T'))
-                      p4++;
-                    if (p4 == ptr)
-                      {
-                        unsigned int n1 = p2 - p1;
-                        unsigned int n2 = p3 - p2;
-                        unsigned int n3 = p4 - p3;
+                    int word = unicode_name_word_lookup (p1, p2 - p1);
+                    if (word < 0)
+                      break;
+                    if (wordptr == &words[UNICODE_CHARNAME_MAX_WORDS])
+                      break;
+                    *wordptr++ = word;
+                    if (p2 == ptr)
+                      goto filled_words;
+                    p1 = p2 + 1;
+                  }
+                  /* Special case for Hangul syllables. Keeps the tables small. */
+                  if (wordptr == &words[2]
+                      && words[0] == UNICODE_CHARNAME_WORD_HANGUL
+                      && words[1] == UNICODE_CHARNAME_WORD_SYLLABLE)
+                    {
+                      /* Split the last word [p1..ptr) into three parts:
+                           1) [BCDGHJKMNPRST]
+                           2) [AEIOUWY]
+                           3) [BCDGHIJKLMNPST]
+                       */
+                      const char *p2 = p1;
+                      while (p2 < ptr
+                             && (*p2 == 'B' || *p2 == 'C' || *p2 == 'D'
+                                 || *p2 == 'G' || *p2 == 'H' || *p2 == 'J'
+                                 || *p2 == 'K' || *p2 == 'M' || *p2 == 'N'
+                                 || *p2 == 'P' || *p2 == 'R' || *p2 == 'S'
+                                 || *p2 == 'T'))
+                        p2++;
+                      const char *p3 = p2;
+                      while (p3 < ptr
+                             && (*p3 == 'A' || *p3 == 'E' || *p3 == 'I'
+                                 || *p3 == 'O' || *p3 == 'U' || *p3 == 'W'
+                                 || *p3 == 'Y'))
+                        p3++;
+                      const char *p4 = p3;
+                      while (p4 < ptr
+                             && (*p4 == 'B' || *p4 == 'C' || *p4 == 'D'
+                                 || *p4 == 'G' || *p4 == 'H' || *p4 == 'I'
+                                 || *p4 == 'J' || *p4 == 'K' || *p4 == 'L'
+                                 || *p4 == 'M' || *p4 == 'N' || *p4 == 'P'
+                                 || *p4 == 'S' || *p4 == 'T'))
+                        p4++;
+                      if (p4 == ptr)
+                        {
+                          size_t n1 = p2 - p1;
+                          size_t n2 = p3 - p2;
+                          size_t n3 = p4 - p3;
 
-                        if (n1 <= 2 && (n2 >= 1 && n2 <= 3) && n3 <= 2)
-                          {
-                            unsigned int index1;
+                          if (n1 <= 2 && (n2 >= 1 && n2 <= 3) && n3 <= 2)
+                            {
+                              for (unsigned int index1 = 0; index1 < 19; index1++)
+                                if (memeq (jamo_initial_short_name[index1], p1, n1)
+                                    && jamo_initial_short_name[index1][n1] == '\0')
+                                  {
+                                    for (unsigned int index2 = 0; index2 < 21; index2++)
+                                      if (memeq (jamo_medial_short_name[index2], p2, n2)
+                                          && jamo_medial_short_name[index2][n2] == '\0')
+                                        {
+                                          for (unsigned int index3 = 0; index3 < 28; index3++)
+                                            if (memeq (jamo_final_short_name[index3], p3, n3)
+                                                && jamo_final_short_name[index3][n3] == '\0')
+                                              {
+                                                return 0xAC00 + (index1 * 21 + index2) * 28 + index3;
+                                              }
+                                          break;
+                                        }
+                                    break;
+                                  }
+                            }
+                        }
+                    }
+                  /* Special case for CJK compatibility ideographs. Keeps the
+                     tables small.  */
+                  if (wordptr == &words[2]
+                      && words[0] == UNICODE_CHARNAME_WORD_CJK
+                      && words[1] == UNICODE_CHARNAME_WORD_COMPATIBILITY
+                      && p1 + 14 <= ptr
+                      && p1 + 15 >= ptr
+                      && memeq (p1, "IDEOGRAPH-", 10))
+                    {
+                      const char *p2 = p1 + 10;
 
-                            for (index1 = 0; index1 < 19; index1++)
-                              if (memcmp (jamo_initial_short_name[index1], p1, n1) == 0
-                                  && jamo_initial_short_name[index1][n1] == '\0')
+                      if (*p2 != '0')
+                        {
+                          unsigned int c = 0;
+
+                          for (;;)
+                            {
+                              if (*p2 >= '0' && *p2 <= '9')
+                                c += (*p2 - '0');
+                              else if (*p2 >= 'A' && *p2 <= 'F')
+                                c += (*p2 - 'A' + 10);
+                              else
+                                break;
+                              p2++;
+                              if (p2 == ptr)
                                 {
-                                  unsigned int index2;
-
-                                  for (index2 = 0; index2 < 21; index2++)
-                                    if (memcmp (jamo_medial_short_name[index2], p2, n2) == 0
-                                        && jamo_medial_short_name[index2][n2] == '\0')
-                                      {
-                                        unsigned int index3;
-
-                                        for (index3 = 0; index3 < 28; index3++)
-                                          if (memcmp (jamo_final_short_name[index3], p3, n3) == 0
-                                              && jamo_final_short_name[index3][n3] == '\0')
-                                            {
-                                              return 0xAC00 + (index1 * 21 + index2) * 28 + index3;
-                                            }
-                                        break;
-                                      }
-                                  break;
+                                  if ((c >= 0xF900 && c <= 0xFA2D)
+                                      || (c >= 0xFA30 && c <= 0xFA6A)
+                                      || (c >= 0xFA70 && c <= 0xFAD9)
+                                      || (c >= 0x2F800 && c <= 0x2FA1D))
+                                    return c;
+                                  else
+                                    break;
                                 }
-                          }
-                      }
-                  }
-                /* Special case for CJK compatibility ideographs. Keeps the
-                   tables small.  */
-                if (wordptr == &words[2]
-                    && words[0] == UNICODE_CHARNAME_WORD_CJK
-                    && words[1] == UNICODE_CHARNAME_WORD_COMPATIBILITY
-                    && p1 + 14 <= ptr
-                    && p1 + 15 >= ptr
-                    && memcmp (p1, "IDEOGRAPH-", 10) == 0)
-                  {
-                    const char *p2 = p1 + 10;
+                              c = c << 4;
+                            }
+                        }
+                    }
+                  /* Special case for variation selectors. Keeps the
+                     tables small.  */
+                  if (wordptr == &words[1]
+                      && words[0] == UNICODE_CHARNAME_WORD_VARIATION
+                      && p1 + 10 <= ptr
+                      && p1 + 12 >= ptr
+                      && memeq (p1, "SELECTOR-", 9))
+                    {
+                      const char *p2 = p1 + 9;
 
-                    if (*p2 != '0')
-                      {
-                        unsigned int c = 0;
+                      if (*p2 != '0')
+                        {
+                          unsigned int c = 0;
 
-                        for (;;)
-                          {
-                            if (*p2 >= '0' && *p2 <= '9')
-                              c += (*p2 - '0');
-                            else if (*p2 >= 'A' && *p2 <= 'F')
-                              c += (*p2 - 'A' + 10);
-                            else
+                          for (;;)
+                            {
+                              if (*p2 >= '0' && *p2 <= '9')
+                                c += (*p2 - '0');
+                              p2++;
+                              if (p2 == ptr)
+                                {
+                                  if (c >= 1 && c <= 16)
+                                    return c - 1 + 0xFE00;
+                                  else if (c >= 17 && c <= 256)
+                                    return c - 17 + 0xE0100;
+                                  else
+                                    break;
+                                }
+                              c = c * 10;
+                            }
+                        }
+                    }
+                }
+            }
+            if (false)
+            filled_words:
+              {
+                /* Multiply by 2, to simplify later comparisons.  */
+                size_t words_length = wordptr - words;
+                {
+                  size_t i = words_length - 1;
+                  words[i] = 2 * words[i];
+                  for (; i > 0; )
+                    {
+                      --i;
+                      words[i] = 2 * words[i] + 1;
+                    }
+                }
+                /* Binary search in unicode_name_to_index.  */
+                {
+                  unsigned int i1 = 0;
+                  unsigned int i2 = SIZEOF (unicode_name_to_index);
+                  for (;;)
+                    {
+                      unsigned int i = (i1 + i2) >> 1;
+                      const uint16_t *w = words;
+                      const uint16_t *p = &unicode_names[unicode_name_to_index[i].name];
+                      size_t n = words_length;
+                      for (;;)
+                        {
+                          if (*p < *w)
+                            {
+                              if (i1 == i)
+                                goto name_not_found;
+                              /* Note here: i1 < i < i2.  */
+                              i1 = i;
                               break;
-                            p2++;
-                            if (p2 == ptr)
-                              {
-                                if ((c >= 0xF900 && c <= 0xFA2D)
-                                    || (c >= 0xFA30 && c <= 0xFA6A)
-                                    || (c >= 0xFA70 && c <= 0xFAD9)
-                                    || (c >= 0x2F800 && c <= 0x2FA1D))
-                                  return c;
-                                else
-                                  break;
-                              }
-                            c = c << 4;
-                          }
-                      }
-                  }
-                /* Special case for variation selectors. Keeps the
-                   tables small.  */
-                if (wordptr == &words[1]
-                    && words[0] == UNICODE_CHARNAME_WORD_VARIATION
-                    && p1 + 10 <= ptr
-                    && p1 + 12 >= ptr
-                    && memcmp (p1, "SELECTOR-", 9) == 0)
-                  {
-                    const char *p2 = p1 + 9;
-
-                    if (*p2 != '0')
-                      {
-                        unsigned int c = 0;
-
-                        for (;;)
-                          {
-                            if (*p2 >= '0' && *p2 <= '9')
-                              c += (*p2 - '0');
-                            p2++;
-                            if (p2 == ptr)
-                              {
-                                if (c >= 1 && c <= 16)
-                                  return c - 1 + 0xFE00;
-                                else if (c >= 17 && c <= 256)
-                                  return c - 17 + 0xE0100;
-                                else
-                                  break;
-                              }
-                            c = c * 10;
-                          }
-                      }
-                  }
+                            }
+                          else if (*p > *w)
+                            {
+                              if (i2 == i)
+                                goto name_not_found;
+                              /* Note here: i1 <= i < i2.  */
+                              i2 = i;
+                              break;
+                            }
+                          p++; w++; n--;
+                          if (n == 0)
+                            return unicode_index_to_code (unicode_name_to_index[i].index);
+                        }
+                    }
+                }
+              name_not_found: ;
               }
           }
-          if (false)
-          filled_words:
-            {
-              /* Multiply by 2, to simplify later comparisons.  */
-              unsigned int words_length = wordptr - words;
-              {
-                int i = words_length - 1;
-                words[i] = 2 * words[i];
-                for (; --i >= 0; )
-                  words[i] = 2 * words[i] + 1;
-              }
-              /* Binary search in unicode_name_to_index.  */
-              {
-                unsigned int i1 = 0;
-                unsigned int i2 = SIZEOF (unicode_name_to_index);
-                for (;;)
-                  {
-                    unsigned int i = (i1 + i2) >> 1;
-                    const uint16_t *w = words;
-                    const uint16_t *p = &unicode_names[unicode_name_to_index[i].name];
-                    unsigned int n = words_length;
-                    for (;;)
-                      {
-                        if (*p < *w)
-                          {
-                            if (i1 == i)
-                              goto name_not_found;
-                            /* Note here: i1 < i < i2.  */
-                            i1 = i;
-                            break;
-                          }
-                        else if (*p > *w)
-                          {
-                            if (i2 == i)
-                              goto name_not_found;
-                            /* Note here: i1 <= i < i2.  */
-                            i2 = i;
-                            break;
-                          }
-                        p++; w++; n--;
-                        if (n == 0)
-                          return unicode_index_to_code (unicode_name_to_index[i].index);
-                      }
-                  }
-              }
-            name_not_found: ;
-            }
         }
     }
   return UNINAME_INVALID;

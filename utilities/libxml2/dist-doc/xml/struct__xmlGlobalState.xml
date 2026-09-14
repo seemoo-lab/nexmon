@@ -1,0 +1,471 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlGlobalState" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlGlobalState</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlGlobalState_1adbf3d098ecbdc14e1a615875ed1f0bfe" prot="public" static="no" mutable="no">
+        <type>unsigned</type>
+        <definition>unsigned localRngState[2]</definition>
+        <argsstring>[2]</argsstring>
+        <name>localRngState</name>
+        <qualifiedname>_xmlGlobalState::localRngState</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="135" column="14" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="135" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1a31b3046c62759a76aca8ead53a0f4754" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlerror_8h_1a7b8f6e2cdbb2916120df21e21d76ae91" kindref="member">xmlError</ref></type>
+        <definition>xmlError lastError</definition>
+        <argsstring></argsstring>
+        <name>lastError</name>
+        <qualifiedname>_xmlGlobalState::lastError</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="137" column="14" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="137" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1ac075a5a96ddba9d18f00cf788a3faafa" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int doValidityCheckingDefaultValue</definition>
+        <argsstring></argsstring>
+        <name>doValidityCheckingDefaultValue</name>
+        <qualifiedname>_xmlGlobalState::doValidityCheckingDefaultValue</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="147" column="9" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="147" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1a5dd73ef92f1f26dfad59f7462fcdd6b6" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int getWarningsDefaultValue</definition>
+        <argsstring></argsstring>
+        <name>getWarningsDefaultValue</name>
+        <qualifiedname>_xmlGlobalState::getWarningsDefaultValue</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="148" column="9" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="148" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1a4c4e1e6026cba3da1ea73f044d39ccc7" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int keepBlanksDefaultValue</definition>
+        <argsstring></argsstring>
+        <name>keepBlanksDefaultValue</name>
+        <qualifiedname>_xmlGlobalState::keepBlanksDefaultValue</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="149" column="9" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="149" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1ade2f440dbfe1d4af026f174db363fe6a" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int loadExtDtdDefaultValue</definition>
+        <argsstring></argsstring>
+        <name>loadExtDtdDefaultValue</name>
+        <qualifiedname>_xmlGlobalState::loadExtDtdDefaultValue</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="150" column="9" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="150" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1a967bd684648d39edaf56af4c25e88ce2" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int pedanticParserDefaultValue</definition>
+        <argsstring></argsstring>
+        <name>pedanticParserDefaultValue</name>
+        <qualifiedname>_xmlGlobalState::pedanticParserDefaultValue</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="151" column="9" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="151" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1a3c649c72ff387e29f18f3a8835438479" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int substituteEntitiesDefaultValue</definition>
+        <argsstring></argsstring>
+        <name>substituteEntitiesDefaultValue</name>
+        <qualifiedname>_xmlGlobalState::substituteEntitiesDefaultValue</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="152" column="9" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="152" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1ac47e9fefc6e2bc640cd1d12aa2758b52" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int indentTreeOutput</definition>
+        <argsstring></argsstring>
+        <name>indentTreeOutput</name>
+        <qualifiedname>_xmlGlobalState::indentTreeOutput</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="155" column="9" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="155" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1af0ad1899fcdd114c03e6fdeda544a686" prot="public" static="no" mutable="no">
+        <type>const char *</type>
+        <definition>const char* treeIndentString</definition>
+        <argsstring></argsstring>
+        <name>treeIndentString</name>
+        <qualifiedname>_xmlGlobalState::treeIndentString</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="156" column="16" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="156" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1ad537f80ada562389ca16edd1a43547a3" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int saveNoEmptyTags</definition>
+        <argsstring></argsstring>
+        <name>saveNoEmptyTags</name>
+        <qualifiedname>_xmlGlobalState::saveNoEmptyTags</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="157" column="9" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="157" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1a93e422300a45cd0c728562e5a3875f1a" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlerror_8h_1a948f54e6b568efec2ff8250406c9a3a6" kindref="member">xmlGenericErrorFunc</ref></type>
+        <definition>xmlGenericErrorFunc genericError</definition>
+        <argsstring></argsstring>
+        <name>genericError</name>
+        <qualifiedname>_xmlGlobalState::genericError</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="160" column="25" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="160" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1ac8e1954e5eb889dd5d8ec9bdc90ba767" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* genericErrorContext</definition>
+        <argsstring></argsstring>
+        <name>genericErrorContext</name>
+        <qualifiedname>_xmlGlobalState::genericErrorContext</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="161" column="10" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="161" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1ab7aa72b9fa5695268948afc3eb5ffbc2" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+        <definition>xmlStructuredErrorFunc structuredError</definition>
+        <argsstring></argsstring>
+        <name>structuredError</name>
+        <qualifiedname>_xmlGlobalState::structuredError</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="162" column="28" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="162" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1a82f5bd3bc5ddb867433c72b758a03ebc" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* structuredErrorContext</definition>
+        <argsstring></argsstring>
+        <name>structuredErrorContext</name>
+        <qualifiedname>_xmlGlobalState::structuredErrorContext</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="163" column="10" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="163" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1a97bd5d9287f8bc0090fb3b5a0fe71805" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1a6fc959a53aad61a058f9039b313d8622" kindref="member">xmlRegisterNodeFunc</ref></type>
+        <definition>xmlRegisterNodeFunc registerNodeDefaultValue</definition>
+        <argsstring></argsstring>
+        <name>registerNodeDefaultValue</name>
+        <qualifiedname>_xmlGlobalState::registerNodeDefaultValue</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="165" column="25" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="165" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1ac0d8a28ed39ad1762e9eedd5bab2db10" prot="public" static="no" mutable="no">
+        <type><ref refid="tree_8h_1aa242184c4aae31aa9c34f690f2e8b00f" kindref="member">xmlDeregisterNodeFunc</ref></type>
+        <definition>xmlDeregisterNodeFunc deregisterNodeDefaultValue</definition>
+        <argsstring></argsstring>
+        <name>deregisterNodeDefaultValue</name>
+        <qualifiedname>_xmlGlobalState::deregisterNodeDefaultValue</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="166" column="27" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="166" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1a6fc652e5b611993981aa72b3466d07c2" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlIO_8h_1a3d74afc4eb6b1aa8b5521b2690459714" kindref="member">xmlParserInputBufferCreateFilenameFunc</ref></type>
+        <definition>xmlParserInputBufferCreateFilenameFunc parserInputBufferCreateFilenameValue</definition>
+        <argsstring></argsstring>
+        <name>parserInputBufferCreateFilenameValue</name>
+        <qualifiedname>_xmlGlobalState::parserInputBufferCreateFilenameValue</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="168" column="44" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="168" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlGlobalState_1abcc871b4cc6ff7fee1047d989ecbe04c" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlIO_8h_1ae825903725daafb3ea508546f13ae0dc" kindref="member">xmlOutputBufferCreateFilenameFunc</ref></type>
+        <definition>xmlOutputBufferCreateFilenameFunc outputBufferCreateFilenameValue</definition>
+        <argsstring></argsstring>
+        <name>outputBufferCreateFilenameValue</name>
+        <qualifiedname>_xmlGlobalState::outputBufferCreateFilenameValue</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/globals.c" line="169" column="39" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="169" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="9">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="13">
+        <label>_xmlBuf</label>
+      </node>
+      <node id="12">
+        <label>_xmlCharEncodingHandler</label>
+        <link refid="struct__xmlCharEncodingHandler"/>
+      </node>
+      <node id="7">
+        <label>_xmlDict</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlDictStrings</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="5">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlError</label>
+        <link refid="struct__xmlError"/>
+      </node>
+      <node id="1">
+        <label>_xmlGlobalState</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>lastError</edgelabel>
+          <edgelabel>structuredError</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>deregisterNodeDefaultValue</edgelabel>
+          <edgelabel>registerNodeDefaultValue</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>parserInputBufferCreateFilenameValue</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>outputBufferCreateFilenameValue</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="10" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="6" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="14">
+        <label>_xmlOutputBuffer</label>
+        <link refid="struct__xmlOutputBuffer"/>
+        <childnode refid="12" relation="usage">
+          <edgelabel>encoder</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>buffer</edgelabel>
+          <edgelabel>conv</edgelabel>
+        </childnode>
+      </node>
+      <node id="11">
+        <label>_xmlParserInputBuffer</label>
+        <link refid="struct__xmlParserInputBuffer"/>
+        <childnode refid="12" relation="usage">
+          <edgelabel>encoder</edgelabel>
+        </childnode>
+        <childnode refid="13" relation="usage">
+          <edgelabel>buffer</edgelabel>
+          <edgelabel>raw</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/globals.c" line="125" column="1" bodyfile="/builds/GNOME/libxml2/globals.c" bodystart="125" bodyend="170"/>
+    <listofallmembers>
+      <member refid="struct__xmlGlobalState_1ac0d8a28ed39ad1762e9eedd5bab2db10" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>deregisterNodeDefaultValue</name></member>
+      <member refid="struct__xmlGlobalState_1ac075a5a96ddba9d18f00cf788a3faafa" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>doValidityCheckingDefaultValue</name></member>
+      <member refid="struct__xmlGlobalState_1a93e422300a45cd0c728562e5a3875f1a" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>genericError</name></member>
+      <member refid="struct__xmlGlobalState_1ac8e1954e5eb889dd5d8ec9bdc90ba767" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>genericErrorContext</name></member>
+      <member refid="struct__xmlGlobalState_1a5dd73ef92f1f26dfad59f7462fcdd6b6" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>getWarningsDefaultValue</name></member>
+      <member refid="struct__xmlGlobalState_1ac47e9fefc6e2bc640cd1d12aa2758b52" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>indentTreeOutput</name></member>
+      <member refid="struct__xmlGlobalState_1a4c4e1e6026cba3da1ea73f044d39ccc7" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>keepBlanksDefaultValue</name></member>
+      <member refid="struct__xmlGlobalState_1a31b3046c62759a76aca8ead53a0f4754" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>lastError</name></member>
+      <member refid="struct__xmlGlobalState_1ade2f440dbfe1d4af026f174db363fe6a" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>loadExtDtdDefaultValue</name></member>
+      <member refid="struct__xmlGlobalState_1adbf3d098ecbdc14e1a615875ed1f0bfe" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>localRngState</name></member>
+      <member refid="struct__xmlGlobalState_1abcc871b4cc6ff7fee1047d989ecbe04c" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>outputBufferCreateFilenameValue</name></member>
+      <member refid="struct__xmlGlobalState_1a6fc652e5b611993981aa72b3466d07c2" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>parserInputBufferCreateFilenameValue</name></member>
+      <member refid="struct__xmlGlobalState_1a967bd684648d39edaf56af4c25e88ce2" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>pedanticParserDefaultValue</name></member>
+      <member refid="struct__xmlGlobalState_1a97bd5d9287f8bc0090fb3b5a0fe71805" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>registerNodeDefaultValue</name></member>
+      <member refid="struct__xmlGlobalState_1ad537f80ada562389ca16edd1a43547a3" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>saveNoEmptyTags</name></member>
+      <member refid="struct__xmlGlobalState_1ab7aa72b9fa5695268948afc3eb5ffbc2" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>structuredError</name></member>
+      <member refid="struct__xmlGlobalState_1a82f5bd3bc5ddb867433c72b758a03ebc" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>structuredErrorContext</name></member>
+      <member refid="struct__xmlGlobalState_1a3c649c72ff387e29f18f3a8835438479" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>substituteEntitiesDefaultValue</name></member>
+      <member refid="struct__xmlGlobalState_1af0ad1899fcdd114c03e6fdeda544a686" prot="public" virt="non-virtual"><scope>_xmlGlobalState</scope><name>treeIndentString</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

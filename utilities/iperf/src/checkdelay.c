@@ -1,42 +1,42 @@
-/*--------------------------------------------------------------- 
- * Copyright (c) 2014                              
- * Broadcom Corporation           
- * All Rights Reserved.                                           
- *--------------------------------------------------------------- 
- * Permission is hereby granted, free of charge, to any person    
- * obtaining a copy of this software and associated       
- * documentation files (the "Software"), to deal in the Software  
- * without restriction, including without limitation the          
- * rights to use, copy, modify, merge, publish, distribute,        
- * sublicense, and/or sell copies of the Software, and to permit     
+/*---------------------------------------------------------------
+ * Copyright (c) 2014
+ * Broadcom Corporation
+ * All Rights Reserved.
+ *---------------------------------------------------------------
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated
+ * documentation files (the "Software"), to deal in the Software
+ * without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute,
+ * sublicense, and/or sell copies of the Software, and to permit
  * persons to whom the Software is furnished to do
- * so, subject to the following conditions: 
+ * so, subject to the following conditions:
  *
- *     
- * Redistributions of source code must retain the above 
- * copyright notice, this list of conditions and 
- * the following disclaimers. 
  *
- *     
- * Redistributions in binary form must reproduce the above 
- * copyright notice, this list of conditions and the following 
- * disclaimers in the documentation and/or other materials 
- * provided with the distribution. 
- * 
- *     
- * Neither the name of Broadcom Coporation, 
- * nor the names of its contributors may be used to endorse 
+ * Redistributions of source code must retain the above
+ * copyright notice, this list of conditions and
+ * the following disclaimers.
+ *
+ *
+ * Redistributions in binary form must reproduce the above
+ * copyright notice, this list of conditions and the following
+ * disclaimers in the documentation and/or other materials
+ * provided with the distribution.
+ *
+ *
+ * Neither the name of Broadcom Coporation,
+ * nor the names of its contributors may be used to endorse
  * or promote products derived from this Software without
- * specific prior written permission. 
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
- * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
- * NONINFRINGEMENT. IN NO EVENT SHALL THE CONTIBUTORS OR COPYRIGHT 
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, 
- * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
+ * specific prior written permission.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE CONTIBUTORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
  * ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  * ________________________________________________________________
  *
  * checkdelay.c
@@ -54,7 +54,7 @@
 #include "headers.h"
 #include "util.h"
 #include "delay.h"
-#ifdef HAVE_SCHED_SETSCHEDULER
+#if HAVE_SCHED_SETSCHEDULER
 #include <sched.h>
 #ifdef HAVE_MLOCKALL
 #include <sys/mman.h>
@@ -76,17 +76,17 @@ int main (int argc, char **argv) {
 #if HAVE_DECL_CPU_SET
     int affinity = 0;
 #endif
-#ifdef HAVE_SCHED_SETSCHEDULER
+#if HAVE_SCHED_SETSCHEDULER
     int realtime = 0;
     struct sched_param sp;
 #endif
 #ifdef HAVE_CLOCK_GETTIME
-    struct timespec t1; 
-#else 
+    struct timespec t1;
+#else
     struct timeval t1;
-#endif    
-    
-    while ((c=getopt(argc, argv, "a:bkd:i:r")) != -1) 
+#endif
+
+    while ((c=getopt(argc, argv, "a:bkd:i:r")) != -1)
 	switch (c) {
 	case 'b':
 	    clockgettime = 1;
@@ -105,7 +105,7 @@ int main (int argc, char **argv) {
 	    affinity=atoi(optarg);
 	    break;
 #endif
-#ifdef HAVE_SCHED_SETSCHEDULER
+#if HAVE_SCHED_SETSCHEDULER
 	case 'r':
 	    realtime = 1;
 	    break;
@@ -115,7 +115,7 @@ int main (int argc, char **argv) {
 #if HAVE_DECL_CPU_SET
 		    ", -a affinity"
 #endif
-#ifdef HAVE_SCHED_SETSCHEDULER
+#if HAVE_SCHED_SETSCHEDULER
 		    ", -r realtime"
 #endif
 		    "\n");
@@ -128,11 +128,11 @@ int main (int argc, char **argv) {
     clockgettime = 1;
 #endif
 
-#ifdef HAVE_SCHED_SETSCHEDULER
+#if HAVE_SCHED_SETSCHEDULER
     if (realtime) {
 	fprintf(stdout,"Setting scheduler to realtime via SCHED_RR\n");
 	// SCHED_OTHER, SCHED_FIFO, SCHED_RR
-	sp.sched_priority = sched_get_priority_max(SCHED_RR); 
+	sp.sched_priority = sched_get_priority_max(SCHED_RR);
 	WARN_errno(sched_setscheduler(0, SCHED_RR, &sp) < 0,
 		   "Client set scheduler");
 #ifdef HAVE_MLOCKALL
@@ -149,12 +149,12 @@ int main (int argc, char **argv) {
     }
 #endif
 #endif
-    if (loopcount > 1000) 
+    if (loopcount > 1000)
         fprintf(stdout,"Measuring %s over %.0e iterations using %d usec delay\n",
 		kalman ? "kalman" :
 		clockgettime ? "clock_gettime" : "nanosleep",
 		(double) loopcount, delay);
-    else 
+    else
         fprintf(stdout,"Measuring %s over %d iterations using %d usec delay\n",
 		kalman ? "kalman" :
 		clockgettime ? "clock_gettime" : "nanosleep",
@@ -165,7 +165,7 @@ int main (int argc, char **argv) {
 #ifdef HAVE_CLOCK_GETTIME
         clock_gettime(CLOCK_REALTIME, &t1);
 	time1 = t1.tv_sec + (t1.tv_nsec / 1000000000.0);
-#else 
+#else
 	gettimeofday( &t1, NULL );
 	time1 = t1.tv_sec + (t1.tv_usec / 1000000.0);
 #endif
@@ -176,7 +176,7 @@ int main (int argc, char **argv) {
 #endif
 	if (clockgettime) {
 	    delay_busyloop(delay);
-	} else { 
+	} else {
 #ifdef HAVE_NANOSLEEP
 	    delay_nanosleep(delay);
 #endif
@@ -184,10 +184,10 @@ int main (int argc, char **argv) {
 #ifdef HAVE_CLOCK_GETTIME
 	clock_gettime(CLOCK_REALTIME, &t1);
 	time2 = t1.tv_sec + (t1.tv_nsec / 1000000000.0);
-#else 
+#else
 	gettimeofday( &t1, NULL );
 	time2 = t1.tv_sec + (t1.tv_usec / 1000000.0);
-#endif    
+#endif
 	delta = (time2 - time1) * 1e6;
 	if (delta > max) {
 	  max = delta;

@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -29,15 +17,15 @@
 #include <glib.h>
 #include "ex-opt.h"
 
-static GHashTable* ex_opts = NULL;
+static GHashTable* ex_opts;
 
-gboolean ex_opt_add(const gchar* optarg) {
-    gchar** splitted;
+bool ex_opt_add(const char* ws_optarg) {
+    char** splitted;
 
     if (!ex_opts)
         ex_opts = g_hash_table_new(g_str_hash,g_str_equal);
 
-    splitted = g_strsplit(optarg,":",2);
+    splitted = g_strsplit(ws_optarg,":",2);
 
     if (splitted[0] && splitted[1]) {
         GPtrArray* this_opts = (GPtrArray *)g_hash_table_lookup(ex_opts,splitted[0]);
@@ -53,14 +41,14 @@ gboolean ex_opt_add(const gchar* optarg) {
 
         g_free(splitted);
 
-        return TRUE;
+        return true;
     } else {
         g_strfreev(splitted);
-        return FALSE;
+        return false;
     }
 }
 
-gint ex_opt_count(const gchar* key) {
+int ex_opt_count(const char* key) {
     GPtrArray* this_opts;
 
     if (! ex_opts)
@@ -75,7 +63,7 @@ gint ex_opt_count(const gchar* key) {
     }
 }
 
-const gchar* ex_opt_get_nth(const gchar* key, guint key_index) {
+const char* ex_opt_get_nth(const char* key, unsigned key_index) {
     GPtrArray* this_opts;
 
     if (! ex_opts)
@@ -85,7 +73,7 @@ const gchar* ex_opt_get_nth(const gchar* key, guint key_index) {
 
     if (this_opts) {
         if (this_opts->len > key_index) {
-            return (const gchar *)g_ptr_array_index(this_opts,key_index);
+            return (const char *)g_ptr_array_index(this_opts,key_index);
         } else {
             /* XXX: assert? */
             return NULL;
@@ -96,7 +84,7 @@ const gchar* ex_opt_get_nth(const gchar* key, guint key_index) {
 
 }
 
-extern const gchar* ex_opt_get_next(const gchar* key) {
+extern const char* ex_opt_get_next(const char* key) {
     GPtrArray* this_opts;
 
     if (! ex_opts)
@@ -106,7 +94,7 @@ extern const gchar* ex_opt_get_next(const gchar* key) {
 
     if (this_opts) {
         if (this_opts->len)
-            return (const gchar *)g_ptr_array_remove_index(this_opts,0);
+            return (const char *)g_ptr_array_remove_index(this_opts,0);
         else
             return NULL;
     } else {
@@ -115,7 +103,7 @@ extern const gchar* ex_opt_get_next(const gchar* key) {
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

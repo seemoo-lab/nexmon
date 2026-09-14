@@ -5,19 +5,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
@@ -34,10 +22,12 @@
 #include <epan/stat_tap_ui.h>
 #include <epan/dissectors/packet-sv.h>
 
+#include <wsutil/cmdarg_err.h>
+
 void register_tap_listener_sv(void);
 
-static int
-sv_packet(void *prs _U_, packet_info *pinfo, epan_dissect_t *edt _U_, const void *pri)
+static tap_packet_status
+sv_packet(void *prs _U_, packet_info *pinfo, epan_dissect_t *edt _U_, const void *pri, tap_flags_t flags _U_)
 {
 	int i;
 	const sv_frame_data * sv_data = (const sv_frame_data *)pri;
@@ -50,10 +40,10 @@ sv_packet(void *prs _U_, packet_info *pinfo, epan_dissect_t *edt _U_, const void
 
 	printf("\n");
 
-	return 0;
+	return TAP_PACKET_DONT_REDRAW;
 }
 
-static void
+static bool
 svstat_init(const char *opt_arg _U_, void *userdata _U_)
 {
 	GString	*error_string;
@@ -65,14 +55,16 @@ svstat_init(const char *opt_arg _U_, void *userdata _U_)
 		0,
 		NULL,
 		sv_packet,
+		NULL,
 		NULL);
 	if (error_string) {
 		/* error, we failed to attach to the tap. clean up */
-		fprintf(stderr, "tshark: Couldn't register sv,stat tap: %s\n",
+		cmdarg_err("Couldn't register sv,stat tap: %s",
 				error_string->str);
 		g_string_free(error_string, TRUE);
-		exit(1);
+		return false;
 	}
+	return true;
 }
 
 static stat_tap_ui svstat_ui = {
@@ -91,7 +83,7 @@ register_tap_listener_sv(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

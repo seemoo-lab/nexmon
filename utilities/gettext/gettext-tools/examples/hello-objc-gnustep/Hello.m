@@ -43,7 +43,6 @@
 {
   GSVbox *cview;
   GSHbox *buttonbar;
-  int i;
 
   label1 = [NSTextField new];
   [label1 setStringValue: _(@"Hello, world!")];

@@ -1,10 +1,12 @@
 /*
  * Copyright © 2015 Canonical Limited
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -73,7 +75,8 @@ g_context_specific_source_new (const gchar *name,
     NULL,
     NULL,
     g_context_specific_source_dispatch,
-    g_context_specific_source_finalize
+    g_context_specific_source_finalize,
+    NULL, NULL
   };
   GContextSpecificSource *css;
   GSource *source;
@@ -150,18 +153,8 @@ g_context_specific_group_request_state (GContextSpecificGroup *group,
         }
     }
 
-  /* we only block for positive transitions */
-  if (requested_state)
-    {
-      while (group->requested_state != group->effective_state)
-        g_cond_wait (&group->cond, &group->lock);
-
-      /* there is no way this could go back to FALSE because the object
-       * that we just created in this thread would have to have been
-       * destroyed again (from this thread) before that could happen.
-       */
-      g_assert (group->effective_state);
-    }
+  while (group->requested_state != group->effective_state)
+    g_cond_wait (&group->cond, &group->lock);
 }
 
 gpointer

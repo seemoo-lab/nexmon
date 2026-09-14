@@ -10,49 +10,40 @@
  * 2001 Ronnie Sahlberg <See AUTHORS for email>
  *   Added all remaining dissectors for this protocol
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
+#include <epan/packet.h>
+#include <epan/tfs.h>
+#include <wsutil/array.h>
 #include "packet-rpc.h"
 #include "packet-ypserv.h"
 
 void proto_register_ypserv(void);
 void proto_reg_handoff_ypserv(void);
 
-static int proto_ypserv = -1;
-static int hf_ypserv_procedure_v1 = -1;
-static int hf_ypserv_procedure_v2 = -1;
-static int hf_ypserv_domain = -1;
-static int hf_ypserv_servesdomain = -1;
-static int hf_ypserv_map = -1;
-static int hf_ypserv_key = -1;
-static int hf_ypserv_peer = -1;
-static int hf_ypserv_more = -1;
-static int hf_ypserv_ordernum = -1;
-static int hf_ypserv_transid = -1;
-static int hf_ypserv_prog = -1;
-static int hf_ypserv_port = -1;
-static int hf_ypserv_value = -1;
-static int hf_ypserv_status = -1;
-static int hf_ypserv_map_parms = -1;
-static int hf_ypserv_xfrstat = -1;
+static int proto_ypserv;
+static int hf_ypserv_procedure_v1;
+static int hf_ypserv_procedure_v2;
+static int hf_ypserv_domain;
+static int hf_ypserv_servesdomain;
+static int hf_ypserv_map;
+static int hf_ypserv_key;
+static int hf_ypserv_peer;
+static int hf_ypserv_more;
+static int hf_ypserv_ordernum;
+static int hf_ypserv_transid;
+static int hf_ypserv_prog;
+static int hf_ypserv_port;
+static int hf_ypserv_value;
+static int hf_ypserv_status;
+static int hf_ypserv_map_parms;
+static int hf_ypserv_xfrstat;
 
-static gint ett_ypserv = -1;
-static gint ett_ypserv_map_parms = -1;
+static int ett_ypserv;
+static int ett_ypserv_map_parms;
 
 static const value_string ypstat[] =
 {
@@ -92,9 +83,9 @@ static const value_string xfrstat[] =
 };
 
 static int
-dissect_ypserv_status(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, gint32 *rstatus)
+dissect_ypserv_status(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree, int32_t *rstatus)
 {
-	gint32 status;
+	int32_t status;
 	const char *err;
 
 	status=tvb_get_ntohl(tvb, offset);
@@ -104,7 +95,7 @@ dissect_ypserv_status(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_t
 	offset = dissect_rpc_uint32(tvb, tree, hf_ypserv_status, offset);
 
 	if(status<0){
-		err=val_to_str(status, ypstat, "Unknown error:%u");
+		err=val_to_str(pinfo->pool, status, ypstat, "Unknown error:%u");
 		col_append_fstr(pinfo->cinfo, COL_INFO," %s", err);
 
 		proto_item_append_text(tree, " Error:%s", err);
@@ -114,27 +105,27 @@ dissect_ypserv_status(tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_t
 }
 
 static int
-dissect_domain_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_domain_call(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_item_append_text(tree, " DOMAIN call");
 
-	return dissect_rpc_string(tvb,tree,hf_ypserv_domain,0,NULL);
+	return dissect_rpc_string(tvb,pinfo,tree,hf_ypserv_domain,0,NULL);
 }
 
 static int
-dissect_domain_nonack_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_domain_nonack_call(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_item_append_text(tree, " DOMAIN_NONACK call");
 
-	return dissect_rpc_string(tvb,tree,hf_ypserv_domain,0,NULL);
+	return dissect_rpc_string(tvb,pinfo,tree,hf_ypserv_domain,0,NULL);
 }
 
 static int
-dissect_maplist_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_maplist_call(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_item_append_text(tree, " MAPLIST call");
 
-	return dissect_rpc_string(tvb,tree,hf_ypserv_domain,0,NULL);
+	return dissect_rpc_string(tvb,pinfo,tree,hf_ypserv_domain,0,NULL);
 }
 
 static int
@@ -164,7 +155,7 @@ dissect_domain_nonack_reply(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *t
 }
 
 static int
-dissect_match_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_match_call(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	const char *str;
 	int offset = 0;
@@ -172,18 +163,18 @@ dissect_match_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void
 	proto_item_append_text(tree, " MATCH call");
 
 	/*domain*/
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_domain, offset, &str);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_domain, offset, &str);
 	col_append_fstr(pinfo->cinfo, COL_INFO," %s/", str);
 	proto_item_append_text(tree, " %s/", str);
 
 	/*map*/
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_map, offset, &str);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_map, offset, &str);
 	col_append_fstr(pinfo->cinfo, COL_INFO,"%s/", str);
 	proto_item_append_text(tree, "%s/", str);
 
 	/*key*/
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_key, offset, &str);
-	col_append_fstr(pinfo->cinfo, COL_INFO,"%s", str);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_key, offset, &str);
+	col_append_str(pinfo->cinfo, COL_INFO, str);
 	proto_item_append_text(tree, "%s", str);
 
 	return offset;
@@ -192,7 +183,7 @@ dissect_match_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void
 static int
 dissect_match_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	gint32 status;
+	int32_t status;
 	const char *str;
 	int offset = 0;
 
@@ -201,12 +192,12 @@ dissect_match_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 	offset = dissect_ypserv_status(tvb, offset, pinfo, tree, &status);
 
 	if(status>=0){
-		offset = dissect_rpc_string(tvb, tree, hf_ypserv_value,offset, &str);
+		offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_value,offset, &str);
 		col_append_fstr(pinfo->cinfo, COL_INFO," %s", str);
 		proto_item_append_text(tree, " %s", str);
 
 	} else {
-		offset = dissect_rpc_string(tvb, tree, hf_ypserv_value,offset, NULL);
+		offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_value,offset, NULL);
 	}
 
 	return offset;
@@ -214,7 +205,7 @@ dissect_match_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 
 
 static int
-dissect_first_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_first_call(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
 	proto_item_append_text(tree, " FIRST call");
@@ -237,8 +228,8 @@ dissect_first_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void
 	 * is buggy.
 	 */
 
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_domain, offset, NULL);
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_map, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_domain, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_map, offset, NULL);
 
 	return offset;
 }
@@ -252,8 +243,8 @@ dissect_first_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* d
 
 	offset = dissect_ypserv_status(tvb, offset, pinfo, tree, NULL);
 
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_value, offset, NULL);
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_key, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_value, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_key, offset, NULL);
 
 	return offset;
 }
@@ -266,28 +257,28 @@ dissect_next_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* da
 
 	offset = dissect_ypserv_status(tvb, offset, pinfo, tree, NULL);
 
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_value, offset, NULL);
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_key, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_value, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_key, offset, NULL);
 
 	return offset;
 }
 
 
 static int
-dissect_next_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_next_call(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
 	proto_item_append_text(tree, " NEXT call");
 
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_domain, offset, NULL);
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_map, offset, NULL);
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_key, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_domain, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_map, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_key, offset, NULL);
 
 	return offset;
 }
 
 static int
-dissect_xfr_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_xfr_call(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	proto_item *sub_item=NULL;
 	proto_tree *sub_tree=NULL;
@@ -303,13 +294,13 @@ dissect_xfr_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* 
 			sub_tree = proto_item_add_subtree(sub_item, ett_ypserv_map_parms);
 	}
 
-	offset = dissect_rpc_string(tvb, sub_tree, hf_ypserv_domain, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, sub_tree, hf_ypserv_domain, offset, NULL);
 
-	offset = dissect_rpc_string(tvb, sub_tree, hf_ypserv_map, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, sub_tree, hf_ypserv_map, offset, NULL);
 
 	offset = dissect_rpc_uint32(tvb, sub_tree, hf_ypserv_ordernum, offset);
 
-	offset = dissect_rpc_string(tvb, sub_tree, hf_ypserv_peer, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, sub_tree, hf_ypserv_peer, offset, NULL);
 
 	proto_tree_add_item(tree, hf_ypserv_transid, tvb, offset, 4, ENC_BIG_ENDIAN);
 	offset += 4;
@@ -355,7 +346,7 @@ dissect_xfr_reply(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void*
 }
 
 static int
-dissect_order_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_order_call(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	const char *str;
 	int offset = 0;
@@ -363,12 +354,12 @@ dissect_order_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void
 	proto_item_append_text(tree, " ORDER call");
 
 	/*domain*/
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_domain, offset, &str);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_domain, offset, &str);
 	col_append_fstr(pinfo->cinfo, COL_INFO," %s/", str);
 	proto_item_append_text(tree, " %s/", str);
 
 	/*map*/
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_map, offset, &str);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_map, offset, &str);
 	col_append_str(pinfo->cinfo, COL_INFO, str);
 	proto_item_append_text(tree, "%s", str);
 
@@ -376,27 +367,27 @@ dissect_order_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void
 }
 
 static int
-dissect_all_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_all_call(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
 	proto_item_append_text(tree, " ALL call");
 
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_domain, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_domain, offset, NULL);
 
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_map, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_map, offset, NULL);
 
 	return offset;
 }
 
 static int
-dissect_master_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_master_call(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
 	int offset = 0;
 	proto_item_append_text(tree, " MASTER call");
 
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_domain, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_domain, offset, NULL);
 
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_map, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_map, offset, NULL);
 
 	return offset;
 }
@@ -404,7 +395,7 @@ dissect_master_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, voi
 static int
 dissect_all_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	guint32	more;
+	uint32_t	more;
 	int offset = 0;
 
 	proto_item_append_text(tree, " ALL reply");
@@ -417,8 +408,8 @@ dissect_all_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* dat
 			break;
 		offset = dissect_ypserv_status(tvb, offset, pinfo, tree, NULL);
 
-		offset = dissect_rpc_string(tvb, tree, hf_ypserv_value, offset, NULL);
-		offset = dissect_rpc_string(tvb, tree, hf_ypserv_key, offset, NULL);
+		offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_value, offset, NULL);
+		offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_key, offset, NULL);
 	}
 
 	return offset;
@@ -432,7 +423,7 @@ dissect_master_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 
 	offset = dissect_ypserv_status(tvb, offset, pinfo, tree, NULL);
 
-	offset = dissect_rpc_string(tvb, tree, hf_ypserv_peer, offset, NULL);
+	offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_peer, offset, NULL);
 
 	return offset;
 }
@@ -441,7 +432,7 @@ dissect_master_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
 static int
 dissect_order_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	guint32 num;
+	uint32_t num;
 	int offset = 0;
 
 	proto_item_append_text(tree, " ORDER reply");
@@ -467,7 +458,7 @@ dissect_maplist_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void*
 	offset = dissect_ypserv_status(tvb, offset, pinfo, tree, NULL);
 	while(tvb_get_ntohl(tvb,offset)){
 		offset = dissect_rpc_uint32(tvb, tree, hf_ypserv_more, offset);
-		offset = dissect_rpc_string(tvb, tree, hf_ypserv_map, offset, NULL);
+		offset = dissect_rpc_string(tvb, pinfo, tree, hf_ypserv_map, offset, NULL);
 
 	}
 	offset = dissect_rpc_uint32(tvb, tree, hf_ypserv_more, offset);
@@ -630,7 +621,7 @@ proto_register_ypserv(void)
 			"Xfrstat", "ypserv.xfrstat", FT_INT32, BASE_DEC,
 			VALS(xfrstat), 0, NULL, HFILL }},
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_ypserv,
 		&ett_ypserv_map_parms,
 	};
@@ -650,7 +641,7 @@ proto_reg_handoff_ypserv(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

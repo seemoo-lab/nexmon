@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,6 +16,8 @@
 #include <epan/packet.h>
 #include <epan/exceptions.h>
 #include <epan/asn1.h>
+#include <epan/expert.h>
+#include <wsutil/strtoi.h>
 
 #include "packet-ber.h"
 #include "packet-isup.h"
@@ -43,152 +33,152 @@ void proto_reg_handoff_h248_annex_c(void);
 #define PFNAME "h248.annexc"
 
 /* H.248 Annex C */
-static int proto_h248_pkg_annexc = -1;
+static int proto_h248_pkg_annexc;
 
-static int hf_h248_sdp_connection_info = -1;
-static int hf_h248_sdp_media_port = -1;
+static int hf_h248_sdp_connection_info;
+static int hf_h248_sdp_media_port;
 
-static int hf_h248_pkg_annexc_media = -1;
-static int hf_h248_pkg_annexc_ACodec = -1;
-static int hf_h248_pkg_annexc_Mediatx = -1;
-static int hf_h248_pkg_annexc_NSAP = -1;
-static int hf_h248_pkg_annexc_BIR = -1;
-static int hf_h248_pkg_annexc_transmission_mode = -1;
-static int hf_h248_pkg_annexc_num_of_channels = -1;
-static int hf_h248_pkg_annexc_sampling_rate = -1;
-static int hf_h248_pkg_annexc_bit_rate = -1;
-static int hf_h248_pkg_annexc_samplepp = -1;
-static int hf_h248_pkg_annexc_silence_supp = -1;
-static int hf_h248_pkg_annexc_encrypt_type = -1;
-static int hf_h248_pkg_annexc_encrypt_key = -1;
-static int hf_h248_pkg_annexc_gain = -1;
-static int hf_h248_pkg_annexc_jitterbuf = -1;
-static int hf_h248_pkg_annexc_propdelay = -1;
-static int hf_h248_pkg_annexc_rtp_payload = -1;
+static int hf_h248_pkg_annexc_media;
+static int hf_h248_pkg_annexc_ACodec;
+static int hf_h248_pkg_annexc_Mediatx;
+static int hf_h248_pkg_annexc_NSAP;
+static int hf_h248_pkg_annexc_BIR;
+static int hf_h248_pkg_annexc_transmission_mode;
+static int hf_h248_pkg_annexc_num_of_channels;
+static int hf_h248_pkg_annexc_sampling_rate;
+static int hf_h248_pkg_annexc_bit_rate;
+static int hf_h248_pkg_annexc_samplepp;
+static int hf_h248_pkg_annexc_silence_supp;
+static int hf_h248_pkg_annexc_encrypt_type;
+static int hf_h248_pkg_annexc_encrypt_key;
+static int hf_h248_pkg_annexc_gain;
+static int hf_h248_pkg_annexc_jitterbuf;
+static int hf_h248_pkg_annexc_propdelay;
+static int hf_h248_pkg_annexc_rtp_payload;
 
-static int hf_h248_pkg_annexc_h222 = -1;
-static int hf_h248_pkg_annexc_h223 = -1;
-static int hf_h248_pkg_annexc_v76 = -1;
-static int hf_h248_pkg_annexc_h2250 = -1;
+static int hf_h248_pkg_annexc_h222;
+static int hf_h248_pkg_annexc_h223;
+static int hf_h248_pkg_annexc_v76;
+static int hf_h248_pkg_annexc_h2250;
 
-static int hf_h248_pkg_annexc_aesa = -1;
-static int hf_h248_pkg_annexc_vp = -1;
-static int hf_h248_pkg_annexc_vc = -1;
-static int hf_h248_pkg_annexc_sc = -1;
-static int hf_h248_pkg_annexc_bcob = -1;
-static int hf_h248_pkg_annexc_bbtc = -1;
-static int hf_h248_pkg_annexc_atc = -1;
-static int hf_h248_pkg_annexc_stc = -1;
-static int hf_h248_pkg_annexc_uppc = -1;
-static int hf_h248_pkg_annexc_pcr0 = -1;
-static int hf_h248_pkg_annexc_scr0 = -1;
-static int hf_h248_pkg_annexc_mbs0 = -1;
-static int hf_h248_pkg_annexc_pcr1 = -1;
-static int hf_h248_pkg_annexc_scr1 = -1;
-static int hf_h248_pkg_annexc_mbs1 = -1;
-static int hf_h248_pkg_annexc_bei = -1;
-static int hf_h248_pkg_annexc_ti = -1;
-static int hf_h248_pkg_annexc_fd = -1;
-static int hf_h248_pkg_annexc_a2pcdv = -1;
-static int hf_h248_pkg_annexc_c2pcdv = -1;
-static int hf_h248_pkg_annexc_appcdv = -1;
-static int hf_h248_pkg_annexc_cppcdv = -1;
-static int hf_h248_pkg_annexc_aclr = -1;
-static int hf_h248_pkg_annexc_meetd = -1;
-static int hf_h248_pkg_annexc_ceetd = -1;
-static int hf_h248_pkg_annexc_QosClass = -1;
-static int hf_h248_pkg_annexc_AALtype = -1;
+static int hf_h248_pkg_annexc_aesa;
+static int hf_h248_pkg_annexc_vp;
+static int hf_h248_pkg_annexc_vc;
+static int hf_h248_pkg_annexc_sc;
+static int hf_h248_pkg_annexc_bcob;
+static int hf_h248_pkg_annexc_bbtc;
+static int hf_h248_pkg_annexc_atc;
+static int hf_h248_pkg_annexc_stc;
+static int hf_h248_pkg_annexc_uppc;
+static int hf_h248_pkg_annexc_pcr0;
+static int hf_h248_pkg_annexc_scr0;
+static int hf_h248_pkg_annexc_mbs0;
+static int hf_h248_pkg_annexc_pcr1;
+static int hf_h248_pkg_annexc_scr1;
+static int hf_h248_pkg_annexc_mbs1;
+static int hf_h248_pkg_annexc_bei;
+static int hf_h248_pkg_annexc_ti;
+static int hf_h248_pkg_annexc_fd;
+static int hf_h248_pkg_annexc_a2pcdv;
+static int hf_h248_pkg_annexc_c2pcdv;
+static int hf_h248_pkg_annexc_appcdv;
+static int hf_h248_pkg_annexc_cppcdv;
+static int hf_h248_pkg_annexc_aclr;
+static int hf_h248_pkg_annexc_meetd;
+static int hf_h248_pkg_annexc_ceetd;
+static int hf_h248_pkg_annexc_QosClass;
+static int hf_h248_pkg_annexc_AALtype;
 
-static int hf_h248_pkg_annexc_dlci = -1;
-static int hf_h248_pkg_annexc_cid = -1;
-static int hf_h248_pkg_annexc_sid = -1;
-static int hf_h248_pkg_annexc_ppt = -1;
+static int hf_h248_pkg_annexc_dlci;
+static int hf_h248_pkg_annexc_cid;
+static int hf_h248_pkg_annexc_sid;
+static int hf_h248_pkg_annexc_ppt;
 
-static int hf_h248_pkg_annexc_ipv4 = -1;
-static int hf_h248_pkg_annexc_ipv6 = -1;
-static int hf_h248_pkg_annexc_port = -1;
-static int hf_h248_pkg_annexc_porttype = -1;
+static int hf_h248_pkg_annexc_ipv4;
+static int hf_h248_pkg_annexc_ipv6;
+static int hf_h248_pkg_annexc_port;
+static int hf_h248_pkg_annexc_porttype;
 
-static int hf_h248_pkg_annexc_alc = -1;
-static int hf_h248_pkg_annexc_sut = -1;
-static int hf_h248_pkg_annexc_tci = -1;
-static int hf_h248_pkg_annexc_timer_cu = -1;
-static int hf_h248_pkg_annexc_maxcpssdu = -1;
+static int hf_h248_pkg_annexc_alc;
+static int hf_h248_pkg_annexc_sut;
+static int hf_h248_pkg_annexc_tci;
+static int hf_h248_pkg_annexc_timer_cu;
+static int hf_h248_pkg_annexc_maxcpssdu;
 
-static int hf_h248_pkg_annexc_aal1st = -1;
-static int hf_h248_pkg_annexc_cbrr = -1;
-static int hf_h248_pkg_annexc_scri = -1;
-static int hf_h248_pkg_annexc_ecm = -1;
-static int hf_h248_pkg_annexc_sdbt = -1;
-static int hf_h248_pkg_annexc_pfci = -1;
+static int hf_h248_pkg_annexc_aal1st;
+static int hf_h248_pkg_annexc_cbrr;
+static int hf_h248_pkg_annexc_scri;
+static int hf_h248_pkg_annexc_ecm;
+static int hf_h248_pkg_annexc_sdbt;
+static int hf_h248_pkg_annexc_pfci;
 
-static int hf_h248_pkg_annexc_tmr = -1;
-static int hf_h248_pkg_annexc_tmrsr = -1;
-static int hf_h248_pkg_annexc_contcheck = -1;
-static int hf_h248_pkg_annexc_itc = -1;
-static int hf_h248_pkg_annexc_transmode = -1;
-static int hf_h248_pkg_annexc_transrate = -1;
-static int hf_h248_pkg_annexc_mult = -1;
-static int hf_h248_pkg_annexc_syncasync = -1;
-static int hf_h248_pkg_annexc_negotiation = -1;
-static int hf_h248_pkg_annexc_userrate = -1;
-static int hf_h248_pkg_annexc_intrate = -1;
-static int hf_h248_pkg_annexc_nictx = -1;
-static int hf_h248_pkg_annexc_nicrx = -1;
-static int hf_h248_pkg_annexc_flowconttx = -1;
-static int hf_h248_pkg_annexc_flowcontrx = -1;
-static int hf_h248_pkg_annexc_rateadapthdr = -1;
-static int hf_h248_pkg_annexc_multiframe = -1;
-static int hf_h248_pkg_annexc_opmode = -1;
-static int hf_h248_pkg_annexc_llidnegot = -1;
-static int hf_h248_pkg_annexc_assign = -1;
-static int hf_h248_pkg_annexc_inbandneg = -1;
-static int hf_h248_pkg_annexc_stopbits = -1;
-static int hf_h248_pkg_annexc_databits = -1;
-static int hf_h248_pkg_annexc_parity = -1;
-static int hf_h248_pkg_annexc_duplexmode = -1;
-static int hf_h248_pkg_annexc_modem = -1;
-static int hf_h248_pkg_annexc_layer2prot = -1;
-static int hf_h248_pkg_annexc_layer3prot = -1;
-static int hf_h248_pkg_annexc_addlayer3prot = -1;
-static int hf_h248_pkg_annexc_dialedn = -1;
-static int hf_h248_pkg_annexc_dialingn = -1;
-static int hf_h248_pkg_annexc_echoci = -1;
-static int hf_h248_pkg_annexc_nci = -1;
-static int hf_h248_pkg_annexc_USI = -1;
+static int hf_h248_pkg_annexc_tmr;
+static int hf_h248_pkg_annexc_tmrsr;
+static int hf_h248_pkg_annexc_contcheck;
+static int hf_h248_pkg_annexc_itc;
+static int hf_h248_pkg_annexc_transmode;
+static int hf_h248_pkg_annexc_transrate;
+static int hf_h248_pkg_annexc_mult;
+static int hf_h248_pkg_annexc_syncasync;
+static int hf_h248_pkg_annexc_negotiation;
+static int hf_h248_pkg_annexc_userrate;
+static int hf_h248_pkg_annexc_intrate;
+static int hf_h248_pkg_annexc_nictx;
+static int hf_h248_pkg_annexc_nicrx;
+static int hf_h248_pkg_annexc_flowconttx;
+static int hf_h248_pkg_annexc_flowcontrx;
+static int hf_h248_pkg_annexc_rateadapthdr;
+static int hf_h248_pkg_annexc_multiframe;
+static int hf_h248_pkg_annexc_opmode;
+static int hf_h248_pkg_annexc_llidnegot;
+static int hf_h248_pkg_annexc_assign;
+static int hf_h248_pkg_annexc_inbandneg;
+static int hf_h248_pkg_annexc_stopbits;
+static int hf_h248_pkg_annexc_databits;
+static int hf_h248_pkg_annexc_parity;
+static int hf_h248_pkg_annexc_duplexmode;
+static int hf_h248_pkg_annexc_modem;
+static int hf_h248_pkg_annexc_layer2prot;
+static int hf_h248_pkg_annexc_layer3prot;
+static int hf_h248_pkg_annexc_addlayer3prot;
+static int hf_h248_pkg_annexc_dialedn;
+static int hf_h248_pkg_annexc_dialingn;
+static int hf_h248_pkg_annexc_echoci;
+static int hf_h248_pkg_annexc_nci;
+static int hf_h248_pkg_annexc_USI;
 
-static int hf_h248_pkg_annexc_fmsdu = -1;
-static int hf_h248_pkg_annexc_bmsdu = -1;
-static int hf_h248_pkg_annexc_sscs = -1;
+static int hf_h248_pkg_annexc_fmsdu;
+static int hf_h248_pkg_annexc_bmsdu;
+static int hf_h248_pkg_annexc_sscs;
 
-static int hf_h248_pkg_annexc_sdp_v = -1;
-static int hf_h248_pkg_annexc_sdp_o = -1;
-static int hf_h248_pkg_annexc_sdp_s = -1;
-static int hf_h248_pkg_annexc_sdp_i = -1;
-static int hf_h248_pkg_annexc_sdp_u = -1;
-static int hf_h248_pkg_annexc_sdp_e = -1;
-static int hf_h248_pkg_annexc_sdp_p = -1;
-static int hf_h248_pkg_annexc_sdp_c = -1;
-static int hf_h248_pkg_annexc_sdp_b = -1;
-static int hf_h248_pkg_annexc_sdp_z = -1;
-static int hf_h248_pkg_annexc_sdp_k = -1;
-static int hf_h248_pkg_annexc_sdp_a = -1;
-static int hf_h248_pkg_annexc_sdp_t = -1;
-static int hf_h248_pkg_annexc_sdp_r = -1;
-static int hf_h248_pkg_annexc_sdp_m = -1;
+static int hf_h248_pkg_annexc_sdp_v;
+static int hf_h248_pkg_annexc_sdp_o;
+static int hf_h248_pkg_annexc_sdp_s;
+static int hf_h248_pkg_annexc_sdp_i;
+static int hf_h248_pkg_annexc_sdp_u;
+static int hf_h248_pkg_annexc_sdp_e;
+static int hf_h248_pkg_annexc_sdp_p;
+static int hf_h248_pkg_annexc_sdp_c;
+static int hf_h248_pkg_annexc_sdp_b;
+static int hf_h248_pkg_annexc_sdp_z;
+static int hf_h248_pkg_annexc_sdp_k;
+static int hf_h248_pkg_annexc_sdp_a;
+static int hf_h248_pkg_annexc_sdp_t;
+static int hf_h248_pkg_annexc_sdp_r;
+static int hf_h248_pkg_annexc_sdp_m;
 
-static int hf_h248_pkg_annexc_olc = -1;
-static int hf_h248_pkg_annexc_olcack = -1;
-static int hf_h248_pkg_annexc_olccnf = -1;
-static int hf_h248_pkg_annexc_olcrej = -1;
-static int hf_h248_pkg_annexc_clc = -1;
-static int hf_h248_pkg_annexc_clcack = -1;
+static int hf_h248_pkg_annexc_olc;
+static int hf_h248_pkg_annexc_olcack;
+static int hf_h248_pkg_annexc_olccnf;
+static int hf_h248_pkg_annexc_olcrej;
+static int hf_h248_pkg_annexc_clc;
+static int hf_h248_pkg_annexc_clcack;
 
+static expert_field ei_h248_sdp_media_port_invalid;
 
-
-static gint ett_annexc = -1;
-static gint ett_vpvc = -1;
-static gint ett_codec = -1;
+static int ett_annexc;
+static int ett_vpvc;
+static int ett_codec;
 
 static const value_string h248_annexc_package_properties_vals[] = {
 	{ 0x0000, "Media stream properties H.248.1 Annex C" },
@@ -624,6 +614,7 @@ static const value_string h248_pkg_annexc_addlayer3prot_values[] = {
 	{0,NULL}
 };
 
+#if 0
 static const value_string h248_pkg_annexc_nci_satellite_values[] _U_ = {
 	{0x0, "no satellite circuit"},
 	{0x1, "one satellite circuit"},
@@ -645,7 +636,7 @@ static const value_string h248_pkg_annexc_nci_echoctl_values[] _U_ = {
 	{0x1, "outgoing echo control device included"},
 	{0,NULL}
 };
-
+#endif
 
 static const value_string h248_pkg_annexc_QosClass_values[] = {
 	{0x0, "Default"},
@@ -755,8 +746,8 @@ static void dissect_h248_annexc_acodec(proto_tree* tree,
 	tvbuff_t* new_tvb;
 	asn1_ctx_t asn1_ctx;
 
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
-	dissect_ber_octet_string(implicit_p ? *((gboolean*)implicit_p) : FALSE, &asn1_ctx, tree, tvb, 0, hfid, &new_tvb);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
+	dissect_ber_octet_string(implicit_p ? *((bool*)implicit_p) : false, &asn1_ctx, tree, tvb, 0, hfid, &new_tvb);
 
 	tree = proto_item_add_subtree(asn1_ctx.created_item,ett_codec);
 	len = tvb_reported_length(new_tvb);
@@ -772,8 +763,8 @@ static void dissect_h248_annexc_BIR(proto_tree* tree,
 	tvbuff_t* new_tvb = NULL;
 	asn1_ctx_t asn1_ctx;
 
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
-	dissect_ber_octet_string(implicit_p ? *((gboolean*)implicit_p) : FALSE, &asn1_ctx, tree, tvb, 0, hfid, &new_tvb);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
+	dissect_ber_octet_string(implicit_p ? *((bool*)implicit_p) : false, &asn1_ctx, tree, tvb, 0, hfid, &new_tvb);
 
 	if ( new_tvb && h248_info->term && ! h248_info->term->bir ) {
 		h248_info->term->bir = tvb_bytes_to_str(wmem_file_scope(), new_tvb,0,tvb_reported_length(new_tvb));
@@ -789,10 +780,10 @@ static void dissect_h248_annexc_NSAP(proto_tree* tree,
 	tvbuff_t* new_tvb = NULL;
 	asn1_ctx_t asn1_ctx;
 
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
-	dissect_ber_octet_string(implicit_p ? *((gboolean*)implicit_p) : FALSE, &asn1_ctx, tree, tvb, 0, hfid, &new_tvb);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
+	dissect_ber_octet_string(implicit_p ? *((bool*)implicit_p) : false, &asn1_ctx, tree, tvb, 0, hfid, &new_tvb);
 	if (new_tvb) {
-		dissect_nsap(new_tvb, 0,tvb_reported_length(new_tvb), tree);
+		dissect_nsap(new_tvb, pinfo, 0,tvb_reported_length(new_tvb), tree);
 		if ( h248_info->term && ! h248_info->term->nsap) {
 			h248_info->term->nsap = tvb_bytes_to_str(wmem_file_scope(), new_tvb,0,tvb_reported_length(new_tvb));
 		}
@@ -810,8 +801,8 @@ static void dissect_h248_annexc_USI(proto_tree* tree, tvbuff_t* tvb, packet_info
 	tvbuff_t* new_tvb = NULL;
 	asn1_ctx_t asn1_ctx;
 
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
-	dissect_ber_octet_string(implicit_p ? *((gboolean*)implicit_p) : FALSE, &asn1_ctx, tree, tvb, 0, hfid, &new_tvb);
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
+	dissect_ber_octet_string(implicit_p ? *((bool*)implicit_p) : false, &asn1_ctx, tree, tvb, 0, hfid, &new_tvb);
 	if (new_tvb)
 		dissect_q931_bearer_capability_ie(new_tvb, 0, tvb_reported_length(new_tvb), tree);
 }
@@ -819,8 +810,8 @@ static void dissect_h248_annexc_USI(proto_tree* tree, tvbuff_t* tvb, packet_info
 static void dissect_h248_annexc_SDP(proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo, int hfid, h248_curr_info_t* h248_info _U_, void* implicit_p _U_) {
 	asn1_ctx_t asn1_ctx;
 
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
-	dissect_ber_restricted_string(FALSE, BER_UNI_TAG_IA5String,
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
+	dissect_ber_restricted_string(false, BER_UNI_TAG_IA5String,
 		&asn1_ctx, tree, tvb, 0, hfid,
 		NULL);
 }
@@ -830,14 +821,14 @@ static void dissect_h248_annexc_SDP_C(proto_tree* tree, tvbuff_t* tvb, packet_in
 	tvbuff_t *param_tvb = NULL;
 	proto_item *ti;
 
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
-	dissect_ber_restricted_string(FALSE, BER_UNI_TAG_IA5String,
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
+	dissect_ber_restricted_string(false, BER_UNI_TAG_IA5String,
 		&asn1_ctx, tree, tvb, 0, hfid,
 		&param_tvb);
 
 	if (param_tvb){
 		ti = proto_tree_add_item(tree, hf_h248_sdp_connection_info, param_tvb, 0, -1, ENC_BIG_ENDIAN);
-		PROTO_ITEM_SET_GENERATED(ti);
+		proto_item_set_generated(ti);
 	}
 }
 
@@ -846,31 +837,37 @@ static void dissect_h248_annexc_SDP_M(proto_tree* tree, tvbuff_t* tvb, packet_in
 	tvbuff_t *param_tvb = NULL;
 	proto_item *ti;
 	int offset, next_offset, tokenlen;
-	gchar *port_str;
+	char *port_str;
 
-	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, TRUE, pinfo);
-	dissect_ber_restricted_string(FALSE, BER_UNI_TAG_IA5String,
+	asn1_ctx_init(&asn1_ctx, ASN1_ENC_BER, true, pinfo);
+	dissect_ber_restricted_string(false, BER_UNI_TAG_IA5String,
 		&asn1_ctx, tree, tvb, 0, hfid,
 		&param_tvb);
 
 	if (param_tvb){
-		offset = tvb_find_guint8(param_tvb, 0, -1, ' ');
+		offset = tvb_find_uint8(param_tvb, 0, -1, ' ');
 		if (offset != -1){
 			offset++;
-			next_offset = tvb_find_guint8(param_tvb, offset, -1, ' ');
+			next_offset = tvb_find_uint8(param_tvb, offset, -1, ' ');
 			if (next_offset > 0){
 				tokenlen = next_offset - offset;
-				port_str = tvb_get_string_enc(wmem_packet_scope(), param_tvb, offset, tokenlen, ENC_UTF_8 | ENC_NA);
+				port_str = tvb_get_string_enc(pinfo->pool, param_tvb, offset, tokenlen, ENC_UTF_8 | ENC_NA);
 				if (g_ascii_isdigit(port_str[0])) {
-					ti = proto_tree_add_uint(tree, hf_h248_sdp_media_port, param_tvb, offset, tokenlen, atoi(port_str));
-					PROTO_ITEM_SET_GENERATED(ti);
+					int32_t port = -1;
+					bool port_valid;
+					port_valid = ws_strtoi32(port_str, NULL, &port);
+					ti = proto_tree_add_uint(tree, hf_h248_sdp_media_port, param_tvb, offset, tokenlen, port);
+					proto_item_set_generated(ti);
+					if (!port_valid)
+						proto_tree_add_expert(tree, pinfo, &ei_h248_sdp_media_port_invalid, param_tvb, offset,
+							tokenlen);
 				}
 			}
 		}
 	}
 }
 
-gboolean h248_c_implicit = TRUE;
+static bool h248_c_implicit = true;
 
 static h248_pkg_param_t h248_annexc_package_properties[] = {
 	{ 0x1001, &hf_h248_pkg_annexc_media, h248_param_ber_integer, NULL },
@@ -1032,6 +1029,8 @@ static h248_package_t h248_annexc_package = {
 
 
 void proto_register_h248_annex_c(void) {
+	expert_module_t* expert_h248_pkg_annexc;
+
 	static hf_register_info hf[] = {
 		{ &hf_h248_pkg_annexc_media,
 		  { "Media", "h248.annexc.media",
@@ -1320,7 +1319,7 @@ void proto_register_h248_annex_c(void) {
 		    FT_UINT8, BASE_HEX, VALS(h248_pkg_annexc_tmrsr_values), 0,
 		    "Transmission Medium Requirement Subrate", HFILL }},
 		{ &hf_h248_pkg_annexc_contcheck,
-		  { "Continuity Check", "h248.annexc.tmsr",
+		  { "Continuity Check", "h248.annexc.contcheck",
 		    FT_UINT8, BASE_DEC, VALS(h248_pkg_annexc_contcheck_values), 0x0C,
 		    NULL, HFILL }},
 
@@ -1345,16 +1344,16 @@ void proto_register_h248_annex_c(void) {
 		    FT_UINT8, BASE_DEC, VALS(h248_pkg_annexc_syncasync_values), 0x80,
 		    "Synchronous/Asynchronous", HFILL }},
 		{ &hf_h248_pkg_annexc_negotiation,
-		  { "UPPC", "h248.annexc.negotiation",
+		  { "Negotiation", "h248.annexc.negotiation",
 		    FT_UINT8, BASE_DEC, VALS(h248_pkg_annexc_negotiation_values), 0x40,
-		    "Negotiation", HFILL }},
+		    NULL, HFILL }},
 
 		{ &hf_h248_pkg_annexc_userrate,
 		  { "Userrate", "h248.annexc.userrate",
 		    FT_UINT8, BASE_HEX, VALS(h248_pkg_annexc_userrate_values), 0x1f,
 		    "User Rate", HFILL }},
 		{ &hf_h248_pkg_annexc_intrate,
-		  { "UPPC", "h248.annexc.intrate",
+		  { "IntRate", "h248.annexc.intrate",
 		    FT_UINT8, BASE_HEX, VALS(h248_pkg_annexc_intrate_values), 0xc0,
 		    "Intermediate Rate", HFILL }},
 		{ &hf_h248_pkg_annexc_nictx,
@@ -1391,7 +1390,7 @@ void proto_register_h248_annex_c(void) {
 		    "Logical Link Identifier negotiation", HFILL }},
 
 		{ &hf_h248_pkg_annexc_assign,
-		  { "llidnegot", "h248.annexc.assign",
+		  { "assign", "h248.annexc.assign",
 		    FT_UINT8, BASE_HEX, VALS(h248_pkg_annexc_assign_values), 0xc0,
 		    "Assignor/Assignee", HFILL }},
 		{ &hf_h248_pkg_annexc_inbandneg,
@@ -1556,10 +1555,15 @@ void proto_register_h248_annex_c(void) {
 		    NULL, HFILL }},
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_annexc,
 		&ett_vpvc,
 		&ett_codec
+	};
+
+	static ei_register_info ei[] = {
+		{ &ei_h248_sdp_media_port_invalid, { "h248.annexc.sdp.media.port.invalid", PI_MALFORMED, PI_ERROR,
+			"Invalid SDP media port", EXPFILL }}
 	};
 
 	proto_h248_pkg_annexc = proto_register_protocol(PNAME, PSNAME, PFNAME);
@@ -1570,7 +1574,8 @@ void proto_register_h248_annex_c(void) {
 
 	h248_register_package(&h248_annexc_package,MERGE_PKG_HIGH);
 
-
+	expert_h248_pkg_annexc = expert_register_protocol(proto_h248_pkg_annexc);
+	expert_register_field_array(expert_h248_pkg_annexc, ei, array_length(ei));
 }
 
 void
@@ -1582,7 +1587,7 @@ proto_reg_handoff_h248_annex_c(void)
 
 }
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

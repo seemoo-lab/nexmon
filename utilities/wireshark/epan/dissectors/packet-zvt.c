@@ -6,25 +6,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /* ZVT is a manufacturer-independent protocol between payment terminals and
  * electronic cash-register systems / vending machines
  *
- * the specifications are available from http://www.zvt-kassenschnittstelle.de
+ * the specifications are available from https://www.terminalhersteller.de
  *
  * ZVT defines a "serial transport protocol" and a "TCP/IP transport
  * protocol"
@@ -43,10 +31,11 @@
 
 #include "config.h"
 
+#include <wsutil/array.h>
 #include <epan/packet.h>
-#include <epan/prefs.h>
-#include <epan/addr_resolv.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
+#include "packet-tcp.h"
 
 /* special characters of the serial transport protocol */
 #define STX 0x02
@@ -59,14 +48,14 @@
 #define ZVT_APDU_MIN_LEN 3
 
 
-static GHashTable *apdu_table = NULL, *bitmap_table = NULL;
+static GHashTable *apdu_table = NULL, *bitmap_table = NULL, *tlv_table;
 
-static wmem_tree_t *transactions = NULL;
+static wmem_tree_t *transactions;
 
 typedef struct _zvt_transaction_t {
-    guint32 rqst_frame;
-    guint32 resp_frame;
-    guint16 ctrl;
+    uint32_t rqst_frame;
+    uint32_t resp_frame;
+    uint16_t ctrl;
 } zvt_transaction_t;
 
 typedef enum _zvt_direction_t {
@@ -83,13 +72,13 @@ typedef enum _zvt_direction_t {
 #define CCRC_NEG 0x84
 
 /* "don't care" value for min_len_field */
-#define LEN_FIELD_ANY G_MAXUINT32
+#define LEN_FIELD_ANY UINT32_MAX
 
 typedef struct _apdu_info_t {
-    guint16          ctrl;
-    guint32          min_len_field;
+    uint16_t         ctrl;
+    uint32_t         min_len_field;
     zvt_direction_t  direction;
-    void (*dissect_payload)(tvbuff_t *, gint, guint16,
+    void (*dissect_payload)(tvbuff_t *, int, uint16_t,
             packet_info *, proto_tree *, zvt_transaction_t *);
 } apdu_info_t;
 
@@ -102,111 +91,222 @@ typedef struct _apdu_info_t {
 #define CTRL_AUTHORISATION 0x0601
 #define CTRL_COMPLETION    0x060F
 #define CTRL_ABORT         0x061E
+#define CTRL_REVERSAL      0x0630
+#define CTRL_REFUND        0x0631
 #define CTRL_END_OF_DAY    0x0650
 #define CTRL_DIAG          0x0670
 #define CTRL_INIT          0x0693
 #define CTRL_PRINT_LINE    0x06D1
+#define CTRL_PRINT_TEXT    0x06D3
 
-static void dissect_zvt_reg(tvbuff_t *tvb, gint offset, guint16 len,
+static void dissect_zvt_int_status(tvbuff_t *tvb, int offset, uint16_t len,
         packet_info *pinfo, proto_tree *tree, zvt_transaction_t *zvt_trans);
-static void dissect_zvt_bitmap_seq(tvbuff_t *tvb, gint offset, guint16 len,
+static void dissect_zvt_reg(tvbuff_t *tvb, int offset, uint16_t len _U_,
+        packet_info *pinfo, proto_tree *tree, zvt_transaction_t *zvt_trans);
+static void dissect_zvt_bitmap_seq(tvbuff_t *tvb, int offset, uint16_t len,
+        packet_info *pinfo, proto_tree *tree, zvt_transaction_t *zvt_trans _U_);
+static void dissect_zvt_init(tvbuff_t *tvb, int offset, uint16_t len _U_,
+        packet_info *pinfo _U_, proto_tree *tree, zvt_transaction_t *zvt_trans _U_);
+static void dissect_zvt_pass_bitmap_seq(tvbuff_t *tvb, int offset, uint16_t len _U_,
+        packet_info *pinfo, proto_tree *tree, zvt_transaction_t *zvt_trans);
+static void dissect_zvt_abort(tvbuff_t *tvb, int offset, uint16_t len _U_,
         packet_info *pinfo, proto_tree *tree, zvt_transaction_t *zvt_trans);
 
 static const apdu_info_t apdu_info[] = {
-    { CTRL_STATUS,        0, DIRECTION_PT_TO_ECR, NULL },
-    { CTRL_INT_STATUS,    0, DIRECTION_PT_TO_ECR, NULL },
+    { CTRL_STATUS,        0, DIRECTION_PT_TO_ECR, dissect_zvt_bitmap_seq },
+    { CTRL_INT_STATUS,    0, DIRECTION_PT_TO_ECR, dissect_zvt_int_status },
     { CTRL_REGISTRATION,  4, DIRECTION_ECR_TO_PT, dissect_zvt_reg },
     /* authorisation has at least a 0x04 tag and 6 bytes for the amount */
     { CTRL_AUTHORISATION, 7, DIRECTION_ECR_TO_PT, dissect_zvt_bitmap_seq },
     { CTRL_COMPLETION,    0, DIRECTION_PT_TO_ECR, dissect_zvt_bitmap_seq },
-    { CTRL_ABORT,         0, DIRECTION_PT_TO_ECR, NULL },
+    { CTRL_ABORT,         0, DIRECTION_PT_TO_ECR, dissect_zvt_abort },
+    { CTRL_REVERSAL,      0, DIRECTION_ECR_TO_PT, dissect_zvt_pass_bitmap_seq },
+    { CTRL_REFUND,        0, DIRECTION_ECR_TO_PT, dissect_zvt_pass_bitmap_seq },
     { CTRL_END_OF_DAY,    0, DIRECTION_ECR_TO_PT, NULL },
-    { CTRL_DIAG,          0,  DIRECTION_ECR_TO_PT, NULL },
-    { CTRL_INIT,          0, DIRECTION_ECR_TO_PT, NULL },
-    { CTRL_PRINT_LINE,    0, DIRECTION_PT_TO_ECR, NULL }
+    { CTRL_DIAG,          0, DIRECTION_ECR_TO_PT, NULL },
+    { CTRL_INIT,          0, DIRECTION_ECR_TO_PT, dissect_zvt_init },
+    { CTRL_PRINT_LINE,    0, DIRECTION_PT_TO_ECR, NULL },
+    { CTRL_PRINT_TEXT,    0, DIRECTION_PT_TO_ECR, dissect_zvt_bitmap_seq }
 };
 
 
 typedef struct _bitmap_info_t {
-    guint8   bmp;
-    guint16  payload_len;
-    gint (*dissect_payload)(tvbuff_t *, gint, packet_info *, proto_tree *);
+    uint8_t  bmp;
+    uint16_t payload_len;
+    int (*dissect_payload)(tvbuff_t *, int, packet_info *, proto_tree *);
 } bitmap_info_t;
 
 #define BMP_TIMEOUT       0x01
 #define BMP_MAX_STAT_INFO 0x02
+#define BMP_SVC_BYTE      0x03
 #define BMP_AMOUNT        0x04
 #define BMP_PUMP_NR       0x05
 #define BMP_TLV_CONTAINER 0x06
+#define BMP_TRACE_NUM     0x0B
+#define BMP_TIME          0x0C
+#define BMP_DATE          0x0D
 #define BMP_EXP_DATE      0x0E
+#define BMP_CARD_SEQ_NUM  0x17
 #define BMP_PAYMENT_TYPE  0x19
 #define BMP_CARD_NUM      0x22
 #define BMP_T2_DAT        0x23
 #define BMP_T3_DAT        0x24
+#define BMP_RES_CODE      0x27
+#define BMP_TID           0x29
+#define BMP_VU_NUMBER     0x2A
 #define BMP_T1_DAT        0x2D
 #define BMP_CVV_CVC       0x3A
+#define BMP_AID           0x3B
 #define BMP_ADD_DATA      0x3C
 #define BMP_CC            0x49
+#define BMP_RCPT_NUM      0x87
+#define BMP_CARD_TYPE     0x8A
+#define BMP_CARD_NAME     0x8B
 
 #define BMP_PLD_LEN_UNKNOWN 0  /* unknown/variable bitmap payload len */
 
-static gint dissect_zvt_tlv_container(
-        tvbuff_t *tvb, gint offset, packet_info *pinfo, proto_tree *tree);
+static int dissect_zvt_amount(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree);
+static int dissect_zvt_tlv_container(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree);
+static inline int dissect_zvt_res_code(
+        tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree);
+static inline int dissect_zvt_cc(
+        tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree);
+static inline int dissect_zvt_terminal_id(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree);
+static inline int dissect_zvt_time(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree);
+static inline int dissect_zvt_date(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree);
+static inline int dissect_zvt_card_type(
+        tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree);
+static inline int dissect_zvt_trace_number(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree);
+static inline int dissect_zvt_expiry_date(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree);
+static inline int dissect_zvt_card_number(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree);
+static inline int dissect_zvt_card_name(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree);
+static inline int dissect_zvt_additional_data(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree);
 
 static const bitmap_info_t bitmap_info[] = {
     { BMP_TIMEOUT,                         1, NULL },
     { BMP_MAX_STAT_INFO,                   1, NULL },
-    { BMP_AMOUNT,                          6, NULL },
+    { BMP_SVC_BYTE,                        1, NULL },
+    { BMP_AMOUNT,                          6, dissect_zvt_amount },
     { BMP_PUMP_NR,                         1, NULL },
     { BMP_TLV_CONTAINER, BMP_PLD_LEN_UNKNOWN, dissect_zvt_tlv_container },
-    { BMP_EXP_DATE,                        2, NULL },
+    { BMP_TRACE_NUM,                       3, dissect_zvt_trace_number },
+    { BMP_TIME,                            3, dissect_zvt_time },
+    { BMP_DATE,                            2, dissect_zvt_date },
+    { BMP_EXP_DATE,                        2, dissect_zvt_expiry_date },
+    { BMP_CARD_SEQ_NUM,                    2, NULL },
     { BMP_PAYMENT_TYPE,                    1, NULL },
-    { BMP_CARD_NUM,      BMP_PLD_LEN_UNKNOWN, NULL },
+    { BMP_CARD_NUM,      BMP_PLD_LEN_UNKNOWN, dissect_zvt_card_number },
     { BMP_T2_DAT,        BMP_PLD_LEN_UNKNOWN, NULL },
     { BMP_T3_DAT,        BMP_PLD_LEN_UNKNOWN, NULL },
+    { BMP_RES_CODE,                        1, dissect_zvt_res_code },
+    { BMP_TID,                             4, dissect_zvt_terminal_id },
+    { BMP_VU_NUMBER,                      15, NULL },
     { BMP_T1_DAT,        BMP_PLD_LEN_UNKNOWN, NULL },
     { BMP_CVV_CVC,                         2, NULL },
-    { BMP_ADD_DATA,      BMP_PLD_LEN_UNKNOWN, NULL },
-    { BMP_CC,                              2, NULL }
+    { BMP_AID,                             8, NULL },
+    { BMP_ADD_DATA,      BMP_PLD_LEN_UNKNOWN, dissect_zvt_additional_data },
+    { BMP_CC,                              2, dissect_zvt_cc },
+    { BMP_RCPT_NUM,                        2, NULL },
+    { BMP_CARD_TYPE,                       1, dissect_zvt_card_type },
+    { BMP_CARD_NAME,     BMP_PLD_LEN_UNKNOWN, dissect_zvt_card_name }
 };
 
 
 void proto_register_zvt(void);
 void proto_reg_handoff_zvt(void);
 
-/* the specification mentions tcp port 20007
-   this port is not officially registered with IANA */
-static guint pref_zvt_tcp_port = 0;
+static dissector_handle_t zvt_tcp_handle;
 
-static int proto_zvt = -1;
+static int proto_zvt;
 
-static int ett_zvt = -1;
-static int ett_zvt_apdu = -1;
-static int ett_zvt_bitmap = -1;
-static int ett_zvt_tlv_dat_obj = -1;
-static int ett_zvt_tlv_tag = -1;
+static int ett_zvt;
+static int ett_zvt_apdu;
+static int ett_zvt_bitmap;
+static int ett_zvt_tlv_dat_obj;
+static int ett_zvt_tlv_subseq;
+static int ett_zvt_tlv_tag;
+static int ett_zvt_tlv_receipt;
 
-static int hf_zvt_resp_in = -1;
-static int hf_zvt_resp_to = -1;
-static int hf_zvt_serial_char = -1;
-static int hf_zvt_crc = -1;
-static int hf_zvt_ctrl = -1;
-static int hf_zvt_ccrc = -1;
-static int hf_zvt_aprc = -1;
-static int hf_zvt_len = -1;
-static int hf_zvt_data = -1;
-static int hf_zvt_reg_pwd = -1;
-static int hf_zvt_reg_cfg = -1;
-static int hf_zvt_cc = -1;
-static int hf_zvt_reg_svc_byte = -1;
-static int hf_zvt_bmp = -1;
-static int hf_zvt_tlv_total_len = -1;
-static int hf_zvt_tlv_tag = -1;
-static int hf_zvt_tlv_tag_class = -1;
-static int hf_zvt_tlv_tag_type = -1;
-static int hf_zvt_tlv_len = -1;
+static int hf_zvt_resp_in;
+static int hf_zvt_resp_to;
+static int hf_zvt_serial_char;
+static int hf_zvt_crc;
+static int hf_zvt_ctrl;
+static int hf_zvt_ccrc;
+static int hf_zvt_aprc;
+static int hf_zvt_len;
+static int hf_zvt_data;
+static int hf_zvt_int_status;
+static int hf_zvt_pwd;
+static int hf_zvt_reg_cfg;
+static int hf_zvt_res_code;
+static int hf_zvt_cc;
+static int hf_zvt_amount;
+static int hf_zvt_terminal_id;
+static int hf_zvt_time;
+static int hf_zvt_date;
+static int hf_zvt_card_type;
+static int hf_zvt_bmp;
+static int hf_zvt_tlv_total_len;
+static int hf_zvt_tlv_tag;
+static int hf_zvt_tlv_tag_class;
+static int hf_zvt_tlv_tag_type;
+static int hf_zvt_tlv_len;
+static int hf_zvt_text_lines_line;
+static int hf_zvt_permitted_cmd;
+static int hf_zvt_receipt_type;
+static int hf_zvt_receipt_parameter_positive_customer;
+static int hf_zvt_receipt_parameter_negative_customer;
+static int hf_zvt_receipt_parameter_positive_merchant;
+static int hf_zvt_receipt_parameter_negative_merchant;
+static int hf_zvt_receipt_parameter_customer_before_merchant;
+static int hf_zvt_receipt_parameter_print_short_receipt;
+static int hf_zvt_receipt_parameter_no_product_data;
+static int hf_zvt_receipt_parameter_ecr_as_printer;
+static int hf_zvt_receipt_parameter;
+static int hf_zvt_trace_number;
+static int hf_zvt_expiry_date;
+static int hf_zvt_card_number;
+static int hf_zvt_card_name;
+static int hf_zvt_additional_data;
+static int hf_zvt_characters_per_line;
+static int hf_zvt_receipt_info;
+static int hf_zvt_receipt_info_positive;
+static int hf_zvt_receipt_info_signature;
+static int hf_zvt_receipt_info_negative;
+static int hf_zvt_receipt_info_printing;
 
-static expert_field ei_invalid_apdu_len = EI_INIT;
+static int * const receipt_parameter_flag_fields[] = {
+    &hf_zvt_receipt_parameter_positive_customer,
+    &hf_zvt_receipt_parameter_negative_customer,
+    &hf_zvt_receipt_parameter_positive_merchant,
+    &hf_zvt_receipt_parameter_negative_merchant,
+    &hf_zvt_receipt_parameter_customer_before_merchant,
+    &hf_zvt_receipt_parameter_print_short_receipt,
+    &hf_zvt_receipt_parameter_no_product_data,
+    &hf_zvt_receipt_parameter_ecr_as_printer,
+    NULL
+};
+
+static int * const receipt_info_fields[] = {
+    &hf_zvt_receipt_info_positive,
+    &hf_zvt_receipt_info_signature,
+    &hf_zvt_receipt_info_negative,
+    &hf_zvt_receipt_info_printing,
+    NULL
+};
+
+static expert_field ei_invalid_apdu_len;
 
 static const value_string serial_char[] = {
     { STX, "Start of text (STX)" },
@@ -226,38 +326,73 @@ static const value_string ctrl_field[] = {
     { CTRL_AUTHORISATION, "Authorisation" },
     { CTRL_COMPLETION, "Completion" },
     { CTRL_ABORT, "Abort" },
+    { CTRL_REVERSAL, "Reversal" },
+    { CTRL_REFUND, "Refund" },
     { CTRL_END_OF_DAY, "End Of Day" },
     { CTRL_DIAG, "Diagnosis" },
     { CTRL_INIT, "Initialisation" },
     { CTRL_PRINT_LINE, "Print Line" },
-    { 0x06D3, "Print Text Block" },
+    { CTRL_PRINT_TEXT, "Print Text Block" },
     { 0, NULL }
 };
 static value_string_ext ctrl_field_ext = VALUE_STRING_EXT_INIT(ctrl_field);
 
+/* ISO 4217 currency codes */
+static const value_string zvt_cc[] = {
+    { 0x0756, "CHF" },
+    { 0x0826, "GBP" },
+    { 0x0840, "USD" },
+    { 0x0978, "EUR" },
+    { 0, NULL }
+};
+
+static const value_string receipt_type[] = {
+    { 0x01, "Transaction receipt (merchant)" },
+    { 0x02, "Transaction receipt (customer)" },
+    { 0x03, "Administration receipt" },
+    { 0, NULL }
+};
+
+static const value_string card_type[] = {
+    {  2, "ec-card" },
+    {  5, "girocard" },
+    {  6, "Mastercard" },
+    { 10, "VISA" },
+    { 46, "Maestro" },
+    {  0, NULL }
+};
+static value_string_ext card_type_ext = VALUE_STRING_EXT_INIT(card_type);
+
 static const value_string bitmap[] = {
     { BMP_TIMEOUT,       "Timeout" },
     { BMP_MAX_STAT_INFO, "max. status info" },
+    { BMP_SVC_BYTE,      "Service byte" },
     { BMP_AMOUNT,        "Amount" },
     { BMP_PUMP_NR,       "Pump number" },
     { BMP_TLV_CONTAINER, "TLV container" },
-    { BMP_EXP_DATE,      "Exipry date" },
+    { BMP_TRACE_NUM,     "Trace number" },
+    { BMP_TIME,          "Time" },
+    { BMP_DATE,          "Date" },
+    { BMP_EXP_DATE,      "Expiry date" },
+    { BMP_CARD_SEQ_NUM,  "Card sequence number" },
     { BMP_PAYMENT_TYPE,  "Payment type" },
     { BMP_CARD_NUM,      "Card number" },
     { BMP_T2_DAT,        "Track 2 data" },
     { BMP_T3_DAT,        "Track 3 data" },
+    { BMP_RES_CODE,      "Result code" },
+    { BMP_TID,           "Terminal ID" },
+    { BMP_VU_NUMBER,     "Contract number"},
     { BMP_T1_DAT,        "Track 1 data" },
     { BMP_CVV_CVC,       "CVV / CVC" },
+    { BMP_AID,           "Authorization attribute" },
     { BMP_ADD_DATA,      "Additional data" },
     { BMP_CC,            "Currency code (CC)" },
+    { BMP_RCPT_NUM,      "Receipt number" },
+    { BMP_CARD_TYPE,     "Card type" },
+    { BMP_CARD_NAME,     "Card name" },
     { 0, NULL }
 };
 static value_string_ext bitmap_ext = VALUE_STRING_EXT_INIT(bitmap);
-
-static const value_string tlv_tags[] = {
-    { 0, NULL }
-};
-static value_string_ext tlv_tags_ext = VALUE_STRING_EXT_INIT(tlv_tags);
 
 static const value_string tlv_tag_class[] = {
     { 0x00, "Universal" },
@@ -268,22 +403,193 @@ static const value_string tlv_tag_class[] = {
 };
 static value_string_ext tlv_tag_class_ext = VALUE_STRING_EXT_INIT(tlv_tag_class);
 
+#define TLV_TAG_TEXT_LINES          0x07
+#define TLV_TAG_ATTRIBUTE           0x09
+#define TLV_TAG_PERMITTED_ZVT_CMD   0x0A
+#define TLV_TAG_CHARS_PER_LINE      0x12
+#define TLV_TAG_DISPLAY_TEXTS       0x24
+#define TLV_TAG_PRINT_TEXTS         0x25
+#define TLV_TAG_PERMITTED_ZVT_CMDS  0x26
+#define TLV_TAG_SUPPORTED_CHARSETS  0x27
+#define TLV_TAG_PAYMENT_TYPE        0x2F
+#define TLV_TAG_EMV_CFG_PARAM       0x40
+#define TLV_TAG_CARD_TYPE_ID        0x41
+#define TLV_TAG_RECEIPT_PARAMETER   0x45
+#define TLV_TAG_APPLICATION         0x60
+#define TLV_TAG_RECEIPT_PARAM       0x1F04
+#define TLV_TAG_RECEIPT_TYPE        0x1F07
+#define TLV_TAG_CARDHOLDER_AUTH     0x1F10
+#define TLV_TAG_ONLINE_FLAG         0x1F11
+#define TLV_TAG_CARD_TYPE           0x1F12
+#define TLV_TAG_RECEIPT_INFO        0x1F37
 
 
+typedef struct _tlv_seq_info_t {
+    unsigned txt_enc;
+} tlv_seq_info_t;
 
-static gint
-dissect_zvt_tlv_tag(tvbuff_t *tvb, gint offset,
-        packet_info *pinfo _U_, proto_tree *tree, guint32 *tag)
+
+static int
+dissect_zvt_tlv_seq(tvbuff_t *tvb, int offset, uint16_t seq_max_len,
+        packet_info *pinfo, proto_tree *tree, tlv_seq_info_t *seq_info);
+
+typedef struct _tlv_info_t {
+    uint32_t tag;
+    int (*dissect_payload)(tvbuff_t *, int, int,
+            packet_info *, proto_tree *, tlv_seq_info_t *);
+} tlv_info_t;
+
+static inline int dissect_zvt_tlv_text_lines(
+        tvbuff_t *tvb, int offset, int len,
+        packet_info *pinfo _U_, proto_tree *tree, tlv_seq_info_t *seq_info);
+
+static inline int dissect_zvt_tlv_subseq(
+        tvbuff_t *tvb, int offset, int len,
+        packet_info *pinfo, proto_tree *tree, tlv_seq_info_t *seq_info);
+
+static inline int dissect_zvt_tlv_permitted_cmd(
+        tvbuff_t *tvb, int offset, int len,
+        packet_info *pinfo _U_, proto_tree *tree, tlv_seq_info_t *seq_info _U_);
+
+static inline int dissect_zvt_tlv_receipt_type(
+        tvbuff_t *tvb, int offset, int len,
+        packet_info *pinfo _U_, proto_tree *tree, tlv_seq_info_t *seq_info _U_);
+
+static inline int dissect_zvt_tlv_receipt_param(
+        tvbuff_t *tvb, int offset, int len,
+        packet_info *pinfo _U_, proto_tree *tree, tlv_seq_info_t *seq_info _U_);
+
+static inline int dissect_zvt_tlv_characters_per_line(
+        tvbuff_t *tvb, int offset, int len,
+        packet_info *pinfo, proto_tree *tree, tlv_seq_info_t *seq_info _U_);
+
+static inline int dissect_zvt_tlv_receipt_info(
+        tvbuff_t *tvb, int offset, int len, packet_info *pinfo _U_,
+        proto_tree *tree, tlv_seq_info_t *seq_info _U_);
+
+static const tlv_info_t tlv_info[] = {
+    { TLV_TAG_TEXT_LINES, dissect_zvt_tlv_text_lines },
+    { TLV_TAG_DISPLAY_TEXTS, dissect_zvt_tlv_subseq },
+    { TLV_TAG_PRINT_TEXTS, dissect_zvt_tlv_subseq },
+    { TLV_TAG_PAYMENT_TYPE, dissect_zvt_tlv_subseq },
+    { TLV_TAG_PERMITTED_ZVT_CMDS, dissect_zvt_tlv_subseq },
+    { TLV_TAG_PERMITTED_ZVT_CMD, dissect_zvt_tlv_permitted_cmd },
+    { TLV_TAG_RECEIPT_TYPE, dissect_zvt_tlv_receipt_type },
+    { TLV_TAG_RECEIPT_PARAM, dissect_zvt_tlv_receipt_param },
+    { TLV_TAG_CHARS_PER_LINE, dissect_zvt_tlv_characters_per_line },
+    { TLV_TAG_RECEIPT_INFO, dissect_zvt_tlv_receipt_info }
+};
+
+static const value_string tlv_tags[] = {
+    { TLV_TAG_TEXT_LINES,         "Text lines" },
+    { TLV_TAG_ATTRIBUTE,          "Attribute"},
+    { TLV_TAG_CHARS_PER_LINE,
+        "Number of characters per line of the printer" },
+    { TLV_TAG_DISPLAY_TEXTS,      "Display texts" },
+    { TLV_TAG_PRINT_TEXTS,        "Print texts" },
+    { TLV_TAG_PERMITTED_ZVT_CMDS, "List of permitted ZVT commands" },
+    { TLV_TAG_SUPPORTED_CHARSETS, "List of supported character sets" },
+    { TLV_TAG_PAYMENT_TYPE,       "Payment type" },
+    { TLV_TAG_EMV_CFG_PARAM,      "EMV config parameter" },
+    { TLV_TAG_CARD_TYPE_ID,       "Card type ID" },
+    { TLV_TAG_RECEIPT_PARAMETER,  "Receipt parameter (EMV)" },
+    { TLV_TAG_APPLICATION,        "Application" },
+    { TLV_TAG_RECEIPT_PARAM,      "Receipt parameter" },
+    { TLV_TAG_RECEIPT_TYPE,       "Receipt type" },
+    { TLV_TAG_CARDHOLDER_AUTH,    "Cardholder authentication" },
+    { TLV_TAG_ONLINE_FLAG,        "Online flag" },
+    { TLV_TAG_CARD_TYPE,          "Card type" },
+    { TLV_TAG_RECEIPT_INFO,       "Receipt information" },
+    { 0, NULL }
+};
+static value_string_ext tlv_tags_ext = VALUE_STRING_EXT_INIT(tlv_tags);
+
+static inline int dissect_zvt_tlv_text_lines(
+        tvbuff_t *tvb, int offset, int len,
+        packet_info *pinfo _U_, proto_tree *tree, tlv_seq_info_t *seq_info)
 {
-    gint offset_start;
-    guint8 one_byte;
-    guint32 _tag;
+    proto_tree_add_item(tree, hf_zvt_text_lines_line,
+            tvb, offset, len, seq_info->txt_enc);
+    return len;
+}
+
+
+static inline int dissect_zvt_tlv_subseq(
+        tvbuff_t *tvb, int offset, int len,
+        packet_info *pinfo, proto_tree *tree, tlv_seq_info_t *seq_info)
+{
+    proto_tree *subseq_tree;
+
+    subseq_tree = proto_tree_add_subtree(tree,
+            tvb, offset, len, ett_zvt_tlv_subseq, NULL,
+            "Subsequence");
+
+    return dissect_zvt_tlv_seq(tvb, offset, len, pinfo, subseq_tree, seq_info);
+}
+
+
+static inline int dissect_zvt_tlv_permitted_cmd(
+        tvbuff_t *tvb, int offset, int len,
+        packet_info *pinfo _U_, proto_tree *tree, tlv_seq_info_t *seq_info _U_)
+{
+    proto_tree_add_item(tree, hf_zvt_permitted_cmd,
+            tvb, offset, len, ENC_BIG_ENDIAN);
+    return len;
+}
+
+
+static inline int dissect_zvt_tlv_receipt_type(
+        tvbuff_t *tvb, int offset, int len,
+        packet_info *pinfo _U_, proto_tree *tree, tlv_seq_info_t *seq_info _U_)
+{
+    proto_tree_add_item(tree, hf_zvt_receipt_type,
+            tvb, offset, len, ENC_BIG_ENDIAN);
+    return len;
+}
+
+
+static inline int dissect_zvt_tlv_receipt_param(
+        tvbuff_t *tvb, int offset, int len,
+        packet_info *pinfo _U_, proto_tree *tree, tlv_seq_info_t *seq_info _U_)
+{
+    proto_tree_add_bitmask(tree, tvb, offset, hf_zvt_receipt_parameter, ett_zvt_tlv_receipt, receipt_parameter_flag_fields, ENC_BIG_ENDIAN);
+    return len;
+}
+
+
+static inline int dissect_zvt_tlv_characters_per_line(
+        tvbuff_t *tvb, int offset, int len,
+        packet_info *pinfo _U_, proto_tree *tree, tlv_seq_info_t *seq_info _U_)
+{
+    proto_tree_add_item(tree, hf_zvt_characters_per_line, tvb, offset, 1,
+            ENC_BCD_DIGITS_0_9 | ENC_BIG_ENDIAN);
+    return len;
+}
+
+
+static inline int dissect_zvt_tlv_receipt_info(
+        tvbuff_t *tvb, int offset, int len,
+        packet_info *pinfo _U_, proto_tree *tree, tlv_seq_info_t *seq_info _U_)
+{
+    proto_tree_add_bitmask(tree, tvb, offset, hf_zvt_receipt_info,
+            ett_zvt_tlv_receipt, receipt_info_fields, ENC_BIG_ENDIAN);
+    return len;
+}
+
+
+static int
+dissect_zvt_tlv_tag(tvbuff_t *tvb, int offset,
+        packet_info *pinfo _U_, proto_tree *tree, uint32_t *tag)
+{
+    int offset_start;
+    uint8_t one_byte;
+    uint32_t _tag;
     proto_item *tag_ti;
     proto_tree *tag_tree;
 
     offset_start = offset;
 
-    one_byte = tvb_get_guint8(tvb, offset);
+    one_byte = tvb_get_uint8(tvb, offset);
     _tag = one_byte;
     offset++;
     if ((one_byte & 0x1F) == 0x1F) {
@@ -293,14 +599,16 @@ dissect_zvt_tlv_tag(tvbuff_t *tvb, gint offset,
                    (the specification defines only 1 and 2-byte tags) */
                 return -1;
             }
-            one_byte = tvb_get_guint8(tvb, offset);
+            one_byte = tvb_get_uint8(tvb, offset);
             _tag = _tag << 8 | (one_byte&0x7F);
             offset++;
         } while (one_byte & 0x80);
     }
 
     tag_ti = proto_tree_add_uint_format(tree, hf_zvt_tlv_tag,
-            tvb, offset_start, offset-offset_start, _tag, "Tag: 0x%x", _tag);
+            tvb, offset_start, offset-offset_start, _tag,
+            "Tag: %s (0x%x)",
+            val_to_str_ext_const(_tag, &tlv_tags_ext, "unknown"), _tag);
 
     tag_tree = proto_item_add_subtree(tag_ti, ett_zvt_tlv_tag);
     proto_tree_add_item(tag_tree, hf_zvt_tlv_tag_class,
@@ -314,18 +622,18 @@ dissect_zvt_tlv_tag(tvbuff_t *tvb, gint offset,
 }
 
 
-static gint
-dissect_zvt_tlv_len(tvbuff_t *tvb, gint offset,
-        packet_info *pinfo _U_, proto_tree *tree, int hf, guint16 *len)
+static int
+dissect_zvt_tlv_len(tvbuff_t *tvb, int offset,
+        packet_info *pinfo _U_, proto_tree *tree, int hf, uint16_t *len)
 {
-    guint16 _len;
-    gint    len_bytes = 1;
+    uint16_t _len;
+    int     len_bytes = 1;
 
-    _len = tvb_get_guint8(tvb, offset);
+    _len = tvb_get_uint8(tvb, offset);
     if (_len & 0x80) {
         if ((_len & 0x03) == 1) {
             len_bytes++;
-            _len = tvb_get_guint8(tvb, offset+1);
+            _len = tvb_get_uint8(tvb, offset+1);
         }
         else if ((_len & 0x03) == 2) {
             len_bytes += 2;
@@ -344,27 +652,33 @@ dissect_zvt_tlv_len(tvbuff_t *tvb, gint offset,
     return len_bytes;
 }
 
- 
-static gint
-dissect_zvt_tlv_container(tvbuff_t *tvb, gint offset,
-        packet_info *pinfo, proto_tree *tree)
+
+static int
+dissect_zvt_tlv_seq(tvbuff_t *tvb, int offset, uint16_t seq_max_len,
+        packet_info *pinfo, proto_tree *tree, tlv_seq_info_t *seq_info)
 {
-    gint        offset_start;
-    proto_item *dat_obj_it;
-    proto_tree *dat_obj_tree;
-    gint        tag_len;
-    guint32     tag;
-    gint        total_len_bytes, data_len_bytes;
-    guint16     data_len = 0;
+    int             offset_start;
+    proto_item     *dat_obj_it;
+    proto_tree     *dat_obj_tree;
+    int             tag_len;
+    uint32_t        tag;
+    int             data_len_bytes;
+    uint16_t        data_len = 0;
+    tlv_info_t     *ti;
+    int             ret;
+
+    if (!seq_info) {
+        seq_info = wmem_new(pinfo->pool, tlv_seq_info_t);
+
+        /* by default, text lines are using the CP437 charset
+           there's an object to change the encoding
+           (XXX - does this change apply only to the current message?) */
+        seq_info->txt_enc = ENC_CP437;
+    }
 
     offset_start = offset;
 
-    total_len_bytes = dissect_zvt_tlv_len(tvb, offset, pinfo,
-                tree, hf_zvt_tlv_total_len, NULL);
-    if (total_len_bytes > 0)
-        offset += total_len_bytes;
-
-    while (tvb_captured_length_remaining(tvb, offset) > 0) {
+    while (offset-offset_start < seq_max_len) {
         dat_obj_tree = proto_tree_add_subtree(tree,
             tvb, offset, -1, ett_zvt_tlv_dat_obj, &dat_obj_it,
             "TLV data object");
@@ -375,35 +689,213 @@ dissect_zvt_tlv_container(tvbuff_t *tvb, gint offset,
         offset += tag_len;
 
         data_len_bytes = dissect_zvt_tlv_len(tvb, offset, pinfo,
-                dat_obj_tree,hf_zvt_tlv_len, &data_len); 
+                dat_obj_tree,hf_zvt_tlv_len, &data_len);
         if (data_len_bytes > 0)
             offset += data_len_bytes;
 
-        /* XXX - dissect the data-element */
-        offset += data_len;
-
+        /* set the sequence length now that we know it
+           this way, we don't have to put the whole switch statement
+           under if (data_len > 0) */
         proto_item_set_len(dat_obj_it, tag_len + data_len_bytes + data_len);
+        if (data_len == 0)
+            continue;
+
+        ti = (tlv_info_t *)g_hash_table_lookup(
+            tlv_table, GUINT_TO_POINTER((unsigned)tag));
+        if (ti && ti->dissect_payload) {
+            ret = ti->dissect_payload(
+                    tvb, offset, (int)data_len, pinfo, dat_obj_tree, seq_info);
+            if (ret <= 0) {
+                /* XXX - expert info */
+            }
+        }
+
+        offset += data_len;
     }
 
     return offset - offset_start;
 }
 
 
-/* dissect one "bitmap", i.e BMP and the corresponding data */
-static gint
-dissect_zvt_bitmap(tvbuff_t *tvb, gint offset,
+static int
+dissect_zvt_tlv_container(tvbuff_t *tvb, int offset,
         packet_info *pinfo, proto_tree *tree)
 {
-    gint           offset_start;
-    guint8         bmp;
-    proto_item    *bitmap_it;
-    proto_tree    *bitmap_tree;
-    bitmap_info_t *bi;
-    gint           ret;
+    int      offset_start;
+    int      total_len_bytes, seq_len;
+    uint16_t seq_max_len = 0;
 
     offset_start = offset;
 
-    bmp = tvb_get_guint8(tvb, offset);
+    total_len_bytes = dissect_zvt_tlv_len(tvb, offset, pinfo,
+                tree, hf_zvt_tlv_total_len, &seq_max_len);
+    if (total_len_bytes > 0)
+        offset += total_len_bytes;
+
+    seq_len = dissect_zvt_tlv_seq(
+            tvb, offset, seq_max_len, pinfo, tree, NULL);
+    if (seq_len  > 0)
+        offset += seq_len;
+
+    return offset - offset_start;
+}
+
+
+static inline int dissect_zvt_res_code(
+        tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree)
+{
+    proto_tree_add_item(tree, hf_zvt_res_code, tvb, offset, 1, ENC_BIG_ENDIAN);
+    return 1;
+}
+
+
+static inline int dissect_zvt_cc(
+        tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree)
+{
+    proto_tree_add_item(tree, hf_zvt_cc, tvb, offset, 2, ENC_BIG_ENDIAN);
+    return 2;
+}
+
+
+static inline int dissect_zvt_card_type(
+        tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree)
+{
+    proto_tree_add_item(tree, hf_zvt_card_type, tvb, offset, 1, ENC_BIG_ENDIAN);
+    return 1;
+}
+
+
+static inline int dissect_zvt_terminal_id(
+        tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree)
+{
+    proto_tree_add_item(tree, hf_zvt_terminal_id, tvb, offset, 4,
+            ENC_BCD_DIGITS_0_9 | ENC_BIG_ENDIAN);
+    return 4;
+}
+
+
+static inline int dissect_zvt_amount(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree)
+{
+    const char *str = tvb_bcd_dig_to_str_be(pinfo->pool, tvb, offset, 6, NULL, false);
+    proto_tree_add_uint64(tree, hf_zvt_amount, tvb, offset, 6, g_ascii_strtoll(str,NULL,10));
+    return 6;
+}
+
+
+static inline int dissect_zvt_time(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree)
+{
+    const char *str = tvb_bcd_dig_to_str_be(pinfo->pool, tvb, offset, 3, NULL, false);
+    char   *fstr = (char *)wmem_alloc(pinfo->pool, 9);
+    fstr[0] = str[0];
+    fstr[1] = str[1];
+    fstr[2] = ':';
+    fstr[3] = str[2];
+    fstr[4] = str[3];
+    fstr[5] = ':';
+    fstr[6] = str[4];
+    fstr[7] = str[5];
+    fstr[8] = 0;
+    proto_tree_add_string(tree, hf_zvt_time, tvb, offset, 3, fstr);
+    return 3;
+}
+
+
+static inline int dissect_zvt_date(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree)
+{
+    const char *str = tvb_bcd_dig_to_str_be(pinfo->pool, tvb, offset, 2, NULL, false);
+    char   *fstr = (char *)wmem_alloc(pinfo->pool, 6);
+    fstr[0] = str[0];
+    fstr[1] = str[1];
+    fstr[2] = '/';
+    fstr[3] = str[2];
+    fstr[4] = str[3];
+    fstr[5] = 0;
+    proto_tree_add_string(tree, hf_zvt_date, tvb, offset, 2, fstr);
+    return 2;
+}
+
+
+static inline int dissect_zvt_expiry_date(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree)
+{
+    const char *str = tvb_bcd_dig_to_str_be(pinfo->pool, tvb, offset, 2, NULL, false);
+    char   *fstr = (char *)wmem_alloc(pinfo->pool, 6);
+    fstr[0] = str[0];
+    fstr[1] = str[1];
+    fstr[2] = '/';
+    fstr[3] = str[2];
+    fstr[4] = str[3];
+    fstr[5] = 0;
+    proto_tree_add_string(tree, hf_zvt_expiry_date, tvb, offset, 2, fstr);
+    return 2;
+}
+
+
+static inline int dissect_zvt_trace_number(
+        tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree)
+{
+    proto_tree_add_item(tree, hf_zvt_trace_number, tvb, offset, 3,
+            ENC_BCD_DIGITS_0_9 | ENC_BIG_ENDIAN);
+    return 3;
+}
+
+
+static inline int dissect_zvt_card_number(
+        tvbuff_t *tvb, int offset, packet_info *pinfo _U_, proto_tree *tree)
+{
+    uint8_t tens = tvb_get_uint8(tvb, offset) & 0x0f;
+    uint8_t ones = tvb_get_uint8(tvb, offset + 1) & 0x0f;
+    uint8_t length = tens * 10 + ones;
+
+    proto_tree_add_item(tree, hf_zvt_card_number, tvb, offset + 2, length,
+            ENC_BCD_DIGITS_0_9 | ENC_BIG_ENDIAN);
+    return 2 + length;
+}
+
+
+static inline int dissect_zvt_card_name(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree)
+{
+    uint8_t tens = tvb_get_uint8(tvb, offset) & 0x0f;
+    uint8_t ones = tvb_get_uint8(tvb, offset + 1) & 0x0f;
+    uint8_t length = tens * 10 + ones;
+    const uint8_t * str = NULL;
+    proto_tree_add_item_ret_string(tree, hf_zvt_card_name, tvb, offset + 2, length, ENC_ASCII, pinfo->pool, &str);
+    return 2 + length;
+}
+
+
+static inline int dissect_zvt_additional_data(
+        tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree)
+{
+    uint8_t hundrets = tvb_get_uint8(tvb, offset) & 0x0f;
+    uint8_t tens = tvb_get_uint8(tvb, offset + 1) & 0x0f;
+    uint8_t ones = tvb_get_uint8(tvb, offset + 2) & 0x0f;
+    uint16_t length = hundrets * 100 + tens * 10 + ones;
+    const uint8_t * str = NULL;
+    proto_tree_add_item_ret_string(tree, hf_zvt_additional_data, tvb, offset + 3, length, ENC_ASCII, pinfo->pool, &str);
+    return 3 + length;
+}
+
+
+/* dissect one "bitmap", i.e BMP and the corresponding data */
+static int
+dissect_zvt_bitmap(tvbuff_t *tvb, int offset,
+        packet_info *pinfo, proto_tree *tree)
+{
+    int            offset_start;
+    uint8_t        bmp;
+    proto_item    *bitmap_it;
+    proto_tree    *bitmap_tree;
+    bitmap_info_t *bi;
+    int            ret;
+
+    offset_start = offset;
+
+    bmp = tvb_get_uint8(tvb, offset);
     if (try_val_to_str(bmp, bitmap) == NULL)
         return -1;
 
@@ -413,11 +905,11 @@ dissect_zvt_bitmap(tvbuff_t *tvb, gint offset,
     proto_tree_add_item(bitmap_tree, hf_zvt_bmp,
             tvb, offset, 1, ENC_BIG_ENDIAN);
     proto_item_append_text(bitmap_it, ": %s",
-            val_to_str(bmp, bitmap, "unknown"));
+            val_to_str_const(bmp, bitmap, "unknown"));
     offset++;
 
     bi = (bitmap_info_t *)g_hash_table_lookup(
-            bitmap_table, GUINT_TO_POINTER((guint)bmp));
+            bitmap_table, GUINT_TO_POINTER((unsigned)bmp));
     if (bi) {
         if (bi->dissect_payload) {
             ret = bi->dissect_payload(tvb, offset, pinfo, bitmap_tree);
@@ -433,30 +925,35 @@ dissect_zvt_bitmap(tvbuff_t *tvb, gint offset,
 }
 
 
-static void
-dissect_zvt_reg(tvbuff_t *tvb, gint offset, guint16 len _U_,
+static void dissect_zvt_int_status(tvbuff_t *tvb, int offset, uint16_t len,
         packet_info *pinfo, proto_tree *tree, zvt_transaction_t *zvt_trans)
 {
-    proto_tree_add_item(tree, hf_zvt_reg_pwd, tvb, offset, 3, ENC_NA);
+    proto_tree_add_item(tree, hf_zvt_int_status,
+            tvb, offset, 1, ENC_BIG_ENDIAN);
+    offset++;
+
+    if (len > 1)
+        offset++; /* skip "timeout" */
+
+    if (len > 2)
+        dissect_zvt_bitmap_seq(tvb, offset, len-2, pinfo, tree, zvt_trans);
+}
+
+
+static void
+dissect_zvt_reg(tvbuff_t *tvb, int offset, uint16_t len _U_,
+        packet_info *pinfo, proto_tree *tree, zvt_transaction_t *zvt_trans)
+{
+    proto_tree_add_item(tree, hf_zvt_pwd, tvb, offset, 3, ENC_NA);
     offset += 3;
 
     proto_tree_add_item(tree, hf_zvt_reg_cfg,
             tvb, offset, 1, ENC_BIG_ENDIAN);
     offset++;
 
-    /* check for the optional part CC|0x03|service byte */
-    if (tvb_captured_length_remaining(tvb, offset)>=4 &&
-            tvb_get_guint8(tvb, offset+2)==0x03) {
-
-        proto_tree_add_item(tree, hf_zvt_cc,
-            tvb, offset, 2, ENC_BIG_ENDIAN);
-        offset += 2;
-
-        offset++; /* 0x03 */
-
-        proto_tree_add_item(tree, hf_zvt_reg_svc_byte,
-            tvb, offset, 1, ENC_BIG_ENDIAN);
-        offset++;
+    /* check for the optional part CC|0x03|service byte|TLV */
+    if (tvb_captured_length_remaining(tvb, offset)>=2) {
+        offset += dissect_zvt_cc(tvb, offset, pinfo, tree);
     }
 
     /* it's ok if the remaining len is 0 */
@@ -466,13 +963,47 @@ dissect_zvt_reg(tvbuff_t *tvb, gint offset, guint16 len _U_,
 }
 
 
+static void dissect_zvt_init(
+        tvbuff_t *tvb, int offset, uint16_t len _U_, packet_info *pinfo _U_,
+        proto_tree *tree, zvt_transaction_t *zvt_trans _U_)
+{
+    proto_tree_add_item(tree, hf_zvt_pwd, tvb, offset, 3, ENC_NA);
+}
+
+
+static void
+dissect_zvt_abort(tvbuff_t *tvb, int offset, uint16_t len _U_,
+        packet_info *pinfo, proto_tree *tree, zvt_transaction_t *zvt_trans)
+{
+    proto_tree_add_item(tree, hf_zvt_res_code, tvb, offset, 1, ENC_NA);
+    offset += 1;
+
+    dissect_zvt_bitmap_seq(tvb, offset,
+            tvb_captured_length_remaining(tvb, offset),
+            pinfo, tree, zvt_trans);
+}
+
+
+static void
+dissect_zvt_pass_bitmap_seq(tvbuff_t *tvb, int offset, uint16_t len _U_,
+        packet_info *pinfo, proto_tree *tree, zvt_transaction_t *zvt_trans)
+{
+    proto_tree_add_item(tree, hf_zvt_pwd, tvb, offset, 3, ENC_NA);
+    offset += 3;
+
+    dissect_zvt_bitmap_seq(tvb, offset,
+            tvb_captured_length_remaining(tvb, offset),
+            pinfo, tree, zvt_trans);
+}
+
+
 /* dissect a sequence of bitmaps
    (which may be the complete APDU payload or a part of it) */
 static void
-dissect_zvt_bitmap_seq(tvbuff_t *tvb, gint offset, guint16 len,
-        packet_info *pinfo _U_, proto_tree *tree, zvt_transaction_t *zvt_trans _U_)
+dissect_zvt_bitmap_seq(tvbuff_t *tvb, int offset, uint16_t len,
+        packet_info *pinfo, proto_tree *tree, zvt_transaction_t *zvt_trans _U_)
 {
-    gint offset_start, ret;
+    int offset_start, ret;
 
     offset_start = offset;
 
@@ -495,7 +1026,7 @@ zvt_set_addresses(packet_info *pinfo, zvt_transaction_t *zvt_trans)
         return;
 
     ai = (apdu_info_t *)g_hash_table_lookup(
-            apdu_table, GUINT_TO_POINTER((guint)zvt_trans->ctrl));
+            apdu_table, GUINT_TO_POINTER((unsigned)zvt_trans->ctrl));
     if (!ai)
         return;
 
@@ -528,13 +1059,13 @@ zvt_set_addresses(packet_info *pinfo, zvt_transaction_t *zvt_trans)
    return -1 if we don't have a complete APDU, 0 if the packet is no ZVT APDU
    or the length of the ZVT APDU if all goes well */
 static int
-dissect_zvt_apdu(tvbuff_t *tvb, gint offset, packet_info *pinfo, proto_tree *tree)
+dissect_zvt_apdu(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree)
 {
-    gint               offset_start;
-    guint8             len_bytes = 1; /* number of bytes for the len field */
-    guint16            ctrl = ZVT_CTRL_NONE;
-    guint16            len;
-    guint8             byte;
+    int                offset_start;
+    uint8_t            len_bytes = 1; /* number of bytes for the len field */
+    uint16_t           ctrl = ZVT_CTRL_NONE;
+    uint16_t           len;
+    uint8_t            byte;
     proto_item        *apdu_it;
     proto_tree        *apdu_tree;
     apdu_info_t       *ai;
@@ -546,7 +1077,7 @@ dissect_zvt_apdu(tvbuff_t *tvb, gint offset, packet_info *pinfo, proto_tree *tre
     if (tvb_captured_length_remaining(tvb, offset) < ZVT_APDU_MIN_LEN)
         return -1;
 
-    len = tvb_get_guint8(tvb, offset+2);
+    len = tvb_get_uint8(tvb, offset+2);
     if (len == 0xFF) {
         len_bytes = 3;
         len = tvb_get_letohs(tvb, offset+3);
@@ -561,10 +1092,10 @@ dissect_zvt_apdu(tvbuff_t *tvb, gint offset, packet_info *pinfo, proto_tree *tre
     apdu_tree = proto_tree_add_subtree(tree,
             tvb, offset, -1, ett_zvt_apdu, &apdu_it, "ZVT APDU");
 
-    byte = tvb_get_guint8(tvb, offset);
+    byte = tvb_get_uint8(tvb, offset);
     if (byte == CCRC_POS || byte == CCRC_NEG) {
         proto_tree_add_item(apdu_tree, hf_zvt_ccrc, tvb, offset, 1, ENC_BIG_ENDIAN);
-        col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "%s",
+        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
                 byte == CCRC_POS ? "Positive completion" : "Negative completion");
         offset++;
         proto_tree_add_item(apdu_tree, hf_zvt_aprc, tvb, offset, 1, ENC_BIG_ENDIAN);
@@ -580,14 +1111,14 @@ dissect_zvt_apdu(tvbuff_t *tvb, gint offset, packet_info *pinfo, proto_tree *tre
         if (zvt_trans && zvt_trans->resp_frame == pinfo->num) {
             it = proto_tree_add_uint(apdu_tree, hf_zvt_resp_to,
                     NULL, 0, 0, zvt_trans->rqst_frame);
-            PROTO_ITEM_SET_GENERATED(it);
+            proto_item_set_generated(it);
         }
     }
     else {
         ctrl = tvb_get_ntohs(tvb, offset);
         proto_tree_add_item(apdu_tree, hf_zvt_ctrl, tvb, offset, 2, ENC_BIG_ENDIAN);
-        col_append_sep_fstr(pinfo->cinfo, COL_INFO, NULL, "%s",
-                val_to_str_const(ctrl, ctrl_field, "Unknown 0x%x"));
+        col_append_sep_str(pinfo->cinfo, COL_INFO, NULL,
+                val_to_str(pinfo->pool, ctrl, ctrl_field, "Unknown 0x%x"));
         offset += 2;
 
         if (PINFO_FD_VISITED(pinfo)) {
@@ -597,7 +1128,7 @@ dissect_zvt_apdu(tvbuff_t *tvb, gint offset, packet_info *pinfo, proto_tree *tre
                     zvt_trans->resp_frame!=0) {
                it = proto_tree_add_uint(apdu_tree, hf_zvt_resp_in,
                        NULL, 0, 0, zvt_trans->resp_frame);
-               PROTO_ITEM_SET_GENERATED(it);
+               proto_item_set_generated(it);
             }
         }
         else {
@@ -611,7 +1142,7 @@ dissect_zvt_apdu(tvbuff_t *tvb, gint offset, packet_info *pinfo, proto_tree *tre
     }
 
     ai = (apdu_info_t *)g_hash_table_lookup(
-            apdu_table, GUINT_TO_POINTER((guint)ctrl));
+            apdu_table, GUINT_TO_POINTER((unsigned)ctrl));
 
     it = proto_tree_add_uint(apdu_tree, hf_zvt_len, tvb, offset, len_bytes, len);
     if (ai && ai->min_len_field!=LEN_FIELD_ANY && len<ai->min_len_field) {
@@ -637,10 +1168,10 @@ dissect_zvt_apdu(tvbuff_t *tvb, gint offset, packet_info *pinfo, proto_tree *tre
 }
 
 
-static gint
-dissect_zvt_serial(tvbuff_t *tvb, gint offset, packet_info *pinfo _U_, proto_tree *tree)
+static int
+dissect_zvt_serial(tvbuff_t *tvb, int offset, packet_info *pinfo, proto_tree *tree)
 {
-    gint  offset_start;
+    int   offset_start;
     int   apdu_len;
 
     offset_start = offset;
@@ -681,40 +1212,40 @@ dissect_zvt_serial(tvbuff_t *tvb, gint offset, packet_info *pinfo _U_, proto_tre
 }
 
 
-static gboolean
-valid_ctrl_field(tvbuff_t *tvb, gint offset)
+static bool
+valid_ctrl_field(tvbuff_t *tvb, int offset)
 {
-    if (tvb_get_guint8(tvb, offset) == 0x80 ||
-        tvb_get_guint8(tvb, offset) == 0x84 ||
+    if (tvb_get_uint8(tvb, offset) == 0x80 ||
+        tvb_get_uint8(tvb, offset) == 0x84 ||
         try_val_to_str_ext(tvb_get_ntohs(tvb, offset), &ctrl_field_ext)) {
-            return TRUE;
+            return true;
     }
 
-    return FALSE;
+    return false;
 }
 
 
 static int
 dissect_zvt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
-    gint        zvt_len = 0;
+    int         zvt_len = 0;
     proto_item *zvt_ti;
     proto_tree *zvt_tree;
-    gboolean    is_serial; /* serial or TCP/IP protocol? */
+    bool        is_serial; /* serial or TCP/IP protocol? */
 
     if (tvb_captured_length(tvb) == 1 &&
-            (tvb_get_guint8(tvb, 0) == ACK ||
-             tvb_get_guint8(tvb, 0) == NAK)) {
-        is_serial = TRUE;
+            (tvb_get_uint8(tvb, 0) == ACK ||
+             tvb_get_uint8(tvb, 0) == NAK)) {
+        is_serial = true;
     }
     else if (tvb_captured_length(tvb) >= 2 &&
-            tvb_get_guint8(tvb, 0) == DLE &&
-            tvb_get_guint8(tvb, 1) == STX) {
-        is_serial = TRUE;
+            tvb_get_uint8(tvb, 0) == DLE &&
+            tvb_get_uint8(tvb, 1) == STX) {
+        is_serial = true;
     }
     else if (tvb_captured_length(tvb) >= ZVT_APDU_MIN_LEN &&
             valid_ctrl_field(tvb, 0)) {
-        is_serial = FALSE;
+        is_serial = false;
     }
     else
         return 0;
@@ -741,83 +1272,58 @@ dissect_zvt(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
     return zvt_len;
 }
 
-
-static int
-dissect_zvt_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static unsigned get_zvt_message_len(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
-    gint        offset = 0, zvt_len = 0, ret;
-    proto_item *zvt_ti;
-    proto_tree *zvt_tree;
+    unsigned len = tvb_get_uint8(tvb, offset+2);
+    if (len == 0xFF)
+        if (tvb_captured_length_remaining(tvb, offset) >= 5)
+            len = tvb_get_letohs(tvb, offset+3) + 5;
+        else
+            len = 0;
+    else
+        len += 3;
 
-    if (tvb_captured_length(tvb) < ZVT_APDU_MIN_LEN) {
-        if (pinfo->can_desegment) {
-            pinfo->desegment_offset = offset;
-            pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;
-            return -1;
-        }
-        return zvt_len;
-    }
-
-    if (!valid_ctrl_field(tvb, 0))
-        return 0; /* reject the packet */
-
-    col_set_str(pinfo->cinfo, COL_PROTOCOL, "ZVT");
-    col_clear(pinfo->cinfo, COL_INFO);
-    zvt_ti = proto_tree_add_protocol_format(tree, proto_zvt,
-            tvb, 0, -1,
-            "ZVT Kassenschnittstelle: Transport Protocol TCP/IP");
-    zvt_tree = proto_item_add_subtree(zvt_ti, ett_zvt);
-
-    while (tvb_captured_length_remaining(tvb, offset) > 0) {
-        ret = dissect_zvt_apdu(tvb, offset, pinfo, zvt_tree);
-        if (ret == 0) {
-            /* not a valid APDU
-               mark the bytes that we consumed and exit, give
-               other dissectors a chance to try the remaining
-               bytes */
-            break;
-        }
-        else if (ret < 0) {
-            /* not enough data - ask the TCP layer for more */
-
-            if (pinfo->can_desegment) {
-                pinfo->desegment_offset = offset;
-                pinfo->desegment_len = DESEGMENT_ONE_MORE_SEGMENT;
-            }
-            break;
-        }
-        else {
-            offset += ret;
-            zvt_len += ret;
-        }
-    }
-
-    proto_item_set_len(zvt_ti, zvt_len);
-    return zvt_len;
+    return len;
 }
 
+static int
+dissect_zvt_tcp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    tcp_dissect_pdus(tvb, pinfo, tree, true, ZVT_APDU_MIN_LEN,
+                     get_zvt_message_len, dissect_zvt, data);
+    return tvb_captured_length(tvb);
+}
+
+static void
+zvt_shutdown(void)
+{
+    g_hash_table_destroy(tlv_table);
+    g_hash_table_destroy(apdu_table);
+    g_hash_table_destroy(bitmap_table);
+}
 
 void
 proto_register_zvt(void)
 {
-    guint     i;
-    module_t *zvt_module;
+    unsigned  i;
     expert_module_t* expert_zvt;
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_zvt,
         &ett_zvt_apdu,
         &ett_zvt_bitmap,
         &ett_zvt_tlv_dat_obj,
-        &ett_zvt_tlv_tag
+        &ett_zvt_tlv_subseq,
+        &ett_zvt_tlv_tag,
+        &ett_zvt_tlv_receipt
     };
     static hf_register_info hf[] = {
         { &hf_zvt_resp_in,
             { "Response In", "zvt.resp_in",
-                FT_FRAMENUM, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+                FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0, NULL, HFILL } },
         { &hf_zvt_resp_to,
             { "Response To", "zvt.resp_to",
-                FT_FRAMENUM, BASE_NONE, NULL, 0x0, NULL, HFILL } },
+                FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0, NULL, HFILL } },
          { &hf_zvt_serial_char,
             { "Serial character", "zvt.serial_char", FT_UINT8,
                 BASE_HEX|BASE_EXT_STRING, &serial_char_ext, 0, NULL, HFILL } },
@@ -839,20 +1345,38 @@ proto_register_zvt(void)
         { &hf_zvt_data,
           { "APDU data", "zvt.data",
             FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL } },
-        { &hf_zvt_reg_pwd,
-            { "Password", "zvt.reg.password",
+        { &hf_zvt_int_status,
+            { "Intermediate status", "zvt.int_status",
+                FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL } },
+        { &hf_zvt_pwd,
+            { "Password", "zvt.password",
                 FT_BYTES, BASE_NONE, NULL, 0, NULL, HFILL } },
         { &hf_zvt_reg_cfg,
             { "Config byte", "zvt.reg.config_byte",
                 FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL } },
+        { &hf_zvt_res_code,
+            { "Result Code", "zvt.result_code",
+                FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL } },
         /* we don't call the filter zvt.reg.cc, the currency code
            appears in several apdus */
         { &hf_zvt_cc,
-            { "Currency Code (CC)", "zvt.cc",
-                FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL } },
-        { &hf_zvt_reg_svc_byte,
-            { "Service byte", "zvt.reg.service_byte",
-                FT_UINT8, BASE_HEX, NULL, 0, NULL, HFILL } },
+            { "Currency Code", "zvt.cc",
+                FT_UINT16, BASE_HEX, VALS(zvt_cc), 0, NULL, HFILL } },
+        { &hf_zvt_card_type,
+            { "Card Type", "zvt.card_type", FT_UINT8,
+                BASE_DEC|BASE_EXT_STRING, &card_type_ext, 0, NULL, HFILL } },
+        { &hf_zvt_terminal_id,
+            { "Terminal ID", "zvt.terminal_id", FT_STRING,
+                BASE_NONE, NULL, 0, NULL, HFILL } },
+        { &hf_zvt_amount,
+            { "Amount", "zvt.amount", FT_UINT48,
+                BASE_DEC, NULL, 0, NULL, HFILL } },
+        { &hf_zvt_time,
+            { "Time", "zvt.time", FT_STRING,
+                BASE_NONE, NULL, 0, NULL, HFILL } },
+        { &hf_zvt_date,
+            { "Date", "zvt.date", FT_STRING,
+                BASE_NONE, NULL, 0, NULL, HFILL } },
         { &hf_zvt_bmp,
             { "BMP", "zvt.bmp", FT_UINT8,
                 BASE_HEX|BASE_EXT_STRING, &bitmap_ext, 0, NULL, HFILL } },
@@ -871,73 +1395,135 @@ proto_register_zvt(void)
                 8, TFS(&tfs_constructed_primitive), 0x20, NULL, HFILL } },
         { &hf_zvt_tlv_len,
             { "Length", "zvt.tlv.len",
-                FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } }
+                FT_UINT32, BASE_DEC, NULL, 0, NULL, HFILL } },
+        { &hf_zvt_text_lines_line,
+            { "Text line", "zvt.tlv.text_lines.line",
+                FT_STRING, BASE_NONE, NULL, 0, NULL, HFILL } },
+        { &hf_zvt_permitted_cmd,
+            { "Permitted command", "zvt.tlv.permitted_command",
+                FT_UINT16, BASE_HEX, NULL, 0, NULL, HFILL } },
+        { &hf_zvt_receipt_type,
+            { "Receipt type", "zvt.tlv.receipt_type",
+                FT_UINT16, BASE_HEX, VALS(receipt_type), 0, NULL, HFILL } },
+        { &hf_zvt_receipt_parameter_positive_customer,
+            { "Positive customer receipt", "zvt.tlv.receipt_parameter.positive_customer", FT_BOOLEAN,
+                8, TFS(&tfs_required_not_required), 0x80, NULL, HFILL } },
+        { &hf_zvt_receipt_parameter_negative_customer,
+            { "Negative customer receipt", "zvt.tlv.receipt_parameter.negative_customer", FT_BOOLEAN,
+                8, TFS(&tfs_required_not_required), 0x40, NULL, HFILL } },
+        { &hf_zvt_receipt_parameter_positive_merchant,
+            { "Positive merchant receipt", "zvt.tlv.receipt_parameter.positive_merchant", FT_BOOLEAN,
+                8, TFS(&tfs_required_not_required), 0x20, NULL, HFILL } },
+        { &hf_zvt_receipt_parameter_negative_merchant,
+            { "Negative merchant receipt", "zvt.tlv.receipt_parameter.negative_merchant", FT_BOOLEAN,
+                8, TFS(&tfs_required_not_required), 0x10, NULL, HFILL } },
+        { &hf_zvt_receipt_parameter_customer_before_merchant,
+            { "Customer receipt should be sent before the merchant receipt", "zvt.tlv.receipt_parameter.customer_first", FT_BOOLEAN,
+                8, TFS(&tfs_yes_no), 0x08, NULL, HFILL } },
+        { &hf_zvt_receipt_parameter_print_short_receipt,
+            { "Print short receipt", "zvt.tlv.receipt_parameter.short_receipt", FT_BOOLEAN,
+                8, TFS(&tfs_yes_no), 0x04, NULL, HFILL } },
+        { &hf_zvt_receipt_parameter_no_product_data,
+            { "Do not print product data (from BMP 3C) on the receipt", "zvt.tlv.receipt_parameter.no_product", FT_BOOLEAN,
+                8, TFS(&tfs_yes_no), 0x02, NULL, HFILL } },
+        { &hf_zvt_receipt_parameter_ecr_as_printer,
+            { "Use ECR as printer", "zvt.tlv.receipt_parameter.ecr_as_printer", FT_BOOLEAN,
+                8, TFS(&tfs_yes_no), 0x01, NULL, HFILL } },
+        { &hf_zvt_receipt_parameter,
+            { "Receipt parameter", "zvt.tlv.receipt_parameter", FT_UINT8,
+                BASE_HEX, NULL, 0x00, NULL, HFILL } },
+        { &hf_zvt_trace_number,
+            { "Trace number", "zvt.trace_number", FT_STRING,
+                BASE_NONE, NULL, 0, NULL, HFILL } },
+        { &hf_zvt_expiry_date,
+            { "Expiry date", "zvt.expiry_date", FT_STRING,
+                BASE_NONE, NULL, 0, NULL, HFILL } },
+        { &hf_zvt_card_number,
+            { "Card number", "zvt.card_number", FT_STRING,
+                BASE_NONE, NULL, 0, NULL, HFILL } },
+        { &hf_zvt_card_name,
+            { "Card name", "zvt.card_name", FT_STRING,
+                BASE_NONE, NULL, 0, NULL, HFILL } },
+        { &hf_zvt_additional_data,
+            { "Additional data", "zvt.additional_data", FT_STRING,
+                BASE_NONE, NULL, 0, NULL, HFILL } },
+        { &hf_zvt_characters_per_line,
+            { "Characters per line", "zvt.characters_per_line", FT_STRING,
+                BASE_NONE, NULL, 0, NULL, HFILL } },
+        { &hf_zvt_receipt_info,
+            { "Receipt information", "zvt.tlv.receipt_info", FT_UINT8,
+                BASE_HEX, NULL, 0x00, NULL, HFILL } },
+        { &hf_zvt_receipt_info_positive,
+            { "Positive receipt (authorised)",
+                "zvt.tlv.receipt_info.positive", FT_BOOLEAN, 8,
+                TFS(&tfs_yes_no), 0x01, NULL, HFILL } },
+        { &hf_zvt_receipt_info_signature,
+            { "Receipt contains a signature",
+                "zvt.tlv.receipt_info.signature", FT_BOOLEAN, 8,
+                TFS(&tfs_yes_no), 0x02, NULL, HFILL } },
+        { &hf_zvt_receipt_info_negative,
+            { "Negative receipt (aborted, rejected)",
+                "zvt.tlv.receipt_info.negative", FT_BOOLEAN, 8,
+                TFS(&tfs_yes_no), 0x04, NULL, HFILL } },
+        { &hf_zvt_receipt_info_printing,
+            { "Printing is mandatory", "zvt.tlv.receipt_info.printing",
+                FT_BOOLEAN, 8, TFS(&tfs_yes_no), 0x80, NULL, HFILL } }
     };
 
     static ei_register_info ei[] = {
         { &ei_invalid_apdu_len,
             { "zvt.apdu_len.invalid", PI_PROTOCOL, PI_WARN,
-                "The APDU length is too short. The minimum length is %d",
+                "The APDU length is too short",
                 EXPFILL }}
     };
 
     apdu_table = g_hash_table_new(g_direct_hash, g_direct_equal);
     for(i=0; i<array_length(apdu_info); i++) {
         g_hash_table_insert(apdu_table,
-                            GUINT_TO_POINTER((guint)apdu_info[i].ctrl),
-                            (gpointer)(&apdu_info[i]));
+                            GUINT_TO_POINTER((unsigned)apdu_info[i].ctrl),
+                            (void *)(&apdu_info[i]));
     }
 
     bitmap_table = g_hash_table_new(g_direct_hash, g_direct_equal);
     for(i=0; i<array_length(bitmap_info); i++) {
         g_hash_table_insert(bitmap_table,
-                            GUINT_TO_POINTER((guint)bitmap_info[i].bmp),
-                            (gpointer)(&bitmap_info[i]));
+                            GUINT_TO_POINTER((unsigned)bitmap_info[i].bmp),
+                            (void *)(&bitmap_info[i]));
     }
 
-    proto_zvt = proto_register_protocol(
-            "ZVT Kassenschnittstelle", "ZVT", "zvt");
+    tlv_table = g_hash_table_new(g_direct_hash, g_direct_equal);
+    for(i=0; i<array_length(tlv_info); i++) {
+        g_hash_table_insert(tlv_table,
+                            GUINT_TO_POINTER((unsigned)tlv_info[i].tag),
+                            (void *)(&tlv_info[i]));
+    }
+
+    proto_zvt = proto_register_protocol("ZVT Kassenschnittstelle", "ZVT", "zvt");
+
     proto_register_field_array(proto_zvt, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
     expert_zvt = expert_register_protocol(proto_zvt);
     expert_register_field_array(expert_zvt, ei, array_length(ei));
 
-    zvt_module = prefs_register_protocol(proto_zvt, proto_reg_handoff_zvt);
-    prefs_register_uint_preference(zvt_module, "tcp.port",
-                   "ZVT TCP Port",
-                   "Set the TCP port for ZVT messages (port 20007 according to the spec)",
-                   10,
-                   &pref_zvt_tcp_port);
-
     transactions = wmem_tree_new_autoreset(wmem_epan_scope(), wmem_file_scope());
+
+    /* register by name to allow mapping to a user DLT */
+    register_dissector("zvt", dissect_zvt, proto_zvt);
+    zvt_tcp_handle = register_dissector("zvt.tcp", dissect_zvt_tcp, proto_zvt);
+
+    register_shutdown_routine(zvt_shutdown);
 }
 
 
 void
 proto_reg_handoff_zvt(void)
 {
-    static gboolean            registered_dissector = FALSE;
-    static int                 zvt_tcp_port;
-    static dissector_handle_t  zvt_tcp_handle;
-
-    if (!registered_dissector) {
-        /* register by name to allow mapping to a user DLT */
-        register_dissector("zvt", dissect_zvt, proto_zvt);
-
-        zvt_tcp_handle = create_dissector_handle(dissect_zvt_tcp, proto_zvt);
-
-        registered_dissector = TRUE;
-    }
-    else
-        dissector_delete_uint("tcp.port", zvt_tcp_port, zvt_tcp_handle);
-
-    zvt_tcp_port = pref_zvt_tcp_port;
-    dissector_add_uint("tcp.port", zvt_tcp_port, zvt_tcp_handle);
+    dissector_add_for_decode_as_with_preference("tcp.port", zvt_tcp_handle);
 }
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

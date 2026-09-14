@@ -1,10 +1,10 @@
 /* Compile a Java program.
-   Copyright (C) 2001-2002, 2006, 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2001-2002, 2006, 2009-2026 Free Software Foundation, Inc.
    Written by Bruno Haible <haible@clisp.cons.org>, 2001.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -13,44 +13,61 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef _JAVACOMP_H
 #define _JAVACOMP_H
 
-#include <stdbool.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /* Compile a Java source file to bytecode.
    java_sources is an array of source file names.
    classpaths is a list of pathnames to be prepended to the CLASSPATH.
 
    source_version can be:    support for
-             1.3             inner classes
-             1.4             assert keyword
-             1.5             generic classes and methods
-             1.6             (not yet supported)
+             1.8             lambdas
+             9               private interface methods
+            10               type inference for local variables
+            11               'var' in parameters of lambda expressions
+            ...
+   If source-version 1.3 or 1.4 or 1.5 or 1.6 or 1.7 is requested, it gets
+   mapped to 1.8, for backward compatibility. (Currently the minimum Java and
+   javac version we need to support is Java 1.8, since older versions are
+   out-of-support, see
+   <https://en.wikipedia.org/wiki/Java_version_history#Release_table>.)
+
    target_version can be:  classfile version:
-             1.1                 45.3
-             1.2                 46.0
-             1.3                 47.0
-             1.4                 48.0
-             1.5                 49.0
-             1.6                 50.0
+             1.8                 52.0
+             9                   53.0
+            10                   54.0
+            11                   55.0
+            ...                  ...
+   If a target-version below 1.8 is requested, it gets mapped to 1.8, for
+   backward compatibility. (Currently the minimum Java and javac version we
+   need to support is Java 1.8, since older versions are out-of-support, see
+   <https://en.wikipedia.org/wiki/Java_version_history#Release_table>.)
    target_version can also be given as NULL. In this case, the required
    target_version is determined from the found JVM (see javaversion.h).
    Specifying target_version is useful when building a library (.jar) that is
    useful outside the given package. Passing target_version = NULL is useful
    when building an application.
-   It is unreasonable to ask for:
+   It is unreasonable to ask for a target-version < source-version, such as
      - target_version < 1.4 with source_version >= 1.4, or
      - target_version < 1.5 with source_version >= 1.5, or
-     - target_version < 1.6 with source_version >= 1.6,
-   because even Sun's javac doesn't support these combinations.
+     - target_version < 1.6 with source_version >= 1.6, or
+     - target_version < 1.7 with source_version >= 1.7, or
+     - target_version < 1.8 with source_version >= 1.8, or
+     - target_version < 9 with source_version >= 9, or
+     - target_version < 10 with source_version >= 10, or
+     - target_version < 11 with source_version >= 11, or
+     - ...
+   because even Sun's/Oracle's javac doesn't support these combinations.
    It is redundant to ask for a target_version > source_version, since the
    smaller target_version = source_version will also always work and newer JVMs
-   support the older target_versions too. Except for the case
-   target_version = 1.4, source_version = 1.3, which allows gcj versions 3.0
-   to 3.2 to be used.
+   support the older target_versions too.
 
    directory is the target directory. The .class file for class X.Y.Z is
    written at directory/X/Y/Z.class. If directory is NULL, the .class
@@ -71,5 +88,10 @@ extern bool compile_java_class (const char * const *java_sources,
                                 bool optimize, bool debug,
                                 bool use_minimal_classpath,
                                 bool verbose);
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _JAVACOMP_H */

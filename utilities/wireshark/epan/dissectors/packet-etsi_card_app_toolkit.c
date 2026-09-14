@@ -1,6 +1,6 @@
 /* packet-card_app_toolkit
  * Routines for packet dissection of
- *	ETSI TS 102 223 v12.2.0  (Release 12 / 2015-03)
+ *	ETSI TS 102 223 v18.2.0  (Release 18 / 2025-04)
  *	3GPP TS 11.14 v8.17.0 (Release 1999 / 2004-09)
  *	3GPP TS 31.111 v9.7.0 (Release 9 / 2012-03)
  * Copyright 2010-2011 by Harald Welte <laforge@gnumonks.org>
@@ -9,142 +9,133 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/charsets.h>
+#include <epan/conversation.h>
+#include <epan/tfs.h>
 
 #include "packet-e212.h"
 #include "packet-gsm_a_common.h"
 #include "packet-gsm_sms.h"
+#include "packet-rrc.h"
+#include "packet-lte-rrc.h"
 
 void proto_register_card_app_toolkit(void);
 void proto_reg_handoff_card_app_toolkit(void);
 
-static int proto_cat = -1;
+static int proto_cat;
 
 static dissector_handle_t gsm_sms_handle;	/* SMS TPDU */
 
-static int hf_cat_tlv = -1;
+static int hf_cat_tlv;
 
-static int hf_ctlv_devid_src = -1;
-static int hf_ctlv_devid_dst = -1;
-static int hf_ctlv_cmd_nr = -1;
-static int hf_ctlv_cmd_type = -1;
-static int hf_ctlv_cmd_qual_refresh = -1;
-static int hf_ctlv_cmd_qual_send_short_msg = -1;
-static int hf_ctlv_cmd_qual_loci = -1;
-static int hf_ctlv_cmd_qual_timer_mgmt = -1;
-static int hf_ctlv_cmd_qual_send_data = -1;
-static int hf_ctlv_cmd_qual = -1;
-static int hf_ctlv_dur_time_unit = -1;
-static int hf_ctlv_dur_time_intv = -1;
-static int hf_ctlv_alpha_id_string = -1;
-static int hf_ctlv_address_ton = -1;
-static int hf_ctlv_address_npi = -1;
-static int hf_ctlv_address_string = -1;
-static int hf_ctlv_subaddress_string = -1;
-static int hf_ctlv_result_gen = -1;
-static int hf_ctlv_result_term = -1;
-static int hf_ctlv_result_launch_browser = -1;
-static int hf_ctlv_result_multiplecard = -1;
-static int hf_ctlv_result_cc_ctrl_mo_sm_ctrl = -1;
-static int hf_ctlv_result_bip = -1;
-static int hf_ctlv_result_frames_cmd = -1;
-static int hf_ctlv_text_string_enc = -1;
-static int hf_ctlv_text_string = -1;
-static int hf_ctlv_event = -1;
-static int hf_ctlv_tone = -1;
-static int hf_ctlv_item_id = -1;
-static int hf_ctlv_item_string = -1;
-static int hf_ctlv_loc_status = -1;
-static int hf_ctlv_timer_val_hr = -1;
-static int hf_ctlv_timer_val_min = -1;
-static int hf_ctlv_timer_val_sec = -1;
-static int hf_ctlv_date_time_yr = -1;
-static int hf_ctlv_date_time_mo = -1;
-static int hf_ctlv_date_time_day = -1;
-static int hf_ctlv_date_time_hr = -1;
-static int hf_ctlv_date_time_min = -1;
-static int hf_ctlv_date_time_sec = -1;
-static int hf_ctlv_date_time_tz = -1;
-static int hf_ctlv_at_cmd = -1;
-static int hf_ctlv_at_rsp = -1;
-static int hf_ctlv_dtmf_string = -1;
-static int hf_ctlv_language = -1;
-static int hf_ctlv_me_status = -1;
-static int hf_ctlv_timing_adv = -1;
-static int hf_ctlv_aid_rid = -1;
-static int hf_ctlv_aid_pix_app_code_etsi = -1;
-static int hf_ctlv_aid_pix_app_code_3gpp = -1;
-static int hf_ctlv_aid_pix_app_code_3gpp2 = -1;
-static int hf_ctlv_aid_pix_app_code = -1;
-static int hf_ctlv_aid_pix_country_code = -1;
-static int hf_ctlv_aid_pix_app_prov_code = -1;
-static int hf_ctlv_aid_pix_app_prov_field = -1;
-static int hf_ctlv_bearer = -1;
-static int hf_ctlv_bearer_descr = -1;
-static int hf_ctlv_bearer_csd_data_rate = -1;
-static int hf_ctlv_bearer_csd_bearer_serv = -1;
-static int hf_ctlv_bearer_csd_conn_elem = -1;
-static int hf_ctlv_bearer_gprs_precedence = -1;
-static int hf_ctlv_bearer_gprs_delay = -1;
-static int hf_ctlv_bearer_gprs_reliability = -1;
-static int hf_ctlv_bearer_gprs_peak = -1;
-static int hf_ctlv_bearer_gprs_mean = -1;
-static int hf_ctlv_bearer_gprs_prot_type = -1;
-static int hf_ctlv_bearer_utran_traffic_class = -1;
-static int hf_ctlv_bearer_utran_max_bitrate_ul = -1;
-static int hf_ctlv_bearer_utran_max_bitrate_dl = -1;
-static int hf_ctlv_bearer_utran_guaranteed_bitrate_ul = -1;
-static int hf_ctlv_bearer_utran_guaranteed_bitrate_dl = -1;
-static int hf_ctlv_bearer_utran_delivery_order = -1;
-static int hf_ctlv_bearer_utran_max_sdu_size = -1;
-static int hf_ctlv_bearer_utran_sdu_error_ratio = -1;
-static int hf_ctlv_bearer_utran_residual_bit_error_ratio = -1;
-static int hf_ctlv_bearer_utran_delivery_erroneous_sdus = -1;
-static int hf_ctlv_bearer_utran_transfer_delay = -1;
-static int hf_ctlv_bearer_utran_traffic_handling_prio = -1;
-static int hf_ctlv_bearer_utran_pdp_type = -1;
-static int hf_ctlv_bearer_params = -1;
-static int hf_ctlv_buffers_size = -1;
-static int hf_ctlv_transport_ptype = -1;
-static int hf_ctlv_transport_port = -1;
-static int hf_ctlv_other_address_coding = -1;
-static int hf_ctlv_other_address_ipv4 = -1;
-static int hf_ctlv_other_address_ipv6 = -1;
-static int hf_ctlv_access_tech = -1;
-static int hf_ctlv_dns_server_address_coding = -1;
-static int hf_ctlv_dns_server_address_ipv4 = -1;
-static int hf_ctlv_dns_server_address_ipv6 = -1;
-static int hf_ctlv_utran_eutran_meas_qual = -1;
-static int hf_ctlv_upd_attach_type = -1;
-static int hf_ctlv_loci_lac = -1;
-static int hf_ctlv_loci_cell_id = -1;
-static int hf_ctlv_loci_ext_cell_id = -1;
-static int hf_ctlv_iari = -1;
-static int hf_ctlv_impu = -1;
-static int hf_ctlv_ims_status_code = -1;
-static int hf_ctlv_broadcast_nw_tech = -1;
-static int hf_ctlv_broadcast_nw_loc_info = -1;
+static int hf_ctlv_devid_src;
+static int hf_ctlv_devid_dst;
+static int hf_ctlv_cmd_nr;
+static int hf_ctlv_cmd_type;
+static int hf_ctlv_cmd_qual_refresh;
+static int hf_ctlv_cmd_qual_send_short_msg;
+static int hf_ctlv_cmd_qual_loci;
+static int hf_ctlv_cmd_qual_timer_mgmt;
+static int hf_ctlv_cmd_qual_send_data;
+static int hf_ctlv_cmd_qual;
+static int hf_ctlv_dur_time_unit;
+static int hf_ctlv_dur_time_intv;
+static int hf_ctlv_alpha_id_string;
+static int hf_ctlv_address_ton;
+static int hf_ctlv_address_npi;
+static int hf_ctlv_address_string;
+static int hf_ctlv_subaddress_string;
+static int hf_ctlv_result_gen;
+static int hf_ctlv_result_term;
+static int hf_ctlv_result_launch_browser;
+static int hf_ctlv_result_multiplecard;
+static int hf_ctlv_result_cc_ctrl_mo_sm_ctrl;
+static int hf_ctlv_result_bip;
+static int hf_ctlv_result_frames_cmd;
+static int hf_ctlv_text_string_enc;
+static int hf_ctlv_text_string;
+static int hf_ctlv_event;
+static int hf_ctlv_tone;
+static int hf_ctlv_item_id;
+static int hf_ctlv_item_string;
+static int hf_ctlv_loc_status;
+static int hf_ctlv_timer_val_hr;
+static int hf_ctlv_timer_val_min;
+static int hf_ctlv_timer_val_sec;
+static int hf_ctlv_date_time_yr;
+static int hf_ctlv_date_time_mo;
+static int hf_ctlv_date_time_day;
+static int hf_ctlv_date_time_hr;
+static int hf_ctlv_date_time_min;
+static int hf_ctlv_date_time_sec;
+static int hf_ctlv_date_time_tz;
+static int hf_ctlv_at_cmd;
+static int hf_ctlv_at_rsp;
+static int hf_ctlv_dtmf_string;
+static int hf_ctlv_language;
+static int hf_ctlv_me_status;
+static int hf_ctlv_timing_adv;
+static int hf_ctlv_aid_rid;
+static int hf_ctlv_aid_pix_app_code_etsi;
+static int hf_ctlv_aid_pix_app_code_3gpp;
+static int hf_ctlv_aid_pix_app_code_3gpp2;
+static int hf_ctlv_aid_pix_app_code;
+static int hf_ctlv_aid_pix_country_code;
+static int hf_ctlv_aid_pix_app_prov_code;
+static int hf_ctlv_aid_pix_app_prov_field;
+static int hf_ctlv_bearer;
+static int hf_ctlv_bearer_descr;
+static int hf_ctlv_bearer_csd_data_rate;
+static int hf_ctlv_bearer_csd_bearer_serv;
+static int hf_ctlv_bearer_csd_conn_elem;
+static int hf_ctlv_bearer_gprs_precedence;
+static int hf_ctlv_bearer_gprs_delay;
+static int hf_ctlv_bearer_gprs_reliability;
+static int hf_ctlv_bearer_gprs_peak;
+static int hf_ctlv_bearer_gprs_mean;
+static int hf_ctlv_bearer_gprs_prot_type;
+static int hf_ctlv_bearer_utran_traffic_class;
+static int hf_ctlv_bearer_utran_max_bitrate_ul;
+static int hf_ctlv_bearer_utran_max_bitrate_dl;
+static int hf_ctlv_bearer_utran_guaranteed_bitrate_ul;
+static int hf_ctlv_bearer_utran_guaranteed_bitrate_dl;
+static int hf_ctlv_bearer_utran_delivery_order;
+static int hf_ctlv_bearer_utran_max_sdu_size;
+static int hf_ctlv_bearer_utran_sdu_error_ratio;
+static int hf_ctlv_bearer_utran_residual_bit_error_ratio;
+static int hf_ctlv_bearer_utran_delivery_erroneous_sdus;
+static int hf_ctlv_bearer_utran_transfer_delay;
+static int hf_ctlv_bearer_utran_traffic_handling_prio;
+static int hf_ctlv_bearer_utran_pdp_type;
+static int hf_ctlv_bearer_params;
+static int hf_ctlv_buffers_size;
+static int hf_ctlv_transport_ptype;
+static int hf_ctlv_transport_port;
+static int hf_ctlv_other_address_coding;
+static int hf_ctlv_other_address_ipv4;
+static int hf_ctlv_other_address_ipv6;
+static int hf_ctlv_access_tech;
+static int hf_ctlv_dns_server_address_coding;
+static int hf_ctlv_dns_server_address_ipv4;
+static int hf_ctlv_dns_server_address_ipv6;
+static int hf_ctlv_utran_eutran_meas_qual;
+static int hf_ctlv_upd_attach_type;
+static int hf_ctlv_loci_lac;
+static int hf_ctlv_loci_cell_id;
+static int hf_ctlv_loci_ext_cell_id;
+static int hf_ctlv_iari;
+static int hf_ctlv_impu;
+static int hf_ctlv_ims_status_code;
+static int hf_ctlv_broadcast_nw_tech;
+static int hf_ctlv_broadcast_nw_loc_info;
 
-static int ett_cat = -1;
-static int ett_elem = -1;
+static int ett_cat;
+static int ett_elem;
 
 
 /* According to Section 7.2 of ETSI TS 101 220 / Chapter 7.2 */
@@ -191,7 +182,7 @@ static const value_string comp_tlv_tag_vals[] = {
 	{ 0x19, "Event list" },
 	{ 0x1a, "GSM/3G Cause" },
 	{ 0x1b, "Location status" },
-	{ 0x1c, "transaction identifier" },
+	{ 0x1c, "Transaction identifier" },
 	{ 0x1d, "GSM/3G BCCH channel list" },
 	{ 0x1e, "Icon identifier" },
 	{ 0x1f, "Item Icon identifier list" },
@@ -242,7 +233,7 @@ static const value_string comp_tlv_tag_vals[] = {
 	{ 0x51, "Item text attribute list" },
 	{ 0x52, "3GPP PDP Context Activation parameter" },
 	{ 0x53, "Contactless state request" },
-	{ 0x54, "Conactless functionality state" },
+	{ 0x54, "Contactless functionality state" },
 	{ 0x55, "3GPP CSG cell selection status" },
 	{ 0x56, "3GPP CSG ID" },
 	{ 0x57, "3GPP HNB name" },
@@ -266,7 +257,7 @@ static const value_string comp_tlv_tag_vals[] = {
 	{ 0x71, "Registry application data" },
 	{ 0x72, "3GPP PLMNwAcT List" },
 	{ 0x73, "3GPP Routing Area Information" },
-	{ 0x74, "3GPP Update/Attach Type" },
+	{ 0x74, "3GPP Update/Attach/Registration Type" },
 	{ 0x75, "3GPP Rejection Cause Code" },
 	{ 0x76, "3GPP Geographical Location Parameters / IARI" },
 	{ 0x77, "3GPP GAD Shapes / IMPU list" },
@@ -294,6 +285,8 @@ static const value_string cmd_qual_refresh_vals[] = {
 	{ 0x06, "NAA Session Reset, only applicable for a 3G platform" },
 	{ 0x07, "Steering of Roaming" },
 	{ 0x08, "Steering of Roaming for I-WLAN" },
+	{ 0x09, "eUICC Profile State Change" },
+	{ 0x0a, "Application Update" },
 	{ 0, NULL }
 };
 
@@ -427,6 +420,7 @@ static const value_string cmd_type_vals[] = {
 	{ 0x71, "CONTACTLESS STATE CHANGED" },
 	{ 0x72, "COMMAND CONTAINER" },
 	{ 0x73, "ENCAPSULATED SESSION CONTROL" },
+	{ 0x79, "LSI COMMAND" },
 	{ 0x81, "End of the proactive session" },
 	{ 0, NULL }
 };
@@ -485,6 +479,7 @@ static const value_string result_vals[] = {
 	{ 0x25, "Interaction with call control by NAA temporary problem" },
 	{ 0x26, "Launch browser generic error code" },
 	{ 0x27, "MMS temporary problem" },
+	{ 0x28, "Bearer Independent Protocol temporary error" },
 	{ 0x30, "Command beyond terminal's capabilities" },
 	{ 0x31, "Command type not understood by terminal" },
 	{ 0x32, "Command data not understood by terminal" },
@@ -564,6 +559,10 @@ static const value_string result_bip_vals[] = {
 	{ 0x10, "Port not available" },
 	{ 0x11, "Launch parameters missing or incorrect" },
 	{ 0x12, "Application launch failed" },
+	{ 0x13, "Channel cannot be established permanently" },
+	{ 0x14, "IPv4 only allowed" },
+	{ 0x15, "IPv6 only allowed" },
+	{ 0x16, "IPv6 not allowed due to IP layer failures" },
 	{ 0, NULL }
 };
 static value_string_ext result_bip_vals_ext = VALUE_STRING_EXT_INIT(result_bip_vals);
@@ -657,6 +656,9 @@ static const value_string event_list_vals[] = {
 	{ 0x1a, "Void" },
 	{ 0x1b, "Secured Profile Container" },
 	{ 0x1c, "Poll Interval Negotiation" },
+	{ 0x1d, "Data Connection Status Change" },
+	{ 0x1e, "CAG cell selection" },
+	{ 0x1f, "Slices Status Change" },
 	{ 0, NULL }
 };
 static value_string_ext event_list_vals_ext = VALUE_STRING_EXT_INIT(event_list_vals);
@@ -689,8 +691,8 @@ static const value_string bearer_vals[] = {
 static const value_string bearer_descr_vals[] = {
 	{ 0x01, "CSD" },
 	{ 0x02, "GPRS / UTRAN packet service / E-UTRAN" },
-	{ 0x03, "default bearer for requested transport layer" },
-	{ 0x04, "local link technology independent" },
+	{ 0x03, "Default bearer for requested transport layer" },
+	{ 0x04, "Local link technology independent" },
 	{ 0x05, "Bluetooth" },
 	{ 0x06, "IrDA" },
 	{ 0x07, "RS232" },
@@ -836,6 +838,9 @@ static const value_string access_tech_vals[] = {
 	{ 0x07, "cdma2000 HRPD (TIA/EIA/IS-856)" },
 	{ 0x08, "E-UTRAN" },
 	{ 0x09, "eHRPD" },
+	{ 0x0a, "3GPP NG-RAN" },
+	{ 0x0b, "3GPP Satellite NG-RAN" },
+	{ 0x0c, "3GPP Satellite E-UTRAN" },
 	{ 0, NULL }
 };
 
@@ -849,6 +854,7 @@ static const value_string utran_eutran_meas_qual_vals[] = {
 	{ 0x06, "E-UTRAN Inter-frequency measurements" },
 	{ 0x07, "E-UTRAN Inter-RAT (GERAN) measurements" },
 	{ 0x08, "E-UTRAN Inter-RAT (UTRAN) measurements" },
+	{ 0x09, "E-UTRAN Inter-RAT (NR) measurements" },
 	{ 0, NULL }
 };
 
@@ -882,6 +888,9 @@ static const value_string upd_attach_type_vals[] = {
 	{ 0x0C, "\"Combined TA/LA updating\" in the case of an EMM TRACKING AREA UPDATE REQUEST message" },
 	{ 0x0D, "\"Combined TA/LA updating with IMSI attach\" in the case of an EMM TRACKING AREA UPDATE REQUEST message" },
 	{ 0x0E, "\"Periodic updating\" in the case of an EMM TRACKING AREA UPDATE REQUEST message" },
+	{ 0x0F, "\"Initial Registration\" in the case of a 5GMM REGISTRATION REQUEST message" },
+	{ 0x10, "\"Mobility Registration updating\" in the case of a 5GMM REGISTRATION REQUEST message" },
+	{ 0x11, "\"Periodic Registration updating\" in the case of a 5GMM REGISTRATION REQUEST message" },
 	{ 0, NULL }
 };
 static value_string_ext upd_attach_type_vals_ext = VALUE_STRING_EXT_INIT(upd_attach_type_vals);
@@ -938,14 +947,14 @@ static const string_string ims_status_code[] = {
 	{ "603", "Decline" },
 	{ "604", "Does Not Exist Anywhere" },
 	{ "606", "Not Acceptable" },
-	{ 0, NULL }
+	{ NULL, NULL }
 };
 
-#define AID_RID_ETSI   G_GINT64_CONSTANT(0xA000000009)
-#define AID_RID_3GPP   G_GINT64_CONSTANT(0xA000000087)
-#define AID_RID_3GPP2  G_GINT64_CONSTANT(0xA000000343)
-#define AID_RID_OMA    G_GINT64_CONSTANT(0xA000000412)
-#define AID_RID_WIMAX  G_GINT64_CONSTANT(0xA000000424)
+#define AID_RID_ETSI   INT64_C(0xA000000009)
+#define AID_RID_3GPP   INT64_C(0xA000000087)
+#define AID_RID_3GPP2  INT64_C(0xA000000343)
+#define AID_RID_OMA    INT64_C(0xA000000412)
+#define AID_RID_WIMAX  INT64_C(0xA000000424)
 
 static const val64_string aid_rid_vals[] = {
 	{ AID_RID_ETSI, "ETSI"},
@@ -985,89 +994,42 @@ static const value_string aid_pix_app_code_3gpp2_vals[] = {
 	{ 0, NULL}
 };
 
+typedef struct {
+	wmem_tree_t *pdus;
+} cat_conv_info_t;
+
+typedef enum {
+	CAT_NMR_NONE,
+	CAT_NMR_GERAN,
+	CAT_NMR_UTRAN,
+	CAT_NMR_E_UTRAN
+} cat_nmr_type;
+
+typedef struct {
+	uint32_t req_frame;
+	uint32_t id;
+	cat_nmr_type nmr_type;
+} cat_transaction_t;
+
+/*
+ * ETSI TS 102 221 Annex A.
+ */
 static void
-dissect_cat_efadn_coding(tvbuff_t *tvb, proto_tree *tree, guint32 pos, guint32 len, int hf_entry)
+dissect_cat_efadn_coding(tvbuff_t *tvb, proto_tree *tree, uint32_t pos, uint32_t len, int hf_entry)
 {
 	if (len) {
-		guint32 i;
+		uint8_t first_byte = tvb_get_uint8(tvb, pos);
 
-		guint8 first_byte = tvb_get_guint8(tvb, pos);
 		if ((first_byte & 0x80) == 0) {
-			wmem_strbuf_t *strbuf = wmem_strbuf_sized_new(wmem_packet_scope(), len+1, 0);
-			for (i = 0; i < len; i++) {
-				guint8 gsm_chars[2];
-				gsm_chars[0] = tvb_get_guint8(tvb, pos+i);
-				if (gsm_chars[0] == 0x1b) {
-					/* Escape character */
-					guint8 second_byte;
-					i++;
-					second_byte = tvb_get_guint8(tvb, pos+i);
-					gsm_chars[0] |= second_byte << 7;
-					gsm_chars[1] = second_byte >> 1;
-					wmem_strbuf_append(strbuf, get_ts_23_038_7bits_string(wmem_packet_scope(), gsm_chars, 0, 2));
-				} else {
-					wmem_strbuf_append(strbuf, get_ts_23_038_7bits_string(wmem_packet_scope(), gsm_chars, 0, 1));
-				}
-			}
-			proto_tree_add_string(tree, hf_entry, tvb, pos, len, wmem_strbuf_finalize(strbuf));
-		} else if (first_byte == 0x80) {
-			proto_tree_add_item(tree, hf_entry, tvb, pos+1, len-1, ENC_UCS_2|ENC_BIG_ENDIAN);
-		} else if (first_byte == 0x81) {
-			guint8 string_len = tvb_get_guint8(tvb, pos+1);
-			guint16 ucs2_base = tvb_get_guint8(tvb, pos+2) << 7;
-			wmem_strbuf_t *strbuf = wmem_strbuf_sized_new(wmem_packet_scope(), 2*string_len+1, 0);
-			for (i = 0; i < string_len; i++) {
-				guint8 byte = tvb_get_guint8(tvb, pos+3+i);
-				if ((byte & 0x80) == 0) {
-					guint8 gsm_chars[2];
-					gsm_chars[0] = byte;
-					if (gsm_chars[0] == 0x1b) {
-						/* Escape character */
-						guint8 second_byte;
-						i++;
-						second_byte = tvb_get_guint8(tvb, pos+3+i);
-						gsm_chars[0] |= second_byte << 7;
-						gsm_chars[1] = second_byte >> 1;
-						wmem_strbuf_append(strbuf, get_ts_23_038_7bits_string(wmem_packet_scope(), gsm_chars, 0, 2));
-					} else {
-						wmem_strbuf_append(strbuf, get_ts_23_038_7bits_string(wmem_packet_scope(), gsm_chars, 0, 1));
-					}
-				} else {
-					guint8 ucs2_char[2];
-					ucs2_char[0] = ucs2_base >> 8;
-					ucs2_char[1] = (ucs2_base & 0xff) + (byte & 0x7f);
-					wmem_strbuf_append(strbuf, get_ucs_2_string(wmem_packet_scope(), ucs2_char, 2, ENC_BIG_ENDIAN));
-				}
-			}
-			proto_tree_add_string(tree, hf_entry, tvb, pos, len, wmem_strbuf_finalize(strbuf));
-		} else if (first_byte == 0x82) {
-			guint8 string_len = tvb_get_guint8(tvb, pos+1);
-			guint16 ucs2_base = tvb_get_ntohs(tvb, pos+2);
-			wmem_strbuf_t *strbuf = wmem_strbuf_sized_new(wmem_packet_scope(), 2*string_len+1, 0);
-			for (i = 0; i < string_len; i++) {
-				guint8 byte = tvb_get_guint8(tvb, pos+4+i);
-				if ((byte & 0x80) == 0) {
-					guint8 gsm_chars[2];
-					gsm_chars[0] = byte;
-					if (gsm_chars[0] == 0x1b) {
-						/* Escape character */
-						guint8 second_byte;
-						i++;
-						second_byte = tvb_get_guint8(tvb, pos+4+i);
-						gsm_chars[0] |= second_byte << 7;
-						gsm_chars[1] = second_byte >> 1;
-						wmem_strbuf_append(strbuf, get_ts_23_038_7bits_string(wmem_packet_scope(), gsm_chars, 0, 2));
-					} else {
-						wmem_strbuf_append(strbuf, get_ts_23_038_7bits_string(wmem_packet_scope(), gsm_chars, 0, 1));
-					}
-				} else {
-					guint8 ucs2_char[2];
-					ucs2_char[0] = ucs2_base >> 8;
-					ucs2_char[1] = (ucs2_base & 0xff) + (byte & 0x7f);
-					wmem_strbuf_append(strbuf, get_ucs_2_string(wmem_packet_scope(), ucs2_char, 2, ENC_BIG_ENDIAN));
-				}
-			}
-			proto_tree_add_string(tree, hf_entry, tvb, pos, len, wmem_strbuf_finalize(strbuf));
+			/*
+			 * Unpacked GSM alphabet.
+			 */
+			proto_tree_add_item(tree, hf_entry, tvb, pos, len, ENC_3GPP_TS_23_038_7BITS_UNPACKED|ENC_NA);
+		} else {
+			/*
+			 * Annex A.
+			 */
+			proto_tree_add_item(tree, hf_entry, tvb, pos, len, ENC_ETSI_TS_102_221_ANNEX_A);
 		}
 	}
 }
@@ -1079,28 +1041,42 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 	proto_tree *cat_tree, *elem_tree;
 	unsigned int pos = 0;
 	tvbuff_t *new_tvb;
-	gboolean ims_event = FALSE, dns_server = FALSE;
-	guint length = tvb_reported_length(tvb);
+	bool ims_event = false, dns_server = false;
+	unsigned length = tvb_reported_length(tvb);
 	gsm_sms_data_t sms_data = {0};
+	conversation_t *conversation;
+	cat_conv_info_t *cat_info;
+	cat_transaction_t *cat_trans = NULL;
+	wmem_tree_key_t key[3];
+
+
+	conversation = find_or_create_conversation(pinfo);
+	cat_info = (cat_conv_info_t*)conversation_get_proto_data(conversation, proto_cat);
+	if (!cat_info) {
+		cat_info = wmem_new(wmem_file_scope(), cat_conv_info_t);
+		cat_info->pdus = wmem_tree_new(wmem_file_scope());
+		conversation_add_proto_data(conversation, proto_cat, cat_info);
+	}
 
 	cat_ti = proto_tree_add_item(tree, proto_cat, tvb, 0, -1, ENC_NA);
 	cat_tree = proto_item_add_subtree(cat_ti, ett_cat);
 	while (pos < length) {
 		proto_item *ti;
-		guint8 g8;
-		guint16 tag;
-		guint32 len, i;
-		guint8 *ptr = NULL;
+		uint32_t g8, cmd_nr, cmd_qual;
+		bool cmd_qual_flag;
+		uint16_t tag;
+		uint32_t len, i;
+		uint8_t *ptr = NULL;
 
-		tag = tvb_get_guint8(tvb, pos++) & 0x7f;
+		tag = tvb_get_uint8(tvb, pos++) & 0x7f;
 		if (tag == 0x7f) {
 			tag = tvb_get_ntohs(tvb, pos) & 0x7fff;
 			pos += 2;
 		}
-		len = tvb_get_guint8(tvb, pos++);
+		len = tvb_get_uint8(tvb, pos++);
 		switch (len) {
 		case 0x81:
-			len = tvb_get_guint8(tvb, pos++);
+			len = tvb_get_uint8(tvb, pos++);
 			break;
 		case 0x82:
 			len = tvb_get_ntohs(tvb, pos);
@@ -1117,12 +1093,12 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 #if 1
 		ti = proto_tree_add_bytes_format(cat_tree, hf_cat_tlv, tvb, pos,
 					    len, ptr, "%s: %s",
-					    val_to_str_ext(tag, &comp_tlv_tag_vals_ext, "%02x"),
-					    (const guint8 *)tvb_bytes_to_str(wmem_packet_scope(), tvb, pos, len));
+					    val_to_str_ext(pinfo->pool, tag, &comp_tlv_tag_vals_ext, "%02x"),
+					    (len > 0) ? tvb_bytes_to_str(pinfo->pool, tvb, pos, len) : "");
 #else
 		ti = proto_tree_add_bytes_format(cat_tree, hf_cat_tlv, tvb, pos,
 					    len, ptr, "%s:   ",
-					    val_to_str_ext(tag, &comp_tlv_tag_vals_ext, "%02x"));
+					    val_to_str_ext(pinfo->pool, tag, &comp_tlv_tag_vals_ext, "%02x"));
 #endif
 		elem_tree = proto_item_add_subtree(ti, ett_elem);
 
@@ -1130,36 +1106,60 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 		case 0x01:	/* command details */
 			if (len < 3)
 				break;
-			proto_tree_add_item(elem_tree, hf_ctlv_cmd_nr, tvb, pos, 1, ENC_BIG_ENDIAN);
-			if (tvb_get_guint8(tvb, pos) == 0x40) {
-				ims_event = TRUE;
-				dns_server = TRUE;
+			proto_tree_add_item_ret_uint(elem_tree, hf_ctlv_cmd_nr, tvb, pos, 1, ENC_BIG_ENDIAN, &cmd_nr);
+			proto_tree_add_item_ret_uint(elem_tree, hf_ctlv_cmd_type, tvb, pos+1, 1, ENC_BIG_ENDIAN, &g8);
+			if (g8 == 0x40) { /* OPEN CHANNEL */
+				ims_event = true;
+				dns_server = true;
 			}
-			proto_tree_add_item(elem_tree, hf_ctlv_cmd_type, tvb, pos+1, 1, ENC_BIG_ENDIAN);
 			/* append command type to INFO column */
-			g8 = tvb_get_guint8(tvb, pos+1);
 			col_append_fstr(pinfo->cinfo, COL_INFO, "%s ",
-					val_to_str_ext(g8, &cmd_type_vals_ext, "%02x "));
+					val_to_str_ext(pinfo->pool, g8, &cmd_type_vals_ext, "%02x "));
 			switch (g8) {
 			case 0x01:
-				proto_tree_add_item(elem_tree, hf_ctlv_cmd_qual_refresh, tvb, pos+2, 1, ENC_BIG_ENDIAN);
+				proto_tree_add_item_ret_uint(elem_tree, hf_ctlv_cmd_qual_refresh, tvb, pos+2, 1, ENC_BIG_ENDIAN, &cmd_qual);
 				break;
 			case 0x13:
-				proto_tree_add_item(elem_tree, hf_ctlv_cmd_qual_send_short_msg, tvb, pos+2, 1, ENC_NA);
-				sms_data.stk_packing_required = tvb_get_guint8(tvb, pos+2) & 0x01 ? TRUE : FALSE;
+				proto_tree_add_item_ret_boolean(elem_tree, hf_ctlv_cmd_qual_send_short_msg, tvb, pos+2, 1, ENC_BIG_ENDIAN, &cmd_qual_flag);
+				sms_data.stk_packing_required = cmd_qual_flag;
+				cmd_qual = cmd_qual_flag;
 				break;
 			case 0x26:
-				proto_tree_add_item(elem_tree, hf_ctlv_cmd_qual_loci, tvb, pos+2, 1, ENC_BIG_ENDIAN);
+				proto_tree_add_item_ret_uint(elem_tree, hf_ctlv_cmd_qual_loci, tvb, pos+2, 1, ENC_BIG_ENDIAN, &cmd_qual);
 				break;
 			case 0x27:
-				proto_tree_add_item(elem_tree, hf_ctlv_cmd_qual_timer_mgmt, tvb, pos+2, 1, ENC_BIG_ENDIAN);
+				proto_tree_add_item_ret_uint(elem_tree, hf_ctlv_cmd_qual_timer_mgmt, tvb, pos+2, 1, ENC_BIG_ENDIAN, &cmd_qual);
 				break;
 			case 0x43:
-				proto_tree_add_item(elem_tree, hf_ctlv_cmd_qual_send_data, tvb, pos+2, 1, ENC_NA);
+				proto_tree_add_item_ret_boolean(elem_tree, hf_ctlv_cmd_qual_send_data, tvb, pos+2, 1, ENC_BIG_ENDIAN, &cmd_qual_flag);
+				cmd_qual = cmd_qual_flag;
 				break;
 			default:
-				proto_tree_add_item(elem_tree, hf_ctlv_cmd_qual, tvb, pos+2, 1, ENC_BIG_ENDIAN);
+				proto_tree_add_item_ret_uint(elem_tree, hf_ctlv_cmd_qual, tvb, pos+2, 1, ENC_BIG_ENDIAN, &cmd_qual);
 				break;
+			}
+			if (data) {
+				uint32_t id = (cmd_nr << 16) | (g8 << 8) | cmd_qual;
+				key[0].length = 1;
+				key[0].key = &id;
+				key[1].length = 1;
+				key[1].key = &pinfo->num;
+				key[2].length = 0;
+				key[2].key = NULL;
+
+				if (GPOINTER_TO_INT(data) == 0xd0 && !PINFO_FD_VISITED(pinfo)) {
+					/* Proactive command */
+					cat_trans = wmem_new(wmem_file_scope(), cat_transaction_t);
+					cat_trans->req_frame = pinfo->num;
+					cat_trans->id = id;
+					cat_trans->nmr_type = ((id & 0x00ffff) == 0x2602) ? CAT_NMR_GERAN : CAT_NMR_NONE;
+					wmem_tree_insert32_array(cat_info->pdus, key, (void*)cat_trans);
+				} else if (GPOINTER_TO_INT(data) == 0x14) {
+					/* Terminal response */
+					cat_trans = (cat_transaction_t*)wmem_tree_lookup32_array_le(cat_info->pdus, key);
+					if (cat_trans && cat_trans->id != id)
+						cat_trans = NULL;
+				}
 			}
 			break;
 		case 0x02:	/* device identity */
@@ -1169,8 +1169,7 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 			proto_tree_add_item(elem_tree, hf_ctlv_devid_dst, tvb, pos+1, 1, ENC_BIG_ENDIAN);
 			break;
 		case 0x03:	/* Result */
-			g8 = tvb_get_guint8(tvb, pos);
-			proto_tree_add_item(elem_tree, hf_ctlv_result_gen, tvb, pos, 1, ENC_BIG_ENDIAN);
+			proto_tree_add_item_ret_uint(elem_tree, hf_ctlv_result_gen, tvb, pos, 1, ENC_BIG_ENDIAN, &g8);
 			switch (g8) {
 			case 0x20:
 				proto_tree_add_item(elem_tree, hf_ctlv_result_term, tvb, pos+1, 1, ENC_BIG_ENDIAN);
@@ -1231,8 +1230,7 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 			if (len == 0)
 				break;
 			/* 1st byte: encoding */
-			proto_tree_add_item(elem_tree, hf_ctlv_text_string_enc, tvb, pos, 1, ENC_BIG_ENDIAN);
-			g8 = tvb_get_guint8(tvb, pos);
+			proto_tree_add_item_ret_uint(elem_tree, hf_ctlv_text_string_enc, tvb, pos, 1, ENC_BIG_ENDIAN, &g8);
 			switch (g8 & 0xf0) {
 			case 0x00:
 				g8 &= 0x0c;
@@ -1245,11 +1243,11 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 			}
 			switch (g8) {
 			case 0x00: /* 7bit */
-				proto_tree_add_item(elem_tree, hf_ctlv_text_string, tvb, pos+1, len-1, ENC_3GPP_TS_23_038_7BITS|ENC_NA);
+				proto_tree_add_item(elem_tree, hf_ctlv_text_string, tvb, pos+1, len-1, ENC_3GPP_TS_23_038_7BITS);
 				break;
 			case 0x04: /* 8bit */
 				/* XXX - ASCII, or some extended ASCII? */
-				proto_tree_add_item(elem_tree, hf_ctlv_text_string, tvb, pos+1, len-1, ENC_ASCII|ENC_NA);
+				proto_tree_add_item(elem_tree, hf_ctlv_text_string, tvb, pos+1, len-1, ENC_ASCII);
 				break;
 			case 0x08: /* UCS2 */
 				proto_tree_add_item(elem_tree, hf_ctlv_text_string, tvb, pos+1, len-1, ENC_UCS_2|ENC_BIG_ENDIAN);
@@ -1273,7 +1271,7 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 			if (len == 0)
 				break;
 			/* MCC/MNC / LAC / CellID */
-			dissect_e212_mcc_mnc(tvb, pinfo, elem_tree, pos, E212_NONE, TRUE);
+			dissect_e212_mcc_mnc(tvb, pinfo, elem_tree, pos, E212_NONE, true);
 			proto_tree_add_item(elem_tree, hf_ctlv_loci_lac, tvb, pos+3, 2, ENC_BIG_ENDIAN);
 			if (len == 5)
 				break;
@@ -1286,15 +1284,34 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 		case 0x62:	/* IMEISV */
 			de_mid(tvb, elem_tree, pinfo, pos, len, NULL, 0);
 			break;
+		case 0x16:
+			if (cat_trans && ((cat_trans->id & 0x00ffff) == 0x2602)) {
+				switch (cat_trans->nmr_type) {
+				case CAT_NMR_GERAN:
+					de_rr_meas_res(tvb, elem_tree, pinfo, pos, len, NULL, 0);
+					break;
+				case CAT_NMR_UTRAN:
+					new_tvb = tvb_new_subset_length(tvb, pos, len);
+					dissect_rrc_MeasurementReport_PDU(new_tvb, pinfo, elem_tree, NULL);
+					break;
+				case CAT_NMR_E_UTRAN:
+					new_tvb = tvb_new_subset_length(tvb, pos, len);
+					dissect_lte_rrc_MeasurementReport_PDU(new_tvb, pinfo, elem_tree, NULL);
+					break;
+				default:
+					break;
+				}
+			}
+			break;
 		case 0x19:	/* event list */
 			for (i = 0; i < len; i++) {
-				guint8 event = tvb_get_guint8(tvb, pos+i);
+				uint8_t event = tvb_get_uint8(tvb, pos+i);
 				if ((event == 0x17) || (event == 0x18)) {
-					ims_event = TRUE;
+					ims_event = true;
 				}
 				proto_tree_add_uint(elem_tree, hf_ctlv_event, tvb, pos+i, 1, event);
 				col_append_fstr(pinfo->cinfo, COL_INFO, "%s ",
-						val_to_str_ext(event, &event_list_vals_ext, "%02x "));
+						val_to_str_ext(pinfo->pool, event, &event_list_vals_ext, "%02x "));
 			}
 			break;
 		case 0x1b:	/* location status */
@@ -1303,31 +1320,31 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 			break;
 		case 0x25:	/* timer value */
 			{
-				guint8 oct;
-				oct = tvb_get_guint8(tvb, pos);
+				uint8_t oct;
+				oct = tvb_get_uint8(tvb, pos);
 				proto_tree_add_uint_format_value(elem_tree, hf_ctlv_timer_val_hr, tvb, pos, 1, oct, "%u (0x%02x)", 10*(oct&0x0f)+(oct>>4), oct);
-				oct = tvb_get_guint8(tvb, pos+1);
+				oct = tvb_get_uint8(tvb, pos+1);
 				proto_tree_add_uint_format_value(elem_tree, hf_ctlv_timer_val_min, tvb, pos+1, 1, oct, "%u (0x%02x)", 10*(oct&0x0f)+(oct>>4), oct);
-				oct = tvb_get_guint8(tvb, pos+2);
+				oct = tvb_get_uint8(tvb, pos+2);
 				proto_tree_add_uint_format_value(elem_tree, hf_ctlv_timer_val_sec, tvb, pos+2, 1, oct, "%u (0x%02x)", 10*(oct&0x0f)+(oct>>4), oct);
 			}
 			break;
 		case 0x26:	/* date-time and time zone */
 			{
-				guint8 oct, tz;
-				oct = tvb_get_guint8(tvb, pos);
+				uint8_t oct, tz;
+				oct = tvb_get_uint8(tvb, pos);
 				proto_tree_add_uint_format_value(elem_tree, hf_ctlv_date_time_yr, tvb, pos, 1, oct, "%u (0x%02x)", 10*(oct&0x0f)+(oct>>4), oct);
-				oct = tvb_get_guint8(tvb, pos+1);
+				oct = tvb_get_uint8(tvb, pos+1);
 				proto_tree_add_uint_format_value(elem_tree, hf_ctlv_date_time_mo, tvb, pos+1, 1, oct, "%u (0x%02x)", 10*(oct&0x0f)+(oct>>4), oct);
-				oct = tvb_get_guint8(tvb, pos+2);
+				oct = tvb_get_uint8(tvb, pos+2);
 				proto_tree_add_uint_format_value(elem_tree, hf_ctlv_date_time_day, tvb, pos+2, 1, oct, "%u (0x%02x)", 10*(oct&0x0f)+(oct>>4), oct);
-				oct = tvb_get_guint8(tvb, pos+3);
+				oct = tvb_get_uint8(tvb, pos+3);
 				proto_tree_add_uint_format_value(elem_tree, hf_ctlv_date_time_hr, tvb, pos+3, 1, oct, "%u (0x%02x)", 10*(oct&0x0f)+(oct>>4), oct);
-				oct = tvb_get_guint8(tvb, pos+4);
+				oct = tvb_get_uint8(tvb, pos+4);
 				proto_tree_add_uint_format_value(elem_tree, hf_ctlv_date_time_min, tvb, pos+4, 1, oct, "%u (0x%02x)", 10*(oct&0x0f)+(oct>>4), oct);
-				oct = tvb_get_guint8(tvb, pos+5);
+				oct = tvb_get_uint8(tvb, pos+5);
 				proto_tree_add_uint_format_value(elem_tree, hf_ctlv_date_time_sec, tvb, pos+5, 1, oct, "%u (0x%02x)", 10*(oct&0x0f)+(oct>>4), oct);
-				oct = tvb_get_guint8(tvb, pos+6);
+				oct = tvb_get_uint8(tvb, pos+6);
 				if (oct == 0xff) {
 					proto_tree_add_uint_format_value(elem_tree, hf_ctlv_date_time_tz, tvb, pos+6, 1, oct, "Unknown (0x%02x)", oct);
 				} else {
@@ -1338,16 +1355,16 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 			}
 			break;
 		case 0x28:	/* AT Command */
-			proto_tree_add_item(elem_tree, hf_ctlv_at_cmd, tvb, pos, len, ENC_ASCII|ENC_NA);
+			proto_tree_add_item(elem_tree, hf_ctlv_at_cmd, tvb, pos, len, ENC_ASCII);
 			break;
 		case 0x29:	/* AT Response */
-			proto_tree_add_item(elem_tree, hf_ctlv_at_rsp, tvb, pos, len, ENC_ASCII|ENC_NA);
+			proto_tree_add_item(elem_tree, hf_ctlv_at_rsp, tvb, pos, len, ENC_ASCII);
 			break;
 		case 0x2c:	/* DTMF string */
 			dissect_cat_efadn_coding(tvb, elem_tree, pos, len, hf_ctlv_dtmf_string);
 			break;
 		case 0x2d:	/* language */
-			proto_tree_add_item(elem_tree, hf_ctlv_language, tvb, pos, len, ENC_ASCII|ENC_NA);
+			proto_tree_add_item(elem_tree, hf_ctlv_language, tvb, pos, len, ENC_ASCII);
 			break;
 		case 0x2e:	/* Timing Advance */
 			proto_tree_add_item(elem_tree, hf_ctlv_me_status, tvb, pos, 1, ENC_BIG_ENDIAN);
@@ -1355,7 +1372,7 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 			break;
 		case 0x2f:	/* AID */
 			{
-				guint64 rid = tvb_get_ntoh40(tvb, pos);
+				uint64_t rid = tvb_get_ntoh40(tvb, pos);
 
 				proto_tree_add_uint64(elem_tree, hf_ctlv_aid_rid, tvb, pos, 5, rid);
 				if (rid == AID_RID_ETSI) {
@@ -1379,8 +1396,7 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 				proto_tree_add_item(elem_tree, hf_ctlv_bearer, tvb, pos+i, 1, ENC_BIG_ENDIAN);
 			break;
 		case 0x35:	/* bearer description */
-			g8 = tvb_get_guint8(tvb, pos);
-			proto_tree_add_uint(elem_tree, hf_ctlv_bearer_descr, tvb, pos, 1, g8);
+			proto_tree_add_item_ret_uint(elem_tree, hf_ctlv_bearer_descr, tvb, pos, 1, ENC_BIG_ENDIAN, &g8);
 			switch (g8) {
 			case 0x01:
 				proto_tree_add_item(elem_tree, hf_ctlv_bearer_csd_data_rate, tvb, pos+1, 1, ENC_BIG_ENDIAN);
@@ -1408,7 +1424,7 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 				proto_tree_add_item(elem_tree, hf_ctlv_bearer_utran_delivery_erroneous_sdus, tvb, pos+14, 1, ENC_BIG_ENDIAN);
 				proto_tree_add_item(elem_tree, hf_ctlv_bearer_utran_transfer_delay, tvb, pos+15, 1, ENC_BIG_ENDIAN);
 				proto_tree_add_item(elem_tree, hf_ctlv_bearer_utran_traffic_handling_prio, tvb, pos+16, 1, ENC_BIG_ENDIAN);
-				proto_tree_add_item(elem_tree, hf_ctlv_bearer_utran_pdp_type, tvb, pos+1, 17, ENC_BIG_ENDIAN);
+				proto_tree_add_item(elem_tree, hf_ctlv_bearer_utran_pdp_type, tvb, pos+1, 1, ENC_BIG_ENDIAN);
 				break;
 			case 0x0a:
 				break;
@@ -1433,11 +1449,10 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 			proto_tree_add_item(elem_tree, hf_ctlv_transport_port, tvb, pos+1, 2, ENC_BIG_ENDIAN);
 			break;
 		case 0x3e:	/* other address */
-			g8 = tvb_get_guint8(tvb, pos);
-			proto_tree_add_uint(elem_tree, hf_ctlv_other_address_coding, tvb, pos, 1, g8);
+			proto_tree_add_item_ret_uint(elem_tree, hf_ctlv_other_address_coding, tvb, pos, 1, ENC_BIG_ENDIAN, &g8);
 			switch (g8) {
 			case 0x21:
-				proto_tree_add_item(elem_tree, hf_ctlv_other_address_ipv4, tvb, pos+1, 4, ENC_NA);
+				proto_tree_add_item(elem_tree, hf_ctlv_other_address_ipv4, tvb, pos+1, 4, ENC_BIG_ENDIAN);
 				break;
 			case 0x57:
 				proto_tree_add_item(elem_tree, hf_ctlv_other_address_ipv6, tvb, pos+1, 16, ENC_NA);
@@ -1452,11 +1467,10 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 			break;
 		case 0x40:	/* Display parameters / DNS server address */
 			if (dns_server) {
-				g8 = tvb_get_guint8(tvb, pos);
-				proto_tree_add_uint(elem_tree, hf_ctlv_dns_server_address_coding, tvb, pos, 1, g8);
+				proto_tree_add_item_ret_uint(elem_tree, hf_ctlv_dns_server_address_coding, tvb, pos, 1, ENC_BIG_ENDIAN, &g8);
 				switch (g8) {
 				case 0x21:
-					proto_tree_add_item(elem_tree, hf_ctlv_dns_server_address_ipv4, tvb, pos+1, 4, ENC_NA);
+					proto_tree_add_item(elem_tree, hf_ctlv_dns_server_address_ipv4, tvb, pos+1, 4, ENC_BIG_ENDIAN);
 					break;
 				case 0x57:
 					proto_tree_add_item(elem_tree, hf_ctlv_dns_server_address_ipv6, tvb, pos+1, 16, ENC_NA);
@@ -1470,26 +1484,34 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 			de_sm_apn(tvb, elem_tree, pinfo, pos, len, NULL, 0);
 			break;
 		case 0x69:	/* UTRAN EUTRAN measurement qualifier */
-			proto_tree_add_item(elem_tree, hf_ctlv_utran_eutran_meas_qual, tvb, pos, 1, ENC_BIG_ENDIAN);
+			proto_tree_add_item_ret_uint(elem_tree, hf_ctlv_utran_eutran_meas_qual, tvb, pos, 1, ENC_BIG_ENDIAN, &g8);
+			if (cat_trans && ((cat_trans->id & 0x00ffff) == 0x2602)) {
+				if (g8 >= 1 && g8 <= 4)
+					cat_trans->nmr_type = CAT_NMR_UTRAN;
+				else if (g8 >= 5 && g8 <= 9)
+					cat_trans->nmr_type = CAT_NMR_E_UTRAN;
+				else
+					cat_trans->nmr_type = CAT_NMR_NONE;
+			}
 			break;
 		case 0x73:	/* Routing Area Information */
 			de_gmm_rai(tvb, elem_tree, pinfo, pos, len, NULL, 0);
 			break;
-		case 0x74:	/* Update/Attach Type */
+		case 0x74:	/* Update/Attach/Registration Type */
 			proto_tree_add_item(elem_tree, hf_ctlv_upd_attach_type, tvb, pos, 1, ENC_BIG_ENDIAN);
 			break;
 		case 0x76:	/* Geographical Location Parameters / IARI */
 			if (ims_event) {
-				proto_tree_add_item(elem_tree, hf_ctlv_iari, tvb, pos, len, ENC_UTF_8 | ENC_NA);
+				proto_tree_add_item(elem_tree, hf_ctlv_iari, tvb, pos, len, ENC_UTF_8);
 			}
 			break;
 		case 0x77:	/* GAD Shapes / IMPU list */
 			if (ims_event) {
 				i = 0;
 				while (i < len) {
-					if (tvb_get_guint8(tvb, pos+i) == 0x80) {
-						g8 = tvb_get_guint8(tvb, pos+i+1);
-						proto_tree_add_item(elem_tree, hf_ctlv_impu, tvb, pos+i+2, g8, ENC_UTF_8 | ENC_NA);
+					if (tvb_get_uint8(tvb, pos+i) == 0x80) {
+						g8 = tvb_get_uint8(tvb, pos+i+1);
+						proto_tree_add_item(elem_tree, hf_ctlv_impu, tvb, pos+i+2, g8, ENC_UTF_8);
 						i += 2+g8;
 					} else {
 						break;
@@ -1499,14 +1521,14 @@ dissect_cat(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 			break;
 		case 0x78:	/* NMEA sentence / IMS Status-Code */
 			if (ims_event) {
-				guint8 *status_code = tvb_get_string_enc(wmem_packet_scope(), tvb, pos, len, ENC_ASCII);
+				uint8_t *status_code = tvb_get_string_enc(pinfo->pool, tvb, pos, len, ENC_ASCII);
 				proto_tree_add_string_format_value(elem_tree, hf_ctlv_ims_status_code, tvb, pos, len,
-					status_code, "%s (%s)", status_code, str_to_str(status_code, ims_status_code, "Unknown"));
+					status_code, "%s (%s)", status_code, str_to_str_wmem(pinfo->pool, status_code, ims_status_code, "Unknown"));
 			}
 			break;
 		case 0x79:	/* PLMN list */
 			for (i = 0; i < len; i+=3) {
-				dissect_e212_mcc_mnc(tvb, pinfo, elem_tree, pos+3*i, E212_NONE, TRUE);
+				dissect_e212_mcc_mnc(tvb, pinfo, elem_tree, pos+3*i, E212_NONE, true);
 			}
 			break;
 		case 0x7a:/* Broadcast Network Information */
@@ -1598,7 +1620,7 @@ proto_register_card_app_toolkit(void)
 		},
 		{ &hf_ctlv_alpha_id_string,
 			{ "Alpha Identifier String", "etsi_cat.comp_tlv.alpha_id.string",
-			  FT_STRING, STR_UNICODE, NULL, 0,
+			  FT_STRING, BASE_NONE, NULL, 0,
 			  NULL, HFILL },
 		},
 		{ &hf_ctlv_address_ton,
@@ -1613,12 +1635,12 @@ proto_register_card_app_toolkit(void)
 		},
 		{ &hf_ctlv_address_string,
 			{ "Address String", "etsi_cat.comp_tlv.address.string",
-			  FT_STRING, STR_UNICODE, NULL, 0,
+			  FT_STRING, BASE_NONE, NULL, 0,
 			  NULL, HFILL },
 		},
 		{ &hf_ctlv_subaddress_string,
 			{ "Subaddress String", "etsi_cat.comp_tlv.subaddress.string",
-			  FT_STRING, STR_UNICODE, NULL, 0,
+			  FT_STRING, BASE_NONE, NULL, 0,
 			  NULL, HFILL },
 		},
 		{ &hf_ctlv_result_gen,
@@ -1663,7 +1685,7 @@ proto_register_card_app_toolkit(void)
 		},
 		{ &hf_ctlv_text_string,
 			{ "Text String", "etsi_cat.comp_tlv.text",
-			  FT_STRING, STR_UNICODE, NULL, 0,
+			  FT_STRING, BASE_NONE, NULL, 0,
 			  NULL, HFILL },
 		},
 		{ &hf_ctlv_event,
@@ -1683,7 +1705,7 @@ proto_register_card_app_toolkit(void)
 		},
 		{ &hf_ctlv_item_string,
 			{ "Item String", "etsi_cat.comp_tlv.item.string",
-			  FT_STRING, STR_UNICODE, NULL, 0,
+			  FT_STRING, BASE_NONE, NULL, 0,
 			  NULL, HFILL },
 		},
 		{ &hf_ctlv_loc_status,
@@ -1743,22 +1765,22 @@ proto_register_card_app_toolkit(void)
 		},
 		{ &hf_ctlv_at_cmd,
 			{ "AT Command", "etsi_cat.comp_tlv.at_cmd",
-			  FT_STRING, STR_UNICODE, NULL, 0,
+			  FT_STRING, BASE_NONE, NULL, 0,
 			  NULL, HFILL },
 		},
 		{ &hf_ctlv_at_rsp,
 			{ "AT Response", "etsi_cat.comp_tlv.at_rsp",
-			  FT_STRING, STR_UNICODE, NULL, 0,
+			  FT_STRING, BASE_NONE, NULL, 0,
 			  NULL, HFILL },
 		},
 		{ &hf_ctlv_dtmf_string,
 			{ "DMTF String", "etsi_cat.comp_tlv.dtmf.string",
-			  FT_STRING, STR_UNICODE, NULL, 0,
+			  FT_STRING, BASE_NONE, NULL, 0,
 			  NULL, HFILL },
 		},
 		{ &hf_ctlv_language,
 			{ "Language", "etsi_cat.comp_tlv.language",
-			  FT_STRING, STR_UNICODE, NULL, 0,
+			  FT_STRING, BASE_NONE, NULL, 0,
 			  NULL, HFILL },
 		},
 		{ &hf_ctlv_me_status,
@@ -1992,7 +2014,7 @@ proto_register_card_app_toolkit(void)
 			  NULL, HFILL },
 		},
 		{ &hf_ctlv_upd_attach_type,
-			{ "UTRAN/E-UTRAN Measurement Qualifier", "etsi_cat.comp_tlv.upd_attach_type",
+			{ "Update/Attach/Registration", "etsi_cat.comp_tlv.upd_attach_type",
 			  FT_UINT8, BASE_HEX | BASE_EXT_STRING, &upd_attach_type_vals_ext, 0,
 			  NULL, HFILL },
 		},
@@ -2013,17 +2035,17 @@ proto_register_card_app_toolkit(void)
 		},
 		{ &hf_ctlv_iari,
 			{ "IARI", "etsi_cat.comp_tlv.iari",
-			  FT_STRING, STR_UNICODE, NULL, 0,
+			  FT_STRING, BASE_NONE, NULL, 0,
 			  NULL, HFILL },
 		},
 		{ &hf_ctlv_impu,
 			{ "IMPU", "etsi_cat.comp_tlv.impu",
-			  FT_STRING, STR_UNICODE, NULL, 0,
+			  FT_STRING, BASE_NONE, NULL, 0,
 			  NULL, HFILL },
 		},
 		{ &hf_ctlv_ims_status_code,
 			{ "IMS Status-Code", "etsi_cat.comp_tlv.ims_status_code",
-			  FT_STRING, STR_UNICODE, NULL, 0,
+			  FT_STRING, BASE_NONE, NULL, 0,
 			  NULL, HFILL },
 		},
 		{ &hf_ctlv_broadcast_nw_tech,
@@ -2037,12 +2059,12 @@ proto_register_card_app_toolkit(void)
 			  NULL, HFILL },
 		}
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_cat,
 		&ett_elem,
 	};
 
-	proto_cat = proto_register_protocol("Card Application Tookit ETSI TS 102.223", "ETSI CAT",
+	proto_cat = proto_register_protocol("Card Application Toolkit ETSI TS 102.223", "ETSI CAT",
 						 "etsi_cat");
 
 	proto_register_field_array(proto_cat, hf, array_length(hf));
@@ -2060,7 +2082,7 @@ proto_reg_handoff_card_app_toolkit(void)
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -19,15 +19,15 @@ BEGIN
     BEGIN
         BLOCK "04090000"  /* Lang = US English, Charset = ASCII */
         BEGIN
-            VALUE "Comments", "This library is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License. You should have received a copy of the GNU General Public License along with this library. If not, see <http://www.gnu.org/licenses/>.\0"
+            VALUE "Comments", "This library is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License. You should have received a copy of the GNU General Public License along with this library. If not, see <https://www.gnu.org/licenses/>.\0"
             VALUE "CompanyName", "Free Software Foundation\0"
-            VALUE "FileDescription", "GPLed libgettextpo for Windows NT/2000/XP/Vista/7 and Windows 95/98/ME\0"
+            VALUE "FileDescription", "GPLed libgettextpo for Windows\0"
             VALUE "FileVersion", PACKAGE_VERSION_STRING "\0"
             VALUE "InternalName", "gettextpo.dll\0"
-            VALUE "LegalCopyright", "Copyright (C) 1995-2016\0"
+            VALUE "LegalCopyright", "Copyright (C) 1995-2024\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "gettextpo.dll\0"
-            VALUE "ProductName", "libgettextpo: public API for PO files\0"
+            VALUE "ProductName", "GNU libgettextpo: public API for PO files\0"
             VALUE "ProductVersion", PACKAGE_VERSION_STRING "\0"
         END
     END

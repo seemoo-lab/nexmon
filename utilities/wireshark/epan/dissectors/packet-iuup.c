@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 
@@ -34,137 +22,100 @@
 #include <epan/packet.h>
 #include <epan/prefs.h>
 #include <epan/expert.h>
+#include <epan/conversation.h>
 #include <epan/crc10-tvb.h>
+#include <epan/crc6-tvb.h>
 #include <wsutil/crc10.h>
 #include <wsutil/crc6.h>
+
+#include "packet-rtp.h"
+#include "packet-iuup.h"
 
 void proto_reg_handoff_iuup(void);
 void proto_register_iuup(void);
 
-typedef struct _iuup_rfci_t {
-    guint id;
-    guint sum_len;
-    guint num_of_subflows;
-    struct {
-        guint len;
-    } subflow[8];
-    struct _iuup_rfci_t* next;
-} iuup_rfci_t;
+static int proto_iuup;
 
-typedef struct {
-    guint32 id;
-    guint num_of_subflows;
-    iuup_rfci_t* rfcis;
-    iuup_rfci_t* last_rfci;
-} iuup_circuit_t;
+static int hf_iuup_direction;
+static int hf_iuup_circuit_id;
 
-static int proto_iuup = -1;
+static int hf_iuup_pdu_type;
+static int hf_iuup_frame_number;
+static int hf_iuup_fqc;
+static int hf_iuup_rfci;
+static int hf_iuup_hdr_crc;
+static int hf_iuup_payload_crc;
 
-static int hf_iuup_direction = -1;
-static int hf_iuup_circuit_id = -1;
+static int hf_iuup_ack_nack;
+static int hf_iuup_frame_number_t14;
+static int hf_iuup_mode_version;
+static int hf_iuup_procedure_indicator;
+static int hf_iuup_error_cause_val;
 
-static int hf_iuup_pdu_type = -1;
-static int hf_iuup_frame_number = -1;
-static int hf_iuup_fqc = -1;
-static int hf_iuup_rfci = -1;
-static int hf_iuup_hdr_crc = -1;
-static int hf_iuup_payload_crc = -1;
+static int hf_iuup_init_ti;
+static int hf_iuup_init_subflows_per_rfci;
+static int hf_iuup_init_chain_ind;
 
-static int hf_iuup_ack_nack = -1;
-static int hf_iuup_frame_number_t14 = -1;
-static int hf_iuup_mode_version = -1;
-static int hf_iuup_procedure_indicator = -1;
-static int hf_iuup_error_cause_val = -1;
+static int hf_iuup_error_distance;
+static int hf_iuup_errorevt_cause_val;
 
-static int hf_iuup_init_ti = -1;
-static int hf_iuup_init_subflows_per_rfci = -1;
-static int hf_iuup_init_chain_ind = -1;
+static int hf_iuup_time_align;
+static int hf_iuup_spare_bytes;
+static int hf_iuup_spare_03;
+/* static int hf_iuup_spare_0f; */
+/* static int hf_iuup_spare_c0; */
+static int hf_iuup_spare_e0;
+static int hf_iuup_spare_ff;
 
-static int hf_iuup_error_distance = -1;
-static int hf_iuup_errorevt_cause_val = -1;
+static int hf_iuup_delay;
+static int hf_iuup_advance;
+static int hf_iuup_delta;
 
-static int hf_iuup_time_align = -1;
-static int hf_iuup_spare_bytes = -1;
-static int hf_iuup_spare_03 = -1;
-/* static int hf_iuup_spare_0f = -1; */
-/* static int hf_iuup_spare_c0 = -1; */
-static int hf_iuup_spare_e0 = -1;
-static int hf_iuup_spare_ff = -1;
-
-static int hf_iuup_delay = -1;
-static int hf_iuup_advance = -1;
-static int hf_iuup_delta = -1;
-
-static int hf_iuup_mode_versions = -1;
-static int hf_iuup_mode_versions_a[] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
+static int hf_iuup_mode_versions;
+static int hf_iuup_mode_versions_a[16];
 
 
-static int hf_iuup_data_pdu_type = -1;
+static int hf_iuup_data_pdu_type;
 
-static int hf_iuup_num_rfci_ind = -1;
+static int hf_iuup_num_rfci_ind;
 
-static int hf_iuup_payload = -1;
+static int hf_iuup_payload;
 
-static int hf_iuup_init_rfci_ind = -1;
-static int hf_iuup_init_rfci[] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
+static int hf_iuup_init_rfci_ind;
+static int hf_iuup_init_rfci[64];
 
-static int hf_iuup_init_rfci_flow_len[64][8] = {
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1}
-};
-
-static int hf_iuup_init_rfci_li[] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
-static int hf_iuup_init_rfci_lri[] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
-static int hf_iuup_init_ipti[] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
-
-static int hf_iuup_rfci_subflow[64][8] = {
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},
-    {-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1},{-1,-1,-1,-1,-1,-1,-1,-1}
-};
-
-static int hf_iuup_rfci_ratectl[] = {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
+static int hf_iuup_init_rfci_flow_len[64][8];
+static int hf_iuup_init_rfci_li[64];
+static int hf_iuup_init_rfci_lri[64];
+static int hf_iuup_init_ipti[64];
+static int hf_iuup_rfci_subflow[64][8];
+static int hf_iuup_rfci_ratectl[64];
 
 
-static gint ett_iuup = -1;
-static gint ett_rfci = -1;
-static gint ett_ipti = -1;
-static gint ett_support = -1;
-static gint ett_time = -1;
-static gint ett_rfciinds = -1;
-static gint ett_payload = -1;
-static gint ett_payload_subflows = -1;
+static int ett_iuup;
+static int ett_rfci;
+static int ett_ipti;
+static int ett_support;
+static int ett_time;
+static int ett_rfciinds;
+static int ett_payload;
+static int ett_payload_subflows;
 
-static expert_field ei_iuup_hdr_crc_bad = EI_INIT;
-static expert_field ei_iuup_payload_crc_bad = EI_INIT;
-static expert_field ei_iuup_payload_undecoded = EI_INIT;
-static expert_field ei_iuup_error_response = EI_INIT;
-static expert_field ei_iuup_ack_nack = EI_INIT;
-static expert_field ei_iuup_time_align = EI_INIT;
-static expert_field ei_iuup_procedure_indicator = EI_INIT;
-static expert_field ei_iuup_pdu_type = EI_INIT;
+static expert_field ei_iuup_hdr_crc_bad;
+static expert_field ei_iuup_payload_crc_bad;
+static expert_field ei_iuup_payload_undecoded;
+static expert_field ei_iuup_error_response;
+static expert_field ei_iuup_ack_nack;
+static expert_field ei_iuup_time_align;
+static expert_field ei_iuup_procedure_indicator;
+static expert_field ei_iuup_pdu_type;
 
-static GHashTable* circuits = NULL;
+static wmem_map_t* circuits;
 
-static gboolean dissect_fields = FALSE;
-static gboolean two_byte_pseudoheader = FALSE;
-static guint global_dynamic_payload_type = 0;
+static dissector_handle_t iuup_handle;
 
-
-#define PDUTYPE_DATA_WITH_CRC 0
-#define PDUTYPE_DATA_NO_CRC 1
-#define PDUTYPE_DATA_CONTROL_PROC 14
+static bool dissect_fields;
+static bool two_byte_pseudoheader;
 
 static const value_string iuup_pdu_types[] = {
     {PDUTYPE_DATA_WITH_CRC,"Data with CRC"},
@@ -322,16 +273,16 @@ static const value_string iuup_fqcs[] = {
 
 
 static proto_item*
-iuup_proto_tree_add_bits(proto_tree* tree, int hf, tvbuff_t* tvb, int offset, int bit_offset, guint bits, guint8** buf) {
-    static const guint8 masks[] = {0x00,0x80,0xc0,0xe0,0xf0,0xf8,0xfc,0xfe};
+iuup_proto_tree_add_bits(packet_info *pinfo, proto_tree* tree, int hf, tvbuff_t* tvb, int offset, int bit_offset, unsigned bits, uint8_t** buf) {
+    static const uint8_t masks[] = {0x00,0x80,0xc0,0xe0,0xf0,0xf8,0xfc,0xfe};
     int len = (bits + bit_offset)/8 + (((bits + bit_offset)%8) ? 0 : 1);
-    guint8* shifted_buffer;
+    uint8_t* shifted_buffer;
     proto_item* pi;
     int i;
 
     DISSECTOR_ASSERT(bit_offset < 8);
 
-    shifted_buffer = (guint8 *)tvb_memdup(wmem_packet_scope(),tvb,offset,len+1);
+    shifted_buffer = (uint8_t *)tvb_memdup(pinfo->pool,tvb,offset,len+1);
 
     for(i = 0; i < len; i++) {
         shifted_buffer[i] <<= bit_offset;
@@ -350,19 +301,42 @@ iuup_proto_tree_add_bits(proto_tree* tree, int hf, tvbuff_t* tvb, int offset, in
     return pi;
 }
 
-static void dissect_iuup_payload(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, guint rfci_id _U_, int offset, guint32 circuit_id) {
-    iuup_circuit_t* iuup_circuit;
+static iuup_circuit_t *find_iuup_circuit(packet_info *pinfo)
+{
+    iuup_circuit_t *iuup_circuit;
+    conversation_t *p_conv;
+
+    if (two_byte_pseudoheader) {
+        uint32_t circuit_id = conversation_get_id_from_elements(pinfo, CONVERSATION_IUUP, USE_LAST_ENDPOINT);
+        iuup_circuit = (iuup_circuit_t *)wmem_map_lookup(circuits,GUINT_TO_POINTER(circuit_id));
+        return iuup_circuit;
+    }
+
+    p_conv = find_conversation(pinfo->num,
+                               &pinfo->net_dst, &pinfo->net_src,
+                               CONVERSATION_IUUP,
+                               pinfo->destport, pinfo->srcport, 0);
+    if (!p_conv)
+        return NULL;
+    iuup_circuit = (iuup_circuit_t *)conversation_get_proto_data(p_conv, proto_iuup);
+    return iuup_circuit;
+}
+
+static void dissect_iuup_payload(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, unsigned rfci_id, int offset) {
+    iuup_circuit_t *iuup_circuit;
     iuup_rfci_t *rfci;
     int last_offset = tvb_reported_length(tvb) - 1;
-    guint bit_offset = 0;
+    unsigned bit_offset = 0;
     proto_item* pi;
+
+    if (offset == (int)tvb_reported_length(tvb)) /* NO_DATA */
+      return;
 
     pi = proto_tree_add_item(tree,hf_iuup_payload,tvb,offset,-1,ENC_NA);
 
-    if ( ! dissect_fields ) {
+    if (!dissect_fields)
         return;
-    } else if ( ! circuit_id
-                || ! ( iuup_circuit  = (iuup_circuit_t *)g_hash_table_lookup(circuits,GUINT_TO_POINTER(circuit_id)) ) ) {
+    if (!(iuup_circuit = find_iuup_circuit(pinfo))) {
         expert_add_info(pinfo, pi, &ei_iuup_payload_undecoded);
         return;
     }
@@ -380,8 +354,8 @@ static void dissect_iuup_payload(tvbuff_t* tvb, packet_info* pinfo, proto_tree* 
 
 
     do {
-        guint i;
-        guint subflows = rfci->num_of_subflows;
+        unsigned i;
+        unsigned subflows = rfci->num_of_subflows;
         proto_tree* flow_tree;
 
         flow_tree = proto_tree_add_subtree(tree,tvb,offset,-1,ett_payload_subflows,NULL,"Payload Frame");
@@ -393,7 +367,7 @@ static void dissect_iuup_payload(tvbuff_t* tvb, packet_info* pinfo, proto_tree* 
             if (! rfci->subflow[i].len)
                 continue;
 
-            iuup_proto_tree_add_bits(flow_tree, hf_iuup_rfci_subflow[rfci->id][i], tvb,
+            iuup_proto_tree_add_bits(pinfo, flow_tree, hf_iuup_rfci_subflow[rfci->id][i], tvb,
                                 offset + (bit_offset/8),
                                 bit_offset % 8,
                                 rfci->subflow[i].len,
@@ -407,16 +381,17 @@ static void dissect_iuup_payload(tvbuff_t* tvb, packet_info* pinfo, proto_tree* 
     } while (offset <= last_offset);
 }
 
-static guint dissect_rfcis(tvbuff_t* tvb, packet_info* pinfo _U_, proto_tree* tree, int* offset, iuup_circuit_t* iuup_circuit) {
+static unsigned dissect_rfcis(tvbuff_t* tvb, packet_info* pinfo _U_, proto_tree* tree, int* offset, iuup_circuit_t *iuup_circuit) {
     proto_item* pi;
     proto_tree* pt;
-    guint8 oct;
-    guint c = 0;
-    guint i;
+    uint8_t oct;
+    unsigned c = 0;
+    unsigned i;
 
+    DISSECTOR_ASSERT(iuup_circuit);
     do {
         iuup_rfci_t *rfci = wmem_new0(wmem_file_scope(), iuup_rfci_t);
-        guint len = 0;
+        unsigned len = 0;
 
         DISSECTOR_ASSERT(c < 64);
 
@@ -427,7 +402,7 @@ static guint dissect_rfcis(tvbuff_t* tvb, packet_info* pinfo _U_, proto_tree* tr
         proto_tree_add_item(pt,hf_iuup_init_rfci_li[c],tvb,*offset,1,ENC_BIG_ENDIAN);
         proto_tree_add_item(pt,hf_iuup_init_rfci[c],tvb,*offset,1,ENC_BIG_ENDIAN);
 
-        oct = tvb_get_guint8(tvb,*offset);
+        oct = tvb_get_uint8(tvb,*offset);
         rfci->id = oct & 0x3f;
         rfci->num_of_subflows = iuup_circuit->num_of_subflows;
 
@@ -438,12 +413,12 @@ static guint dissect_rfcis(tvbuff_t* tvb, packet_info* pinfo _U_, proto_tree* tr
         (*offset)++;
 
         for(i = 0; i < iuup_circuit->num_of_subflows; i++) {
-            guint subflow_len;
+            unsigned subflow_len;
 
             if (len == 2) {
                 subflow_len = tvb_get_ntohs(tvb,*offset);
             } else {
-                subflow_len = tvb_get_guint8(tvb,*offset);
+                subflow_len = tvb_get_uint8(tvb,*offset);
             }
 
             rfci->subflow[i].len = subflow_len;
@@ -467,37 +442,43 @@ static guint dissect_rfcis(tvbuff_t* tvb, packet_info* pinfo _U_, proto_tree* tr
     return c - 1;
 }
 
-static void dissect_iuup_init(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree, guint32 circuit_id) {
+static void dissect_iuup_init(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tree) {
     int offset = 4;
-    guint8 oct = tvb_get_guint8(tvb,offset);
-    guint n = (oct & 0x0e) >> 1;
-    gboolean ti = oct & 0x10;
-    guint i;
-    guint rfcis;
+    uint8_t oct = tvb_get_uint8(tvb,offset);
+    unsigned n = (oct & 0x0e) >> 1;
+    bool ti = oct & 0x10;
+    unsigned i;
+    unsigned rfcis;
     proto_item* pi;
     proto_tree* support_tree = NULL;
     proto_tree* iptis_tree;
-    iuup_circuit_t* iuup_circuit = NULL;
+    iuup_circuit_t *iuup_circuit = NULL;
+    uint32_t circuit_id = 0;
 
-    if (circuit_id) {
-        iuup_circuit = (iuup_circuit_t *)g_hash_table_lookup(circuits,GUINT_TO_POINTER(circuit_id));
-
+    if (two_byte_pseudoheader) {
+        iuup_circuit = find_iuup_circuit(pinfo);
         if (iuup_circuit) {
-            g_hash_table_remove(circuits,GUINT_TO_POINTER(circuit_id));
+            circuit_id = iuup_circuit->id;
+            wmem_map_remove(circuits,GUINT_TO_POINTER(iuup_circuit->id));
+            iuup_circuit = NULL;
+        } else {
+            circuit_id = conversation_get_id_from_elements(pinfo, CONVERSATION_IUUP, USE_LAST_ENDPOINT);
         }
-
-        iuup_circuit = wmem_new0(wmem_file_scope(), iuup_circuit_t);
-    } else {
-        iuup_circuit = wmem_new0(wmem_packet_scope(), iuup_circuit_t);
     }
 
+    iuup_circuit = wmem_new0(wmem_file_scope(), iuup_circuit_t);
     iuup_circuit->id = circuit_id;
     iuup_circuit->num_of_subflows = n;
     iuup_circuit->rfcis = NULL;
     iuup_circuit->last_rfci = NULL;
 
-    if (circuit_id) {
-        g_hash_table_insert(circuits,GUINT_TO_POINTER(iuup_circuit->id),iuup_circuit);
+    if (two_byte_pseudoheader) {
+        wmem_map_insert(circuits,GUINT_TO_POINTER(circuit_id),iuup_circuit);
+    } else {
+        conversation_t *p_conv;
+        p_conv = conversation_new(pinfo->num, &pinfo->net_dst, &pinfo->net_src, CONVERSATION_IUUP,
+                                  pinfo->destport, pinfo->srcport, 0);
+        conversation_add_proto_data(p_conv, proto_iuup, iuup_circuit);
     }
 
     if (tree) {
@@ -545,8 +526,8 @@ static void dissect_iuup_init(tvbuff_t* tvb, packet_info* pinfo, proto_tree* tre
 }
 
 static void dissect_iuup_ratectl(tvbuff_t* tvb, packet_info* pinfo _U_, proto_tree* tree) {
-    guint num = tvb_get_guint8(tvb,4) & 0x3f;
-    guint i;
+    unsigned num = tvb_get_uint8(tvb,4) & 0x3f;
+    unsigned i;
     proto_item* pi;
     proto_tree* inds_tree;
     int offset = 4;
@@ -561,23 +542,18 @@ static void dissect_iuup_ratectl(tvbuff_t* tvb, packet_info* pinfo _U_, proto_tr
 
 }
 
-static void add_hdr_crc(tvbuff_t* tvb, packet_info* pinfo, proto_item* iuup_tree, guint16 crccheck)
+static void add_hdr_crc(tvbuff_t* tvb, packet_info* pinfo, proto_item* iuup_tree)
 {
-    proto_item *crc_item;
-
-    crc_item = proto_tree_add_item(iuup_tree,hf_iuup_hdr_crc,tvb,2,1,ENC_BIG_ENDIAN);
-    if (crccheck) {
-        proto_item_append_text(crc_item, "%s", " [incorrect]");
-        expert_add_info(pinfo, crc_item, &ei_iuup_hdr_crc_bad);
-    }
+    proto_tree_add_checksum(iuup_tree, tvb, 2, hf_iuup_hdr_crc, -1, &ei_iuup_hdr_crc_bad,
+                            pinfo, crc6_compute_tvb(tvb, 2), ENC_BIG_ENDIAN, PROTO_CHECKSUM_VERIFY);
 }
 
-static guint16
+static uint16_t
 update_crc10_by_bytes_iuup(tvbuff_t *tvb, int offset, int length)
 {
-    guint16 crc10;
-    guint16 extra_16bits;
-    guint8 extra_8bits[2];
+    uint16_t crc10;
+    uint16_t extra_16bits;
+    uint8_t extra_8bits[2];
 
     crc10 = update_crc10_by_bytes_tvb(0, tvb, offset + 2, length);
     extra_16bits = tvb_get_ntohs(tvb, offset) & 0x3FF;
@@ -591,7 +567,7 @@ static void add_payload_crc(tvbuff_t* tvb, packet_info* pinfo, proto_item* iuup_
 {
     proto_item *crc_item;
     int length = tvb_reported_length(tvb);
-    guint16 crccheck = update_crc10_by_bytes_iuup(tvb, 2, length - 4);
+    uint16_t crccheck = update_crc10_by_bytes_iuup(tvb, 2, length - 4);
 
     crc_item = proto_tree_add_item(iuup_tree,hf_iuup_payload_crc,tvb,2,2,ENC_BIG_ENDIAN);
     if (crccheck) {
@@ -600,23 +576,157 @@ static void add_payload_crc(tvbuff_t* tvb, packet_info* pinfo, proto_item* iuup_
     }
 }
 
-#define ACKNACK_MASK  0x0c
-#define PROCEDURE_MASK  0x0f
-#define FQC_MASK 0xc0
-#define PDUTYPE_MASK 0xf0
-static int dissect_iuup(tvbuff_t* tvb_in, packet_info* pinfo, proto_tree* tree, void* data _U_) {
-    proto_item* pi;
+static int dissect_iuup_data(tvbuff_t* tvb, packet_info* pinfo,
+                              proto_tree* iuup_tree, void* data _U_, uint8_t pdutype)
+{
+    proto_item *pi;
+    uint8_t first_octet;
+    uint8_t second_octet;
+    uint8_t payload_offset;
+
+    first_octet = tvb_get_uint8(tvb,0);
+    second_octet = tvb_get_uint8(tvb,1);
+
+    col_append_fstr(pinfo->cinfo, COL_INFO,"FN: %x RFCI: %u", (unsigned)(first_octet & 0x0f), (unsigned)(second_octet & 0x3f));
+
+    proto_tree_add_item(iuup_tree,hf_iuup_frame_number,tvb,0,1,ENC_BIG_ENDIAN);
+    pi = proto_tree_add_item(iuup_tree,hf_iuup_fqc,tvb,1,1,ENC_BIG_ENDIAN);
+
+    if (first_octet & FQC_MASK) {
+        expert_add_info(pinfo, pi, &ei_iuup_error_response);
+    }
+
+    proto_tree_add_item(iuup_tree,hf_iuup_rfci,tvb,1,1,ENC_BIG_ENDIAN);
+    add_hdr_crc(tvb, pinfo, iuup_tree);
+    switch (pdutype) {
+    case PDUTYPE_DATA_WITH_CRC:
+        add_payload_crc(tvb, pinfo, iuup_tree);
+        payload_offset = 4;
+        break;
+    case PDUTYPE_DATA_NO_CRC:
+        payload_offset = 3;
+        break;
+    }
+    dissect_iuup_payload(tvb,pinfo,iuup_tree,second_octet & 0x3f, payload_offset);
+    return tvb_captured_length(tvb);
+}
+
+static int dissect_iuup_control(tvbuff_t* tvb, packet_info* pinfo,
+                                 proto_tree* iuup_tree, void* data _U_)
+{
+    proto_item *pi;
+    proto_item *proc_item = NULL;
+    proto_item *ack_item = NULL;
+    uint8_t first_octet;
+    uint8_t second_octet;
+
+    first_octet = tvb_get_uint8(tvb,0);
+    second_octet = tvb_get_uint8(tvb,1);
+
+    if (iuup_tree) {
+        ack_item = proto_tree_add_item(iuup_tree,hf_iuup_ack_nack,tvb,0,1,ENC_BIG_ENDIAN);
+        proto_tree_add_item(iuup_tree,hf_iuup_frame_number_t14,tvb,0,1,ENC_BIG_ENDIAN);
+        proto_tree_add_item(iuup_tree,hf_iuup_mode_version,tvb,1,1,ENC_BIG_ENDIAN);
+        proc_item = proto_tree_add_item(iuup_tree,hf_iuup_procedure_indicator,tvb,1,1,ENC_BIG_ENDIAN);
+        add_hdr_crc(tvb, pinfo, iuup_tree);
+    }
+
+    col_append_str(pinfo->cinfo, COL_INFO,
+                    val_to_str(pinfo->pool, first_octet & ACKNACK_MASK,
+                                iuup_colinfo_acknack_vals, "[action:%u] "));
+
+    col_append_str(pinfo->cinfo, COL_INFO,
+                    val_to_str(pinfo->pool, second_octet & PROCEDURE_MASK,
+                                iuup_colinfo_procedures, "[proc:%u] "));
+
+    switch ( first_octet & ACKNACK_MASK ) {
+        case ACKNACK_ACK:
+            switch(second_octet & PROCEDURE_MASK) {
+                case PROC_INIT:
+                    proto_tree_add_item(iuup_tree,hf_iuup_spare_03,tvb,2,1,ENC_BIG_ENDIAN);
+                    proto_tree_add_item(iuup_tree,hf_iuup_spare_ff,tvb,3,1,ENC_BIG_ENDIAN);
+                    return tvb_captured_length(tvb);
+                case PROC_RATE:
+                    dissect_iuup_ratectl(tvb,pinfo,iuup_tree);
+                    return tvb_captured_length(tvb);
+                case PROC_TIME:
+                case PROC_ERROR:
+                    break;
+                default:
+                    expert_add_info(pinfo, proc_item, &ei_iuup_procedure_indicator);
+                    return tvb_captured_length(tvb);
+            }
+            break;
+        case ACKNACK_NACK:
+            pi = proto_tree_add_item(iuup_tree,hf_iuup_error_cause_val,tvb,4,1,ENC_BIG_ENDIAN);
+            expert_add_info(pinfo, pi, &ei_iuup_error_response);
+            return tvb_captured_length(tvb);
+        case ACKNACK_RESERVED:
+            expert_add_info(pinfo, ack_item, &ei_iuup_ack_nack);
+            return tvb_captured_length(tvb);
+        case ACKNACK_PROC:
+            break;
+    }
+
+    switch( second_octet & PROCEDURE_MASK ) {
+        case PROC_INIT:
+            add_payload_crc(tvb, pinfo, iuup_tree);
+            dissect_iuup_init(tvb,pinfo,iuup_tree);
+            return tvb_captured_length(tvb);
+        case PROC_RATE:
+            add_payload_crc(tvb, pinfo, iuup_tree);
+            dissect_iuup_ratectl(tvb,pinfo,iuup_tree);
+            return tvb_captured_length(tvb);
+        case PROC_TIME:
+        {
+            proto_tree* time_tree;
+            unsigned ta;
+
+            ta = tvb_get_uint8(tvb,4);
+
+            pi = proto_tree_add_item(iuup_tree,hf_iuup_time_align,tvb,4,1,ENC_BIG_ENDIAN);
+            time_tree = proto_item_add_subtree(pi,ett_time);
+
+            if (ta >= 1 && ta <= 80) {
+                pi = proto_tree_add_uint(time_tree,hf_iuup_delay,tvb,4,1,ta * 500);
+                proto_item_set_generated(pi);
+                pi = proto_tree_add_float(time_tree,hf_iuup_delta,tvb,4,1,((float)((int)(ta) * 500))/(float)1000000.0);
+                proto_item_set_generated(pi);
+            } else if (ta >= 129 && ta <= 208) {
+                pi = proto_tree_add_uint(time_tree,hf_iuup_advance,tvb,4,1,(ta-128) * 500);
+                proto_item_set_generated(pi);
+                pi = proto_tree_add_float(time_tree,hf_iuup_delta,tvb,4,1,((float)((int)(-(((int)ta)-128))) * 500)/(float)1000000.0);
+                proto_item_set_generated(pi);
+            } else {
+                expert_add_info(pinfo, pi, &ei_iuup_time_align);
+            }
+
+            proto_tree_add_item(iuup_tree,hf_iuup_spare_bytes,tvb,5,-1,ENC_NA);
+            return tvb_captured_length(tvb);
+        }
+        case PROC_ERROR:
+            col_append_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, tvb_get_uint8(tvb,4) & 0x3f,iuup_error_causes,"Unknown (%u)"));
+
+            proto_tree_add_item(iuup_tree,hf_iuup_error_distance,tvb,4,1,ENC_BIG_ENDIAN);
+            pi = proto_tree_add_item(iuup_tree,hf_iuup_errorevt_cause_val,tvb,4,1,ENC_BIG_ENDIAN);
+            expert_add_info(pinfo, pi, &ei_iuup_error_response);
+            proto_tree_add_item(iuup_tree,hf_iuup_spare_bytes,tvb,5,-1,ENC_NA);
+            return tvb_captured_length(tvb);
+        default: /* bad */
+            expert_add_info(pinfo, proc_item, &ei_iuup_procedure_indicator);
+            return tvb_captured_length(tvb);
+    }
+    return tvb_captured_length(tvb);
+}
+
+static int dissect_iuup(tvbuff_t *tvb_in, packet_info *pinfo, proto_tree *tree, void *data) {
     proto_item* iuup_item = NULL;
     proto_item* pdutype_item = NULL;
     proto_tree* iuup_tree = NULL;
-    proto_item* proc_item = NULL;
-    proto_item* ack_item = NULL;
-    guint8 first_octet;
-    guint8 second_octet;
-    guint8 pdutype;
-    guint phdr = 0;
-    guint16  hdrcrc6;
-    guint16  crccheck;
+    struct _rtp_info *rtp_info = NULL;
+    uint8_t first_octet;
+    uint8_t pdutype;
+    unsigned phdr = 0;
     tvbuff_t* tvb = tvb_in;
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "IuUP");
@@ -631,16 +741,16 @@ static int dissect_iuup(tvbuff_t* tvb_in, packet_info* pinfo, proto_tree* tree, 
 
         phdr &= 0x7fff;
 
-        pinfo->circuit_id = phdr;
+        conversation_set_elements_by_id(pinfo, CONVERSATION_IUUP, phdr);
 
         tvb = tvb_new_subset_length(tvb_in,2,len);
+    } else if (data) {
+        /* Coming from RTP */
+        rtp_info = (struct _rtp_info*)data;
+        rtp_info->info_is_iuup = true;
     }
 
-    first_octet =  tvb_get_guint8(tvb,0);
-    second_octet =  tvb_get_guint8(tvb,1);
-    hdrcrc6 = tvb_get_guint8(tvb, 2) >> 2;
-    crccheck = update_crc6_by_bytes(hdrcrc6, first_octet, second_octet);
-
+    first_octet = tvb_get_uint8(tvb,0);
     pdutype = ( first_octet & PDUTYPE_MASK ) >> 4;
 
     if (tree) {
@@ -650,132 +760,14 @@ static int dissect_iuup(tvbuff_t* tvb_in, packet_info* pinfo, proto_tree* tree, 
         pdutype_item = proto_tree_add_item(iuup_tree,hf_iuup_pdu_type,tvb,0,1,ENC_BIG_ENDIAN);
     }
 
-    col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pdutype, iuup_colinfo_pdu_types, "Unknown PDU Type(%u) "));
+    col_add_str(pinfo->cinfo, COL_INFO, val_to_str(pinfo->pool, pdutype, iuup_colinfo_pdu_types, "Unknown PDU Type(%u) "));
 
     switch(pdutype) {
         case PDUTYPE_DATA_WITH_CRC:
-            col_append_fstr(pinfo->cinfo, COL_INFO,"FN: %x RFCI: %u", (guint)(first_octet & 0x0f) ,(guint)(second_octet & 0x3f));
-
-            proto_tree_add_item(iuup_tree,hf_iuup_frame_number,tvb,0,1,ENC_BIG_ENDIAN);
-            pi = proto_tree_add_item(iuup_tree,hf_iuup_fqc,tvb,1,1,ENC_BIG_ENDIAN);
-
-            if (first_octet & FQC_MASK) {
-                expert_add_info(pinfo, pi, &ei_iuup_error_response);
-            }
-
-            proto_tree_add_item(iuup_tree,hf_iuup_rfci,tvb,1,1,ENC_BIG_ENDIAN);
-            add_hdr_crc(tvb, pinfo, iuup_tree, crccheck);
-            add_payload_crc(tvb, pinfo, iuup_tree);
-            dissect_iuup_payload(tvb,pinfo,iuup_tree,second_octet & 0x3f,4,pinfo->circuit_id);
-            return tvb_captured_length(tvb);
         case PDUTYPE_DATA_NO_CRC:
-            col_append_fstr(pinfo->cinfo, COL_INFO," RFCI %u", (guint)(second_octet & 0x3f));
-
-            proto_tree_add_item(iuup_tree,hf_iuup_frame_number,tvb,0,1,ENC_BIG_ENDIAN);
-            pi = proto_tree_add_item(iuup_tree,hf_iuup_fqc,tvb,1,1,ENC_BIG_ENDIAN);
-
-            if (first_octet & FQC_MASK) {
-                expert_add_info(pinfo, pi, &ei_iuup_error_response);
-            }
-
-            proto_tree_add_item(iuup_tree,hf_iuup_rfci,tvb,1,1,ENC_BIG_ENDIAN);
-            add_hdr_crc(tvb, pinfo, iuup_tree, crccheck);
-            dissect_iuup_payload(tvb,pinfo,iuup_tree,second_octet & 0x3f,3,pinfo->circuit_id);
-            return tvb_captured_length(tvb);
+            return dissect_iuup_data(tvb, pinfo, iuup_tree, data, pdutype);
         case PDUTYPE_DATA_CONTROL_PROC:
-            if (tree) {
-                ack_item = proto_tree_add_item(iuup_tree,hf_iuup_ack_nack,tvb,0,1,ENC_BIG_ENDIAN);
-                proto_tree_add_item(iuup_tree,hf_iuup_frame_number_t14,tvb,0,1,ENC_BIG_ENDIAN);
-                proto_tree_add_item(iuup_tree,hf_iuup_mode_version,tvb,1,1,ENC_BIG_ENDIAN);
-                proc_item = proto_tree_add_item(iuup_tree,hf_iuup_procedure_indicator,tvb,1,1,ENC_BIG_ENDIAN);
-                add_hdr_crc(tvb, pinfo, iuup_tree, crccheck);
-            }
-
-            col_append_str(pinfo->cinfo, COL_INFO,
-                           val_to_str(first_octet & ACKNACK_MASK,
-                                      iuup_colinfo_acknack_vals, "[action:%u] "));
-
-            col_append_str(pinfo->cinfo, COL_INFO,
-                           val_to_str(second_octet & PROCEDURE_MASK,
-                                      iuup_colinfo_procedures, "[proc:%u] "));
-
-            switch ( first_octet & ACKNACK_MASK ) {
-                case ACKNACK_ACK:
-                    switch(second_octet & PROCEDURE_MASK) {
-                        case PROC_INIT:
-                            proto_tree_add_item(iuup_tree,hf_iuup_spare_03,tvb,2,1,ENC_BIG_ENDIAN);
-                            proto_tree_add_item(iuup_tree,hf_iuup_spare_ff,tvb,3,1,ENC_BIG_ENDIAN);
-                            return tvb_captured_length(tvb);
-                        case PROC_RATE:
-                            dissect_iuup_ratectl(tvb,pinfo,iuup_tree);
-                            return tvb_captured_length(tvb);
-                        case PROC_TIME:
-                        case PROC_ERROR:
-                            break;
-                        default:
-                            expert_add_info(pinfo, proc_item, &ei_iuup_procedure_indicator);
-                            return tvb_captured_length(tvb);
-                    }
-                    break;
-                case ACKNACK_NACK:
-                    pi = proto_tree_add_item(iuup_tree,hf_iuup_error_cause_val,tvb,4,1,ENC_BIG_ENDIAN);
-                    expert_add_info(pinfo, pi, &ei_iuup_error_response);
-                    return tvb_captured_length(tvb);
-                case ACKNACK_RESERVED:
-                    expert_add_info(pinfo, ack_item, &ei_iuup_ack_nack);
-                    return tvb_captured_length(tvb);
-                case ACKNACK_PROC:
-                    break;
-            }
-
-            switch( second_octet & PROCEDURE_MASK ) {
-                case PROC_INIT:
-                    add_payload_crc(tvb, pinfo, iuup_tree);
-                    dissect_iuup_init(tvb,pinfo,iuup_tree,pinfo->circuit_id);
-                    return tvb_captured_length(tvb);
-                case PROC_RATE:
-                    add_payload_crc(tvb, pinfo, iuup_tree);
-                    dissect_iuup_ratectl(tvb,pinfo,iuup_tree);
-                    return tvb_captured_length(tvb);
-                case PROC_TIME:
-                {
-                    proto_tree* time_tree;
-                    guint ta;
-
-                    ta = tvb_get_guint8(tvb,4);
-
-                    pi = proto_tree_add_item(iuup_tree,hf_iuup_time_align,tvb,4,1,ENC_BIG_ENDIAN);
-                    time_tree = proto_item_add_subtree(pi,ett_time);
-
-                    if (ta >= 1 && ta <= 80) {
-                        pi = proto_tree_add_uint(time_tree,hf_iuup_delay,tvb,4,1,ta * 500);
-                        PROTO_ITEM_SET_GENERATED(pi);
-                        pi = proto_tree_add_float(time_tree,hf_iuup_delta,tvb,4,1,((gfloat)((gint)(ta) * 500))/(gfloat)1000000.0);
-                        PROTO_ITEM_SET_GENERATED(pi);
-                    } else if (ta >= 129 && ta <= 208) {
-                        pi = proto_tree_add_uint(time_tree,hf_iuup_advance,tvb,4,1,(ta-128) * 500);
-                        PROTO_ITEM_SET_GENERATED(pi);
-                        pi = proto_tree_add_float(time_tree,hf_iuup_delta,tvb,4,1,((gfloat)((gint)(-(((gint)ta)-128))) * 500)/(gfloat)1000000.0);
-                        PROTO_ITEM_SET_GENERATED(pi);
-                    } else {
-                        expert_add_info(pinfo, pi, &ei_iuup_time_align);
-                    }
-
-                    proto_tree_add_item(iuup_tree,hf_iuup_spare_bytes,tvb,5,-1,ENC_NA);
-                    return tvb_captured_length(tvb);
-                }
-                case PROC_ERROR:
-                    col_append_str(pinfo->cinfo, COL_INFO, val_to_str(tvb_get_guint8(tvb,4) & 0x3f,iuup_error_causes,"Unknown (%u)"));
-
-                    proto_tree_add_item(iuup_tree,hf_iuup_error_distance,tvb,4,1,ENC_BIG_ENDIAN);
-                    pi = proto_tree_add_item(iuup_tree,hf_iuup_errorevt_cause_val,tvb,4,1,ENC_BIG_ENDIAN);
-                    expert_add_info(pinfo, pi, &ei_iuup_error_response);
-                    proto_tree_add_item(iuup_tree,hf_iuup_spare_bytes,tvb,5,-1,ENC_NA);
-                    return tvb_captured_length(tvb);
-                default: /* bad */
-                    expert_add_info(pinfo, proc_item, &ei_iuup_procedure_indicator);
-                    return tvb_captured_length(tvb);
-            }
+            return dissect_iuup_control(tvb, pinfo, iuup_tree, data);
         default:
             expert_add_info(pinfo, pdutype_item, &ei_iuup_pdu_type);
             break;
@@ -784,35 +776,36 @@ static int dissect_iuup(tvbuff_t* tvb_in, packet_info* pinfo, proto_tree* tree, 
 }
 
 
-static gboolean dissect_iuup_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_) {
+static bool dissect_iuup_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data) {
     int len = tvb_captured_length(tvb);
 
-    guint8 first_octet =  tvb_get_guint8(tvb,0);
-    guint8 second_octet =  tvb_get_guint8(tvb,1);
-    guint16 hdrcrc6 = tvb_get_guint8(tvb, 2) >> 2;
+    uint8_t first_octet =  tvb_get_uint8(tvb,0);
+    uint8_t second_octet =  tvb_get_uint8(tvb,1);
+    uint8_t octet_array[] = {first_octet, second_octet};
+    uint16_t hdrcrc6 = tvb_get_uint8(tvb, 2) >> 2;
 
-    if (update_crc6_by_bytes(hdrcrc6, first_octet, second_octet)) return FALSE;
+    if (crc6_0X6F(hdrcrc6, octet_array, second_octet)) return false;
 
     switch ( first_octet & 0xf0 ) {
         case 0x00: {
-            if (len<7) return FALSE;
-            if (update_crc10_by_bytes_iuup(tvb, 4, len-4) ) return FALSE;
+            if (len<7) return false;
+            if (update_crc10_by_bytes_iuup(tvb, 4, len-4) ) return false;
             break;
         }
         case 0x10:
-            /* a FALSE positive factory */
-            if (len<5) return FALSE;
+            /* a false positive factory */
+            if (len<5) return false;
             break;
         case 0xe0:
-            if (len<5) return FALSE;
-            if( (second_octet & 0x0f) > 3) return FALSE;
+            if (len<5) return false;
+            if( (second_octet & 0x0f) > 3) return false;
             break;
         default:
-            return FALSE;
+            return false;
     }
 
     dissect_iuup(tvb, pinfo, tree, data);
-    return TRUE;
+    return true;
 }
 
 
@@ -832,35 +825,11 @@ static int find_iuup(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* 
     return tvb_captured_length(tvb);
 }
 
-static void init_iuup(void) {
-    circuits = g_hash_table_new(g_direct_hash,g_direct_equal);
-}
-
-static void cleanup_iuup(void) {
-    g_hash_table_destroy(circuits);
-}
-
 
 void proto_reg_handoff_iuup(void) {
-    static gboolean iuup_prefs_initialized = FALSE;
-    static dissector_handle_t iuup_handle;
-    static guint saved_dynamic_payload_type = 0;
+    dissector_add_string("rtp_dyn_payload_type","VND.3GPP.IUFP", iuup_handle);
 
-    if (!iuup_prefs_initialized) {
-        iuup_handle = find_dissector("iuup");
-        dissector_add_string("rtp_dyn_payload_type","VND.3GPP.IUFP", iuup_handle);
-        iuup_prefs_initialized = TRUE;
-    } else {
-        if ( saved_dynamic_payload_type > 95 ) {
-            dissector_delete_uint("rtp.pt", saved_dynamic_payload_type, iuup_handle);
-        }
-    }
-
-    saved_dynamic_payload_type = global_dynamic_payload_type;
-
-    if ( global_dynamic_payload_type > 95 ) {
-        dissector_add_uint("rtp.pt", global_dynamic_payload_type, iuup_handle);
-    }
+    dissector_add_uint_range_with_preference("rtp.pt", "", iuup_handle);
 }
 
 
@@ -964,7 +933,7 @@ void proto_register_iuup(void) {
     };
 
 
-    gint* ett[] = {
+    int* ett[] = {
         &ett_iuup,
         &ett_rfci,
         &ett_ipti,
@@ -994,13 +963,12 @@ void proto_register_iuup(void) {
     proto_register_subtree_array(ett, array_length(ett));
     expert_iuup = expert_register_protocol(proto_iuup);
     expert_register_field_array(expert_iuup, ei, array_length(ei));
-    register_dissector("iuup", dissect_iuup, proto_iuup);
+    iuup_handle = register_dissector("iuup", dissect_iuup, proto_iuup);
     register_dissector("find_iuup", find_iuup, proto_iuup);
 
-    register_init_routine(&init_iuup);
-    register_cleanup_routine(&cleanup_iuup);
+    circuits = wmem_map_new_autoreset(wmem_epan_scope(), wmem_file_scope(), g_direct_hash, g_direct_equal);
 
-    iuup_module = prefs_register_protocol(proto_iuup, proto_reg_handoff_iuup);
+    iuup_module = prefs_register_protocol(proto_iuup, NULL);
 
     prefs_register_bool_preference(iuup_module, "dissect_payload",
                                    "Dissect IuUP Payload bits",
@@ -1012,11 +980,7 @@ void proto_register_iuup(void) {
                                    "The payload contains a two byte pseudoheader indicating direction and circuit_id",
                                    &two_byte_pseudoheader);
 
-    prefs_register_uint_preference(iuup_module, "dynamic.payload.type",
-                                   "IuUP dynamic payload type",
-                                   "The dynamic payload type which will be interpreted as IuUP",
-                                   10,
-                                   &global_dynamic_payload_type);
+    prefs_register_obsolete_preference(iuup_module, "dynamic.payload.type");
 }
 
 /*

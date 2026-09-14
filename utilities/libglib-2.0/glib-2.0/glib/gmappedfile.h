@@ -3,10 +3,12 @@
  *
  * Copyright 2005 Matthias Clasen
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -34,11 +36,11 @@ typedef struct _GMappedFile GMappedFile;
 GLIB_AVAILABLE_IN_ALL
 GMappedFile *g_mapped_file_new          (const gchar  *filename,
 				         gboolean      writable,
-				         GError      **error) G_GNUC_MALLOC;
+				         GError      **error);
 GLIB_AVAILABLE_IN_ALL
 GMappedFile *g_mapped_file_new_from_fd  (gint          fd,
 					 gboolean      writable,
-					 GError      **error) G_GNUC_MALLOC;
+					 GError      **error);
 GLIB_AVAILABLE_IN_ALL
 gsize        g_mapped_file_get_length   (GMappedFile  *file);
 GLIB_AVAILABLE_IN_ALL

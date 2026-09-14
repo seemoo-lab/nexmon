@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 /* This protocol implements PANA as of the IETF RFC 5191.
  * (Note: This dissector was updated to reflect
@@ -30,8 +18,15 @@
 
 #include <epan/packet.h>
 #include <epan/conversation.h>
+#include <epan/tfs.h>
+
+#include <wsutil/array.h>
+#include <wsutil/ws_padding_to.h>
+
 void proto_register_pana(void);
 void proto_reg_handoff_pana(void);
+
+static dissector_handle_t pana_handle;
 
 #if 0
 #define PANA_UDP_PORT 3001
@@ -82,37 +77,37 @@ void proto_reg_handoff_pana(void);
 static dissector_handle_t eap_handle;
 
 /* Initialize the protocol and registered fields */
-static int proto_pana = -1;
-static int hf_pana_reserved_type = -1;
-static int hf_pana_length_type = -1;
-static int hf_pana_msg_type = -1;
-static int hf_pana_session_id = -1;
-static int hf_pana_seqnumber = -1;
-static int hf_pana_response_in = -1;
-static int hf_pana_response_to = -1;
-static int hf_pana_response_time = -1;
+static int proto_pana;
+static int hf_pana_reserved_type;
+static int hf_pana_length_type;
+static int hf_pana_msg_type;
+static int hf_pana_session_id;
+static int hf_pana_seqnumber;
+static int hf_pana_response_in;
+static int hf_pana_response_to;
+static int hf_pana_response_time;
 
-static int hf_pana_flags = -1;
-static int hf_pana_flag_r = -1;
-static int hf_pana_flag_s = -1;
-static int hf_pana_flag_c = -1;
-static int hf_pana_flag_a = -1;
-static int hf_pana_flag_p = -1;
-static int hf_pana_flag_i = -1;
-static int hf_pana_avp_code = -1;
-static int hf_pana_avp_data_length = -1;
-static int hf_pana_avp_flags = -1;
-static int hf_pana_avp_flag_v = -1;
-static int hf_pana_avp_reserved = -1;
-static int hf_pana_avp_vendorid = -1;
+static int hf_pana_flags;
+static int hf_pana_flag_r;
+static int hf_pana_flag_s;
+static int hf_pana_flag_c;
+static int hf_pana_flag_a;
+static int hf_pana_flag_p;
+static int hf_pana_flag_i;
+static int hf_pana_avp_code;
+static int hf_pana_avp_data_length;
+static int hf_pana_avp_flags;
+static int hf_pana_avp_flag_v;
+static int hf_pana_avp_reserved;
+static int hf_pana_avp_vendorid;
 
-static int hf_pana_avp_data_uint64 = -1;
-static int hf_pana_avp_data_int64 = -1;
-static int hf_pana_avp_data_uint32 = -1;
-static int hf_pana_avp_data_int32 = -1;
-static int hf_pana_avp_data_bytes = -1;
-static int hf_pana_avp_data_string = -1;
-static int hf_pana_avp_data_enumerated = -1;
+static int hf_pana_avp_data_uint64;
+static int hf_pana_avp_data_int64;
+static int hf_pana_avp_data_uint32;
+static int hf_pana_avp_data_int32;
+static int hf_pana_avp_data_bytes;
+static int hf_pana_avp_data_string;
+static int hf_pana_avp_data_enumerated;
 
 #define MSG_TYPE_MAX 5
 static const value_string msg_type_names[] = {
@@ -194,16 +189,16 @@ static const value_string avp_type_names[]={
 
 
 /* Initialize the subtree pointers */
-static gint ett_pana = -1;
-static gint ett_pana_flags = -1;
-static gint ett_pana_avp = -1;
-static gint ett_pana_avp_info = -1;
-static gint ett_pana_avp_flags = -1;
+static int ett_pana;
+static int ett_pana_flags;
+static int ett_pana_avp;
+static int ett_pana_avp_info;
+static int ett_pana_avp_flags;
 
 
 typedef struct _pana_transaction_t {
-        guint32  req_frame;
-        guint32  rep_frame;
+        uint32_t req_frame;
+        uint32_t rep_frame;
         nstime_t req_time;
 } pana_transaction_t;
 
@@ -218,9 +213,9 @@ dissect_pana_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
  * Function for the PANA flags dissector.
  */
 static void
-dissect_pana_flags(proto_tree *parent_tree, tvbuff_t *tvb, int offset, guint16 flags)
+dissect_pana_flags(proto_tree *parent_tree, tvbuff_t *tvb, int offset, uint16_t flags)
 {
-        static const int * flag_fields[] = {
+        static int * const flag_fields[] = {
             &hf_pana_flag_r,
             &hf_pana_flag_s,
             &hf_pana_flag_c,
@@ -239,9 +234,9 @@ dissect_pana_flags(proto_tree *parent_tree, tvbuff_t *tvb, int offset, guint16 f
  * Function for AVP flags dissector.
  */
 static void
-dissect_pana_avp_flags(proto_tree *parent_tree, tvbuff_t *tvb, int offset, guint16 flags)
+dissect_pana_avp_flags(proto_tree *parent_tree, tvbuff_t *tvb, int offset, uint16_t flags)
 {
-        static const int * flag_fields[] = {
+        static int * const flag_fields[] = {
             &hf_pana_avp_flag_v,
             NULL,
         };
@@ -255,7 +250,7 @@ dissect_pana_avp_flags(proto_tree *parent_tree, tvbuff_t *tvb, int offset, guint
  * Map AVP code to AVP type
  */
 static pana_avp_types
-pana_avp_get_type(guint16 avp_code, guint32 vendor_id)
+pana_avp_get_type(uint16_t avp_code, uint32_t vendor_id)
 {
 
         if(vendor_id == 0) {
@@ -286,20 +281,21 @@ pana_avp_get_type(guint16 avp_code, guint32 vendor_id)
  * Function for AVP dissector.
  */
 static void
+// NOLINTNEXTLINE(misc-no-recursion)
 dissect_avps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *avp_tree)
 {
 
-        gint    offset;
-        guint16 avp_code;
-        guint16 avp_flags;
-        guint32 avp_length;
-        guint16 avp_type;
-        guint32 vendor_id;
-        guint32 avp_hdr_length;
-        guint32 avp_data_length, result_code;
-        guint32 padding;
+        int     offset;
+        uint16_t avp_code;
+        uint16_t avp_flags;
+        uint32_t avp_length;
+        uint16_t avp_type;
+        uint32_t vendor_id;
+        uint32_t avp_hdr_length;
+        uint32_t avp_data_length, result_code;
+        uint32_t padding;
 
-        gint32  buffer_length;
+        int32_t buffer_length;
 
         tvbuff_t   *group_tvb;
         tvbuff_t   *eap_tvb;
@@ -333,19 +329,19 @@ dissect_avps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *avp_tree)
 
 
                 /* Check padding */
-                padding = (4 - (avp_length % 4)) % 4;
+                padding = WS_PADDING_TO_4(avp_length);
 
                 single_avp_tree = proto_tree_add_subtree_format(avp_tree, tvb, offset, avp_length + padding,
                                                                 ett_pana_avp_info, NULL, "%s (%s) length: %d bytes (%d padded bytes)",
-                                                                val_to_str(avp_code, avp_code_names, "Unknown (%d)"),
-                                                                val_to_str(avp_type, avp_type_names, "Unknown (%d)"),
+                                                                val_to_str(pinfo->pool, avp_code, avp_code_names, "Unknown (%d)"),
+                                                                val_to_str(pinfo->pool, avp_type, avp_type_names, "Unknown (%d)"),
                                                                 avp_length,
                                                                 avp_length + padding);
 
                 /* AVP Code */
                 proto_tree_add_uint_format_value(single_avp_tree, hf_pana_avp_code, tvb,
                                                  offset, 2, avp_code, "%s (%u)",
-                                                 val_to_str(avp_code, avp_code_names, "Unknown (%d)"),
+                                                 val_to_str(pinfo->pool, avp_code, avp_code_names, "Unknown (%d)"),
                                                  avp_code);
                 offset += 2;
 
@@ -374,15 +370,16 @@ dissect_avps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *avp_tree)
                                         avp_group_tree = proto_tree_add_subtree(single_avp_tree,
                                                                                 tvb, offset, avp_data_length,
                                                                                 ett_pana_avp, NULL, "Grouped AVP");
-                                        group_tvb = tvb_new_subset(tvb, offset,
+                                        group_tvb = tvb_new_subset_length_caplen(tvb, offset,
                                                                    MIN(avp_data_length, tvb_reported_length(tvb)-offset),
                                                                    avp_data_length);
+                                        // We recurse here, but we'll run out of packet before we run out of stack.
                                         dissect_avps(group_tvb, pinfo, avp_group_tree);
                                         break;
                                 }
                                 case PANA_UTF8STRING: {
                                         proto_tree_add_item(single_avp_tree, hf_pana_avp_data_string, tvb,
-                                                                     offset, avp_data_length, ENC_UTF_8|ENC_NA);
+                                                                     offset, avp_data_length, ENC_UTF_8);
                                         break;
                                 }
                                 case PANA_OCTET_STRING: {
@@ -420,7 +417,7 @@ dissect_avps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *avp_tree)
                                         proto_tree_add_uint_format(single_avp_tree, hf_pana_avp_code, tvb, offset, avp_data_length,
                                                                    result_code, "Value: %d (%s)",
                                                                    result_code,
-                                                                   val_to_str(result_code, avp_code_names, "Unknown (%d)"));
+                                                                   val_to_str(pinfo->pool, result_code, avp_code_names, "Unknown (%d)"));
                                         break;
                                 }
                                 case PANA_EAP: {
@@ -437,6 +434,7 @@ dissect_avps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *avp_tree)
                                                                                 tvb, offset, avp_data_length,
                                                                                 ett_pana_avp, NULL, "AVP Value (PANA packet)");
                                         encap_tvb = tvb_new_subset_length(tvb, offset, avp_data_length);
+                                        // We recurse here, but we'll run out of packet before we run out of stack.
                                         dissect_pana_pdu(encap_tvb, pinfo, avp_encap_tree);
                                         break;
                                 }
@@ -455,15 +453,16 @@ dissect_avps(tvbuff_t *tvb, packet_info *pinfo, proto_tree *avp_tree)
  * Function for the PANA PDU dissector.
  */
 static void
+// NOLINTNEXTLINE(misc-no-recursion)
 dissect_pana_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 
         proto_tree        *pana_tree = NULL;
-        guint16            flags;
-        guint16            msg_type;
-        guint32            msg_length;
-        guint32            avp_length;
-        guint32            seq_num;
+        uint16_t           flags;
+        uint16_t           msg_type;
+        uint32_t           msg_length;
+        uint32_t           avp_length;
+        uint32_t           seq_num;
         conversation_t     *conversation;
         pana_conv_info_t   *pana_info;
         pana_transaction_t *pana_trans;
@@ -480,8 +479,8 @@ dissect_pana_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
         avp_length = msg_length - 16;
 
         col_add_fstr(pinfo->cinfo, COL_INFO, "Type %s-%s",
-                     val_to_str(msg_type, msg_type_names, "Unknown (%d)"),
-                     val_to_str(flags & PANA_FLAG_R, msg_subtype_names, "Unknown (%d)"));
+                     val_to_str(pinfo->pool, msg_type, msg_type_names, "Unknown (%d)"),
+                     val_to_str(pinfo->pool, flags & PANA_FLAG_R, msg_subtype_names, "Unknown (%d)"));
 
         /* Make the protocol tree */
         if (tree) {
@@ -511,7 +510,7 @@ dissect_pana_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                 conversation_add_proto_data(conversation, proto_pana, pana_info);
         }
 
-        if(!pinfo->fd->flags.visited){
+        if(!pinfo->fd->visited){
                 if(flags&PANA_FLAG_R){
                         /* This is a request */
                         pana_trans=wmem_new(wmem_file_scope(), pana_transaction_t);
@@ -531,7 +530,7 @@ dissect_pana_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 
         if(!pana_trans){
                 /* create a "fake" pana_trans structure */
-                pana_trans=wmem_new(wmem_packet_scope(), pana_transaction_t);
+                pana_trans=wmem_new(pinfo->pool, pana_transaction_t);
                 pana_trans->req_frame=0;
                 pana_trans->rep_frame=0;
                 pana_trans->req_time=pinfo->abs_ts;
@@ -544,7 +543,7 @@ dissect_pana_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                         proto_item *it;
 
                         it=proto_tree_add_uint(pana_tree, hf_pana_response_in, tvb, 0, 0, pana_trans->rep_frame);
-                        PROTO_ITEM_SET_GENERATED(it);
+                        proto_item_set_generated(it);
                 }
         } else {
                 /* This is a reply */
@@ -553,11 +552,11 @@ dissect_pana_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                         nstime_t ns;
 
                         it=proto_tree_add_uint(pana_tree, hf_pana_response_to, tvb, 0, 0, pana_trans->req_frame);
-                        PROTO_ITEM_SET_GENERATED(it);
+                        proto_item_set_generated(it);
 
                         nstime_delta(&ns, &pinfo->abs_ts, &pana_trans->req_time);
                         it=proto_tree_add_time(pana_tree, hf_pana_response_time, tvb, 0, 0, &ns);
-                        PROTO_ITEM_SET_GENERATED(it);
+                        proto_item_set_generated(it);
                 }
         }
 
@@ -576,8 +575,8 @@ dissect_pana_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
         /* Message Type */
         proto_tree_add_uint_format_value(pana_tree, hf_pana_msg_type, tvb,
                                          offset, 2, msg_type, "%s-%s (%d)",
-                                         val_to_str(msg_type, msg_type_names, "Unknown (%d)"),
-                                         val_to_str(flags & PANA_FLAG_R, msg_subtype_names, "Unknown (%d)"),
+                                         val_to_str(pinfo->pool, msg_type, msg_type_names, "Unknown (%d)"),
+                                         val_to_str(pinfo->pool, flags & PANA_FLAG_R, msg_subtype_names, "Unknown (%d)"),
                                          msg_type);
         offset += 2;
 
@@ -604,18 +603,20 @@ dissect_pana_pdu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 
 /*
  * Function for the PANA dissector.
+ *
+ * Called directly as a non-heuristic dissecotr or called by the heuristic
+ * dissector.
  */
-/* Called either as a "new-style" or a heuristic dissector */
 static int
 dissect_pana(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
 {
 
-        guint16 pana_res;
-        guint32 msg_length;
-        guint16 flags;
-        guint32 buffer_length;
-        guint16 msg_type;
-        guint32 avp_length;
+        uint16_t pana_res;
+        uint32_t msg_length;
+        uint16_t flags;
+        uint32_t buffer_length;
+        uint16_t msg_type;
+        uint32_t avp_length;
 
         /* Get actual buffer length */
         buffer_length = tvb_captured_length(tvb);
@@ -659,10 +660,10 @@ dissect_pana(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
         /* For bug 1908: check the length of the first AVP, too */
 
         if (avp_length != 0) {
-                guint32 avp_offset;
-                guint16 avp_code;
-                guint32 first_avp_length;
-                guint16 avp_flags;
+                uint32_t avp_offset;
+                uint16_t avp_code;
+                uint32_t first_avp_length;
+                uint16_t avp_flags;
 
                 if (avp_length < MIN_AVP_SIZE) {
                         return 0;
@@ -700,6 +701,11 @@ dissect_pana(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_
 
 }
 
+static bool
+dissect_pana_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+    return dissect_pana(tvb, pinfo, tree, data) != 0;
+}
 
 /*
  * Register the protocol with Wireshark
@@ -711,12 +717,12 @@ proto_register_pana(void)
         static hf_register_info hf[] = {
                 { &hf_pana_response_in,
                   { "Response In", "pana.response_in",
-                    FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+                    FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_RESPONSE), 0x0,
                     "The response to this PANA request is in this frame", HFILL }
                 },
                 { &hf_pana_response_to,
                   { "Request In", "pana.response_to",
-                    FT_FRAMENUM, BASE_NONE, NULL, 0x0,
+                    FT_FRAMENUM, BASE_NONE, FRAMENUM_TYPE(FT_FRAMENUM_REQUEST), 0x0,
                     "This is a response to the PANA request in this frame", HFILL }
                 },
                 { &hf_pana_response_time,
@@ -860,7 +866,7 @@ proto_register_pana(void)
         };
 
         /* Setup protocol subtree array */
-        static gint *ett[] = {
+        static int *ett[] = {
                 &ett_pana,
                 &ett_pana_flags,
                 &ett_pana_avp,
@@ -869,33 +875,30 @@ proto_register_pana(void)
         };
 
         /* Register the protocol name and description */
-        proto_pana = proto_register_protocol("Protocol for carrying Authentication for Network Access",
-                                             "PANA", "pana");
+        proto_pana = proto_register_protocol("Protocol for carrying Authentication for Network Access", "PANA", "pana");
 
         /* Required function calls to register the header fields and subtrees used */
         proto_register_field_array(proto_pana, hf, array_length(hf));
         proto_register_subtree_array(ett, array_length(ett));
 
+        /* Register the dissector handle */
+        pana_handle = register_dissector("pana", dissect_pana, proto_pana);
 }
 
 
 void
 proto_reg_handoff_pana(void)
 {
+        heur_dissector_add("udp", dissect_pana_heur, "PANA over UDP", "pana_udp", proto_pana, HEURISTIC_ENABLE);
 
-        dissector_handle_t pana_handle;
-
-        heur_dissector_add("udp", dissect_pana, "PANA over UDP", "pana_udp", proto_pana, HEURISTIC_ENABLE);
-
-        pana_handle = create_dissector_handle(dissect_pana, proto_pana);
-        dissector_add_for_decode_as("udp.port", pana_handle);
+        dissector_add_for_decode_as_with_preference("udp.port", pana_handle);
 
         eap_handle = find_dissector_add_dependency("eap", proto_pana);
 
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

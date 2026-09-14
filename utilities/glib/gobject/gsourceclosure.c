@@ -1,10 +1,12 @@
 /* GObject - GLib Type, Object, Parameter and Signal Library
  * Copyright (C) 2001 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -32,9 +34,9 @@ G_DEFINE_BOXED_TYPE (GIOChannel, g_io_channel, g_io_channel_ref, g_io_channel_un
 GType
 g_io_condition_get_type (void)
 {
-  static volatile GType etype = 0;
+  static GType etype = 0;
 
-  if (g_once_init_enter (&etype))
+  if (g_once_init_enter_pointer (&etype))
     {
       static const GFlagsValue values[] = {
 	{ G_IO_IN,   "G_IO_IN",   "in" },
@@ -46,7 +48,7 @@ g_io_condition_get_type (void)
 	{ 0, NULL, NULL }
       };
       GType type_id = g_flags_register_static ("GIOCondition", values);
-      g_once_init_leave (&etype, type_id);
+      g_once_init_leave_pointer (&etype, type_id);
     }
   return etype;
 }
@@ -119,7 +121,8 @@ g_child_watch_closure_callback (GPid     pid,
 
 #ifdef G_OS_UNIX
   g_value_init (&params[0], G_TYPE_ULONG);
-  g_value_set_ulong (&params[0], pid);
+  G_STATIC_ASSERT (sizeof (pid) <= sizeof (unsigned long));
+  g_value_set_ulong (&params[0], (gulong) pid);
 #endif
 #ifdef G_OS_WIN32
   g_value_init (&params[0], G_TYPE_POINTER);
@@ -258,7 +261,7 @@ g_source_set_closure (GSource  *source,
       source->source_funcs != &g_timeout_funcs &&
       source->source_funcs != &g_idle_funcs)
     {
-      g_critical (G_STRLOC ": closure can not be set on closure without GSourceFuncs::closure_callback\n");
+      g_critical (G_STRLOC ": closure cannot be set on GSource without GSourceFuncs::closure_callback");
       return;
     }
 

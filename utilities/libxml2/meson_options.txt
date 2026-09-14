@@ -1,0 +1,170 @@
+option('c14n',
+  type: 'feature',
+  description: 'Canonical XML 1.0 support'
+)
+
+option('catalog',
+  type: 'feature',
+  description: 'XML Catalogs support'
+)
+
+option('debugging',
+  type: 'feature',
+  description: 'Debugging module and shell'
+)
+
+option('docs',
+  type: 'feature',
+  description: 'Build documentation'
+)
+
+option('history',
+  type: 'feature',
+  description: 'History support for shell'
+)
+
+option('html',
+  type: 'feature',
+  description: 'HTML parser'
+)
+
+option('http',
+  type: 'feature',
+  description: 'ABI compatibility for removed HTTP support'
+)
+
+# TODO meson custom dependency
+option('iconv',
+  type: 'feature',
+  description: 'iconv support'
+)
+
+option('icu',
+  type: 'feature',
+  value: 'disabled',
+  description: 'ICU support'
+)
+
+option('iso8859x',
+  type: 'feature',
+  description: 'ISO-8859-X support if no iconv'
+)
+
+option('legacy',
+  type: 'feature',
+  value: 'disabled',
+  description: 'Maximum ABI compatibility'
+)
+
+option('modules',
+  type: 'feature',
+  description: 'Dynamic modules support'
+)
+
+option('output',
+  type: 'feature',
+  description: 'Serialization support'
+)
+
+option('pattern',
+  type: 'feature',
+  description: 'xmlPattern selection interface'
+)
+
+option('push',
+  type: 'feature',
+  description: 'push parser interfaces'
+)
+
+option('python',
+  type: 'feature',
+  description: 'Python bindings'
+)
+
+option('reader',
+  type: 'feature',
+  description: 'xmlReader parsing interface'
+)
+
+option('readline',
+  type: 'feature',
+  description: 'use readline for shell history'
+)
+
+option('regexps',
+  type: 'feature',
+  description: 'Regular expressions support'
+)
+
+option('relaxng',
+  type: 'feature',
+  description: 'RELAX NG support'
+)
+
+option('sax1',
+  type: 'feature',
+  description: 'Older SAX1 interface'
+)
+
+option('schemas',
+  type: 'feature',
+  description: 'XML Schemas 1.0 support'
+)
+
+option('schematron',
+  type: 'feature',
+  description: 'Schematron support'
+)
+
+option('threads',
+  type: 'feature',
+  description: 'Multithreading support'
+)
+
+option('thread-alloc',
+  type: 'feature',
+  value: 'disabled',
+  description: 'per-thread malloc hooks'
+)
+
+option('tls',
+  type: 'feature',
+  value: 'disabled',
+  description: 'thread-local storage'
+)
+
+option('valid',
+  type: 'feature',
+  description: 'DTD validation support'
+)
+
+option('writer',
+  type: 'feature',
+  description: 'xmlWriter serialization interface'
+)
+
+option('xinclude',
+  type: 'feature',
+  description: 'XInclude 1.0 support'
+)
+
+option('xpath',
+  type: 'feature',
+  description: 'XPath 1.0 support'
+)
+
+option('xptr',
+  type: 'feature',
+  description: 'XPointer support'
+)
+
+option('zlib',
+  type: 'feature',
+  description: 'ZLIB support'
+)
+
+option('minimum',
+  type: 'boolean',
+  value: false,
+  description: 'build a minimally sized library'
+)

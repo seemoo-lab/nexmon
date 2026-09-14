@@ -1,10 +1,12 @@
 /*
  * Copyright © 2011 Red Hat, Inc
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -23,746 +25,7 @@
  * files.
  */
 
-/* Basic types {{{1 */
-
-/**
- * SECTION:types
- * @title: Basic Types
- * @short_description: standard GLib types, defined for ease-of-use
- *     and portability
- *
- * GLib defines a number of commonly used types, which can be divided
- * into 4 groups:
- * - New types which are not part of standard C (but are defined in
- *   various C standard library header files) - #gboolean, #gsize,
- *   #gssize, #goffset, #gintptr, #guintptr.
- * - Integer types which are guaranteed to be the same size across
- *   all platforms - #gint8, #guint8, #gint16, #guint16, #gint32,
- *   #guint32, #gint64, #guint64.
- * - Types which are easier to use than their standard C counterparts -
- *   #gpointer, #gconstpointer, #guchar, #guint, #gushort, #gulong.
- * - Types which correspond exactly to standard C types, but are
- *   included for completeness - #gchar, #gint, #gshort, #glong,
- *   #gfloat, #gdouble.
- *
- * GLib also defines macros for the limits of some of the standard
- * integer and floating point types, as well as macros for suitable
- * printf() formats for these types.
- */
-
-/**
- * gboolean:
- *
- * A standard boolean type.
- * Variables of this type should only contain the value
- * %TRUE or %FALSE.
- */
-
-/**
- * gpointer:
- *
- * An untyped pointer.
- * #gpointer looks better and is easier to use than void*.
- */
-
-/**
- * gconstpointer:
- *
- * An untyped pointer to constant data.
- * The data pointed to should not be changed.
- *
- * This is typically used in function prototypes to indicate
- * that the data pointed to will not be altered by the function.
- */
-
-/**
- * gchar:
- *
- * Corresponds to the standard C char type.
- */
-
-/**
- * guchar:
- *
- * Corresponds to the standard C unsigned char type.
- */
-
-/**
- * gint:
- *
- * Corresponds to the standard C int type.
- * Values of this type can range from #G_MININT to #G_MAXINT.
- */
-
-/**
- * G_MININT:
- *
- * The minimum value which can be held in a #gint.
- */
-
-/**
- * G_MAXINT:
- *
- * The maximum value which can be held in a #gint.
- */
-
-/**
- * guint:
- *
- * Corresponds to the standard C unsigned int type.
- * Values of this type can range from 0 to #G_MAXUINT.
- */
-
-/**
- * G_MAXUINT:
- *
- * The maximum value which can be held in a #guint.
- */
-
-/**
- * gshort:
- *
- * Corresponds to the standard C short type.
- * Values of this type can range from #G_MINSHORT to #G_MAXSHORT.
- */
-
-/**
- * G_MINSHORT:
- *
- * The minimum value which can be held in a #gshort.
- */
-
-/**
- * G_MAXSHORT:
- *
- * The maximum value which can be held in a #gshort.
- */
-
-/**
- * gushort:
- *
- * Corresponds to the standard C unsigned short type.
- * Values of this type can range from 0 to #G_MAXUSHORT.
- */
-
-/**
- * G_MAXUSHORT:
- *
- * The maximum value which can be held in a #gushort.
- */
-
-/**
- * glong:
- *
- * Corresponds to the standard C long type.
- * Values of this type can range from #G_MINLONG to #G_MAXLONG.
- */
-
-/**
- * G_MINLONG:
- *
- * The minimum value which can be held in a #glong.
- */
-
-/**
- * G_MAXLONG:
- *
- * The maximum value which can be held in a #glong.
- */
-
-/**
- * gulong:
- *
- * Corresponds to the standard C unsigned long type.
- * Values of this type can range from 0 to #G_MAXULONG.
- */
-
-/**
- * G_MAXULONG:
- *
- * The maximum value which can be held in a #gulong.
- */
-
-/**
- * gint8:
- *
- * A signed integer guaranteed to be 8 bits on all platforms.
- * Values of this type can range from #G_MININT8 (= -128) to
- * #G_MAXINT8 (= 127).
- */
-
-/**
- * G_MININT8:
- *
- * The minimum value which can be held in a #gint8.
- *
- * Since: 2.4
- */
-
-/**
- * G_MAXINT8:
- *
- * The maximum value which can be held in a #gint8.
- *
- * Since: 2.4
- */
-
-/**
- * guint8:
- *
- * An unsigned integer guaranteed to be 8 bits on all platforms.
- * Values of this type can range from 0 to #G_MAXUINT8 (= 255).
- */
-
-/**
- * G_MAXUINT8:
- *
- * The maximum value which can be held in a #guint8.
- *
- * Since: 2.4
- */
-
-/**
- * gint16:
- *
- * A signed integer guaranteed to be 16 bits on all platforms.
- * Values of this type can range from #G_MININT16 (= -32,768) to
- * #G_MAXINT16 (= 32,767).
- *
- * To print or scan values of this type, use
- * %G_GINT16_MODIFIER and/or %G_GINT16_FORMAT.
- */
-
-/**
- * G_MININT16:
- *
- * The minimum value which can be held in a #gint16.
- *
- * Since: 2.4
- */
-
-/**
- * G_MAXINT16:
- *
- * The maximum value which can be held in a #gint16.
- *
- * Since: 2.4
- */
-
-/**
- * G_GINT16_MODIFIER:
- *
- * The platform dependent length modifier for conversion specifiers
- * for scanning and printing values of type #gint16 or #guint16. It
- * is a string literal, but doesn't include the percent-sign, such
- * that you can add precision and length modifiers between percent-sign
- * and conversion specifier and append a conversion specifier.
- *
- * The following example prints "0x7b";
- * |[<!-- language="C" -->
- * gint16 value = 123;
- * g_print ("%#" G_GINT16_MODIFIER "x", value);
- * ]|
- *
- * Since: 2.4
- */
-
-/**
- * G_GINT16_FORMAT:
- *
- * This is the platform dependent conversion specifier for scanning and
- * printing values of type #gint16. It is a string literal, but doesn't
- * include the percent-sign, such that you can add precision and length
- * modifiers between percent-sign and conversion specifier.
- *
- * |[<!-- language="C" -->
- * gint16 in;
- * gint32 out;
- * sscanf ("42", "%" G_GINT16_FORMAT, &in)
- * out = in * 1000;
- * g_print ("%" G_GINT32_FORMAT, out);
- * ]|
- */
-
-/**
- * guint16:
- *
- * An unsigned integer guaranteed to be 16 bits on all platforms.
- * Values of this type can range from 0 to #G_MAXUINT16 (= 65,535).
- *
- * To print or scan values of this type, use
- * %G_GINT16_MODIFIER and/or %G_GUINT16_FORMAT.
- */
-
-/**
- * G_MAXUINT16:
- *
- * The maximum value which can be held in a #guint16.
- *
- * Since: 2.4
- */
-
-/**
- * G_GUINT16_FORMAT:
- *
- * This is the platform dependent conversion specifier for scanning
- * and printing values of type #guint16. See also #G_GINT16_FORMAT
- */
-
-/**
- * gint32:
- *
- * A signed integer guaranteed to be 32 bits on all platforms.
- * Values of this type can range from #G_MININT32 (= -2,147,483,648)
- * to #G_MAXINT32 (= 2,147,483,647).
- *
- * To print or scan values of this type, use
- * %G_GINT32_MODIFIER and/or %G_GINT32_FORMAT.
- */
-
-/**
- * G_MININT32:
- *
- * The minimum value which can be held in a #gint32.
- *
- * Since: 2.4
- */
-
-/**
- * G_MAXINT32:
- *
- * The maximum value which can be held in a #gint32.
- *
- * Since: 2.4
- */
-
-/**
- * G_GINT32_MODIFIER:
- *
- * The platform dependent length modifier for conversion specifiers
- * for scanning and printing values of type #gint32 or #guint32. It
- * is a string literal. See also #G_GINT16_MODIFIER.
- *
- * Since: 2.4
- */
-
-/**
- * G_GINT32_FORMAT:
- *
- * This is the platform dependent conversion specifier for scanning
- * and printing values of type #gint32. See also #G_GINT16_FORMAT.
- */
-
-/**
- * guint32:
- *
- * An unsigned integer guaranteed to be 32 bits on all platforms.
- * Values of this type can range from 0 to #G_MAXUINT32 (= 4,294,967,295).
- *
- * To print or scan values of this type, use
- * %G_GINT32_MODIFIER and/or %G_GUINT32_FORMAT.
- */
-
-/**
- * G_MAXUINT32:
- *
- * The maximum value which can be held in a #guint32.
- *
- * Since: 2.4
- */
-
-/**
- * G_GUINT32_FORMAT:
- *
- * This is the platform dependent conversion specifier for scanning
- * and printing values of type #guint32. See also #G_GINT16_FORMAT.
- */
-
-/**
- * gint64:
- *
- * A signed integer guaranteed to be 64 bits on all platforms.
- * Values of this type can range from #G_MININT64
- * (= -9,223,372,036,854,775,808) to #G_MAXINT64
- * (= 9,223,372,036,854,775,807).
- *
- * To print or scan values of this type, use
- * %G_GINT64_MODIFIER and/or %G_GINT64_FORMAT.
- */
-
-/**
- * G_MININT64:
- *
- * The minimum value which can be held in a #gint64.
- */
-
-/**
- * G_MAXINT64:
- *
- * The maximum value which can be held in a #gint64.
- */
-
-/**
- * G_GINT64_MODIFIER:
- *
- * The platform dependent length modifier for conversion specifiers
- * for scanning and printing values of type #gint64 or #guint64.
- * It is a string literal.
- *
- * Some platforms do not support printing 64-bit integers, even
- * though the types are supported. On such platforms %G_GINT64_MODIFIER
- * is not defined.
- *
- * Since: 2.4
- */
-
-/**
- * G_GINT64_FORMAT:
- *
- * This is the platform dependent conversion specifier for scanning
- * and printing values of type #gint64. See also #G_GINT16_FORMAT.
- *
- * Some platforms do not support scanning and printing 64-bit integers,
- * even though the types are supported. On such platforms %G_GINT64_FORMAT
- * is not defined. Note that scanf() may not support 64-bit integers, even
- * if %G_GINT64_FORMAT is defined. Due to its weak error handling, scanf()
- * is not recommended for parsing anyway; consider using g_ascii_strtoull()
- * instead.
- */
-
-/**
- * guint64:
- *
- * An unsigned integer guaranteed to be 64-bits on all platforms.
- * Values of this type can range from 0 to #G_MAXUINT64
- * (= 18,446,744,073,709,551,615).
- *
- * To print or scan values of this type, use
- * %G_GINT64_MODIFIER and/or %G_GUINT64_FORMAT.
- */
-
-/**
- * G_MAXUINT64:
- *
- * The maximum value which can be held in a #guint64.
- */
-
-/**
- * G_GUINT64_FORMAT:
- *
- * This is the platform dependent conversion specifier for scanning
- * and printing values of type #guint64. See also #G_GINT16_FORMAT.
- *
- * Some platforms do not support scanning and printing 64-bit integers,
- * even though the types are supported. On such platforms %G_GUINT64_FORMAT
- * is not defined.  Note that scanf() may not support 64-bit integers, even
- * if %G_GINT64_FORMAT is defined. Due to its weak error handling, scanf()
- * is not recommended for parsing anyway; consider using g_ascii_strtoull()
- * instead.
- */
-
-/**
- * G_GINT64_CONSTANT:
- * @val: a literal integer value, e.g. 0x1d636b02300a7aa7
- *
- * This macro is used to insert 64-bit integer literals
- * into the source code.
- */
-
-/**
- * G_GUINT64_CONSTANT:
- * @val: a literal integer value, e.g. 0x1d636b02300a7aa7U
- *
- * This macro is used to insert 64-bit unsigned integer
- * literals into the source code.
- *
- * Since: 2.10
- */
-
-/**
- * gfloat:
- *
- * Corresponds to the standard C float type.
- * Values of this type can range from -#G_MAXFLOAT to #G_MAXFLOAT.
- */
-
-/**
- * G_MINFLOAT:
- *
- * The minimum positive value which can be held in a #gfloat.
- *
- * If you are interested in the smallest value which can be held
- * in a #gfloat, use -%G_MAXFLOAT.
- */
-
-/**
- * G_MAXFLOAT:
- *
- * The maximum value which can be held in a #gfloat.
- */
-
-/**
- * gdouble:
- *
- * Corresponds to the standard C double type.
- * Values of this type can range from -#G_MAXDOUBLE to #G_MAXDOUBLE.
- */
-
-/**
- * G_MINDOUBLE:
- *
- * The minimum positive value which can be held in a #gdouble.
- *
- * If you are interested in the smallest value which can be held
- * in a #gdouble, use -%G_MAXDOUBLE.
- */
-
-/**
- * G_MAXDOUBLE:
- *
- * The maximum value which can be held in a #gdouble.
- */
-
-/**
- * gsize:
- *
- * An unsigned integer type of the result of the sizeof operator,
- * corresponding to the size_t type defined in C99.
- * This type is wide enough to hold the numeric value of a pointer,
- * so it is usually 32 bit wide on a 32-bit platform and 64 bit wide
- * on a 64-bit platform. Values of this type can range from 0 to
- * #G_MAXSIZE.
- *
- * To print or scan values of this type, use
- * %G_GSIZE_MODIFIER and/or %G_GSIZE_FORMAT.
- */
-
-/**
- * G_MAXSIZE:
- *
- * The maximum value which can be held in a #gsize.
- *
- * Since: 2.4
- */
-
-/**
- * G_GSIZE_MODIFIER:
- *
- * The platform dependent length modifier for conversion specifiers
- * for scanning and printing values of type #gsize. It
- * is a string literal.
- *
- * Since: 2.6
- */
-
-/**
- * G_GSIZE_FORMAT:
- *
- * This is the platform dependent conversion specifier for scanning
- * and printing values of type #gsize. See also #G_GINT16_FORMAT.
- *
- * Since: 2.6
- */
-
-/**
- * gssize:
- *
- * A signed variant of #gsize, corresponding to the
- * ssize_t defined on most platforms.
- * Values of this type can range from #G_MINSSIZE
- * to #G_MAXSSIZE.
- *
- * To print or scan values of this type, use
- * %G_GSSIZE_MODIFIER and/or %G_GSSIZE_FORMAT.
- */
-
-/**
- * G_MINSSIZE:
- *
- * The minimum value which can be held in a #gssize.
- *
- * Since: 2.14
- */
-
-/**
- * G_MAXSSIZE:
- *
- * The maximum value which can be held in a #gssize.
- *
- * Since: 2.14
- */
-
-/**
- * G_GSSIZE_FORMAT:
- *
- * This is the platform dependent conversion specifier for scanning
- * and printing values of type #gssize. See also #G_GINT16_FORMAT.
- *
- * Since: 2.6
- */
-
-/**
- * G_GSSIZE_MODIFIER:
- *
- * The platform dependent length modifier for conversion specifiers
- * for scanning and printing values of type #gssize. It
- * is a string literal.
- *
- * Since: 2.6
- */
-
-/**
- * goffset:
- *
- * A signed integer type that is used for file offsets,
- * corresponding to the C99 type off64_t.
- * Values of this type can range from #G_MINOFFSET to
- * #G_MAXOFFSET.
- *
- * To print or scan values of this type, use
- * %G_GOFFSET_MODIFIER and/or %G_GOFFSET_FORMAT.
- *
- * Since: 2.14
- */
-
-/**
- * G_MINOFFSET:
- *
- * The minimum value which can be held in a #goffset.
- */
-
-/**
- * G_MAXOFFSET:
- *
- * The maximum value which can be held in a #goffset.
- */
-
-/**
- * G_GOFFSET_MODIFIER:
- *
- * The platform dependent length modifier for conversion specifiers
- * for scanning and printing values of type #goffset. It is a string
- * literal. See also #G_GINT64_MODIFIER.
- *
- * Since: 2.20
- */
-
-/**
- * G_GOFFSET_FORMAT:
- *
- * This is the platform dependent conversion specifier for scanning
- * and printing values of type #goffset. See also #G_GINT64_FORMAT.
- *
- * Since: 2.20
- */
-
-/**
- * G_GOFFSET_CONSTANT:
- * @val: a literal integer value, e.g. 0x1d636b02300a7aa7
- *
- * This macro is used to insert #goffset 64-bit integer literals
- * into the source code.
- *
- * See also #G_GINT64_CONSTANT.
- *
- * Since: 2.20
- */
-
-/**
- * gintptr:
- *
- * Corresponds to the C99 type intptr_t,
- * a signed integer type that can hold any pointer.
- *
- * To print or scan values of this type, use
- * %G_GINTPTR_MODIFIER and/or %G_GINTPTR_FORMAT.
- *
- * Since: 2.18
- */
-
-/**
- * G_GINTPTR_MODIFIER:
- *
- * The platform dependent length modifier for conversion specifiers
- * for scanning and printing values of type #gintptr or #guintptr.
- * It is a string literal.
- *
- * Since: 2.22
- */
-
-/**
- * G_GINTPTR_FORMAT:
- *
- * This is the platform dependent conversion specifier for scanning
- * and printing values of type #gintptr.
- *
- * Since: 2.22
- */
-
-/**
- * guintptr:
- *
- * Corresponds to the C99 type uintptr_t,
- * an unsigned integer type that can hold any pointer.
- *
- * To print or scan values of this type, use
- * %G_GINTPTR_MODIFIER and/or %G_GUINTPTR_FORMAT.
- *
- * Since: 2.18
- */
-
-/**
- * G_GUINTPTR_FORMAT:
- *
- * This is the platform dependent conversion specifier
- * for scanning and printing values of type #guintptr.
- *
- * Since: 2.22
- */
-
 /* Type conversion {{{1 */
-
-/**
- * SECTION:type_conversion
- * @title: Type Conversion Macros
- * @short_description: portably storing integers in pointer variables
- *
- * Many times GLib, GTK+, and other libraries allow you to pass "user
- * data" to a callback, in the form of a void pointer. From time to time
- * you want to pass an integer instead of a pointer. You could allocate
- * an integer, with something like:
- * |[<!-- language="C" -->
- *   int *ip = g_new (int, 1);
- *   *ip = 42;
- * ]|
- * But this is inconvenient, and it's annoying to have to free the
- * memory at some later time.
- *
- * Pointers are always at least 32 bits in size (on all platforms GLib
- * intends to support). Thus you can store at least 32-bit integer values
- * in a pointer value. Naively, you might try this, but it's incorrect:
- * |[<!-- language="C" -->
- *   gpointer p;
- *   int i;
- *   p = (void*) 42;
- *   i = (int) p;
- * ]|
- * Again, that example was not correct, don't copy it.
- * The problem is that on some systems you need to do this:
- * |[<!-- language="C" -->
- *   gpointer p;
- *   int i;
- *   p = (void*) (long) 42;
- *   i = (int) (long) p;
- * ]|
- * The GLib macros GPOINTER_TO_INT(), GINT_TO_POINTER(), etc. take care
- * to do the right thing on the every platform.
- *
- * Warning: You may not store pointers in integers. This is not
- * portable in any way, shape or form. These macros only allow storing
- * integers in pointers, and only preserve 32 bits of the integer; values
- * outside the range of a 32-bit integer will be mangled.
- */
 
 /**
  * GINT_TO_POINTER:
@@ -809,6 +72,12 @@
  * @s: #gsize to stuff into the pointer
  *
  * Stuffs a #gsize into a pointer type.
+ *
+ * Remember, you may not store pointers in integers. This is not portable
+ * in any way, shape or form. These macros only allow storing integers in
+ * pointers, and preserve all bits of a pointer (e.g. on CHERI systems).
+ * The only types that can store pointers as well as integers are #guintptr
+ * and #gintptr.
  */
 
 /**
@@ -817,72 +86,45 @@
  *
  * Extracts a #gsize from a pointer. The #gsize must have
  * been stored in the pointer with GSIZE_TO_POINTER().
+ *
+ * Remember, you may not store pointers in integers. This is not portable
+ * in any way, shape or form. These macros only allow storing integers in
+ * pointers, and preserve all bits of a pointer (e.g. on CHERI systems).
+ * The only types that can store pointers as well as integers are #guintptr
+ * and #gintptr.
+ *
+ * See also GPOINTER_TO_TYPE() for #GType.
  */
  
 /* Byte order {{{1 */
 
 /**
- * SECTION:byte_order
- * @title: Byte Order Macros
- * @short_description: a portable way to convert between different byte orders
- *
- * These macros provide a portable way to determine the host byte order
- * and to convert values between different byte orders.
- *
- * The byte order is the order in which bytes are stored to create larger
- * data types such as the #gint and #glong values.
- * The host byte order is the byte order used on the current machine.
- *
- * Some processors store the most significant bytes (i.e. the bytes that
- * hold the largest part of the value) first. These are known as big-endian
- * processors. Other processors (notably the x86 family) store the most
- * significant byte last. These are known as little-endian processors.
- *
- * Finally, to complicate matters, some other processors store the bytes in
- * a rather curious order known as PDP-endian. For a 4-byte word, the 3rd
- * most significant byte is stored first, then the 4th, then the 1st and
- * finally the 2nd.
- *
- * Obviously there is a problem when these different processors communicate
- * with each other, for example over networks or by using binary file formats.
- * This is where these macros come in. They are typically used to convert
- * values into a byte order which has been agreed on for use when
- * communicating between different processors. The Internet uses what is
- * known as 'network byte order' as the standard byte order (which is in
- * fact the big-endian byte order).
- *
- * Note that the byte order conversion macros may evaluate their arguments
- * multiple times, thus you should not use them with arguments which have
- * side-effects.
- */
-
-/**
  * G_BYTE_ORDER:
  *
  * The host byte order.
- * This can be either #G_LITTLE_ENDIAN or #G_BIG_ENDIAN (support for
- * #G_PDP_ENDIAN may be added in future.)
+ * This can be either %G_LITTLE_ENDIAN or %G_BIG_ENDIAN (support for
+ * %G_PDP_ENDIAN may be added in future.)
  */
 
 /**
  * G_LITTLE_ENDIAN:
  *
  * Specifies one of the possible types of byte order.
- * See #G_BYTE_ORDER.
+ * See %G_BYTE_ORDER.
  */
 
 /**
  * G_BIG_ENDIAN:
  *
  * Specifies one of the possible types of byte order.
- * See #G_BYTE_ORDER.
+ * See %G_BYTE_ORDER.
  */
 
 /**
  * G_PDP_ENDIAN:
  *
  * Specifies one of the possible types of byte order
- * (currently unused). See #G_BYTE_ORDER.
+ * (currently unused). See %G_BYTE_ORDER.
  */
 
 /**
@@ -1424,27 +666,6 @@
  */
  
 /* Bounds-checked integer arithmetic {{{1 */
-/**
- * SECTION:checkedmath
- * @title: Bounds-checking integer arithmetic
- * @short_description: a set of helpers for performing checked integer arithmetic
- *
- * GLib offers a set of macros for doing additions and multiplications
- * of unsigned integers, with checks for overflows.
- *
- * The helpers all have three arguments.  A pointer to the destination
- * is always the first argument and the operands to the operation are
- * the other two.
- *
- * Following standard GLib convention, the helpers return %TRUE in case
- * of success (ie: no overflow).
- *
- * The helpers may be macros, normal functions or inlines.  They may be
- * implemented with inline assembly or compiler intrinsics where
- * available.
- *
- * Since: 2.48
- */
 
 /**
  * g_uint_checked_add
@@ -1550,23 +771,6 @@
 /* Numerical Definitions {{{1 */
 
 /**
- * SECTION:numerical
- * @title: Numerical Definitions
- * @short_description: mathematical constants, and floating point decomposition
- *
- * GLib offers mathematical constants such as #G_PI for the value of pi;
- * many platforms have these in the C library, but some don't, the GLib
- * versions always exist.
- *
- * The #GFloatIEEE754 and #GDoubleIEEE754 unions are used to access the
- * sign, mantissa and exponent of IEEE floats and doubles. These unions are
- * defined as appropriate for a given platform. IEEE floats and doubles are
- * supported (used for storage) by at least Intel, PPC and Sparc. See
- * [IEEE 754-2008](http://en.wikipedia.org/wiki/IEEE_float)
- * for more information about IEEE number formats.
- */
-
-/**
  * G_IEEE754_FLOAT_BIAS:
  *
  * The bias by which exponents in single-precision floats are offset.
@@ -1645,52 +849,60 @@
  *
  * Multiplying the base 2 exponent by this number yields the base 10 exponent.
  */
- 
-/* Macros {{{1 */
 
-/**
- * SECTION:macros
- * @title: Standard Macros
- * @short_description: commonly-used macros
- *
- * These macros provide a few commonly-used features.
- */
+/* Macros {{{1 */
 
 /**
  * G_OS_WIN32:
  *
  * This macro is defined only on Windows. So you can bracket
- * Windows-specific code in "\#ifdef G_OS_WIN32".
+ * Windows-specific code in `#ifdef G_OS_WIN32`.
  */
 
 /**
  * G_OS_UNIX:
  *
  * This macro is defined only on UNIX. So you can bracket
- * UNIX-specific code in "\#ifdef G_OS_UNIX".
+ * UNIX-specific code in `#ifdef G_OS_UNIX`.
+ *
+ * To detect whether to compile features that require a specific kernel
+ * or operating system, check for the appropriate OS-specific predefined
+ * macros instead, for example:
+ *
+ * - Linux kernel (any libc, including glibc, musl or Android): `#ifdef __linux__`
+ * - Linux kernel and GNU user-space: `#if defined(__linux__) && defined(__GLIBC__)`
+ * - FreeBSD kernel (any libc, including glibc): `#ifdef __FreeBSD_kernel__`
+ * - FreeBSD kernel and user-space: `#ifdef __FreeBSD__`
+ * - Apple operating systems (macOS, iOS, tvOS), regardless of whether
+ *   Cocoa/Carbon toolkits are available: `#ifdef __APPLE__`
+ *
+ * See <https://sourceforge.net/p/predef/wiki/OperatingSystems/> for more.
  */
 
 /**
  * G_DIR_SEPARATOR:
  *
  * The directory separator character.
- * This is '/' on UNIX machines and '\' under Windows.
+ *
+ * This is `'/'` on UNIX machines and `'\'` under Windows.
  */
 
 /**
  * G_DIR_SEPARATOR_S:
  *
  * The directory separator as a string.
- * This is "/" on UNIX machines and "\" under Windows.
+ *
+ * This is `"/"` on UNIX machines and `"\"` under Windows.
  */
 
 /**
  * G_IS_DIR_SEPARATOR:
  * @c: a character
  *
- * Checks whether a character is a directory
- * separator. It returns %TRUE for '/' on UNIX
- * machines and for '\' or '/' under Windows.
+ * Checks whether a character is a directory separator.
+ *
+ * It returns true for `'/'` on UNIX machines and for `'\'` or `'/'` under
+ * Windows.
  *
  * Since: 2.6
  */
@@ -1755,6 +967,7 @@
  * The absolute value is simply the number with any negative sign taken away.
  *
  * For example,
+ *
  * - ABS(-10) is 10.
  * - ABS(10) is also 10.
  *
@@ -1771,11 +984,33 @@
  * greater than @high the result is undefined.
  *
  * For example,
+ *
  * - CLAMP(5, 10, 15) is 10.
  * - CLAMP(15, 5, 10) is 10.
  * - CLAMP(20, 15, 25) is 20.
  *
  * Returns: the value of @x clamped to the range between @low and @high
+ */
+
+/**
+ * G_APPROX_VALUE:
+ * @a: a numeric value
+ * @b: a numeric value
+ * @epsilon: a numeric value that expresses the tolerance between @a and @b
+ *
+ * Evaluates to a truth value if the absolute difference between @a and @b is
+ * smaller than @epsilon, and to a false value otherwise.
+ *
+ * For example,
+ *
+ * - `G_APPROX_VALUE (5, 6, 2)` evaluates to true
+ * - `G_APPROX_VALUE (3.14, 3.15, 0.001)` evaluates to false
+ * - `G_APPROX_VALUE (n, 0.f, FLT_EPSILON)` evaluates to true if `n` is within
+ *   the single precision floating point epsilon from zero
+ *
+ * Returns: %TRUE if the two values are within the desired range
+ *
+ * Since: 2.58
  */
 
 /**
@@ -1807,23 +1042,12 @@
  *
  * Returns the offset, in bytes, of a member of a struct.
  *
- * Returns: the offset of @member from the start of @struct_type
- */
-
-/**
- * G_CONST_RETURN:
+ * Consider using standard C `offsetof()`, available since at least C89
+ * and C++98, in new code (but note that `offsetof()` returns a `size_t`
+ * rather than a `long`).
  *
- * If %G_DISABLE_CONST_RETURNS is defined, this macro expands
- * to nothing. By default, the macro expands to const. The macro
- * can be used in place of const for functions that return a value
- * that should not be modified. The purpose of this macro is to allow
- * us to turn on const for returned constant strings by default, while
- * allowing programmers who find that annoying to turn it off. This macro
- * should only be used for return values and for "out" parameters, it
- * doesn't make sense for "in" parameters.
- *
- * Deprecated: 2.30: API providers should replace all existing uses with
- * const and API consumers should adjust their code accordingly
+ * Returns: the offset of @member from the start of @struct_type,
+ *  as a value of type #glong.
  */
 
 /**
@@ -1835,31 +1059,8 @@
  * macro will not work on an array allocated on the heap, only static
  * arrays or arrays on the stack.
  */
- 
+
 /* Miscellaneous Macros {{{1 */
-
-/**
- * SECTION:macros_misc
- * @title: Miscellaneous Macros
- * @short_description: specialized macros which are not used often
- *
- * These macros provide more specialized features which are not
- * needed so often by application programmers.
- */
-
-/**
- * G_INLINE_FUNC:
- *
- * This macro used to be used to conditionally define inline functions
- * in a compatible way before this feature was supported in all
- * compilers.  These days, GLib requires inlining support from the
- * compiler, so your GLib-using programs can safely assume that the
- * "inline" keywork works properly.
- *
- * Never use this macro anymore.  Just say "static inline".
- *
- * Deprecated: 2.48: Use "static inline" instead
- */
 
 /**
  * G_STMT_START:
@@ -1878,7 +1079,7 @@
 /**
  * G_BEGIN_DECLS:
  *
- * Used (along with #G_END_DECLS) to bracket header files. If the
+ * Used (along with %G_END_DECLS) to bracket header files. If the
  * compiler in use is a C++ compiler, adds extern "C"
  * around the header.
  */
@@ -1886,7 +1087,7 @@
 /**
  * G_END_DECLS:
  *
- * Used (along with #G_BEGIN_DECLS) to bracket header files. If the
+ * Used (along with %G_BEGIN_DECLS) to bracket header files. If the
  * compiler in use is a C++ compiler, adds extern "C"
  * around the header.
  */
@@ -1901,6 +1102,12 @@
  * In order to use this function, you must include string.h yourself,
  * because this macro may use memmove() and GLib does not include
  * string.h for you.
+ *
+ * Each invocation of `G_VA_COPY (ap1, ap2)` must be matched with a
+ * corresponding `va_end (ap1)` call in the same function.
+ *
+ * This is equivalent to standard C `va_copy()`, available since C99
+ * and C++11, which should be preferred in new code.
  */
 
 /**
@@ -1997,8 +1204,10 @@
 
 /**
  * G_GNUC_CHECK_VERSION:
+ * @major: major version to check against
+ * @minor: minor version to check against
  *
- * Expands to a a check for a compiler with __GNUC__ defined and a version
+ * Expands to a check for a compiler with __GNUC__ defined and a version
  * greater than or equal to the major and minor numbers provided. For example,
  * the following would only match on compilers such as GCC 4.8 or newer.
  *
@@ -2008,124 +1217,6 @@
  * ]|
  *
  * Since: 2.42
- */
-
-/**
- * G_GNUC_CONST:
- *
- * Expands to the GNU C const function attribute if the compiler is gcc.
- * Declaring a function as const enables better optimization of calls to
- * the function. A const function doesn't examine any values except its
- * parameters, and has no effects except its return value.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * A function that has pointer arguments and examines the data pointed to
- * must not be declared const. Likewise, a function that calls a non-const
- * function usually must not be const. It doesn't make sense for a const
- * function to return void.
- */
-
-/**
- * G_GNUC_PURE:
- *
- * Expands to the GNU C pure function attribute if the compiler is gcc.
- * Declaring a function as pure enables better optimization of calls to
- * the function. A pure function has no effects except its return value
- * and the return value depends only on the parameters and/or global
- * variables.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- */
-
-/**
- * G_GNUC_MALLOC:
- *
- * Expands to the GNU C malloc function attribute if the compiler is gcc.
- * Declaring a function as malloc enables better optimization of the function.
- * A function can have the malloc attribute if it returns a pointer which is
- * guaranteed to not alias with any other pointer when the function returns
- * (in practice, this means newly allocated memory).
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * Since: 2.6
- */
-
-/**
- * G_GNUC_ALLOC_SIZE:
- * @x: the index of the argument specifying the allocation size
- *
- * Expands to the GNU C alloc_size function attribute if the compiler
- * is a new enough gcc. This attribute tells the compiler that the
- * function returns a pointer to memory of a size that is specified
- * by the @xth function parameter.
- *
- * Place the attribute after the function declaration, just before the
- * semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * Since: 2.18
- */
-
-/**
- * G_GNUC_ALLOC_SIZE2:
- * @x: the index of the argument specifying one factor of the allocation size
- * @y: the index of the argument specifying the second factor of the allocation size
- *
- * Expands to the GNU C alloc_size function attribute if the compiler is a
- * new enough gcc. This attribute tells the compiler that the function returns
- * a pointer to memory of a size that is specified by the product of two
- * function parameters.
- *
- * Place the attribute after the function declaration, just before the
- * semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * Since: 2.18
- */
-
-/**
- * G_GNUC_DEPRECATED:
- *
- * Expands to the GNU C deprecated attribute if the compiler is gcc.
- * It can be used to mark typedefs, variables and functions as deprecated.
- * When called with the `-Wdeprecated-declarations` option,
- * gcc will generate warnings when deprecated interfaces are used.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * Since: 2.2
- */
-
-/**
- * G_GNUC_DEPRECATED_FOR:
- * @f: the intended replacement for the deprecated symbol,
- *     such as the name of a function
- *
- * Like %G_GNUC_DEPRECATED, but names the intended replacement for the
- * deprecated symbol if the version of gcc in use is new enough to support
- * custom deprecation messages.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * Note that if @f is a macro, it will be expanded in the warning message.
- * You can enclose it in quotes to prevent this. (The quotes will show up
- * in the warning, but it's better than showing the macro expansion.)
- *
- * Since: 2.26
  */
 
 /**
@@ -2142,7 +1233,54 @@
  * has any effect.)
  *
  * This macro can be used either inside or outside of a function body,
- * but must appear on a line by itself.
+ * but must appear on a line by itself. Both this macro and the corresponding
+ * %G_GNUC_END_IGNORE_DEPRECATIONS are considered statements, so they
+ * should not be used around branching or loop conditions; for instance,
+ * this use is invalid:
+ *
+ * |[<!-- language="C" -->
+ *   G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+ *   if (check == some_deprecated_function ())
+ *   G_GNUC_END_IGNORE_DEPRECATIONS
+ *     {
+ *       do_something ();
+ *     }
+ * ]|
+ *
+ * and you should move the deprecated section outside the condition
+ *
+ * |[<!-- language="C" -->
+ *
+ *   // Solution A
+ *   some_data_t *res;
+ *
+ *   G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+ *   res = some_deprecated_function ();
+ *   G_GNUC_END_IGNORE_DEPRECATIONS
+ *
+ *   if (check == res)
+ *     {
+ *       do_something ();
+ *     }
+ *
+ *   // Solution B
+ *   G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+ *   if (check == some_deprecated_function ())
+ *     {
+ *       do_something ();
+ *     }
+ *   G_GNUC_END_IGNORE_DEPRECATIONS
+ * ]|
+ *
+ * |[<!-- language="C" -->
+ * static void
+ * test_deprecated_function (void)
+ * {
+ *   G_GNUC_BEGIN_IGNORE_DEPRECATIONS
+ *   g_assert_cmpint (my_mistake (), ==, 42);
+ *   G_GNUC_END_IGNORE_DEPRECATIONS
+ * }
+ * ]|
  *
  * Since: 2.32
  */
@@ -2168,6 +1306,11 @@
  * meant to be portable across different compilers and must be placed
  * before the function declaration.
  *
+ * |[<!-- language="C" -->
+ * G_DEPRECATED
+ * int my_mistake (void);
+ * ]|
+ *
  * Since: 2.32
  */
 
@@ -2179,6 +1322,11 @@
  * functions declarations as deprecated. Unlike %G_GNUC_DEPRECATED_FOR, it
  * is meant to be portable across different compilers and must be placed
  * before the function declaration.
+ *
+ * |[<!-- language="C" -->
+ * G_DEPRECATED_FOR(my_replacement)
+ * int my_mistake (void);
+ * ]|
  *
  * Since: 2.32
  */
@@ -2201,157 +1349,6 @@
  * A macro that should be defined before including the glib.h header.
  * If it is defined, no compiler warnings will be produced for uses
  * of deprecated GLib APIs.
- */
-
-/**
- * G_GNUC_NORETURN:
- *
- * Expands to the GNU C noreturn function attribute if the compiler is gcc.
- * It is used for declaring functions which never return. It enables
- * optimization of the function, and avoids possible compiler warnings.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- */
-
-/**
- * G_GNUC_UNUSED:
- *
- * Expands to the GNU C unused function attribute if the compiler is gcc.
- * It is used for declaring functions and arguments which may never be used.
- * It avoids possible compiler warnings.
- *
- * For functions, place the attribute after the declaration, just before the
- * semicolon. For arguments, place the attribute at the beginning of the
- * argument declaration.
- *
- * |[<!-- language="C" -->
- * void my_unused_function (G_GNUC_UNUSED gint unused_argument,
- *                          gint other_argument) G_GNUC_UNUSED;
- * ]|
- *
- * See the GNU C documentation for more details.
- */
-
-/**
- * G_GNUC_PRINTF:
- * @format_idx: the index of the argument corresponding to the
- *     format string (The arguments are numbered from 1)
- * @arg_idx: the index of the first of the format arguments
- *
- * Expands to the GNU C format function attribute if the compiler is gcc.
- * This is used for declaring functions which take a variable number of
- * arguments, with the same syntax as printf(). It allows the compiler
- * to type-check the arguments passed to the function.
- *
- * Place the attribute after the function declaration, just before the
- * semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * |[<!-- language="C" -->
- * gint g_snprintf (gchar  *string,
- *                  gulong       n,
- *                  gchar const *format,
- *                  ...) G_GNUC_PRINTF (3, 4);
- * ]|
- */
-
-/**
- * G_GNUC_SCANF:
- * @format_idx: the index of the argument corresponding to
- *     the format string (The arguments are numbered from 1)
- * @arg_idx: the index of the first of the format arguments
- *
- * Expands to the GNU C format function attribute if the compiler is gcc.
- * This is used for declaring functions which take a variable number of
- * arguments, with the same syntax as scanf(). It allows the compiler
- * to type-check the arguments passed to the function.
- *
- * See the GNU C documentation for details.
- */
-
-/**
- * G_GNUC_FORMAT:
- * @arg_idx: the index of the argument
- *
- * Expands to the GNU C format_arg function attribute if the compiler
- * is gcc. This function attribute specifies that a function takes a
- * format string for a printf(), scanf(), strftime() or strfmon() style
- * function and modifies it, so that the result can be passed to a printf(),
- * scanf(), strftime() or strfmon() style function (with the remaining
- * arguments to the format function the same as they would have been
- * for the unmodified string).
- *
- * Place the attribute after the function declaration, just before the
- * semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * |[<!-- language="C" -->
- * gchar *g_dgettext (gchar *domain_name, gchar *msgid) G_GNUC_FORMAT (2);
- * ]|
- */
-
-/**
- * G_GNUC_NULL_TERMINATED:
- *
- * Expands to the GNU C sentinel function attribute if the compiler is gcc.
- * This function attribute only applies to variadic functions and instructs
- * the compiler to check that the argument list is terminated with an
- * explicit %NULL.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * Since: 2.8
- */
-
-/**
- * G_GNUC_WARN_UNUSED_RESULT:
- *
- * Expands to the GNU C warn_unused_result function attribute if the compiler
- * is gcc. This function attribute makes the compiler emit a warning if the
- * result of a function call is ignored.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
- *
- * Since: 2.10
- */
-
-/**
- * G_GNUC_FUNCTION:
- *
- * Expands to "" on all modern compilers, and to  __FUNCTION__ on gcc
- * version 2.x. Don't use it.
- *
- * Deprecated: 2.16: Use G_STRFUNC() instead
- */
-
-/**
- * G_GNUC_PRETTY_FUNCTION:
- *
- * Expands to "" on all modern compilers, and to __PRETTY_FUNCTION__
- * on gcc version 2.x. Don't use it.
- *
- * Deprecated: 2.16: Use G_STRFUNC() instead
- */
-
-/**
- * G_GNUC_NO_INSTRUMENT:
- *
- * Expands to the GNU C no_instrument_function function attribute if the
- * compiler is gcc. Functions with this attribute will not be instrumented
- * for profiling, when the compiler is called with the
- * `-finstrument-functions` option.
- *
- * Place the attribute after the declaration, just before the semicolon.
- *
- * See the GNU C documentation for more details.
  */
 
 /**
@@ -2383,15 +1380,84 @@
  */
 
 /**
- * G_GNUC_MAY_ALIAS:
+ * G_C_STD_VERSION:
  *
- * Expands to the GNU C may_alias type attribute if the compiler is gcc.
- * Types with this attribute will not be subjected to type-based alias
- * analysis, but are assumed to alias with any other type, just like char.
+ * The C standard version the code is compiling against, it's normally
+ * defined with the same value of `__STDC_VERSION__` for C standard
+ * compatible compilers, while it uses the lowest standard version
+ * in pure MSVC, given that in such compiler the definition depends on
+ * a compilation flag.
  *
- * See the GNU C documentation for details.
+ * This is granted to be undefined when compiling with a C++ compiler.
  *
- * Since: 2.14
+ * See also: %G_C_STD_CHECK_VERSION and %G_CXX_STD_VERSION
+ *
+ * Since: 2.76
+ */
+
+/**
+ * G_C_STD_CHECK_VERSION:
+ * @version: The C version to be checked for compatibility
+ *
+ * Macro to check if the current compiler supports a specified @version
+ * of the C standard. Such value must be numeric and can be provided both
+ * in the short form for the well-known versions (e.g. `90`, `99`...) or in
+ * the complete form otherwise (e.g. `199000L`, `199901L`, `205503L`...).
+ *
+ * When a C++ compiler is used, the macro is defined and returns always %FALSE.
+ *
+ * This value is compared against %G_C_STD_VERSION.
+ *
+ * |[<!-- language="C" -->
+ * #if G_C_STD_CHECK_VERSION(17)
+ * #endif
+ * ]|
+ *
+ * See also: %G_CXX_STD_CHECK_VERSION
+ *
+ * Returns: %TRUE if @version is supported by the compiler, %FALSE otherwise
+ *
+ * Since: 2.76
+ */
+
+/**
+ * G_CXX_STD_VERSION:
+ *
+ * The C++ standard version the code is compiling against, it's defined
+ * with the same value of `__cplusplus` for C++ standard compatible
+ * compilers, while it uses `_MSVC_LANG` in MSVC, given that the
+ * standard definition depends on a compilation flag in such compiler.
+ *
+ * This is granted to be undefined when not compiling with a C++ compiler.
+ *
+ * See also: %G_CXX_STD_CHECK_VERSION and %G_C_STD_VERSION
+ *
+ * Since: 2.76
+ */
+
+/**
+ * G_CXX_STD_CHECK_VERSION:
+ * @version: The C++ version to be checked for compatibility
+ *
+ * Macro to check if the current compiler supports a specified @version
+ * of the C++ standard. Such value must be numeric and can be provided both
+ * in the short form for the well-known versions (e.g. `11`, `17`...) or in
+ * the complete form otherwise (e.g. `201103L`, `201703L`, `205503L`...).
+ *
+ * When a C compiler is used, the macro is defined and returns always %FALSE.
+ *
+ * This value is compared against %G_CXX_STD_VERSION.
+ *
+ * |[<!-- language="C" -->
+ * #if G_CXX_STD_CHECK_VERSION(20)
+ * #endif
+ * ]|
+ *
+ * See also: %G_C_STD_CHECK_VERSION
+ *
+ * Returns: %TRUE if @version is supported by the compiler, %FALSE otherwise
+ *
+ * Since: 2.76
  */
 
 /**
@@ -2458,6 +1524,8 @@
  *
  * The variable is cleaned up in a way appropriate to its type when the
  * variable goes out of scope.  The type must support this.
+ * The way to clean up the type must have been defined using one of the macros
+ * G_DEFINE_AUTO_CLEANUP_CLEAR_FUNC() or G_DEFINE_AUTO_CLEANUP_FREE_FUNC().
  *
  * This feature is only supported on GCC and clang.  This macro is not
  * defined on other compilers and should not be used in programs that
@@ -2470,7 +1538,7 @@
  * This macro can be used to avoid having to do explicit cleanups of
  * local variables when exiting functions.  It often vastly simplifies
  * handling of error conditions, removing the need for various tricks
- * such as 'goto out' or repeating of cleanup code.  It is also helpful
+ * such as `goto out` or repeating of cleanup code.  It is also helpful
  * for non-error cases.
  *
  * Consider the following example:
@@ -2497,8 +1565,8 @@
  * }
  * ]|
  *
- * You must initialize the variable in some way -- either by use of an
- * initialiser or by ensuring that an _init function will be called on
+ * You must initialize the variable in some way — either by use of an
+ * initialiser or by ensuring that an `_init` function will be called on
  * it unconditionally before it goes out of scope.
  *
  * Since: 2.44
@@ -2512,6 +1580,8 @@
  *
  * The variable is cleaned up in a way appropriate to its type when the
  * variable goes out of scope.  The type must support this.
+ * The way to clean up the type must have been defined using the macro
+ * G_DEFINE_AUTOPTR_CLEANUP_FUNC().
  *
  * This feature is only supported on GCC and clang.  This macro is not
  * defined on other compilers and should not be used in programs that
@@ -2519,12 +1589,12 @@
  *
  * This is meant to be used to declare pointers to types with cleanup
  * functions.  The type of the variable is a pointer to @TypeName.  You
- * must not add your own '*'.
+ * must not add your own `*`.
  *
  * This macro can be used to avoid having to do explicit cleanups of
  * local variables when exiting functions.  It often vastly simplifies
  * handling of error conditions, removing the need for various tricks
- * such as 'goto out' or repeating of cleanup code.  It is also helpful
+ * such as `goto out` or repeating of cleanup code.  It is also helpful
  * for non-error cases.
  *
  * Consider the following example:
@@ -2554,7 +1624,7 @@
  * }
  * ]|
  *
- * You must initialise the variable in some way -- either by use of an
+ * You must initialise the variable in some way — either by use of an
  * initialiser or by ensuring that it is assigned to unconditionally
  * before it goes out of scope.
  *
@@ -2576,7 +1646,7 @@
  * This means it's useful for any type that is returned from
  * g_malloc().
  *
- * Otherwise, this macro has similar constraints as g_autoptr() - only
+ * Otherwise, this macro has similar constraints as g_autoptr(): only
  * supported on GCC and clang, the variable must be initialized, etc.
  *
  * |[
@@ -2587,15 +1657,100 @@
  *
  *   membuf = g_malloc (8192);
  *
- *   /* Some computation on membuf */
+ *   // Some computation on membuf
  *
- *   /* membuf will be automatically freed here */
+ *   // membuf will be automatically freed here
  *   return TRUE;
  * }
  * ]|
  *
  * Since: 2.44
  */
+
+/**
+ * g_autolist:
+ * @TypeName: a supported variable type
+ *
+ * Helper to declare a list variable with automatic deep cleanup.
+ *
+ * The list is deeply freed, in a way appropriate to the specified type, when the
+ * variable goes out of scope.  The type must support this.
+ *
+ * This feature is only supported on GCC and clang.  This macro is not
+ * defined on other compilers and should not be used in programs that
+ * are intended to be portable to those compilers.
+ *
+ * This is meant to be used to declare lists of a type with a cleanup
+ * function.  The type of the variable is a `GList *`.  You
+ * must not add your own `*`.
+ *
+ * This macro can be used to avoid having to do explicit cleanups of
+ * local variables when exiting functions.  It often vastly simplifies
+ * handling of error conditions, removing the need for various tricks
+ * such as `goto out` or repeating of cleanup code.  It is also helpful
+ * for non-error cases.
+ *
+ * See also g_autoslist(), g_autoptr() and g_steal_pointer().
+ *
+ * Since: 2.56
+ */
+
+/**
+ * g_autoslist:
+ * @TypeName: a supported variable type
+ *
+ * Helper to declare a singly linked list variable with automatic deep cleanup.
+ *
+ * The list is deeply freed, in a way appropriate to the specified type, when the
+ * variable goes out of scope.  The type must support this.
+ *
+ * This feature is only supported on GCC and clang.  This macro is not
+ * defined on other compilers and should not be used in programs that
+ * are intended to be portable to those compilers.
+ *
+ * This is meant to be used to declare lists of a type with a cleanup
+ * function.  The type of the variable is a `GSList *`.  You
+ * must not add your own `*`.
+ *
+ * This macro can be used to avoid having to do explicit cleanups of
+ * local variables when exiting functions.  It often vastly simplifies
+ * handling of error conditions, removing the need for various tricks
+ * such as `goto out` or repeating of cleanup code.  It is also helpful
+ * for non-error cases.
+ *
+ * See also g_autolist(), g_autoptr() and g_steal_pointer().
+ *
+ * Since: 2.56
+ */
+
+/**
+ * g_autoqueue:
+ * @TypeName: a supported variable type
+ *
+ * Helper to declare a double-ended queue variable with automatic deep cleanup.
+ *
+ * The queue is deeply freed, in a way appropriate to the specified type, when the
+ * variable goes out of scope.  The type must support this.
+ *
+ * This feature is only supported on GCC and clang.  This macro is not
+ * defined on other compilers and should not be used in programs that
+ * are intended to be portable to those compilers.
+ *
+ * This is meant to be used to declare queues of a type with a cleanup
+ * function.  The type of the variable is a `GQueue *`.  You
+ * must not add your own `*`.
+ *
+ * This macro can be used to avoid having to do explicit cleanups of
+ * local variables when exiting functions.  It often vastly simplifies
+ * handling of error conditions, removing the need for various tricks
+ * such as `goto out` or repeating of cleanup code.  It is also helpful
+ * for non-error cases.
+ *
+ * See also g_autolist(), g_autoptr() and g_steal_pointer().
+ *
+ * Since: 2.62
+ */
+
 
 /**
  * G_DEFINE_AUTOPTR_CLEANUP_FUNC:
@@ -2607,7 +1762,7 @@
  * The function will not be called if the variable to be cleaned up
  * contains %NULL.
  *
- * This will typically be the _free() or _unref() function for the given
+ * This will typically be the `_free()` or `_unref()` function for the given
  * type.
  *
  * With this definition, it will be possible to use g_autoptr() with
@@ -2630,7 +1785,7 @@
  *
  * Defines the appropriate cleanup function for a type.
  *
- * This will typically be the _clear() function for the given type.
+ * This will typically be the `_clear()` function for the given type.
  *
  * With this definition, it will be possible to use g_auto() with
  * @TypeName.
@@ -2662,7 +1817,7 @@
  * and file descriptors.
  *
  * @none specifies the "none" value for the type in question.  It is
- * probably something like %NULL or -1.  If the variable is found to
+ * probably something like %NULL or `-1`.  If the variable is found to
  * contain this value then the free function will not be called.
  *
  * |[
@@ -2676,16 +1831,6 @@
  */
 
 /* Windows Compatibility Functions {{{1 */
-
-/**
- * SECTION:windows
- * @title: Windows Compatibility Functions
- * @short_description: UNIX emulation on Windows
- *
- * These functions provide some level of UNIX emulation on the
- * Windows platform. If your application really needs the POSIX
- * APIs, we suggest you try the Cygwin project.
- */
 
 /**
  * MAXPATHLEN:

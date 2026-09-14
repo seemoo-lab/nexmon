@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1999 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -32,61 +20,74 @@
 #include <epan/conversation.h>
 #include <epan/prefs.h>
 #include <epan/to_str.h>
+#include <epan/expert.h>
+
+#include <wsutil/strtoi.h>
+
+#define DHT_MIN_LEN 5
 
 void proto_register_bt_dht(void);
 void proto_reg_handoff_bt_dht(void);
 
-/* Specifications: BEP-0005
- * http://www.bittorrent.org/beps/bep_0005.html
+/* Specifications:
+ * https://www.bittorrent.org/beps/bep_0005.html BEP 5 DHT Protocol
+ * https://www.bittorrent.org/beps/bep_0042.html BEP 42 DHT Security extension
  */
 
-static int proto_bt_dht = -1;
+static int proto_bt_dht;
 static dissector_handle_t bt_dht_handle;
 
 /* fields */
-static int hf_bencoded_int = -1;
-static int hf_bencoded_string = -1;
-static int hf_bencoded_list = -1;
-static int hf_bencoded_dict = -1;
-static int hf_bencoded_dict_entry = -1;
+static int hf_bencoded_int;
+static int hf_bencoded_string;
+static int hf_bencoded_list;
+static int hf_bencoded_dict;
+static int hf_bencoded_dict_entry;
+static int hf_bencoded_list_terminator;
 
-static int hf_bt_dht_error = -1;
-static int hf_bt_dht_peers = -1;
-static int hf_bt_dht_peer = -1;
-static int hf_bt_dht_nodes = -1;
-static int hf_bt_dht_node = -1;
-static int hf_bt_dht_id = -1;
+static int hf_bt_dht_error;
+static int hf_bt_dht_peers;
+static int hf_bt_dht_peer;
+static int hf_bt_dht_nodes;
+static int hf_bt_dht_node;
+static int hf_bt_dht_id;
 
-static int hf_ip = -1;
-static int hf_port = -1;
-static int hf_truncated_data = -1;
+static int hf_ip;
+static int hf_ip6;
+static int hf_port;
+static int hf_truncated_data;
+
+static expert_field ei_int_string;
+static expert_field ei_invalid_len;
+static expert_field ei_duplicate_dict_keys;
+static expert_field ei_unsorted_dict_keys;
 
 /* tree types */
-static gint ett_bt_dht = -1;
-static gint ett_bencoded_list = -1;
-static gint ett_bencoded_dict = -1;
-static gint ett_bencoded_dict_entry = -1;
-static gint ett_bt_dht_error = -1;
-static gint ett_bt_dht_peers = -1;
-static gint ett_bt_dht_nodes = -1;
+static int ett_bt_dht;
+static int ett_bencoded_list;
+static int ett_bencoded_dict;
+static int ett_bencoded_dict_entry;
+static int ett_bt_dht_error;
+static int ett_bt_dht_peers;
+static int ett_bt_dht_nodes;
 
 /* some keys use short name in packet */
 static const value_string short_key_name_value_string[] = {
-  { 'y', "Message type" },
-  { 'q', "Request type" },
+  { 'a', "Request arguments" },
   { 'e', "Error" },
+  { 'q', "Request type" },
+  { 'r', "Response values" },
   { 't', "Transaction ID" },
   { 'v', "Version" },
-  { 'a', "Request arguments" },
-  { 'r', "Response values" },
+  { 'y', "Message type" },
   { 0, NULL }
 };
 
 /* some values use short name in packet */
 static const value_string short_val_name_value_string[] = {
+  { 'e', "Error" },
   { 'q', "Request" },
   { 'r', "Response" },
-  { 'e', "Error" },
   { 0, NULL }
 };
 
@@ -94,22 +95,27 @@ static const char dict_str[] = "Dictionary...";
 static const char list_str[] = "List...";
 
 
-static inline int
-bencoded_string_length(tvbuff_t *tvb, guint *offset_ptr)
+static inline bool
+bencoded_string_length(packet_info *pinfo, tvbuff_t *tvb, unsigned *offset_ptr, unsigned *length)
 {
-  guint offset, start, len;
+  unsigned offset, start;
+  unsigned remaining = tvb_captured_length_remaining(tvb, *offset_ptr);
+  if (remaining == 0)
+    return false;
 
   offset = *offset_ptr;
   start = offset;
 
-  while(tvb_get_guint8(tvb, offset) != ':')
+  while(tvb_get_uint8(tvb, offset) != ':' && --remaining)
     ++offset;
 
-  len = atoi(tvb_get_string_enc(wmem_packet_scope(), tvb, start, offset-start, ENC_ASCII));
-  ++offset; /* skip the ':' */
-
-  *offset_ptr = offset;
-  return len;
+  if (remaining && ws_strtou32(tvb_get_string_enc(pinfo->pool, tvb, start, offset-start, ENC_ASCII),
+      NULL, length)) {
+    ++offset; /* skip the ':' */
+    *offset_ptr = offset;
+    return true;
+  }
+  return false;
 }
 
 
@@ -119,16 +125,23 @@ bencoded_string_length(tvbuff_t *tvb, guint *offset_ptr)
  */
 
 static int
-dissect_bencoded_string(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *tree, guint offset, const char **result, gboolean tohex, const char *label )
+dissect_bencoded_string(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, const char **result, bool tohex, const char *label )
 {
-  guint string_len;
-  string_len = bencoded_string_length(tvb, &offset);
+  unsigned string_len;
+  if (!bencoded_string_length(pinfo, tvb, &offset, &string_len))
+    return 0;
+
+  const unsigned remaining = tvb_captured_length_remaining(tvb, offset);
+  if (remaining < string_len)
+    return 0;
 
   /* fill the return data */
-  if( tohex )
-    *result = tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, string_len );
+  if (string_len == 0)
+    *result = "";
+  else if (tohex)
+    *result = tvb_bytes_to_str(pinfo->pool, tvb, offset, string_len );
   else
-    *result = tvb_get_string_enc( wmem_packet_scope(), tvb, offset, string_len , ENC_ASCII);
+    *result = tvb_get_string_enc( pinfo->pool, tvb, offset, string_len , ENC_ASCII);
 
   proto_tree_add_string_format( tree, hf_bencoded_string, tvb, offset, string_len, *result, "%s: %s", label, *result );
   offset += string_len;
@@ -140,18 +153,30 @@ dissect_bencoded_string(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *tree, 
  * *result will be the decoded value
  */
 static int
-dissect_bencoded_int(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *tree, guint offset, const char **result, const char *label )
+dissect_bencoded_int(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, const char **result, const char *label )
 {
-  guint start_offset;
+  unsigned start_offset;
+  unsigned remaining = tvb_captured_length_remaining(tvb, offset);
 
-  /* we have confirmed that the first byte is 'i' */
+  /* the shortest valid integer is i0e, so we need at least 3 bytes */
+  if (remaining < 3)
+    return 0;
+
+  if (tvb_get_uint8(tvb, offset) != 'i')
+    return 0;
+
   offset += 1;
+  remaining -= 1;
   start_offset = offset;
-
-  while( tvb_get_guint8(tvb,offset)!='e' )
+  while (tvb_get_uint8(tvb, offset) != 'e' && --remaining)
     offset += 1;
 
-  *result = tvb_get_string_enc( wmem_packet_scope(), tvb, start_offset, offset-start_offset, ENC_ASCII);
+  if (remaining == 0)
+    return 0;
+
+  proto_tree_add_item(tree, hf_bencoded_list_terminator, tvb, offset, 1, ENC_ASCII);
+
+  *result = tvb_get_string_enc( pinfo->pool, tvb, start_offset, offset-start_offset, ENC_ASCII);
   proto_tree_add_string_format( tree, hf_bencoded_int, tvb, start_offset, offset-start_offset, *result,
     "%s: %s", label, *result );
 
@@ -160,25 +185,36 @@ dissect_bencoded_int(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *tree, gui
 }
 
 /* pre definition of dissect_bencoded_dict(), which is needed by dissect_bencoded_list() */
-static int dissect_bencoded_dict(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset, const char *label );
+static int dissect_bencoded_dict(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, const char *label );
 
 /* dissect a bencoded list from tvb, start at offset. it's like "lXXXe", "X" is any bencoded thing */
 static int
-dissect_bencoded_list(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset, const char *label  )
+// NOLINTNEXTLINE(misc-no-recursion)
+dissect_bencoded_list(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, const char *label  )
 {
   proto_item *ti;
   proto_tree *sub_tree;
-  guint       one_byte;
+  unsigned    one_byte;
   const char *result;
+
+  /* the shortest valid list is "le", so we need at least 2 bytes */
+  if (tvb_captured_length_remaining(tvb, offset) < 2)
+    return 0;
 
   ti = proto_tree_add_none_format( tree, hf_bencoded_list, tvb, offset, 0, "%s: list...", label );
   sub_tree = proto_item_add_subtree( ti, ett_bencoded_list);
 
-  /* skip the 'l' */
+  if (tvb_get_uint8(tvb, offset) != 'l')
+    return 0;
   offset += 1;
 
-  while( (one_byte=tvb_get_guint8(tvb,offset)) != 'e' )
+  while (tvb_captured_length_remaining(tvb, offset) > 0)
   {
+    one_byte = tvb_get_uint8(tvb, offset);
+    if (one_byte == 'e')
+      break;
+
+    unsigned start_offset = offset;
     switch( one_byte )
     {
     /* a integer */
@@ -187,25 +223,40 @@ dissect_bencoded_list(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint
       break;
     /* a sub-list */
     case 'l':
-      offset = dissect_bencoded_list( tvb, pinfo, sub_tree, offset, "Sub-list" );
+      increment_dissection_depth(pinfo);
+      offset = dissect_bencoded_list(tvb, pinfo, sub_tree, offset, "Sub-list");
+      decrement_dissection_depth(pinfo);
       break;
     /* a dictionary */
     case 'd':
-      offset = dissect_bencoded_dict( tvb, pinfo, sub_tree, offset, "Sub-dict" );
+      increment_dissection_depth(pinfo);
+      offset = dissect_bencoded_dict(tvb, pinfo, sub_tree, offset, "Sub-dict");
+      decrement_dissection_depth(pinfo);
       break;
     /* a string */
     default:
-      offset = dissect_bencoded_string( tvb, pinfo, sub_tree, offset, &result, FALSE, "String" );
+      offset = dissect_bencoded_string( tvb, pinfo, sub_tree, offset, &result, false, "String" );
       break;
     }
+    if (offset <= start_offset)
+    {
+      proto_tree_add_expert(sub_tree, pinfo, &ei_int_string, tvb, offset, -1);
+      /* if offset is not going on, there is no chance to exit the loop, then return*/
+      return 0;
+    }
   }
+
+  if (tvb_captured_length_remaining(tvb, offset) == 0)
+    return 0;
+
+  proto_tree_add_item(sub_tree, hf_bencoded_list_terminator, tvb, offset, 1, ENC_ASCII);
   offset += 1;
   return offset;
 }
 
 /* dissect a bt dht error from tvb, start at offset. it's like "li201e9:error msge" */
 static int
-dissect_bt_dht_error(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset, const char **result, const char *label )
+dissect_bt_dht_error(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, const char **result, const char *label )
 {
   proto_item *ti;
   proto_tree *sub_tree;
@@ -222,26 +273,32 @@ dissect_bt_dht_error(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint 
 
   /* dissect bt-dht error number and message */
   offset = dissect_bencoded_int( tvb, pinfo, sub_tree, offset, &error_no, "Error ID" );
-  offset = dissect_bencoded_string( tvb, pinfo, sub_tree, offset, &error_msg, FALSE, "Error Message" );
+  if (offset == 0) {
+    return 0;
+  }
+  offset = dissect_bencoded_string( tvb, pinfo, sub_tree, offset, &error_msg, false, "Error Message" );
+  if (offset == 0) {
+    return 0;
+  }
 
   proto_item_set_text( ti, "%s: error %s, %s", label, error_no, error_msg );
-  col_append_fstr( pinfo->cinfo, COL_INFO, "error_no=%s error_msg=%s ", error_no, error_msg );
-  *result = wmem_strdup_printf(wmem_packet_scope(), "error %s, %s", error_no, error_msg );
+  col_append_fstr( pinfo->cinfo, COL_INFO, " No=%s Msg=%s", error_no, error_msg );
+  *result = wmem_strdup_printf(pinfo->pool, "error %s, %s", error_no, error_msg );
 
-  return offset;
+  return offset + 1;
 }
 
 /* dissect a bt dht values list from tvb, start at offset. it's like "l6:....6:....e" */
 static int
-dissect_bt_dht_values(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset, const char **result, const char *label )
+dissect_bt_dht_values(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, const char **result, const char *label )
 {
   proto_item *ti;
   proto_tree *sub_tree;
   proto_item *value_ti;
   proto_tree *value_tree;
 
-  guint       peer_index;
-  guint       string_len;
+  unsigned    peer_index;
+  unsigned    string_len;
 
   ti = proto_tree_add_item( tree, hf_bt_dht_peers, tvb, offset, 0, ENC_NA );
   sub_tree = proto_item_add_subtree( ti, ett_bt_dht_peers);
@@ -251,13 +308,17 @@ dissect_bt_dht_values(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint
   offset += 1;
 
   /* dissect bt-dht values */
-  while( tvb_get_guint8(tvb,offset)!='e' )
+  while( tvb_get_uint8(tvb,offset)!='e' )
   {
-    string_len = bencoded_string_length(tvb, &offset);
-
-    /* 4 bytes ip, 2 bytes port */
-    for( ; string_len>=6; string_len-=6, offset+=6 )
+    if (!bencoded_string_length(pinfo, tvb, &offset, &string_len))
     {
+      expert_add_info(pinfo, ti, &ei_invalid_len);
+      // Fail hard here rather than potentially looping excessively.
+      return 0;
+    }
+    else if (string_len == 6)
+    {
+      /* 4 bytes ip, 2 bytes port */
       peer_index += 1;
 
       value_ti = proto_tree_add_item( sub_tree, hf_bt_dht_peer, tvb, offset, 6, ENC_NA );
@@ -265,110 +326,160 @@ dissect_bt_dht_values(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint
       value_tree = proto_item_add_subtree( value_ti, ett_bt_dht_peers);
 
       proto_tree_add_item( value_tree, hf_ip, tvb, offset, 4, ENC_BIG_ENDIAN);
-      proto_item_append_text(value_ti, " (IP/Port: %s", tvb_ip_to_str(tvb, offset));
+      proto_item_append_text(value_ti, " (IP/Port: %s", tvb_ip_to_str(pinfo->pool, tvb, offset));
       proto_tree_add_item( value_tree, hf_port, tvb, offset+4, 2, ENC_BIG_ENDIAN);
       proto_item_append_text(value_ti, ":%u)", tvb_get_ntohs( tvb, offset+4 ));
-
     }
-    /* truncated data */
-    if( string_len>0 )
+    else if (string_len == 18)
     {
-      proto_tree_add_item( tree, hf_truncated_data, tvb, offset, string_len, ENC_NA );
-      offset += string_len;
+      /* 16 bytes ip, 2 bytes port */
+      peer_index += 1;
+
+      value_ti = proto_tree_add_item( sub_tree, hf_bt_dht_peer, tvb, offset, 18, ENC_NA );
+      proto_item_append_text(value_ti, " %d", peer_index);
+      value_tree = proto_item_add_subtree( value_ti, ett_bt_dht_peers);
+
+      proto_tree_add_item( value_tree, hf_ip6, tvb, offset, 16, ENC_NA);
+      proto_item_append_text(value_ti, " (IPv6/Port: [%s]", tvb_ip6_to_str(pinfo->pool, tvb, offset));
+      proto_tree_add_item( value_tree, hf_port, tvb, offset+16, 2, ENC_BIG_ENDIAN);
+      proto_item_append_text(value_ti, ":%u)", tvb_get_ntohs( tvb, offset+16 ));
     }
+    else
+    {
+      /* truncated data */
+      proto_tree_add_item( tree, hf_truncated_data, tvb, offset, string_len, ENC_NA );
+    }
+
+    offset += string_len;
   }
 
-  if (tvb_get_guint8(tvb,offset)=='e') /* list ending delimiter */
+  if (tvb_get_uint8(tvb,offset)=='e') { /* list ending delimiter */
+    proto_tree_add_item(sub_tree, hf_bencoded_list_terminator, tvb, offset, 1, ENC_ASCII);
     offset++;
+  }
 
   proto_item_set_text( ti, "%s: %d peers", label, peer_index );
-  col_append_fstr( pinfo->cinfo, COL_INFO, "reply=%d peers ", peer_index );
-  *result = wmem_strdup_printf(wmem_packet_scope(), "%d peers", peer_index);
+  col_append_fstr( pinfo->cinfo, COL_INFO, " Peers=%d", peer_index );
+  *result = wmem_strdup_printf(pinfo->pool, "%d peers", peer_index);
 
   return offset;
 }
 
 static int
-dissect_bt_dht_nodes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset, const char **result, const char *label )
+dissect_bt_dht_nodes(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, const char **result, const char *label, bool is_ipv6 )
 {
   proto_item *ti;
   proto_tree *sub_tree;
   proto_item *node_ti;
   proto_tree *node_tree;
 
-  guint       node_index;
-  guint       string_len;
+  unsigned    node_index;
+  unsigned    string_len;
+  unsigned    node_byte_length;
 
-  string_len = bencoded_string_length(tvb, &offset);
+  if (!bencoded_string_length(pinfo, tvb, &offset, &string_len))
+    return 0;
 
   ti = proto_tree_add_item( tree, hf_bt_dht_nodes, tvb, offset, string_len, ENC_NA );
   sub_tree = proto_item_add_subtree( ti, ett_bt_dht_nodes);
   node_index = 0;
 
-  /* 20 bytes id, 4 bytes ip, 2 bytes port */
-  for( ; string_len>=26; string_len-=26, offset+=26 )
+  /* 26 bytes = 20 bytes id + 4 bytes ipv4 address + 2 bytes port */
+  node_byte_length = 26;
+
+  if ( is_ipv6 )
+  {
+    /* 38 bytes = 20 bytes id + 16 bytes ipv6 address + 2 bytes port */
+    node_byte_length = 38;
+  }
+
+  for( ; string_len>=node_byte_length; string_len-=node_byte_length, offset+=node_byte_length )
   {
     node_index += 1;
 
-
-    node_ti = proto_tree_add_item( sub_tree, hf_bt_dht_node, tvb, offset, 26, ENC_NA);
+    node_ti = proto_tree_add_item( sub_tree, hf_bt_dht_node, tvb, offset, node_byte_length, ENC_NA);
     proto_item_append_text(node_ti, " %d", node_index);
     node_tree = proto_item_add_subtree( node_ti, ett_bt_dht_peers);
 
     proto_tree_add_item( node_tree, hf_bt_dht_id, tvb, offset, 20, ENC_NA);
-    proto_item_append_text(node_ti, " (id: %s", tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, 20));
-    proto_tree_add_item( node_tree, hf_ip, tvb, offset+20, 4, ENC_BIG_ENDIAN);
-    proto_item_append_text(node_ti, ", IP/Port: %s", tvb_ip_to_str(tvb, offset+20));
-    proto_tree_add_item( node_tree, hf_port, tvb, offset+24, 2, ENC_BIG_ENDIAN);
-    proto_item_append_text(node_ti, ":%u)", tvb_get_ntohs( tvb, offset+24 ));
+    proto_item_append_text(node_ti, " (id: %s", tvb_bytes_to_str(pinfo->pool, tvb, offset, 20));
+
+    if ( is_ipv6 )
+    {
+      proto_tree_add_item( node_tree, hf_ip6, tvb, offset+20, 16, ENC_NA);
+      proto_item_append_text(node_ti, ", IPv6/Port: [%s]", tvb_ip6_to_str(pinfo->pool, tvb, offset+20));
+
+      proto_tree_add_item( node_tree, hf_port, tvb, offset+36, 2, ENC_BIG_ENDIAN);
+      proto_item_append_text(node_ti, ":%u)", tvb_get_ntohs( tvb, offset+36 ));
+    }
+    else
+    {
+      proto_tree_add_item( node_tree, hf_ip, tvb, offset+20, 4, ENC_BIG_ENDIAN);
+      proto_item_append_text(node_ti, ", IPv4/Port: %s", tvb_ip_to_str(pinfo->pool, tvb, offset+20));
+
+      proto_tree_add_item( node_tree, hf_port, tvb, offset+24, 2, ENC_BIG_ENDIAN);
+      proto_item_append_text(node_ti, ":%u)", tvb_get_ntohs( tvb, offset+24 ));
+    }
   }
+
   if( string_len>0 )
   {
     proto_tree_add_item( tree, hf_truncated_data, tvb, offset, string_len, ENC_NA );
     offset += string_len;
   }
   proto_item_set_text( ti, "%s: %d nodes", label, node_index );
-  col_append_fstr( pinfo->cinfo, COL_INFO, "reply=%d nodes ", node_index );
-  *result = wmem_strdup_printf(wmem_packet_scope(), "%d", node_index);
+  col_append_fstr( pinfo->cinfo, COL_INFO, " Nodes=%d", node_index );
+  *result = wmem_strdup_printf(pinfo->pool, "%d", node_index);
 
   return offset;
 }
 
 static int
-dissect_bencoded_dict_entry(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset )
+// NOLINTNEXTLINE(misc-no-recursion)
+dissect_bencoded_dict_entry(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, const char **key)
 {
   proto_item *ti;
   proto_tree *sub_tree;
-  gboolean    tohex;
-  const char *key;
+  bool        tohex;
   const char *val;
-  guint       orig_offset = offset;
+  unsigned    orig_offset = offset;
 
-  key = NULL;
   val = NULL;
 
   ti       = proto_tree_add_item( tree, hf_bencoded_dict_entry, tvb, offset, 0, ENC_NA );
   sub_tree = proto_item_add_subtree( ti, ett_bencoded_dict_entry);
 
   /* dissect the key, it must be a string */
-  offset   = dissect_bencoded_string( tvb, pinfo, sub_tree, offset, &key, FALSE, "Key" );
+  offset   = dissect_bencoded_string( tvb, pinfo, sub_tree, offset, key, false, "Key" );
+  if (offset == 0 || !*key)
+  {
+    proto_tree_add_expert_format(sub_tree, pinfo, &ei_int_string, tvb, offset, -1, "Invalid string for Key");
+    return 0;
+  }
+
+  if (tvb_captured_length_remaining(tvb, offset) == 0)
+    return 0;
 
   /* If it is a dict, then just do recursion */
-  switch( tvb_get_guint8(tvb,offset) )
+  switch( tvb_get_uint8(tvb,offset) )
   {
   case 'd':
-    offset = dissect_bencoded_dict( tvb, pinfo, sub_tree, offset, "Value" );
+    increment_dissection_depth(pinfo);
+    offset = dissect_bencoded_dict(tvb, pinfo, sub_tree, offset, "Value");
+    decrement_dissection_depth(pinfo);
     val    = dict_str;
     break;
   case 'l':
-    if( strcmp(key,"e")==0 )
+    if( strcmp(*key,"e")==0 )
       offset = dissect_bt_dht_error( tvb, pinfo, sub_tree, offset, &val, "Value" );
-    else if( strcmp(key,"values")==0 )
+    else if( strcmp(*key,"values")==0 )
       offset = dissect_bt_dht_values( tvb, pinfo, sub_tree, offset, &val, "Value" );
     /* other unfamiliar lists */
     else
     {
-      offset = dissect_bencoded_list( tvb, pinfo, sub_tree, offset, "Value" );
+      increment_dissection_depth(pinfo);
+      offset = dissect_bencoded_list(tvb, pinfo, sub_tree, offset, "Value");
+      decrement_dissection_depth(pinfo);
       val = list_str;
     }
     break;
@@ -378,61 +489,98 @@ dissect_bencoded_dict_entry(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
   /* it's a string */
   default:
     /* special process */
-    if( strcmp(key,"nodes")==0 )
+    if( strcmp(*key,"nodes")==0 )
     {
-      offset = dissect_bt_dht_nodes( tvb, pinfo, sub_tree, offset, &val, "Value" );
+      offset = dissect_bt_dht_nodes( tvb, pinfo, sub_tree, offset, &val, "Value", 0 );
     }
-    else if( strcmp(key,"ip")==0 )
+    else if( strcmp(*key,"nodes6")==0 )
+    {
+      offset = dissect_bt_dht_nodes( tvb, pinfo, sub_tree, offset, &val, "Value", 1 );
+    }
+    else if( strcmp(*key,"ip")==0 )
     {
       /*
-       * Not found in BEP 0005 but explained by
-       * http://www.rasterbar.com/products/libtorrent/dht_sec.html
+       * BEP 42 DHT Security extension
+       * https://www.bittorrent.org/beps/bep_0042.html
+       * https://www.rasterbar.com/products/libtorrent/dht_sec.html
        */
 
-      int len, old_offset;
-      old_offset = offset;
-      len = bencoded_string_length(tvb, &offset);
+      unsigned len;
+      int old_offset = offset;
+      if (!bencoded_string_length(pinfo, tvb, &offset, &len)) {
+        proto_tree_add_expert_format(sub_tree, pinfo, &ei_int_string, tvb, offset, -1, "Invalid string for value");
+        return 0;
+      }
 
-      if(len == 4) {
-        proto_tree_add_item(sub_tree, hf_ip, tvb, offset, len, ENC_BIG_ENDIAN);
-        val = tvb_ip_to_str(tvb, offset);
-        offset += len;
+      if(len == 6) {
+        proto_tree_add_item(sub_tree, hf_ip, tvb, offset, 4, ENC_BIG_ENDIAN);
+        val = tvb_ip_to_str(pinfo->pool, tvb, offset);
+        offset += 4;
+        proto_tree_add_item(sub_tree, hf_port, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 2;
+      }
+      else if (len == 18)
+      {
+        proto_tree_add_item(sub_tree, hf_ip6, tvb, offset, 16, ENC_NA);
+        val = tvb_ip6_to_str(pinfo->pool, tvb, offset);
+        offset += 16;
+
+        proto_tree_add_item(sub_tree, hf_port, tvb, offset, 2, ENC_BIG_ENDIAN);
+        offset += 2;
       }
       else {
-        offset = dissect_bencoded_string( tvb, pinfo, sub_tree, old_offset, &val, TRUE, "Value" );
+        offset = dissect_bencoded_string( tvb, pinfo, sub_tree, old_offset, &val, true, "Value" );
       }
     }
     else
     {
       /* some need to return hex string */
-      tohex = strcmp(key,"id")==0 || strcmp(key,"target")==0
-           || strcmp(key,"info_hash")==0 || strcmp(key,"t")==0
-           || strcmp(key,"v")==0 || strcmp(key,"token")==0;
+      tohex = strcmp(*key,"id")==0 || strcmp(*key,"target")==0
+           || strcmp(*key,"info_hash")==0 || strcmp(*key,"t")==0
+           || strcmp(*key,"v")==0 || strcmp(*key,"token")==0;
       offset = dissect_bencoded_string( tvb, pinfo, sub_tree, offset, &val, tohex, "Value" );
     }
   }
 
-  if( strlen(key)==1 )
-    key = val_to_str_const( key[0], short_key_name_value_string, key );
-  if( strlen(val)==1 )
+  if (offset == 0)
+  {
+    proto_tree_add_expert_format(sub_tree, pinfo, &ei_int_string, tvb, offset, -1, "Invalid string for value");
+    return 0;
+  }
+
+  if(strcmp(*key,"q")==0 && strlen(val)>1 )
+    col_prepend_fstr(pinfo->cinfo, COL_INFO, "%c%s", g_ascii_toupper(val[0]), val + 1);
+  if(strcmp(*key,"r")==0 )
+    col_prepend_fstr(pinfo->cinfo, COL_INFO, "Response");
+  if(strcmp(*key,"e")==0 )
+    col_prepend_fstr(pinfo->cinfo, COL_INFO, "Error");
+  if((strcmp(*key,"info_hash")==0 || strcmp(*key,"target")==0) )
+    col_append_fstr(pinfo->cinfo, COL_INFO, " %c%s=%s", g_ascii_toupper((*key)[0]), *key + 1, val);
+
+  const char * printable_key = *key;
+  if(strlen(*key)==1 )
+    printable_key = val_to_str_const( (*key)[0], short_key_name_value_string, *key );
+  if(val && strlen(val)==1 )
     val = val_to_str_const( val[0], short_val_name_value_string, val );
 
-  proto_item_set_text( ti, "%s: %s", key, val );
+  proto_item_set_text( ti, "%s: %s", printable_key, val );
   proto_item_set_len( ti, offset-orig_offset );
-
-  if( strcmp(key,"message_type")==0 || strcmp(key,"request_type")==0 )
-    col_append_fstr(pinfo->cinfo, COL_INFO, "%s=%s ", key, val);
 
   return offset;
 }
 
 /* dict = d...e */
 static int
-dissect_bencoded_dict(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset, const char *label )
+// NOLINTNEXTLINE(misc-no-recursion)
+dissect_bencoded_dict(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, const char *label )
 {
   proto_item *ti;
   proto_tree *sub_tree;
-  guint       orig_offset = offset;
+  unsigned    orig_offset = offset;
+
+  /* the shortest valid dictionary is "de", so we need at least 2 bytes */
+  if (tvb_captured_length_remaining(tvb, offset) < 2)
+    return 0;
 
   if(offset == 0)
   {
@@ -445,56 +593,131 @@ dissect_bencoded_dict(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint
     sub_tree = proto_item_add_subtree( ti, ett_bencoded_dict);
   }
 
-  /* skip the first char('d') */
+  if (tvb_get_uint8(tvb, offset) != 'd')
+    return 0;
   offset += 1;
 
-  while( tvb_get_guint8(tvb,offset)!='e' )
-    offset = dissect_bencoded_dict_entry( tvb, pinfo, sub_tree, offset );
+  const char * prev_key = NULL;
+  unsigned prev_key_offset = 0;
+  while (tvb_captured_length_remaining(tvb, offset) > 0) {
+    if (tvb_get_uint8(tvb, offset) == 'e')
+      break;
 
+    const char * key = NULL;
+    const unsigned entry_start = offset;
+    offset = dissect_bencoded_dict_entry( tvb, pinfo, sub_tree, offset, &key );
+    if (offset == 0)
+    {
+      proto_tree_add_expert(sub_tree, pinfo, &ei_int_string, tvb, offset, -1);
+      return 0;
+    }
+
+    if (prev_key != NULL && key != NULL) {
+      const int ordering = strcmp(key, prev_key);
+      if (ordering < 0) {
+        proto_tree_add_expert(
+          sub_tree, pinfo, &ei_unsorted_dict_keys, tvb, prev_key_offset, offset - prev_key_offset);
+      } else if (ordering == 0) {
+        proto_tree_add_expert(
+          sub_tree, pinfo, &ei_duplicate_dict_keys, tvb, prev_key_offset, offset - prev_key_offset);
+      }
+    }
+
+    prev_key = key;
+    prev_key_offset = entry_start;
+  }
+
+  if (tvb_captured_length_remaining(tvb, offset) == 0)
+    return 0;
+
+  proto_tree_add_item(sub_tree, hf_bencoded_list_terminator, tvb, offset, 1, ENC_ASCII);
   offset += 1;
   proto_item_set_len( ti, offset-orig_offset );
 
   return offset;
 }
 
-static int
-dissect_bt_dht(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_)
+static bool
+test_bt_dht(packet_info *pinfo _U_, tvbuff_t *tvb, int offset, void *data _U_)
 {
+
+  /* The DHT KRPC protocol sends packets that are bencoded dictionaries.
+   * Bencoded dictionaries always have the keys in sorted (raw string)
+   * order. There are three possible message types, query, which has "a" and
+   * "q" keys that map to dictionaries, response, which has an "r" key
+   * that maps to a dictionary, and error, which has an "e" key that maps
+   * to a list.
+   *
+   * Conveniently, those keys appear in sort order before all other possible
+   * top level keys, with the exception of the "ip" key added in BEP-0042.
+   *
+   * Thus, there are only four possible initial sets of bytes, corresponding
+   * to beginning with an "a" dictionary, "r" dictionary, "ip" string, or an
+   * "e" list.
+   */
+
+  if (tvb_captured_length_remaining(tvb, offset) < DHT_MIN_LEN)
+    return false;
+
+  if (tvb_memeql(tvb, offset, (const uint8_t*)"d1:ad", 5) == 0) {
+    return true;
+  } else if (tvb_memeql(tvb, offset, (const uint8_t*)"d1:rd", 5) == 0) {
+    return true;
+  } else if (tvb_memeql(tvb, offset, (const uint8_t*)"d2:ip", 5) == 0) {
+    return true;
+  } else if (tvb_memeql(tvb, offset, (const uint8_t*)"d1:el", 5) == 0) {
+    return true;
+  }
+
+  return false;
+}
+
+static int
+dissect_bt_dht(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+{
+  /* BitTorrent clients use the same UDP connection for DHT as for uTP.
+   * So even if this has been set as the dissector for this conversation
+   * or port, test it and reject it if not BT-DHT in order to give other
+   * dissectors, especially BT-uTP, a chance.
+   */
+  if (!test_bt_dht(pinfo, tvb, 0, data)) {
+    return 0;
+  }
+
   col_set_str(pinfo->cinfo, COL_PROTOCOL, "BT-DHT");
   col_clear(pinfo->cinfo, COL_INFO);
 
+  /* XXX: There is a separate "bencode" dissector. Would it be possible
+   * to use it, at least to move some functions into a shared header?
+   * DHT has some keys with special meanings, and some values that
+   * are supposed to be interpreted specially (e.g., IP/port combinations),
+   * so maybe it's more trouble than it's worth.
+   */
   return dissect_bencoded_dict(tvb, pinfo, tree, 0, "BitTorrent DHT Protocol");
 }
 
 static
-gboolean dissect_bt_dht_heur (tvbuff_t *tvb, packet_info *pinfo,
-                                        proto_tree *tree, void *data _U_)
+bool dissect_bt_dht_heur (tvbuff_t *tvb, packet_info *pinfo,
+                                        proto_tree *tree, void *data)
 {
   conversation_t *conversation;
 
-  /* try dissecting */
-  /* Assume dictionary (d) is followed by a one char long (1:) key string. */
-
-  if(tvb_captured_length(tvb) < 4)
-    return FALSE;
-
-  if(tvb_memeql(tvb, 0, "d1:", 3) != 0)
-    return FALSE;
-
-  /* Is 'key' a valid key ? */
-  if(try_val_to_str(tvb_get_guint8(tvb, 3), short_key_name_value_string) == NULL)
-    return FALSE;
+  if (!test_bt_dht(pinfo, tvb, 0, data)) {
+    return false;
+  }
 
   conversation = find_or_create_conversation(pinfo);
-  conversation_set_dissector(conversation, bt_dht_handle);
+  conversation_set_dissector_from_frame_number(conversation, pinfo->num, bt_dht_handle);
 
   dissect_bt_dht(tvb, pinfo, tree, NULL);
-  return TRUE;
+  return true;
 }
 
 void
 proto_register_bt_dht(void)
 {
+  expert_module_t* expert_bt_dht;
+
   static hf_register_info hf[] = {
     { &hf_bencoded_string,
       { "String", "bt-dht.bencoded.string",
@@ -515,6 +738,10 @@ proto_register_bt_dht(void)
     { &hf_bencoded_dict_entry,
       { "Dictionary Entry", "bt-dht.bencoded.dict_entry",
         FT_NONE, BASE_NONE, NULL, 0x0, NULL, HFILL }
+    },
+    { &hf_bencoded_list_terminator,
+      { "Terminator", "bt-dht.bencoded.list.terminator",
+        FT_STRING, BASE_NONE, NULL, 0x0, NULL, HFILL }
     },
     { &hf_bt_dht_error,
       { "Error", "bt-dht.error",
@@ -544,6 +771,10 @@ proto_register_bt_dht(void)
       { "IP", "bt-dht.ip",
         FT_IPv4, BASE_NONE, NULL, 0x0, NULL, HFILL }
     },
+    { &hf_ip6,
+      { "IP", "bt-dht.ip6",
+        FT_IPv6, BASE_NONE, NULL, 0x0, NULL, HFILL }
+    },
     { &hf_port,
       { "Port", "bt-dht.port",
         FT_UINT16, BASE_DEC, NULL, 0x0, NULL, HFILL }
@@ -554,8 +785,19 @@ proto_register_bt_dht(void)
     }
   };
 
+  static ei_register_info ei[] = {
+    { &ei_int_string, { "bt-dht.invalid_string", PI_MALFORMED, PI_ERROR,
+    "String must contain an integer", EXPFILL }},
+    { &ei_invalid_len, { "bt-dht.invalid_length", PI_MALFORMED, PI_ERROR,
+    "Invalid length", EXPFILL }},
+    { &ei_duplicate_dict_keys, { "bt-dht.bencoding.dict_duplicate_key", PI_PROTOCOL, PI_WARN,
+    "Dictionary has duplicate keys", EXPFILL }},
+    { &ei_unsorted_dict_keys, { "bt-dht.bencoding.dict_out_of_order", PI_PROTOCOL, PI_CHAT,
+    "Dictionary keys are not in sorted order", EXPFILL }},
+  };
+
   /* Setup protocol subtree array */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_bt_dht,
     &ett_bencoded_list,
     &ett_bencoded_dict,
@@ -567,36 +809,26 @@ proto_register_bt_dht(void)
 
   module_t *bt_dht_module;
 
-  proto_bt_dht = proto_register_protocol (
-    "BitTorrent DHT Protocol",  /* name */
-    "BT-DHT",                   /* short name */
-    "bt-dht"                    /* abbrev */
-  );
+  proto_bt_dht = proto_register_protocol ("BitTorrent DHT Protocol", "BT-DHT", "bt-dht");
 
-  bt_dht_module = prefs_register_protocol(proto_bt_dht, proto_reg_handoff_bt_dht);
+  bt_dht_module = prefs_register_protocol(proto_bt_dht, NULL);
   prefs_register_obsolete_preference(bt_dht_module, "enable");
 
   proto_register_field_array(proto_bt_dht, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
+
+  expert_bt_dht = expert_register_protocol(proto_bt_dht);
+  expert_register_field_array(expert_bt_dht, ei, array_length(ei));
+
+  bt_dht_handle = register_dissector("bt-dht", dissect_bt_dht, proto_bt_dht);
 }
 
 void
 proto_reg_handoff_bt_dht(void)
 {
-  static gboolean prefs_initialized = FALSE;
+  heur_dissector_add("udp", dissect_bt_dht_heur, "BitTorrent DHT over UDP", "bittorrent_dht_udp", proto_bt_dht, HEURISTIC_ENABLE);
 
-  /* "Decode As" is always available;
-   *  Heuristic dissection in disabled by default since the heuristic is quite weak.
-   *  XXX - Still too weak?
-   */
-  if (!prefs_initialized) {
-    heur_dissector_add("udp", dissect_bt_dht_heur, "BitTorrent DHT over UDP", "bittorrent_dht_udp", proto_bt_dht, HEURISTIC_DISABLE);
-
-    bt_dht_handle = create_dissector_handle(dissect_bt_dht, proto_bt_dht);
-    dissector_add_for_decode_as("udp.port", bt_dht_handle);
-
-    prefs_initialized = TRUE;
-  }
+  dissector_add_for_decode_as_with_preference("udp.port", bt_dht_handle);
 }
 
 /*

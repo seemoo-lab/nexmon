@@ -1,42 +1,18 @@
 #! /bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test recognition of ISO C 99 <inttypes.h> format string directives.
+# Test C support: strings with hexadecimal escape sequences that are
+# invalid UTF-8.
 
-cat <<EOF > xg-c-8.c
-void foo ()
-{
-  printf (_("File size is: %" PRId64), size);
-  printf (_("File age is %10" PRIdMAX " microseconds"), age);
-  printf (_(PRIXFAST16 " errors"), nerrs);
-  printf (_(PRIXFAT16 " mistakes"), nerrs);
-}
+cat <<\EOF > xg-c-8.c
+gettext("\xE0")
 EOF
 
 : ${XGETTEXT=xgettext}
-${XGETTEXT} --omit-header --no-location -k_ -o xg-c-8.tmp xg-c-8.c || Exit 1
-LC_ALL=C tr -d '\r' < xg-c-8.tmp > xg-c-8.po || Exit 1
-
-cat <<EOF > xg-c-8.ok
-#, c-format
-msgid "File size is: %<PRId64>"
-msgstr ""
-
-#, c-format
-msgid "File age is %10<PRIdMAX> microseconds"
-msgstr ""
-
-#, c-format
-msgid "<PRIXFAST16> errors"
-msgstr ""
-
-#, c-format
-msgid " mistakes"
-msgstr ""
-EOF
-
-: ${DIFF=diff}
-${DIFF} xg-c-8.ok xg-c-8.po
+LANGUAGE= LC_ALL=C ${XGETTEXT} --no-location --from-code=UTF-8 -d xg-c-8.tmp xg-c-8.c 2>xg-c-8.err
 result=$?
+cat xg-c-8.err
+test $result = 1 || Exit 1
+grep 'is not UTF-8 encoded' xg-c-8.err >/dev/null || Exit 1
 
-exit $result
+exit 0

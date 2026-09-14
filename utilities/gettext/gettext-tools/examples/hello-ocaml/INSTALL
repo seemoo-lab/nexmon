@@ -1,0 +1,23 @@
+This example relies on
+  - OCaml,
+  - 'opam', the OCaml package manager.
+The following get installed through 'opam':
+  - 'dune', part of the OCaml build system,
+  - the opam package 'gettext-stub'
+    <https://opam.ocaml.org/packages/gettext-stub/>
+    <https://github.com/gildor478/ocaml-gettext/>
+    <https://gildor478.github.io/ocaml-gettext/>
+
+Preparation: Define environment variable for use of 'opam':
+  $ eval $(opam env)
+  $ opam install dune
+  $ opam install gettext-stub
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

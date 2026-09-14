@@ -8,164 +8,93 @@
 #include <gtk/gtk.h>
 #include <glib/gi18n.h>
 
+/* Get exit() declaration.  */
+#include <stdlib.h>
+
 /* Get getpid() declaration.  */
-#if HAVE_UNISTD_H
+#if defined _WIN32 && !defined __CYGWIN__
+/* native Windows API */
+# include <process.h>
+# define getpid _getpid
+#else
+/* POSIX API */
 # include <unistd.h>
 #endif
 
 #define UI_PATH "/org/gnu/gettext/examples/hello/hello.ui"
 #define APPLICATION_ID "org.gnu.gettext.examples.hello"
-#define GSETTINGS_SCHEMA "org.gnu.gettext.examples.hello"
 
-/* Forward declaration of GObject types.  */
-
-#define HELLO_TYPE_APPLICATION_WINDOW (hello_application_window_get_type ())
-#define HELLO_APPLICATION_WINDOW(obj)                           \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj),                           \
-                               HELLO_TYPE_APPLICATION_WINDOW,   \
-                               HelloApplicationWindow))
-
-typedef struct _HelloApplicationWindow HelloApplicationWindow;
-typedef struct _HelloApplicationWindowClass HelloApplicationWindowClass;
-
-#define HELLO_TYPE_APPLICATION (hello_application_get_type ())
-#define HELLO_APPLICATION(obj)                          \
-  (G_TYPE_CHECK_INSTANCE_CAST ((obj),                   \
-                               HELLO_TYPE_APPLICATION,  \
-                               HelloApplication))
-
-typedef struct _HelloApplication HelloApplication;
-typedef struct _HelloApplicationClass HelloApplicationClass;
-
-/* Custom application window implementation.  */
-
-struct _HelloApplicationWindow
+/* An ad-hoc struct for managing the main window.
+   (Not connected to the GObject type system.)  */
+struct HelloWindow
 {
-  GtkApplicationWindow parent;
-  GtkWidget *label;
-  GtkWidget *button;
-  GSettings *settings;
+  GtkWindow *window;
+  GtkLabel *label;
+  GtkButton *button;
   gsize label_id;
   gchar *labels[3];
 };
 
-struct _HelloApplicationWindowClass
-{
-  GtkApplicationWindowClass parent_class;
-};
-
-G_DEFINE_TYPE (HelloApplicationWindow, hello_application_window,
-               GTK_TYPE_APPLICATION_WINDOW);
-
 static void
-update_content (HelloApplicationWindow *window)
+update_content (struct HelloWindow *hello_window)
 {
-  gtk_label_set_label (GTK_LABEL (window->label),
-                       window->labels[window->label_id]);
-  window->label_id = (window->label_id + 1) % G_N_ELEMENTS (window->labels);
+  gtk_label_set_label (hello_window->label,
+                       hello_window->labels[hello_window->label_id]);
+  hello_window->label_id =
+    (hello_window->label_id + 1) % G_N_ELEMENTS (hello_window->labels);
 }
 
 static void
-hello_application_window_init (HelloApplicationWindow *window)
+clicked_callback (GtkWidget *widget, struct HelloWindow *hello_window)
 {
-  gtk_widget_init_template (GTK_WIDGET (window));
-
-  window->settings = g_settings_new (GSETTINGS_SCHEMA);
-  g_settings_bind (window->settings, "use-markup",
-                   window->label, "use-markup",
-                   G_SETTINGS_BIND_DEFAULT);
-
-  window->labels[0]
-    = g_strdup_printf (_("<big>Hello world!</big>\n"
-                         "This program is running as "
-                         "process number <b>%d</b>."),
-                       getpid ());
-  window->labels[1]
-    = g_strdup (_("<big><u>This is another text</u></big>"));
-  window->labels[2]
-    = g_strdup (_("<big><i>This is yet another text</i></big>"));
-
-  update_content (window);
+  update_content (hello_window);
 }
 
 static void
-hello_application_window_dispose (GObject *object)
+activate (GApplication *application, void *data)
 {
-  HelloApplicationWindow *window = HELLO_APPLICATION_WINDOW (object);
-  g_clear_object (&window->settings);
-}
+  GtkBuilder *builder;
+  GError *error = NULL;
 
-static void
-hello_application_window_class_init (HelloApplicationWindowClass *klass)
-{
-  GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
+  /* Instantiate the UI.  */
+  builder = gtk_builder_new ();
+  if (gtk_builder_add_from_resource (builder, UI_PATH, &error) == 0)
+    {
+      g_printerr ("Error instantiating UI: %s\n", error->message);
+      g_clear_error (&error);
+      exit (1);
+    }
 
-  gobject_class->dispose = hello_application_window_dispose;
+  struct HelloWindow *hello_window = g_malloc (sizeof (struct HelloWindow));
+  hello_window->window = GTK_WINDOW (gtk_builder_get_object (builder, "main_window"));
+  hello_window->label = GTK_LABEL (gtk_builder_get_object (builder, "label"));
+  hello_window->button = GTK_BUTTON (gtk_builder_get_object (builder, "button"));
 
-  gtk_widget_class_set_template_from_resource (GTK_WIDGET_CLASS (klass),
-                                               UI_PATH);
-  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (klass),
-                                        HelloApplicationWindow, label);
-  gtk_widget_class_bind_template_child (GTK_WIDGET_CLASS (klass),
-                                        HelloApplicationWindow, button);
-}
+  /* Allow Pango markup in the label.  */
+  gtk_label_set_use_markup (hello_window->label, TRUE);
 
-static HelloApplicationWindow *
-hello_application_window_new (HelloApplication *application)
-{
-  return g_object_new (HELLO_TYPE_APPLICATION_WINDOW,
-                       "application", application,
-                       NULL);
-}
+  /* Prepare various presentations of the label.  */
+  hello_window->label_id = 0;
+  gchar *line1 = g_strdup_printf ("<big>%s</big>", _("Hello world!"));
+  gchar *line2 =
+    g_strdup_printf (_("This program is running as process number %s."),
+                     g_strdup_printf ("<b>%d</b>", getpid ()));
+  hello_window->labels[0] = g_strdup_printf ("%s\n%s", line1, line2);
+  hello_window->labels[1] =
+    g_strdup_printf ("<big><u>%s</u></big>", _("This is another text"));
+  hello_window->labels[2] =
+    g_strdup_printf ("<big><i>%s</i></big>", _("This is yet another text"));
 
-/* Custom application implementation.  */
+  update_content (hello_window);
 
-struct _HelloApplication
-{
-  GtkApplication parent;
-};
+  /* Make sure that the application runs for as long as this window is
+     still open.  */
+  gtk_application_add_window (GTK_APPLICATION (application),
+                              GTK_WINDOW (hello_window->window));
 
-struct _HelloApplicationClass
-{
-  GtkApplicationClass parent_class;
-};
-
-G_DEFINE_TYPE (HelloApplication, hello_application, GTK_TYPE_APPLICATION);
-
-static void
-hello_application_init (HelloApplication *application)
-{
-}
-
-static void
-clicked_callback (GtkWidget *widget, void *data)
-{
-  update_content (HELLO_APPLICATION_WINDOW (data));
-}
-
-static void
-hello_application_activate (GApplication *application)
-{
-  HelloApplicationWindow *window;
-
-  window = hello_application_window_new (HELLO_APPLICATION (application));
-  g_signal_connect (window->button, "clicked",
-                    G_CALLBACK (clicked_callback), window);
-  gtk_window_present (GTK_WINDOW (window));
-}
-
-static void
-hello_application_class_init (HelloApplicationClass *klass)
-{
-  G_APPLICATION_CLASS (klass)->activate = hello_application_activate;
-}
-
-static HelloApplication *
-hello_application_new (void)
-{
-  return g_object_new (HELLO_TYPE_APPLICATION,
-                       "application-id", APPLICATION_ID,
-                       NULL);
+  g_signal_connect (hello_window->button, "clicked",
+                    G_CALLBACK (clicked_callback), hello_window);
+  gtk_window_present (GTK_WINDOW (hello_window->window));
 }
 
 int
@@ -174,15 +103,15 @@ main (int argc, char *argv[])
   GApplication *application;
   int status;
 
-  /* Load the GSettings schema from the current directory.  */
-  g_setenv ("GSETTINGS_SCHEMA_DIR", ".", FALSE);
-
   /* Initializations.  */
   textdomain ("hello-c-gnome3");
   bindtextdomain ("hello-c-gnome3", LOCALEDIR);
 
   /* Create application.  */
-  application = G_APPLICATION (hello_application_new ());
+  application =
+    G_APPLICATION (gtk_application_new (APPLICATION_ID,
+                                        G_APPLICATION_DEFAULT_FLAGS));
+  g_signal_connect (application, "activate", G_CALLBACK (activate), NULL);
 
   /* Start the application.  */
   status = g_application_run (application, argc, argv);

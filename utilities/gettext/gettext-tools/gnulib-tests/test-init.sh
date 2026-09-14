@@ -1,11 +1,11 @@
 #!/bin/sh
 # Unit tests for init.sh
-# Copyright (C) 2011-2016 Free Software Foundation, Inc.
+# Copyright (C) 2011-2026 Free Software Foundation, Inc.
 # This file is part of the GNUlib Library.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or
+# the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
@@ -14,9 +14,9 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-: ${srcdir=.}
+: "${srcdir=.}"
 . "$srcdir/init.sh"; path_prepend_ .
 
 fail=0
@@ -57,7 +57,8 @@ EOF
     # Also remove the @@ line, since Solaris 5.10 and GNU diff formats differ:
     # -@@ -0,0 +1 @@
     # +@@ -1,0 +1,1 @@
-    sed 's/	.*//;/^@@/d' out > k && mv k out
+    # Also, remove space after leading '+', since AIX 7.1 diff outputs a space.
+    sed 's/	.*//;/^@@/d;s/^+ /+/' out > k && mv k out
     cat <<\EOF > exp
 --- empty
 +++ in

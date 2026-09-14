@@ -1,0 +1,3 @@
+test/VC/dtds/doc.dtd:2: validity error : Element doc has 2 ID attribute defined in the external subset : val
+<!ATTLIST doc val ID #IMPLIED>
+                             ^

@@ -7,19 +7,7 @@
 # By Gerald Combs <gerald@wireshark.org>
 # Copyright 1998 Gerald Combs
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
 
 above-sibling		UINT32	HEX
@@ -66,7 +54,7 @@ backing-store	UINT8	DEC	VALS
 bell-duration	INT16	DEC
 bell-percent	INT8	DEC
 bell-pitch	INT16	DEC
-bit-gravity	UINT8	DEC	VALS(gravity)
+bit-gravity	UINT8	DEC	VALS(bit_gravity)
 bit-plane	UINT32	HEX
 blue		UINT16	DEC
 blues		UINT16	DEC
@@ -74,7 +62,7 @@ border-pixel	UINT32	HEX
 border-pixmap	UINT32	HEX	VALS
 border-width	UINT16	DEC
 button		UINT8	DEC	VALS
-byte-order	UINT8	HEX	VALS
+byte-order	CHAR	HEX	VALS
 
 childwindow	UINT32	HEX
 cap-style	UINT8	DEC	VALS
@@ -263,7 +251,7 @@ grab-status	UINT8	DEC	VALS
 grab-window	UINT32	HEX
 graphics-exposures	BOOLEAN	NONE
 height		UINT16	DEC
-image-byte-order	UINT8	HEX	VALS
+image-byte-order	CHAR	HEX	VALS
 initial-connection	NONE	NONE	undecoded
 image-format	UINT8	DEC	VALS
 image-pixmap-format	UINT8	DEC	VALS
@@ -535,7 +523,7 @@ warp-pointer-dst-window	UINT32	HEX	VALS(zero_is_none)
 warp-pointer-src-window	UINT32	HEX	VALS(zero_is_none)
 wid		UINT32	HEX		Window id
 width		UINT16	DEC
-win-gravity	UINT8	DEC	VALS(gravity)
+win-gravity	UINT8	DEC	VALS(win_gravity)
 win-x		INT16	DEC
 win-y		INT16	DEC
 window		UINT32	HEX

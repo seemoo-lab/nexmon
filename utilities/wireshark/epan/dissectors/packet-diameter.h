@@ -6,49 +6,57 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
+
+#ifndef __PACKET_DIAMETER_H__
+#define __PACKET_DIAMETER_H__
 
 /* Request-Answer Pair */
 typedef struct _diameter_req_ans_pair_t
 {
-	guint32		hop_by_hop_id;
-	guint32		end_to_end_id;
-	guint32		cmd_code;
-	guint32		result_code;
+	uint32_t		hop_by_hop_id;
+	uint32_t		end_to_end_id;
+	uint32_t		cmd_code;
+	uint32_t		result_code;
 	const char*	cmd_str;
-	guint32 	req_frame; 	/* frame number in which request was seen */
-	guint32		ans_frame;	/* frame number in which answer was seen */
+	uint32_t 	req_frame; 	/* frame number in which request was seen */
+	uint32_t		ans_frame;	/* frame number in which answer was seen */
 	nstime_t	req_time;
 	nstime_t	srt_time;
-	gboolean	processing_request; /* TRUE if processing request, FALSE if processing answer. */
+	bool	processing_request; /* true if processing request, false if processing answer. */
 } diameter_req_ans_pair_t;
 
 /* Info needed by AVP sub dissectors */
 typedef struct _diam_sub_dis_t {
-	guint32 application_id;
-	guint32 feature_list_id;
-	gboolean dis_gouped;       /**< Set during dissection of grouped AVP */
-	guint32 vendor_id;
+	uint32_t application_id;
+	uint32_t cmd_code;
+	uint32_t feature_list_id;
+	bool dis_gouped;       /**< Set during dissection of grouped AVP */
+	uint32_t group_avp_code; /* Set AVP code for current dissected grouped AVP */
+	uint32_t vendor_id;
 	char *avp_str;
+	proto_item* item;          /**< The item created for this AVP*/
+	uint32_t subscription_id_type;     /* Store the Subscription-Id-Type for use when we dissect Subscription-Id-Data */
+	uint32_t user_equipment_info_type; /* Store the User-Equipment-Info-Type for use when we dissect User-Equipment-Info-Value */
+	bool parent_message_is_request; /* Whether the Diameter message that contains your AVP is a request */
+	const char *session_id;
+	const char *imsi; /* Store IMSI from first AVP with type E.212*/
 } diam_sub_dis_t;
 
 #define DIAM_APPID_3GPP_CX      16777216
 #define DIAM_APPID_3GPP_SH      16777217
+#define DIAM_APPID_3GPP_RX      16777236
 #define DIAM_APPID_3GPP_GX      16777238
+#define DIAM_APPID_3GPP_STA     16777250
 #define DIAM_APPID_3GPP_S6A_S6D 16777251
-#define DIAM_APPID_3GPP_S13	16777252
-#define DIAM_APPID_3GPP_SLH	16777291
-#define DIAM_APPID_3GPP_S7A	16777308
+#define DIAM_APPID_3GPP_S13     16777252
+#define DIAM_APPID_3GPP_SWM     16777264
+#define DIAM_APPID_3GPP_SWX     16777265
+#define DIAM_APPID_3GPP_S6B     16777272
+#define DIAM_APPID_3GPP_SLH     16777291
+#define DIAM_APPID_3GPP_SD      16777303
+#define DIAM_APPID_3GPP_S7A     16777308
+#define DIAM_APPID_3GPP_S6T     16777345
+
+#endif /* __PACKET_DIAMETER_H__ */

@@ -2,9 +2,6 @@
 # Check of --unicode-subst, --byte-subst, --widechar-subst options.
 set -e
 iconv=../src/iconv_no_i18n
-# Make sure the charset.alias file is found.
-CHARSETALIASDIR=../lib
-export CHARSETALIASDIR
 
 options_ascii='--unicode-subst=<U+%04X> --byte-subst=<0x%02x> --widechar-subst=<%08x>'
 options_utf8='--unicode-subst=«U+%04X» --byte-subst=«0x%02x» --widechar-subst=«%08x»'
@@ -22,7 +19,7 @@ cmp tmp-out tmp-ok
 
 # Test of --byte-subst with a non-ASCII substitution.
 
-if test "`(locale charmap) 2>/dev/null`" = UTF-8; then
+if ./is-native && test "`(locale charmap) 2>/dev/null`" = UTF-8; then
   cat > tmp-in <<\EOF
 Böse Bübchen
 EOF
@@ -33,7 +30,7 @@ EOF
   cmp tmp-out tmp-ok
 fi
 
-if test "`(locale charmap) 2>/dev/null`" = UTF-8; then
+if ./is-native && test "`(locale charmap) 2>/dev/null`" = UTF-8; then
   cat > tmp-in <<\EOF
 Böse Bübchen
 EOF
@@ -80,7 +77,7 @@ cmp tmp-out tmp-ok
 
 # Test of --unicode-subst with a non-ASCII substitution.
 
-if test "`(locale charmap) 2>/dev/null`" = UTF-8; then
+if ./is-native && test "`(locale charmap) 2>/dev/null`" = UTF-8; then
   cat > tmp-in <<\EOF
 Russian (Русский)
 EOF
@@ -119,7 +116,7 @@ fi
 # wcrtomb() doesn't exist on FreeBSD 4.0 and is broken on MacOS X 10.3.
 # So far this has been tested only on a glibc system with !__STDC_ISO_10646__.
 
-if false && test "`(locale charmap) 2>/dev/null`" = UTF-8; then
+if false && ./is-native && test "`(locale charmap) 2>/dev/null`" = UTF-8; then
   cat > tmp-in <<\EOF
 Russian (Русский)
 EOF
@@ -131,7 +128,7 @@ Russian (<00000420><00000443><00000441><00000441><0000043a><00000438><00000439>)
 EOF
   cmp tmp-out1 tmp-ok
   cmp tmp-out2 tmp-ok
-  if test "`(LC_ALL=de_DE.ISO-8859-1 locale charmap) 2>/dev/null`" = ISO-8859-1; then
+  if ./is-native && test "`(LC_ALL=de_DE.ISO-8859-1 locale charmap) 2>/dev/null`" = ISO-8859-1; then
     options_latin1=`echo " $options_utf8" | $iconv -f UTF-8 -t ISO-8859-1`
     LC_ALL=de_DE.ISO-8859-1 $iconv $options_latin1 -f wchar_t -t UTF-8 < tmp-inw > tmp-out1
     cat > tmp-ok <<\EOF

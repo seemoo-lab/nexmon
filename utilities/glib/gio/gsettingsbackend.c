@@ -2,10 +2,12 @@
  * Copyright © 2009, 2010 Codethink Limited
  * Copyright © 2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the licence, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -50,17 +52,13 @@ G_DEFINE_ABSTRACT_TYPE_WITH_PRIVATE (GSettingsBackend, g_settings_backend, G_TYP
 static gboolean g_settings_has_backend;
 
 /**
- * SECTION:gsettingsbackend
- * @title: GSettingsBackend
- * @short_description: Interface for settings backend implementations
- * @include: gio/gsettingsbackend.h
- * @see_also: #GSettings, #GIOExtensionPoint
+ * GSettingsBackend:
  *
- * The #GSettingsBackend interface defines a generic interface for
+ * The `GSettingsBackend` interface defines a generic interface for
  * non-strictly-typed data that is stored in a hierarchy. To implement
- * an alternative storage backend for #GSettings, you need to implement
- * the #GSettingsBackend interface and then make it implement the
- * extension point #G_SETTINGS_BACKEND_EXTENSION_POINT_NAME.
+ * an alternative storage backend for [class@Gio.Settings], you need to
+ * implement the `GSettingsBackend` interface and then make it implement the
+ * extension point `G_SETTINGS_BACKEND_EXTENSION_POINT_NAME`.
  *
  * The interface defines methods for reading and writing values, a
  * method for determining if writing of certain values will fail
@@ -70,23 +68,22 @@ static gboolean g_settings_has_backend;
  * implementations must carefully adhere to the expectations of
  * callers that are documented on each of the interface methods.
  *
- * Some of the GSettingsBackend functions accept or return a #GTree.
- * These trees always have strings as keys and #GVariant as values.
- * g_settings_backend_create_tree() is a convenience function to create
- * suitable trees.
+ * Some of the `GSettingsBackend` functions accept or return a
+ * [struct@GLib.Tree]. These trees always have strings as keys and
+ * [struct@GLib.Variant] as values.
  *
- * The GSettingsBackend API is exported to allow third-party
+ * The `GSettingsBackend` API is exported to allow third-party
  * implementations, but does not carry the same stability guarantees
  * as the public GIO API. For this reason, you have to define the
- * C preprocessor symbol %G_SETTINGS_ENABLE_BACKEND before including
+ * C preprocessor symbol `G_SETTINGS_ENABLE_BACKEND` before including
  * `gio/gsettingsbackend.h`.
  **/
 
 static gboolean
 is_key (const gchar *key)
 {
-  gint length;
-  gint i;
+  size_t length;
+  size_t i;
 
   g_return_val_if_fail (key != NULL, FALSE);
   g_return_val_if_fail (key[0] == '/', FALSE);
@@ -104,8 +101,8 @@ is_key (const gchar *key)
 static gboolean
 is_path (const gchar *path)
 {
-  gint length;
-  gint i;
+  size_t length;
+  size_t i;
 
   g_return_val_if_fail (path != NULL, FALSE);
   g_return_val_if_fail (path[0] == '/', FALSE);
@@ -122,7 +119,13 @@ is_path (const gchar *path)
 
 struct _GSettingsBackendWatch
 {
-  GObject                       *target;
+  /* Always access the target via the weak reference */
+  GWeakRef                       target;
+  /* The pointer is only for comparison from the weak notify,
+   * at which point the target might already be close to
+   * destroyed. It's not safe to use it for anything anymore
+   * at that point */
+  GObject                       *target_ptr;
   const GSettingsListenerVTable *vtable;
   GMainContext                  *context;
   GSettingsBackendWatch         *next;
@@ -154,11 +157,12 @@ g_settings_backend_watch_weak_notify (gpointer  data,
   /* search and remove */
   g_mutex_lock (&backend->priv->lock);
   for (ptr = &backend->priv->watches; *ptr; ptr = &(*ptr)->next)
-    if ((*ptr)->target == where_the_object_was)
+    if ((*ptr)->target_ptr == where_the_object_was)
       {
         GSettingsBackendWatch *tmp = *ptr;
 
         *ptr = tmp->next;
+        g_weak_ref_clear (&tmp->target);
         g_slice_free (GSettingsBackendWatch, tmp);
 
         g_mutex_unlock (&backend->priv->lock);
@@ -173,7 +177,7 @@ g_settings_backend_watch_weak_notify (gpointer  data,
  * g_settings_backend_watch:
  * @backend: a #GSettingsBackend
  * @target: the GObject (typically GSettings instance) to call back to
- * @context: (allow-none): a #GMainContext, or %NULL
+ * @context: (nullable): a #GMainContext, or %NULL
  * ...: callbacks...
  *
  * Registers a new watch on a #GSettingsBackend.
@@ -208,8 +212,10 @@ g_settings_backend_watch (GSettingsBackend              *backend,
    * GSettings object in a thread other than the one that is doing the
    * dispatching is as follows:
    *
-   *  1) hold a GObject reference on the GSettings during an outstanding
-   *     dispatch.  This ensures that the delivery is always possible.
+   *  1) hold a strong reference on the GSettings during an outstanding
+   *     dispatch.  This ensures that the delivery is always possible while
+   *     the GSettings object is alive, and if this was the last reference
+   *     then it will be dropped from the dispatch thread.
    *
    *  2) hold a weak reference on the GSettings at other times.  This
    *     allows us to receive early notification of pending destruction
@@ -224,12 +230,8 @@ g_settings_backend_watch (GSettingsBackend              *backend,
    * possible to keep the object alive using g_object_ref() and we would
    * have no way of knowing this.
    *
-   * Note also that we do not need to hold a reference on the main
-   * context here since the GSettings instance does that for us and we
-   * will receive the weak notify long before it is dropped.  We don't
-   * even need to hold it during dispatches because our reference on the
-   * GSettings will prevent the finalize from running and dropping the
-   * ref on the context.
+   * Note also that we need to hold a reference on the main context here
+   * since the GSettings instance may be finalized before the closure runs.
    *
    * All access to the list holds a mutex.  We have some strategies to
    * avoid some of the pain that would be associated with that.
@@ -238,7 +240,8 @@ g_settings_backend_watch (GSettingsBackend              *backend,
   watch = g_slice_new (GSettingsBackendWatch);
   watch->context = context;
   watch->vtable = vtable;
-  watch->target = target;
+  g_weak_ref_init (&watch->target, target);
+  watch->target_ptr = target;
   g_object_weak_ref (target, g_settings_backend_watch_weak_notify, backend);
 
   /* linked list prepend */
@@ -267,6 +270,8 @@ g_settings_backend_invoke_closure (gpointer user_data)
   closure->function (closure->target, closure->backend, closure->name,
                      closure->origin_tag, closure->names);
 
+  if (closure->context)
+    g_main_context_unref (closure->context);
   g_object_unref (closure->backend);
   g_object_unref (closure->target);
   g_strfreev (closure->names);
@@ -299,11 +304,18 @@ g_settings_backend_dispatch_signal (GSettingsBackend    *backend,
   for (watch = backend->priv->watches; watch; watch = watch->next)
     {
       GSettingsBackendClosure *closure;
+      GObject *target = g_weak_ref_get (&watch->target);
+
+      /* If the target was destroyed in the meantime, just skip it here */
+      if (!target)
+        continue;
 
       closure = g_slice_new (GSettingsBackendClosure);
       closure->context = watch->context;
+      if (closure->context)
+        g_main_context_ref (closure->context);
       closure->backend = g_object_ref (backend);
-      closure->target = g_object_ref (watch->target);
+      closure->target = g_steal_pointer (&target);
       closure->function = G_STRUCT_MEMBER (void *, watch->vtable,
                                            function_offset);
       closure->name = g_strdup (name);
@@ -391,7 +403,7 @@ g_settings_backend_changed (GSettingsBackend *backend,
  * end with '/' and must not contain '//').
  *
  * The meaning of this signal is that any of the key names resulting
- * from the contatenation of @path with each item in @items may have
+ * from the concatenation of @path with each item in @items may have
  * changed.
  *
  * The same rules for when notifications must occur apply as per
@@ -586,7 +598,7 @@ g_settings_backend_flatten_one (gpointer key,
  * @path: (out): the location to save the path
  * @keys: (out) (transfer container) (array zero-terminated=1): the
  *        location to save the relative keys
- * @values: (out) (allow-none) (transfer container) (array zero-terminated=1):
+ * @values: (out) (optional) (transfer container) (array zero-terminated=1):
  *          the location to save the values, or %NULL
  *
  * Calculate the longest common prefix of all keys in a tree and write
@@ -688,7 +700,7 @@ g_settings_backend_changed_tree (GSettingsBackend *backend,
  * backend (ie: the one that the backend would contain if
  * g_settings_reset() were called).
  *
- * Returns: the value that was read, or %NULL
+ * Returns: (nullable) (transfer full): the value that was read, or %NULL
  */
 GVariant *
 g_settings_backend_read (GSettingsBackend   *backend,
@@ -726,7 +738,7 @@ g_settings_backend_read (GSettingsBackend   *backend,
  * value for themselves, then this will return %NULL (even if the
  * sysadmin has provided a default value).
  *
- * Returns: the value that was read, or %NULL
+ * Returns: (nullable) (transfer full): the value that was read, or %NULL
  */
 GVariant *
 g_settings_backend_read_user_value (GSettingsBackend   *backend,
@@ -768,6 +780,8 @@ g_settings_backend_read_user_value (GSettingsBackend   *backend,
  * to emit a second "changed" signal (either during this call, or later)
  * to indicate that the affected keys have suddenly "changed back" to their
  * old values.
+ *
+ * If @value has a floating reference, it will be sunk.
  *
  * Returns: %TRUE if the write succeeded, %FALSE if the key was not writable
  */
@@ -975,6 +989,12 @@ g_settings_backend_verify (gpointer impl)
   return TRUE;
 }
 
+/* We need to cache the default #GSettingsBackend for the entire process
+ * lifetime, especially if the backend is #GMemorySettingsBackend: it needs to
+ * keep the in-memory settings around even while there are no #GSettings
+ * instances alive. */
+static GSettingsBackend *settings_backend_default_singleton = NULL;  /* (owned) (atomic) */
+
 /**
  * g_settings_backend_get_default:
  *
@@ -984,19 +1004,27 @@ g_settings_backend_verify (gpointer impl)
  *
  * The user gets a reference to the backend.
  *
- * Returns: (transfer full): the default #GSettingsBackend
+ * Returns: (not nullable) (transfer full): the default #GSettingsBackend,
+ *     which will be a dummy (memory) settings backend if no other settings
+ *     backend is available.
  *
  * Since: 2.28
  */
 GSettingsBackend *
 g_settings_backend_get_default (void)
 {
-  GSettingsBackend *backend;
+  if (g_once_init_enter_pointer (&settings_backend_default_singleton))
+    {
+      GSettingsBackend *singleton;
 
-  backend = _g_io_module_get_default (G_SETTINGS_BACKEND_EXTENSION_POINT_NAME,
-				      "GSETTINGS_BACKEND",
-				      g_settings_backend_verify);
-  return g_object_ref (backend);
+      singleton = _g_io_module_get_default (G_SETTINGS_BACKEND_EXTENSION_POINT_NAME,
+                                            "GSETTINGS_BACKEND",
+                                            g_settings_backend_verify);
+
+      g_once_init_leave_pointer (&settings_backend_default_singleton, singleton);
+    }
+
+  return g_object_ref (settings_backend_default_singleton);
 }
 
 /*< private >
@@ -1010,7 +1038,8 @@ g_settings_backend_get_default (void)
  * If this is not implemented in the backend, then a %TRUE
  * #GSimplePermission is returned.
  *
- * Returns: a non-%NULL #GPermission. Free with g_object_unref()
+ * Returns: (not nullable) (transfer full): a non-%NULL #GPermission.
+ *     Free with g_object_unref()
  */
 GPermission *
 g_settings_backend_get_permission (GSettingsBackend *backend,
@@ -1042,5 +1071,7 @@ g_settings_backend_sync_default (void)
 
       if (class->sync)
         class->sync (backend);
+
+      g_object_unref (backend);
     }
 }

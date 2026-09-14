@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -26,6 +14,7 @@
 #include <epan/packet.h>
 #include <epan/asn1.h>
 #include <epan/oids.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 
@@ -45,13 +34,13 @@ void proto_register_acp133(void);
 void proto_reg_handoff_acp133(void);
 
 /* Initialize the protocol and registered fields */
-static int proto_acp133 = -1;
+static int proto_acp133;
 
 
 #include "packet-acp133-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_acp133 = -1;
+static int ett_acp133;
 #include "packet-acp133-ett.c"
 
 #include "packet-acp133-fn.c"
@@ -67,7 +56,7 @@ void proto_register_acp133(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_acp133,
 #include "packet-acp133-ettarr.c"
   };

@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -29,10 +17,7 @@
 #define PSNAME "BJNP"
 #define PFNAME "bjnp"
 
-#define BJNP_PORT1         8611
-#define BJNP_PORT2         8612
-#define BJNP_PORT3         8613
-#define BJNP_PORT4         8614
+#define BJNP_PORT_RANGE    "8611-8614"
 
 /* dev_type */
 #define PRINTER_COMMAND    0x01
@@ -52,17 +37,17 @@
 void proto_register_bjnp(void);
 void proto_reg_handoff_bjnp(void);
 
-static int proto_bjnp = -1;
+static int proto_bjnp;
 
-static int hf_bjnp_id = -1;
-static int hf_dev_type = -1;
-static int hf_cmd_code = -1;
-static int hf_seq_no = -1;
-static int hf_session_id = -1;
-static int hf_payload_len = -1;
-static int hf_payload = -1;
+static int hf_bjnp_id;
+static int hf_dev_type;
+static int hf_cmd_code;
+static int hf_seq_no;
+static int hf_session_id;
+static int hf_payload_len;
+static int hf_payload;
 
-static gint ett_bjnp = -1;
+static int ett_bjnp;
 
 static dissector_handle_t bjnp_handle;
 
@@ -89,13 +74,13 @@ static int dissect_bjnp (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
 {
   proto_tree *bjnp_tree;
   proto_item *ti;
-  gint        offset = 0;
-  guint32     payload_len;
-  guint8      dev_type, cmd_code;
-  gchar      *info;
+  int         offset = 0;
+  uint32_t    payload_len;
+  uint8_t     dev_type, cmd_code;
+  char       *info;
 
   /* If it does not start with a printable character it's not BJNP */
-  if(!g_ascii_isprint(tvb_get_guint8(tvb, 0)))
+  if(!g_ascii_isprint(tvb_get_uint8(tvb, 0)))
     return 0;
 
   col_set_str (pinfo->cinfo, COL_PROTOCOL, PSNAME);
@@ -104,20 +89,20 @@ static int dissect_bjnp (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
   ti = proto_tree_add_item (tree, proto_bjnp, tvb, offset, -1, ENC_NA);
   bjnp_tree = proto_item_add_subtree (ti, ett_bjnp);
 
-  proto_tree_add_item (bjnp_tree, hf_bjnp_id, tvb, offset, 4, ENC_ASCII|ENC_NA);
+  proto_tree_add_item (bjnp_tree, hf_bjnp_id, tvb, offset, 4, ENC_ASCII);
   offset += 4;
 
-  dev_type = tvb_get_guint8 (tvb, offset);
+  dev_type = tvb_get_uint8 (tvb, offset);
   proto_tree_add_item (bjnp_tree, hf_dev_type, tvb, offset, 1, ENC_BIG_ENDIAN);
   offset++;
 
-  cmd_code = tvb_get_guint8 (tvb, offset);
+  cmd_code = tvb_get_uint8 (tvb, offset);
   proto_tree_add_item (bjnp_tree, hf_cmd_code, tvb, offset, 1, ENC_BIG_ENDIAN);
   offset++;
 
-  info = wmem_strdup_printf(wmem_packet_scope(), "%s: %s",
-                            val_to_str (dev_type, dev_type_vals, "Unknown type (%d)"),
-                            val_to_str (cmd_code, cmd_code_vals, "Unknown code (%d)"));
+  info = wmem_strdup_printf(pinfo->pool, "%s: %s",
+                            val_to_str(pinfo->pool, dev_type, dev_type_vals, "Unknown type (%d)"),
+                            val_to_str(pinfo->pool, cmd_code, cmd_code_vals, "Unknown code (%d)"));
 
   proto_item_append_text (ti, ", %s", info);
   col_add_str (pinfo->cinfo, COL_INFO, info);
@@ -166,7 +151,7 @@ void proto_register_bjnp (void)
         NULL, 0x0, NULL, HFILL } },
   };
 
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_bjnp
   };
 
@@ -180,10 +165,7 @@ void proto_register_bjnp (void)
 
 void proto_reg_handoff_bjnp (void)
 {
-  dissector_add_uint ("udp.port", BJNP_PORT1, bjnp_handle);
-  dissector_add_uint ("udp.port", BJNP_PORT2, bjnp_handle);
-  dissector_add_uint ("udp.port", BJNP_PORT3, bjnp_handle);
-  dissector_add_uint ("udp.port", BJNP_PORT4, bjnp_handle);
+  dissector_add_uint_range_with_preference("udp.port", BJNP_PORT_RANGE, bjnp_handle);
 }
 
 /*

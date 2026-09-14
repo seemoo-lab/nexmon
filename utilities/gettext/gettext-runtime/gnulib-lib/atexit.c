@@ -1,5 +1,7 @@
-/* Wrapper to implement ANSI C's atexit using SunOS's on_exit. */
-/* This function is in the public domain.  --Mike Stump. */
+/* Wrapper to implement ANSI C's atexit using SunOS's on_exit.  */
+/* This file is in the public domain.  */
+
+/* Written by Mike Stump.  */
 
 #include <config.h>
 

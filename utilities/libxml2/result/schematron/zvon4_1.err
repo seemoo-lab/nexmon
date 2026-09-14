@@ -1,0 +1,2 @@
+./test/schematron/zvon4_1.xml:1: element XXX: schematron error : /XXX line 1: Root element is XXX, not AAA 
+./test/schematron/zvon4_1.xml fails to validate

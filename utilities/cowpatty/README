@@ -1,8 +1,6 @@
 coWPAtty - Brute-force dictionary attack against WPA-PSK.
 
-Copyright(c) 2004-2005, Joshua Wright <jwright@hasborg.com>
-
-$Id: README,v 4.0 2006-07-28 12:23:48 jwright Exp $
+Copyright(c) 2004-2018  Joshua Wright <jwright@hasborg.com>
 
 --------------------------------------------------------------------------------
 

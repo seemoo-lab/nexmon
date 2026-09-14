@@ -1,9 +1,9 @@
 /* Test of character set conversion.
-   Copyright (C) 2007-2016 Free Software Foundation, Inc.
+   Copyright (C) 2007-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2007.  */
 
@@ -46,6 +46,12 @@ main ()
      and UTF-8.  */
   iconv_t cd_88591_to_utf8 = iconv_open ("UTF-8", "ISO-8859-1");
   iconv_t cd_utf8_to_88591 = iconv_open ("ISO-8859-1", "UTF-8");
+
+#if defined __MVS__ && defined __IBMC__
+  /* String literals below are in ASCII, not EBCDIC.  */
+# pragma convert("ISO8859-1")
+# define CONVERT_ENABLED
+#endif
 
   ASSERT (cd_88591_to_utf8 != (iconv_t)(-1));
   ASSERT (cd_utf8_to_88591 != (iconv_t)(-1));
@@ -142,7 +148,12 @@ main ()
 
   iconv_close (cd_88591_to_utf8);
   iconv_close (cd_utf8_to_88591);
+
+#ifdef CONVERT_ENABLED
+# pragma convert(pop)
 #endif
 
-  return 0;
+#endif /* HAVE_ICONV */
+
+  return test_exit_status;
 }

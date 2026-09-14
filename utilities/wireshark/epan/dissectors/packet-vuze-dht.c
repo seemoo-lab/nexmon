@@ -6,28 +6,15 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1999 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 #include <epan/to_str.h>
 
-#define DEFAULT_UDP_PORT 11273
+#define DEFAULT_UDP_PORT 11273 /* Not IANA registered */
 
 void proto_register_vuze_dht(void);
 
@@ -196,119 +183,116 @@ static const value_string vuze_dht_network_coordinate_type_vals[] = {
   { 0, NULL }
 };
 
-static int proto_vuze_dht = -1;
+static int proto_vuze_dht;
 
 /* --- fields ---*/
 
 /* address appears in contacts, request header, reply error */
-static int hf_vuze_dht_address = -1;
-static int hf_vuze_dht_address_len = -1;
-static int hf_vuze_dht_address_v4 = -1;
-static int hf_vuze_dht_address_v6 = -1;
-static int hf_vuze_dht_address_port = -1;
+static int hf_vuze_dht_address;
+static int hf_vuze_dht_address_len;
+static int hf_vuze_dht_address_v4;
+static int hf_vuze_dht_address_v6;
+static int hf_vuze_dht_address_port;
 
 /* contact appears in values, reply find_node, reply find_value */
-static int hf_vuze_dht_contact = -1;
-static int hf_vuze_dht_contact_type = -1;
-static int hf_vuze_dht_proto_ver = -1;
+static int hf_vuze_dht_contact;
+static int hf_vuze_dht_contact_type;
+static int hf_vuze_dht_proto_ver;
 
 /* value appears in reply find_value */
-static int hf_vuze_dht_value = -1;
-static int hf_vuze_dht_value_ver = -1;
-static int hf_vuze_dht_value_created = -1;
-static int hf_vuze_dht_value_bytes_count = -1;
-static int hf_vuze_dht_value_bytes = -1;
-static int hf_vuze_dht_value_flags = -1;
-static int hf_vuze_dht_value_life_hours = -1;
-static int hf_vuze_dht_value_replication_factor = -1;
+static int hf_vuze_dht_value;
+static int hf_vuze_dht_value_ver;
+static int hf_vuze_dht_value_created;
+static int hf_vuze_dht_value_bytes_count;
+static int hf_vuze_dht_value_bytes;
+static int hf_vuze_dht_value_flags;
+static int hf_vuze_dht_value_life_hours;
+static int hf_vuze_dht_value_replication_factor;
 
 /* firstly appear in request header */
-static int hf_vuze_dht_connection_id = -1;
-static int hf_vuze_dht_action = -1;
-static int hf_vuze_dht_transaction_id = -1;
-static int hf_vuze_dht_vendor_id = -1;
-static int hf_vuze_dht_network_id = -1;
-static int hf_vuze_dht_local_proto_ver = -1;
-static int hf_vuze_dht_instance_id = -1;
-static int hf_vuze_dht_time = -1;
-static int hf_vuze_dht_generic_flags = -1;
-static int hf_vuze_dht_generic_flags2 = -1;
+static int hf_vuze_dht_connection_id;
+static int hf_vuze_dht_action;
+static int hf_vuze_dht_transaction_id;
+static int hf_vuze_dht_vendor_id;
+static int hf_vuze_dht_network_id;
+static int hf_vuze_dht_local_proto_ver;
+static int hf_vuze_dht_instance_id;
+static int hf_vuze_dht_time;
+static int hf_vuze_dht_generic_flags;
+static int hf_vuze_dht_generic_flags2;
 
 /* firstly appear in reply ping */
-static int hf_vuze_dht_network_coordinates_count = -1;
-static int hf_vuze_dht_network_coordinates = -1;
-static int hf_vuze_dht_network_coordinate = -1;
-static int hf_vuze_dht_network_coordinate_type = -1;
-static int hf_vuze_dht_network_coordinate_size = -1;
-static int hf_vuze_dht_network_coordinate_data = -1;
-static int hf_vuze_dht_network_coordinate_x = -1;
-static int hf_vuze_dht_network_coordinate_y = -1;
-static int hf_vuze_dht_network_coordinate_height = -1;
-static int hf_vuze_dht_network_coordinate_error = -1;
+static int hf_vuze_dht_network_coordinates_count;
+static int hf_vuze_dht_network_coordinates;
+static int hf_vuze_dht_network_coordinate;
+static int hf_vuze_dht_network_coordinate_type;
+static int hf_vuze_dht_network_coordinate_size;
+static int hf_vuze_dht_network_coordinate_data;
+static int hf_vuze_dht_network_coordinate_x;
+static int hf_vuze_dht_network_coordinate_y;
+static int hf_vuze_dht_network_coordinate_height;
+static int hf_vuze_dht_network_coordinate_error;
 
 /* firstly appear in request store */
-static int hf_vuze_dht_spoof_id = -1;
-static int hf_vuze_dht_keys_count = -1;
-static int hf_vuze_dht_keys = -1;
-static int hf_vuze_dht_key = -1;
-static int hf_vuze_dht_key_len = -1;
-static int hf_vuze_dht_key_data = -1;
-static int hf_vuze_dht_value_group = -1;
-static int hf_vuze_dht_value_groups = -1;
-static int hf_vuze_dht_value_groups_count = -1;
-static int hf_vuze_dht_values_count = -1;
+static int hf_vuze_dht_spoof_id;
+static int hf_vuze_dht_keys_count;
+static int hf_vuze_dht_keys;
+static int hf_vuze_dht_key;
+static int hf_vuze_dht_key_len;
+static int hf_vuze_dht_key_data;
+static int hf_vuze_dht_value_group;
+static int hf_vuze_dht_value_groups;
+static int hf_vuze_dht_value_groups_count;
+static int hf_vuze_dht_values_count;
 
 /* firstly appear in reply store */
-static int hf_vuze_dht_diversifications_len = -1;
-static int hf_vuze_dht_diversifications = -1;
+static int hf_vuze_dht_diversifications_len;
+static int hf_vuze_dht_diversifications;
 
 /* firstly appear in request find_node */
-static int hf_vuze_dht_id_len = -1;
-static int hf_vuze_dht_id = -1;
-static int hf_vuze_dht_node_status = -1;
-static int hf_vuze_dht_size = -1;
+static int hf_vuze_dht_id_len;
+static int hf_vuze_dht_id;
+static int hf_vuze_dht_node_status;
+static int hf_vuze_dht_size;
 
 /* firstly appear in reply find_node */
-static int hf_vuze_dht_node_type = -1;
-static int hf_vuze_dht_contacts_count = -1;
-static int hf_vuze_dht_contacts = -1;
+static int hf_vuze_dht_node_type;
+static int hf_vuze_dht_contacts_count;
+static int hf_vuze_dht_contacts;
 
 /* firstly appear in request find_value */
-static int hf_vuze_dht_flags = -1;
-static int hf_vuze_dht_values_num = -1;
-static int hf_vuze_dht_values_total = -1;
-static int hf_vuze_dht_reads_per_min = -1;
-static int hf_vuze_dht_diversification_type = -1;
-static int hf_vuze_dht_max_values = -1;
+static int hf_vuze_dht_flags;
+static int hf_vuze_dht_values_num;
+static int hf_vuze_dht_values_total;
+static int hf_vuze_dht_reads_per_min;
+static int hf_vuze_dht_diversification_type;
+static int hf_vuze_dht_max_values;
 
 /* firstly appear in reply find_value */
-static int hf_vuze_dht_has_continuation = -1;
-static int hf_vuze_dht_has_values = -1;
+static int hf_vuze_dht_has_continuation;
+static int hf_vuze_dht_has_values;
 
 /* firstly appear in reply error */
-static int hf_vuze_dht_error_type = -1;
-static int hf_vuze_dht_key_block_request_len = -1;
-static int hf_vuze_dht_key_block_request = -1;
-static int hf_vuze_dht_signature_len = -1;
-static int hf_vuze_dht_signature = -1;
+static int hf_vuze_dht_error_type;
+static int hf_vuze_dht_key_block_request_len;
+static int hf_vuze_dht_key_block_request;
+static int hf_vuze_dht_signature_len;
+static int hf_vuze_dht_signature;
 
 /* trees */
-static gint ett_vuze_dht = -1;
-static gint ett_vuze_dht_address = -1;
-static gint ett_vuze_dht_contacts = -1;
-static gint ett_vuze_dht_contact = -1;
-static gint ett_vuze_dht_keys = -1;
-static gint ett_vuze_dht_key = -1;
-static gint ett_vuze_dht_value_groups = -1;
-static gint ett_vuze_dht_value_group = -1;
-static gint ett_vuze_dht_value = -1;
-static gint ett_vuze_dht_network_coordinates = -1;
-static gint ett_vuze_dht_network_coordinate = -1;
+static int ett_vuze_dht;
+static int ett_vuze_dht_address;
+static int ett_vuze_dht_contacts;
+static int ett_vuze_dht_contact;
+static int ett_vuze_dht_keys;
+static int ett_vuze_dht_key;
+static int ett_vuze_dht_value_groups;
+static int ett_vuze_dht_value_group;
+static int ett_vuze_dht_value;
+static int ett_vuze_dht_network_coordinates;
+static int ett_vuze_dht_network_coordinate;
 
 static dissector_handle_t vuze_dht_handle;
-
-/* port use */
-static guint global_vuze_dht_udp_port = DEFAULT_UDP_PORT;
 
 void proto_reg_handoff_vuze_dht(void);
 
@@ -322,12 +306,12 @@ short:         port number
 static int
 dissect_vuze_dht_address(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *tree, int offset, const char* addr_name)
 {
-  guint8 ip_length;
+  uint8_t ip_length;
   proto_tree *sub_tree;
   proto_item *ti;
   address addr;
 
-  ip_length = tvb_get_guint8(tvb,offset);
+  ip_length = tvb_get_uint8(tvb,offset);
   /* the decoded length is ip length+3, see the format above */
   ti = proto_tree_add_none_format(tree, hf_vuze_dht_address, tvb, offset, ip_length+3, "%s: ", addr_name );
   sub_tree = proto_item_add_subtree(ti, ett_vuze_dht_address);
@@ -352,7 +336,7 @@ dissect_vuze_dht_address(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *tree,
   offset += ip_length;
 
   proto_tree_add_item(sub_tree, hf_vuze_dht_address_port, tvb, offset, TL_SHORT, ENC_BIG_ENDIAN);
-  proto_item_append_text( ti, "%s:%d", address_to_str(wmem_packet_scope(), &addr ), tvb_get_ntohs(tvb,offset) );
+  proto_item_append_text( ti, "%s:%d", address_to_str(pinfo->pool, &addr ), tvb_get_ntohs(tvb,offset) );
   offset += TL_SHORT;
 
   return offset;
@@ -372,10 +356,10 @@ dissect_vuze_dht_contact(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, in
   proto_tree *sub_tree;
 
   /* the decoded length is ip length+5, see the format above */
-  ti = proto_tree_add_none_format( tree, hf_vuze_dht_contact, tvb, offset, tvb_get_guint8(tvb,offset+2)+5,
+  ti = proto_tree_add_none_format( tree, hf_vuze_dht_contact, tvb, offset, tvb_get_uint8(tvb,offset+2)+5,
       "%s contact, version %d",
-      val_to_str_const( tvb_get_guint8(tvb, offset), vuze_dht_contact_type_vals, "Unknown"),
-      tvb_get_guint8(tvb, offset+1) );
+      val_to_str_const( tvb_get_uint8(tvb, offset), vuze_dht_contact_type_vals, "Unknown"),
+      tvb_get_uint8(tvb, offset+1) );
   sub_tree = proto_item_add_subtree(ti, ett_vuze_dht_contact);
 
   proto_tree_add_item(sub_tree, hf_vuze_dht_contact_type, tvb, offset, TL_BYTE, ENC_BIG_ENDIAN);
@@ -413,9 +397,9 @@ dissect_vuze_dht_key(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *tree, int
 {
   proto_item *ti;
   proto_tree *sub_tree;
-  guint key_len;
+  unsigned key_len;
 
-  key_len = tvb_get_guint8( tvb, offset );
+  key_len = tvb_get_uint8( tvb, offset );
   ti = proto_tree_add_item( tree, hf_vuze_dht_key, tvb, offset, key_len+1, ENC_NA );
   sub_tree = proto_item_add_subtree(ti, ett_vuze_dht_key);
 
@@ -423,7 +407,7 @@ dissect_vuze_dht_key(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *tree, int
   offset += TL_BYTE;
 
   proto_tree_add_item( sub_tree, hf_vuze_dht_key_data, tvb, offset, key_len, ENC_NA );
-  proto_item_append_text( ti, ": %d bytes ( %s )", key_len, tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, key_len ) );
+  proto_item_append_text( ti, ": %d bytes ( %s )", key_len, tvb_bytes_to_str(pinfo->pool, tvb, offset, key_len ) );
   offset += key_len;
 
   return offset;
@@ -509,7 +493,7 @@ dissect_vuze_dht_value(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *tree, i
     offset += TL_SHORT;
 
     proto_tree_add_item(sub_tree, hf_vuze_dht_value_bytes, tvb, offset, value_bytes_count, ENC_NA);
-    proto_item_append_text( ti, ": %d bytes ( %s )", value_bytes_count, tvb_bytes_to_str(wmem_packet_scope(), tvb, offset, value_bytes_count ) );
+    proto_item_append_text( ti, ": %d bytes ( %s )", value_bytes_count, tvb_bytes_to_str(pinfo->pool, tvb, offset, value_bytes_count ) );
     offset += value_bytes_count;
 
     offset = dissect_vuze_dht_contact( tvb, pinfo, sub_tree, offset );
@@ -580,16 +564,16 @@ dissect_vuze_dht_network_coordinate(tvbuff_t *tvb, packet_info _U_*pinfo, proto_
 {
   proto_item *ti;
   proto_tree *sub_tree;
-  guint coordinate_size;
-  guint coordinate_type;
+  unsigned coordinate_size;
+  unsigned coordinate_type;
 
-  coordinate_type = tvb_get_guint8( tvb, offset );
-  coordinate_size = tvb_get_guint8( tvb, offset+1 );
+  coordinate_type = tvb_get_uint8( tvb, offset );
+  coordinate_size = tvb_get_uint8( tvb, offset+1 );
 
   ti = proto_tree_add_item( tree, hf_vuze_dht_network_coordinate, tvb, offset, coordinate_size+2, ENC_NA );
   sub_tree = proto_item_add_subtree(ti, ett_vuze_dht_network_coordinate);
 
-  proto_item_append_text( ti, ": type %d, length %d", tvb_get_guint8(tvb,offset), tvb_get_guint8(tvb,offset+TL_BYTE) );
+  proto_item_append_text( ti, ": type %d, length %d", tvb_get_uint8(tvb,offset), tvb_get_uint8(tvb,offset+TL_BYTE) );
 
   if (coordinate_type == NC_VIVALDI) {
     proto_item_append_text( ti, " ( %.2f, %.2f, %.2f, %.2f )",
@@ -599,7 +583,7 @@ dissect_vuze_dht_network_coordinate(tvbuff_t *tvb, packet_info _U_*pinfo, proto_
         tvb_get_ntohieee_float(tvb, offset+TL_BYTE+TL_BYTE+TL_FLOAT+TL_FLOAT+TL_FLOAT) );
   } else {
     proto_item_append_text( ti, " ( %s )",
-        tvb_bytes_to_str(wmem_packet_scope(), tvb, offset+TL_BYTE+TL_BYTE, coordinate_size ) );
+        tvb_bytes_to_str(pinfo->pool, tvb, offset+TL_BYTE+TL_BYTE, coordinate_size ) );
   }
 
   proto_tree_add_item( sub_tree, hf_vuze_dht_network_coordinate_type, tvb, offset, TL_BYTE, ENC_BIG_ENDIAN );
@@ -634,13 +618,13 @@ dissect_vuze_dht_network_coordinates(tvbuff_t *tvb, packet_info *pinfo, proto_tr
 {
   proto_item *ti;
   proto_tree *sub_tree;
-  guint i;
-  guint network_coordinates_count;
+  unsigned i;
+  unsigned network_coordinates_count;
 
   if( ver >= PV_GENERIC_NETPOS )
   {
     proto_tree_add_item(tree, hf_vuze_dht_network_coordinates_count, tvb, offset, TL_BYTE, ENC_BIG_ENDIAN);
-    network_coordinates_count = tvb_get_guint8( tvb, offset );
+    network_coordinates_count = tvb_get_uint8( tvb, offset );
     offset += TL_BYTE;
 
     ti = proto_tree_add_none_format( tree, hf_vuze_dht_network_coordinates, tvb, offset, 0, "%d network coordinates", network_coordinates_count );
@@ -685,7 +669,7 @@ dissect_vuze_dht_request_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
   offset += TL_INT;
 
   proto_tree_add_item(tree, hf_vuze_dht_proto_ver, tvb, offset, TL_BYTE, ENC_BIG_ENDIAN);
-  *ver = tvb_get_guint8( tvb, offset );
+  *ver = tvb_get_uint8( tvb, offset );
   offset += TL_BYTE;
 
   if( *ver >= PV_VENDOR_ID )
@@ -754,7 +738,7 @@ dissect_vuze_dht_reply_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tre
   offset += TL_LONG;
 
   proto_tree_add_item(tree, hf_vuze_dht_proto_ver, tvb, offset, TL_BYTE, ENC_BIG_ENDIAN);
-  *ver = tvb_get_guint8( tvb, offset );
+  *ver = tvb_get_uint8( tvb, offset );
   offset += TL_BYTE;
 
   if( *ver >= PV_VENDOR_ID )
@@ -815,20 +799,20 @@ VALUES             value groups always             Groups of values, one for eac
 static int
 dissect_vuze_dht_request_store(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int ver )
 {
-  guint8 keys_count, value_groups_count;
+  uint8_t keys_count, value_groups_count;
   if( ver >= PV_ANTI_SPOOF )
   {
     proto_tree_add_item(tree, hf_vuze_dht_spoof_id, tvb, offset, TL_INT, ENC_BIG_ENDIAN);
     offset += TL_INT;
   }
   proto_tree_add_item(tree, hf_vuze_dht_keys_count, tvb, offset, TL_BYTE, ENC_BIG_ENDIAN);
-  keys_count = tvb_get_guint8( tvb, offset );
+  keys_count = tvb_get_uint8( tvb, offset );
   offset += TL_BYTE;
 
   offset = dissect_vuze_dht_keys( tvb, pinfo, tree, offset, keys_count );
 
   proto_tree_add_item(tree, hf_vuze_dht_value_groups_count, tvb, offset, TL_BYTE, ENC_BIG_ENDIAN);
-  value_groups_count = tvb_get_guint8( tvb, offset );
+  value_groups_count = tvb_get_uint8( tvb, offset );
   offset += TL_BYTE;
 
   offset = dissect_vuze_dht_value_groups( tvb, pinfo, tree, offset, value_groups_count, ver );
@@ -848,9 +832,9 @@ dissect_vuze_dht_reply_store(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *t
 {
   if( ver >= PV_DIV_AND_CONT )
   {
-    guint diversifications_len;
+    unsigned diversifications_len;
     proto_tree_add_item(tree, hf_vuze_dht_diversifications_len, tvb, offset, TL_BYTE, ENC_BIG_ENDIAN);
-    diversifications_len = tvb_get_guint8( tvb, offset );
+    diversifications_len = tvb_get_uint8( tvb, offset );
     offset += TL_BYTE;
 
     proto_tree_add_item(tree, hf_vuze_dht_diversifications, tvb, offset, diversifications_len, ENC_NA);
@@ -872,10 +856,10 @@ DHT_SIZE    int    >=MORE_NODE_STATUS  Estimated size of the DHT; Unknown value 
 static int
 dissect_vuze_dht_request_find_node(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *tree, int offset, int ver )
 {
-  guint id_len;
+  unsigned id_len;
 
   proto_tree_add_item(tree, hf_vuze_dht_id_len, tvb, offset, TL_BYTE, ENC_BIG_ENDIAN);
-  id_len = tvb_get_guint8( tvb, offset );
+  id_len = tvb_get_uint8( tvb, offset );
   offset += TL_BYTE;
 
   proto_tree_add_item(tree, hf_vuze_dht_id, tvb, offset, id_len, ENC_NA);
@@ -910,7 +894,7 @@ CONTACTS            contacts            always             List with contacts.
 static int
 dissect_vuze_dht_reply_find_node(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int ver )
 {
-  guint contacts_count;
+  unsigned contacts_count;
 
   if( ver >= PV_ANTI_SPOOF )
   {
@@ -982,15 +966,15 @@ VALUES               value group         HAS_VALUES == true              Values 
 static int
 dissect_vuze_dht_reply_find_value(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int ver )
 {
-  guint8 has_values;
-  guint contacts_count;
+  uint8_t has_values;
+  unsigned contacts_count;
   if( ver >= PV_DIV_AND_CONT )
   {
     proto_tree_add_item(tree, hf_vuze_dht_has_continuation, tvb, offset, TL_BOOL, ENC_BIG_ENDIAN);
     offset += TL_BOOL;
   }
   proto_tree_add_item(tree, hf_vuze_dht_has_values, tvb, offset, TL_BOOL, ENC_BIG_ENDIAN);
-  has_values = tvb_get_guint8( tvb, offset );
+  has_values = tvb_get_uint8( tvb, offset );
   offset += TL_BOOL;
 
   if( has_values )
@@ -1031,9 +1015,9 @@ SIGNATURE                byte[]   ERROR_TYPE == KEY_BLOCKED   Signature of the r
 static int
 dissect_vuze_dht_reply_error(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int ver _U_ )
 {
-  guint error_type;
-  guint8 key_block_request_len;
-  guint signature_len;
+  unsigned error_type;
+  uint8_t key_block_request_len;
+  unsigned signature_len;
 
   proto_tree_add_item(tree, hf_vuze_dht_error_type, tvb, offset, TL_INT, ENC_BIG_ENDIAN);
   error_type = tvb_get_ntohl( tvb, offset );
@@ -1047,7 +1031,7 @@ dissect_vuze_dht_reply_error(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree
     break;
   case ET_KEY_BLOCKED:
     proto_tree_add_item(tree, hf_vuze_dht_key_block_request_len, tvb, offset, TL_BYTE, ENC_BIG_ENDIAN);
-    key_block_request_len = tvb_get_guint8( tvb, offset );
+    key_block_request_len = tvb_get_uint8( tvb, offset );
     offset += TL_BYTE;
 
     proto_tree_add_item(tree, hf_vuze_dht_key_block_request, tvb, offset, key_block_request_len, ENC_NA);
@@ -1080,14 +1064,14 @@ SIGNATURE                 byte[]  Signature of the request.
 static int
 dissect_vuze_dht_request_key_block(tvbuff_t *tvb, packet_info _U_*pinfo, proto_tree *tree, int offset, int ver _U_ )
 {
-  guint8 key_block_request_len;
-  guint signature_len;
+  uint8_t key_block_request_len;
+  unsigned signature_len;
 
   proto_tree_add_item(tree, hf_vuze_dht_spoof_id, tvb, offset, TL_INT, ENC_BIG_ENDIAN);
   offset += TL_INT;
 
   proto_tree_add_item(tree, hf_vuze_dht_key_block_request_len, tvb, offset, TL_BYTE, ENC_BIG_ENDIAN);
-  key_block_request_len = tvb_get_guint8( tvb, offset );
+  key_block_request_len = tvb_get_uint8( tvb, offset );
   offset += TL_BYTE;
 
   proto_tree_add_item(tree, hf_vuze_dht_key_block_request, tvb, offset, key_block_request_len, ENC_NA);
@@ -1124,7 +1108,7 @@ dissect_vuze_dht(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data
     Replies always start with the action, which always has the MSB clear
     Therefore, the MSB of an incoming packet should be used to distinguish requests from replies.
   */
-  if( tvb_get_guint8(tvb,0) & 0x80 )
+  if( tvb_get_uint8(tvb,0) & 0x80 )
   {
     decoded_length = dissect_vuze_dht_request_header(tvb, pinfo, sub_tree, decoded_length, &action, &proto_ver );
   }
@@ -1518,7 +1502,7 @@ proto_register_vuze_dht(void)
   };
 
   /* Setup protocol subtree array */
-  static gint *ett[] = {
+  static int *ett[] = {
       &ett_vuze_dht,
       &ett_vuze_dht_address,
       &ett_vuze_dht_contacts,
@@ -1532,47 +1516,19 @@ proto_register_vuze_dht(void)
       &ett_vuze_dht_network_coordinate
   };
 
-  module_t *vuze_dht_module;
-
   /* Register protocol */
-  proto_vuze_dht = proto_register_protocol (
-                        "Vuze DHT Protocol",  /* name */
-                        "Vuze-DHT",               /* short name */
-                        "vuze-dht"                /* abbrev */
-                        );
+  proto_vuze_dht = proto_register_protocol ( "Vuze DHT Protocol", "Vuze-DHT", "vuze-dht" );
 
   proto_register_field_array(proto_vuze_dht, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
 
   vuze_dht_handle = register_dissector("vuze-dht", dissect_vuze_dht, proto_vuze_dht);
-
-  /* Register our configuration options */
-  vuze_dht_module = prefs_register_protocol(proto_vuze_dht, proto_reg_handoff_vuze_dht);
-
-  prefs_register_uint_preference(vuze_dht_module, "udp_port",
-                                           "Vuze DHT Protocol UDP port",
-                                           "Set the UDP port for Vuze DHT Protocol.",
-                                           10, &global_vuze_dht_udp_port);
 }
 
 void
 proto_reg_handoff_vuze_dht(void)
 {
-  static gboolean vuze_dht_prefs_initialized = FALSE;
-  static guint vuze_dht_udp_port;
-
-  if (!vuze_dht_prefs_initialized)
-  {
-    vuze_dht_prefs_initialized = TRUE;
-  }
-  else
-  {
-    dissector_delete_uint("udp.port", vuze_dht_udp_port, vuze_dht_handle);
-  }
-
-  /* Set our port number for future use */
-  vuze_dht_udp_port = global_vuze_dht_udp_port;
-  dissector_add_uint("udp.port", global_vuze_dht_udp_port, vuze_dht_handle);
+  dissector_add_uint("udp.port", DEFAULT_UDP_PORT, vuze_dht_handle);
 }
 /*
  * Editor modelines

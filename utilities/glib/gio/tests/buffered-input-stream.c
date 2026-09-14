@@ -2,6 +2,8 @@
  * Copyright (C) 2008 Red Hat, Inc.
  * Authors: Matthias Clasen <mclasen@redhat.com>
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -58,6 +60,16 @@ test_peek (void)
   g_assert_cmpint (npeek, ==, 0);
   g_free (buffer);
 
+  buffer = g_new0 (char, 64);
+  npeek = g_buffered_input_stream_peek (G_BUFFERED_INPUT_STREAM (in), buffer, 8, 0);
+  g_assert_cmpint (npeek, ==, 0);
+  g_free (buffer);
+
+  buffer = g_new0 (char, 64);
+  npeek = g_buffered_input_stream_peek (G_BUFFERED_INPUT_STREAM (in), buffer, 5, G_MAXSIZE);
+  g_assert_cmpint (npeek, ==, 0);
+  g_free (buffer);
+
   g_object_unref (in);
   g_object_unref (base);
 }
@@ -77,7 +89,7 @@ test_peek_buffer (void)
   nfill = g_buffered_input_stream_fill (G_BUFFERED_INPUT_STREAM (in), strlen ("abcdefghijk"), NULL, NULL);
   buffer = (char *) g_buffered_input_stream_peek_buffer (G_BUFFERED_INPUT_STREAM (in), &bufsize);
   g_assert_cmpint (nfill, ==, bufsize);
-  g_assert (0 == strncmp ("abcdefghijk", buffer, bufsize));
+  g_assert_cmpint (strncmp ("abcdefghijk", buffer, bufsize), ==, 0);
 
   g_object_unref (in);
   g_object_unref (base);
@@ -126,7 +138,7 @@ test_read_byte (void)
   GInputStream *in;
   GError *error;
 
-  g_test_bug ("562393");
+  g_test_bug ("https://bugzilla.gnome.org/show_bug.cgi?id=562393");
 
   base = g_memory_input_stream_new_from_data ("abcdefgh", -1, NULL);
   in = g_buffered_input_stream_new (base);
@@ -149,7 +161,7 @@ test_read_byte (void)
   g_assert_cmpint (g_buffered_input_stream_read_byte (G_BUFFERED_INPUT_STREAM (in), NULL, &error), ==, -1);
   g_assert_no_error (error);
 
-  g_assert (g_input_stream_close (in, NULL, &error));
+  g_input_stream_close (in, NULL, &error);
   g_assert_no_error (error);
   g_assert_cmpint (g_buffered_input_stream_read_byte (G_BUFFERED_INPUT_STREAM (in), NULL, &error), ==, -1);
   g_assert_error (error, G_IO_ERROR, G_IO_ERROR_CLOSED);
@@ -422,12 +434,12 @@ test_close (void)
   base = g_memory_input_stream_new_from_data ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVXYZ", -1, NULL);
   in = g_buffered_input_stream_new (base);
 
-  g_assert (g_filter_input_stream_get_close_base_stream (G_FILTER_INPUT_STREAM (in)));
+  g_assert_true (g_filter_input_stream_get_close_base_stream (G_FILTER_INPUT_STREAM (in)));
 
   error = NULL;
-  g_assert (g_input_stream_close (in, NULL, &error));
+  g_input_stream_close (in, NULL, &error);
   g_assert_no_error (error);
-  g_assert (g_input_stream_is_closed (base));
+  g_assert_true (g_input_stream_is_closed (base));
 
   g_object_unref (in);
   g_object_unref (base);
@@ -438,9 +450,9 @@ test_close (void)
   g_filter_input_stream_set_close_base_stream (G_FILTER_INPUT_STREAM (in), FALSE);
 
   error = NULL;
-  g_assert (g_input_stream_close (in, NULL, &error));
+  g_input_stream_close (in, NULL, &error);
   g_assert_no_error (error);
-  g_assert (!g_input_stream_is_closed (base));
+  g_assert_false (g_input_stream_is_closed (base));
 
   g_object_unref (in);
   g_object_unref (base);
@@ -469,7 +481,7 @@ test_seek (void)
   /* Seek forward (in buffer) */
   ret = g_seekable_seek (G_SEEKABLE (in), 1, G_SEEK_CUR, NULL, &error);
   g_assert_no_error (error);
-  g_assert (ret);
+  g_assert_true (ret);
   g_assert_cmpint (g_seekable_tell (G_SEEKABLE (in)), ==, 2);
   byte = g_buffered_input_stream_read_byte (G_BUFFERED_INPUT_STREAM (in), NULL, &error);
   g_assert_no_error (error);
@@ -479,7 +491,7 @@ test_seek (void)
   /* Seek backward (in buffer) */
   ret = g_seekable_seek (G_SEEKABLE (in), -2, G_SEEK_CUR, NULL, &error);
   g_assert_no_error (error);
-  g_assert (ret);
+  g_assert_true (ret);
   g_assert_cmpint (g_seekable_tell (G_SEEKABLE (in)), ==, 1);
   byte = g_buffered_input_stream_read_byte (G_BUFFERED_INPUT_STREAM (in), NULL, &error);
   g_assert_no_error (error);
@@ -489,7 +501,7 @@ test_seek (void)
   /* Seek forward (outside buffer) */
   ret = g_seekable_seek (G_SEEKABLE (in), 6, G_SEEK_CUR, NULL, &error);
   g_assert_no_error (error);
-  g_assert (ret);
+  g_assert_true (ret);
   g_assert_cmpint (g_seekable_tell (G_SEEKABLE (in)), ==, 8);
   byte = g_buffered_input_stream_read_byte (G_BUFFERED_INPUT_STREAM (in), NULL, &error);
   g_assert_no_error (error);
@@ -499,7 +511,7 @@ test_seek (void)
   /* Seek backward (outside buffer) */
   ret = g_seekable_seek (G_SEEKABLE (in), -6, G_SEEK_CUR, NULL, &error);
   g_assert_no_error (error);
-  g_assert (ret);
+  g_assert_true (ret);
   g_assert_cmpint (g_seekable_tell (G_SEEKABLE (in)), ==, 3);
   byte = g_buffered_input_stream_read_byte (G_BUFFERED_INPUT_STREAM (in), NULL, &error);
   g_assert_no_error (error);
@@ -509,7 +521,7 @@ test_seek (void)
   /* Seek from beginning */
   ret = g_seekable_seek (G_SEEKABLE (in), 8, G_SEEK_SET, NULL, &error);
   g_assert_no_error (error);
-  g_assert (ret);
+  g_assert_true (ret);
   g_assert_cmpint (g_seekable_tell (G_SEEKABLE (in)), ==, 8);
   byte = g_buffered_input_stream_read_byte (G_BUFFERED_INPUT_STREAM (in), NULL, &error);
   g_assert_no_error (error);
@@ -519,7 +531,7 @@ test_seek (void)
   /* Seek from end */
   ret = g_seekable_seek (G_SEEKABLE (in), -1, G_SEEK_END, NULL, &error);
   g_assert_no_error (error);
-  g_assert (ret);
+  g_assert_true (ret);
   g_assert_cmpint (g_seekable_tell (G_SEEKABLE (in)), ==, 50);
   byte = g_buffered_input_stream_read_byte (G_BUFFERED_INPUT_STREAM (in), NULL, &error);
   g_assert_no_error (error);
@@ -536,7 +548,6 @@ main (int   argc,
       char *argv[])
 {
   g_test_init (&argc, &argv, NULL);
-  g_test_bug_base ("http://bugzilla.gnome.org/");
 
   g_test_add_func ("/buffered-input-stream/peek", test_peek);
   g_test_add_func ("/buffered-input-stream/peek-buffer", test_peek_buffer);

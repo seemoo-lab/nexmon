@@ -1,0 +1,13 @@
+This example relies on:
+  - the GTK libraries (libgtk, libgdk), version 3.10 or later
+  - the glib libraries (libglib)
+  - the GTK / C++ bindings (libgtkmm)
+
+Installation:
+  ./autogen.sh
+  ./configure --prefix=/some/prefix
+  make
+  make install
+Cleanup:
+  make distclean
+  ./autoclean.sh

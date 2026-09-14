@@ -6,26 +6,14 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include <epan/packet.h>
-#include <epan/etypes.h>
 #include <epan/proto_data.h>
+#include <epan/tfs.h>
 #include "packet-fc.h"
 
 #define BRDWLK_MAX_PACKET_CNT  0xFFFF
@@ -77,32 +65,33 @@ static const value_string brdwlk_eof_vals[] = {
     {0, NULL},
 };
 
-static int hf_brdwlk_sof = -1;
-static int hf_brdwlk_eof = -1;
-static int hf_brdwlk_error = -1;
-static int hf_brdwlk_vsan = -1;
-static int hf_brdwlk_pktcnt = -1;
-static int hf_brdwlk_drop = -1;
-static int hf_brdwlk_plen = -1;
-static int hf_brdwlk_error_plp = -1;
-static int hf_brdwlk_error_ef = -1;
-static int hf_brdwlk_error_nd = -1;
-static int hf_brdwlk_error_tr = -1;
-static int hf_brdwlk_error_badcrc = -1;
-static int hf_brdwlk_error_ff = -1;
-static int hf_brdwlk_error_jumbo = -1;
-static int hf_brdwlk_error_ctrl = -1;
+static int hf_brdwlk_sof;
+static int hf_brdwlk_eof;
+static int hf_brdwlk_error;
+static int hf_brdwlk_vsan;
+static int hf_brdwlk_pktcnt;
+static int hf_brdwlk_drop;
+static int hf_brdwlk_plen;
+static int hf_brdwlk_error_plp;
+static int hf_brdwlk_error_ef;
+static int hf_brdwlk_error_nd;
+static int hf_brdwlk_error_tr;
+static int hf_brdwlk_error_badcrc;
+static int hf_brdwlk_error_ff;
+static int hf_brdwlk_error_jumbo;
+static int hf_brdwlk_error_ctrl;
 
 /* Initialize the subtree pointers */
-static gint ett_brdwlk = -1;
-static gint ett_brdwlk_error = -1;
+static int ett_brdwlk;
+static int ett_brdwlk_error;
 
-static gint proto_brdwlk = -1;
+static int proto_brdwlk;
 
-static guint16 packet_count = 0;
-static gboolean first_pkt = TRUE;                /* start of capture */
+static uint16_t packet_count;
+static bool first_pkt = true;                /* start of capture */
 
 static dissector_handle_t fc_dissector_handle;
+static dissector_handle_t brdwlk_handle;
 
 
 static const true_false_string tfs_error_plp = {
@@ -141,7 +130,7 @@ static const true_false_string tfs_error_ctrl = {
 static void
 dissect_brdwlk_err(proto_tree *parent_tree, tvbuff_t *tvb, int offset)
 {
-    static const int * flags[] = {
+    static int * const flags[] = {
         &hf_brdwlk_error_plp,
         &hf_brdwlk_error_ef,
         &hf_brdwlk_error_nd,
@@ -165,12 +154,12 @@ dissect_brdwlk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
     proto_item *ti, *hidden_item;
     proto_tree *brdwlk_tree;
     tvbuff_t *next_tvb;
-    guint8 error, eof, sof;
+    uint8_t error, eof, sof;
     int hdrlen = 2,
         offset = 0;
-    gint len, reported_len, plen;
-    guint16 pkt_cnt;
-    gboolean dropped_packets;
+    int len, reported_len, plen;
+    uint16_t pkt_cnt;
+    bool dropped_packets;
     fc_data_t fc_data;
 
     /* Make entries in Protocol column and Info column on summary display */
@@ -178,7 +167,7 @@ dissect_brdwlk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 
     col_clear(pinfo->cinfo, COL_INFO);
 
-    sof = (tvb_get_guint8(tvb, offset) & 0xF0) >> 4;
+    sof = (tvb_get_uint8(tvb, offset) & 0xF0) >> 4;
 
     fc_data.sof_eof = 0;
     if ((sof == FCM_DELIM_SOFI3) || (sof == FCM_DELIM_SOFI2) || (sof == FCM_DELIM_SOFI1)
@@ -235,8 +224,8 @@ dissect_brdwlk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
             proto_tree_add_uint(brdwlk_tree, hf_brdwlk_pktcnt, tvb, offset,
                                 2, pkt_cnt);
         }
-        dropped_packets = FALSE;
-        if (pinfo->fd->flags.visited) {
+        dropped_packets = false;
+        if (pinfo->fd->visited) {
             /*
              * This isn't the first pass, so we can't use the global
              * "packet_count" variable to determine whether there were
@@ -245,7 +234,7 @@ dissect_brdwlk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
              * any frame preceded by dropped packets.
              */
             if (p_get_proto_data(wmem_file_scope(), pinfo, proto_brdwlk, 0) != NULL)
-                dropped_packets = TRUE;
+                dropped_packets = true;
         } else {
             /*
              * This is the first pass, so we have to use the global
@@ -258,7 +247,7 @@ dissect_brdwlk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
             if (pkt_cnt != packet_count + 1) {
                 if (!first_pkt &&
                     (pkt_cnt != 0 || (packet_count != BRDWLK_MAX_PACKET_CNT))) {
-                    dropped_packets = TRUE;
+                    dropped_packets = true;
 
                     /*
                      * Mark this frame as having been preceded by dropped
@@ -272,14 +261,14 @@ dissect_brdwlk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 
         hidden_item = proto_tree_add_boolean(brdwlk_tree, hf_brdwlk_drop,
                 tvb, offset, 0, dropped_packets);
-        PROTO_ITEM_SET_HIDDEN(hidden_item);
+        proto_item_set_hidden(hidden_item);
 
         packet_count = pkt_cnt;
 
-        error=tvb_get_guint8(tvb, offset+2);
+        error=tvb_get_uint8(tvb, offset+2);
         dissect_brdwlk_err(brdwlk_tree, tvb, offset+2);
 
-        eof = tvb_get_guint8(tvb, offset+3);
+        eof = tvb_get_uint8(tvb, offset+3);
         if (eof != FCM_DELIM_EOFN) {
             fc_data.sof_eof |= FC_DATA_EOF_LAST_FRAME;
         }
@@ -312,7 +301,7 @@ dissect_brdwlk(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
     }
 
     fc_data.ethertype = ETHERTYPE_BRDWALK;
-    next_tvb = tvb_new_subset(tvb, 2, len, reported_len);
+    next_tvb = tvb_new_subset_length_caplen(tvb, 2, len, reported_len);
     call_dissector_with_data(fc_dissector_handle, next_tvb, pinfo, tree, &fc_data);
     return tvb_captured_length(tvb);
 }
@@ -321,7 +310,7 @@ static void
 brdwlk_init(void)
 {
     packet_count = 0;
-    first_pkt = TRUE;
+    first_pkt = true;
 }
 
 /* Register the protocol with Wireshark */
@@ -352,7 +341,7 @@ proto_register_brdwlk(void)
           {"Packet Dropped", "brdwlk.drop", FT_BOOLEAN, BASE_NONE, NULL, 0x0,
            NULL, HFILL}},
         { &hf_brdwlk_vsan,
-          {"VSAN", "brdwlk.vsan", FT_UINT16, BASE_DEC, NULL, 0xFFF, NULL,
+          {"VSAN", "brdwlk.vsan", FT_UINT16, BASE_DEC, NULL, 0x0FFF, NULL,
            HFILL}},
         { &hf_brdwlk_plen,
           {"Original Packet Length", "brdwlk.plen", FT_UINT32, BASE_DEC, NULL, 0x0, NULL,
@@ -384,36 +373,35 @@ proto_register_brdwlk(void)
     };
 
 /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_brdwlk,
         &ett_brdwlk_error,
     };
 
 /* Register the protocol name and description */
-    proto_brdwlk = proto_register_protocol("Boardwalk",
-                                           "Boardwalk", "brdwlk");
+    proto_brdwlk = proto_register_protocol("Boardwalk", "Boardwalk", "brdwlk");
 
 /* Required function calls to register the header fields and subtrees used */
     proto_register_field_array(proto_brdwlk, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 
     register_init_routine(&brdwlk_init);
+
+/* Register the dissector */
+    brdwlk_handle = register_dissector("brdwlk", dissect_brdwlk, proto_brdwlk);
 }
 
 
 void
 proto_reg_handoff_brdwlk(void)
 {
-    dissector_handle_t brdwlk_handle;
-
-    brdwlk_handle = create_dissector_handle(dissect_brdwlk, proto_brdwlk);
     dissector_add_uint("ethertype", ETHERTYPE_BRDWALK, brdwlk_handle);
     dissector_add_uint("ethertype", 0xABCD, brdwlk_handle);
     fc_dissector_handle = find_dissector_add_dependency("fc", proto_brdwlk);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

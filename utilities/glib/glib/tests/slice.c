@@ -4,66 +4,6 @@
 /* We test deprecated functionality here */
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 
-#ifdef G_ENABLE_DEBUG
-static void
-test_slice_nodebug (void)
-{
-  const gchar *oldval;
-
-  oldval = g_getenv ("G_SLICE");
-  g_unsetenv ("G_SLICE");
-
-  if (g_test_subprocess ())
-    {
-      gpointer p, q;
-
-      p = g_slice_alloc (237);
-      q = g_slice_alloc (259);
-      g_slice_free1 (237, p);
-      g_slice_free1 (259, q);
-
-      g_slice_debug_tree_statistics ();
-      return;
-    }
-  g_test_trap_subprocess (NULL, 1000000, 0);
-  g_test_trap_assert_passed ();
-  g_test_trap_assert_stderr ("*GSlice: MemChecker: root=NULL*");
-
-  if (oldval)
-    g_setenv ("G_SLICE", oldval, TRUE);
-}
-
-static void
-test_slice_debug (void)
-{
-  const gchar *oldval;
-
-  oldval = g_getenv ("G_SLICE");
-  g_setenv ("G_SLICE", "debug-blocks:always-malloc", TRUE);
-
-  if (g_test_subprocess ())
-    {
-      gpointer p, q;
-
-      p = g_slice_alloc (237);
-      q = g_slice_alloc (259);
-      g_slice_free1 (237, p);
-      g_slice_free1 (259, q);
-
-      g_slice_debug_tree_statistics ();
-      return;
-    }
-  g_test_trap_subprocess (NULL, 1000000, 0);
-  g_test_trap_assert_passed ();
-  g_test_trap_assert_stderr ("*GSlice: MemChecker: * trunks, * branches, * old branches*");
-
-  if (oldval)
-    g_setenv ("G_SLICE", oldval, TRUE);
-  else
-    g_unsetenv ("G_SLICE");
-}
-#endif
-
 static void
 test_slice_copy (void)
 {
@@ -107,7 +47,7 @@ thread_allocate (gpointer data)
   gint b;
   gint size;
   gpointer p;
-  volatile gpointer *loc;
+  gpointer *loc;  /* (atomic) */
 
   for (i = 0; i < 10000; i++)
     {
@@ -137,7 +77,7 @@ test_allocate (void)
 {
   GThread *threads[30];
   gint size;
-  gint i;
+  gsize i;
 
   for (i = 0; i < 30; i++)
     for (size = 1; size <= 4096; size++)
@@ -150,18 +90,50 @@ test_allocate (void)
     g_thread_join (threads[i]);
 }
 
+static void
+test_new_empty (void)
+{
+#if !defined(_MSC_VER) || defined(__clang__)
+  typedef struct {
+    /* empty */
+  } EmptyStruct;
+  EmptyStruct *p1, *p2, *p3;
+
+  g_test_summary ("Test that g_slice_new() never returns NULL, even with a zero-size allocation");
+  g_test_bug ("https://gitlab.gnome.org/GNOME/glib/-/issues/3688");
+
+  if (sizeof (EmptyStruct) > 0)
+    {
+      g_test_skip ("Compiler doesn’t support empty structs");
+      return;
+    }
+
+  p1 = g_slice_new (EmptyStruct);
+  g_assert_nonnull (p1);
+
+  p2 = g_slice_new0 (EmptyStruct);
+  g_assert_nonnull (p2);
+
+  p3 = g_slice_dup (EmptyStruct, p1);
+  g_assert_nonnull (p3);
+
+  g_free (p3);
+  g_free (p2);
+  g_free (p1);
+#else
+  g_test_skip ("MSVC requires that structs are non-empty");
+#endif
+}
+
 int
 main (int argc, char **argv)
 {
   g_test_init (&argc, &argv, NULL);
 
-#ifdef G_ENABLE_DEBUG
-  g_test_add_func ("/slice/nodebug", test_slice_nodebug);
-  g_test_add_func ("/slice/debug", test_slice_debug);
-#endif
   g_test_add_func ("/slice/copy", test_slice_copy);
   g_test_add_func ("/slice/chain", test_chain);
   g_test_add_func ("/slice/allocate", test_allocate);
+  g_test_add_func ("/slice/new-empty", test_new_empty);
 
   return g_test_run ();
 }

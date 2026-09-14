@@ -1,0 +1,7 @@
+<sch:schema xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+	<sch:pattern id="TestPattern">
+		<sch:rule context="book">
+			<sch:report test="not(@available)">Book <sch:value-of select="falae()"/> test</sch:report>
+		</sch:rule>
+	</sch:pattern>
+</sch:schema>

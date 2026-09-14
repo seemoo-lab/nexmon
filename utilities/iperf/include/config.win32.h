@@ -10,7 +10,7 @@
  * This contains variables that the configure script checks and
  * then defines or undefines. The source code checks for these
  * variables to know if certain features are present.
- * 
+ *
  * by Mark Gates <mgates@nlanr.net>
  *
  * Copyright  1999  The Board of Trustees of the University of Illinois
@@ -78,5 +78,5 @@
 
 /* Define if Debugging of sockets is desired */
 /* #undef DBG_MJZ */
- 
+
 #endif /* CONFIG_H */

@@ -1,9 +1,9 @@
 /* Test of fabs*() function family.
-   Copyright (C) 2012-2016 Free Software Foundation, Inc.
+   Copyright (C) 2012-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 static void
 test_function (void)
@@ -32,16 +32,12 @@ test_function (void)
   ASSERT (!signbit (y));
 
   /* Randomized tests.  */
-  {
-    int i;
-
-    for (i = 0; i < SIZEOF (RANDOM); i++)
-      {
-        x = L_(10.0) * RANDOM[i]; /* 0.0 <= x <= 10.0 */
-        ASSERT (FABS (x) == x);
-        ASSERT (FABS (- x) == x);
-      }
-  }
+  for (int i = 0; i < SIZEOF (RANDOM); i++)
+    {
+      x = L_(10.0) * RANDOM[i]; /* 0.0 <= x <= 10.0 */
+      ASSERT (FABS (x) == x);
+      ASSERT (FABS (- x) == x);
+    }
 }
 
 volatile DOUBLE x;

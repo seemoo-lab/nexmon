@@ -1,0 +1,15 @@
+*** isatty.c.orig	2023-09-06 17:28:49.893388907 +0200
+--- isatty.c	2023-09-06 17:30:02.718035282 +0200
+***************
+*** 162,167 ****
+--- 162,171 ----
+  # define _isatty_nothrow _isatty
+  #endif
+  
++ #ifdef IN_LIBTEXTSTYLE
++ # define isatty libtextstyle_isatty
++ #endif
++ 
+  /* Determine whether FD refers to a console device.  Return 1 if yes.
+     Return 0 and set errno if no. (ptsname_r relies on the errno value.)  */
+  int

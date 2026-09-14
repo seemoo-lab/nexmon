@@ -1,0 +1,1415 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="xmlmemory_8c" kind="file" language="C++">
+    <compoundname>xmlmemory.c</compoundname>
+    <includes local="yes">libxml.h</includes>
+    <includes local="no">string.h</includes>
+    <includes local="no">stdlib.h</includes>
+    <includes local="no">ctype.h</includes>
+    <includes local="no">time.h</includes>
+    <includes refid="xmlmemory_8h" local="no">libxml/xmlmemory.h</includes>
+    <includes refid="xmlerror_8h" local="no">libxml/xmlerror.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includes refid="threads_8h" local="no">libxml/threads.h</includes>
+    <includes local="yes">private/error.h</includes>
+    <includes local="yes">private/memory.h</includes>
+    <includes local="yes">private/threads.h</includes>
+    <incdepgraph>
+      <node id="27">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+      </node>
+      <node id="25">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+      </node>
+      <node id="24">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+      </node>
+      <node id="22">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="24" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="26" relation="include">
+        </childnode>
+        <childnode refid="27" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+      </node>
+      <node id="28">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+      </node>
+      <node id="26">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="25" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+      </node>
+      <node id="11">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="15" relation="include">
+        </childnode>
+      </node>
+      <node id="15">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+      </node>
+      <node id="9">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>/builds/GNOME/libxml2/xmlmemory.c</label>
+        <link refid="xmlmemory_8c"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="28" relation="include">
+        </childnode>
+        <childnode refid="29" relation="include">
+        </childnode>
+        <childnode refid="30" relation="include">
+        </childnode>
+        <childnode refid="31" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>ctype.h</label>
+      </node>
+      <node id="2">
+        <label>libxml.h</label>
+      </node>
+      <node id="10">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="14">
+        <label>limits.h</label>
+      </node>
+      <node id="29">
+        <label>private/error.h</label>
+      </node>
+      <node id="30">
+        <label>private/memory.h</label>
+      </node>
+      <node id="31">
+        <label>private/threads.h</label>
+      </node>
+      <node id="16">
+        <label>stdarg.h</label>
+      </node>
+      <node id="19">
+        <label>stddef.h</label>
+      </node>
+      <node id="8">
+        <label>stdio.h</label>
+      </node>
+      <node id="4">
+        <label>stdlib.h</label>
+      </node>
+      <node id="3">
+        <label>string.h</label>
+      </node>
+      <node id="6">
+        <label>time.h</label>
+      </node>
+    </incdepgraph>
+    <innerclass refid="structmemnod" prot="public">memnod</innerclass>
+    <sectiondef kind="define">
+      <memberdef kind="define" id="xmlmemory_8c_1a2e0dfa3e1bcca0ce16dfbe14da3a27be" prot="public" static="no">
+        <name>IN_LIBXML</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="7" column="9" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="7" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlmemory_8c_1a59930c435bb77e20cbc3166eb1d89155" prot="public" static="no">
+        <name>MEMTAG</name>
+        <initializer>0x5aa5U</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="38" column="9" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="38" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlmemory_8c_1a65d1ea18e1cbfa27d9d1952f05e31e60" prot="public" static="no">
+        <name>ALIGN_SIZE</name>
+        <initializer>sizeof(double)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="48" column="10" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="48" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlmemory_8c_1a8972c61108c4ed5d0b76a714782a8453" prot="public" static="no">
+        <name>RESERVE_SIZE</name>
+        <initializer>              (((sizeof(MEMHDR) + ALIGN_SIZE - 1) \
+              / ALIGN_SIZE ) * ALIGN_SIZE)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="50" column="10" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="50" bodyend="51"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlmemory_8c_1ad6a20ec9394445398c2618b055acbcb1" prot="public" static="no">
+        <name>MAX_SIZE_T</name>
+        <initializer>((size_t)-1)</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="53" column="9" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="53" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlmemory_8c_1af788a2809262fc2000060af39c79f17b" prot="public" static="no">
+        <name>CLIENT_2_HDR</name>
+        <param><defname>a</defname></param>
+        <initializer>((void *) (((char *) (a)) - RESERVE_SIZE))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="55" column="9" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="55" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="define" id="xmlmemory_8c_1a50bd185fd9c5418730d4bbf59f82cbc5" prot="public" static="no">
+        <name>HDR_2_CLIENT</name>
+        <param><defname>a</defname></param>
+        <initializer>((void *) (((char *) (a)) + RESERVE_SIZE))</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="56" column="9" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="56" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="xmlmemory_8c_1ab93ce70617c2d80e93344ee5392735e4" prot="public" static="no">
+        <type>struct memnod</type>
+        <definition>typedef struct memnod MEMHDR</definition>
+        <argsstring></argsstring>
+        <name>MEMHDR</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="43" column="8"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="var">
+      <memberdef kind="variable" id="xmlmemory_8c_1abb981f1f3232e73a32a501447f52ee7a" prot="public" static="yes" mutable="no">
+        <type>unsigned long</type>
+        <definition>unsigned long debugMemSize</definition>
+        <argsstring></argsstring>
+        <name>debugMemSize</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="24" column="23" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="24" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="xmlmemory_8c_1a74a64d63661e12c7adfdc8e7cd60d130" prot="public" static="yes" mutable="no">
+        <type>unsigned long</type>
+        <definition>unsigned long debugMemBlocks</definition>
+        <argsstring></argsstring>
+        <name>debugMemBlocks</name>
+        <initializer>= 0</initializer>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="25" column="23" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="25" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="xmlmemory_8c_1a4b67240bd403d582af755d35e4ff6692" prot="public" static="yes" mutable="no">
+        <type><ref refid="threads_8h_1a65cb9dc91b670770a3725773fd5a4df7" kindref="member">xmlMutex</ref></type>
+        <definition>xmlMutex xmlMemMutex</definition>
+        <argsstring></argsstring>
+        <name>xmlMemMutex</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="26" column="17" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="26" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="xmlmemory_8c_1a72d318a0d63660bae5261d6b3405f354" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void *</type>
+        <definition>void * xmlMallocLoc</definition>
+        <argsstring>(size_t size, const char *file, int line)</argsstring>
+        <name>xmlMallocLoc</name>
+        <param>
+          <type>size_t</type>
+          <declname>size</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>file</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>line</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000380"><xreftitle>Deprecated</xreftitle><xrefdescription><para>don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an int specifying the size in byte to allocate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>file</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the file name or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>line</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the line number </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the allocated area or NULL in case of lack of memory. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="67" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="67" bodyend="71"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1a03cb0419c97e2e8ae7adc2c4d785adb4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void *</type>
+        <definition>void * xmlMallocAtomicLoc</definition>
+        <argsstring>(size_t size, const char *file, int line)</argsstring>
+        <name>xmlMallocAtomicLoc</name>
+        <param>
+          <type>size_t</type>
+          <declname>size</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>file</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>line</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000381"><xreftitle>Deprecated</xreftitle><xrefdescription><para>don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an unsigned int specifying the size in byte to allocate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>file</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the file name or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>line</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the line number </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the allocated area or NULL in case of lack of memory. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="82" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="82" bodyend="86"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1a3f66274204603c9ef3526cae4066acbc" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void *</type>
+        <definition>void * xmlMemMalloc</definition>
+        <argsstring>(size_t size)</argsstring>
+        <name>xmlMemMalloc</name>
+        <param>
+          <type>size_t</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>a malloc() equivalent, with logging of the allocation info. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an int specifying the size in byte to allocate. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the allocated area or NULL in case of lack of memory. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="95" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="95" bodyend="116"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1addd0442f8bb0806fd852fbe2ca34b1f7" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void *</type>
+        <definition>void * xmlReallocLoc</definition>
+        <argsstring>(void *ptr, size_t size, const char *file, int line)</argsstring>
+        <name>xmlReallocLoc</name>
+        <param>
+          <type>void *</type>
+          <declname>ptr</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>size</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>file</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>line</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000382"><xreftitle>Deprecated</xreftitle><xrefdescription><para>don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the initial memory block pointer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an int specifying the size in byte to allocate. </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>file</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the file name or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>line</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the line number </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the allocated area or NULL in case of lack of memory. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="128" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="128" bodyend="132"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1a4782b29354b4986213d613eeba28b387" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void *</type>
+        <definition>void * xmlMemRealloc</definition>
+        <argsstring>(void *ptr, size_t size)</argsstring>
+        <name>xmlMemRealloc</name>
+        <param>
+          <type>void *</type>
+          <declname>ptr</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>a realloc() equivalent, with logging of the allocation info. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the initial memory block pointer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an int specifying the size in byte to allocate. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the allocated area or NULL in case of lack of memory. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="142" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="142" bodyend="177"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1a3522d3bdbe585f7cf0694b106f56dd4b" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlMemFree</definition>
+        <argsstring>(void *ptr)</argsstring>
+        <name>xmlMemFree</name>
+        <param>
+          <type>void *</type>
+          <declname>ptr</declname>
+        </param>
+        <briefdescription>
+<para>a free() equivalent, with error checking. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the memory block pointer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="185" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="185" bodyend="211"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1aa82b9c711bd6e2b45643d51387d8f05a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>char *</type>
+        <definition>char * xmlMemStrdupLoc</definition>
+        <argsstring>(const char *str, const char *file, int line)</argsstring>
+        <name>xmlMemStrdupLoc</name>
+        <param>
+          <type>const char *</type>
+          <declname>str</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>file</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>line</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000383"><xreftitle>Deprecated</xreftitle><xrefdescription><para>don&apos;t use</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the initial string pointer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>file</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the file name or NULL </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>line</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the line number </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the new string or NULL if allocation error occurred. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="222" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="222" bodyend="226"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1a97162c9d2a566a6ad251a5d44178b100" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>char *</type>
+        <definition>char * xmlMemoryStrdup</definition>
+        <argsstring>(const char *str)</argsstring>
+        <name>xmlMemoryStrdup</name>
+        <param>
+          <type>const char *</type>
+          <declname>str</declname>
+        </param>
+        <briefdescription>
+<para>a strdup() equivalent, with logging of the allocation info. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>str</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the initial string pointer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to the new string or NULL if allocation error occurred. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="235" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="235" bodyend="261"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1a7e80f9711755649dcff7c7ad045fed78" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>size_t</type>
+        <definition>size_t xmlMemSize</definition>
+        <argsstring>(void *ptr)</argsstring>
+        <name>xmlMemSize</name>
+        <param>
+          <type>void *</type>
+          <declname>ptr</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ptr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the memory allocation </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the size of a memory allocation. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="269" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="269" bodyend="280"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1a1bf16e38cfdce2a18a888b845133395d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlMemUsed</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlMemUsed</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Provides the amount of memory currently allocated. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>an int representing the amount of memory allocated. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="289" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="289" bodyend="291"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1afb0642976dfcbee22df305b41a0d8b33" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlMemBlocks</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlMemBlocks</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Provides the number of memory areas currently allocated. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="return"><para>an int representing the number of blocks </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="300" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="300" bodyend="307"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1a666fcaf51328ba4e5acf4704468f0d92" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlMemDisplayLast</definition>
+        <argsstring>(FILE *fp, long nbBytes)</argsstring>
+        <name>xmlMemDisplayLast</name>
+        <param>
+          <type>FILE *</type>
+          <declname>fp</declname>
+        </param>
+        <param>
+          <type>long</type>
+          <declname>nbBytes</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000384"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This feature was removed. </para>
+</xrefdescription></xrefsect><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>fp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a FILE descriptor </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nbBytes</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the amount of memory to dump </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="315" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="315" bodyend="317"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1aee74a50dfb53ebbfd3cfe231bc4cb2a5" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlMemDisplay</definition>
+        <argsstring>(FILE *fp)</argsstring>
+        <name>xmlMemDisplay</name>
+        <param>
+          <type>FILE *</type>
+          <declname>fp</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000385"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This feature was removed. </para>
+</xrefdescription></xrefsect><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>fp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a FILE descriptor </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="324" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="324" bodyend="326"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1adf8542adeac423db5c440119fe3d3cba" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlMemShow</definition>
+        <argsstring>(FILE *fp, int nr)</argsstring>
+        <name>xmlMemShow</name>
+        <param>
+          <type>FILE *</type>
+          <declname>fp</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>nr</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000386"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This feature was removed. </para>
+</xrefdescription></xrefsect><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>fp</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a FILE descriptor </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>nr</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>number of entries to dump </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="334" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="334" bodyend="336"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1af28bfd5f3477b8068b50b75cdb120202" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlMemoryDump</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlMemoryDump</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000387"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This feature was removed. </para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="342" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="342" bodyend="344"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1ad66e2d22c7bb72a3921b05675e33059c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void *</type>
+        <definition>void * xmlGrowArray</definition>
+        <argsstring>(void *array, size_t elemSize, int *capacity, int min, int max)</argsstring>
+        <name>xmlGrowArray</name>
+        <param>
+          <type>void *</type>
+          <declname>array</declname>
+        </param>
+        <param>
+          <type>size_t</type>
+          <declname>elemSize</declname>
+        </param>
+        <param>
+          <type>int *</type>
+          <declname>capacity</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>min</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>max</declname>
+        </param>
+        <briefdescription>
+<para>Grow an array, combining overflow-checked capacity growth with reallocation. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>array</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to the array (may be NULL for first allocation) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>elemSize</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>size of each element in bytes </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>capacity</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>pointer to current capacity (updated on success) </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>min</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>initial allocation size </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>max</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>maximum number of elements </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the new pointer on success, or NULL on failure with the original array and capacity preserved. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="366" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="366" bodyend="383"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1ad7abed47851c8c33c9f840c0ecfc70f4" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlInitMemory</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlInitMemory</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000388"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Alias for <ref refid="parser_8h_1a642085a16c74b8352e92a89c348cc9c4" kindref="member">xmlInitParser</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><simplesect kind="return"><para>0. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="397" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="397" bodyend="400"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1ac27fc2eda692d35c73fc19a4d452babe" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlInitMemoryInternal</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlInitMemoryInternal</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Initialize the memory layer. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="406" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="406" bodyend="408"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1a6fad15dbecad624ee430cd7102eda760" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlCleanupMemory</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCleanupMemory</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000389"><xreftitle>Deprecated</xreftitle><xrefdescription><para>This function is a no-op. Call <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> to free global state but see the warnings there. <ref refid="parser_8h_1a7eb4447bac68a016b428f51cc402369f" kindref="member">xmlCleanupParser</ref> should be only called once at program exit. In most cases, you don&apos;t have call cleanup functions at all. </para>
+</xrefdescription></xrefsect></para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="417" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="417" bodyend="418"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1a48b6323a664e542772b4582d85d66f5e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlCleanupMemoryInternal</definition>
+        <argsstring>(void)</argsstring>
+        <name>xmlCleanupMemoryInternal</name>
+        <param>
+          <type>void</type>
+        </param>
+        <briefdescription>
+<para>Free up all the memory allocated by the library for its own use. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This should not be called by user level code. </para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="425" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="425" bodyend="436"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1aaf5fda31eb649128f58f61e8e022f196" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlMemSetup</definition>
+        <argsstring>(xmlFreeFunc freeFunc, xmlMallocFunc mallocFunc, xmlReallocFunc reallocFunc, xmlStrdupFunc strdupFunc)</argsstring>
+        <name>xmlMemSetup</name>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a8f7e901df83e1a867e3c157963dee331" kindref="member">xmlFreeFunc</ref></type>
+          <declname>freeFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a2f682977675c213576c096d4921498b0" kindref="member">xmlMallocFunc</ref></type>
+          <declname>mallocFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a0dd26c9e178d6a1c19459a4d50e1cc65" kindref="member">xmlReallocFunc</ref></type>
+          <declname>reallocFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a5dce41163312ec2fa3c4ac57cc4b795e" kindref="member">xmlStrdupFunc</ref></type>
+          <declname>strdupFunc</declname>
+        </param>
+        <briefdescription>
+<para>Override the default memory access functions with a new set This has to be called before any other libxml routines ! </para>
+        </briefdescription>
+        <detaileddescription>
+<para>Should this be blocked if there was already some allocations done ?</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>freeFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the free() function to use </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mallocFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the malloc() function to use </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>reallocFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the realloc() function to use </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>strdupFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the strdup() function to use </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="452" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="452" bodyend="468"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1abb6175f1a50a973d1b49f4cf3017113d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlMemGet</definition>
+        <argsstring>(xmlFreeFunc *freeFunc, xmlMallocFunc *mallocFunc, xmlReallocFunc *reallocFunc, xmlStrdupFunc *strdupFunc)</argsstring>
+        <name>xmlMemGet</name>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a8f7e901df83e1a867e3c157963dee331" kindref="member">xmlFreeFunc</ref> *</type>
+          <declname>freeFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a2f682977675c213576c096d4921498b0" kindref="member">xmlMallocFunc</ref> *</type>
+          <declname>mallocFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a0dd26c9e178d6a1c19459a4d50e1cc65" kindref="member">xmlReallocFunc</ref> *</type>
+          <declname>reallocFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a5dce41163312ec2fa3c4ac57cc4b795e" kindref="member">xmlStrdupFunc</ref> *</type>
+          <declname>strdupFunc</declname>
+        </param>
+        <briefdescription>
+<para>Provides the memory access functions set currently in use. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>freeFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>place to save the free() function in use </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mallocFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>place to save the malloc() function in use </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>reallocFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>place to save the realloc() function in use </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>strdupFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>place to save the strdup() function in use </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="480" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="480" bodyend="487"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1a638989e93a33e0515cae68bf82c3ca22" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlGcMemSetup</definition>
+        <argsstring>(xmlFreeFunc freeFunc, xmlMallocFunc mallocFunc, xmlMallocFunc mallocAtomicFunc, xmlReallocFunc reallocFunc, xmlStrdupFunc strdupFunc)</argsstring>
+        <name>xmlGcMemSetup</name>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a8f7e901df83e1a867e3c157963dee331" kindref="member">xmlFreeFunc</ref></type>
+          <declname>freeFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a2f682977675c213576c096d4921498b0" kindref="member">xmlMallocFunc</ref></type>
+          <declname>mallocFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a2f682977675c213576c096d4921498b0" kindref="member">xmlMallocFunc</ref></type>
+          <declname>mallocAtomicFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a0dd26c9e178d6a1c19459a4d50e1cc65" kindref="member">xmlReallocFunc</ref></type>
+          <declname>reallocFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a5dce41163312ec2fa3c4ac57cc4b795e" kindref="member">xmlStrdupFunc</ref></type>
+          <declname>strdupFunc</declname>
+        </param>
+        <briefdescription>
+<para>Override the default memory access functions with a new set This has to be called before any other libxml routines ! </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The mallocAtomicFunc is specialized for atomic block allocations (i.e. of areas useful for garbage collected memory allocators</para>
+<para><xrefsect id="deprecated_1_deprecated000390"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="xmlmemory_8h_1aaf5fda31eb649128f58f61e8e022f196" kindref="member">xmlMemSetup</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para>Should this be blocked if there was already some allocations done ?</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>freeFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the free() function to use </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mallocFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the malloc() function to use </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mallocAtomicFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the malloc() function to use for atomic allocations </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>reallocFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the realloc() function to use </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>strdupFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the strdup() function to use </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="508" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="508" bodyend="527"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlmemory_8c_1ab9137826044b477c8d35f845bb246d24" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlGcMemGet</definition>
+        <argsstring>(xmlFreeFunc *freeFunc, xmlMallocFunc *mallocFunc, xmlMallocFunc *mallocAtomicFunc, xmlReallocFunc *reallocFunc, xmlStrdupFunc *strdupFunc)</argsstring>
+        <name>xmlGcMemGet</name>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a8f7e901df83e1a867e3c157963dee331" kindref="member">xmlFreeFunc</ref> *</type>
+          <declname>freeFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a2f682977675c213576c096d4921498b0" kindref="member">xmlMallocFunc</ref> *</type>
+          <declname>mallocFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a2f682977675c213576c096d4921498b0" kindref="member">xmlMallocFunc</ref> *</type>
+          <declname>mallocAtomicFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a0dd26c9e178d6a1c19459a4d50e1cc65" kindref="member">xmlReallocFunc</ref> *</type>
+          <declname>reallocFunc</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlmemory_8h_1a5dce41163312ec2fa3c4ac57cc4b795e" kindref="member">xmlStrdupFunc</ref> *</type>
+          <declname>strdupFunc</declname>
+        </param>
+        <briefdescription>
+<para>Provides the memory access functions set currently in use The mallocAtomicFunc is specialized for atomic block allocations (i.e. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>of areas useful for garbage collected memory allocators</para>
+<para><xrefsect id="deprecated_1_deprecated000391"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use <ref refid="xmlmemory_8h_1abb6175f1a50a973d1b49f4cf3017113d" kindref="member">xmlMemGet</ref>.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>freeFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>place to save the free() function in use </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mallocFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>place to save the malloc() function in use </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>mallocAtomicFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>place to save the atomic malloc() function in use </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>reallocFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>place to save the realloc() function in use </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>strdupFunc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>place to save the strdup() function in use </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 on success </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlmemory.c" line="544" column="1" bodyfile="/builds/GNOME/libxml2/xmlmemory.c" bodystart="544" bodyend="553"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlmemory.c"/>
+  </compounddef>
+</doxygen>

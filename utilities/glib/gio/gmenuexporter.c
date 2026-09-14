@@ -1,10 +1,12 @@
 /*
  * Copyright © 2011 Canonical Ltd.
  *
- *  This library is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License as
- *  published by the Free Software Foundation; either version 2 of the
- *  licence, or (at your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ *  This library is free software; you can redistribute it and/or
+ *  modify it under the terms of the GNU Lesser General Public
+ *  License as published by the Free Software Foundation; either
+ *  version 2.1 of the License, or (at your option) any later version.
  *
  *  This library is distributed in the hope that it will be useful, but
  *  WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,21 +28,6 @@
 #include "gdbusnamewatching.h"
 #include "gdbuserror.h"
 
-/**
- * SECTION:gmenuexporter
- * @title: GMenuModel exporter
- * @short_description: Export GMenuModels on D-Bus
- * @include: gio/gio.h
- * @see_also: #GMenuModel, #GDBusMenuModel
- *
- * These functions support exporting a #GMenuModel on D-Bus.
- * The D-Bus interface that is used is a private implementation
- * detail.
- *
- * To access an exported #GMenuModel remotely, use
- * g_dbus_menu_model_get() to obtain a #GDBusMenuModel.
- */
-
 /* {{{1 D-Bus Interface description */
 
 /* For documentation of this interface, see
@@ -51,8 +38,9 @@ static GDBusInterfaceInfo *
 org_gtk_Menus_get_interface (void)
 {
   static GDBusInterfaceInfo *interface_info;
+  static gsize interface_info_initialized = 0;
 
-  if (interface_info == NULL)
+  if (g_once_init_enter (&interface_info_initialized))
     {
       GError *error = NULL;
       GDBusNodeInfo *info;
@@ -72,11 +60,13 @@ org_gtk_Menus_get_interface (void)
                                            "  </interface>"
                                            "</node>", &error);
       if (info == NULL)
-        g_error ("%s\n", error->message);
+        g_error ("%s", error->message);
       interface_info = g_dbus_node_info_lookup_interface (info, "org.gtk.Menus");
       g_assert (interface_info != NULL);
       g_dbus_interface_info_ref (interface_info);
       g_dbus_node_info_unref (info);
+
+      g_once_init_leave (&interface_info_initialized, 1);
     }
 
   return interface_info;
@@ -207,7 +197,7 @@ g_menu_exporter_menu_describe_item (GMenuExporterMenu *menu,
   const char *name;
   GVariant *value;
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE_VARDICT);
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE_VARDICT);
 
   attr_iter = g_menu_model_iterate_item_attributes (menu->model, position);
   while (g_menu_attribute_iter_get_next (attr_iter, &name, &value))
@@ -231,7 +221,7 @@ g_menu_exporter_menu_list (GMenuExporterMenu *menu)
   GVariantBuilder builder;
   gint i, n;
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("aa{sv}"));
 
   n = g_sequence_get_length (menu->item_links);
   for (i = 0; i < n; i++)
@@ -250,10 +240,21 @@ g_menu_exporter_menu_items_changed (GMenuModel *model,
   GMenuExporterMenu *menu = user_data;
   GSequenceIter *point;
   gint i;
+#ifndef G_DISABLE_ASSERT
+  gint n_items;
+#endif
 
   g_assert (menu->model == model);
   g_assert (menu->item_links != NULL);
-  g_assert (position + removed <= g_sequence_get_length (menu->item_links));
+
+#ifndef G_DISABLE_ASSERT
+  n_items = g_sequence_get_length (menu->item_links);
+#endif
+  g_assert (position >= 0 && position < G_MENU_EXPORTER_MAX_SECTION_SIZE);
+  g_assert (removed >= 0 && removed < G_MENU_EXPORTER_MAX_SECTION_SIZE);
+  g_assert (added < G_MENU_EXPORTER_MAX_SECTION_SIZE);
+  g_assert (position + removed <= n_items);
+  g_assert (n_items - removed + added < G_MENU_EXPORTER_MAX_SECTION_SIZE);
 
   point = g_sequence_get_iter_at_pos (menu->item_links, position + removed);
   g_sequence_remove_range (g_sequence_get_iter_at_pos (menu->item_links, position), point);
@@ -265,7 +266,7 @@ g_menu_exporter_menu_items_changed (GMenuModel *model,
     {
       GVariantBuilder builder;
 
-      g_variant_builder_init (&builder, G_VARIANT_TYPE ("(uuuuaa{sv})"));
+      g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("(uuuuaa{sv})"));
       g_variant_builder_add (&builder, "u", g_menu_exporter_group_get_id (menu->group));
       g_variant_builder_add (&builder, "u", menu->id);
       g_variant_builder_add (&builder, "u", position);
@@ -525,7 +526,9 @@ g_menu_exporter_remote_free (gpointer data)
       g_menu_exporter_group_unsubscribe (group, GPOINTER_TO_INT (val));
     }
 
-  g_bus_unwatch_name (remote->watch_id);
+  if (remote->watch_id > 0)
+    g_bus_unwatch_name (remote->watch_id);
+
   g_hash_table_unref (remote->watches);
 
   g_slice_free (GMenuExporterRemote, remote);
@@ -556,6 +559,7 @@ struct _GMenuExporter
   guint next_group_id;
 
   GMenuExporterMenu *root;
+  GMenuExporterRemote *peer_remote;
   GHashTable *remotes;
 };
 
@@ -582,19 +586,28 @@ g_menu_exporter_subscribe (GMenuExporter *exporter,
   GVariantIter iter;
   guint32 id;
 
-  remote = g_hash_table_lookup (exporter->remotes, sender);
+  if (sender != NULL)
+    remote = g_hash_table_lookup (exporter->remotes, sender);
+  else
+    remote = exporter->peer_remote;
 
   if (remote == NULL)
     {
-      guint watch_id;
+      if (sender != NULL)
+        {
+          guint watch_id;
 
-      watch_id = g_bus_watch_name_on_connection (exporter->connection, sender, G_BUS_NAME_WATCHER_FLAGS_NONE,
-                                                 NULL, g_menu_exporter_name_vanished, exporter, NULL);
-      remote = g_menu_exporter_remote_new (exporter, watch_id);
-      g_hash_table_insert (exporter->remotes, g_strdup (sender), remote);
+          watch_id = g_bus_watch_name_on_connection (exporter->connection, sender, G_BUS_NAME_WATCHER_FLAGS_NONE,
+                                                     NULL, g_menu_exporter_name_vanished, exporter, NULL);
+          remote = g_menu_exporter_remote_new (exporter, watch_id);
+          g_hash_table_insert (exporter->remotes, g_strdup (sender), remote);
+        }
+      else
+        remote = exporter->peer_remote =
+          g_menu_exporter_remote_new (exporter, 0);
     }
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE ("(a(uuaa{sv}))"));
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE ("(a(uuaa{sv}))"));
 
   g_variant_builder_open (&builder, G_VARIANT_TYPE ("a(uuaa{sv})"));
 
@@ -616,7 +629,10 @@ g_menu_exporter_unsubscribe (GMenuExporter *exporter,
   GVariantIter iter;
   guint32 id;
 
-  remote = g_hash_table_lookup (exporter->remotes, sender);
+  if (sender != NULL)
+    remote = g_hash_table_lookup (exporter->remotes, sender);
+  else
+    remote = exporter->peer_remote;
 
   if (remote == NULL)
     return;
@@ -626,7 +642,12 @@ g_menu_exporter_unsubscribe (GMenuExporter *exporter,
     g_menu_exporter_remote_unsubscribe (remote, id);
 
   if (!g_menu_exporter_remote_has_subscriptions (remote))
-    g_hash_table_remove (exporter->remotes, sender);
+    {
+      if (sender != NULL)
+        g_hash_table_remove (exporter->remotes, sender);
+      else
+        g_clear_pointer (&exporter->peer_remote, g_menu_exporter_remote_free);
+    }
 }
 
 static void
@@ -635,7 +656,7 @@ g_menu_exporter_report (GMenuExporter *exporter,
 {
   GVariantBuilder builder;
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
+  g_variant_builder_init_static (&builder, G_VARIANT_TYPE_TUPLE);
   g_variant_builder_open (&builder, G_VARIANT_TYPE_ARRAY);
   g_variant_builder_add_value (&builder, report);
   g_variant_builder_close (&builder);
@@ -686,11 +707,10 @@ g_menu_exporter_create_group (GMenuExporter *exporter)
 }
 
 static void
-g_menu_exporter_free (gpointer user_data)
+g_menu_exporter_free (GMenuExporter *exporter)
 {
-  GMenuExporter *exporter = user_data;
-
-  g_menu_exporter_menu_free (exporter->root);
+  g_clear_pointer (&exporter->root, g_menu_exporter_menu_free);
+  g_clear_pointer (&exporter->peer_remote, g_menu_exporter_remote_free);
   g_hash_table_unref (exporter->remotes);
   g_hash_table_unref (exporter->groups);
   g_object_unref (exporter->connection);
@@ -747,6 +767,10 @@ g_menu_exporter_method_call (GDBusConnection       *connection,
  * constraint is violated, the export will fail and 0 will be
  * returned (with @error set accordingly).
  *
+ * Exporting menus with sections containing more than
+ * %G_MENU_EXPORTER_MAX_SECTION_SIZE items is not supported and results in
+ * undefined behavior.
+ *
  * You can unexport the menu model using
  * g_dbus_connection_unexport_menu_model() with the return value of
  * this function.
@@ -762,27 +786,22 @@ g_dbus_connection_export_menu_model (GDBusConnection  *connection,
                                      GError          **error)
 {
   const GDBusInterfaceVTable vtable = {
-    g_menu_exporter_method_call,
+    g_menu_exporter_method_call, NULL, NULL, { 0 }
   };
   GMenuExporter *exporter;
   guint id;
 
   exporter = g_slice_new0 (GMenuExporter);
-
-  id = g_dbus_connection_register_object (connection, object_path, org_gtk_Menus_get_interface (),
-                                          &vtable, exporter, g_menu_exporter_free, error);
-
-  if (id == 0)
-    {
-      g_slice_free (GMenuExporter, exporter);
-      return 0;
-    }
-
   exporter->connection = g_object_ref (connection);
   exporter->object_path = g_strdup (object_path);
   exporter->groups = g_hash_table_new (NULL, NULL);
   exporter->remotes = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_menu_exporter_remote_free);
-  exporter->root = g_menu_exporter_group_add_menu (g_menu_exporter_create_group (exporter), menu);
+
+  id = g_dbus_connection_register_object (connection, object_path, org_gtk_Menus_get_interface (),
+                                          &vtable, exporter, (GDestroyNotify) g_menu_exporter_free, error);
+
+  if (id != 0)
+    exporter->root = g_menu_exporter_group_add_menu (g_menu_exporter_create_group (exporter), menu);
 
   return id;
 }

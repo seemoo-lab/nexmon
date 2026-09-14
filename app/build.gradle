@@ -1,15 +1,22 @@
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
+//
+// Toolchain modernization (see MODERNIZATION.md): moved off the retired
+// jcenter() and AGP 2.3.2 to AGP 7.4.2 on google()/mavenCentral(). This is a
+// build-tooling-only bump: the app stays on the legacy android.support library
+// (compileSdk/targetSdk 28), so no source changes to AndroidX are required.
 buildscript {
     repositories {
-        jcenter()
+        google()
+        mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.2'
+        classpath 'com.android.tools.build:gradle:7.4.2'
     }
 }
 
 allprojects {
     repositories {
-        jcenter()
+        google()
+        mavenCentral()
     }
 }

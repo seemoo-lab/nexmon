@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -35,58 +23,63 @@ Specs:
 #include <epan/packet.h>
 #include <epan/to_str.h>
 #include <epan/ipproto.h>
+#include <epan/expert.h>
 #include "packet-ip.h"
 
 void proto_reg_handoff_tapa(void);
 void proto_register_tapa(void);
 
 /* protocol handles */
-static int proto_tapa = -1;
+static int proto_tapa;
 
 /* ett handles */
-static int ett_tapa_discover = -1;
-static int ett_tapa_discover_req = -1;
-static int ett_tapa_tunnel = -1;
+static int ett_tapa_discover;
+static int ett_tapa_discover_req;
+static int ett_tapa_tunnel;
 
 /* hf elements */
-static int hf_tapa_discover_type = -1;
-static int hf_tapa_discover_flags = -1;
-static int hf_tapa_discover_length = -1;
-static int hf_tapa_discover_unknown = -1;
+static int hf_tapa_discover_type;
+static int hf_tapa_discover_flags;
+static int hf_tapa_discover_length;
+static int hf_tapa_discover_unknown;
 
-static int hf_tapa_discover_req_type = -1;
-static int hf_tapa_discover_req_pad = -1;
-static int hf_tapa_discover_req_length = -1;
-static int hf_tapa_discover_req_value = -1;
+static int hf_tapa_discover_req_type;
+static int hf_tapa_discover_req_pad;
+static int hf_tapa_discover_req_length;
+static int hf_tapa_discover_req_value;
 
-static int hf_tapa_discover_newtlv_type = -1;
-static int hf_tapa_discover_newtlv_pad = -1;
-static int hf_tapa_discover_newtlv_length = -1;
-static int hf_tapa_discover_newtlv_valuetext = -1;
-static int hf_tapa_discover_newtlv_valuehex = -1;
+static int hf_tapa_discover_newtlv_type;
+static int hf_tapa_discover_newtlv_pad;
+static int hf_tapa_discover_newtlv_length;
+static int hf_tapa_discover_newtlv_valuetext;
+static int hf_tapa_discover_newtlv_valuehex;
 
-static int hf_tapa_discover_reply_switchip = -1;
-static int hf_tapa_discover_reply_unused = -1;
-static int hf_tapa_discover_reply_bias = -1;
-static int hf_tapa_discover_reply_pad = -1;
+static int hf_tapa_discover_reply_switchip;
+static int hf_tapa_discover_reply_unused;
+static int hf_tapa_discover_reply_bias;
+static int hf_tapa_discover_reply_pad;
 
-static int hf_tapa_tunnel_version = -1;
-static int hf_tapa_tunnel_five = -1;
-static int hf_tapa_tunnel_type = -1;
-static int hf_tapa_tunnel_zero = -1;
-static int hf_tapa_tunnel_dmac = -1;
-static int hf_tapa_tunnel_smac = -1;
-static int hf_tapa_tunnel_seqno = -1;
-static int hf_tapa_tunnel_length = -1;
-static int hf_tapa_tunnel_0804 = -1;
-static int hf_tapa_tunnel_tagsetc = -1;
+static int hf_tapa_tunnel_version;
+static int hf_tapa_tunnel_five;
+static int hf_tapa_tunnel_type;
+static int hf_tapa_tunnel_zero;
+static int hf_tapa_tunnel_dmac;
+static int hf_tapa_tunnel_smac;
+static int hf_tapa_tunnel_seqno;
+static int hf_tapa_tunnel_length;
+static int hf_tapa_tunnel_0804;
+static int hf_tapa_tunnel_tagsetc;
 
-static int hf_tapa_tunnel_remaining = -1;
+static int hf_tapa_tunnel_remaining;
+
+static expert_field ei_tapa_length_too_short;
+
+static dissector_handle_t tapa_handle;
 
 #define PROTO_SHORT_NAME "TAPA"
 #define PROTO_LONG_NAME "Trapeze Access Point Access Protocol"
 
-#define PORT_TAPA	5000
+#define PORT_TAPA	5000 /* Not IANA registered */
 
 typedef enum {
 	TAPA_TYPE_REQUEST	= 0x01,
@@ -135,29 +128,29 @@ static const value_string tapa_discover_unknown_vals[] = {
 };
 #endif
 
-static gboolean
-check_ascii(tvbuff_t *tvb, gint offset, gint length)
+static bool
+check_ascii(tvbuff_t *tvb, int offset, int length)
 {
-	gint i;
-	guint8 buf;
+	int i;
+	uint8_t buf;
 
 	for (i = 0; i < length; i++) {
-		buf = tvb_get_guint8(tvb, offset+i);
+		buf = tvb_get_uint8(tvb, offset+i);
 		if (buf < 0x20 || buf >= 0x80) {
-			return FALSE;
+			return false;
 		}
 	}
-	return TRUE;
+	return true;
 }
 
 static int
-dissect_tapa_discover_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tapa_discover_tree, guint32 offset, gint remaining)
+dissect_tapa_discover_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tapa_discover_tree, uint32_t offset, int remaining)
 {
 	proto_tree_add_item(tapa_discover_tree, hf_tapa_discover_reply_switchip, tvb, offset, 4,
 		ENC_BIG_ENDIAN);
 
 	col_append_fstr(pinfo->cinfo, COL_INFO, ", Switch: %s",
-			tvb_ip_to_str(tvb, offset));
+			tvb_ip_to_str(pinfo->pool, tvb, offset));
 
 	offset += 4;
 
@@ -178,19 +171,19 @@ dissect_tapa_discover_reply(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tapa_
 }
 
 static int
-dissect_tapa_discover_req(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tapa_discover_tree, guint32 offset, gint remaining)
+dissect_tapa_discover_req(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tapa_discover_tree, uint32_t offset, int remaining)
 {
 	proto_tree	*tapa_discover_item_tree;
-	guint8		 item_type;
-	gint		 item_length;
-	gchar		*item_text;
-	const gchar	*item_type_text;
+	uint8_t		 item_type;
+	int		 item_length;
+	char		*item_text;
+	const char	*item_type_text;
 
 	while (remaining > 0) {
-		item_type = tvb_get_guint8(tvb, offset);
-		item_type_text = val_to_str(item_type, tapa_discover_request_vals, "%d");
+		item_type = tvb_get_uint8(tvb, offset);
+		item_type_text = val_to_str(pinfo->pool, item_type, tapa_discover_request_vals, "%d");
 		item_length = tvb_get_ntohs(tvb, offset + 2);
-		item_text = tvb_format_text(tvb, offset + 4, item_length);
+		item_text = tvb_format_text(pinfo->pool, tvb, offset + 4, item_length);
 
 		col_append_fstr(pinfo->cinfo, COL_INFO, ", %s: %s",
 				item_type_text, item_text);
@@ -220,34 +213,23 @@ dissect_tapa_discover_req(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tapa_di
 }
 
 static int
-dissect_tapa_discover_unknown_new_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tapa_discover_tree, guint32 offset, gint remaining)
+dissect_tapa_discover_unknown_new_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tapa_discover_tree, uint32_t offset, int remaining)
 {
 	proto_tree	*tapa_discover_item_tree;
-	guint8		 item_type;
-	gint		 item_length;
-	const gchar	*item_text;
-	/*const gchar	*item_type_text;*/
-	gboolean	 is_ascii;
+	proto_item	*item, *discover_item;
+	uint8_t		 item_type;
+	int		 item_length;
+	const char	*item_text;
+	/*const char	*item_type_text;*/
+	bool	 is_ascii;
 
 	while (remaining > 3) {  /* type(1) + flags(1) + length(2) */
-		item_type = tvb_get_guint8(tvb, offset);
-		/*item_type_text = val_to_str(item_type, tapa_discover_unknown_vals, "%d");*/
+		item_type = tvb_get_uint8(tvb, offset);
+		/*item_type_text = val_to_str(pinfo->pool, item_type, tapa_discover_unknown_vals, "%d");*/
 		item_length = tvb_get_ntohs(tvb, offset + 2) - 4;
 
-		DISSECTOR_ASSERT(item_length > 0);
-
-		is_ascii = check_ascii(tvb, offset + 4, item_length);
-		if (is_ascii)
-			item_text = tvb_format_text(tvb, offset + 4, item_length);
-		else
-			item_text = "BINARY-DATA";
-
-		col_append_fstr(pinfo->cinfo, COL_INFO, ", T=%d L=%d",
-				item_type, item_length);
-
 		tapa_discover_item_tree = proto_tree_add_subtree_format(tapa_discover_tree, tvb, offset, 4 + item_length,
-			ett_tapa_discover_req, NULL, "Type %d, length %d, value %s",
-			item_type, item_length, item_text);
+			ett_tapa_discover_req, &discover_item, "Type %d, length %d", item_type, item_length);
 
 		proto_tree_add_item(tapa_discover_item_tree, hf_tapa_discover_newtlv_type, tvb, offset, 1,
 			ENC_BIG_ENDIAN);
@@ -257,13 +239,28 @@ dissect_tapa_discover_unknown_new_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_t
 			ENC_BIG_ENDIAN);
 		offset += 1;
 
-		proto_tree_add_item(tapa_discover_item_tree, hf_tapa_discover_newtlv_length, tvb, offset, 2,
+		item = proto_tree_add_item(tapa_discover_item_tree, hf_tapa_discover_newtlv_length, tvb, offset, 2,
 			ENC_BIG_ENDIAN);
 		offset += 2;
 
+		if (item_length <= 0) {
+			expert_add_info(pinfo, item, &ei_tapa_length_too_short);
+			return offset;
+		}
+
+		is_ascii = check_ascii(tvb, offset + 4, item_length);
+		if (is_ascii)
+			item_text = tvb_format_text(pinfo->pool, tvb, offset + 4, item_length);
+		else
+			item_text = "BINARY-DATA";
+
+		col_append_fstr(pinfo->cinfo, COL_INFO, ", T=%d L=%d",
+				item_type, item_length);
+		proto_item_append_text(discover_item, ", value %s", item_text);
+
 		if (is_ascii)
 			proto_tree_add_item(tapa_discover_item_tree, hf_tapa_discover_newtlv_valuetext,
-				tvb, offset, item_length, ENC_ASCII|ENC_NA);
+				tvb, offset, item_length, ENC_ASCII);
 		else
 			proto_tree_add_item(tapa_discover_item_tree, hf_tapa_discover_newtlv_valuehex,
 				tvb, offset, item_length, ENC_NA);
@@ -279,18 +276,16 @@ dissect_tapa_discover(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 	proto_item *ti;
 	proto_tree *tapa_discover_tree = NULL;
-	guint32 offset = 0;
-	guint8 packet_type;
-	guint remaining;
+	int offset = 0;
+	uint8_t packet_type;
+	int remaining;
 
-	packet_type = tvb_get_guint8(tvb, 0);
+	packet_type = tvb_get_uint8(tvb, 0);
 	remaining = tvb_get_ntohs(tvb, 2) - 4;
-
-	DISSECTOR_ASSERT(remaining > 4);
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_SHORT_NAME);
 	col_add_fstr(pinfo->cinfo, COL_INFO, "Discover - %s",
-			val_to_str(packet_type, tapa_discover_type_vals, "Unknown (%d)"));
+			val_to_str(pinfo->pool, packet_type, tapa_discover_type_vals, "Unknown (%d)"));
 
 	if (tree) {
 		ti = proto_tree_add_item(tree, proto_tapa, tvb, offset, -1,
@@ -305,9 +300,14 @@ dissect_tapa_discover(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 			ENC_BIG_ENDIAN);
 		offset += 1;
 
-		proto_tree_add_item(tapa_discover_tree, hf_tapa_discover_length, tvb, offset, 2,
+		ti = proto_tree_add_item(tapa_discover_tree, hf_tapa_discover_length, tvb, offset, 2,
 			ENC_BIG_ENDIAN);
 		offset += 2;
+
+		if (remaining <= 0) {
+			expert_add_info(pinfo, ti, &ei_tapa_length_too_short);
+			return offset;
+		}
 
 		switch (packet_type) {
 		case TAPA_TYPE_REQUEST:
@@ -337,18 +337,18 @@ dissect_tapa_tunnel(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 {
 	proto_item *ti;
 	proto_tree *tapa_tunnel_tree = NULL;
-	guint32 offset = 0;
-	guint8 version;
-	guint8 type;
-	guint remaining;
+	uint32_t offset = 0;
+	uint8_t version;
+	uint8_t type;
+	unsigned remaining;
 
-	version = tvb_get_guint8(tvb, 0) & 0xF0;
-	type = tvb_get_guint8(tvb, 1);
+	version = tvb_get_uint8(tvb, 0) & 0xF0;
+	type = tvb_get_uint8(tvb, 1);
 	remaining = tvb_reported_length(tvb);
 
 	col_set_str(pinfo->cinfo, COL_PROTOCOL, PROTO_SHORT_NAME);
 	col_add_fstr(pinfo->cinfo, COL_INFO, "Tunnel - V=%d, T=%s", version >> 4,
-			val_to_str(type, tapa_tunnel_type_vals, "Unknown (%d)"));
+			val_to_str(pinfo->pool, type, tapa_tunnel_type_vals, "Unknown (%d)"));
 
 	if (tree) {
 		ti = proto_tree_add_item(tree, proto_tapa, tvb, offset, -1,
@@ -411,44 +411,44 @@ dissect_tapa_tunnel(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
 	return offset;
 }
 
-static gboolean
+static bool
 test_tapa_discover(tvbuff_t *tvb)
 {
-	guint8 type, req_type;
-	guint16 length;
+	uint8_t type, req_type;
+	uint16_t length;
 
 	if (tvb_captured_length(tvb) < 4)
-		return FALSE;
+		return false;
 
 	/* Type(1 byte) <= 5, unknown(1 byte), length(2 bytes) */
-	type = tvb_get_guint8(tvb, 0);
-	/* unknown = tvb_get_guint8(tvb, 1); */
+	type = tvb_get_uint8(tvb, 0);
+	/* unknown = tvb_get_uint8(tvb, 1); */
 	length = tvb_get_ntohs(tvb, 2);
-	req_type = tvb_get_guint8(tvb, 4);
+	req_type = tvb_get_uint8(tvb, 4);
 
 	if (type < TAPA_TYPE_REQUEST		||
 	    type > TAPA_TYPE_REPLY_NEW		||
 	    length < 12				||
 	    length > 1472			||
 	    (type == TAPA_TYPE_REQUEST && (req_type < TAPA_REQUEST_SERIAL || req_type > TAPA_REQUEST_MODEL))) {
-		return FALSE;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
-static gboolean
+static bool
 test_tapa_tunnel(tvbuff_t *tvb)
 {
 	/* If it isn't IPv4, it's TAPA. IPv4: Version(1 byte) = 4,
 		length(2 bytes) >= 20 */
 	if (tvb_captured_length(tvb) < 4 ||
-	    (tvb_get_guint8(tvb, 0) & 0xF0) >= 0x40 ||
+	    (tvb_get_uint8(tvb, 0) & 0xF0) >= 0x40 ||
 	    tvb_get_ntohs(tvb, 2) > 0 ||
-	    tvb_get_guint8(tvb, 1) > 1) {	/* Is tunnel type known? */
-		return FALSE;
+	    tvb_get_uint8(tvb, 1) > 1) {	/* Is tunnel type known? */
+		return false;
 	}
-	return TRUE;
+	return true;
 }
 
 static int
@@ -463,24 +463,24 @@ dissect_tapa_static(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *d
 }
 
 /* heuristic dissector */
-static gboolean
-dissect_tapa_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+static bool
+dissect_tapa_heur(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *iph)
 {
-	ws_ip *iph = (ws_ip*)data;
-
 	/* The TAPA protocol also uses IP protocol number 4 but it isn't really IPIP */
-	if (iph && (iph->ip_nxt == IP_PROTO_IPIP) && ((tvb_get_guint8(tvb, 0) & 0xF0) != 0x40) &&
+	if ((ws_ip_protocol(iph) == IP_PROTO_IPIP) && ((tvb_get_uint8(tvb, 0) & 0xF0) != 0x40) &&
 	    (tvb_get_ntohs(tvb, 2)) < 20) {
-		dissect_tapa_static(tvb, pinfo, tree, data);
-		return TRUE;
+		dissect_tapa_static(tvb, pinfo, tree, iph);
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 void
 proto_register_tapa(void)
 {
+	expert_module_t* expert_tapa;
+
 	static hf_register_info hf[] = {
 
 		/* TAPA discover header */
@@ -606,32 +606,37 @@ proto_register_tapa(void)
 		    0x0, NULL, HFILL }},
 
 	};
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_tapa_discover,
 		&ett_tapa_discover_req,
 		&ett_tapa_tunnel,
 	};
 
+	static ei_register_info ei[] = {
+		{ &ei_tapa_length_too_short,
+		  { "tapa.length_too_short", PI_MALFORMED, PI_ERROR,
+	            "Length is too short (<= 4)", EXPFILL }}
+	};
+
 	proto_tapa = proto_register_protocol(PROTO_LONG_NAME, PROTO_SHORT_NAME, "tapa");
 	proto_register_field_array(proto_tapa, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
+	expert_tapa = expert_register_protocol(proto_tapa);
+	expert_register_field_array(expert_tapa, ei, array_length(ei));
 
-	register_dissector("tapa", dissect_tapa_static, proto_tapa);
+	tapa_handle = register_dissector("tapa", dissect_tapa_static, proto_tapa);
 
 }
 
 void
 proto_reg_handoff_tapa(void)
 {
-	dissector_handle_t tapa_handle;
-
-	tapa_handle = find_dissector("tapa");
-	dissector_add_uint("udp.port", PORT_TAPA, tapa_handle);
+	dissector_add_uint_with_preference("udp.port", PORT_TAPA, tapa_handle);
 	heur_dissector_add( "ip", dissect_tapa_heur, "TAPA over IP", "tapa_ip", proto_tapa, HEURISTIC_ENABLE);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

@@ -2,6 +2,8 @@
  * Copyright (C) 2011 Red Hat, Inc
  * Author: Matthias Clasen
  *
+ * SPDX-License-Identifier: LicenseRef-old-glib-tests
+ *
  * This work is provided "as is"; redistribution and modification
  * in whole or in part, in any medium, physical or electronic is
  * permitted without restriction.
@@ -21,6 +23,7 @@
  */
 
 #include <config.h>
+#include <errno.h>
 
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
@@ -32,9 +35,15 @@
 
 #include <glib.h>
 
+#include "glib/glib-private.h"
+
 #ifdef G_OS_UNIX
 #include <unistd.h>
 #include <sys/resource.h>
+#endif
+
+#ifdef THREADS_POSIX
+#include <pthread.h>
 #endif
 
 static gpointer
@@ -127,32 +136,45 @@ test_thread3 (void)
 static void
 test_thread4 (void)
 {
-#ifdef HAVE_PRLIMIT
+#ifdef _GLIB_ADDRESS_SANITIZER
+  g_test_incomplete ("FIXME: Leaks a GSystemThread's name, see glib#2308");
+#elif defined(HAVE_PRLIMIT)
   struct rlimit ol, nl;
   GThread *thread;
   GError *error;
-  gint ret;
-
-  /* Linux CAP_SYS_RESOURCE overrides RLIMIT_NPROC, and probably similar
-   * things are true on other systems.
-   */
-  if (getuid () == 0 || geteuid () == 0)
-    return;
 
   getrlimit (RLIMIT_NPROC, &nl);
   nl.rlim_cur = 1;
 
-  if ((ret = prlimit (getpid(), RLIMIT_NPROC, &nl, &ol)) != 0)
-    g_error ("prlimit failed: %s\n", g_strerror (ret));
+  if (prlimit (getpid (), RLIMIT_NPROC, &nl, &ol) != 0)
+    g_error ("setting RLIMIT_NPROC to {cur=%ld,max=%ld} failed: %s",
+             (long) nl.rlim_cur, (long) nl.rlim_max, g_strerror (errno));
 
   error = NULL;
   thread = g_thread_try_new ("a", thread1_func, NULL, &error);
-  g_assert (thread == NULL);
-  g_assert_error (error, G_THREAD_ERROR, G_THREAD_ERROR_AGAIN);
-  g_error_free (error);
 
-  if ((ret = prlimit (getpid (), RLIMIT_NPROC, &ol, NULL)) != 0)
-    g_error ("resetting RLIMIT_NPROC failed: %s\n", g_strerror (ret));
+  if (thread != NULL)
+    {
+      gpointer result;
+
+      /* Privileged processes might be able to create new threads even
+       * though the rlimit is too low. There isn't much we can do about
+       * this; we just can't test this failure mode in this situation. */
+      g_test_skip ("Unable to test g_thread_try_new() failing with EAGAIN "
+                   "while privileged (CAP_SYS_RESOURCE, CAP_SYS_ADMIN or "
+                   "euid 0?)");
+      result = g_thread_join (thread);
+      g_assert_cmpint (GPOINTER_TO_INT (result), ==, 1);
+    }
+  else
+    {
+      g_assert (thread == NULL);
+      g_assert_error (error, G_THREAD_ERROR, G_THREAD_ERROR_AGAIN);
+      g_error_free (error);
+    }
+
+  if (prlimit (getpid (), RLIMIT_NPROC, &ol, NULL) != 0)
+    g_error ("resetting RLIMIT_NPROC failed: %s", g_strerror (errno));
 #endif
 }
 
@@ -170,12 +192,17 @@ test_thread5 (void)
 static gpointer
 thread6_func (gpointer data)
 {
-#ifdef HAVE_PTHREAD_SETNAME_NP_WITH_TID
+#if defined (HAVE_PTHREAD_SETNAME_NP_WITH_TID) && defined (HAVE_PTHREAD_GETNAME_NP)
   char name[16];
+  const char *name2;
 
   pthread_getname_np (pthread_self(), name, 16);
 
   g_assert_cmpstr (name, ==, data);
+
+  name2 = g_thread_get_name (g_thread_self ());
+
+  g_assert_cmpstr (name2, ==, data);
 #endif
 
   return NULL;
@@ -190,6 +217,47 @@ test_thread6 (void)
   g_thread_join (thread);
 }
 
+#if defined(_SC_NPROCESSORS_ONLN) && defined(THREADS_POSIX) && defined(HAVE_PTHREAD_GETAFFINITY_NP)
+static gpointer
+thread7_func (gpointer data)
+{
+  int idx = 0, err;
+  int ncores = sysconf (_SC_NPROCESSORS_ONLN);
+
+  cpu_set_t old_mask, new_mask;
+
+  err = pthread_getaffinity_np (pthread_self (), sizeof (old_mask), &old_mask);
+  CPU_ZERO (&new_mask);
+  g_assert_cmpint (err, ==, 0);
+
+  for (idx = 0; idx < ncores; ++idx)
+    if (CPU_ISSET (idx, &old_mask))
+      {
+        CPU_SET (idx, &new_mask);
+        break;
+      }
+
+  err = pthread_setaffinity_np (pthread_self (), sizeof (new_mask), &new_mask);
+  g_assert_cmpint (err, ==, 0);
+
+  int af_count = g_get_num_processors ();
+  return GINT_TO_POINTER (af_count);
+}
+#endif
+
+static void
+test_thread7 (void)
+{
+#if defined(_SC_NPROCESSORS_ONLN) && defined(THREADS_POSIX) && defined(HAVE_PTHREAD_GETAFFINITY_NP)
+  GThread *thread = g_thread_new ("mask", thread7_func, NULL);
+  gpointer result = g_thread_join (thread);
+
+  g_assert_cmpint (GPOINTER_TO_INT (result), ==, 1);
+#else
+  g_test_skip ("Skipping because pthread_getaffinity_np() is not available");
+#endif
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -201,6 +269,7 @@ main (int argc, char *argv[])
   g_test_add_func ("/thread/thread4", test_thread4);
   g_test_add_func ("/thread/thread5", test_thread5);
   g_test_add_func ("/thread/thread6", test_thread6);
+  g_test_add_func ("/thread/thread7", test_thread7);
 
   return g_test_run ();
 }

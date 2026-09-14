@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -223,7 +211,7 @@ static const value_string sm_pdu_type_value[] = {
 };
 
 /* TODO: Change to useful name once known */
-#define SM_PROTOCOL_X004 0x0004 /* https://bugs.wireshark.org/bugzilla/show_bug.cgi?id=7188 */
+#define SM_PROTOCOL_X004 0x0004 /* https://gitlab.com/wireshark/wireshark/-/issues/7188 */
 /* RUDP/SM stack called BSM V1 (version 1 versus Version 0 used for SS7). */
 #define SM_PROTOCOL_X100 0x0100
 #define SM_PROTOCOL_X101 0x0101
@@ -232,31 +220,31 @@ static const value_string sm_pdu_type_value[] = {
 
 
 /* Initialize the protocol and registered fields */
-static int proto_sm = -1;
+static int proto_sm;
 
-static int hf_sm_sm_msg_type = -1;
-static int hf_sm_protocol = -1;
-static int hf_sm_msg_id = -1;
-static int hf_sm_msg_type = -1;
-static int hf_sm_channel = -1;
-static int hf_sm_bearer = -1;
-static int hf_sm_len = -1;
-static int hf_sm_ip_addr = -1;
-static int hf_sm_context = -1;
-static int hf_sm_eisup_msg_id = -1;
-static int hf_sm_tag = -1;
-static int hf_sm_alignment_type = -1;
-static int hf_sm_backhaul_reason_code = -1;
-static int hf_sm_backhaul_event_code = -1;
-static int hf_sm_backhaul_cause_code = -1;
-static int hf_sm_linkdown_cause_code = -1;
-static int hf_sm_retrieval_type = -1;
-static int hf_sm_lsc_state_type = -1;
-static int hf_sm_stat_request_type = -1;
-static int hf_sm_bsn_num = -1;
+static int hf_sm_sm_msg_type;
+static int hf_sm_protocol;
+static int hf_sm_msg_id;
+static int hf_sm_msg_type;
+static int hf_sm_channel;
+static int hf_sm_bearer;
+static int hf_sm_len;
+static int hf_sm_ip_addr;
+static int hf_sm_context;
+static int hf_sm_eisup_msg_id;
+static int hf_sm_tag;
+static int hf_sm_alignment_type;
+static int hf_sm_backhaul_reason_code;
+static int hf_sm_backhaul_event_code;
+static int hf_sm_backhaul_cause_code;
+static int hf_sm_linkdown_cause_code;
+static int hf_sm_retrieval_type;
+static int hf_sm_lsc_state_type;
+static int hf_sm_stat_request_type;
+static int hf_sm_bsn_num;
 
 /* Initialize the subtree pointers */
-static gint ett_sm = -1;
+static int ett_sm;
 
 static dissector_handle_t sdp_handle;
 static dissector_handle_t mtp3_handle;
@@ -269,12 +257,12 @@ dissect_sm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     proto_item *ti;
     proto_tree *sm_tree;
     tvbuff_t   *next_tvb      = NULL;
-    guint32     sm_message_type;
-    guint32     bh_event_code = 0;
-    guint16     protocol;
-    guint16     msg_type      = 0;
-    guint16     length;
-    guint16     tag;
+    uint32_t    sm_message_type;
+    uint32_t    bh_event_code = 0;
+    uint16_t    protocol;
+    uint16_t    msg_type      = 0;
+    uint16_t    length;
+    uint16_t    tag;
     int         offset        = 0;
 
     sm_message_type = tvb_get_ntohl(tvb,offset);
@@ -284,7 +272,7 @@ dissect_sm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
     col_add_fstr(pinfo->cinfo, COL_INFO, "Cisco SM Packet (%s)",
         val_to_str_const(sm_message_type, sm_message_type_value_info,"reserved"));
 
-    ti = proto_tree_add_item(tree, proto_sm, tvb, offset, 0, ENC_NA);
+    ti = proto_tree_add_item(tree, proto_sm, tvb, offset, -1, ENC_NA);
     sm_tree = proto_item_add_subtree(ti, ett_sm);
 
     proto_tree_add_uint_format_value(sm_tree, hf_sm_sm_msg_type, tvb, offset, 4, sm_message_type,
@@ -343,7 +331,7 @@ dissect_sm(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 
             break;
         case SM_PROTOCOL_X101:
-            /* XXX Reverse enginered so this may not be correct!!!
+            /* XXX Reverse engineered so this may not be correct!!!
              * EISUP - used between Cisco HSI and Cisco PGW devices,
              * uses RUDP with default port number 8003.
              * Protocol stack is RUDP->Cisco SM->SDP.
@@ -586,7 +574,7 @@ proto_register_sm(void)
     };
 
 /* Setup protocol subtree array */
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_sm,
     };
 
@@ -610,7 +598,7 @@ proto_reg_handoff_sm(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

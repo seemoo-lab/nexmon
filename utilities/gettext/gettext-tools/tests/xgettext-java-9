@@ -1,0 +1,30 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Java support: diagnostics for invalid format strings.
+
+: ${XGETTEXT=xgettext}
+
+cat <<\EOF > xg-j-9.java
+_("Invalid Java format %z").formatted();
+EOF
+
+LANGUAGE= LC_ALL=C \
+${XGETTEXT} --omit-header --no-location \
+            -k_ --flag=_:1:pass-java-format --flag=_:1:pass-java-printf-format \
+            -o xg-j-9.tmp xg-j-9.java 2>xg-j-9.err \
+  || Exit 1
+cat xg-j-9.err
+grep 'warning: Although being used in a format string position, the msgid is not a valid Java printf format string.' xg-j-9.err >/dev/null || Exit 1
+func_filter_POT_Creation_Date xg-j-9.tmp xg-j-9.po
+
+cat <<\EOF > xg-j-9.ok
+msgid "Invalid Java format %z"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-j-9.ok xg-j-9.po
+result=$?
+
+exit $result

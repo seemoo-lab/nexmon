@@ -1,37 +1,29 @@
 /* packet-packetbb.c
  * Routines for parsing packetbb rfc 5444
  * Parser created by Henning Rogge <henning.rogge@fkie.fraunhofer.de> of Fraunhover
+ * TLV values decoding by Francois Schneider <francois.schneider_@_airbus.com>
  *
- * http://tools.ietf.org/html/rfc5444
- * http://tools.ietf.org/html/rfc5498
+ * https://tools.ietf.org/html/rfc5444
+ * https://tools.ietf.org/html/rfc5498
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #include "config.h"
 
 
 #include <epan/packet.h>
-#include <epan/prefs.h>
 #include <epan/expert.h>
+#include <epan/to_str.h>
+#include <wsutil/array.h>
 
 void proto_reg_handoff_packetbb(void);
 void proto_register_packetbb(void);
+
+static dissector_handle_t packetbb_handle;
 
 #define PACKET_HEADER_HASSEQNR     0x08
 #define PACKET_HEADER_HASTLV       0x04
@@ -56,139 +48,326 @@ void proto_register_packetbb(void);
 
 #define MAX_ADDR_SIZE                16
 
-#define PACKETBB_MSG_TLV_LENGTH        (G_MAXUINT8 + 1)
+#define PACKETBB_MSG_TLV_LENGTH        (UINT8_MAX + 1)
 
 #define TLV_CAT_PACKET             0
 #define TLV_CAT_MESSAGE            1
 #define TLV_CAT_ADDRESS            2
 
+/* Generic address TLV defined by IANA in RFC5497 (timetlv) */
+enum rfc5497_tlv_iana {
+  RFC5497_TLV_INTERVAL_TIME = 0,
+  RFC5497_TLV_VALIDITY_TIME = 1
+};
+
+/* Generic address TLV defined by IANA in RFC6130 (NHDP) */
+enum rfc6130_addrtlv_iana {
+  RFC6130_ADDRTLV_LOCAL_IF      = 2,
+  RFC6130_ADDRTLV_LINK_STATUS   = 3,
+  RFC6130_ADDRTLV_OTHER_NEIGH   = 4
+};
+
+/* Generic address TLVs defined by IANA in RFC7182 (rfc5444-sec) */
+enum rfc7182_tlv_iana {
+  RFC7182_TLV_ICV           = 5,
+  RFC7182_TLV_TIMESTAMP     = 6
+};
+
+/* Generic address TLV defined by IANA in RFC7181 (OLSRv2) */
+enum rfc7181_addrtlv_iana {
+  RFC7181_ADDRTLV_LINK_METRIC   = 7,
+  RFC7181_ADDRTLV_MPR           = 8,
+  RFC7181_ADDRTLV_NBR_ADDR_TYPE = 9,
+  RFC7181_ADDRTLV_GATEWAY       = 10
+};
+
+/* Generic message TLV defined by IANA in RFC7181 (OLSRv2) */
+enum rfc7181_msgtlvs_iana {
+  RFC7181_MSGTLV_MPR_WILLING    = 7,
+  RFC7181_MSGTLV_CONT_SEQ_NUM   = 8
+};
+
+/* Bit-flags for LINK_METRIC address TLV */
+enum rfc7181_linkmetric_flags {
+  RFC7181_LINKMETRIC_INCOMING_LINK  = 1<<15,
+  RFC7181_LINKMETRIC_OUTGOING_LINK  = 1<<14,
+  RFC7181_LINKMETRIC_INCOMING_NEIGH = 1<<13,
+  RFC7181_LINKMETRIC_OUTGOING_NEIGH = 1<<12
+};
+
+/* Bit-flags for MPR address TLV */
+enum rfc7181_mpr_bitmask {
+  RFC7181_MPR_FLOODING    = 1,
+  RFC7181_MPR_ROUTING     = 2,
+  RFC7181_MPR_FLOOD_ROUTE = 3
+};
+
 /* Message types defined by IANA in RFC5444 */
-const value_string msgheader_type_vals[] = {
+static const value_string msgheader_type_vals[] = {
   { 0, "HELLO (NHDP)"                   },
-  { 1, "TC (OLSRv2 Topology Control)"   },
+  { 1, "TC (OLSRv2)"                    },
   { 0, NULL                             }};
 
 /* Packet TLV types defined by IANA in RFC7182 */
-const value_string pkttlv_type_vals[] = {
-  { 5, "ICV (Integrity Check Value)"    },
-  { 6, "Timestamp"                      },
-  { 0, NULL                             }};
+static const value_string pkttlv_type_vals[] = {
+  { RFC7182_TLV_ICV              , "Integrity Check Value"         },
+  { RFC7182_TLV_TIMESTAMP        , "Timestamp"                     },
+  { 0                            , NULL                            }};
 
 /* Message TLV types defined by IANA in RFC5497,7181,7182 */
-const value_string msgtlv_type_vals[] = {
-  {  0, "Interval time"                 },
-  {  1, "Validity time"                 },
-  {  5, "ICV (Integrity Check Value)"   },
-  {  6, "Timestamp"                     },
-  {  7, "MPR willingness"               },
-  {  8, "Continuous sequence number"    },
-  {  0, NULL                            }};
+static const value_string msgtlv_type_vals[] = {
+  { RFC5497_TLV_INTERVAL_TIME    , "Signaling message interval"    },
+  { RFC5497_TLV_VALIDITY_TIME    , "Message validity time"         },
+  { RFC7182_TLV_ICV              , "Integrity Check Value"         },
+  { RFC7182_TLV_TIMESTAMP        , "Timestamp"                     },
+  { RFC7181_MSGTLV_MPR_WILLING   , "MPR willingness"               },
+  { RFC7181_MSGTLV_CONT_SEQ_NUM  , "Content sequence number"       },
+  { 0                            , NULL                            }};
 
 /* Address TLV types defined by IANA in RFC5497,6130,7181,7182 */
-const value_string addrtlv_type_vals[] = {
-  {  0, "Interval time"                 },
-  {  1, "Validity time"                 },
-  {  2, "Local interface status"        },
-  {  3, "Link status"                   },
-  {  4, "Other neighbor status"         },
-  {  5, "ICV (Integrity Check Value)"   },
-  {  6, "Timestamp"                     },
-  {  7, "Link metric"                   },
-  {  8, "MPR (Multipoint Relay)"        },
-  {  9, "Neighbor address type"         },
-  { 10, "Gateway"                       },
-  {  0, NULL                            }};
+static const value_string addrtlv_type_vals[] = {
+  { RFC5497_TLV_INTERVAL_TIME    , "Signaling message interval"    },
+  { RFC5497_TLV_VALIDITY_TIME    , "Message validity time"         },
+  { RFC6130_ADDRTLV_LOCAL_IF     , "Local interface status"        },
+  { RFC6130_ADDRTLV_LINK_STATUS  , "Link status"                   },
+  { RFC6130_ADDRTLV_OTHER_NEIGH  , "Other neighbor status"         },
+  { RFC7182_TLV_ICV              , "Integrity Check Value"         },
+  { RFC7182_TLV_TIMESTAMP        , "Timestamp"                     },
+  { RFC7181_ADDRTLV_LINK_METRIC  , "Link metric"                   },
+  { RFC7181_ADDRTLV_MPR          , "Multipoint Relay"              },
+  { RFC7181_ADDRTLV_NBR_ADDR_TYPE, "Neighbor address type"         },
+  { RFC7181_ADDRTLV_GATEWAY      , "Gateway"                       },
+  { 0                            , NULL                            }};
 
-static int proto_packetbb = -1;
-static guint global_packetbb_port = 269;
+/* Values of LOCALIF TLV of RFC6130 */
+static const value_string localif_vals[] = {
+  { 0, "THIS_IF"                        },
+  { 1, "OTHER_IF"                       },
+  { 0, NULL                             }};
 
-static int hf_packetbb_header = -1;
-static int hf_packetbb_version = -1;
-static int hf_packetbb_header_flags = -1;
-static int hf_packetbb_header_flags_phasseqnum = -1;
-static int hf_packetbb_header_flags_phastlv = -1;
-static int hf_packetbb_seqnr = -1;
-static int hf_packetbb_msg = -1;
-static int hf_packetbb_msgheader = -1;
-static int hf_packetbb_msgheader_type = -1;
-static int hf_packetbb_msgheader_flags = -1;
-static int hf_packetbb_msgheader_flags_mhasorig = -1;
-static int hf_packetbb_msgheader_flags_mhashoplimit = -1;
-static int hf_packetbb_msgheader_flags_mhashopcount = -1;
-static int hf_packetbb_msgheader_flags_mhasseqnr = -1;
-static int hf_packetbb_msgheader_addresssize = -1;
-static int hf_packetbb_msgheader_size = -1;
-static int hf_packetbb_msgheader_origaddripv4 = -1;
-static int hf_packetbb_msgheader_origaddripv6 = -1;
-static int hf_packetbb_msgheader_origaddrmac = -1;
-static int hf_packetbb_msgheader_origaddrcustom = -1;
-static int hf_packetbb_msgheader_hoplimit = -1;
-static int hf_packetbb_msgheader_hopcount = -1;
-static int hf_packetbb_msgheader_seqnr = -1;
-static int hf_packetbb_addr = -1;
-static int hf_packetbb_addr_num = -1;
-static int hf_packetbb_addr_flags = -1;
-static int hf_packetbb_addr_flags_hashead = -1;
-static int hf_packetbb_addr_flags_hasfulltail = -1;
-static int hf_packetbb_addr_flags_haszerotail = -1;
-static int hf_packetbb_addr_flags_hassingleprelen = -1;
-static int hf_packetbb_addr_flags_hasmultiprelen = -1;
-static int hf_packetbb_addr_head = -1;
-static int hf_packetbb_addr_tail = -1;
-static int hf_packetbb_addr_value[4] = { -1, -1, -1, -1 };
-static int hf_packetbb_addr_value_mid = -1;
-static int hf_packetbb_addr_value_prefix = -1;
-static int hf_packetbb_tlvblock = -1;
-static int hf_packetbb_tlvblock_length = -1;
-static int hf_packetbb_tlv = -1;
-static int hf_packetbb_pkttlv_type = -1;
-static int hf_packetbb_msgtlv_type = -1;
-static int hf_packetbb_addrtlv_type = -1;
-static int hf_packetbb_tlv_flags = -1;
-static int hf_packetbb_tlv_flags_hastypext = -1;
-static int hf_packetbb_tlv_flags_hassingleindex = -1;
-static int hf_packetbb_tlv_flags_hasmultiindex = -1;
-static int hf_packetbb_tlv_flags_hasvalue = -1;
-static int hf_packetbb_tlv_flags_hasextlen = -1;
-static int hf_packetbb_tlv_flags_hasmultivalue = -1;
-static int hf_packetbb_tlv_typeext = -1;
-static int hf_packetbb_tlv_indexstart = -1;
-static int hf_packetbb_tlv_indexend = -1;
-static int hf_packetbb_tlv_length = -1;
-static int hf_packetbb_tlv_value = -1;
-static int hf_packetbb_tlv_multivalue = -1;
+/* Values of LINKSTATUS TLV of RFC6130 */
+static const value_string linkstatus_vals[] = {
+  { 0, "LOST"                           },
+  { 1, "SYMMETRIC"                      },
+  { 2, "HEARD"                          },
+  { 0, NULL                             }};
 
-static gint ett_packetbb = -1;
-static gint ett_packetbb_header = -1;
-static gint ett_packetbb_header_flags = -1;
-static gint ett_packetbb_msg[PACKETBB_MSG_TLV_LENGTH];
-static gint ett_packetbb_msgheader = -1;
-static gint ett_packetbb_msgheader_flags = -1;
-static gint ett_packetbb_addr = -1;
-static gint ett_packetbb_addr_flags = -1;
-static gint ett_packetbb_addr_value = -1;
-static gint ett_packetbb_tlvblock = -1;
-static gint ett_packetbb_tlv[PACKETBB_MSG_TLV_LENGTH];
-static gint ett_packetbb_tlv_flags = -1;
-static gint ett_packetbb_tlv_value = -1;
+/* Values of OTHERNEIGH TLV of RFC6130 */
+static const value_string otherneigh_vals[] = {
+  { 0, "LOST"                           },
+  { 1, "SYMMETRIC"                      },
+  { 0, NULL                             }};
 
-static expert_field ei_packetbb_error = EI_INIT;
+/* Values of MPR TLV of RFC7181 */
+static const value_string mpr_vals[] = {
+  { 1, "FLOODING"                       },
+  { 2, "ROUTING"                        },
+  { 3, "FLOOD_ROUTE"                    },
+  { 0, NULL                             }};
 
+/* Values of NBRADDRTYPE TLV of RFC7181 */
+static const value_string nbraddrtype_vals[] = {
+  { 1, "ORIGINATOR"                     },
+  { 2, "ROUTABLE"                       },
+  { 3, "ROUTABLE_ORIG"                  },
+  { 0, NULL                             }};
 
-static int dissect_pbb_tlvblock(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset,
-    guint maxoffset, gint8 addrCount, guint tlvCat) {
-  guint16 tlvblockLength;
-  guint tlvblockEnd;
+static int proto_packetbb;
+
+#define PACKETBB_PORT 269 /* Not IANA registered */
+
+static int hf_packetbb_header;
+static int hf_packetbb_version;
+static int hf_packetbb_header_flags;
+static int hf_packetbb_header_flags_phasseqnum;
+static int hf_packetbb_header_flags_phastlv;
+static int hf_packetbb_seqnr;
+static int hf_packetbb_msg;
+static int hf_packetbb_msgheader;
+static int hf_packetbb_msgheader_type;
+static int hf_packetbb_msgheader_flags;
+static int hf_packetbb_msgheader_flags_mhasorig;
+static int hf_packetbb_msgheader_flags_mhashoplimit;
+static int hf_packetbb_msgheader_flags_mhashopcount;
+static int hf_packetbb_msgheader_flags_mhasseqnr;
+static int hf_packetbb_msgheader_addresssize;
+static int hf_packetbb_msgheader_size;
+static int hf_packetbb_msgheader_origaddripv4;
+static int hf_packetbb_msgheader_origaddripv6;
+static int hf_packetbb_msgheader_origaddrmac;
+static int hf_packetbb_msgheader_origaddrcustom;
+static int hf_packetbb_msgheader_hoplimit;
+static int hf_packetbb_msgheader_hopcount;
+static int hf_packetbb_msgheader_seqnr;
+static int hf_packetbb_addr;
+static int hf_packetbb_addr_num;
+static int hf_packetbb_addr_flags;
+static int hf_packetbb_addr_flags_hashead;
+static int hf_packetbb_addr_flags_hasfulltail;
+static int hf_packetbb_addr_flags_haszerotail;
+static int hf_packetbb_addr_flags_hassingleprelen;
+static int hf_packetbb_addr_flags_hasmultiprelen;
+static int hf_packetbb_addr_head;
+static int hf_packetbb_addr_tail;
+static int hf_packetbb_addr_value[4];
+static int hf_packetbb_addr_value_mid;
+static int hf_packetbb_addr_value_prefix;
+static int hf_packetbb_tlvblock;
+static int hf_packetbb_tlvblock_length;
+static int hf_packetbb_tlv;
+static int hf_packetbb_pkttlv_type;
+static int hf_packetbb_msgtlv_type;
+static int hf_packetbb_addrtlv_type;
+static int hf_packetbb_tlv_flags;
+static int hf_packetbb_tlv_flags_hastypext;
+static int hf_packetbb_tlv_flags_hassingleindex;
+static int hf_packetbb_tlv_flags_hasmultiindex;
+static int hf_packetbb_tlv_flags_hasvalue;
+static int hf_packetbb_tlv_flags_hasextlen;
+static int hf_packetbb_tlv_flags_hasmultivalue;
+static int hf_packetbb_tlv_typeext;
+static int hf_packetbb_tlv_indexstart;
+static int hf_packetbb_tlv_indexend;
+static int hf_packetbb_tlv_length;
+static int hf_packetbb_tlv_value;
+static int hf_packetbb_tlv_multivalue;
+static int hf_packetbb_tlv_intervaltime;
+static int hf_packetbb_tlv_validitytime;
+static int hf_packetbb_tlv_localifs;
+static int hf_packetbb_tlv_linkstatus;
+static int hf_packetbb_tlv_otherneigh;
+static int hf_packetbb_tlv_icv;
+static int hf_packetbb_tlv_timestamp;
+static int hf_packetbb_tlv_linkmetric_flags_linkin;
+static int hf_packetbb_tlv_linkmetric_flags_linkout;
+static int hf_packetbb_tlv_linkmetric_flags_neighin;
+static int hf_packetbb_tlv_linkmetric_flags_neighout;
+static int hf_packetbb_tlv_linkmetric_value;
+static int hf_packetbb_tlv_mpr;
+static int hf_packetbb_tlv_nbraddrtype;
+static int hf_packetbb_tlv_gateway;
+static int hf_packetbb_tlv_mprwillingness;
+static int hf_packetbb_tlv_mprwillingness_flooding;
+static int hf_packetbb_tlv_mprwillingness_routing;
+static int hf_packetbb_tlv_contseqnum;
+
+static int ett_packetbb;
+static int ett_packetbb_header;
+static int ett_packetbb_header_flags;
+static int ett_packetbb_msg[PACKETBB_MSG_TLV_LENGTH];
+static int ett_packetbb_msgheader;
+static int ett_packetbb_msgheader_flags;
+static int ett_packetbb_addr;
+static int ett_packetbb_addr_flags;
+static int ett_packetbb_addr_value;
+static int ett_packetbb_tlvblock;
+static int ett_packetbb_tlv[PACKETBB_MSG_TLV_LENGTH];
+static int ett_packetbb_tlv_flags;
+static int ett_packetbb_tlv_value;
+static int ett_packetbb_tlv_mprwillingness;
+static int ett_packetbb_tlv_linkmetric;
+
+static expert_field ei_packetbb_error;
+
+/* Link metric of RFC7181 */
+static uint32_t uncompress_metric(uint16_t val16) {
+  uint8_t exp = (val16 >> 8) & 0xf;
+  return (uint32_t)((((uint16_t)257U + (val16 & 0xff)) << exp) - 256);
+}
+
+/* Time metric of RFC5497 */
+static uint32_t uncompress_time(uint8_t val8) {
+  uint8_t exp = val8 >> 3;
+  float mant = (float)(val8 & 0x07);
+  return (uint32_t)((1.00 + mant / 8) * (1U << exp));
+}
+
+static proto_item* dissect_pbb_tlvvalue(tvbuff_t *tvb, proto_tree *tlvTree, unsigned offset, unsigned len, unsigned tlvCat, unsigned tlvType) {
+  proto_tree *tlv_decoded_value_tree = NULL;
+  proto_tree *tlv_decoded_value_item = NULL;
+
+  static int * const mprwillingness_values[] = {
+    &hf_packetbb_tlv_mprwillingness_flooding,
+    &hf_packetbb_tlv_mprwillingness_routing,
+    NULL
+  };
+
+  switch (tlvCat) {
+  case TLV_CAT_MESSAGE:
+
+    if (tlvType == RFC7181_MSGTLV_MPR_WILLING) {
+      tlv_decoded_value_item = proto_tree_add_bitmask(tlvTree, tvb, offset, hf_packetbb_tlv_mprwillingness, ett_packetbb_tlv_mprwillingness, mprwillingness_values, ENC_BIG_ENDIAN);
+      break;
+    }
+    else if (tlvType == RFC7181_MSGTLV_CONT_SEQ_NUM) {
+      tlv_decoded_value_item = proto_tree_add_item(tlvTree, hf_packetbb_tlv_contseqnum, tvb, offset, len, ENC_BIG_ENDIAN);
+      break;
+    }
+
+    /* other tlvTypes are common with categories PACKET and ADDRESS,
+       do not break.
+    */
+    /* FALL THROUGH */
+  case TLV_CAT_PACKET:
+  case TLV_CAT_ADDRESS:
+
+    switch (tlvType) {
+    case RFC5497_TLV_INTERVAL_TIME:
+      tlv_decoded_value_item = proto_tree_add_item(tlvTree, hf_packetbb_tlv_intervaltime, tvb, offset, len, ENC_NA);
+      proto_item_append_text(tlv_decoded_value_item, " (%d)", uncompress_time(tvb_get_uint8(tvb, offset)));
+      break;
+    case RFC5497_TLV_VALIDITY_TIME:
+      tlv_decoded_value_item = proto_tree_add_item(tlvTree, hf_packetbb_tlv_validitytime, tvb, offset, len, ENC_NA);
+      proto_item_append_text(tlv_decoded_value_item, " (%d)", uncompress_time(tvb_get_uint8(tvb, offset)));
+      break;
+    case RFC6130_ADDRTLV_LOCAL_IF:
+      tlv_decoded_value_item = proto_tree_add_item(tlvTree, hf_packetbb_tlv_localifs, tvb, offset, 1, ENC_NA);
+      break;
+    case RFC6130_ADDRTLV_LINK_STATUS:
+      tlv_decoded_value_item = proto_tree_add_item(tlvTree, hf_packetbb_tlv_linkstatus, tvb, offset, 1, ENC_NA);
+      break;
+    case RFC6130_ADDRTLV_OTHER_NEIGH:
+      tlv_decoded_value_item = proto_tree_add_item(tlvTree, hf_packetbb_tlv_otherneigh, tvb, offset, 1, ENC_NA);
+      break;
+    case RFC7182_TLV_ICV:
+      tlv_decoded_value_item = proto_tree_add_item(tlvTree, hf_packetbb_tlv_icv, tvb, offset, len, ENC_NA);
+      break;
+    case RFC7182_TLV_TIMESTAMP:
+      tlv_decoded_value_item = proto_tree_add_item(tlvTree, hf_packetbb_tlv_timestamp, tvb, offset, len, ENC_NA);
+      break;
+    case RFC7181_ADDRTLV_LINK_METRIC:
+      tlv_decoded_value_tree = proto_tree_add_subtree(tlvTree, tvb, offset, len, ett_packetbb_tlv_linkmetric, NULL, "Link metric");
+      proto_tree_add_item(tlv_decoded_value_tree, hf_packetbb_tlv_linkmetric_flags_linkin, tvb, offset, 2, ENC_BIG_ENDIAN);
+      proto_tree_add_item(tlv_decoded_value_tree, hf_packetbb_tlv_linkmetric_flags_linkout, tvb, offset, 2, ENC_BIG_ENDIAN);
+      proto_tree_add_item(tlv_decoded_value_tree, hf_packetbb_tlv_linkmetric_flags_neighin, tvb, offset, 2, ENC_BIG_ENDIAN);
+      proto_tree_add_item(tlv_decoded_value_tree, hf_packetbb_tlv_linkmetric_flags_neighout, tvb, offset, 2, ENC_BIG_ENDIAN);
+      tlv_decoded_value_item = proto_tree_add_item(tlv_decoded_value_tree, hf_packetbb_tlv_linkmetric_value, tvb, offset, 2, ENC_BIG_ENDIAN);
+      proto_item_append_text(tlv_decoded_value_item, " (%d)", uncompress_metric(tvb_get_uint16(tvb, offset, ENC_BIG_ENDIAN)));
+      break;
+    case RFC7181_ADDRTLV_MPR:
+      tlv_decoded_value_item = proto_tree_add_item(tlvTree, hf_packetbb_tlv_mpr, tvb, offset, len, ENC_NA);
+      break;
+    case RFC7181_ADDRTLV_NBR_ADDR_TYPE:
+      tlv_decoded_value_item = proto_tree_add_item(tlvTree, hf_packetbb_tlv_nbraddrtype, tvb, offset, len, ENC_NA);
+      break;
+    case RFC7181_ADDRTLV_GATEWAY:
+      tlv_decoded_value_item = proto_tree_add_item(tlvTree, hf_packetbb_tlv_gateway, tvb, offset, len, ENC_NA);
+      break;
+    }
+  }
+  return tlv_decoded_value_item;
+}
+
+static int dissect_pbb_tlvblock(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, unsigned maxoffset, int8_t addrCount, unsigned tlvCat) {
+  uint16_t tlvblockLength;
+  unsigned tlvblockEnd;
 
   proto_tree *tlvblock_tree, *tlv_tree, *tlvValue_tree;
   proto_item *tlvBlock_item, *tlv_item, *tlvValue_item;
 
   int tlvCount = 0;
 
-  int hf_packetbb_tlv_type = 0;
-  const value_string* tlv_type_vals = NULL;
-
-  static const int *flags[] = {
+  static int * const flags[] = {
     &hf_packetbb_tlv_flags_hastypext,
     &hf_packetbb_tlv_flags_hassingleindex,
     &hf_packetbb_tlv_flags_hasmultiindex,
@@ -220,36 +399,39 @@ static int dissect_pbb_tlvblock(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
 
   offset += 2;
   while (offset < tlvblockEnd) {
-    guint tlvStart, tlvLength;
-    guint8 tlvType, tlvFlags, tlvExtType, indexStart, indexEnd;
-    guint16 length = 0;
+    unsigned tlvStart, tlvLength;
+    uint8_t tlvType, tlvFlags, /*tlvExtType, */indexStart, indexEnd;
+    uint16_t length = 0;
+    int hf_packetbb_tlv_type = 0;
+    const value_string *tlv_type_vals;
 
     tlvStart = offset;
-    tlvType = tvb_get_guint8(tvb, offset++);
-    tlvFlags = tvb_get_guint8(tvb, offset++);
+    tlvType = tvb_get_uint8(tvb, offset++);
+    tlvFlags = tvb_get_uint8(tvb, offset++);
+
+    if ((tlvFlags & TLV_HAS_TYPEEXT) != 0) {
+      /* skip over ext-type */
+      offset++;
+    }
 
     indexStart = 0;
     indexEnd = addrCount ? (addrCount - 1) : 0;
-    tlvExtType = 0;
-
-    if ((tlvFlags & TLV_HAS_TYPEEXT) != 0) {
-      tlvExtType = tvb_get_guint8(tvb, offset++);
-    }
 
     if ((tlvFlags & TLV_HAS_SINGLEINDEX) != 0) {
-      indexStart = indexEnd = tvb_get_guint8(tvb, offset++);
+      indexStart = indexEnd = tvb_get_uint8(tvb, offset++);
     }
     else if ((tlvFlags & TLV_HAS_MULTIINDEX) != 0) {
-      indexStart = tvb_get_guint8(tvb, offset++);
-      indexEnd = tvb_get_guint8(tvb, offset++);
+      indexStart = tvb_get_uint8(tvb, offset++);
+      indexEnd = tvb_get_uint8(tvb, offset++);
     }
 
     if ((tlvFlags & TLV_HAS_VALUE) != 0) {
       if ((tlvFlags & TLV_HAS_EXTLEN) != 0) {
-        length = tvb_get_ntohs(tvb, offset++);
+        length = tvb_get_ntohs(tvb, offset);
+        offset += 2;
       }
       else {
-        length = tvb_get_guint8(tvb, offset++);
+        length = tvb_get_uint8(tvb, offset++);
       }
     }
 
@@ -272,15 +454,6 @@ static int dissect_pbb_tlvblock(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
       /* assume TLV_CAT_ADDRESS */
       hf_packetbb_tlv_type = hf_packetbb_addrtlv_type;
       tlv_type_vals = addrtlv_type_vals;
-    }
-
-    if ((tlvFlags & TLV_HAS_TYPEEXT) == 0) {
-      proto_item_append_text(tlv_item, " (%s)",
-        val_to_str_const(tlvType, tlv_type_vals, "Unknown type"));
-    }
-    else {
-      proto_item_append_text(tlv_item, " (%s / %d)",
-        val_to_str_const(tlvType, tlv_type_vals, "Unknown type"), tlvExtType);
     }
 
     /* add type */
@@ -326,16 +499,18 @@ static int dissect_pbb_tlvblock(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
       proto_tree_add_uint_format_value(tlv_tree, hf_packetbb_tlv_length, tvb, offset, 0, 0, "0 (implicit)");
     }
 
-    if (length > 0) {
       /* add value */
+    if (length > 0) {
       tlvValue_item = proto_tree_add_item(tlv_tree, hf_packetbb_tlv_value, tvb, offset, length, ENC_NA);
-
       if ((tlvFlags & TLV_HAS_MULTIVALUE) == 0) {
+        /* single value */
+        dissect_pbb_tlvvalue(tvb, tlv_tree, offset, length, tlvCat, tlvType);
         offset += length;
       }
       else {
+        /* multiple values */
         int i;
-        guint c = indexEnd - indexStart + 1;
+        unsigned c = indexEnd - indexStart + 1;
         if (c > 0) {
           tlvValue_tree = proto_item_add_subtree(tlvValue_item, ett_packetbb_tlv_value);
 
@@ -346,6 +521,10 @@ static int dissect_pbb_tlvblock(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
         }
       }
     }
+
+    if (tlv_item) {
+      proto_item_append_text(tlv_item, " (t=%d,l=%d): %s", tlvType, length, val_to_str(pinfo->pool, tlvType, tlv_type_vals, "Unknown Type (%d)") );
+    }
     tlvCount++;
   }
 
@@ -354,15 +533,15 @@ static int dissect_pbb_tlvblock(tvbuff_t *tvb, packet_info *pinfo, proto_tree *t
   return offset;
 }
 
-static int dissect_pbb_addressblock(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset, guint maxoffset,
-    guint8 addressType, guint8 addressSize) {
-  guint8 addr[MAX_ADDR_SIZE];
+static int dissect_pbb_addressblock(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset, unsigned maxoffset,
+    uint8_t addressType, uint8_t addressSize) {
+  uint8_t addr[MAX_ADDR_SIZE];
 
-  guint8 numAddr;
-  guint8 address_flags;
-  guint8 head_length = 0, tail_length = 0;
-  guint block_length = 0, midSize = 0;
-  guint block_index = 0, head_index = 0, tail_index = 0, mid_index = 0, prefix_index = 0;
+  uint8_t numAddr;
+  uint8_t address_flags;
+  uint8_t head_length = 0, tail_length = 0;
+  unsigned block_length = 0, midSize = 0;
+  unsigned block_index = 0, head_index = 0, tail_index = 0, mid_index = 0, prefix_index = 0;
 
   proto_tree *addr_tree = NULL;
   proto_tree *addrValue_tree = NULL;
@@ -372,7 +551,7 @@ static int dissect_pbb_addressblock(tvbuff_t *tvb, packet_info *pinfo, proto_tre
 
   int i = 0;
 
-  static const int *flags[] = {
+  static int * const flags[] = {
     &hf_packetbb_addr_flags_hashead,
     &hf_packetbb_addr_flags_hasfulltail,
     &hf_packetbb_addr_flags_haszerotail,
@@ -395,8 +574,8 @@ static int dissect_pbb_addressblock(tvbuff_t *tvb, packet_info *pinfo, proto_tre
   block_index = offset;
   midSize = addressSize;
 
-  numAddr = tvb_get_guint8(tvb, offset++);
-  address_flags = tvb_get_guint8(tvb, offset++);
+  numAddr = tvb_get_uint8(tvb, offset++);
+  address_flags = tvb_get_uint8(tvb, offset++);
 
   if ((address_flags & ADDR_HASHEAD) != 0) {
     head_index = offset;
@@ -406,7 +585,7 @@ static int dissect_pbb_addressblock(tvbuff_t *tvb, packet_info *pinfo, proto_tre
          "Not enough octets for addressblock head");
       return tvb_reported_length(tvb);
     }
-    head_length = tvb_get_guint8(tvb, offset++);
+    head_length = tvb_get_uint8(tvb, offset++);
 
     if (head_length > addressSize-1) {
       proto_tree_add_expert_format(tree, pinfo, &ei_packetbb_error, tvb, offset, maxoffset - offset,
@@ -432,7 +611,7 @@ static int dissect_pbb_addressblock(tvbuff_t *tvb, packet_info *pinfo, proto_tre
           "Not enough octets for addressblock tail");
       return tvb_reported_length(tvb);
     }
-    tail_length = tvb_get_guint8(tvb, offset++);
+    tail_length = tvb_get_uint8(tvb, offset++);
     if (tail_length > addressSize-1-head_length) {
       proto_tree_add_expert_format(tree, pinfo, &ei_packetbb_error, tvb, offset, maxoffset - offset,
           "address tail length is too long");
@@ -449,7 +628,7 @@ static int dissect_pbb_addressblock(tvbuff_t *tvb, packet_info *pinfo, proto_tre
           "Not enough octets for addressblock tail");
       return tvb_reported_length(tvb);
     }
-    tail_length = tvb_get_guint8(tvb, offset++);
+    tail_length = tvb_get_uint8(tvb, offset++);
     if (tail_length > addressSize-1-head_length) {
       proto_tree_add_expert_format(tree, pinfo, &ei_packetbb_error, tvb, offset, maxoffset - offset,
           "address tail length is too long");
@@ -512,8 +691,8 @@ static int dissect_pbb_addressblock(tvbuff_t *tvb, packet_info *pinfo, proto_tre
     proto_tree_add_item(addr_tree, hf_packetbb_addr_tail, tvb, tail_index, 1, ENC_NA);
   }
   for (i=0; i<numAddr; i++) {
-    guint32 ipv4 = 0;
-    guint8 prefix = addressSize * 8;
+    uint32_t ipv4 = 0;
+    uint8_t prefix = addressSize * 8;
 
     tvb_memcpy(tvb, &addr[head_length], mid_index + midSize*i, midSize);
     ipv4 = (addr[3] << 24) + (addr[2] << 16) + (addr[1] << 8) + addr[0];
@@ -525,15 +704,16 @@ static int dissect_pbb_addressblock(tvbuff_t *tvb, packet_info *pinfo, proto_tre
         break;
       case 1:
         addrValue_item = proto_tree_add_ipv6(addr_tree, hf_packetbb_addr_value[addressType],
-            tvb, mid_index, block_index + block_length - mid_index, (struct e_in6_addr *)addr);
+            tvb, mid_index, block_index + block_length - mid_index, (ws_in6_addr *)addr);
         break;
       case 2:
         addrValue_item = proto_tree_add_ether(addr_tree, hf_packetbb_addr_value[addressType],
             tvb, mid_index, block_index + block_length - mid_index, addr);
         break;
       case 3:
-        addrValue_item = proto_tree_add_bytes(addr_tree, hf_packetbb_addr_value[addressType],
-            tvb, mid_index, block_index + block_length - mid_index, addr);
+        addrValue_item = proto_tree_add_bytes_format_value(addr_tree, hf_packetbb_addr_value[addressType],
+            tvb, mid_index, block_index + block_length - mid_index, NULL,
+            "%s", bytes_to_str(pinfo->pool, addr, head_length + midSize));
         break;
       default:
         break;
@@ -544,11 +724,11 @@ static int dissect_pbb_addressblock(tvbuff_t *tvb, packet_info *pinfo, proto_tre
         mid_index + midSize*i, midSize, ENC_NA);
 
     if ((address_flags & ADDR_HASSINGLEPRELEN) != 0) {
-      prefix = tvb_get_guint8(tvb, prefix_index);
+      prefix = tvb_get_uint8(tvb, prefix_index);
       proto_tree_add_item(addrValue_tree, hf_packetbb_addr_value_prefix, tvb, prefix_index, 1, ENC_BIG_ENDIAN);
     }
     else if ((address_flags & ADDR_HASMULTIPRELEN) != 0) {
-      prefix = tvb_get_guint8(tvb, prefix_index + i);
+      prefix = tvb_get_uint8(tvb, prefix_index + i);
       proto_tree_add_item(addrValue_tree, hf_packetbb_addr_value_prefix, tvb, prefix_index + i, 1, ENC_BIG_ENDIAN);
     }
     proto_item_append_text(addrValue_item, "/%d", prefix);
@@ -558,7 +738,7 @@ static int dissect_pbb_addressblock(tvbuff_t *tvb, packet_info *pinfo, proto_tre
   return offset;
 }
 
-static int dissect_pbb_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint offset) {
+static int dissect_pbb_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned offset) {
   proto_tree *message_tree;
   proto_tree *header_tree = NULL;
   proto_tree *headerFlags_tree = NULL;
@@ -567,10 +747,10 @@ static int dissect_pbb_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
   proto_item *header_item = NULL;
   proto_item *headerFlags_item = NULL;
 
-  guint8 messageType;
-  guint8 messageFlags;
-  guint16 messageLength, headerLength, messageEnd;
-  guint8 addressSize, addressType;
+  uint8_t messageType;
+  uint8_t messageFlags;
+  uint16_t messageLength, headerLength, messageEnd;
+  uint8_t addressSize, addressType;
 
   if (tvb_reported_length(tvb) - offset < 6) {
     proto_tree_add_expert_format(tree, pinfo, &ei_packetbb_error, tvb, offset, -1,
@@ -578,8 +758,8 @@ static int dissect_pbb_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
     return tvb_reported_length(tvb);
   }
 
-  messageType = tvb_get_guint8(tvb, offset);
-  messageFlags = tvb_get_guint8(tvb, offset+1);
+  messageType = tvb_get_uint8(tvb, offset);
+  messageFlags = tvb_get_uint8(tvb, offset+1);
   messageLength = tvb_get_ntohs(tvb, offset+2);
   addressSize = (messageFlags & 0x0f) + 1;
 
@@ -624,9 +804,9 @@ static int dissect_pbb_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
   }
 
   message_item = proto_tree_add_item(tree, hf_packetbb_msg, tvb, offset, messageLength, ENC_NA);
-  message_tree = proto_item_add_subtree(message_item, ett_packetbb_msg[messageType]);
   proto_item_append_text(message_item, " (%s)",
-    val_to_str_const(messageType, msgheader_type_vals, "Unknown type"));
+      val_to_str_const(messageType, msgheader_type_vals, "Unknown type"));
+  message_tree = proto_item_add_subtree(message_item, ett_packetbb_msg[messageType]);
 
   header_item = proto_tree_add_item(message_tree, hf_packetbb_msgheader, tvb, offset, headerLength, ENC_NA);
   header_tree = proto_item_add_subtree(header_item, ett_packetbb_msgheader);
@@ -710,13 +890,13 @@ static int dissect_pbb_message(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tr
   return offset;
 }
 
-static int dissect_pbb_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, guint headerLength, guint tlvIndex) {
+static int dissect_pbb_header(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, unsigned headerLength, unsigned tlvIndex) {
   proto_tree *header_tree;
   proto_item *header_item;
 
-  guint8 packet_flags = tvb_get_guint8(tvb, 0);
+  uint8_t packet_flags = tvb_get_uint8(tvb, 0);
 
-  static const int *flags[] = {
+  static int * const flags[] = {
     &hf_packetbb_header_flags_phasseqnum,
     &hf_packetbb_header_flags_phastlv,
     NULL
@@ -746,15 +926,15 @@ static int dissect_packetbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 
   proto_item *ti;
   proto_tree *packetbb_tree;
-  guint offset;
-  guint8 packet_flags;
-  guint headerLength = 1;
-  guint tlvIndex = 0;
+  unsigned offset;
+  uint8_t packet_flags;
+  unsigned headerLength = 1;
+  unsigned tlvIndex = 0;
 
   /* Make sure it's a PacketBB packet */
 
   /* calculate header length */
-  packet_flags = tvb_get_guint8(tvb, 0);
+  packet_flags = tvb_get_uint8(tvb, 0);
   if ((packet_flags & PACKET_HEADER_HASSEQNR) != 0) {
     headerLength += 2;
   }
@@ -789,20 +969,7 @@ static int dissect_packetbb(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree,
 }
 
 void proto_reg_handoff_packetbb(void) {
-  static gboolean packetbb_prefs_initialized = FALSE;
-  static dissector_handle_t packetbb_handle;
-  static guint packetbb_udp_port;
-
-  if (!packetbb_prefs_initialized) {
-    packetbb_handle = create_dissector_handle(dissect_packetbb, proto_packetbb);
-    packetbb_prefs_initialized = TRUE;
-  }
-  else {
-    dissector_delete_uint("udp.port", global_packetbb_port, packetbb_handle);
-  }
-
-  packetbb_udp_port = global_packetbb_port;
-  dissector_add_uint("udp.port", packetbb_udp_port, packetbb_handle);
+  dissector_add_uint_with_preference("udp.port", PACKETBB_PORT, packetbb_handle);
 }
 
 void proto_register_packetbb(void) {
@@ -825,12 +992,12 @@ void proto_register_packetbb(void) {
     },
     { &hf_packetbb_header_flags_phasseqnum,
       { "Has sequence number", "packetbb.flags.phasseqnum",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), PACKET_HEADER_HASSEQNR,
+        FT_BOOLEAN, 8, NULL, PACKET_HEADER_HASSEQNR,
         NULL, HFILL }
     },
     { &hf_packetbb_header_flags_phastlv,
       { "Has tlv block", "packetbb.flags.phastlv",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), PACKET_HEADER_HASTLV,
+        FT_BOOLEAN, 8, NULL, PACKET_HEADER_HASTLV,
         NULL, HFILL }
     },
     { &hf_packetbb_seqnr,
@@ -860,22 +1027,22 @@ void proto_register_packetbb(void) {
     },
     { &hf_packetbb_msgheader_flags_mhasorig,
       { "Has originator address", "packetbb.msg.flags.mhasorig",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), MSG_HEADER_HASORIG,
+        FT_BOOLEAN, 8, NULL, MSG_HEADER_HASORIG,
         NULL, HFILL }
     },
     { &hf_packetbb_msgheader_flags_mhashoplimit,
       { "Has hoplimit", "packetbb.msg.flags.mhashoplimit",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), MSG_HEADER_HASHOPLIMIT,
+        FT_BOOLEAN, 8, NULL, MSG_HEADER_HASHOPLIMIT,
         NULL, HFILL }
     },
     { &hf_packetbb_msgheader_flags_mhashopcount,
       { "Has hopcount", "packetbb.msg.flags.mhashopcount",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), MSG_HEADER_HASHOPCOUNT,
+        FT_BOOLEAN, 8, NULL, MSG_HEADER_HASHOPCOUNT,
         NULL, HFILL }
     },
     { &hf_packetbb_msgheader_flags_mhasseqnr,
       { "Has sequence number", "packetbb.msg.flags.mhasseqnum",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), MSG_HEADER_HASSEQNR,
+        FT_BOOLEAN, 8, NULL, MSG_HEADER_HASSEQNR,
         NULL, HFILL }
     },
     { &hf_packetbb_msgheader_addresssize,
@@ -941,27 +1108,27 @@ void proto_register_packetbb(void) {
     },
     { &hf_packetbb_addr_flags_hashead,
       { "Has head", "packetbb.msg.addr.hashead",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), ADDR_HASHEAD,
+        FT_BOOLEAN, 8, NULL, ADDR_HASHEAD,
         NULL, HFILL }
     },
     { &hf_packetbb_addr_flags_hasfulltail,
       { "Has full tail", "packetbb.msg.addr.hasfulltail",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), ADDR_HASFULLTAIL,
+        FT_BOOLEAN, 8, NULL, ADDR_HASFULLTAIL,
         NULL, HFILL }
     },
     { &hf_packetbb_addr_flags_haszerotail,
       { "Has zero tail", "packetbb.msg.addr.haszerotail",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), ADDR_HASZEROTAIL,
+        FT_BOOLEAN, 8, NULL, ADDR_HASZEROTAIL,
         NULL, HFILL }
     },
     { &hf_packetbb_addr_flags_hassingleprelen,
       { "Has single prelen", "packetbb.msg.addr.hassingleprelen",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), ADDR_HASSINGLEPRELEN,
+        FT_BOOLEAN, 8, NULL, ADDR_HASSINGLEPRELEN,
         NULL, HFILL }
     },
     { &hf_packetbb_addr_flags_hasmultiprelen,
       { "Has multiple prelen", "packetbb.msg.addr.hasmultiprelen",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), ADDR_HASMULTIPRELEN,
+        FT_BOOLEAN, 8, NULL, ADDR_HASMULTIPRELEN,
         NULL, HFILL }
     },
     { &hf_packetbb_addr_head,
@@ -991,7 +1158,7 @@ void proto_register_packetbb(void) {
     },
     { &hf_packetbb_addr_value[3],
       { "Address", "packetbb.msg.addr.valuecustom",
-        FT_UINT_BYTES, BASE_NONE, NULL, 0,
+        FT_BYTES, BASE_NONE, NULL, 0,
         NULL, HFILL }
     },
     { &hf_packetbb_addr_value_mid,
@@ -1046,32 +1213,32 @@ void proto_register_packetbb(void) {
     },
     { &hf_packetbb_tlv_flags_hastypext,
       { "Has type-ext", "packetbb.tlv.hastypeext",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), TLV_HAS_TYPEEXT,
+        FT_BOOLEAN, 8, NULL, TLV_HAS_TYPEEXT,
         NULL, HFILL }
     },
     { &hf_packetbb_tlv_flags_hassingleindex,
       { "Has single index", "packetbb.tlv.hassingleindex",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), TLV_HAS_SINGLEINDEX,
+        FT_BOOLEAN, 8, NULL, TLV_HAS_SINGLEINDEX,
         NULL, HFILL }
     },
     { &hf_packetbb_tlv_flags_hasmultiindex,
       { "Has multiple indices", "packetbb.tlv.hasmultiindex",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), TLV_HAS_MULTIINDEX,
+        FT_BOOLEAN, 8, NULL, TLV_HAS_MULTIINDEX,
         NULL, HFILL }
     },
     { &hf_packetbb_tlv_flags_hasvalue,
       { "Has value", "packetbb.tlv.hasvalue",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), TLV_HAS_VALUE,
+        FT_BOOLEAN, 8, NULL, TLV_HAS_VALUE,
         NULL, HFILL }
     },
     { &hf_packetbb_tlv_flags_hasextlen,
       { "Has extended length", "packetbb.tlv.hasextlen",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), TLV_HAS_EXTLEN,
+        FT_BOOLEAN, 8, NULL, TLV_HAS_EXTLEN,
         NULL, HFILL }
     },
     { &hf_packetbb_tlv_flags_hasmultivalue,
       { "Has multiple values", "packetbb.tlv.hasmultivalue",
-        FT_BOOLEAN, 8, TFS(&tfs_true_false), TLV_HAS_MULTIVALUE,
+        FT_BOOLEAN, 8, NULL, TLV_HAS_MULTIVALUE,
         NULL, HFILL }
     },
     { &hf_packetbb_tlv_indexstart,
@@ -1098,11 +1265,106 @@ void proto_register_packetbb(void) {
       { "Multivalue", "packetbb.tlv.multivalue",
         FT_BYTES, BASE_NONE, NULL, 0,
         NULL, HFILL }
-    }
+    },
+    { &hf_packetbb_tlv_intervaltime,
+      { "Signaling message interval", "packetbb.tlv.intervaltime",
+        FT_UINT8, BASE_HEX, NULL, 0,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_validitytime,
+      { "Message validity time", "packetbb.tlv.validitytime",
+        FT_UINT8, BASE_HEX, NULL, 0,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_localifs,
+      { "Local interface status", "packetbb.tlv.localifs",
+        FT_UINT8, BASE_DEC, VALS(localif_vals), 0,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_linkstatus,
+      { "Link status", "packetbb.tlv.linkstatus",
+        FT_UINT8, BASE_DEC, VALS(linkstatus_vals), 0,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_otherneigh,
+      { "Other neighbor status", "packetbb.tlv.otherneigh",
+        FT_UINT8, BASE_DEC, VALS(otherneigh_vals), 0,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_icv,
+      { "Integrity Check Value", "packetbb.tlv.icv",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_timestamp,
+      { "Timestamp", "packetbb.tlv.timestamp",
+        FT_BYTES, BASE_NONE, NULL, 0,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_mprwillingness,
+      { "MPR willingness", "packetbb.tlv.mprwillingness",
+        FT_UINT8, BASE_HEX, NULL, 0,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_mprwillingness_flooding,
+      { "Flooding", "packetbb.tlv.mprwillingnessflooding",
+        FT_UINT8, BASE_DEC, NULL, 0xF0,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_mprwillingness_routing,
+      { "Routing", "packetbb.tlv.mprwillingnessrouting",
+        FT_UINT8, BASE_DEC, NULL, 0x0F,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_contseqnum,
+      { "Content sequence number", "packetbb.tlv.contseqnum",
+        FT_UINT16, BASE_HEX, NULL, 0,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_linkmetric_flags_linkin,
+      { "Incoming link", "packetbb.tlv.linkmetriclinkin",
+        FT_BOOLEAN, 16, NULL, RFC7181_LINKMETRIC_INCOMING_LINK,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_linkmetric_flags_linkout,
+      { "Outgoing link", "packetbb.tlv.linkmetriclinkout",
+        FT_BOOLEAN, 16, NULL, RFC7181_LINKMETRIC_OUTGOING_LINK,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_linkmetric_flags_neighin,
+      { "Incoming neighbor", "packetbb.tlv.linkmetricneighin",
+        FT_BOOLEAN, 16, NULL, RFC7181_LINKMETRIC_INCOMING_NEIGH,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_linkmetric_flags_neighout,
+      { "Outgoing neighbor", "packetbb.tlv.linkmetricneighout",
+        FT_BOOLEAN, 16, NULL, RFC7181_LINKMETRIC_OUTGOING_NEIGH,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_linkmetric_value,
+      { "Link metric", "packetbb.tlv.linkmetricvalue",
+        FT_UINT16, BASE_HEX, NULL, 0,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_mpr,
+      { "Multipoint Relay", "packetbb.tlv.mpr",
+        FT_UINT8, BASE_DEC, VALS(mpr_vals), 0,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_nbraddrtype,
+      { "Neighbor address type", "packetbb.tlv.nbraddrtype",
+        FT_UINT8, BASE_DEC, VALS(nbraddrtype_vals), 0,
+        NULL, HFILL }
+    },
+    { &hf_packetbb_tlv_gateway,
+      { "Gateway", "packetbb.tlv.gateway",
+        FT_UINT8, BASE_DEC, NULL, 0,
+        NULL, HFILL }
+    },
   };
 
   /* Setup protocol subtree array */
-  gint *ett_base[] = {
+  int *ett_base[] = {
     &ett_packetbb,
     &ett_packetbb_header,
     &ett_packetbb_header_flags,
@@ -1113,47 +1375,39 @@ void proto_register_packetbb(void) {
     &ett_packetbb_addr_value,
     &ett_packetbb_tlvblock,
     &ett_packetbb_tlv_flags,
-    &ett_packetbb_tlv_value
+    &ett_packetbb_tlv_value,
+    &ett_packetbb_tlv_mprwillingness,
+    &ett_packetbb_tlv_linkmetric
   };
 
   static ei_register_info ei[] = {
     { &ei_packetbb_error, { "packetbb.error", PI_PROTOCOL, PI_WARN, "ERROR!", EXPFILL }},
   };
 
-  static gint *ett[array_length(ett_base) + 2*PACKETBB_MSG_TLV_LENGTH];
-  module_t *packetbb_module;
+  static int *ett[array_length(ett_base) + 2*PACKETBB_MSG_TLV_LENGTH];
   expert_module_t* expert_packetbb;
   int i,j;
 
   memcpy(ett, ett_base, sizeof(ett_base));
   j = array_length(ett_base);
   for (i=0; i<PACKETBB_MSG_TLV_LENGTH; i++) {
-    ett_packetbb_msg[i] = -1;
-    ett_packetbb_tlv[i] = -1;
-
     ett[j++] = &ett_packetbb_msg[i];
     ett[j++] = &ett_packetbb_tlv[i];
   }
 
   /* name, short name, abbrev */
-  proto_packetbb = proto_register_protocol("PacketBB Protocol", "PacketBB",
-      "packetbb");
+  proto_packetbb = proto_register_protocol("PacketBB Protocol", "PacketBB", "packetbb");
+  packetbb_handle = register_dissector("packetbb", dissect_packetbb, proto_packetbb);
 
   /* Required function calls to register the header fields and subtrees used */
   proto_register_field_array(proto_packetbb, hf, array_length(hf));
   proto_register_subtree_array(ett, array_length(ett));
   expert_packetbb = expert_register_protocol(proto_packetbb);
   expert_register_field_array(expert_packetbb, ei, array_length(ei));
-
-  /* configurable packetbb port */
-  packetbb_module = prefs_register_protocol(proto_packetbb, proto_reg_handoff_packetbb);
-  prefs_register_uint_preference(packetbb_module, "communication_port",
-      "UDP port for packetbb", "UDP communication port for packetbb PDUs",
-      10, &global_packetbb_port);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local Variables:
  * c-basic-offset: 2

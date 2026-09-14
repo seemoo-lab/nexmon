@@ -1,0 +1,21 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test that MO files are reproducible across GNU gettext versions
+# (because the unit tests of some packages, such as the Translate Toolkit,
+# compare .mo files against expected results).
+
+test -d mf-21 || mkdir mf-21
+test -d mf-21/LC_MESSAGES || mkdir mf-21/LC_MESSAGES
+
+cat <<\EOF > mf-21.po
+msgid "Hello, world!"
+msgstr "Hallo Welt!"
+EOF
+
+: ${MSGFMT=msgfmt}
+${MSGFMT} --endianness=little -o mf-21.mo mf-21.po || Exit 1
+
+cmp "$wabs_srcdir"/testdata/mf-21.mo mf-21.mo || Exit 1
+
+exit 0

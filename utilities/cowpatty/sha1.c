@@ -1,19 +1,10 @@
 /*
  * coWPAtty - Brute-force dictionary attack against WPA-PSK.
  *
- * Copyright (c) 2004-2005, Joshua Wright <jwright@hasborg.com>
+ * Copyright (c) 2004-2018, Joshua Wright <jwright@hasborg.com>
  *
- * $Id: sha1.c,v 4.2 2008-03-20 16:49:38 jwright Exp $
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation. See COPYING for more
- * details.
- *
- * coWPAtty is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This software may be modified and distributed under the terms
+ * of the BSD-3-clause license. See the LICENSE file for details.
  */
 
 /*
@@ -47,7 +38,7 @@ void sha1_mac(unsigned char *key, unsigned int key_len,
 	SHA1Final(mac, &context);
 }
 
-/* HMAC code is based on RFC 2104 
+/* HMAC code is based on RFC 2104
    Modifications (hacks) by Joshua Wright.  Optimized a bit for pbkdf2
    processing by caching values that are repetitive.  There is some repetitive
    code in this function, which I've retained to make it more readable (for my
@@ -122,7 +113,7 @@ void hmac_sha1_vector(unsigned char *key, unsigned int key_len,
 	/* End NOCACHED SHA1 processing */
 	/* This code attempts to optimize the hmac-sha1 process by caching
 	   values that remain constant for the same key.  This code is called
-	   many times by pbkdf2, so all optimizations help. 
+	   many times by pbkdf2, so all optimizations help.
 
 	   If we've gotten here, we want to use caching, and have already cached
 	   the values for k_ipad and k_opad after SHA1Update. */
@@ -210,8 +201,8 @@ void sha1_prf(unsigned char *key, unsigned int key_len,
 	size_t pos, plen;
 	u8 hash[SHA1_MAC_LEN];
 	size_t label_len = strlen(label);
-	unsigned char *addr[] = { (unsigned char *)label, 
-					(unsigned char *)&zero, 
+	unsigned char *addr[] = { (unsigned char *)label,
+					(unsigned char *)&zero,
 					data,
 					(unsigned char *)&counter };
 	unsigned int len[] = { label_len, 1, data_len, 1 };

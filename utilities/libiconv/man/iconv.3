@@ -1,4 +1,4 @@
-.\" Copyright (c) Bruno Haible <bruno@clisp.org>
+.\" Copyright (c) Free Software Foundation, Inc.
 .\"
 .\" This is free documentation; you can redistribute it and/or
 .\" modify it under the terms of the GNU General Public License as
@@ -9,7 +9,7 @@
 .\"   GNU glibc-2 source code and manual
 .\"   OpenGroup's Single Unix specification http://www.UNIX-systems.org/online.html
 .\"
-.TH ICONV 3  "September 7, 2008" "GNU" "Linux Programmer's Manual"
+.TH ICONV 3  "May 30, 2025" "GNU"
 .SH NAME
 iconv \- perform character set conversion
 .SH SYNOPSIS
@@ -18,6 +18,12 @@ iconv \- perform character set conversion
 .sp
 .BI "size_t iconv (iconv_t " cd ,
 .BI "              const char* * " inbuf ", size_t * "inbytesleft ,
+.BI "              char* * " outbuf ", size_t * "outbytesleft );
+.sp
+or (for POSIX compatibility)
+.sp
+.BI "size_t iconv (iconv_t " cd ,
+.BI "              char* * " inbuf ", size_t * "inbytesleft ,
 .BI "              char* * " outbuf ", size_t * "outbytesleft );
 .fi
 .SH DESCRIPTION
@@ -38,22 +44,41 @@ output bytes, and it updates the conversion state contained in \fIcd\fP.
 If the character encoding of the input is stateful, the \fBiconv\fP function
 can also convert a sequence of input bytes to an update of the conversion state
 without producing any output bytes; such input is called a \fIshift sequence\fP.
-The conversion can stop for four reasons:
+The conversion can stop for five reasons:
 .PP
 1. An invalid multibyte sequence is encountered in the input. In this case
 it sets \fBerrno\fP to \fBEILSEQ\fP and returns (size_t)(\-1). \fI*inbuf\fP
 is left pointing to the beginning of the invalid multibyte sequence.
 .PP
-2. The input byte sequence has been entirely converted, i.e. \fI*inbytesleft\fP
+2. A multibyte sequence is encountered that is valid but that cannot be
+translated to the character encoding of the output.
+This condition depends on the implementation and on the conversion
+descriptor.
+In the GNU C library and GNU libiconv, if \fIcd\fP was created without the
+suffix \fB//TRANSLIT\fP or \fB//IGNORE\fP or \fB//NON_IDENTICAL_DISCARD\fP,
+the conversion is strict: lossy conversions produce this condition.
+If the suffix \fB//TRANSLIT\fP was specified, transliteration can avoid this
+condition in some cases.
+In the musl C library, this condition cannot occur because a conversion to
+\fB\[aq]*\[aq]\fP is used as a fallback.
+In the FreeBSD, NetBSD, and Solaris implementations of \fBiconv\fP, this
+condition cannot occur either, because a conversion to \fB\[aq]?\[aq]\fP is
+used as a fallback.
+When this condition is met, the \fBiconv\fP function sets \fBerrno\fP to
+\fBEILSEQ\fP and returns (size_t)(\-1).
+\fI*inbuf\fP is left pointing to the beginning of the unconvertible multibyte
+sequence.
+.PP
+3. The input byte sequence has been entirely converted, i.e. \fI*inbytesleft\fP
 has gone down to 0. In this case \fBiconv\fP returns the number of
 non-reversible conversions performed during this call.
 .PP
-3. An incomplete multibyte sequence is encountered in the input, and the
+4. An incomplete multibyte sequence is encountered in the input, and the
 input byte sequence terminates after it. In this case it sets \fBerrno\fP to
 \fBEINVAL\fP and returns (size_t)(\-1). \fI*inbuf\fP is left pointing to the
 beginning of the incomplete multibyte sequence.
 .PP
-4. The output buffer has no more room for the next converted character. In
+5. The output buffer has no more room for the next converted character. In
 this case it sets \fBerrno\fP to \fBE2BIG\fP and returns (size_t)(\-1).
 .PP
 A different case is when \fIinbuf\fP is NULL or \fI*inbuf\fP is NULL, but
@@ -85,8 +110,43 @@ An invalid multibyte sequence has been encountered in the input.
 .B EINVAL
 An incomplete multibyte sequence has been encountered in the input.
 .SH "CONFORMING TO"
-POSIX:2001
+POSIX:2024
+.PP
+Note:
+In the functions \fBiconv\fP, \fBexecv\fP, \fBexecve\fP, \fBexecvp\fP,
+POSIX uses the type
+\fBchar **\fP in place of the more correct \fBconst char **\fP,
+thus forcing programs which use \fBconst\fP as usual
+to add a cast in the second argument of an \fBiconv\fP invocation.
+GNU libiconv uses \fBconst char **\fP or \fBchar **\fP,
+depending on the platform.
+.PP
+Packages that use the GNU Build System can determine
+which of the two choices the declaration of \fBiconv\fP in \fB<iconv.h>\fP
+actually uses.
+To do this, the package can use the Autoconf macro \fBAM_ICONV\fP,
+documented in the GNU gettext manual and
+also available from the module \fBiconv\fP in GNU gnulib,
+and then use the C preprocessor symbol \fBICONV_CONST\fP.
+.SH NOTES
+In each series of calls to the \fBiconv\fP function,
+the last should be one with \fIinbuf\fP or \fI*inbuf\fP equal to NULL,
+in order to complete the conversion of any partially converted input.
+
+Although \fIinbuf\fP and \fIoutbuf\fP are typed as
+\fBconst char **\fP and \fBchar **\fP, respectively,
+this does not mean that the objects they point can be interpreted
+as C strings or as arrays of characters:
+the interpretation of character byte sequences is
+handled internally by the conversion functions.
+In some encodings, a zero byte may be a valid part of a multibyte character.
+
+The caller of the \fBiconv\fP function
+must ensure that the pointers passed to the function are suitable
+for accessing characters in the appropriate character set.
+For the encodings \fBUCS-2-INTERNAL\fP, \fBUCS-4-INTERNAL\fP, and \fBwchar_t\fP,
+this includes ensuring correct alignment.
 .SH "SEE ALSO"
 .BR iconv_open (3),
-.BR iconvctl (3)
+.BR iconvctl (3),
 .BR iconv_close (3)

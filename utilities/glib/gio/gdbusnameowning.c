@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,20 +29,9 @@
 #include "gdbuserror.h"
 #include "gdbusprivate.h"
 #include "gdbusconnection.h"
+#include "gioerror.h"
 
 #include "glibintl.h"
-
-/**
- * SECTION:gdbusnameowning
- * @title: Owning Bus Names
- * @short_description: Simple API for owning bus names
- * @include: gio/gio.h
- *
- * Convenience API for owning bus names.
- *
- * A simple example for owning a name can be found in
- * [gdbus-example-own-name.c](https://git.gnome.org/browse/glib/tree/gio/tests/gdbus-example-own-name.c) 
- */
 
 G_LOCK_DEFINE_STATIC (lock);
 
@@ -55,7 +46,7 @@ typedef enum
 
 typedef struct
 {
-  volatile gint             ref_count;
+  gint                      ref_count;  /* (atomic) */
   guint                     id;
   GBusNameOwnerFlags        flags;
   gchar                    *name;
@@ -73,7 +64,7 @@ typedef struct
   guint                     name_acquired_subscription_id;
   guint                     name_lost_subscription_id;
 
-  volatile gboolean         cancelled; /* must hold lock when reading or modifying */
+  gboolean                  cancelled; /* must hold lock when reading or modifying */
 
   gboolean                  needs_release;
 } Client;
@@ -99,9 +90,9 @@ client_unref (Client *client)
           if (client->disconnected_signal_handler_id > 0)
             g_signal_handler_disconnect (client->connection, client->disconnected_signal_handler_id);
           if (client->name_acquired_subscription_id > 0)
-            g_dbus_connection_signal_unsubscribe (client->connection, client->name_acquired_subscription_id);
+            g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_acquired_subscription_id));
           if (client->name_lost_subscription_id > 0)
-            g_dbus_connection_signal_unsubscribe (client->connection, client->name_lost_subscription_id);
+            g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_lost_subscription_id));
           g_object_unref (client->connection);
         }
       g_main_context_unref (client->main_context);
@@ -197,7 +188,7 @@ schedule_call_in_idle (Client *client, CallType  call_type)
                          call_in_idle_cb,
                          data,
                          (GDestroyNotify) call_handler_data_free);
-  g_source_set_name (idle_source, "[gio] call_in_idle_cb");
+  g_source_set_static_name (idle_source, "[gio, gdbusnameowning.c] call_in_idle_cb");
   g_source_attach (idle_source, client->main_context);
   g_source_unref (idle_source);
 }
@@ -268,10 +259,17 @@ on_name_lost_or_acquired (GDBusConnection  *connection,
   Client *client = user_data;
   const gchar *name;
 
-  if (g_strcmp0 (object_path, "/org/freedesktop/DBus") != 0 ||
-      g_strcmp0 (interface_name, "org.freedesktop.DBus") != 0 ||
-      g_strcmp0 (sender_name, "org.freedesktop.DBus") != 0)
+  if (g_strcmp0 (object_path, DBUS_PATH_DBUS) != 0 ||
+      g_strcmp0 (interface_name, DBUS_INTERFACE_DBUS) != 0 ||
+      g_strcmp0 (sender_name, DBUS_SERVICE_DBUS) != 0)
     goto out;
+
+  if (!g_variant_is_of_type (parameters, G_VARIANT_TYPE ("(s)")))
+    {
+      g_warning ("%s signal had unexpected signature %s", signal_name,
+                 g_variant_get_type_string (parameters));
+      goto out;
+    }
 
   if (g_strcmp0 (signal_name, "NameLost") == 0)
     {
@@ -303,7 +301,7 @@ request_name_cb (GObject      *source_object,
   Client *client = user_data;
   GVariant *result;
   guint32 request_name_reply;
-  gboolean subscribe;
+  gboolean unsubscribe;
 
   request_name_reply = 0;
   result = NULL;
@@ -318,72 +316,52 @@ request_name_cb (GObject      *source_object,
       g_variant_unref (result);
     }
 
-  subscribe = FALSE;
+  unsubscribe = FALSE;
 
   switch (request_name_reply)
     {
-    case 1: /* DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER */
+    case DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER:
       /* We got the name - now listen for NameLost and NameAcquired */
       call_acquired_handler (client);
-      subscribe = TRUE;
-      client->needs_release = TRUE;
       break;
 
-    case 2: /* DBUS_REQUEST_NAME_REPLY_IN_QUEUE */
+    case DBUS_REQUEST_NAME_REPLY_IN_QUEUE:
       /* Waiting in line - listen for NameLost and NameAcquired */
       call_lost_handler (client);
-      subscribe = TRUE;
-      client->needs_release = TRUE;
       break;
 
     default:
       /* assume we couldn't get the name - explicit fallthrough */
-    case 3: /* DBUS_REQUEST_NAME_REPLY_EXISTS */
-    case 4: /* DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER */
+    case DBUS_REQUEST_NAME_REPLY_EXISTS:
+    case DBUS_REQUEST_NAME_REPLY_ALREADY_OWNER:
       /* Some other part of the process is already owning the name */
       call_lost_handler (client);
+      unsubscribe = TRUE;
+      client->needs_release = FALSE;
       break;
     }
 
-
-  if (subscribe)
+  /* If we’re not the owner and not in the queue, there’s no point in continuing
+   * to listen to NameAcquired or NameLost. */
+  if (unsubscribe)
     {
       GDBusConnection *connection = NULL;
 
-      /* if cancelled, there is no point in subscribing to signals - if not, make sure
-       * we use a known good Connection object since it may be set to NULL at any point
-       * after being cancelled
+      /* make sure we use a known good Connection object since it may be set to
+       * NULL at any point after being cancelled
        */
       G_LOCK (lock);
       if (!client->cancelled)
         connection = g_object_ref (client->connection);
       G_UNLOCK (lock);
 
-      /* start listening to NameLost and NameAcquired messages */
       if (connection != NULL)
         {
-          client->name_lost_subscription_id =
-            g_dbus_connection_signal_subscribe (connection,
-                                                "org.freedesktop.DBus",
-                                                "org.freedesktop.DBus",
-                                                "NameLost",
-                                                "/org/freedesktop/DBus",
-                                                client->name,
-                                                G_DBUS_SIGNAL_FLAGS_NONE,
-                                                on_name_lost_or_acquired,
-                                                client,
-                                                NULL);
-          client->name_acquired_subscription_id =
-            g_dbus_connection_signal_subscribe (connection,
-                                                "org.freedesktop.DBus",
-                                                "org.freedesktop.DBus",
-                                                "NameAcquired",
-                                                "/org/freedesktop/DBus",
-                                                client->name,
-                                                G_DBUS_SIGNAL_FLAGS_NONE,
-                                                on_name_lost_or_acquired,
-                                                client,
-                                                NULL);
+          if (client->name_acquired_subscription_id > 0)
+            g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_acquired_subscription_id));
+          if (client->name_lost_subscription_id > 0)
+            g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_lost_subscription_id));
+
           g_object_unref (connection);
         }
     }
@@ -404,13 +382,11 @@ on_connection_disconnected (GDBusConnection *connection,
   if (client->disconnected_signal_handler_id > 0)
     g_signal_handler_disconnect (client->connection, client->disconnected_signal_handler_id);
   if (client->name_acquired_subscription_id > 0)
-    g_dbus_connection_signal_unsubscribe (client->connection, client->name_acquired_subscription_id);
+    g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_acquired_subscription_id));
   if (client->name_lost_subscription_id > 0)
-    g_dbus_connection_signal_unsubscribe (client->connection, client->name_lost_subscription_id);
+    g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_lost_subscription_id));
   g_object_unref (client->connection);
   client->disconnected_signal_handler_id = 0;
-  client->name_acquired_subscription_id = 0;
-  client->name_lost_subscription_id = 0;
   client->connection = NULL;
 
   call_lost_handler (client);
@@ -427,11 +403,46 @@ has_connection (Client *client)
                                                              G_CALLBACK (on_connection_disconnected),
                                                              client);
 
+  /* Start listening to NameLost and NameAcquired messages. We hold
+   * references to the Client in the signal closures, since it’s possible
+   * for a signal to be in-flight after unsubscribing the signal handler.
+   * This creates a reference count cycle, but that’s explicitly broken by
+   * disconnecting the signal handlers before calling client_unref() in
+   * g_bus_unown_name().
+   *
+   * Subscribe to NameLost and NameAcquired before calling RequestName() to
+   * avoid the potential race of losing the name between receiving a reply to
+   * RequestName() and subscribing to NameLost. The #PreviousCall state will
+   * ensure that the user callbacks get called an appropriate number of times. */
+  client->name_lost_subscription_id =
+    g_dbus_connection_signal_subscribe (client->connection,
+                                        DBUS_SERVICE_DBUS,
+                                        DBUS_INTERFACE_DBUS,
+                                        "NameLost",
+                                        DBUS_PATH_DBUS,
+                                        client->name,
+                                        G_DBUS_SIGNAL_FLAGS_NONE,
+                                        on_name_lost_or_acquired,
+                                        client_ref (client),
+                                        (GDestroyNotify) client_unref);
+  client->name_acquired_subscription_id =
+    g_dbus_connection_signal_subscribe (client->connection,
+                                        DBUS_SERVICE_DBUS,
+                                        DBUS_INTERFACE_DBUS,
+                                        "NameAcquired",
+                                        DBUS_PATH_DBUS,
+                                        client->name,
+                                        G_DBUS_SIGNAL_FLAGS_NONE,
+                                        on_name_lost_or_acquired,
+                                        client_ref (client),
+                                        (GDestroyNotify) client_unref);
+
   /* attempt to acquire the name */
+  client->needs_release = TRUE;
   g_dbus_connection_call (client->connection,
-                          "org.freedesktop.DBus",  /* bus name */
-                          "/org/freedesktop/DBus", /* object path */
-                          "org.freedesktop.DBus",  /* interface name */
+                          DBUS_SERVICE_DBUS,
+                          DBUS_PATH_DBUS,
+                          DBUS_INTERFACE_DBUS,
                           "RequestName",           /* method name */
                           g_variant_new ("(su)",
                                          client->name,
@@ -492,20 +503,21 @@ connection_get_cb (GObject      *source_object,
 
 /**
  * g_bus_own_name_on_connection:
- * @connection: a #GDBusConnection
+ * @connection: a bus connection
  * @name: the well-known name to own
- * @flags: a set of flags from the #GBusNameOwnerFlags enumeration
- * @name_acquired_handler: (allow-none): handler to invoke when @name is acquired or %NULL
- * @name_lost_handler: (allow-none): handler to invoke when @name is lost or %NULL
+ * @flags: a set of flags with ownership options
+ * @name_acquired_handler: (nullable) (scope notified): handler to invoke when
+ *   @name is acquired, or `NULL` to ignore
+ * @name_lost_handler: (nullable) (scope notified): handler to invoke when @name
+ *   is lost, or `NULL` to ignore
  * @user_data: user data to pass to handlers
- * @user_data_free_func: (allow-none): function for freeing @user_data or %NULL
+ * @user_data_free_func: (nullable): function for freeing @user_data
  *
- * Like g_bus_own_name() but takes a #GDBusConnection instead of a
- * #GBusType.
+ * Like [func@Gio.bus_own_name] but takes a [class@Gio.DBusConnection] instead
+ * of a [enum@Gio.BusType].
  *
- * Returns: an identifier (never 0) that an be used with
- *     g_bus_unown_name() to stop owning the name
- *
+ * Returns: an identifier (never 0) that can be used with
+ *   [func@Gio.bus_unown_name] to stop owning the name
  * Since: 2.26
  */
 guint
@@ -556,44 +568,48 @@ g_bus_own_name_on_connection (GDBusConnection          *connection,
  * g_bus_own_name:
  * @bus_type: the type of bus to own a name on
  * @name: the well-known name to own
- * @flags: a set of flags from the #GBusNameOwnerFlags enumeration
- * @bus_acquired_handler: (allow-none): handler to invoke when connected to the bus of type @bus_type or %NULL
- * @name_acquired_handler: (allow-none): handler to invoke when @name is acquired or %NULL
- * @name_lost_handler: (allow-none): handler to invoke when @name is lost or %NULL
+ * @flags: a set of flags with ownership options
+ * @bus_acquired_handler: (nullable) (scope notified): handler to invoke when
+ *   connected to the bus of type @bus_type, or `NULL` to ignore
+ * @name_acquired_handler: (nullable) (scope notified): handler to invoke when
+ *   @name is acquired, or `NULL` to ignore
+ * @name_lost_handler: (nullable) (scope notified): handler to invoke when @name
+ *   is lost, or `NULL` to ignore
  * @user_data: user data to pass to handlers
- * @user_data_free_func: (allow-none): function for freeing @user_data or %NULL
+ * @user_data_free_func: (nullable): function for freeing @user_data
  *
- * Starts acquiring @name on the bus specified by @bus_type and calls
- * @name_acquired_handler and @name_lost_handler when the name is
- * acquired respectively lost. Callbacks will be invoked in the 
- * [thread-default main context][g-main-context-push-thread-default]
+ * Requests ownership of @name on the bus specified by @bus_type.
+ *
+ * It asynchronously calls @name_acquired_handler and @name_lost_handler when
+ * the name is acquired and lost, respectively.
+ *
+ * Callbacks will be invoked in the thread-default
+ * main context (see [method@GLib.MainContext.push_thread_default])
  * of the thread you are calling this function from.
  *
  * You are guaranteed that one of the @name_acquired_handler and @name_lost_handler
- * callbacks will be invoked after calling this function - there are three
+ * callbacks will be invoked after calling this function — there are three
  * possible cases:
  * 
- * - @name_lost_handler with a %NULL connection (if a connection to the bus
- *   can't be made).
- *
- * - @bus_acquired_handler then @name_lost_handler (if the name can't be
- *   obtained)
- *
+ * - @name_lost_handler with a `NULL` connection (if a connection to the bus
+ *   can’t be made).
+ * - @bus_acquired_handler then @name_lost_handler (if the name can’t be
+ *   obtained).
  * - @bus_acquired_handler then @name_acquired_handler (if the name was
  *   obtained).
  *
- * When you are done owning the name, just call g_bus_unown_name()
- * with the owner id this function returns.
+ * When you are done owning the name, call [func@Gio.bus_unown_name] with the
+ * owner ID this function returns.
  *
  * If the name is acquired or lost (for example another application
  * could acquire the name if you allow replacement or the application
  * currently owning the name exits), the handlers are also invoked.
- * If the #GDBusConnection that is used for attempting to own the name
+ * If the [class@Gio.DBusConnection] that is used for attempting to own the name
  * closes, then @name_lost_handler is invoked since it is no longer
  * possible for other processes to access the process.
  *
- * You cannot use g_bus_own_name() several times for the same name (unless
- * interleaved with calls to g_bus_unown_name()) - only the first call
+ * You cannot use [func@Gio.bus_own_name] several times for the same name (unless
+ * interleaved with calls to [func@Gio.bus_unown_name]) — only the first call
  * will work.
  *
  * Another guarantee is that invocations of @name_acquired_handler
@@ -602,20 +618,19 @@ g_bus_own_name_on_connection (GDBusConnection          *connection,
  * guaranteed that the next time one of the handlers is invoked, it
  * will be @name_lost_handler. The reverse is also true.
  *
- * If you plan on exporting objects (using e.g.
- * g_dbus_connection_register_object()), note that it is generally too late
+ * If you plan on exporting objects (using, for example,
+ * [method@Gio.DBusConnection.register_object]), note that it is generally too late
  * to export the objects in @name_acquired_handler. Instead, you can do this
  * in @bus_acquired_handler since you are guaranteed that this will run
  * before @name is requested from the bus.
  *
- * This behavior makes it very simple to write applications that wants
- * to [own names][gdbus-owning-names] and export objects.
+ * This behavior makes it very simple to write applications that want
+ * to [own names](dbus-name-owning.html#d-bus-name-owning) and export objects.
  * Simply register objects to be exported in @bus_acquired_handler and
  * unregister the objects (if any) in @name_lost_handler.
  *
- * Returns: an identifier (never 0) that an be used with
- *     g_bus_unown_name() to stop owning the name.
- *
+ * Returns: an identifier (never 0) that can be used with
+ *   [func@Gio.bus_unown_name] to stop owning the name
  * Since: 2.26
  */
 guint
@@ -787,20 +802,19 @@ bus_own_name_free_func (gpointer user_data)
  * g_bus_own_name_with_closures: (rename-to g_bus_own_name)
  * @bus_type: the type of bus to own a name on
  * @name: the well-known name to own
- * @flags: a set of flags from the #GBusNameOwnerFlags enumeration
- * @bus_acquired_closure: (allow-none): #GClosure to invoke when connected to
- *     the bus of type @bus_type or %NULL
- * @name_acquired_closure: (allow-none): #GClosure to invoke when @name is
- *     acquired or %NULL
- * @name_lost_closure: (allow-none): #GClosure to invoke when @name is lost or
- *     %NULL
+ * @flags: a set of flags with ownership options
+ * @bus_acquired_closure: (nullable): closure to invoke when connected to
+ *   the bus of type @bus_type, or `NULL` to ignore
+ * @name_acquired_closure: (nullable): closure to invoke when @name is
+ *   acquired, or `NULL` to ignore
+ * @name_lost_closure: (nullable): closure to invoke when @name is lost, or
+ *   `NULL` to ignore
  *
- * Version of g_bus_own_name() using closures instead of callbacks for
+ * Version of [func@Gio.bus_own_name using closures instead of callbacks for
  * easier binding in other languages.
  *
- * Returns: an identifier (never 0) that an be used with
- *     g_bus_unown_name() to stop owning the name.
- *
+ * Returns: an identifier (never 0) that can be used with
+ *   [func@Gio.bus_unown_name] to stop owning the name.
  * Since: 2.26
  */
 guint
@@ -825,20 +839,19 @@ g_bus_own_name_with_closures (GBusType            bus_type,
 
 /**
  * g_bus_own_name_on_connection_with_closures: (rename-to g_bus_own_name_on_connection)
- * @connection: a #GDBusConnection
+ * @connection: a bus connection
  * @name: the well-known name to own
- * @flags: a set of flags from the #GBusNameOwnerFlags enumeration
- * @name_acquired_closure: (allow-none): #GClosure to invoke when @name is
- *     acquired or %NULL
- * @name_lost_closure: (allow-none): #GClosure to invoke when @name is lost
- *     or %NULL
+ * @flags: a set of flags with ownership options
+ * @name_acquired_closure: (nullable): closure to invoke when @name is
+ *   acquired, or `NULL` to ignore
+ * @name_lost_closure: (nullable): closure to invoke when @name is lost,
+ *   or `NULL` to ignore
  *
- * Version of g_bus_own_name_on_connection() using closures instead of
+ * Version of [func@Gio.bus_own_name_on_connection] using closures instead of
  * callbacks for easier binding in other languages.
  *
- * Returns: an identifier (never 0) that an be used with
- *     g_bus_unown_name() to stop owning the name.
- *
+ * Returns: an identifier (never 0) that can be used with
+ *   [func@Gio.bus_unown_name] to stop owning the name.
  * Since: 2.26
  */
 guint
@@ -861,9 +874,17 @@ g_bus_own_name_on_connection_with_closures (GDBusConnection    *connection,
 
 /**
  * g_bus_unown_name:
- * @owner_id: an identifier obtained from g_bus_own_name()
+ * @owner_id: an identifier obtained from [func@Gio.bus_own_name]
  *
  * Stops owning a name.
+ *
+ * Note that there may still be D-Bus traffic to process (relating to owning
+ * and unowning the name) in the current thread-default
+ * [struct@GLib.MainContext] after this function has returned. You should
+ * continue to iterate the [struct@GLib.MainContext] until the
+ * [callback@GLib.DestroyNotify] function passed to [func@Gio.bus_own_name] is
+ * called, in order to avoid memory leaks through callbacks queued on the
+ * [struct@GLib.MainContext] after it’s stopped being iterated.
  *
  * Since: 2.26
  */
@@ -910,9 +931,9 @@ g_bus_unown_name (guint owner_id)
            */
           error = NULL;
           result = g_dbus_connection_call_sync (client->connection,
-                                                "org.freedesktop.DBus",  /* bus name */
-                                                "/org/freedesktop/DBus", /* object path */
-                                                "org.freedesktop.DBus",  /* interface name */
+                                                DBUS_SERVICE_DBUS,
+                                                DBUS_PATH_DBUS,
+                                                DBUS_INTERFACE_DBUS,
                                                 "ReleaseName",           /* method name */
                                                 g_variant_new ("(s)", client->name),
                                                 G_VARIANT_TYPE ("(u)"),
@@ -922,15 +943,20 @@ g_bus_unown_name (guint owner_id)
                                                 &error);
           if (result == NULL)
             {
-              g_warning ("Error releasing name %s: %s", client->name, error->message);
+              if (!g_error_matches (error, G_IO_ERROR, G_IO_ERROR_CLOSED))
+                g_warning ("Error releasing name %s: %s", client->name, error->message);
               g_error_free (error);
             }
           else
             {
               g_variant_get (result, "(u)", &release_name_reply);
-              if (release_name_reply != 1 /* DBUS_RELEASE_NAME_REPLY_RELEASED */)
+              if (release_name_reply != DBUS_RELEASE_NAME_REPLY_RELEASED)
                 {
                   g_warning ("Unexpected reply %d when releasing name %s", release_name_reply, client->name);
+                }
+              else
+                {
+                  client->needs_release = FALSE;
                 }
               g_variant_unref (result);
             }
@@ -939,12 +965,10 @@ g_bus_unown_name (guint owner_id)
       if (client->disconnected_signal_handler_id > 0)
         g_signal_handler_disconnect (client->connection, client->disconnected_signal_handler_id);
       if (client->name_acquired_subscription_id > 0)
-        g_dbus_connection_signal_unsubscribe (client->connection, client->name_acquired_subscription_id);
+        g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_acquired_subscription_id));
       if (client->name_lost_subscription_id > 0)
-        g_dbus_connection_signal_unsubscribe (client->connection, client->name_lost_subscription_id);
+        g_dbus_connection_signal_unsubscribe (client->connection, g_steal_handle_id (&client->name_lost_subscription_id));
       client->disconnected_signal_handler_id = 0;
-      client->name_acquired_subscription_id = 0;
-      client->name_lost_subscription_id = 0;
       if (client->connection != NULL)
         {
           g_object_unref (client->connection);

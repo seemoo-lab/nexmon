@@ -2,10 +2,12 @@
  *
  * Copyright © 2009 Codethink Limited
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 2 of the licence or (at
- * your option) any later version.
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * See the included COPYING file for more information.
  *
@@ -13,33 +15,22 @@
  */
 
 /**
- * SECTION:gunixfdmessage
- * @title: GUnixFDMessage
- * @short_description: A GSocketControlMessage containing a GUnixFDList
- * @include: gio/gunixfdmessage.h
- * @see_also: #GUnixConnection, #GUnixFDList, #GSocketControlMessage
+ * GUnixFDMessage:
  *
- * This #GSocketControlMessage contains a #GUnixFDList.
- * It may be sent using g_socket_send_message() and received using
- * g_socket_receive_message() over UNIX sockets (ie: sockets in the
- * %G_SOCKET_ADDRESS_UNIX family). The file descriptors are copied
+ * This [class@Gio.SocketControlMessage] contains a [class@Gio.UnixFDList].
+ * It may be sent using [method@Gio.Socket.send_message] and received using
+ * [method@Gio.Socket.receive_message] over UNIX sockets (ie: sockets in the
+ * `G_SOCKET_FAMILY_UNIX` family). The file descriptors are copied
  * between processes by the kernel.
  *
  * For an easier way to send and receive file descriptors over
- * stream-oriented UNIX sockets, see g_unix_connection_send_fd() and
- * g_unix_connection_receive_fd().
+ * stream-oriented UNIX sockets, see [method@Gio.UnixConnection.send_fd] and
+ * [method@Gio.UnixConnection.receive_fd].
  *
  * Note that `<gio/gunixfdmessage.h>` belongs to the UNIX-specific GIO
  * interfaces, thus you have to use the `gio-unix-2.0.pc` pkg-config
- * file when using it.
+ * file or the `GioUnix-2.0` GIR namespace when using it.
  */
-
-/**
- * GUnixFDMessage:
- *
- * #GUnixFDMessage is an opaque data structure and can only be accessed
- * using the following functions.
- **/
 
 #include "config.h"
 
@@ -110,14 +101,19 @@ g_unix_fd_message_deserialize (int      level,
    */
   for (i = 0; i < n; i++)
     {
+      int errsv;
+
       do
-        s = fcntl (fds[i], F_SETFD, FD_CLOEXEC);
-      while (s < 0 && errno == EINTR);
+        {
+          s = fcntl (fds[i], F_SETFD, FD_CLOEXEC);
+          errsv = errno;
+        }
+      while (s < 0 && errsv == EINTR);
 
       if (s < 0)
         {
           g_warning ("Error setting close-on-exec flag on incoming fd: %s",
-                     g_strerror (errno));
+                     g_strerror (errsv));
           return NULL;
         }
     }
@@ -148,7 +144,7 @@ g_unix_fd_message_set_property (GObject *object, guint prop_id,
   GUnixFDMessage *message = G_UNIX_FD_MESSAGE (object);
 
   g_assert (message->priv->list == NULL);
-  g_assert_cmpint (prop_id, ==, 1);
+  g_assert (prop_id == 1);
 
   message->priv->list = g_value_dup_object (value);
 
@@ -180,7 +176,7 @@ g_unix_fd_message_get_property (GObject *object, guint prop_id,
 {
   GUnixFDMessage *message = G_UNIX_FD_MESSAGE (object);
 
-  g_assert_cmpint (prop_id, ==, 1);
+  g_assert (prop_id == 1);
 
   g_value_set_object (value, g_unix_fd_message_get_fd_list (message));
 }
@@ -217,9 +213,15 @@ g_unix_fd_message_class_init (GUnixFDMessageClass *class)
   object_class->set_property = g_unix_fd_message_set_property;
   object_class->get_property = g_unix_fd_message_get_property;
 
+  /**
+   * GUnixFDMessage:fd-list:
+   *
+   * The [class@Gio.UnixFDList] object to send with the message.
+   *
+   * Since: 2.22
+   */
   g_object_class_install_property (object_class, 1,
-    g_param_spec_object ("fd-list", "file descriptor list",
-                         "The GUnixFDList object to send with the message",
+    g_param_spec_object ("fd-list", NULL, NULL,
                          G_TYPE_UNIX_FD_LIST, G_PARAM_STATIC_STRINGS |
                          G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }
@@ -261,7 +263,7 @@ g_unix_fd_message_new_with_fd_list (GUnixFDList *fd_list)
 /**
  * g_unix_fd_message_steal_fds:
  * @message: a #GUnixFDMessage
- * @length: (out) (allow-none): pointer to the length of the returned
+ * @length: (out) (optional): pointer to the length of the returned
  *     array, or %NULL
  *
  * Returns the array of file descriptors that is contained in this

@@ -1,0 +1,249 @@
+This file explains in detail how we come to the conclusion that libgettextpo
+is multithread-safe.
+
+This file is in the public domain.
+
+2024-08: This is the list of all variables
+  $ nm $file | grep ' [bBdD] '
+and their resolution.
+
+------------------ Object files in ../src/:
+
+message.o
+0000000000000000 D libgettextpo_format_language
+0000000000000100 D libgettextpo_format_language_pretty
+0000000000000200 D libgettextpo_syntax_check_name
+These are in fact 'const'.
+
+write-catalog.o
+0000000000000000 d page_width
+This cannot change at runtime, because message_page_width_set is not called in libgettextpo.
+
+write-po.o
+0000000000000002 b escape
+This cannot change at runtime, because message_print_style_escape is not called in libgettextpo.
+0000000000000004 d filepos_comment_type
+This cannot change at runtime, because message_print_style_filepos is not called in libgettextpo.
+0000000000000000 b indent
+This cannot change at runtime, because message_print_style_indent is not called in libgettextpo.
+0000000000000000 D libgettextpo_output_format_po
+This is effectively 'const'.
+0000000000000000 d print_comment
+This cannot change at runtime, because message_print_style_comment is not called in libgettextpo.
+0000000000000001 b uniforum
+This cannot change at runtime, because message_print_style_uniforum is not called in libgettextpo.
+0000000000000008 d wrap_strings
+This cannot change at runtime, because message_page_width_ignore is not called in libgettextpo.
+
+po-charset.o
+0000000000000000 D libgettextpo_po_charset_ascii
+0000000000000008 D libgettextpo_po_charset_utf8
+These are effectively 'const'.
+0000000000000020 d standard_charsets.2
+This is effectively 'const'.
+0000000000000200 d weird_charsets.1
+This is effectively 'const'.
+0000000000000240 d weird_cjk_charsets.0
+This is effectively 'const'.
+
+read-po.o
+0000000000000000 D libgettextpo_gram_max_allowed_errors
+This cannot change at runtime, because gram_max_allowed_errors is not assigned in libgettextpo.
+0000000000000000 D libgettextpo_input_format_po
+This is effectively 'const'.
+
+read-catalog.o
+0000000000000000 d default_methods
+This is effectively 'const'.
+0000000000000000 B libgettextpo_allow_duplicates
+This cannot change at runtime, because allow_duplicates is not assigned in libgettextpo.
+
+plural-table.o
+0000000000000000 D libgettextpo_plural_table
+This is effectively 'const'.
+
+format-awk.o
+0000000000000000 D libgettextpo_formatstring_awk
+This is effectively 'const'.
+
+format-boost.o
+0000000000000000 D libgettextpo_formatstring_boost
+This is effectively 'const'.
+
+format-c++-brace.o
+0000000000000000 D libgettextpo_formatstring_cplusplus_brace
+This is effectively 'const'.
+
+format-c.o
+0000000000000000 D libgettextpo_formatstring_c
+0000000000000040 D libgettextpo_formatstring_objc
+These are effectively 'const'.
+
+format-csharp.o
+0000000000000000 D libgettextpo_formatstring_csharp
+This is effectively 'const'.
+
+format-elisp.o
+0000000000000000 D libgettextpo_formatstring_elisp
+This is effectively 'const'.
+
+format-gcc-internal.o
+0000000000000000 D libgettextpo_formatstring_gcc_internal
+This is effectively 'const'.
+
+format-gfc-internal.o
+0000000000000000 D libgettextpo_formatstring_gfc_internal
+This is effectively 'const'.
+
+format-java.o
+0000000000000000 D libgettextpo_formatstring_java
+This is effectively 'const'.
+
+format-java-printf.o
+0000000000000000 D libgettextpo_formatstring_java_printf
+This is effectively 'const'.
+
+format-javascript.o
+0000000000000000 D libgettextpo_formatstring_javascript
+This is effectively 'const'.
+
+format-kde-kuit.o
+0000000000000000 D libgettextpo_formatstring_kde_kuit
+This is effectively 'const'.
+
+format-kde.o
+0000000000000000 D libgettextpo_formatstring_kde
+This is effectively 'const'.
+
+format-librep.o
+0000000000000000 D libgettextpo_formatstring_librep
+This is effectively 'const'.
+
+format-lisp.o
+0000000000000000 D libgettextpo_formatstring_lisp
+This is effectively 'const'.
+
+format-lua.o
+0000000000000000 D libgettextpo_formatstring_lua
+This is effectively 'const'.
+
+format-pascal.o
+0000000000000000 D libgettextpo_formatstring_pascal
+This is effectively 'const'.
+
+format-perl-brace.o
+0000000000000000 D libgettextpo_formatstring_perl_brace
+This is effectively 'const'.
+
+format-perl.o
+0000000000000000 D libgettextpo_formatstring_perl
+This is effectively 'const'.
+
+format-php.o
+0000000000000000 D libgettextpo_formatstring_php
+This is effectively 'const'.
+
+format-python-brace.o
+0000000000000000 D libgettextpo_formatstring_python_brace
+This is effectively 'const'.
+
+format-python.o
+0000000000000000 D libgettextpo_formatstring_python
+This is effectively 'const'.
+
+format-qt.o
+0000000000000000 D libgettextpo_formatstring_qt
+This is effectively 'const'.
+
+format-qt-plural.o
+0000000000000000 D libgettextpo_formatstring_qt_plural
+This is effectively 'const'.
+
+format-ruby.o
+0000000000000000 D libgettextpo_formatstring_ruby
+This is effectively 'const'.
+
+format-scheme.o
+0000000000000000 D libgettextpo_formatstring_scheme
+This is effectively 'const'.
+
+format-sh.o
+0000000000000000 D libgettextpo_formatstring_sh
+This is effectively 'const'.
+
+format-smalltalk.o
+0000000000000000 D libgettextpo_formatstring_smalltalk
+0000000000000040 D libgettextpo_formatstring_ycp
+These are effectively 'const'.
+
+format-tcl.o
+0000000000000000 D libgettextpo_formatstring_tcl
+This is effectively 'const'.
+
+format.o
+0000000000000000 D libgettextpo_formatstring_parsers
+This is effectively 'const'.
+
+plural-exp.o
+0000000000000000 D libgettextpo_germanic_plural
+This is in fact 'const'.
+
+msgl-check.o
+0000000000000040 d default_values.0
+0000000000000000 d required_fields.1
+These are effectively 'const'.
+
+sentence.o
+0000000000000000 D libgettextpo_sentence_end_required_spaces
+This cannot change at runtime, because sentence_end_required_spaces is not assigned in libgettextpo.
+
+------------------ Object files in this directory:
+
+gettext-po.o
+0000000000000000 b all_formats
+0000000000000000 b all_formats_init_once
+These variables make the gettext-po.c code multithread-safe.
+0000000000000000 D libgettextpo_version
+This cannot change at runtime, because libgettextpo_version is not assigned in libgettextpo.
+
+------------------ Object files part of libgnu.la in this directory:
+
+libgnu_la-exitfail.o
+0000000000000000 D libgettextpo_exit_failure
+This cannot change at runtime, because exit_failure is not assigned in libgettextpo.
+
+libgnu_la-fcntl.o
+0000000000000000 b have_dupfd_cloexec.0
+This can change at runtime, but it will change to the same value in all threads.
+
+libgnu_la-fstrcmp.o
+0000000000000000 b buffer_key
+0000000000000008 b bufmax_key
+0000000000000010 b keys_init_once
+These variables make the fstrcmp.c code multithread-safe.
+
+libgnu_la-fwriteerror.o
+0000000000000000 b stdout_closed.0
+This is not used at runtime, because all uses of write-*.c in libgettextpo is to files specified by a file name, not to stdout.
+
+libgnu_la-gl_linked_list.o
+0000000000000000 D libgettextpo_gl_linked_list_implementation
+This is in fact 'const'.
+
+libgnu_la-mbrtoc32.o
+0000000000000000 b internal_state
+This is not used at runtime, because all uses of mbrtoc32() pass a non-NULL state pointer.
+
+libgnu_la-obstack.o
+0000000000000000 D libgettextpo_obstack_alloc_failed_handler
+This cannot change at runtime, because obstack_alloc_failed_handler is not assigned in libgettextpo.
+
+libgnu_la-striconveha.o
+0000000000000020 d autodetect_jp_try
+0000000000000040 d autodetect_kr_try
+0000000000000000 d autodetect_utf8_try
+These are in fact 'const'.
+0000000000000048 d autodetect_list
+0000000000000050 d autodetect_list_end
+0000000000000000 d autodetect_predefined
+These cannot change at runtime, because uniconv_register_autodetect is not called in libgettextpo.

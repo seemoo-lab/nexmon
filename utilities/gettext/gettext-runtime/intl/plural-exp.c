@@ -1,6 +1,5 @@
 /* Expression parsing for plural form selection.
-   Copyright (C) 2000-2016 Free Software Foundation, Inc.
-   Written by Ulrich Drepper <drepper@cygnus.com>, 2000.
+   Copyright (C) 2000-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -13,7 +12,9 @@
    GNU Lesser General Public License for more details.
 
    You should have received a copy of the GNU Lesser General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
+
+/* Written by Ulrich Drepper and Bruno Haible.  */
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>
@@ -23,9 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "plural-exp.h"
-
-#if HAVE_STRUCT_INITIALIZER
+#include <plural-exp.h>
 
 /* These structs are the constant expression for the germanic plural
    form determination.  It represents the expression  "n != 1".  */
@@ -57,42 +56,7 @@ const struct expression GERMANIC_PLURAL =
   }
 };
 
-# define INIT_GERMANIC_PLURAL()
-
-#else
-
-/* For compilers without support for ISO C 99 struct/union initializers:
-   Initialization at run-time.  */
-
-static struct expression plvar;
-static struct expression plone;
-struct expression GERMANIC_PLURAL;
-
-static void
-init_germanic_plural (void)
-{
-  if (plone.val.num == 0)
-    {
-      plvar.nargs = 0;
-      plvar.operation = var;
-
-      plone.nargs = 0;
-      plone.operation = num;
-      plone.val.num = 1;
-
-      GERMANIC_PLURAL.nargs = 2;
-      GERMANIC_PLURAL.operation = not_equal;
-      GERMANIC_PLURAL.val.args[0] = &plvar;
-      GERMANIC_PLURAL.val.args[1] = &plone;
-    }
-}
-
-# define INIT_GERMANIC_PLURAL() init_germanic_plural ()
-
-#endif
-
 void
-internal_function
 EXTRACT_PLURAL_EXPRESSION (const char *nullentry,
 			   const struct expression **pluralp,
 			   unsigned long int *npluralsp)
@@ -118,12 +82,7 @@ EXTRACT_PLURAL_EXPRESSION (const char *nullentry,
 	    ++nplurals;
 	  if (!(*nplurals >= '0' && *nplurals <= '9'))
 	    goto no_plural;
-#if defined HAVE_STRTOUL || defined _LIBC
 	  n = strtoul (nplurals, &endp, 10);
-#else
-	  for (endp = nplurals, n = 0; *endp >= '0' && *endp <= '9'; endp++)
-	    n = n * 10 + (*endp - '0');
-#endif
 	  if (nplurals == endp)
 	    goto no_plural;
 	  *npluralsp = n;
@@ -145,7 +104,6 @@ EXTRACT_PLURAL_EXPRESSION (const char *nullentry,
          for `one', the plural form otherwise.  Yes, this is also what
          English is using since English is a Germanic language.  */
     no_plural:
-      INIT_GERMANIC_PLURAL ();
       *pluralp = &GERMANIC_PLURAL;
       *npluralsp = 2;
     }

@@ -1,0 +1,71 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Go support: local function declarations.
+
+cat <<\EOF > xg-go-17.go
+package main
+
+import (
+	"fmt"
+	"github.com/leonelquinteros/gotext"
+)
+
+func main () {
+
+	var NL1 = func () *gotext.Locale {
+		return gotext.NewLocale(".", "fr_FR")
+	}
+
+
+	type NotLocale2 struct {
+		l *gotext.Locale
+	}
+
+	var NL2 = func () *NotLocale2 {
+		return new (NotLocale2)
+	}
+
+
+	type NotLocale3 struct {
+		b int
+		Get func (s string) string
+	}
+
+	var NL3 = func () NotLocale3 {
+		return NotLocale3{}
+	}
+
+
+	type NotLocale4 interface {
+		Get (s string) string
+	}
+
+	var NL4 = func () NotLocale4 {
+		return * new (NotLocale4)
+	}
+
+
+	fmt.Println(NL1().Get("Test 1"))
+	fmt.Println(NL2().l.Get("Test 2"))
+	fmt.Println(NL3().Get("Test 3"))
+	fmt.Println(NL4().Get("Test 4"))
+}
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -d xg-go-17.tmp xg-go-17.go || Exit 1
+LC_ALL=C tr -d '\r' < xg-go-17.tmp.po > xg-go-17.po || Exit 1
+
+cat <<\EOF > xg-go-17.ok
+msgid "Test 1"
+msgstr ""
+
+msgid "Test 2"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-go-17.ok xg-go-17.po || Exit 1
+
+exit 0

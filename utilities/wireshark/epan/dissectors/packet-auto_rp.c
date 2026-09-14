@@ -8,19 +8,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -33,48 +21,50 @@
 void proto_register_auto_rp(void);
 void proto_reg_handoff_auto_rp(void);
 
-static gint proto_auto_rp = -1;
-static gint ett_auto_rp = -1;
-static gint ett_auto_rp_ver_type = -1;
-static gint ett_auto_rp_map = -1;
-static gint ett_auto_rp_group = -1;
+static dissector_handle_t auto_rp_handle;
 
-static gint hf_auto_rp_version = -1;
-static gint hf_auto_rp_type = -1;
-static gint hf_auto_rp_count = -1;
-static gint hf_auto_rp_holdtime = -1;
-static gint hf_auto_rp_pim_ver = -1;
-static gint hf_auto_rp_rp_addr = -1;
-static gint hf_auto_rp_prefix_sgn = -1;
-static gint hf_auto_rp_mask_len = -1;
-static gint hf_auto_rp_group_prefix = -1;
-static gint hf_auto_rp_reserved = -1;
-static gint hf_auto_rp_trailing_junk = -1;
-static gint hf_auto_rp_group_num = -1;
+static int proto_auto_rp;
+static int ett_auto_rp;
+static int ett_auto_rp_ver_type;
+static int ett_auto_rp_map;
+static int ett_auto_rp_group;
+
+static int hf_auto_rp_version;
+static int hf_auto_rp_type;
+static int hf_auto_rp_count;
+static int hf_auto_rp_holdtime;
+static int hf_auto_rp_pim_ver;
+static int hf_auto_rp_rp_addr;
+static int hf_auto_rp_prefix_sgn;
+static int hf_auto_rp_mask_len;
+static int hf_auto_rp_group_prefix;
+static int hf_auto_rp_reserved;
+static int hf_auto_rp_trailing_junk;
+static int hf_auto_rp_group_num;
 
 #define UDP_PORT_PIM_RP_DISC 496
 
 struct auto_rp_fixed_hdr {
 #define AUTO_RP_VERSION_MASK 0xf0
 #define AUTO_RP_TYPE_MASK    0x0f
-        guint8  ver_type;       /* pim-autorp-spec01.txt defines version 1+ */
-        guint8  rp_count;       /* Number of struct auto_rp_maps that follow the this header */
-        guint16 holdtime;       /* Time in seconds this announcement is valid. 0 equals forever */
-        guint32 reserved;
+        uint8_t ver_type;       /* pim-autorp-spec01.txt defines version 1+ */
+        uint8_t rp_count;       /* Number of struct auto_rp_maps that follow the this header */
+        uint16_t holdtime;       /* Time in seconds this announcement is valid. 0 equals forever */
+        uint32_t reserved;
 };
 
 struct auto_rp_map_hdr {
-        guint32 rp_address;       /* The unicast IPv4 address of this RP */
+        uint32_t rp_address;       /* The unicast IPv4 address of this RP */
 #define AUTO_RP_PIM_VER_MASK 0x03
-        guint8  pim_version;      /* RP's highest PIM version. 2-bit field */
-        guint8  group_count;      /* Number of encoded group addresses that follow this header */
+        uint8_t pim_version;      /* RP's highest PIM version. 2-bit field */
+        uint8_t group_count;      /* Number of encoded group addresses that follow this header */
 };
 
 struct auto_rp_enc_grp_hdr {   /* Encoded group address */
 #define AUTO_RP_SIGN_MASK 0x01
-        guint8  prefix_sgn;    /* 0 positive, 1 negative group prefix */
-        guint8  mask_len;      /* Length of group prefix */
-        guint32 addr;          /* Group prefix */
+        uint8_t prefix_sgn;    /* 0 positive, 1 negative group prefix */
+        uint8_t mask_len;      /* Length of group prefix */
+        uint32_t addr;          /* Group prefix */
 };
 
 #define AUTO_RP_VER_1PLUS 1
@@ -111,17 +101,17 @@ static const value_string auto_rp_mask_sign_vals[] = {
         {0,                            NULL}
 };
 
-static int do_auto_rp_map(tvbuff_t *tvb, int offset, proto_tree *auto_rp_tree);
+static int do_auto_rp_map(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, proto_tree *auto_rp_tree);
 
 static int dissect_auto_rp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-        guint8 ver_type, rp_count;
+        uint8_t ver_type, rp_count;
 
         col_set_str(pinfo->cinfo, COL_PROTOCOL, "Auto-RP");
         col_clear(pinfo->cinfo, COL_INFO);
 
-        ver_type = tvb_get_guint8(tvb, 0);
-        rp_count = tvb_get_guint8(tvb, 1);
+        ver_type = tvb_get_uint8(tvb, 0);
+        rp_count = tvb_get_uint8(tvb, 1);
         col_add_fstr(pinfo->cinfo, COL_INFO, "%s (v%s) for %u RP%s",
                      val_to_str_const(lo_nibble(ver_type), auto_rp_type_vals, "Unknown"),
                      val_to_str_const(hi_nibble(ver_type), auto_rp_ver_vals,  "Unknown"),
@@ -131,7 +121,7 @@ static int dissect_auto_rp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
                 proto_item *ti;
                 proto_tree *auto_rp_tree, *ver_type_tree;
                 int         i, offset;
-                guint16     holdtime;
+                uint16_t    holdtime;
 
                 offset = 0;
                 ti = proto_tree_add_item(tree, proto_auto_rp, tvb, offset, -1, ENC_NA);
@@ -157,7 +147,7 @@ static int dissect_auto_rp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
                 offset+=4;
 
                 for (i = 0; i < rp_count; i++)
-                        offset = do_auto_rp_map(tvb, offset, auto_rp_tree);
+                        offset = do_auto_rp_map(pinfo->pool, tvb, offset, auto_rp_tree);
 
                 if (tvb_reported_length_remaining(tvb, offset) > 0)
                         proto_tree_add_item(tree, hf_auto_rp_trailing_junk, tvb, offset, -1, ENC_NA);
@@ -169,18 +159,18 @@ static int dissect_auto_rp(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, 
 /*
  * Handles one Auto-RP map entry. Returns the new offset.
  */
-static int do_auto_rp_map(tvbuff_t *tvb, int offset, proto_tree *auto_rp_tree)
+static int do_auto_rp_map(wmem_allocator_t *scope, tvbuff_t *tvb, int offset, proto_tree *auto_rp_tree)
 {
         proto_tree *map_tree;
-        guint8      group_count;
+        uint8_t     group_count;
         int         i;
 
-        group_count = tvb_get_guint8(tvb, offset + 5);
+        group_count = tvb_get_uint8(tvb, offset + 5);
 
         /* sizeof map header + n * sizeof encoded group addresses */
         map_tree = proto_tree_add_subtree_format(auto_rp_tree, tvb, offset, 6 + group_count * 6,
                                  ett_auto_rp_map, NULL,
-                                 "RP %s: %u group%s", tvb_ip_to_str(tvb, offset),
+                                 "RP %s: %u group%s", tvb_ip_to_str(scope, tvb, offset),
                                  group_count, plurality(group_count, "", "s"));
 
         proto_tree_add_item(map_tree, hf_auto_rp_rp_addr, tvb, offset, 4, ENC_BIG_ENDIAN);
@@ -192,13 +182,13 @@ static int do_auto_rp_map(tvbuff_t *tvb, int offset, proto_tree *auto_rp_tree)
 
         for (i = 0; i < group_count; i++) {
                 proto_tree *grp_tree;
-                guint8      sign, mask_len;
+                uint8_t     sign, mask_len;
 
-                sign = tvb_get_guint8(tvb, offset);
-                mask_len = tvb_get_guint8(tvb, offset + 1);
+                sign = tvb_get_uint8(tvb, offset);
+                mask_len = tvb_get_uint8(tvb, offset + 1);
                 grp_tree = proto_tree_add_subtree_format(map_tree, tvb, offset, 6,
                                          ett_auto_rp_group, NULL, "Group %s/%u (%s)",
-                                         tvb_ip_to_str(tvb, offset + 2), mask_len,
+                                         tvb_ip_to_str(scope, tvb, offset + 2), mask_len,
                                          val_to_str_const(sign&AUTO_RP_SIGN_MASK, auto_rp_mask_sign_vals, ""));
 
                 proto_tree_add_uint(grp_tree, hf_auto_rp_prefix_sgn, tvb, offset, 1, sign);
@@ -277,33 +267,28 @@ void proto_register_auto_rp(void)
                    NULL, HFILL }},
         };
 
-        static gint *ett[] = {
+        static int *ett[] = {
                 &ett_auto_rp,
                 &ett_auto_rp_ver_type,
                 &ett_auto_rp_map,
                 &ett_auto_rp_group
         };
 
-        proto_auto_rp = proto_register_protocol("Cisco Auto-RP",
-                                                "Auto-RP", "auto_rp");
+        proto_auto_rp = proto_register_protocol("Cisco Auto-RP", "Auto-RP", "auto_rp");
         proto_register_field_array(proto_auto_rp, hf, array_length(hf));
         proto_register_subtree_array(ett, array_length(ett));
 
-        return;
+        auto_rp_handle = register_dissector("auto_rp", dissect_auto_rp, proto_auto_rp);
 }
 
 void
 proto_reg_handoff_auto_rp(void)
 {
-        dissector_handle_t auto_rp_handle;
-
-        auto_rp_handle = create_dissector_handle(dissect_auto_rp,
-                                                 proto_auto_rp);
-        dissector_add_uint("udp.port", UDP_PORT_PIM_RP_DISC, auto_rp_handle);
+        dissector_add_uint_with_preference("udp.port", UDP_PORT_PIM_RP_DISC, auto_rp_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

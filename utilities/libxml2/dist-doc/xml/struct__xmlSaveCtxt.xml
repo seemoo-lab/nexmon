@@ -1,0 +1,194 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSaveCtxt" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSaveCtxt</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSaveCtxt_1ad9e76039252fef00f7fc5ae5a35a754c" prot="public" static="no" mutable="no">
+        <type>const <ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>const xmlChar* encoding</definition>
+        <argsstring></argsstring>
+        <name>encoding</name>
+        <qualifiedname>_xmlSaveCtxt::encoding</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlsave.c" line="36" column="19" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="36" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSaveCtxt_1a6793e35bbee7364228c3940f6aa054a6" prot="public" static="no" mutable="no">
+        <type>xmlCharEncodingHandlerPtr</type>
+        <definition>xmlCharEncodingHandlerPtr handler</definition>
+        <argsstring></argsstring>
+        <name>handler</name>
+        <qualifiedname>_xmlSaveCtxt::handler</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlsave.c" line="37" column="31" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="37" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSaveCtxt_1a894b772bdd757a6511455cab22fc7bc8" prot="public" static="no" mutable="no">
+        <type>xmlOutputBufferPtr</type>
+        <definition>xmlOutputBufferPtr buf</definition>
+        <argsstring></argsstring>
+        <name>buf</name>
+        <qualifiedname>_xmlSaveCtxt::buf</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlsave.c" line="38" column="24" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="38" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSaveCtxt_1a849fa981f121eb25a67e4e14392840ba" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int options</definition>
+        <argsstring></argsstring>
+        <name>options</name>
+        <qualifiedname>_xmlSaveCtxt::options</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlsave.c" line="39" column="9" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="39" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSaveCtxt_1acf4d33ee4cff36f69b924471174dcb11" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int level</definition>
+        <argsstring></argsstring>
+        <name>level</name>
+        <qualifiedname>_xmlSaveCtxt::level</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlsave.c" line="40" column="9" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="40" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSaveCtxt_1a317afff57d87a89158c2b038d37b2b08" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int format</definition>
+        <argsstring></argsstring>
+        <name>format</name>
+        <qualifiedname>_xmlSaveCtxt::format</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlsave.c" line="41" column="9" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="41" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSaveCtxt_1a66197a26a6bc2fae997cf819a22ea472" prot="public" static="no" mutable="no">
+        <type>char</type>
+        <definition>char indent[60+1]</definition>
+        <argsstring>[60+1]</argsstring>
+        <name>indent</name>
+        <qualifiedname>_xmlSaveCtxt::indent</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlsave.c" line="42" column="10" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="42" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSaveCtxt_1abab2d7811d920ba2a03a635cf9aeac9d" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int indent_nr</definition>
+        <argsstring></argsstring>
+        <name>indent_nr</name>
+        <qualifiedname>_xmlSaveCtxt::indent_nr</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlsave.c" line="43" column="9" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="43" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSaveCtxt_1af883f541ff2122b0c9e813b363ed1b01" prot="public" static="no" mutable="no">
+        <type>int</type>
+        <definition>int indent_size</definition>
+        <argsstring></argsstring>
+        <name>indent_size</name>
+        <qualifiedname>_xmlSaveCtxt::indent_size</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlsave.c" line="44" column="9" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="44" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSaveCtxt_1ad48a19c0e863894b98735e1123ef3fcd" prot="public" static="no" mutable="no">
+        <type><ref refid="encoding_8h_1a167ac51fa3e644243494671248c56b67" kindref="member">xmlCharEncodingOutputFunc</ref></type>
+        <definition>xmlCharEncodingOutputFunc escape</definition>
+        <argsstring></argsstring>
+        <name>escape</name>
+        <qualifiedname>_xmlSaveCtxt::escape</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlsave.c" line="45" column="31" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="45" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="4">
+        <label>_xmlBuf</label>
+      </node>
+      <node id="2">
+        <label>_xmlCharEncodingHandler</label>
+        <link refid="struct__xmlCharEncodingHandler"/>
+      </node>
+      <node id="3">
+        <label>_xmlOutputBuffer</label>
+        <link refid="struct__xmlOutputBuffer"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>encoder</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>buffer</edgelabel>
+          <edgelabel>conv</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlSaveCtxt</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>handler</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>buf</edgelabel>
+        </childnode>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xmlsave.c" line="35" column="1" bodyfile="/builds/GNOME/libxml2/xmlsave.c" bodystart="35" bodyend="46"/>
+    <listofallmembers>
+      <member refid="struct__xmlSaveCtxt_1a894b772bdd757a6511455cab22fc7bc8" prot="public" virt="non-virtual"><scope>_xmlSaveCtxt</scope><name>buf</name></member>
+      <member refid="struct__xmlSaveCtxt_1ad9e76039252fef00f7fc5ae5a35a754c" prot="public" virt="non-virtual"><scope>_xmlSaveCtxt</scope><name>encoding</name></member>
+      <member refid="struct__xmlSaveCtxt_1ad48a19c0e863894b98735e1123ef3fcd" prot="public" virt="non-virtual"><scope>_xmlSaveCtxt</scope><name>escape</name></member>
+      <member refid="struct__xmlSaveCtxt_1a317afff57d87a89158c2b038d37b2b08" prot="public" virt="non-virtual"><scope>_xmlSaveCtxt</scope><name>format</name></member>
+      <member refid="struct__xmlSaveCtxt_1a6793e35bbee7364228c3940f6aa054a6" prot="public" virt="non-virtual"><scope>_xmlSaveCtxt</scope><name>handler</name></member>
+      <member refid="struct__xmlSaveCtxt_1a66197a26a6bc2fae997cf819a22ea472" prot="public" virt="non-virtual"><scope>_xmlSaveCtxt</scope><name>indent</name></member>
+      <member refid="struct__xmlSaveCtxt_1abab2d7811d920ba2a03a635cf9aeac9d" prot="public" virt="non-virtual"><scope>_xmlSaveCtxt</scope><name>indent_nr</name></member>
+      <member refid="struct__xmlSaveCtxt_1af883f541ff2122b0c9e813b363ed1b01" prot="public" virt="non-virtual"><scope>_xmlSaveCtxt</scope><name>indent_size</name></member>
+      <member refid="struct__xmlSaveCtxt_1acf4d33ee4cff36f69b924471174dcb11" prot="public" virt="non-virtual"><scope>_xmlSaveCtxt</scope><name>level</name></member>
+      <member refid="struct__xmlSaveCtxt_1a849fa981f121eb25a67e4e14392840ba" prot="public" virt="non-virtual"><scope>_xmlSaveCtxt</scope><name>options</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

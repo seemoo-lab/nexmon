@@ -1,0 +1,2 @@
+./test/schemas/all_0.xml:1: Schemas validity error : Element 'c': This element is not expected.
+./test/schemas/all_0.xml fails to validate

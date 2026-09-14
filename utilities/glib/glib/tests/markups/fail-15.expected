@@ -5,4 +5,4 @@ ELEMENT 'foo'
     TEXT '
 '
   END 'bar'
-ERROR Error on line 3 char 8: Document ended unexpectedly with elements still open - 'foo' was the last element opened
+ERROR Error on line 3 char 8: Document ended unexpectedly with elements still open — “foo” was the last element opened

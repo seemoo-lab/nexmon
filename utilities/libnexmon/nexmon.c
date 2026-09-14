@@ -53,19 +53,14 @@
 #include <net/if.h>
 #include <nexioctls.h>
 #include <string.h>
+#include <unistd.h>
+
+#define NEXMON_FD_MAX(a) ((int)(sizeof(a)/sizeof((a)[0])))
 
 #define WLC_GET_MONITOR                 107
 #define WLC_SET_MONITOR                 108
 
-struct nexio {
-    struct ifreq *ifr;
-    int sock_rx_ioctl;
-    int sock_rx_frame;
-    int sock_tx;
-};
-
-extern int nex_ioctl(struct nexio *nexio, int cmd, void *buf, int len, bool set);
-extern struct nexio *nex_init_ioctl(const char *ifname);
+#include <libnexio.h>
 
 #ifndef RTLD_NEXT
 #define RTLD_NEXT ((void *) -1l)
@@ -86,11 +81,13 @@ static int (*func_ioctl) (int, request_t, void *) = NULL;
 static int (*func_socket) (int, int, int) = NULL;
 static int (*func_bind) (int, const struct sockaddr *, int) = NULL;
 static int (*func_write) (int, const void *, size_t) = NULL;
+static int (*func_close) (int) = NULL;
 
-static void _libmexmon_init() __attribute__ ((constructor));
-static void _libmexmon_init() {
-    nexio = nex_init_ioctl(ifname);
-
+/* Resolve the real libc symbols. Safe to call more than once and from a hook
+ * that runs before the constructor (e.g. a socket() call issued by an
+ * earlier-ordered library constructor), which would otherwise NULL-deref. */
+static void
+_libnexmon_resolve(void) {
     if (! func_ioctl)
         func_ioctl = (int (*) (int, request_t, void *)) dlsym (REAL_LIBC, "ioctl");
 
@@ -105,6 +102,16 @@ static void _libmexmon_init() {
 
     if (! func_sendto)
         func_sendto = (int (*) (int, const void *, size_t, int, const struct sockaddr *, socklen_t)) dlsym (REAL_LIBC, "sendto");
+
+    if (! func_close)
+        func_close = (int (*) (int)) dlsym (REAL_LIBC, "close");
+}
+
+static void _libmexmon_init() __attribute__ ((constructor));
+static void _libmexmon_init() {
+    nexio = nex_init_ioctl(ifname);
+
+    _libnexmon_resolve();
 }
 
 int
@@ -117,6 +124,8 @@ ioctl(int fd, request_t request, ...)
     va_start (args, request);
     argp = va_arg (args, void *);
     va_end (args);
+
+    if (! func_ioctl) _libnexmon_resolve();
 
     ret = func_ioctl(fd, request, argp);
     //if (ret < 0) {
@@ -292,18 +301,21 @@ static char domain_types[][16] = {
     "AF_SMC"
 };
 
-int socket_to_type[100] = { 0 };
-char bound_to_correct_if[100] = { 0 };
+static int socket_to_type[100] = { 0 };
+static char bound_to_correct_if[100] = { 0 };
 
 int
 socket(int domain, int type, int protocol)
 {
     int ret;
 
+    if (! func_socket) _libnexmon_resolve();
+
     ret = func_socket(domain, type, protocol);
 
-    // save the socket type
-    if (ret < sizeof(socket_to_type)/sizeof(socket_to_type[0]))
+    // save the socket type (only for valid, in-range descriptors: a failed
+    // socket() returns -1, which must not index the array)
+    if (ret >= 0 && ret < NEXMON_FD_MAX(socket_to_type))
         socket_to_type[ret] = type;
 
     //if ((type - 1 < sizeof(sock_types)/sizeof(sock_types[0])) && (domain - 1 < sizeof(domain_types)/sizeof(domain_types[0])))
@@ -313,22 +325,47 @@ socket(int domain, int type, int protocol)
 }
 
 int
-bind(int sockfd, const struct sockaddr *addr, int addrlen)
+close(int fd)
+{
+    if (! func_close) _libnexmon_resolve();
+
+    // clear our per-descriptor bookkeeping so a later reuse of this fd number
+    // does not inherit a stale "bound to wlan0" / socket-type flag, which would
+    // otherwise misroute an unrelated raw socket's write()/sendto() into
+    // NEX_INJECT_FRAME.
+    if (fd >= 0 && fd < NEXMON_FD_MAX(socket_to_type))
+        socket_to_type[fd] = 0;
+    if (fd >= 0 && fd < NEXMON_FD_MAX(bound_to_correct_if))
+        bound_to_correct_if[fd] = 0;
+
+    return func_close(fd);
+}
+
+int
+bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen)
 {
     int ret;
-    struct sockaddr_ll *sll = (struct sockaddr_ll *) addr;
+
+    if (! func_bind) _libnexmon_resolve();
 
     ret = func_bind(sockfd, addr, addrlen);
 
-    char sll_ifname[IF_NAMESIZE] = { 0 };
-    if_indextoname(sll->sll_ifindex, sll_ifname);
+    // Only inspect the address as an AF_PACKET sockaddr_ll when it actually is
+    // one; otherwise a short/NULL address would over-read or NULL-deref.
+    if (addr != NULL && addrlen >= sizeof(struct sockaddr_ll) &&
+        addr->sa_family == AF_PACKET &&
+        sockfd >= 0 && sockfd < NEXMON_FD_MAX(bound_to_correct_if)) {
+        struct sockaddr_ll *sll = (struct sockaddr_ll *) addr;
+        char sll_ifname[IF_NAMESIZE] = { 0 };
 
-    if ((sockfd < sizeof(bound_to_correct_if)/sizeof(bound_to_correct_if[0])) && !strncmp(ifname, sll_ifname, sizeof(ifname)))
-        bound_to_correct_if[sockfd] = 1;
+        if (if_indextoname(sll->sll_ifindex, sll_ifname) != NULL &&
+            !strncmp(ifname, sll_ifname, IF_NAMESIZE))
+            bound_to_correct_if[sockfd] = 1;
+    }
 
-    //printf("LIBNEXMON: %d = %s(%d, 0x%p, %d) sll_ifindex=%d ifname=%s\n", ret, __FUNCTION__, sockfd, addr, addrlen, sll->sll_ifindex, sll_ifname);
+    //printf("LIBNEXMON: %d = %s(%d, 0x%p, %d)\n", ret, __FUNCTION__, sockfd, addr, addrlen);
 
-    return ret;    
+    return ret;
 }
 
 struct inject_frame {
@@ -343,8 +380,10 @@ write(int fd, const void *buf, size_t count)
 {
     ssize_t ret;
 
+    if (! func_write) _libnexmon_resolve();
+
     // check if the user wants to write on a raw socket
-    if ((fd > 2) && (fd < sizeof(socket_to_type)/sizeof(socket_to_type[0])) && (socket_to_type[fd] == SOCK_RAW) && (bound_to_correct_if[fd] == 1)) {
+    if ((fd > 2) && (fd < NEXMON_FD_MAX(socket_to_type)) && (socket_to_type[fd] == SOCK_RAW) && (bound_to_correct_if[fd] == 1)) {
         struct inject_frame *buf_dup = (struct inject_frame *) malloc(count + sizeof(struct inject_frame));
 
         buf_dup->len = count + sizeof(struct inject_frame);
@@ -370,8 +409,10 @@ sendto(int sockfd, const void *buf, size_t len, int flags, const struct sockaddr
 {
     ssize_t ret;
 
+    if (! func_sendto) _libnexmon_resolve();
+
     // check if the user wants to write on a raw socket
-    if ((sockfd > 2) && (sockfd < sizeof(socket_to_type)/sizeof(socket_to_type[0])) && (socket_to_type[sockfd] == SOCK_RAW) && (bound_to_correct_if[sockfd] == 1)) {
+    if ((sockfd > 2) && (sockfd < NEXMON_FD_MAX(socket_to_type)) && (socket_to_type[sockfd] == SOCK_RAW) && (bound_to_correct_if[sockfd] == 1)) {
         struct inject_frame *buf_dup = (struct inject_frame *) malloc(len + sizeof(struct inject_frame));
 
         buf_dup->len = len + sizeof(struct inject_frame);

@@ -4,10 +4,12 @@
  *
  * Copyright (C) 2006-2007 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -26,6 +28,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "gcontenttype.h"
+#include "gcontenttypeprivate.h"
 #include "gthemedicon.h"
 #include "gicon.h"
 #include "glibintl.h"
@@ -59,7 +62,7 @@ get_registry_classes_key (const char    *subdir,
       if (key_type == REG_EXPAND_SZ)
         {
           wchar_t dummy[1];
-          int len = ExpandEnvironmentStringsW (wc_temp, dummy, 1);
+          DWORD len = ExpandEnvironmentStringsW (wc_temp, dummy, 1);
           if (len > 0)
             {
               wchar_t *wc_temp_expanded = g_new (wchar_t, len);
@@ -83,9 +86,24 @@ get_registry_classes_key (const char    *subdir,
   return value_utf8;
 }
 
+/*< private >*/
+void
+g_content_type_set_mime_dirs_impl (const gchar * const *dirs)
+{
+  /* noop on Windows */
+}
+
+/*< private >*/
+const gchar * const *
+g_content_type_get_mime_dirs_impl (void)
+{
+  const gchar * const *mime_dirs = { NULL };
+  return mime_dirs;
+}
+
 gboolean
-g_content_type_equals (const gchar *type1,
-                       const gchar *type2)
+g_content_type_equals_impl (const gchar *type1,
+                            const gchar *type2)
 {
   char *progid1, *progid2;
   gboolean res;
@@ -109,11 +127,12 @@ g_content_type_equals (const gchar *type1,
 }
 
 gboolean
-g_content_type_is_a (const gchar *type,
-                     const gchar *supertype)
+g_content_type_is_a_impl (const gchar *type,
+                          const gchar *supertype)
 {
   gboolean res;
-  char *value_utf8;
+  char *perceived_type;
+  char *perceived_supertype;
 
   g_return_val_if_fail (type != NULL, FALSE);
   g_return_val_if_fail (supertype != NULL, FALSE);
@@ -121,17 +140,37 @@ g_content_type_is_a (const gchar *type,
   if (g_content_type_equals (type, supertype))
     return TRUE;
 
-  res = FALSE;
-  value_utf8 = get_registry_classes_key (type, L"PerceivedType");
-  if (value_utf8 && strcmp (value_utf8, supertype) == 0)
-    res = TRUE;
-  g_free (value_utf8);
-  
+  perceived_type = get_registry_classes_key (type, L"PerceivedType");
+  perceived_supertype = get_registry_classes_key (supertype, L"PerceivedType");
+
+  res = perceived_type && perceived_supertype &&
+    strcmp (perceived_type, perceived_supertype) == 0;
+
+  g_free (perceived_type);
+  g_free (perceived_supertype);
+
   return res;
 }
 
 gboolean
-g_content_type_is_unknown (const gchar *type)
+g_content_type_is_mime_type_impl (const gchar *type,
+                                  const gchar *mime_type)
+{
+  gchar *content_type;
+  gboolean ret;
+
+  g_return_val_if_fail (type != NULL, FALSE);
+  g_return_val_if_fail (mime_type != NULL, FALSE);
+
+  content_type = g_content_type_from_mime_type (mime_type);
+  ret = g_content_type_is_a (type, content_type);
+  g_free (content_type);
+
+  return ret;
+}
+
+gboolean
+g_content_type_is_unknown_impl (const gchar *type)
 {
   g_return_val_if_fail (type != NULL, FALSE);
 
@@ -139,7 +178,7 @@ g_content_type_is_unknown (const gchar *type)
 }
 
 gchar *
-g_content_type_get_description (const gchar *type)
+g_content_type_get_description_impl (const gchar *type)
 {
   char *progid;
   char *description;
@@ -163,7 +202,7 @@ g_content_type_get_description (const gchar *type)
 }
 
 gchar *
-g_content_type_get_mime_type (const gchar *type)
+g_content_type_get_mime_type_impl (const gchar *type)
 {
   char *mime;
 
@@ -187,7 +226,7 @@ G_LOCK_DEFINE_STATIC (_type_icons);
 static GHashTable *_type_icons = NULL;
 
 GIcon *
-g_content_type_get_icon (const gchar *type)
+g_content_type_get_icon_impl (const gchar *type)
 {
   GIcon *themed_icon;
   char *name = NULL;
@@ -245,19 +284,19 @@ g_content_type_get_icon (const gchar *type)
 }
 
 GIcon *
-g_content_type_get_symbolic_icon (const gchar *type)
+g_content_type_get_symbolic_icon_impl (const gchar *type)
 {
   return g_content_type_get_icon (type);
 }
 
 gchar *
-g_content_type_get_generic_icon_name (const gchar *type)
+g_content_type_get_generic_icon_name_impl (const gchar *type)
 {
   return NULL;
 }
 
 gboolean
-g_content_type_can_be_executable (const gchar *type)
+g_content_type_can_be_executable_impl (const gchar *type)
 {
   g_return_val_if_fail (type != NULL, FALSE);
 
@@ -296,7 +335,7 @@ looks_like_text (const guchar *data,
 }
 
 gchar *
-g_content_type_from_mime_type (const gchar *mime_type)
+g_content_type_from_mime_type_impl (const gchar *mime_type)
 {
   char *key, *content_type;
 
@@ -310,18 +349,20 @@ g_content_type_from_mime_type (const gchar *mime_type)
   content_type = get_registry_classes_key (key, L"Extension");
   g_free (key);
 
-  return content_type;
+
+  return content_type ? g_steal_pointer (&content_type) : g_strdup ("*");
 }
 
 gchar *
-g_content_type_guess (const gchar  *filename,
-                      const guchar *data,
-                      gsize         data_size,
-                      gboolean     *result_uncertain)
+g_content_type_guess_impl (const gchar  *filename,
+                           const guchar *data,
+                           gsize         data_size,
+                           gboolean     *result_uncertain)
 {
   char *basename;
   char *type;
   char *dot;
+  size_t i;
 
   type = NULL;
 
@@ -334,11 +375,21 @@ g_content_type_guess (const gchar  *filename,
 
   if (filename)
     {
-      basename = g_path_get_basename (filename);
-      dot = strrchr (basename, '.');
-      if (dot)
-        type = g_strdup (dot);
-      g_free (basename);
+      i = strlen (filename);
+      if (i > 0 && filename[i - 1] == G_DIR_SEPARATOR)
+        {
+          type = g_strdup ("inode/directory");
+          if (result_uncertain)
+            *result_uncertain = TRUE;
+        }
+      else
+        {
+          basename = g_path_get_basename (filename);
+          dot = strrchr (basename, '.');
+          if (dot)
+            type = g_strdup (dot);
+          g_free (basename);
+        }
     }
 
   if (type)
@@ -351,7 +402,7 @@ g_content_type_guess (const gchar  *filename,
 }
 
 GList *
-g_content_types_get_registered (void)
+g_content_types_get_registered_impl (void)
 {
   DWORD index;
   wchar_t keyname[256];
@@ -387,7 +438,7 @@ g_content_types_get_registered (void)
 }
 
 gchar **
-g_content_type_guess_for_tree (GFile *root)
+g_content_type_guess_for_tree_impl (GFile *root)
 {
   /* FIXME: implement */
   return NULL;

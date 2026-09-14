@@ -1,0 +1,29 @@
+# Italian messages for hello-c++20.
+# Copyright (C) 2005, 2006 Yoyodyne, Inc. (msgids)
+# Copyright (C) 2024 Free Software Foundation, Inc.
+# This file is distributed under the same license as the gettext package.
+# Marco Colombo <m.colombo@ed.ac.uk>, 2005, 2006, 2015.
+# Michele Locati <michele@locati.it>, 2024, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: GNU hello-c++20 0.26-pre1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"PO-Revision-Date: 2025-07-08 13:59+0200\n"
+"Last-Translator: Michele Locati <michele@locati.it>\n"
+"Language-Team: Italian <tp@lists.linux.it>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
+
+#: hello.cc:48
+msgid "Hello, world!"
+msgstr "Ciao, mondo!"
+
+#: hello.cc:50 hello.cc:53
+#, c++-format
+msgid "This program is running as process number {:d}."
+msgstr "Questo programma è in esecuzione con numero di processo {:d}."

@@ -5,189 +5,108 @@
 # Jaroslav Fojtik <fojtik@cmp.felk.cvut.cz>, 1998.
 # Vladimir Michl <Vladimir.Michl@seznam.cz>, 1998.
 # Marek Černocký <marek@manet.cz>, 2011, 2013.
+# Petr Písař <petr.pisar@atlas.cz>, 2021, 2025.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: gettext-runtime 0.19.4.73\n"
-"Report-Msgid-Bugs-To: bug-gnu-gettext@gnu.org\n"
-"POT-Creation-Date: 2016-06-11 22:08+0900\n"
-"PO-Revision-Date: 2015-06-26 08:34+0200\n"
-"Last-Translator: Marek Černocký <marek@manet.cz>\n"
+"Project-Id-Version: gettext-runtime 0.26-pre1\n"
+"Report-Msgid-Bugs-To: bug-gettext@gnu.org\n"
+"POT-Creation-Date: 2025-06-28 23:48+0200\n"
+"PO-Revision-Date: 2025-07-05 14:19+02:00\n"
+"Last-Translator: Petr Pisar <petr.pisar@atlas.cz>\n"
 "Language-Team: Czech <translation-team-cs@lists.sourceforge.net>\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Bugs: Report translation errors to the Language-Team address.\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
-#: gnulib-lib/closeout.c:66
-msgid "write error"
-msgstr "chyba při zápisu"
-
-# lib/error.c:91
-#: gnulib-lib/error.c:191
-msgid "Unknown system error"
-msgstr "Neznámá systémová chyba"
-
-# lib/getopt.c:628
-#: gnulib-lib/getopt.c:575 gnulib-lib/getopt.c:604
-#, c-format
-msgid "%s: option '%s' is ambiguous; possibilities:"
-msgstr "%s: přepínač „%s“ není jednoznačný; možnosti:"
-
-# lib/getopt.c:813
-#: gnulib-lib/getopt.c:619
-#, c-format
-msgid "%s: option '%s' is ambiguous\n"
-msgstr "%s: přepínač „%s“ není jednoznačný\n"
-
-# lib/getopt.c:652
-#: gnulib-lib/getopt.c:654 gnulib-lib/getopt.c:658
-#, c-format
-msgid "%s: option '--%s' doesn't allow an argument\n"
-msgstr "%s: přepínač „--%s“ musí být zadán bez argumentu\n"
-
-# lib/getopt.c:657
-#: gnulib-lib/getopt.c:667 gnulib-lib/getopt.c:672
-#, c-format
-msgid "%s: option '%c%s' doesn't allow an argument\n"
-msgstr "%s: přepínač „%c%s“ musí být zadán bez argumentu\n"
-
-# lib/getopt.c:674 lib/getopt.c:847
-#: gnulib-lib/getopt.c:715 gnulib-lib/getopt.c:734
-#, c-format
-msgid "%s: option '--%s' requires an argument\n"
-msgstr "%s: přepínač „%s“ vyžaduje argument\n"
-
-# lib/getopt.c:703
-#: gnulib-lib/getopt.c:772 gnulib-lib/getopt.c:775
-#, c-format
-msgid "%s: unrecognized option '--%s'\n"
-msgstr "%s: neznámý přepínač „--%s“\n"
-
-# lib/getopt.c:707
-#: gnulib-lib/getopt.c:783 gnulib-lib/getopt.c:786
-#, c-format
-msgid "%s: unrecognized option '%c%s'\n"
-msgstr "%s: neznámý přepínač „%c%s“\n"
-
-# lib/getopt.c:736
-#: gnulib-lib/getopt.c:835 gnulib-lib/getopt.c:838
-#, c-format
-msgid "%s: invalid option -- '%c'\n"
-msgstr "%s: neznámý přepínač -- „%c“\n"
-
-# lib/getopt.c:766 lib/getopt.c:896
-#: gnulib-lib/getopt.c:891 gnulib-lib/getopt.c:908 gnulib-lib/getopt.c:1118
-#: gnulib-lib/getopt.c:1136
-#, c-format
-msgid "%s: option requires an argument -- '%c'\n"
-msgstr "%s: přepínač vyžaduje argument -- „%c“\n"
-
-# lib/getopt.c:813
-#: gnulib-lib/getopt.c:964 gnulib-lib/getopt.c:980
-#, c-format
-msgid "%s: option '-W %s' is ambiguous\n"
-msgstr "%s: přepínač „-W %s“ není jednoznačný\n"
-
-# lib/getopt.c:831
-#: gnulib-lib/getopt.c:1004 gnulib-lib/getopt.c:1022
-#, c-format
-msgid "%s: option '-W %s' doesn't allow an argument\n"
-msgstr "%s: přepínač „-W %s“ musí být zadán bez argumentu\n"
-
-# lib/getopt.c:674 lib/getopt.c:847
-#: gnulib-lib/getopt.c:1043 gnulib-lib/getopt.c:1061
-#, c-format
-msgid "%s: option '-W %s' requires an argument\n"
-msgstr "%s: přepínač „-W %s“ vyžaduje argument\n"
-
-# lib/xmalloc.c:82
-#: gnulib-lib/xmalloc.c:38
-#, c-format
-msgid "memory exhausted"
-msgstr "paměť vyčerpána"
-
-#: src/envsubst.c:112 src/gettext.c:134 src/ngettext.c:123
+#: src/envsubst.c:112 src/gettext.c:138 src/ngettext.c:128
+#: src/printf_gettext.c:111 src/printf_ngettext.c:116
 #, c-format, no-wrap
 msgid ""
 "Copyright (C) %s Free Software Foundation, Inc.\n"
-"License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n"
+"License GPLv3+: GNU GPL version 3 or later <%s>\n"
 "This is free software: you are free to change and redistribute it.\n"
 "There is NO WARRANTY, to the extent permitted by law.\n"
 msgstr ""
 "Copyright © %s Free Software Foundation, Inc.\n"
-"Licence GPLv3+: GNU GPL verze 3 nebo novější <http://gnu.org/licenses/gpl.html>\n"
+"Licence GPLv3+: GNU GPL verze 3 nebo novější <%s>\n"
 "Jedná se o svobodný software: můžete jej svobodně měnit a šířit.\n"
 "Nejsou poskytovány ŽÁDNÉ ZÁRUKY, mimo těch daných zákonem.\n"
 
 # src/gettextp.c:139 src/msgcmp.c:149 src/msgfmt.c:262 src/msgmerge.c:256
 # src/msgunfmt.c:180 src/xgettext.c:399
-#: src/envsubst.c:118 src/gettext.c:140 src/ngettext.c:129
+#: src/envsubst.c:118 src/gettext.c:144 src/ngettext.c:134
+#: src/printf_gettext.c:117 src/printf_ngettext.c:122
 #, c-format
 msgid "Written by %s.\n"
 msgstr "Napsal %s.\n"
 
 #. This is a proper name. See the gettext manual, section Names.
-#: src/envsubst.c:118
+#: src/envsubst.c:118 src/printf_gettext.c:117 src/printf_ngettext.c:122
 msgid "Bruno Haible"
 msgstr "Bruno Haible"
 
 # src/gettextp.c:164
-#: src/envsubst.c:127 src/gettext.c:158 src/ngettext.c:141
+#: src/envsubst.c:127 src/gettext.c:162 src/ngettext.c:146
 #, c-format
 msgid "too many arguments"
 msgstr "příliš mnoho argumentů"
 
 # src/gettextp.c:154
-#: src/envsubst.c:138 src/gettext.c:168 src/ngettext.c:153
+#: src/envsubst.c:138 src/gettext.c:172 src/ngettext.c:158
+#: src/printf_ngettext.c:133
 #, c-format
 msgid "missing arguments"
 msgstr "chybí argumenty"
 
 # src/gettextp.c:228 src/msgcmp.c:181 src/msgfmt.c:361 src/msgmerge.c:298
 # src/msgunfmt.c:210 src/xgettext.c:532
-#: src/envsubst.c:171 src/gettext.c:239 src/ngettext.c:207
+#: src/envsubst.c:176 src/gettext.c:249 src/ngettext.c:216
+#: src/printf_gettext.c:165 src/printf_ngettext.c:197
 #, c-format
 msgid "Try '%s --help' for more information.\n"
 msgstr "Více informací získáte příkazem „%s --help“.\n"
 
-#: src/envsubst.c:176
+#: src/envsubst.c:181
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION] [SHELL-FORMAT]\n"
 msgstr "Použití: %s [PŘEPÍNAČE] [FORMÁT_SHELLU]\n"
 
-#: src/envsubst.c:181
+#: src/envsubst.c:186
 #, c-format, no-wrap
 msgid "Substitutes the values of environment variables.\n"
 msgstr "Dosadí hodnoty proměnných prostředí.\n"
 
-#: src/envsubst.c:185
+#: src/envsubst.c:190
 #, c-format, no-wrap
 msgid "Operation mode:\n"
 msgstr "Operační režim:\n"
 
-#: src/envsubst.c:188
+#: src/envsubst.c:193
 #, c-format, no-wrap
 msgid "  -v, --variables             output the variables occurring in SHELL-FORMAT\n"
 msgstr "  -v, --variables             vypsat proměnné vyskytující se ve FORMÁTU_SHELLU\n"
 
-#: src/envsubst.c:192
+#: src/envsubst.c:197 src/gettext.c:280 src/ngettext.c:248
+#: src/printf_gettext.c:188 src/printf_ngettext.c:224
 #, c-format, no-wrap
 msgid "Informative output:\n"
 msgstr "Informační výstup:\n"
 
-#: src/envsubst.c:195
+#: src/envsubst.c:200
 #, c-format, no-wrap
 msgid "  -h, --help                  display this help and exit\n"
 msgstr "  -h, --help                  zobrazit tuto nápovědu a skončit\n"
 
-#: src/envsubst.c:198
+#: src/envsubst.c:203
 #, c-format, no-wrap
 msgid "  -V, --version               output version information and exit\n"
 msgstr "  -V, --version               vypsat informace o verzi a skončit\n"
 
-#: src/envsubst.c:202
+#: src/envsubst.c:207
 #, c-format, no-wrap
 msgid ""
 "In normal operation mode, standard input is copied to standard output,\n"
@@ -204,7 +123,7 @@ msgstr ""
 "v opačném případě jsou dosazovány všechny odkazy na proměnné prostředí,\n"
 "které se objeví na standardním vstupu.\n"
 
-#: src/envsubst.c:211
+#: src/envsubst.c:216
 #, c-format, no-wrap
 msgid ""
 "When --variables is used, standard input is ignored, and the output consists\n"
@@ -214,33 +133,40 @@ msgstr ""
 "sestává z proměnných prostředí, které jsou odkazovány z FORMÁTU-SHELLU, jedna\n"
 "proměnná co řádek.\n"
 
-# src/gettextp.c:255 src/msgcmp.c:200 src/msgfmt.c:386 src/msgmerge.c:331
-# src/msgunfmt.c:234 src/xgettext.c:582
-#. TRANSLATORS: The placeholder indicates the bug-reporting address
-#. for this package.  Please add _another line_ saying
+#. TRANSLATORS: The first placeholder is the web address of the Savannah
+#. project of this package.  The second placeholder is the bug-reporting
+#. email address for this package.  Please add _another line_ saying
 #. "Report translation bugs to <...>\n" with the address for translation
 #. bugs (typically your translation team's web or email address).
-#: src/envsubst.c:219 src/gettext.c:280 src/ngettext.c:245
-msgid "Report bugs to <bug-gnu-gettext@gnu.org>.\n"
-msgstr "Chyby hlaste na <bug-gnu-gettext@gnu.org>.\n"
+#: src/envsubst.c:225 src/gettext.c:304 src/ngettext.c:269
+#: src/printf_gettext.c:277 src/printf_ngettext.c:313
+#, c-format
+msgid ""
+"Report bugs in the bug tracker at <%s>\n"
+"or by email to <%s>.\n"
+msgstr ""
+"Chyby hlaste anglicky do systému pro sledování chyb na\n"
+"<%s> nebo e-mailem na\n"
+"<%s>. Chyby v překladu česky na\n"
+"<translation-team-cs@lists.sourceforge.net>.\n"
 
 # src/msgunfmt.c:266 src/msgunfmt.c:330 src/po-lex.c:185 src/xget-lex.c:254
-#: src/envsubst.c:442
+#: src/envsubst.c:453
 #, c-format
 msgid "error while reading \"%s\""
 msgstr "chyba při čtení „%s“"
 
 # src/xget-lex.c:150
-#: src/envsubst.c:443
+#: src/envsubst.c:453
 msgid "standard input"
 msgstr "standardní vstup"
 
 #. This is a proper name. See the gettext manual, section Names.
-#: src/gettext.c:140 src/ngettext.c:129
+#: src/gettext.c:144 src/ngettext.c:134
 msgid "Ulrich Drepper"
 msgstr "Ulrich Drepper"
 
-#: src/gettext.c:244
+#: src/gettext.c:254
 #, c-format, no-wrap
 msgid ""
 "Usage: %s [OPTION] [[TEXTDOMAIN] MSGID]\n"
@@ -249,35 +175,66 @@ msgstr ""
 "Použití: %s [PŘEPÍNAČE] [[TEXTOVÁ_DOMÉNA] ID_ZPRÁVY]\n"
 "nebo:    %s [PŘEPÍNAČE] -s [ID_ZPRÁVY]…\n"
 
-#: src/gettext.c:250
+#: src/gettext.c:260
 #, c-format, no-wrap
 msgid "Display native language translation of a textual message.\n"
 msgstr "Zobrazí v národním jazyce překlad textové zprávy.\n"
 
-# src/gettextp.c:233
-#: src/gettext.c:254
+# src/gettextp.c:164
+#: src/gettext.c:263 src/ngettext.c:230 src/printf_gettext.c:179
+#: src/printf_ngettext.c:211
+#, c-format
+msgid "Options and arguments:\n"
+msgstr "Přepínače a argumenty:\n"
+
+#: src/gettext.c:266
 #, c-format, no-wrap
+msgid "  -d, --domain=TEXTDOMAIN   retrieve translated messages from TEXTDOMAIN\n"
+msgstr "  -d, --domain=TEXTOVÁ_DOMÉNA  získá přeložené zprávy z TEXTOVÉ_DOMÉNY\n"
+
+#: src/gettext.c:268 src/ngettext.c:235
+#, c-format
+msgid "  -c, --context=CONTEXT     specify context for MSGID\n"
+msgstr "  -c, --context=KONTEXT        určuje kontext ID_ZPRÁVY\n"
+
+#: src/gettext.c:270 src/ngettext.c:237
+#, c-format
+msgid "  -e                        enable expansion of some escape sequences\n"
+msgstr "  -e                           umožní rozvoj některých posloupností escape\n"
+
+#: src/gettext.c:272
+#, c-format
+msgid "  -n                        suppress trailing newline\n"
+msgstr "  -n                           potlačí nové řádky na konci\n"
+
+#: src/gettext.c:274 src/ngettext.c:239
+#, c-format
+msgid "  -E                        (ignored for compatibility)\n"
+msgstr "  -E                           (ignorován kvůli kompatibilitě)\n"
+
+#: src/gettext.c:276
+#, c-format
 msgid ""
-"  -d, --domain=TEXTDOMAIN   retrieve translated messages from TEXTDOMAIN\n"
-"  -e                        enable expansion of some escape sequences\n"
-"  -E                        (ignored for compatibility)\n"
-"  -h, --help                display this help and exit\n"
-"  -n                        suppress trailing newline\n"
-"  -V, --version             display version information and exit\n"
 "  [TEXTDOMAIN] MSGID        retrieve translated message corresponding\n"
 "                            to MSGID from TEXTDOMAIN\n"
 msgstr ""
-"  -d, --domain=TEXTOVÁ_DOMÉNA   získat přeložené zprávy z TEXTOVÉ_DOMÉNY\n"
-"  -e                            umožnit rozvoj některých sekvencí escape\n"
-"  -E                            (kvůli kompatibilitě, ignorován)\n"
-"  -h, --help                    vypsat tuto nápovědu a skončit\n"
-"  -n                            potlačit nové řádky na konci\n"
-"  -V, --version                 vypsat informace o verzi a skončit\n"
-"  [TEXTOVÁ_DOMÉNA] ID_ZPRÁVY    vypsat přeloženou zprávu odpovídající\n"
-"                                ID_ZPRÁVY z TEXTOVÉ_DOMÉNY\n"
+"  [TEXTOVÁ_DOMÉNA] ID_ZPRÁVY   vypíše přeloženou zprávu odpovídající\n"
+"                               ID_ZPRÁVY z TEXTOVÉ_DOMÉNY\n"
+
+#: src/gettext.c:282 src/ngettext.c:250 src/printf_gettext.c:190
+#: src/printf_ngettext.c:226
+#, c-format
+msgid "  -h, --help                display this help and exit\n"
+msgstr "  -h, --help                   zobrazí tuto nápovědu a skončí\n"
+
+#: src/gettext.c:284 src/ngettext.c:252 src/printf_gettext.c:192
+#: src/printf_ngettext.c:228
+#, c-format
+msgid "  -V, --version             display version information and exit\n"
+msgstr "  -V, --version                vypíše údaje o verzi a skončí\n"
 
 # src/gettextp.c:245
-#: src/gettext.c:265
+#: src/gettext.c:288
 #, c-format, no-wrap
 msgid ""
 "If the TEXTDOMAIN parameter is not given, the domain is determined from the\n"
@@ -291,51 +248,49 @@ msgid ""
 msgstr ""
 "Není-li zadán argument TEXTOVÁ_DOMÉNA, je doména určena z proměnné\n"
 "prostředí TEXTDOMAIN. Jestliže katalog se zprávami není nalezen\n"
-"v předpokládané složce, hledán se ve složce, zadané v proměnné prostředí\n"
+"v obvyklém adresáři, hledá se v umístění určeném proměnnou prostředí\n"
 "TEXTDOMAINDIR.\n"
-"Je-li použit argument -s, chová se program podobně jako příkaz „echo“. Ale\n"
+"Je-li použit přepínač -s, chová se program podobně jako příkaz „echo“. Ale\n"
 "namísto toto, aby pouze zkopíroval svoje argumenty na standardní výstup,\n"
-"zprávy nalezené ve vybraném katalogu napřed přeloží. \n"
-"Standardní prohledávaná složka: %s\n"
+"zprávy nalezené ve vybraném katalogu napřed přeloží.\n"
+"Standardně prohledávaný adresář: %s\n"
 
-#: src/ngettext.c:212
+#: src/ngettext.c:221
 #, c-format, no-wrap
 msgid "Usage: %s [OPTION] [TEXTDOMAIN] MSGID MSGID-PLURAL COUNT\n"
 msgstr "Použití: %s [PŘEPÍNAČE] [TEXTOVÁ_DOMÉNA] ID_ZPRÁVY ID_PLURÁLU_ZPRÁVY POČET\n"
 
-#: src/ngettext.c:217
+#: src/ngettext.c:226
 #, c-format, no-wrap
 msgid ""
 "Display native language translation of a textual message whose grammatical\n"
 "form depends on a number.\n"
 msgstr "Zobrazí v národním jazyce překlad textové zprávy, která gramaticky závisí na počtu.\n"
 
-# src/gettextp.c:233
-#: src/ngettext.c:222
+#: src/ngettext.c:233
 #, c-format, no-wrap
-msgid ""
-"  -d, --domain=TEXTDOMAIN   retrieve translated message from TEXTDOMAIN\n"
-"  -e                        enable expansion of some escape sequences\n"
-"  -E                        (ignored for compatibility)\n"
-"  -h, --help                display this help and exit\n"
-"  -V, --version             display version information and exit\n"
-"  [TEXTDOMAIN]              retrieve translated message from TEXTDOMAIN\n"
-"  MSGID MSGID-PLURAL        translate MSGID (singular) / MSGID-PLURAL (plural)\n"
-"  COUNT                     choose singular/plural form based on this value\n"
+msgid "  -d, --domain=TEXTDOMAIN   retrieve translated message from TEXTDOMAIN\n"
+msgstr "  -d, --domain=TEXTOVÁ_DOMÉNA  získá přeloženou zprávu z TEXTOVÉ_DOMÉNY\n"
+
+#: src/ngettext.c:241
+#, c-format
+msgid "  [TEXTDOMAIN]              retrieve translated message from TEXTDOMAIN\n"
+msgstr "  [TEXTOVÁ_DOMÉNA]             získá přeloženou zprávu z TEXTOVÉ_DOMÉNY\n"
+
+#: src/ngettext.c:243
+#, c-format
+msgid "  MSGID MSGID-PLURAL        translate MSGID (singular) / MSGID-PLURAL (plural)\n"
 msgstr ""
-"  -d, --domain=TEXTOVÁ_DOMÉNA   získat přeložené zprávy z TEXTOVÉ_DOMÉNY\n"
-"  -e                            umožnit rozvoj některých sekvencí escape\n"
-"  -E                            (kvůli kompatibilitě, ignorován)\n"
-"  -h, --help                    vypsat tuto nápovědu a skončit\n"
-"  -n                            potlačit nové řádky na konci\n"
-"  -V, --version                 vypsat informace o verzi a skončit\n"
-"  [TEXTOVÁ_DOMÉNA]              překlady získat z TEXTOVÉ_DOMÉNY\n"
-"  ID_ZPRÁVY ID_PLURÁLU_ZPRÁVY   přeložit ID_ZPRÁVY (jednotné číslo) /\n"
-"                                ID_PLURÁLU_ZPRÁVY (množné číslo)\n"
-"  POČET                         zvolit jednotné/množné číslo podle této hodnoty\n"
+"  ID_ZPRÁVY ID_PLURÁLU_ZPRÁVY  přeloží ID_ZPRÁVY (jednotné číslo) /\n"
+"                               ID_PLURÁLU_ZPRÁVY (množné číslo)\n"
+
+#: src/ngettext.c:245 src/printf_ngettext.c:219
+#, c-format
+msgid "  COUNT                     choose singular/plural form based on this value\n"
+msgstr "  POČET                        zvolí jednotné/množné číslo podle této hodnoty\n"
 
 # src/gettextp.c:245
-#: src/ngettext.c:233
+#: src/ngettext.c:256
 #, c-format, no-wrap
 msgid ""
 "If the TEXTDOMAIN parameter is not given, the domain is determined from the\n"
@@ -346,6 +301,389 @@ msgid ""
 msgstr ""
 "Není-li zadán argument TEXTOVÁ_DOMÉNA, je doména určena z proměnné\n"
 "prostředí TEXTDOMAIN. Jestliže katalog se zprávami není nalezen\n"
-"v předpokládané složce, hledán se ve složce, zadané v proměnné prostředí\n"
+"v obvyklém adresáři, hledá se v umístění určeném proměnnou prostředí\n"
 "TEXTDOMAINDIR.\n"
-"Standardní prohledávaná složka: %s\n"
+"Standardně prohledávaný adresář: %s\n"
+
+#: src/printf-command.c:154
+#, c-format
+msgid "In the directive number %zu, the argument number 0 is not a positive integer."
+msgstr "V direktivě číslo %zu argument číslo 0 není kladné celé číslo."
+
+#: src/printf-command.c:237
+#, c-format
+msgid "The string ends in the middle of a directive."
+msgstr "Řetězec končí uprostřed direktivy,"
+
+#: src/printf-command.c:242
+#, c-format
+msgid "In the directive number %zu, the character '%c' is not a valid conversion specifier."
+msgstr "V direktivě číslo %zu znak „%c“ není platným formátovacím znakem."
+
+#: src/printf-command.c:246
+#, c-format
+msgid "The character that terminates the directive number %zu is not a valid conversion specifier."
+msgstr "Znak, který ukončuje direktivu číslo %zu není platným formátovacím znakem."
+
+#: src/printf-command.c:255 src/printf-command.c:259
+#, c-format
+msgid "In the directive number %zu, the flag '%c' is invalid for the conversion '%c'."
+msgstr "V directive číslo %zu příznak „%c“ nelze použít s formátovacím znakem „%c“."
+
+#: src/printf-command.c:278 src/printf-command.c:292
+#, c-format
+msgid "The string refers to arguments both through absolute argument numbers and through unnumbered argument specifications."
+msgstr "Řetězec odkazuje na argumenty jak absolutním pořadím argumentů, tak nečíslovanými určeními argumentů."
+
+#: src/printf-command.c:394
+#, c-format
+msgid "The string ends in the middle of an escape sequence."
+msgstr "Řetězec končí uprostřed escapovací posloupnosti."
+
+#: src/printf-command.c:402
+#, c-format
+msgid "The escape sequence '%c%c' is unsupported (not in POSIX)."
+msgstr "Escapovací posloupnost „%c%c“ není (v POSIXU) podporována."
+
+#: src/printf-command.c:403
+#, c-format
+msgid "The escape sequence '%c%c' is invalid."
+msgstr "Escapovací posloupnost „%c%c“ není platná."
+
+#: src/printf-command.c:407
+#, c-format
+msgid "This escape sequence is invalid."
+msgstr "Tato escapovací posloupnost je neplatná."
+
+#: src/printf-command.c:455 src/printf-command.c:501 src/printf-command.c:568
+#: src/printf-command.c:638 src/printf-command.c:691
+#, c-format
+msgid "write error"
+msgstr "chyba při zápisu"
+
+#: src/printf-command.c:529 src/printf-command.c:556 src/printf-command.c:597
+#: src/printf-command.c:626 src/printf-command.c:679
+#, c-format
+msgid "%s: expected a numeric value"
+msgstr "%s: očekávána číselná hodnota"
+
+#: src/printf-command.c:550 src/printf-command.c:620 src/printf-command.c:673
+#, c-format
+msgid "%s: value not completely converted"
+msgstr "%s: hodnota nebyla zcela převedena"
+
+# TODO: pluralize
+#: src/printf-command.c:717
+#, c-format
+msgid "The translated format string consumes %zu arguments, whereas the original format string consumes only %zu arguments."
+msgstr "Přeložený formátovací řetězec spotřebovává %zu argumentů, ale původní formátovací řetězec pouze %zu."
+
+#: src/printf-command.c:728
+#, c-format
+msgid "warning: ignoring excess arguments, starting with %s"
+msgstr "pozor: přebytečné argumenty se ignorují, počínaje %s"
+
+# src/gettextp.c:154
+#: src/printf_gettext.c:128
+#, c-format
+msgid "missing format string"
+msgstr "chybí formátovací řetězec"
+
+#: src/printf_gettext.c:170
+#, c-format, no-wrap
+msgid "Usage: %s [OPTION] FORMAT [ARGUMENT]...\n"
+msgstr "Použití: %s [PŘEPÍNAČ] FORMÁT [ARGUMENT]…\n"
+
+#: src/printf_gettext.c:175
+#, c-format, no-wrap
+msgid ""
+"Produces formatted output, applying the native language translation of FORMAT\n"
+"to the ARGUMENTs.\n"
+msgstr ""
+"Vrací formátovaný výstup za použití FORMÁTU přeloženého do přirozeného\n"
+"jazyka na ARGUMENTY.\n"
+
+#: src/printf_gettext.c:181 src/printf_ngettext.c:213
+#, c-format
+msgid "  -c, --context=CONTEXT     specify context for FORMAT\n"
+msgstr "  -c, --context=KONTEXT        určuje kontext pro FORMÁT\n"
+
+#: src/printf_gettext.c:183
+#, c-format
+msgid "  FORMAT                    format string\n"
+msgstr "  FORMÁT                       formátovací řetězec\n"
+
+#: src/printf_gettext.c:185 src/printf_ngettext.c:221
+#, c-format
+msgid "  ARGUMENT                  string or numeric argument\n"
+msgstr "  ARGUMENT                     řetězcový nebo číselný argument\n"
+
+#: src/printf_gettext.c:196
+#, c-format, no-wrap
+msgid ""
+"The format string consists of\n"
+"  - plain text,\n"
+"  - directives, that start with '%c',\n"
+"  - escape sequences, that start with a backslash.\n"
+msgstr ""
+"Formátovací řetězec se skládá z\n"
+"  - obyčejného textu,\n"
+"  - direktiv, které začínají znakem „%c“,\n"
+"  - escapovacích posloupností, které začínají zpětným lomítkem.\n"
+
+#: src/printf_gettext.c:204 src/printf_ngettext.c:240
+#, c-format, no-wrap
+msgid ""
+"A directive that consumes an argument\n"
+"  - starts with '%s' or '%s' where %s is a positive integer,\n"
+"  - is optionally followed by any of the characters '%c', '%c', '%c', '%c', '%c',\n"
+"    each of which acts as a flag,\n"
+"  - is optionally followed by a width specification (a nonnegative integer),\n"
+"  - is optionally followed by '%c' and a precision specification (an optional\n"
+"    nonnegative integer),\n"
+"  - is finished by a specifier\n"
+"      - '%c', that prints a character,\n"
+"      - '%c', that prints a string,\n"
+"      - '%c', '%c', that print an integer,\n"
+"      - '%c', '%c', '%c', '%c', that print an unsigned (nonnegative) integer,\n"
+"      - '%c', '%c', that print a floating-point number in scientific notation,\n"
+"      - '%c', '%c', that print a floating-point number without an exponent,\n"
+"      - '%c', '%c', that print a floating-point number in general notation,\n"
+"      - '%c', '%c', that print a floating-point number in hexadecimal notation.\n"
+"Additionally there is the directive '%s', that prints a single '%c'.\n"
+msgstr ""
+"Direktiva, která spotřebovává argument\n"
+"  - začíná s „%s“ nebo „%s“, kde %s je kladné celé číslo,\n"
+"  - je volitelně následována některým ze znaků „%c“, „%c“, „%c“, „%c“ a „%c“,\n"
+"    každý se chová jako příznak,\n"
+"  - je volitelně následována určením šířky (nezáporné celé číslo),\n"
+"  - je volitelně následována „%c“ a určením přesnosti (volitelné nezáporné\n"
+"    číslo),\n"
+"  - je zakončena formátovacím znakem\n"
+"      - „%c“, který tiskne znak,\n"
+"      - „%c“, který tiskne řetězec,\n"
+"      - „%c“, „%c“, který tiskne celé číslo,\n"
+"      - „%c“, „%c“, „%c“, „%c“, které tisknou bezznaménkové (nezáporné)\n"
+"        celé číslo,\n"
+"      - „%c“, „%c“, které tisknou číslo s pohyblivou desetinou čárkou ve\n"
+"        vědeckém tvaru,\n"
+"      - „%c“, „%c“, které tisknou číslo s pohyblivou desetinou čárkou bez\n"
+"        exponentu,\n"
+"      - „%c“, „%c“, které tisknou číslo s pohyblivou desetinou čárkou\n"
+"        v obecném tvaru,\n"
+"      - „%c“, „%c“, které tisknou číslo s pohyblivou desetinou čárkou\n"
+"        v šestnáctkové soustavě.\n"
+"K tomu existuje direktiva „%s“, která tiskne jedno „%c“.\n"
+
+#: src/printf_gettext.c:233 src/printf_ngettext.c:269
+#, c-format, no-wrap
+msgid ""
+"If a directive specifies the argument by its number ('%s' notation),\n"
+"all directives that consume an argument must do so.\n"
+msgstr ""
+"Pokud direktiva určuje argument pomocí čísla (zápis „%s“,\n"
+"musí tak činit všechny direktivy, které spotřebovávají argument.\n"
+
+#. TRANSLATORS: Most of the placeholders expand to 2 characters.
+#. The last placeholder expands to 4 characters.
+#: src/printf_gettext.c:240 src/printf_ngettext.c:276
+#, c-format
+msgid ""
+"The escape sequences are:\n"
+"\n"
+"  %s      backslash\n"
+"  %s      alert (BEL)\n"
+"  %s      backspace (BS)\n"
+"  %s      form feed (FF)\n"
+"  %s      new line (LF)\n"
+"  %s      carriage return (CR)\n"
+"  %s      horizontal tab (HT)\n"
+"  %s      vertical tab (VT)\n"
+"  %s    octal number with 1 to 3 octal digits\n"
+msgstr ""
+"Escapovací posloupnosti jsou:\n"
+"\n"
+"  %s      zpětné lomítko\n"
+"  %s      zvonek (BEL)\n"
+"  %s      backspace (BS)\n"
+"  %s      posunutí formuláře (FF)\n"
+"  %s      nový řádek (LF)\n"
+"  %s      návrat vozíku (CR)\n"
+"  %s      vodorovný tabulátor (HT)\n"
+"  %s      svislý tabulátor (VT)\n"
+"  %s      osmičkové číslo s 1 až 3 osmičkovými číslicemi\n"
+
+#: src/printf_gettext.c:255 src/printf_ngettext.c:291
+#, c-format
+msgid "Environment variables:\n"
+msgstr "Proměnné prostředí:\n"
+
+#: src/printf_gettext.c:259 src/printf_ngettext.c:295
+#, c-format, no-wrap
+msgid ""
+"The translation of the format string is looked up in the translation domain\n"
+"given by the environment variable %s.\n"
+msgstr ""
+"Překlad formátovacího řetězce se hledá v překladové doméně určené proměnnou\n"
+"prostředí %s.\n"
+
+#: src/printf_gettext.c:264 src/printf_ngettext.c:300
+#, c-format, no-wrap
+msgid ""
+"It is looked up in the catalogs directory given by the environment variable\n"
+"%s or, if not present, in the default catalogs directory.\n"
+"This binary is configured to use the default catalogs directory:\n"
+"%s\n"
+msgstr ""
+"Vyhledává se v adresáři s katalogy určeném proměnnou prostředí\n"
+"%s nebo, není-li přítomna, ve výchozím adresáři s katalogy.\n"
+"Tento program má nastaven jako výchozí adresář s katalogy:\n"
+"%s\n"
+
+#: src/printf_ngettext.c:202
+#, c-format, no-wrap
+msgid "Usage: %s [OPTION] FORMAT FORMAT-PLURAL COUNT [ARGUMENT]...\n"
+msgstr "Použití: %s [PŘEPÍNAČ] FORMÁT FORMÁT_PLURÁLU POČET [ARGUMENT]…\n"
+
+#: src/printf_ngettext.c:207
+#, c-format, no-wrap
+msgid ""
+"Produces formatted output, applying the native language translation of FORMAT\n"
+"and FORMAT-PLURAL, depending on COUNT, to the ARGUMENTs.\n"
+msgstr ""
+"Dává formátovaný výstup za použití FORMÁTU přeloženého do přirozeného jazyka\n"
+"nebo FORMÁTU_PLURÁLU v závislosti na POČTU na ARGUMENTY.\n"
+
+#: src/printf_ngettext.c:215
+#, c-format
+msgid "  FORMAT                    English singular form of format string\n"
+msgstr "  FORMÁT                       formátovací řetězec pro anglické jednotné číslo\n"
+
+#: src/printf_ngettext.c:217
+#, c-format
+msgid "  FORMAT-PLURAL             English plural form of format string\n"
+msgstr "  FORMÁT_PLURÁLU               formátovací řetězec pro anglické množné číslo\n"
+
+#: src/printf_ngettext.c:232
+#, c-format, no-wrap
+msgid ""
+"Each format string consists of\n"
+"  - plain text,\n"
+"  - directives, that start with '%c',\n"
+"  - escape sequences, that start with a backslash.\n"
+msgstr ""
+"Každý formátovací řetězec se skládá z\n"
+"  - obyčejného textu,\n"
+"  - direktiv, které začínají znakem „%c“,\n"
+"  - escapovacích posloupností, které začínají zpětným lomítkem.\n"
+
+# lib/error.c:91
+#~ msgid "Unknown system error"
+#~ msgstr "Neznámá systémová chyba"
+
+# lib/getopt.c:813
+#, c-format
+#~ msgid "%s: option '%s%s' is ambiguous\n"
+#~ msgstr "%s: přepínač „%s%s“ není jednoznačný\n"
+
+# lib/getopt.c:628
+#, c-format
+#~ msgid "%s: option '%s%s' is ambiguous; possibilities:"
+#~ msgstr "%s: přepínač „%s%s“ není jednoznačný; možnosti:"
+
+# lib/getopt.c:707
+#, c-format
+#~ msgid "%s: unrecognized option '%s%s'\n"
+#~ msgstr "%s: neznámý přepínač „%s%s“\n"
+
+# lib/getopt.c:657
+#, c-format
+#~ msgid "%s: option '%s%s' doesn't allow an argument\n"
+#~ msgstr "%s: přepínač „%s%s“ nepřipouští argument\n"
+
+# lib/getopt.c:674 lib/getopt.c:847
+#, c-format
+#~ msgid "%s: option '%s%s' requires an argument\n"
+#~ msgstr "%s: přepínač „%s%s“ vyžaduje argument\n"
+
+# lib/getopt.c:736
+#, c-format
+#~ msgid "%s: invalid option -- '%c'\n"
+#~ msgstr "%s: neznámý přepínač – „%c“\n"
+
+# lib/getopt.c:766 lib/getopt.c:896
+#, c-format
+#~ msgid "%s: option requires an argument -- '%c'\n"
+#~ msgstr "%s: přepínač vyžaduje argument – „%c“\n"
+
+# lib/xmalloc.c:82
+#, c-format
+#~ msgid "memory exhausted"
+#~ msgstr "paměť vyčerpána"
+
+# lib/getopt.c:652
+#~ msgid "%s: option '--%s' doesn't allow an argument\n"
+#~ msgstr "%s: přepínač „--%s“ musí být zadán bez argumentu\n"
+
+# lib/getopt.c:703
+#~ msgid "%s: unrecognized option '--%s'\n"
+#~ msgstr "%s: neznámý přepínač „--%s“\n"
+
+# lib/getopt.c:813
+#~ msgid "%s: option '-W %s' is ambiguous\n"
+#~ msgstr "%s: přepínač „-W %s“ není jednoznačný\n"
+
+# lib/getopt.c:831
+#~ msgid "%s: option '-W %s' doesn't allow an argument\n"
+#~ msgstr "%s: přepínač „-W %s“ musí být zadán bez argumentu\n"
+
+# lib/getopt.c:674 lib/getopt.c:847
+#~ msgid "%s: option '-W %s' requires an argument\n"
+#~ msgstr "%s: přepínač „-W %s“ vyžaduje argument\n"
+
+# src/gettextp.c:255 src/msgcmp.c:200 src/msgfmt.c:386 src/msgmerge.c:331
+# src/msgunfmt.c:234 src/xgettext.c:582
+#~ msgid "Report bugs to <bug-gnu-gettext@gnu.org>.\n"
+#~ msgstr "Chyby hlaste na <bug-gnu-gettext@gnu.org>.\n"
+
+# src/gettextp.c:233
+#~ msgid ""
+#~ "  -d, --domain=TEXTDOMAIN   retrieve translated messages from TEXTDOMAIN\n"
+#~ "  -e                        enable expansion of some escape sequences\n"
+#~ "  -E                        (ignored for compatibility)\n"
+#~ "  -h, --help                display this help and exit\n"
+#~ "  -n                        suppress trailing newline\n"
+#~ "  -V, --version             display version information and exit\n"
+#~ "  [TEXTDOMAIN] MSGID        retrieve translated message corresponding\n"
+#~ "                            to MSGID from TEXTDOMAIN\n"
+#~ msgstr ""
+#~ "  -d, --domain=TEXTOVÁ_DOMÉNA   získat přeložené zprávy z TEXTOVÉ_DOMÉNY\n"
+#~ "  -e                            umožnit rozvoj některých sekvencí escape\n"
+#~ "  -E                            (kvůli kompatibilitě, ignorován)\n"
+#~ "  -h, --help                    vypsat tuto nápovědu a skončit\n"
+#~ "  -n                            potlačit nové řádky na konci\n"
+#~ "  -V, --version                 vypsat informace o verzi a skončit\n"
+#~ "  [TEXTOVÁ_DOMÉNA] ID_ZPRÁVY    vypsat přeloženou zprávu odpovídající\n"
+#~ "                                ID_ZPRÁVY z TEXTOVÉ_DOMÉNY\n"
+
+# src/gettextp.c:233
+#~ msgid ""
+#~ "  -d, --domain=TEXTDOMAIN   retrieve translated message from TEXTDOMAIN\n"
+#~ "  -e                        enable expansion of some escape sequences\n"
+#~ "  -E                        (ignored for compatibility)\n"
+#~ "  -h, --help                display this help and exit\n"
+#~ "  -V, --version             display version information and exit\n"
+#~ "  [TEXTDOMAIN]              retrieve translated message from TEXTDOMAIN\n"
+#~ "  MSGID MSGID-PLURAL        translate MSGID (singular) / MSGID-PLURAL (plural)\n"
+#~ "  COUNT                     choose singular/plural form based on this value\n"
+#~ msgstr ""
+#~ "  -d, --domain=TEXTOVÁ_DOMÉNA   získat přeložené zprávy z TEXTOVÉ_DOMÉNY\n"
+#~ "  -e                            umožnit rozvoj některých sekvencí escape\n"
+#~ "  -E                            (kvůli kompatibilitě, ignorován)\n"
+#~ "  -h, --help                    vypsat tuto nápovědu a skončit\n"
+#~ "  -n                            potlačit nové řádky na konci\n"
+#~ "  -V, --version                 vypsat informace o verzi a skončit\n"
+#~ "  [TEXTOVÁ_DOMÉNA]              překlady získat z TEXTOVÉ_DOMÉNY\n"
+#~ "  ID_ZPRÁVY ID_PLURÁLU_ZPRÁVY   přeložit ID_ZPRÁVY (jednotné číslo) /\n"
+#~ "                                ID_PLURÁLU_ZPRÁVY (množné číslo)\n"
+#~ "  POČET                         zvolit jednotné/množné číslo podle této hodnoty\n"

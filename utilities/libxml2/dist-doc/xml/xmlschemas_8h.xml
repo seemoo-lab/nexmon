@@ -1,0 +1,1945 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="xmlschemas_8h" kind="file" language="C++">
+    <compoundname>xmlschemas.h</compoundname>
+    <includes refid="xmlversion_8h" local="no">libxml/xmlversion.h</includes>
+    <includes local="no">stdio.h</includes>
+    <includes refid="encoding_8h" local="no">libxml/encoding.h</includes>
+    <includes refid="parser_8h" local="no">libxml/parser.h</includes>
+    <includes refid="tree_8h" local="no">libxml/tree.h</includes>
+    <includes refid="xmlerror_8h" local="no">libxml/xmlerror.h</includes>
+    <includedby refid="xmlreader_8c" local="no">/builds/GNOME/libxml2/xmlreader.c</includedby>
+    <includedby refid="xmlschemas_8c" local="no">/builds/GNOME/libxml2/xmlschemas.c</includedby>
+    <includedby refid="xmlschemastypes_8c" local="no">/builds/GNOME/libxml2/xmlschemastypes.c</includedby>
+    <includedby refid="xmlreader_8h" local="no">xmlreader.h</includedby>
+    <includedby refid="xmlschemastypes_8h" local="no">xmlschemastypes.h</includedby>
+    <incdepgraph>
+      <node id="22">
+        <label>libxml/SAX2.h</label>
+        <link refid="SAX2_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+      </node>
+      <node id="14">
+        <label>libxml/dict.h</label>
+        <link refid="dict_8h"/>
+        <childnode refid="15" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="5">
+        <label>libxml/encoding.h</label>
+        <link refid="encoding_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="20">
+        <label>libxml/entities.h</label>
+        <link refid="entities_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="16">
+        <label>libxml/hash.h</label>
+        <link refid="hash_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="18">
+        <label>libxml/list.h</label>
+        <link refid="list_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="7">
+        <label>libxml/parser.h</label>
+        <link refid="parser_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="14" relation="include">
+        </childnode>
+        <childnode refid="16" relation="include">
+        </childnode>
+        <childnode refid="17" relation="include">
+        </childnode>
+        <childnode refid="20" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="21" relation="include">
+        </childnode>
+        <childnode refid="22" relation="include">
+        </childnode>
+        <childnode refid="23" relation="include">
+        </childnode>
+      </node>
+      <node id="23">
+        <label>libxml/threads.h</label>
+        <link refid="threads_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="8">
+        <label>libxml/tree.h</label>
+        <link refid="tree_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="9" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+        <childnode refid="12" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="17">
+        <label>libxml/valid.h</label>
+        <link refid="valid_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="18" relation="include">
+        </childnode>
+        <childnode refid="19" relation="include">
+        </childnode>
+        <childnode refid="13" relation="include">
+        </childnode>
+      </node>
+      <node id="21">
+        <label>libxml/xmlIO.h</label>
+        <link refid="xmlIO_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+      </node>
+      <node id="19">
+        <label>libxml/xmlautomata.h</label>
+        <link refid="xmlautomata_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="6">
+        <label>libxml/xmlerror.h</label>
+        <link refid="xmlerror_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="12">
+        <label>libxml/xmlmemory.h</label>
+        <link refid="xmlmemory_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="13">
+        <label>libxml/xmlregexp.h</label>
+        <link refid="xmlregexp_8h"/>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="10" relation="include">
+        </childnode>
+      </node>
+      <node id="1">
+        <label>xmlschemas.h</label>
+        <link refid="xmlschemas_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="4" relation="include">
+        </childnode>
+        <childnode refid="5" relation="include">
+        </childnode>
+        <childnode refid="7" relation="include">
+        </childnode>
+        <childnode refid="8" relation="include">
+        </childnode>
+        <childnode refid="6" relation="include">
+        </childnode>
+      </node>
+      <node id="10">
+        <label>libxml/xmlstring.h</label>
+        <link refid="xmlstring_8h"/>
+        <childnode refid="11" relation="include">
+        </childnode>
+        <childnode refid="2" relation="include">
+        </childnode>
+      </node>
+      <node id="2">
+        <label>libxml/xmlversion.h</label>
+        <link refid="xmlversion_8h"/>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>libxml/xmlexports.h</label>
+      </node>
+      <node id="9">
+        <label>limits.h</label>
+      </node>
+      <node id="11">
+        <label>stdarg.h</label>
+      </node>
+      <node id="15">
+        <label>stddef.h</label>
+      </node>
+      <node id="4">
+        <label>stdio.h</label>
+      </node>
+    </incdepgraph>
+    <invincdepgraph>
+      <node id="2">
+        <label>xmlreader.h</label>
+        <link refid="xmlreader_8h"/>
+      </node>
+      <node id="1">
+        <label>xmlschemas.h</label>
+        <link refid="xmlschemas_8h"/>
+        <childnode refid="2" relation="include">
+        </childnode>
+        <childnode refid="3" relation="include">
+        </childnode>
+      </node>
+      <node id="3">
+        <label>xmlschemastypes.h</label>
+        <link refid="xmlschemastypes_8h"/>
+      </node>
+    </invincdepgraph>
+    <sectiondef kind="enum">
+      <memberdef kind="enum" id="xmlschemas_8h_1a291984d559872552df0b088284cace73" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlSchemaValidError</name>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73ac084db22eeac8438135385963ac97ef6" prot="public">
+          <name>XML_SCHEMAS_ERR_OK</name>
+          <initializer>= 0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a5387cd3999146b77cbbb5fbcc7f05a94" prot="public">
+          <name>XML_SCHEMAS_ERR_NOROOT</name>
+          <initializer>= 1</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73aa01b2685a7621aae9baa1b206ca004b3" prot="public">
+          <name>XML_SCHEMAS_ERR_UNDECLAREDELEM</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a7e52ae6962104ff462252ec69f433f3e" prot="public">
+          <name>XML_SCHEMAS_ERR_NOTTOPLEVEL</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a44b70d7576b90ee7d7039d1e37a435d2" prot="public">
+          <name>XML_SCHEMAS_ERR_MISSING</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a8e4ab40a33827af7533d81ed58511799" prot="public">
+          <name>XML_SCHEMAS_ERR_WRONGELEM</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a8c0f9b1f9feb842df3f13b5b1495abf4" prot="public">
+          <name>XML_SCHEMAS_ERR_NOTYPE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a84df52c9e3a39d3b735f201c79111d08" prot="public">
+          <name>XML_SCHEMAS_ERR_NOROLLBACK</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73af0238ecb962cdbffd4625bcfc7e6e804" prot="public">
+          <name>XML_SCHEMAS_ERR_ISABSTRACT</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a7273c8bdebc7456ed593200df0d6d314" prot="public">
+          <name>XML_SCHEMAS_ERR_NOTEMPTY</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a18f5082853d1029a00f9b570cfe20c90" prot="public">
+          <name>XML_SCHEMAS_ERR_ELEMCONT</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a7f4c10adeebb883b1032a2d1981b0d3c" prot="public">
+          <name>XML_SCHEMAS_ERR_HAVEDEFAULT</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a5c0268d8f111e527f7644c0bc5976a6a" prot="public">
+          <name>XML_SCHEMAS_ERR_NOTNILLABLE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73af7b5e46af0bd1bffd6b17fdb48ff327c" prot="public">
+          <name>XML_SCHEMAS_ERR_EXTRACONTENT</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a37954392e08b2d83922ce8c8f32a9ea0" prot="public">
+          <name>XML_SCHEMAS_ERR_INVALIDATTR</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a2a5a0a636ad5f620c1910febe3443b75" prot="public">
+          <name>XML_SCHEMAS_ERR_INVALIDELEM</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a0e0a182719dcc61254d017bc500a9327" prot="public">
+          <name>XML_SCHEMAS_ERR_NOTDETERMINIST</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73afefd2fb3b4f77c38d42ae80e3684ca01" prot="public">
+          <name>XML_SCHEMAS_ERR_CONSTRUCT</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a8ddb23feea6f550938d0aedb7a3a56a5" prot="public">
+          <name>XML_SCHEMAS_ERR_INTERNAL</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73ad5c12e47758bcb68a16429699e0ac8c2" prot="public">
+          <name>XML_SCHEMAS_ERR_NOTSIMPLE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73ab6d4da7fcde1cffae4b7167332937d6f" prot="public">
+          <name>XML_SCHEMAS_ERR_ATTRUNKNOWN</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73aed65302e8c2e69b534ce8ba85bf5b1e7" prot="public">
+          <name>XML_SCHEMAS_ERR_ATTRINVALID</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73ace42a3c03a6de77d123cf1ed0399f3c2" prot="public">
+          <name>XML_SCHEMAS_ERR_VALUE</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a6efa88c391535906d6a322b743cfb6a6" prot="public">
+          <name>XML_SCHEMAS_ERR_FACET</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a9ced8f783a3337d32831f50606edf05e" prot="public">
+          <name>XML_SCHEMAS_ERR_</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <enumvalue id="xmlschemas_8h_1a291984d559872552df0b088284cace73a9e79b0636ebe4366e8d27dd4205b5491" prot="public">
+          <name>XML_SCHEMAS_ERR_XXX</name>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>This error codes are obsolete; not used any more. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="35" column="1" bodyfile="xmlschemas.h" bodystart="35" bodyend="62"/>
+      </memberdef>
+      <memberdef kind="enum" id="xmlschemas_8h_1a8e16b29a07b1cd459f50505926c8edc8" prot="public" static="no" strong="no">
+        <type></type>
+        <name>xmlSchemaValidOption</name>
+        <enumvalue id="xmlschemas_8h_1a8e16b29a07b1cd459f50505926c8edc8a63339607e17804dc3adda296d3f9d688" prot="public">
+          <name>XML_SCHEMA_VAL_VC_I_CREATE</name>
+          <initializer>= 1&lt;&lt;0</initializer>
+          <briefdescription>
+          </briefdescription>
+          <detaileddescription>
+          </detaileddescription>
+        </enumvalue>
+        <briefdescription>
+<para>This is the set of XML Schema validation options. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="72" column="1" bodyfile="xmlschemas.h" bodystart="72" bodyend="77"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="typedef">
+      <memberdef kind="typedef" id="xmlschemas_8h_1a5e3b86363eea6a0903665c7394b44d5d" prot="public" static="no">
+        <type>struct <ref refid="struct__xmlSchema" kindref="compound">_xmlSchema</ref></type>
+        <definition>typedef struct _xmlSchema xmlSchema</definition>
+        <argsstring></argsstring>
+        <name>xmlSchema</name>
+        <briefdescription>
+<para>XML schema. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="87" column="25" bodyfile="xmlschemas.h" bodystart="87" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlschemas_8h_1a79b482e2aa543daaa4aa97975de6fbd0" prot="public" static="no">
+        <type><ref refid="xmlschemas_8h_1a5e3b86363eea6a0903665c7394b44d5d" kindref="member">xmlSchema</ref> *</type>
+        <definition>typedef xmlSchema* xmlSchemaPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="88" column="19" bodyfile="xmlschemas.h" bodystart="88" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlschemas_8h_1a7c0ef1385252b0c2263a6ccd7c4e50c7" prot="public" static="no">
+        <type>void(*</type>
+        <definition>typedef void(* xmlSchemaValidityErrorFunc) (void *ctx, const char *msg,...)</definition>
+        <argsstring>)(void *ctx, const char *msg,...)</argsstring>
+        <name>xmlSchemaValidityErrorFunc</name>
+        <briefdescription>
+<para>Signature of an error callback from an XSD validation. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the message </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra arguments </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="97" column="9" bodyfile="xmlschemas.h" bodystart="98" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlschemas_8h_1aa53ac51b0d2b3a1b2d2ce9f2c6667f46" prot="public" static="no">
+        <type>void(*</type>
+        <definition>typedef void(* xmlSchemaValidityWarningFunc) (void *ctx, const char *msg,...)</definition>
+        <argsstring>)(void *ctx, const char *msg,...)</argsstring>
+        <name>xmlSchemaValidityWarningFunc</name>
+        <briefdescription>
+<para>Signature of a warning callback from an XSD validation. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>msg</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the message </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>...</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>extra arguments </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="107" column="9" bodyfile="xmlschemas.h" bodystart="108" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlschemas_8h_1aba7ee46aa7d7b70214fc87532530607f" prot="public" static="no">
+        <type>struct _xmlSchemaParserCtxt</type>
+        <definition>typedef struct _xmlSchemaParserCtxt xmlSchemaParserCtxt</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaParserCtxt</name>
+        <briefdescription>
+<para>Schema parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="111" column="35" bodyfile="xmlschemas.h" bodystart="111" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlschemas_8h_1a030e7eed786bace695c5fc9c3b95ebb4" prot="public" static="no">
+        <type><ref refid="xmlschemas_8h_1aba7ee46aa7d7b70214fc87532530607f" kindref="member">xmlSchemaParserCtxt</ref> *</type>
+        <definition>typedef xmlSchemaParserCtxt* xmlSchemaParserCtxtPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaParserCtxtPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="112" column="29" bodyfile="xmlschemas.h" bodystart="112" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" prot="public" static="no">
+        <type>struct _xmlSchemaValidCtxt</type>
+        <definition>typedef struct _xmlSchemaValidCtxt xmlSchemaValidCtxt</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaValidCtxt</name>
+        <briefdescription>
+<para>Schema validation context. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="115" column="34" bodyfile="xmlschemas.h" bodystart="115" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlschemas_8h_1aed2fbff31d09740634289a07a2d257cf" prot="public" static="no">
+        <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+        <definition>typedef xmlSchemaValidCtxt* xmlSchemaValidCtxtPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaValidCtxtPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="116" column="28" bodyfile="xmlschemas.h" bodystart="116" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlschemas_8h_1adbf8193be2eaf285a5ab8da50749886c" prot="public" static="no">
+        <type>int(*</type>
+        <definition>typedef int(* xmlSchemaValidityLocatorFunc) (void *ctx, const char **file, unsigned long *line)</definition>
+        <argsstring>)(void *ctx, const char **file, unsigned long *line)</argsstring>
+        <name>xmlSchemaValidityLocatorFunc</name>
+        <briefdescription>
+<para>A schemas validation locator, a callback called by the validator. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>This is used when file or node information are not available to find out what file and line number are affected</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user provided context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>file</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>returned file information </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>line</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>returned line information </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success and -1 in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="129" column="9" bodyfile="xmlschemas.h" bodystart="129" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlschemas_8h_1a7ba4fb3b2e2e149110d0bdb5419706bf" prot="public" static="no">
+        <type>struct _xmlSchemaSAXPlug</type>
+        <definition>typedef struct _xmlSchemaSAXPlug xmlSchemaSAXPlugStruct</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaSAXPlugStruct</name>
+        <briefdescription>
+<para>Interface to insert Schemas SAX validation in a SAX stream. </para>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="227" column="32" bodyfile="xmlschemas.h" bodystart="227" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="typedef" id="xmlschemas_8h_1af91c67b31a9fe46aff81991ceb464513" prot="public" static="no">
+        <type><ref refid="xmlschemas_8h_1a7ba4fb3b2e2e149110d0bdb5419706bf" kindref="member">xmlSchemaSAXPlugStruct</ref> *</type>
+        <definition>typedef xmlSchemaSAXPlugStruct* xmlSchemaSAXPlugPtr</definition>
+        <argsstring></argsstring>
+        <name>xmlSchemaSAXPlugPtr</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="228" column="32" bodyfile="xmlschemas.h" bodystart="228" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <sectiondef kind="func">
+      <memberdef kind="function" id="xmlschemas_8h_1a8ce89b878a12b6c07583914161106088" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlschemas_8h_1aba7ee46aa7d7b70214fc87532530607f" kindref="member">xmlSchemaParserCtxt</ref> *</type>
+        <definition>xmlSchemaParserCtxt * xmlSchemaNewParserCtxt</definition>
+        <argsstring>(const char *URL)</argsstring>
+        <name>xmlSchemaNewParserCtxt</name>
+        <param>
+          <type>const char *</type>
+          <declname>URL</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML Schemas parse context for that file/resource expected to contain an XML Schemas file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>URL</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the location of the schema </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the parser context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="136" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="12172" bodyend="12185" declfile="xmlschemas.h" declline="136" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a58789d91bb6132db1b46eab06fb12df1" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlschemas_8h_1aba7ee46aa7d7b70214fc87532530607f" kindref="member">xmlSchemaParserCtxt</ref> *</type>
+        <definition>xmlSchemaParserCtxt * xmlSchemaNewMemParserCtxt</definition>
+        <argsstring>(const char *buffer, int size)</argsstring>
+        <name>xmlSchemaNewMemParserCtxt</name>
+        <param>
+          <type>const char *</type>
+          <declname>buffer</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>size</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML Schemas parse context for that memory buffer expected to contain an XML Schemas file. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>buffer</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to a char array containing the schemas </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>size</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the size of the array </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the parser context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="138" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="12196" bodyend="12209" declfile="xmlschemas.h" declline="138" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1ac64a45546e061114b63efca5b2e6ef6a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlschemas_8h_1aba7ee46aa7d7b70214fc87532530607f" kindref="member">xmlSchemaParserCtxt</ref> *</type>
+        <definition>xmlSchemaParserCtxt * xmlSchemaNewDocParserCtxt</definition>
+        <argsstring>(xmlDoc *doc)</argsstring>
+        <name>xmlSchemaNewDocParserCtxt</name>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>doc</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML Schemas parse context for that document. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>NB. The document may be modified during the parsing process.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a preparsed document tree </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the parser context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="141" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="12219" bodyend="12234" declfile="xmlschemas.h" declline="141" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a044ef113f31fdf97d0d46f257ff123e0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaFreeParserCtxt</definition>
+        <argsstring>(xmlSchemaParserCtxt *ctxt)</argsstring>
+        <name>xmlSchemaFreeParserCtxt</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1aba7ee46aa7d7b70214fc87532530607f" kindref="member">xmlSchemaParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Free the resources associated to the schema parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema parser context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="143" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="12242" bodyend="12260" declfile="xmlschemas.h" declline="143" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a7cb3b1bca9f3c19d717a48f1d8f4cf7e" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaSetParserErrors</definition>
+        <argsstring>(xmlSchemaParserCtxt *ctxt, xmlSchemaValidityErrorFunc err, xmlSchemaValidityWarningFunc warn, void *ctx)</argsstring>
+        <name>xmlSchemaSetParserErrors</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1aba7ee46aa7d7b70214fc87532530607f" kindref="member">xmlSchemaParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a7c0ef1385252b0c2263a6ccd7c4e50c7" kindref="member">xmlSchemaValidityErrorFunc</ref></type>
+          <declname>err</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemas_8h_1aa53ac51b0d2b3a1b2d2ce9f2c6667f46" kindref="member">xmlSchemaValidityWarningFunc</ref></type>
+          <declname>warn</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Set the callback functions used to handle errors for a validation context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000428"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use xmlSchemaSetParserStructuredErrors.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>err</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error callback </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>warn</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the warning callback </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>contextual data for the callbacks </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="145" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="20990" bodyend="21001" declfile="xmlschemas.h" declline="145" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a127a79ab69f0666a6125184a6f7443d0" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaSetParserStructuredErrors</definition>
+        <argsstring>(xmlSchemaParserCtxt *ctxt, xmlStructuredErrorFunc serror, void *ctx)</argsstring>
+        <name>xmlSchemaSetParserStructuredErrors</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1aba7ee46aa7d7b70214fc87532530607f" kindref="member">xmlSchemaParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+          <declname>serror</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Set the structured error callback. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>serror</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the structured error function </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the functions context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="150" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="21011" bodyend="21021" declfile="xmlschemas.h" declline="150" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a01cb1e2aced5d5d93564c3b8d64810ac" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaGetParserErrors</definition>
+        <argsstring>(xmlSchemaParserCtxt *ctxt, xmlSchemaValidityErrorFunc *err, xmlSchemaValidityWarningFunc *warn, void **ctx)</argsstring>
+        <name>xmlSchemaGetParserErrors</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1aba7ee46aa7d7b70214fc87532530607f" kindref="member">xmlSchemaParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a7c0ef1385252b0c2263a6ccd7c4e50c7" kindref="member">xmlSchemaValidityErrorFunc</ref> *</type>
+          <declname>err</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemas_8h_1aa53ac51b0d2b3a1b2d2ce9f2c6667f46" kindref="member">xmlSchemaValidityWarningFunc</ref> *</type>
+          <declname>warn</declname>
+        </param>
+        <param>
+          <type>void **</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Get the callback information used to handle errors for a parser context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a XMl-Schema parser context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>err</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error callback result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>warn</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the warning callback result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>contextual data for the callbacks result </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of failure, 0 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="154" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="21033" bodyend="21046" declfile="xmlschemas.h" declline="154" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a7141d9962335061d6671f1f92ce00770" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaSetResourceLoader</definition>
+        <argsstring>(xmlSchemaParserCtxt *ctxt, xmlResourceLoader loader, void *data)</argsstring>
+        <name>xmlSchemaSetResourceLoader</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1aba7ee46aa7d7b70214fc87532530607f" kindref="member">xmlSchemaParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="parser_8h_1a7c18bf0fce4a02394bd219d9422c27ed" kindref="member">xmlResourceLoader</ref></type>
+          <declname>loader</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>data</declname>
+        </param>
+        <briefdescription>
+<para>Register a callback function that will be called to load documents or external entities. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><simplesect kind="since"><para>2.14.0 </para>
+</simplesect>
+<parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>schema parser </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>loader</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>resource loader </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>user data which will be passed to the loader </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="159" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="21058" bodyend="21064" declfile="xmlschemas.h" declline="159" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1adda46d95bf868b02cba073516c07ac53" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaIsValid</definition>
+        <argsstring>(xmlSchemaValidCtxt *ctxt)</argsstring>
+        <name>xmlSchemaIsValid</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Check if any error was detected during validation. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema validation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>1 if valid so far, 0 if errors were detected, and -1 in case of internal error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="163" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27303" bodyend="27308" declfile="xmlschemas.h" declline="163" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a8f59ee6ce60f896254b62caebdf941ea" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlschemas_8h_1a5e3b86363eea6a0903665c7394b44d5d" kindref="member">xmlSchema</ref> *</type>
+        <definition>xmlSchema * xmlSchemaParse</definition>
+        <argsstring>(xmlSchemaParserCtxt *ctxt)</argsstring>
+        <name>xmlSchemaParse</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1aba7ee46aa7d7b70214fc87532530607f" kindref="member">xmlSchemaParserCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>parse a schema definition resource and build an internal XML Schema structure which can be used to validate instances. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the internal XML Schema structure built from the resource or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="166" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="20865" bodyend="20977" declfile="xmlschemas.h" declline="166" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a10f3ce22a86fd4658f63937f79ad4e0d" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaFree</definition>
+        <argsstring>(xmlSchema *schema)</argsstring>
+        <name>xmlSchemaFree</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a5e3b86363eea6a0903665c7394b44d5d" kindref="member">xmlSchema</ref> *</type>
+          <declname>schema</declname>
+        </param>
+        <briefdescription>
+<para>Deallocate a Schema structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>schema</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema structure </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="168" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="4043" bodyend="4083" declfile="xmlschemas.h" declline="168" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a13d8a3a333ac2af6b4cce5248b8e06ba" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaDump</definition>
+        <argsstring>(FILE *output, xmlSchema *schema)</argsstring>
+        <name>xmlSchemaDump</name>
+        <param>
+          <type>FILE *</type>
+          <declname>output</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a5e3b86363eea6a0903665c7394b44d5d" kindref="member">xmlSchema</ref> *</type>
+          <declname>schema</declname>
+        </param>
+        <briefdescription>
+<para>Dump a Schema structure. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>output</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the file output </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>schema</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema structure </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="171" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="4437" bodyend="4459" declfile="xmlschemas.h" declline="171" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a63c75b2e7e4d5d15a3716e9b053a28ab" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaSetValidErrors</definition>
+        <argsstring>(xmlSchemaValidCtxt *ctxt, xmlSchemaValidityErrorFunc err, xmlSchemaValidityWarningFunc warn, void *ctx)</argsstring>
+        <name>xmlSchemaSetValidErrors</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a7c0ef1385252b0c2263a6ccd7c4e50c7" kindref="member">xmlSchemaValidityErrorFunc</ref></type>
+          <declname>err</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemas_8h_1aa53ac51b0d2b3a1b2d2ce9f2c6667f46" kindref="member">xmlSchemaValidityWarningFunc</ref></type>
+          <declname>warn</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Set the error and warning callback information. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><xrefsect id="deprecated_1_deprecated000429"><xreftitle>Deprecated</xreftitle><xrefdescription><para>Use xmlSchemaSetValidStructuredErrors.</para>
+</xrefdescription></xrefsect></para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>err</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error function </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>warn</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the warning function </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the functions context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="178" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27321" bodyend="27332" declfile="xmlschemas.h" declline="178" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a0f6271e2b4ac67e8ccfe8cd668152ce2" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaSetValidStructuredErrors</definition>
+        <argsstring>(xmlSchemaValidCtxt *ctxt, xmlStructuredErrorFunc serror, void *ctx)</argsstring>
+        <name>xmlSchemaSetValidStructuredErrors</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlerror_8h_1a43ce1e8b08b983fe847fdf074b021127" kindref="member">xmlStructuredErrorFunc</ref></type>
+          <declname>serror</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Set the structured error callback. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>serror</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the structured error function </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the functions context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="183" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27342" bodyend="27353" declfile="xmlschemas.h" declline="183" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a82eb3b6cb63d190804e8bd07490da13c" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaGetValidErrors</definition>
+        <argsstring>(xmlSchemaValidCtxt *ctxt, xmlSchemaValidityErrorFunc *err, xmlSchemaValidityWarningFunc *warn, void **ctx)</argsstring>
+        <name>xmlSchemaGetValidErrors</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a7c0ef1385252b0c2263a6ccd7c4e50c7" kindref="member">xmlSchemaValidityErrorFunc</ref> *</type>
+          <declname>err</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemas_8h_1aa53ac51b0d2b3a1b2d2ce9f2c6667f46" kindref="member">xmlSchemaValidityWarningFunc</ref> *</type>
+          <declname>warn</declname>
+        </param>
+        <param>
+          <type>void **</type>
+          <declname>ctx</declname>
+        </param>
+        <briefdescription>
+<para>Get the error and warning callback information. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a XML-Schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>err</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the error function result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>warn</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the warning function result </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctx</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the functions context result </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>-1 in case of error and 0 otherwise </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="187" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27365" bodyend="27378" declfile="xmlschemas.h" declline="187" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1aa72b47f377f8b76f162cc92e92da17d3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaSetValidOptions</definition>
+        <argsstring>(xmlSchemaValidCtxt *ctxt, int options)</argsstring>
+        <name>xmlSchemaSetValidOptions</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Sets the options to be used during the validation. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a combination of <ref refid="xmlschemas_8h_1a8e16b29a07b1cd459f50505926c8edc8" kindref="member">xmlSchemaValidOption</ref> </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success, -1 in case of an API error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="192" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27390" bodyend="27410" declfile="xmlschemas.h" declline="192" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1ae4f30fe75e702854f203253f898001ae" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaValidateSetFilename</definition>
+        <argsstring>(xmlSchemaValidCtxt *vctxt, const char *filename)</argsstring>
+        <name>xmlSchemaValidateSetFilename</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <briefdescription>
+<para>Workaround to provide file error reporting information when this is not provided by current APIs. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>vctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the file name </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="195" column="13" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27073" bodyend="27082" declfile="xmlschemas.h" declline="195" declcolumn="13"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1aa0ffe72ddca315ea38ec575ba4ad5a9a" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValidCtxtGetOptions</definition>
+        <argsstring>(xmlSchemaValidCtxt *ctxt)</argsstring>
+        <name>xmlSchemaValidCtxtGetOptions</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Get the validation context options. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the option combination or -1 on error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="198" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27419" bodyend="27426" declfile="xmlschemas.h" declline="198" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a95aa096e869383c65ea4e22bd06bff25" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+        <definition>xmlSchemaValidCtxt * xmlSchemaNewValidCtxt</definition>
+        <argsstring>(xmlSchema *schema)</argsstring>
+        <name>xmlSchemaNewValidCtxt</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a5e3b86363eea6a0903665c7394b44d5d" kindref="member">xmlSchema</ref> *</type>
+          <declname>schema</declname>
+        </param>
+        <briefdescription>
+<para>Create an XML Schemas validation context based on the given schema. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>schema</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a precompiled XML Schemas </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the validation context or NULL in case of error </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="201" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27040" bodyend="27063" declfile="xmlschemas.h" declline="201" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a0b1c5e61900b0fb50f864410cd167443" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaFreeValidCtxt</definition>
+        <argsstring>(xmlSchemaValidCtxt *ctxt)</argsstring>
+        <name>xmlSchemaFreeValidCtxt</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Free the resources associated to the schema validation context. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the schema validation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="203" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27214" bodyend="27293" declfile="xmlschemas.h" declline="203" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1aaaba1a88d8ddd4cf388132532bea9874" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValidateDoc</definition>
+        <argsstring>(xmlSchemaValidCtxt *ctxt, xmlDoc *instance)</argsstring>
+        <name>xmlSchemaValidateDoc</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ae94acff8b6413934705e29389bcddc17" kindref="member">xmlDoc</ref> *</type>
+          <declname>instance</declname>
+          <defname>doc</defname>
+        </param>
+        <briefdescription>
+<para>Validate a document tree in memory. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>doc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a parsed document tree </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if the document is schemas valid, a positive error code number otherwise and -1 in case of internal or API error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="205" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27743" bodyend="27759" declfile="xmlschemas.h" declline="205" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1ae4a27934342180bc3b5dd0dc84379c47" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValidateOneElement</definition>
+        <argsstring>(xmlSchemaValidCtxt *ctxt, xmlNode *elem)</argsstring>
+        <name>xmlSchemaValidateOneElement</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1ac8c054adbdabc014ab4584dfb1ce841e" kindref="member">xmlNode</ref> *</type>
+          <declname>elem</declname>
+        </param>
+        <briefdescription>
+<para>Validate a branch of a tree, starting with the given <computeroutput>elem</computeroutput>. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>elem</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an element node </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if the element and its subtree is valid, a positive error code number otherwise and -1 in case of an internal or API error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="208" column="13" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27720" bodyend="27732" declfile="xmlschemas.h" declline="208" declcolumn="13"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1ab373af6a2fb2490fc3398dafebe371e3" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValidateStream</definition>
+        <argsstring>(xmlSchemaValidCtxt *ctxt, xmlParserInputBuffer *input, xmlCharEncoding enc, const xmlSAXHandler *sax, void *user_data)</argsstring>
+        <name>xmlSchemaValidateStream</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a7a0ca7c6b30d7a9103b28626f820cab9" kindref="member">xmlParserInputBuffer</ref> *</type>
+          <declname>input</declname>
+        </param>
+        <param>
+          <type><ref refid="encoding_8h_1a662791d23b3d1e0a37244d35c57a02e5" kindref="member">xmlCharEncoding</ref></type>
+          <declname>enc</declname>
+        </param>
+        <param>
+          <type>const <ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> *</type>
+          <declname>sax</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>user_data</declname>
+        </param>
+        <briefdescription>
+<para>Validate an input based on a flow of SAX event from the parser and forward the events to the <computeroutput>sax</computeroutput> handler with the provided <computeroutput>user_data</computeroutput> the user provided <computeroutput>sax</computeroutput> handler must be a SAX2 one. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>input</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the input to use for reading the data </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>enc</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>an optional encoding information </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sax</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a SAX handler for the resulting events </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>user_data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the context to provide to the SAX handler. </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if the document is schemas valid, a positive error code number otherwise and -1 in case of internal or API error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="211" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="28391" bodyend="28443" declfile="xmlschemas.h" declline="211" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1ab550f18c78a429953292a791e484078f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaValidateFile</definition>
+        <argsstring>(xmlSchemaValidCtxt *ctxt, const char *filename, int options)</argsstring>
+        <name>xmlSchemaValidateFile</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type>const char *</type>
+          <declname>filename</declname>
+        </param>
+        <param>
+          <type>int</type>
+          <declname>options</declname>
+        </param>
+        <briefdescription>
+<para>Do a schemas validation of the given resource, it will use the SAX streamable validation internally. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>filename</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the URI of the instance </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>options</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a future set of options, currently unused </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 if the document is valid, a positive error code number otherwise and -1 in case of an internal or API error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="217" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="28456" bodyend="28475" declfile="xmlschemas.h" declline="217" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1aaf80a04b4fcd5f69b1deb1075f32a002" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="tree_8h_1afe4cc6b7bf2e4d3858f4aee47370d3d8" kindref="member">xmlParserCtxt</ref> *</type>
+        <definition>xmlParserCtxt * xmlSchemaValidCtxtGetParserCtxt</definition>
+        <argsstring>(xmlSchemaValidCtxt *ctxt)</argsstring>
+        <name>xmlSchemaValidCtxtGetParserCtxt</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>allow access to the parser context of the schema validation context </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>the parser context of the schema validation context or NULL in case of error. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="222" column="5" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="28485" bodyend="28490" declfile="xmlschemas.h" declline="222" declcolumn="5"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a317d01ef9872c364821eb5cb367a5899" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type><ref refid="xmlschemas_8h_1a7ba4fb3b2e2e149110d0bdb5419706bf" kindref="member">xmlSchemaSAXPlugStruct</ref> *</type>
+        <definition>xmlSchemaSAXPlugStruct * xmlSchemaSAXPlug</definition>
+        <argsstring>(xmlSchemaValidCtxt *ctxt, xmlSAXHandler **sax, void **user_data)</argsstring>
+        <name>xmlSchemaSAXPlug</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>ctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> **</type>
+          <declname>sax</declname>
+        </param>
+        <param>
+          <type>void **</type>
+          <declname>user_data</declname>
+        </param>
+        <briefdescription>
+<para>Plug a SAX based validation layer in a SAX parsing event flow. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The original <computeroutput>saxptr</computeroutput> and <computeroutput>dataptr</computeroutput> data are replaced by new pointers but the calls to the original will be maintained.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>sax</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to the original <ref refid="tree_8h_1a45238c4ba896d6577bb4986e98122e03" kindref="member">xmlSAXHandler</ref> </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>user_data</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a pointer to the original SAX user data pointer </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>a pointer to a data structure needed to unplug the validation layer or NULL in case of errors. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="231" column="13" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="28114" bodyend="28244" declfile="xmlschemas.h" declline="231" declcolumn="13"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1a4fc4ddeff2e69874e4652489ab485357" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>int</type>
+        <definition>int xmlSchemaSAXUnplug</definition>
+        <argsstring>(xmlSchemaSAXPlugStruct *plug)</argsstring>
+        <name>xmlSchemaSAXUnplug</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a7ba4fb3b2e2e149110d0bdb5419706bf" kindref="member">xmlSchemaSAXPlugStruct</ref> *</type>
+          <declname>plug</declname>
+        </param>
+        <briefdescription>
+<para>Unplug a SAX based validation layer in a SAX parsing event flow. </para>
+        </briefdescription>
+        <detaileddescription>
+<para>The original pointers used in the call are restored.</para>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>plug</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a data structure returned by xmlSchemaSAXPlug </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+<simplesect kind="return"><para>0 in case of success and -1 in case of failure. </para>
+</simplesect>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="235" column="13" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="28254" bodyend="28275" declfile="xmlschemas.h" declline="235" declcolumn="13"/>
+      </memberdef>
+      <memberdef kind="function" id="xmlschemas_8h_1ad7e350e471dc5dcab88d700577f2f70f" prot="public" static="no" const="no" explicit="no" inline="no" virt="non-virtual">
+        <type>void</type>
+        <definition>void xmlSchemaValidateSetLocator</definition>
+        <argsstring>(xmlSchemaValidCtxt *vctxt, xmlSchemaValidityLocatorFunc f, void *ctxt)</argsstring>
+        <name>xmlSchemaValidateSetLocator</name>
+        <param>
+          <type><ref refid="xmlschemas_8h_1a6d448163e5fdcdcaa76fae4e99347c22" kindref="member">xmlSchemaValidCtxt</ref> *</type>
+          <declname>vctxt</declname>
+        </param>
+        <param>
+          <type><ref refid="xmlschemas_8h_1adbf8193be2eaf285a5ab8da50749886c" kindref="member">xmlSchemaValidityLocatorFunc</ref></type>
+          <declname>f</declname>
+        </param>
+        <param>
+          <type>void *</type>
+          <declname>ctxt</declname>
+        </param>
+        <briefdescription>
+<para>Allows to set a locator function to the validation context, which will be used to provide file and line information since those are not provided as part of the SAX validation flow Setting <computeroutput>f</computeroutput> to NULL disable the locator. </para>
+        </briefdescription>
+        <detaileddescription>
+<para><parameterlist kind="param"><parameteritem>
+<parameternamelist>
+<parametername>vctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>a schema validation context </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>f</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the locator function pointer </para>
+</parameterdescription>
+</parameteritem>
+<parameteritem>
+<parameternamelist>
+<parametername>ctxt</parametername>
+</parameternamelist>
+<parameterdescription>
+<para>the locator context </para>
+</parameterdescription>
+</parameteritem>
+</parameterlist>
+</para>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="xmlschemas.h" line="239" column="13" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="28289" bodyend="28296" declfile="xmlschemas.h" declline="239" declcolumn="13"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+<para>incomplete XML Schemas structure implementation </para>
+    </briefdescription>
+    <detaileddescription>
+<para>interface to the XML Schemas handling and schema validity checking, it is incomplete right now.</para>
+<para><simplesect kind="copyright"><para>See Copyright for the status of this software.</para>
+</simplesect>
+<simplesect kind="author"><para>Daniel Veillard </para>
+</simplesect>
+</para>
+    </detaileddescription>
+    <location file="xmlschemas.h"/>
+  </compounddef>
+</doxygen>

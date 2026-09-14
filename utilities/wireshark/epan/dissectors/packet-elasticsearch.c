@@ -6,29 +6,21 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #include "config.h"
 
 #include <epan/packet.h>
 #include <epan/expert.h>
+#include <epan/tfs.h>
 #include "packet-tcp.h"
 
-#define ELASTICSEARCH_DISCOVERY_PORT 54328
-#define ELASTICSEARCH_BINARY_PORT 9300
-#define ELASTICSEARCH_HTTP_PORT 9200
+#define ELASTICSEARCH_DISCOVERY_PORT 54328 /* Not IANA registered */
+#define ELASTICSEARCH_BINARY_PORT 9300 /* Not IANA registered */
+
+#define ELASTICSEARCH_HEADER_SIZE_VERSION 7060099 /* First version to support variable header size */
+#define ELASTICSEARCH_THREAD_CONTEXT_VERSION 5000099 /* First version to include the thread context */
+#define ELASTICSEARCH_FEATURES_VERSION 6030099 /* First version which includes a feature list */
 
 #define IPv4_ADDRESS_LENGTH 4
 #define ELASTICSEARCH_STATUS_FLAG_RESPONSE 1   /* 001 */
@@ -54,59 +46,68 @@ typedef struct {
 
 typedef struct {
     int length;
-    int value;
+    uint32_t value;
     char string[9];
 } version_t;
 
 void proto_register_elasticsearch(void);
 void proto_reg_handoff_elasticsearch(void);
 
-static dissector_handle_t elasticsearch_http_handle;
-static int proto_elasticsearch = -1;
+static dissector_handle_t elasticsearch_handle_binary;
+static dissector_handle_t elasticsearch_zen_handle;
+
+static int proto_elasticsearch;
 
 /* Fields */
-static int hf_elasticsearch_internal_header = -1;
-static int hf_elasticsearch_version = -1;
-static int hf_elasticsearch_ping_request_id = -1;
-static int hf_elasticsearch_cluster_name= -1;
-static int hf_elasticsearch_node_name = -1;
-static int hf_elasticsearch_node_id = -1;
-static int hf_elasticsearch_host_name = -1;
-static int hf_elasticsearch_host_address = -1;
-static int hf_elasticsearch_address_type = -1;
-static int hf_elasticsearch_address_format = -1;
-static int hf_elasticsearch_address_name = -1;
-static int hf_elasticsearch_address_length = -1;
-static int hf_elasticsearch_address_ipv4 = -1;
-static int hf_elasticsearch_address_ipv6 = -1;
-static int hf_elasticsearch_address_ipv6_scope_id = -1;
-static int hf_elasticsearch_attributes_length = -1;
-static int hf_elasticsearch_address_port = -1;
-static int hf_elasticsearch_header_token = -1;
-static int hf_elasticsearch_header_message_length = -1;
-static int hf_elasticsearch_header_request_id = -1;
-static int hf_elasticsearch_header_status_flags = -1;
-static int hf_elasticsearch_header_status_flags_message_type = -1;
-static int hf_elasticsearch_header_status_flags_error = -1;
-static int hf_elasticsearch_header_status_flags_compression = -1;
-static int hf_elasticsearch_action = -1;
-static int hf_elasticsearch_data = -1;
-static int hf_elasticsearch_data_compressed = -1;
+static int hf_elasticsearch_internal_header;
+static int hf_elasticsearch_version;
+static int hf_elasticsearch_ping_request_id;
+static int hf_elasticsearch_cluster_name;
+static int hf_elasticsearch_node_name;
+static int hf_elasticsearch_node_id;
+static int hf_elasticsearch_host_name;
+static int hf_elasticsearch_host_address;
+static int hf_elasticsearch_address_type;
+static int hf_elasticsearch_address_format;
+static int hf_elasticsearch_address_name;
+static int hf_elasticsearch_address_length;
+static int hf_elasticsearch_address_ipv4;
+static int hf_elasticsearch_address_ipv6;
+static int hf_elasticsearch_address_ipv6_scope_id;
+static int hf_elasticsearch_attributes_length;
+static int hf_elasticsearch_address_port;
+static int hf_elasticsearch_header_token;
+static int hf_elasticsearch_header_message_length;
+static int hf_elasticsearch_header_request_id;
+static int hf_elasticsearch_header_status_flags;
+static int hf_elasticsearch_header_status_flags_message_type;
+static int hf_elasticsearch_header_status_flags_error;
+static int hf_elasticsearch_header_status_flags_compression;
+static int hf_elasticsearch_header_size;
+static int hf_elasticsearch_header_request;
+static int hf_elasticsearch_header_response;
+static int hf_elasticsearch_header_key;
+static int hf_elasticsearch_header_value;
+
+static int hf_elasticsearch_feature;
+static int hf_elasticsearch_action;
+static int hf_elasticsearch_data;
+static int hf_elasticsearch_data_compressed;
 
 /* Expert info */
-static expert_field ei_elasticsearch_unsupported_version = EI_INIT;
-static expert_field ei_elasticsearch_unsupported_address_format = EI_INIT;
-static expert_field ei_elasticsearch_unsupported_address_type = EI_INIT;
+static expert_field ei_elasticsearch_unsupported_version;
+static expert_field ei_elasticsearch_unsupported_address_format;
+static expert_field ei_elasticsearch_unsupported_address_type;
 
 
 /* Trees */
-static gint ett_elasticsearch = -1;
-static gint ett_elasticsearch_address = -1;
-static gint ett_elasticsearch_discovery_node = -1;
-static gint ett_elasticsearch_status_flags = -1;
+static int ett_elasticsearch;
+static int ett_elasticsearch_address;
+static int ett_elasticsearch_discovery_node;
+static int ett_elasticsearch_status_flags;
+static int ett_elasticsearch_header;
 
 /* Forward declarations */
-static int dissect_elasticsearch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data);
 static int dissect_elasticsearch_zen_ping(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data);
 
 static const value_string address_types[] = {
@@ -131,45 +132,45 @@ static const value_string status_flag_message_type[] = {
     { 0, NULL }
 };
 
-static void elasticsearch_format_version(gchar *buf, guint32 value) {
-    g_snprintf(buf, ELASTICSEARCH_VERSION_LABEL_LENGTH, "%d.%d.%d (%d)", (value / 1000000) % 100,
+static void elasticsearch_format_version(char *buf, uint32_t value) {
+    snprintf(buf, ELASTICSEARCH_VERSION_LABEL_LENGTH, "%d.%d.%d (%d)", (value / 1000000) % 100,
             (value / 10000) % 100, (value/ 100) % 100, value);
 }
 
 static vint_t read_vint(tvbuff_t *tvb, int offset){
     /* See: org.elasticsearch.common.io.stream.StreamInput#readVInt */
     vint_t vint;
-    guint8 b = tvb_get_guint8(tvb, offset);
+    uint8_t b = tvb_get_uint8(tvb, offset);
     vint.value = b & 0x7F;
     if ((b & 0x80) == 0) {
         vint.length = 1;
         return vint;
     }
-    b = tvb_get_guint8(tvb, offset+1);
+    b = tvb_get_uint8(tvb, offset+1);
     vint.value |= (b & 0x7F) << 7;
     if ((b & 0x80) == 0) {
         vint.length = 2;
         return vint;
     }
-    b = tvb_get_guint8(tvb, offset+2);
+    b = tvb_get_uint8(tvb, offset+2);
     vint.value |= (b & 0x7F) << 14;
     if ((b & 0x80) == 0) {
         vint.length = 3;
         return vint;
     }
-    b = tvb_get_guint8(tvb, offset+3);
+    b = tvb_get_uint8(tvb, offset+3);
     vint.value |= (b & 0x7F) << 21;
     if ((b & 0x80) == 0) {
         vint.length = 4;
         return vint;
     }
-    b = tvb_get_guint8(tvb, offset+4);
+    b = tvb_get_uint8(tvb, offset+4);
     vint.length = 5;
     vint.value |= ((b & 0x7F) << 28);
     return vint;
 }
 
-static vstring_t read_vstring(tvbuff_t *tvb, int offset) {
+static vstring_t read_vstring(wmem_allocator_t *scope, tvbuff_t *tvb, int offset) {
     vstring_t vstring;
     int string_starting_offset;
     int string_length;
@@ -178,7 +179,7 @@ static vstring_t read_vstring(tvbuff_t *tvb, int offset) {
     string_starting_offset = offset + vstring.vint_length.length;
     string_length = vstring.vint_length.value;
 
-    vstring.value = tvb_get_string_enc(wmem_packet_scope(), tvb, string_starting_offset, string_length, ENC_UTF_8);
+    vstring.value = tvb_get_string_enc(scope, tvb, string_starting_offset, string_length, ENC_UTF_8);
     vstring.length = string_length + vstring.vint_length.length;
 
     return vstring;
@@ -188,10 +189,10 @@ static int elasticsearch_partial_dissect_address(tvbuff_t *tvb, packet_info *pin
     proto_tree *address_tree;
     proto_item *address_item;
     int start_offset;
-    guint8 es_address_format;
-    guint8 address_length;
+    uint8_t es_address_format;
+    uint8_t address_length;
     vstring_t address_name;
-    guint16 address_type_id;
+    uint16_t address_type_id;
 
     /* Store this away for later */
     start_offset = offset;
@@ -210,18 +211,18 @@ static int elasticsearch_partial_dissect_address(tvbuff_t *tvb, packet_info *pin
     }
 
     /* Address format */
-    es_address_format = tvb_get_guint8(tvb, offset);
+    es_address_format = tvb_get_uint8(tvb, offset);
     proto_tree_add_item(address_tree, hf_elasticsearch_address_format, tvb, offset, 1, ENC_BIG_ENDIAN);
     offset += 1;
 
     switch(es_address_format) {
         case ADDRESS_FORMAT_NUEMRIC:
-            address_length = tvb_get_guint8(tvb, offset);
+            address_length = tvb_get_uint8(tvb, offset);
             proto_tree_add_item(address_tree, hf_elasticsearch_address_length, tvb, offset, 1, ENC_BIG_ENDIAN);
             offset += 1;
             /* Its either IPv4 or IPv6 depending on the length */
             if (address_length == IPv4_ADDRESS_LENGTH) {
-                proto_tree_add_item(address_tree, hf_elasticsearch_address_ipv4, tvb, offset, 4, ENC_NA);
+                proto_tree_add_item(address_tree, hf_elasticsearch_address_ipv4, tvb, offset, 4, ENC_BIG_ENDIAN);
                 offset += 4;
             }
             else {
@@ -233,7 +234,7 @@ static int elasticsearch_partial_dissect_address(tvbuff_t *tvb, packet_info *pin
             break;
 
         case ADDRESS_FORMAT_STRING:
-            address_name = read_vstring(tvb, offset);
+            address_name = read_vstring(pinfo->pool, tvb, offset);
             proto_tree_add_string(address_tree, hf_elasticsearch_address_name, tvb, offset, address_name.length, address_name.value);
             offset += address_name.length;
             break;
@@ -260,7 +261,7 @@ static version_t elasticsearch_parse_version(tvbuff_t *tvb, int offset){
     raw_version_value = read_vint(tvb, offset);
     version.length = raw_version_value.length;
     version.value = raw_version_value.value;
-    g_snprintf(version.string, sizeof(version.string), "%d.%d.%d", (version.value / 1000000) % 100,
+    snprintf(version.string, sizeof(version.string), "%d.%d.%d", (version.value / 1000000) % 100,
             (version.value / 10000) % 100, (version.value/ 100) % 100);
 
     return version;
@@ -306,7 +307,7 @@ static int dissect_elasticsearch_zen_ping(tvbuff_t *tvb, packet_info *pinfo, pro
     offset += 4;
 
     /* Cluster name */
-    cluster_name = read_vstring(tvb, offset);
+    cluster_name = read_vstring(pinfo->pool, tvb, offset);
     proto_tree_add_string(elasticsearch_tree, hf_elasticsearch_cluster_name, tvb, offset, cluster_name.length, cluster_name.value);
     col_append_fstr(pinfo->cinfo, COL_INFO, "cluster=%s", cluster_name.value);
     offset += cluster_name.length;
@@ -316,7 +317,7 @@ static int dissect_elasticsearch_zen_ping(tvbuff_t *tvb, packet_info *pinfo, pro
     discovery_node_tree = proto_tree_add_subtree(elasticsearch_tree, tvb, offset, -1, ett_elasticsearch_discovery_node, &discovery_node_item, "Node" );
 
     /* Node name */
-    node_name = read_vstring(tvb, offset);
+    node_name = read_vstring(pinfo->pool, tvb, offset);
     proto_tree_add_string(discovery_node_tree, hf_elasticsearch_node_name, tvb, offset, node_name.length, node_name.value);
     col_append_fstr(pinfo->cinfo, COL_INFO, ", name=%s", node_name.value);
     offset += node_name.length;
@@ -325,17 +326,17 @@ static int dissect_elasticsearch_zen_ping(tvbuff_t *tvb, packet_info *pinfo, pro
 
 
     /* Node ID */
-    node_id = read_vstring(tvb, offset);
+    node_id = read_vstring(pinfo->pool, tvb, offset);
     proto_tree_add_string(discovery_node_tree, hf_elasticsearch_node_id, tvb, offset, node_id.length, node_id.value);
     offset += node_id.length;
 
     /* Hostname */
-    host_name = read_vstring(tvb, offset);
+    host_name = read_vstring(pinfo->pool, tvb, offset);
     proto_tree_add_string(discovery_node_tree, hf_elasticsearch_host_name, tvb, offset, host_name.length, host_name.value);
     offset += host_name.length;
 
     /* Host address */
-    host_address = read_vstring(tvb, offset);
+    host_address = read_vstring(pinfo->pool, tvb, offset);
     proto_tree_add_string(discovery_node_tree, hf_elasticsearch_host_address, tvb, offset, host_address.length, host_address.value);
     offset += host_address.length;
 
@@ -359,32 +360,43 @@ static int elasticsearch_binary_header_is_valid(tvbuff_t *tvb){
     /* Header was introduced in V0.20.0RC1. At the moment I'm not supporting versions before this
     *  See: org.elasticsearch.transport.netty.NettyHeader#writeHeader
     * */
-    return tvb_captured_length(tvb) >= 1 && tvb_get_ntohs(tvb, 0) == ELASTICSEARCH_BINARY_HEADER_TOKEN;
+    return tvb_captured_length(tvb) >= 2 && tvb_get_ntohs(tvb, 0) == ELASTICSEARCH_BINARY_HEADER_TOKEN;
 }
 
-static int elasticsearch_transport_status_flag_is_a_response(gint8 transport_status_flags) {
+static int elasticsearch_transport_status_flag_is_a_response(int8_t transport_status_flags) {
     return transport_status_flags & ELASTICSEARCH_STATUS_FLAG_RESPONSE;
 }
 
-static int transport_status_flag_is_a_request(gint8 transport_status_flags){
+static int transport_status_flag_is_a_request(int8_t transport_status_flags){
     return !elasticsearch_transport_status_flag_is_a_response(transport_status_flags);
 }
 
-static int elasticsearch_is_compressed(gint8 transport_status_flags){
+static int elasticsearch_is_compressed(int8_t transport_status_flags){
 
     return transport_status_flags & ELASTICSEARCH_STATUS_FLAG_COMPRESSED;
 }
 
-static void elasticsearch_decode_binary_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, gint8 transport_status_flags) {
+static void elasticsearch_decode_binary_request(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int8_t transport_status_flags, uint32_t version) {
 
-    vstring_t action;
+    int i;
+    vint_t features;
+    vstring_t action, feature;
 
     if(elasticsearch_is_compressed(transport_status_flags)){
         proto_tree_add_item(tree, hf_elasticsearch_data_compressed, tvb, offset, -1, ENC_NA);
         col_append_str(pinfo->cinfo, COL_INFO, "[COMPRESSED], ");
-
     } else {
-        action = read_vstring(tvb, offset);
+        if (version >= ELASTICSEARCH_FEATURES_VERSION) {
+            features = read_vint(tvb, offset);
+            offset += features.length;
+            for (i = 0; i < features.value; i++) {
+                feature = read_vstring(pinfo->pool, tvb, offset);
+                proto_tree_add_string(tree, hf_elasticsearch_feature, tvb, offset, feature.length, feature.value);
+                offset += feature.length;
+            }
+        }
+
+        action = read_vstring(pinfo->pool, tvb, offset);
         proto_tree_add_string(tree, hf_elasticsearch_action, tvb, offset, action.length, action.value);
         col_append_fstr(pinfo->cinfo, COL_INFO, "action=%s, ", action.value);
         offset += action.length;
@@ -392,7 +404,7 @@ static void elasticsearch_decode_binary_request(tvbuff_t *tvb, packet_info *pinf
     }
 }
 
-static void append_status_info_to_column(packet_info *pinfo, gint8 transport_status_flags) {
+static void append_status_info_to_column(packet_info *pinfo, int8_t transport_status_flags) {
     if(transport_status_flags & ELASTICSEARCH_STATUS_FLAG_ERROR){
         col_append_str(pinfo->cinfo, COL_INFO, "[ERROR], ");
     }else{
@@ -400,22 +412,30 @@ static void append_status_info_to_column(packet_info *pinfo, gint8 transport_sta
     }
 }
 
-static void elasticsearch_decode_binary_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, gint8 transport_status_flags) {
+static void elasticsearch_decode_binary_response(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, int offset, int8_t transport_status_flags, uint32_t version _U_) {
     append_status_info_to_column(pinfo, transport_status_flags);
     if(elasticsearch_is_compressed(transport_status_flags)){
         col_append_str(pinfo->cinfo, COL_INFO, "[COMPRESSED], ");
         proto_tree_add_item(tree, hf_elasticsearch_data_compressed, tvb, offset, -1, ENC_NA);
     } else {
-        proto_tree_add_item(tree, hf_elasticsearch_data, tvb, offset, -1, ENC_NA);
+        proto_tree_add_item(tree, hf_elasticsearch_data, tvb, offset, tvb_reported_length_remaining(tvb, offset), ENC_NA);
     }
 
 }
 
 static int elasticsearch_dissect_valid_binary_packet(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data _U_){
 
+    int i, j;
     int offset = 0;
-    gint8 transport_status_flags;
-    guint64 request_id;
+    int8_t transport_status_flags;
+    uint32_t version;
+    uint64_t request_id;
+    vint_t request_headers, response_headers;
+    vstring_t header_key;
+    vint_t header_values;
+    vstring_t header_value;
+    proto_item *header_item;
+    proto_tree *header_tree;
     proto_item *transport_status_flags_item;
     proto_tree *transport_status_flags_tree;
 
@@ -428,7 +448,7 @@ static int elasticsearch_dissect_valid_binary_packet(tvbuff_t *tvb, packet_info 
     *
     * Token/Magic number that is at the start of all ES packets
     */
-    proto_tree_add_item(tree, hf_elasticsearch_header_token, tvb, offset, 2, ENC_ASCII|ENC_NA);
+    proto_tree_add_item(tree, hf_elasticsearch_header_token, tvb, offset, 2, ENC_ASCII);
     offset += 2;
 
     /* Message length */
@@ -441,7 +461,7 @@ static int elasticsearch_dissect_valid_binary_packet(tvbuff_t *tvb, packet_info 
     offset += 8;
 
     /* Transport status: org.elasticsearch.transport.support.TransportStatus */
-    transport_status_flags = tvb_get_guint8(tvb, offset);
+    transport_status_flags = tvb_get_uint8(tvb, offset);
     transport_status_flags_item = proto_tree_add_uint(tree, hf_elasticsearch_header_status_flags, tvb, offset, 1, transport_status_flags);
     transport_status_flags_tree = proto_item_add_subtree(transport_status_flags_item, ett_elasticsearch_status_flags);
     if(elasticsearch_transport_status_flag_is_a_response(transport_status_flags)){
@@ -455,53 +475,82 @@ static int elasticsearch_dissect_valid_binary_packet(tvbuff_t *tvb, packet_info 
     offset += 1;
 
     /* Version  */
-    proto_tree_add_item(tree, hf_elasticsearch_version, tvb, offset, 4, ENC_BIG_ENDIAN);
+    proto_tree_add_item_ret_uint(tree, hf_elasticsearch_version, tvb, offset, 4, ENC_BIG_ENDIAN, &version);
     offset += 4;
 
-    /* Only requests have actions */
-    if (transport_status_flag_is_a_request(transport_status_flags)) {
-        elasticsearch_decode_binary_request(tvb, pinfo, tree, offset, transport_status_flags);
-    } else {
-        elasticsearch_decode_binary_response(tvb, pinfo, tree, offset, transport_status_flags);
+    /* Variable header size */
+    if (version >= ELASTICSEARCH_HEADER_SIZE_VERSION) {
+        proto_tree_add_item(tree, hf_elasticsearch_header_size, tvb, offset, 4, ENC_BIG_ENDIAN);
+        offset += 4;
     }
-    col_append_fstr(pinfo->cinfo, COL_INFO, "request_id=%"G_GUINT64_FORMAT" ", request_id);
+
+    if (version >= ELASTICSEARCH_THREAD_CONTEXT_VERSION) {
+        /* Request headers */
+        request_headers = read_vint(tvb, offset);
+        offset += request_headers.length;
+        for (i = 0; i < request_headers.value; i++) {
+            header_key = read_vstring(pinfo->pool, tvb, offset);
+            header_value = read_vstring(pinfo->pool, tvb, offset + header_key.length);
+
+            header_item = proto_tree_add_item(tree, hf_elasticsearch_header_request, tvb, offset, header_key.length + header_value.length, ENC_NA);
+            header_tree = proto_item_add_subtree(header_item, ett_elasticsearch_header);
+
+            proto_tree_add_string(header_tree, hf_elasticsearch_header_key, tvb, offset, header_key.length, header_key.value);
+            proto_tree_add_string(header_tree, hf_elasticsearch_header_value, tvb, offset + header_key.length, header_value.length, header_value.value);
+
+            proto_item_append_text(header_item, ": %s: %s", header_key.value, header_value.value);
+
+            offset += header_key.length;
+            offset += header_value.length;
+        }
+
+        /* Response headers */
+        response_headers = read_vint(tvb, offset);
+        offset += response_headers.length;
+        for (i = 0; i < response_headers.value; i++) {
+            header_item = proto_tree_add_item(tree, hf_elasticsearch_header_response, tvb, offset, 0, ENC_NA);
+            header_tree = proto_item_add_subtree(header_item, ett_elasticsearch_header);
+
+            header_key = read_vstring(pinfo->pool, tvb, offset);
+            proto_tree_add_string(header_tree, hf_elasticsearch_header_key, tvb, offset, header_key.length, header_key.value);
+            proto_item_append_text(header_item, ": %s", header_key.value);
+            offset += header_key.length;
+
+            header_values = read_vint(tvb, offset);
+            offset += header_values.length;
+
+            for (j = 0; j < header_values.value; j++) {
+                header_value = read_vstring(pinfo->pool, tvb, offset);
+                proto_tree_add_string(header_tree, hf_elasticsearch_header_value, tvb, offset, header_value.length, header_value.value);
+                proto_item_append_text(header_item, j > 0 ? ", %s" : "%s", header_value.value);
+                offset += header_value.length;
+            }
+
+            proto_item_set_end(header_item, tvb, offset);
+        }
+    }
+
+    /* Only requests have features and actions */
+    if (transport_status_flag_is_a_request(transport_status_flags)) {
+        elasticsearch_decode_binary_request(tvb, pinfo, tree, offset, transport_status_flags, version);
+    } else {
+        elasticsearch_decode_binary_response(tvb, pinfo, tree, offset, transport_status_flags, version);
+    }
+    col_append_fstr(pinfo->cinfo, COL_INFO, "request_id=%"PRIu64" ", request_id);
 
 
     /* Everything is marked as data, return the whole tvb as the length */
     return tvb_captured_length(tvb);
 }
 
-static guint elasticsearch_get_binary_message_len(packet_info *pinfo _U_, tvbuff_t *tvb,
+static unsigned elasticsearch_get_binary_message_len(packet_info *pinfo _U_, tvbuff_t *tvb,
                                                   int offset, void *data _U_)
 {
     /* length is two bytes into the packet, also the length doesn't include the starting 6 bytes */
-    return (guint)tvb_get_ntohl(tvb, offset+ELASTICSEARCH_MESSAGE_LENGTH_OFFSET) + ELASTICSEARCH_HEADER_LENGTH;
+    return (unsigned)tvb_get_ntohl(tvb, offset+ELASTICSEARCH_MESSAGE_LENGTH_OFFSET) + ELASTICSEARCH_HEADER_LENGTH;
 }
 
-static void elasticsearch_dissect_binary_protocol(tvbuff_t *tvb, packet_info *pinfo, void *data, int offset, proto_tree *elasticsearch_tree) {
-    if(elasticsearch_binary_header_is_valid(tvb)){
-        /* pass all packets through TCP-reassembly */
-        tcp_dissect_pdus(tvb, pinfo, elasticsearch_tree, TRUE, ELASTICSEARCH_HEADER_LENGTH,
-                elasticsearch_get_binary_message_len, elasticsearch_dissect_valid_binary_packet, data);
-    } else {
-        proto_tree_add_item(elasticsearch_tree, hf_elasticsearch_data, tvb, offset, -1, ENC_NA);
-        expert_add_info(pinfo, elasticsearch_tree, &ei_elasticsearch_unsupported_version);
-    }
-}
-
-static void elasticsearch_dissect_tcp_message_types(tvbuff_t *tvb, packet_info *pinfo, void *data, int offset,
-        proto_tree *elasticsearch_tree, proto_tree *root_tree) {
-
-    if(pinfo->srcport == ELASTICSEARCH_BINARY_PORT || pinfo->destport == ELASTICSEARCH_BINARY_PORT){
-        elasticsearch_dissect_binary_protocol(tvb, pinfo, data, offset, elasticsearch_tree);
-    } else if(pinfo->srcport == ELASTICSEARCH_HTTP_PORT || pinfo->destport == ELASTICSEARCH_HTTP_PORT) {
-        /* Restore count before as we want the HTTP dissector to do desegmentation */
-        pinfo->can_desegment = pinfo->saved_can_desegment;
-        call_dissector(elasticsearch_http_handle, tvb, pinfo, root_tree);
-    }
-}
-
-static int dissect_elasticsearch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data) {
+static int dissect_elasticsearch_binary(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data) {
 
     int offset = 0;
     proto_item *root_elasticsearch_item;
@@ -513,7 +562,14 @@ static int dissect_elasticsearch(tvbuff_t *tvb, packet_info *pinfo, proto_tree *
     root_elasticsearch_item = proto_tree_add_item(tree, proto_elasticsearch, tvb, 0, -1, ENC_NA);
     elasticsearch_tree = proto_item_add_subtree(root_elasticsearch_item,ett_elasticsearch);
 
-    elasticsearch_dissect_tcp_message_types(tvb, pinfo, data, offset, elasticsearch_tree, tree);
+    if(elasticsearch_binary_header_is_valid(tvb)){
+        /* pass all packets through TCP-reassembly */
+        tcp_dissect_pdus(tvb, pinfo, elasticsearch_tree, true, ELASTICSEARCH_HEADER_LENGTH,
+                elasticsearch_get_binary_message_len, elasticsearch_dissect_valid_binary_packet, data);
+    } else {
+        proto_tree_add_item(elasticsearch_tree, hf_elasticsearch_data, tvb, offset, -1, ENC_NA);
+        expert_add_info(pinfo, elasticsearch_tree, &ei_elasticsearch_unsupported_version);
+    }
 
     return tvb_captured_length(tvb);
 }
@@ -689,6 +745,38 @@ void proto_register_elasticsearch(void) {
                 NULL, HFILL
             }
         },
+        { &hf_elasticsearch_header_size,
+            { "Header size", "elasticsearch.header.size",
+                FT_UINT32, BASE_DEC,
+                NULL, 0x0,
+                NULL, HFILL
+            }
+        },
+        { &hf_elasticsearch_header_request,
+            { "Request header", "elasticsearch.header.request",
+               FT_NONE, BASE_NONE, NULL, 0x0,
+               NULL, HFILL }
+        },
+        { &hf_elasticsearch_header_response,
+            { "Response header", "elasticsearch.header.response",
+               FT_NONE, BASE_NONE, NULL, 0x0,
+               NULL, HFILL }
+        },
+        { &hf_elasticsearch_header_key,
+            { "Key", "elasticsearch.header.key",
+               FT_STRING, BASE_NONE, NULL, 0x0,
+               NULL, HFILL }
+        },
+        { &hf_elasticsearch_header_value,
+            { "Value", "elasticsearch.header.value",
+               FT_STRING, BASE_NONE, NULL, 0x0,
+               NULL, HFILL }
+        },
+        { &hf_elasticsearch_feature,
+            { "Feature", "elasticsearch.feature",
+               FT_STRING, BASE_NONE, NULL, 0x0,
+               NULL, HFILL }
+        },
         { &hf_elasticsearch_action,
             { "Action", "elasticsearch.action",
                 FT_STRING, BASE_NONE,
@@ -713,11 +801,12 @@ void proto_register_elasticsearch(void) {
 
     };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_elasticsearch,
         &ett_elasticsearch_address,
         &ett_elasticsearch_discovery_node,
         &ett_elasticsearch_status_flags,
+        &ett_elasticsearch_header,
     };
 
     static ei_register_info ei[] = {
@@ -728,36 +817,28 @@ void proto_register_elasticsearch(void) {
 
     expert_module_t*expert_elasticsearch;
 
+    proto_elasticsearch = proto_register_protocol("Elasticsearch", "Elasticsearch", "elasticsearch");
+
     expert_elasticsearch = expert_register_protocol(proto_elasticsearch);
     expert_register_field_array(expert_elasticsearch, ei, array_length(ei));
 
-    proto_elasticsearch = proto_register_protocol(
-        "Elasticsearch",
-        "Elasticsearch",
-        "elasticsearch"
-    );
-
     proto_register_field_array(proto_elasticsearch, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
+
+    elasticsearch_handle_binary = register_dissector("elasticsearch_binary", dissect_elasticsearch_binary, proto_elasticsearch);
+    elasticsearch_zen_handle = register_dissector("elasticsearch_zen_ping", dissect_elasticsearch_zen_ping, proto_elasticsearch);
 
 }
 
 void proto_reg_handoff_elasticsearch(void) {
 
-    dissector_handle_t elasticsearch_handle;
-    dissector_handle_t elasticsearch_zen_handle;
-    elasticsearch_http_handle = find_dissector_add_dependency("http", proto_elasticsearch);
-
-    elasticsearch_handle = create_dissector_handle(dissect_elasticsearch, proto_elasticsearch);
-    elasticsearch_zen_handle = create_dissector_handle(dissect_elasticsearch_zen_ping, proto_elasticsearch);
-    dissector_add_uint("udp.port", ELASTICSEARCH_DISCOVERY_PORT, elasticsearch_zen_handle);
-    dissector_add_uint("tcp.port", ELASTICSEARCH_BINARY_PORT, elasticsearch_handle);
-    dissector_add_uint("tcp.port", ELASTICSEARCH_HTTP_PORT, elasticsearch_handle);
+    dissector_add_uint_with_preference("udp.port", ELASTICSEARCH_DISCOVERY_PORT, elasticsearch_zen_handle);
+    dissector_add_uint_with_preference("tcp.port", ELASTICSEARCH_BINARY_PORT, elasticsearch_handle_binary);
 
 }
 
 /*
-* Editor modelines - http://www.wireshark.org/tools/modelines.html
+* Editor modelines - https://www.wireshark.org/tools/modelines.html
 *
 * Local variables:
 * c-basic-offset: 4

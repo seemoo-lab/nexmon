@@ -4,7 +4,7 @@
 # Plural test for YCP
 #
 
-cat <<EOF > xg-y-1.ycp
+cat <<\EOF > xg-y-1.ycp
 title = sformat (_("%1 package", "%1 packages", num), num);
 EOF
 
@@ -12,7 +12,7 @@ EOF
 ${XGETTEXT} --omit-header --no-location -k:1,2 -d xg-y-1.tmp xg-y-1.ycp || Exit 1
 LC_ALL=C tr -d '\r' < xg-y-1.tmp.po > xg-y-1.po || Exit 1
 
-cat <<EOF > xg-y-1.ok
+cat <<\EOF > xg-y-1.ok
 #, ycp-format
 msgid "%1 package"
 msgid_plural "%1 packages"

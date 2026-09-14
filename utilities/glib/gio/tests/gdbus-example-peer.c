@@ -117,9 +117,20 @@ static const GDBusInterfaceVTable interface_vtable =
   handle_method_call,
   NULL,
   NULL,
+  { 0 }
 };
 
 /* ---------------------------------------------------------------------------------------------------- */
+
+static void
+connection_closed (GDBusConnection *connection,
+                   gboolean remote_peer_vanished,
+                   GError *Error,
+                   gpointer user_data)
+{
+  g_print ("Client disconnected.\n");
+  g_object_unref (connection);
+}
 
 static gboolean
 on_new_connection (GDBusServer *server,
@@ -136,7 +147,6 @@ on_new_connection (GDBusServer *server,
   else
     s = g_credentials_to_string (credentials);
 
-
   g_print ("Client connected.\n"
            "Peer credentials: %s\n"
            "Negotiated capabilities: unix-fd-passing=%d\n",
@@ -144,6 +154,7 @@ on_new_connection (GDBusServer *server,
            g_dbus_connection_get_capabilities (connection) & G_DBUS_CAPABILITY_FLAGS_UNIX_FD_PASSING);
 
   g_object_ref (connection);
+  g_signal_connect (connection, "closed", G_CALLBACK (connection_closed), NULL);
   registration_id = g_dbus_connection_register_object (connection,
                                                        "/org/gtk/GDBus/TestObject",
                                                        introspection_data->interfaces[0],
@@ -153,7 +164,77 @@ on_new_connection (GDBusServer *server,
                                                        NULL); /* GError** */
   g_assert (registration_id > 0);
 
+  g_free (s);
+
   return TRUE;
+}
+
+/* ---------------------------------------------------------------------------------------------------- */
+
+static gboolean
+allow_mechanism_cb (GDBusAuthObserver *observer,
+                    const gchar *mechanism,
+                    G_GNUC_UNUSED gpointer user_data)
+{
+  /*
+   * In a production GDBusServer that only needs to work on modern Unix
+   * platforms, consider requiring EXTERNAL (credentials-passing),
+   * which is the recommended authentication mechanism for AF_UNIX
+   * sockets:
+   *
+   * if (g_strcmp0 (mechanism, "EXTERNAL") == 0)
+   *   return TRUE;
+   *
+   * return FALSE;
+   *
+   * For this example we accept everything.
+   */
+
+  g_print ("Considering whether to accept %s authentication...\n", mechanism);
+  return TRUE;
+}
+
+static gboolean
+authorize_authenticated_peer_cb (GDBusAuthObserver *observer,
+                                 G_GNUC_UNUSED GIOStream *stream,
+                                 GCredentials *credentials,
+                                 G_GNUC_UNUSED gpointer user_data)
+{
+  gboolean authorized = FALSE;
+
+  g_print ("Considering whether to authorize authenticated peer...\n");
+
+  if (credentials != NULL)
+    {
+      GCredentials *own_credentials;
+      gchar *credentials_string = NULL;
+
+      credentials_string = g_credentials_to_string (credentials);
+      g_print ("Peer's credentials: %s\n", credentials_string);
+      g_free (credentials_string);
+
+      own_credentials = g_credentials_new ();
+
+      credentials_string = g_credentials_to_string (own_credentials);
+      g_print ("Server's credentials: %s\n", credentials_string);
+      g_free (credentials_string);
+
+      if (g_credentials_is_same_user (credentials, own_credentials, NULL))
+        authorized = TRUE;
+
+      g_object_unref (own_credentials);
+    }
+
+  if (!authorized)
+    {
+      /* In most servers you'd want to reject this, but for this example
+       * we allow it. */
+      g_print ("A server would often not want to authorize this identity\n");
+      g_print ("Authorizing it anyway for demonstration purposes\n");
+      authorized = TRUE;
+    }
+
+  return authorized;
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -172,7 +253,7 @@ main (int argc, char *argv[])
       { "server", 's', 0, G_OPTION_ARG_NONE, &opt_server, "Start a server instead of a client", NULL },
       { "address", 'a', 0, G_OPTION_ARG_STRING, &opt_address, "D-Bus address to use", NULL },
       { "allow-anonymous", 'n', 0, G_OPTION_ARG_NONE, &opt_allow_anonymous, "Allow anonymous authentication", NULL },
-      { NULL}
+      G_OPTION_ENTRY_NULL
     };
 
   ret = 1;
@@ -186,10 +267,14 @@ main (int argc, char *argv[])
   g_option_context_add_main_entries (opt_context, opt_entries, NULL);
   if (!g_option_context_parse (opt_context, &argc, &argv, &error))
     {
+      g_option_context_free (opt_context);
       g_printerr ("Error parsing options: %s\n", error->message);
       g_error_free (error);
       goto out;
     }
+
+  g_option_context_free (opt_context);
+
   if (opt_address == NULL)
     {
       g_printerr ("Incorrect usage, try --help.\n");
@@ -210,6 +295,7 @@ main (int argc, char *argv[])
 
   if (opt_server)
     {
+      GDBusAuthObserver *observer;
       GDBusServer *server;
       gchar *guid;
       GMainLoop *loop;
@@ -221,14 +307,20 @@ main (int argc, char *argv[])
       if (opt_allow_anonymous)
         server_flags |= G_DBUS_SERVER_FLAGS_AUTHENTICATION_ALLOW_ANONYMOUS;
 
+      observer = g_dbus_auth_observer_new ();
+      g_signal_connect (observer, "allow-mechanism", G_CALLBACK (allow_mechanism_cb), NULL);
+      g_signal_connect (observer, "authorize-authenticated-peer", G_CALLBACK (authorize_authenticated_peer_cb), NULL);
+
       error = NULL;
       server = g_dbus_server_new_sync (opt_address,
                                        server_flags,
                                        guid,
-                                       NULL, /* GDBusAuthObserver */
+                                       observer,
                                        NULL, /* GCancellable */
                                        &error);
       g_dbus_server_start (server);
+
+      g_object_unref (observer);
       g_free (guid);
 
       if (server == NULL)
@@ -273,7 +365,8 @@ main (int argc, char *argv[])
                "Negotiated capabilities: unix-fd-passing=%d\n",
                g_dbus_connection_get_capabilities (connection) & G_DBUS_CAPABILITY_FLAGS_UNIX_FD_PASSING);
 
-      greeting = g_strdup_printf ("Hey, it's %" G_GUINT64_FORMAT " already!", (guint64) time (NULL));
+      greeting = g_strdup_printf ("Hey, it's %" G_GINT64_FORMAT " already!",
+                                  g_get_real_time () / G_USEC_PER_SEC);
       value = g_dbus_connection_call_sync (connection,
                                            NULL, /* bus_name */
                                            "/org/gtk/GDBus/TestObject",
@@ -285,6 +378,8 @@ main (int argc, char *argv[])
                                            -1,
                                            NULL,
                                            &error);
+      g_free (greeting);
+
       if (value == NULL)
         {
           g_printerr ("Error invoking HelloWorld(): %s\n", error->message);
@@ -302,5 +397,7 @@ main (int argc, char *argv[])
   ret = 0;
 
  out:
+  g_free (opt_address);
+
   return ret;
 }

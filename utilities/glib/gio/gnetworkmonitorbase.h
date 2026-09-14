@@ -2,10 +2,12 @@
  *
  * Copyright 2011 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -48,20 +50,22 @@ struct _GNetworkMonitorBaseClass {
   gpointer padding[8];
 };
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GType g_network_monitor_base_get_type (void);
 
 /*< protected >*/
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 void g_network_monitor_base_add_network    (GNetworkMonitorBase  *monitor,
 					    GInetAddressMask     *network);
-GLIB_AVAILABLE_IN_2_32
+GIO_AVAILABLE_IN_2_32
 void g_network_monitor_base_remove_network (GNetworkMonitorBase  *monitor,
 					    GInetAddressMask     *network);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void g_network_monitor_base_set_networks   (GNetworkMonitorBase  *monitor,
 					    GInetAddressMask    **networks,
 					    gint                  length);
+
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (GNetworkMonitorBase, g_object_unref)
 
 G_END_DECLS
 

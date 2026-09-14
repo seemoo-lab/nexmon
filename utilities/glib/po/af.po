@@ -3709,6 +3709,102 @@ msgstr "Benodig meer toevoer"
 msgid "Invalid compressed data"
 msgstr "Ongeldige saamgepersde data"
 
+msgctxt "full month name with day"
+msgid "January"
+msgstr "Januarie"
+
+msgctxt "full month name with day"
+msgid "February"
+msgstr "Februarie"
+
+msgctxt "full month name with day"
+msgid "March"
+msgstr "Maart"
+
+msgctxt "full month name with day"
+msgid "April"
+msgstr "April"
+
+msgctxt "full month name with day"
+msgid "May"
+msgstr "Mei"
+
+msgctxt "full month name with day"
+msgid "June"
+msgstr "Junie"
+
+msgctxt "full month name with day"
+msgid "July"
+msgstr "Julie"
+
+msgctxt "full month name with day"
+msgid "August"
+msgstr "Augustus"
+
+msgctxt "full month name with day"
+msgid "September"
+msgstr "September"
+
+msgctxt "full month name with day"
+msgid "October"
+msgstr "Oktober"
+
+msgctxt "full month name with day"
+msgid "November"
+msgstr "November"
+
+msgctxt "full month name with day"
+msgid "December"
+msgstr "Desember"
+
+msgctxt "abbreviated month name with day"
+msgid "Jan"
+msgstr "Jan"
+
+msgctxt "abbreviated month name with day"
+msgid "Feb"
+msgstr "Feb"
+
+msgctxt "abbreviated month name with day"
+msgid "Mar"
+msgstr "Mrt"
+
+msgctxt "abbreviated month name with day"
+msgid "Apr"
+msgstr "Apr"
+
+msgctxt "abbreviated month name with day"
+msgid "May"
+msgstr "Mei"
+
+msgctxt "abbreviated month name with day"
+msgid "Jun"
+msgstr "Jun"
+
+msgctxt "abbreviated month name with day"
+msgid "Jul"
+msgstr "Jul"
+
+msgctxt "abbreviated month name with day"
+msgid "Aug"
+msgstr "Aug"
+
+msgctxt "abbreviated month name with day"
+msgid "Sep"
+msgstr "Sep"
+
+msgctxt "abbreviated month name with day"
+msgid "Oct"
+msgstr "Okt"
+
+msgctxt "abbreviated month name with day"
+msgid "Nov"
+msgstr "Nov"
+
+msgctxt "abbreviated month name with day"
+msgid "Dec"
+msgstr "Des"
+
 #~ msgctxt "GDateTime"
 #~ msgid "am"
 #~ msgstr "vm."

@@ -1,9 +1,9 @@
 /* Test of u8_prev() function.
-   Copyright (C) 2010-2016 Free Software Foundation, Inc.
+   Copyright (C) 2010-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* Written by Bruno Haible <bruno@clisp.org>, 2010.  */
 
@@ -35,12 +35,11 @@ check (const uint8_t *input, size_t input_length, ucs4_t *puc)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
     ucs4_t uc1;
 
     ptr = buf;
     *ptr++ = 'x';
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     if (u8_prev (&uc1, ptr + input_length, buf) != ptr)
@@ -53,13 +52,12 @@ check (const uint8_t *input, size_t input_length, ucs4_t *puc)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
     ucs4_t uc1;
 
     ptr = buf;
     *ptr++ = 0xC3;
     *ptr++ = 0x97;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     if (u8_prev (&uc1, ptr + input_length, buf) != ptr)
@@ -72,14 +70,13 @@ check (const uint8_t *input, size_t input_length, ucs4_t *puc)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
     ucs4_t uc1;
 
     ptr = buf;
     *ptr++ = 0xE2;
     *ptr++ = 0x84;
     *ptr++ = 0x82;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     if (u8_prev (&uc1, ptr + input_length, buf) != ptr)
@@ -92,7 +89,6 @@ check (const uint8_t *input, size_t input_length, ucs4_t *puc)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
     ucs4_t uc1;
 
     ptr = buf;
@@ -100,7 +96,7 @@ check (const uint8_t *input, size_t input_length, ucs4_t *puc)
     *ptr++ = 0x9D;
     *ptr++ = 0x94;
     *ptr++ = 0x9E;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     if (u8_prev (&uc1, ptr + input_length, buf) != ptr)
@@ -129,11 +125,10 @@ check_invalid (const uint8_t *input, size_t input_length)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
 
     ptr = buf;
     *ptr++ = 'x';
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     uc = 0xBADFACE;
@@ -147,12 +142,11 @@ check_invalid (const uint8_t *input, size_t input_length)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
 
     ptr = buf;
     *ptr++ = 0xC3;
     *ptr++ = 0x97;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     uc = 0xBADFACE;
@@ -166,13 +160,12 @@ check_invalid (const uint8_t *input, size_t input_length)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
 
     ptr = buf;
     *ptr++ = 0xE2;
     *ptr++ = 0x84;
     *ptr++ = 0x82;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     uc = 0xBADFACE;
@@ -186,14 +179,13 @@ check_invalid (const uint8_t *input, size_t input_length)
   {
     uint8_t buf[100];
     uint8_t *ptr;
-    size_t i;
 
     ptr = buf;
     *ptr++ = 0xF0;
     *ptr++ = 0x9D;
     *ptr++ = 0x94;
     *ptr++ = 0x9E;
-    for (i = 0; i < input_length; i++)
+    for (size_t i = 0; i < input_length; i++)
       ptr[i] = input[i];
 
     uc = 0xBADFACE;
@@ -213,10 +205,9 @@ main ()
 
   /* Test ISO 646 unit input.  */
   {
-    ucs4_t c;
     uint8_t buf[1];
 
-    for (c = 0; c < 0x80; c++)
+    for (ucs4_t c = 0; c < 0x80; c++)
       {
         buf[0] = c;
         uc = 0xBADFACE;
@@ -311,5 +302,5 @@ main ()
     ASSERT (check_invalid (input, SIZEOF (input)) == 0);
   }
 
-  return 0;
+  return test_exit_status;
 }

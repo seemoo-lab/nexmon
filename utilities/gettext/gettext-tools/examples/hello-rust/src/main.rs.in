@@ -1,0 +1,32 @@
+/* Example for use of GNU gettext.
+   This file is in the public domain.
+
+   Source code of the Rust program.  */
+
+/* gettext-rs
+   Home: https://crates.io/crates/gettext-rs
+         https://lib.rs/crates/gettext-rs
+         https://github.com/gettext-rs/gettext-rs
+   Documentation: https://docs.rs/gettext-rs/latest/gettextrs/ */
+use gettextrs::*;
+
+/* formatx
+   Home: https://crates.io/crates/formatx
+         https://lib.rs/crates/formatx
+         https://github.com/clitic/formatx
+   Documentation: https://docs.rs/formatx/latest/formatx/ */
+use formatx::*;
+
+use std::process;
+
+fn main() {
+  setlocale (LocaleCategory::LcAll, "");
+
+  textdomain ("hello-rust").expect ("textdomain failed");
+  bindtextdomain ("hello-rust", "@localedir@").expect ("bindtextdomain failed");
+  /* gettext-rs requires UTF-8 encoding.  */
+  bind_textdomain_codeset ("hello-rust", "UTF-8").expect ("bind_textdomain_codeset failed");
+
+  println! ("{}", gettext ("Hello, world!"));
+  println! ("{}", formatx! (gettext ("This program is running as process number {}."), process::id ()).unwrap ());
+}

@@ -1,9 +1,9 @@
 #!/bin/sh
 . "${srcdir=.}/init.sh"; path_prepend_ . ../src
 
-# Test PHP support: here documents.
+# Test PHP support: heredoc strings, nowdoc strings.
 
-cat <<EOF > xg-ph-2.php
+cat <<\EOF > xg-ph-2.php
 <?
 echo _("Egyptians");
 echo <<<EOTMARKER
@@ -36,6 +36,20 @@ Odoakar
 Theoderich
 EOTMARKER
 echo _("Franks");
+echo _(<<<EOTMARKER
+Chlodovechus Rex Francorum
+Carolus Rex Francorum et Langobardorum, Magnus Imperator Romanorum
+EOTMARKER);
+echo _("Hohenstaufens");
+echo _(<<<"EOTMARKER"
+   Fridericus Imperator Romani Imperii
+     Fridericus II Imperator
+  EOTMARKER);
+echo _("French");
+echo _(<<<'EOTMARKER'
+Louis XIV
+Napoleon Bonaparte
+EOTMARKER);
 ?>
 EOF
 
@@ -57,7 +71,7 @@ LC_ALL=C tr -d '\r' < xg-ph-2d.tmp.po > xg-ph-2d.po || Exit 1
 ${XGETTEXT} --omit-header --no-location -d xg-ph-2s.tmp xg-ph-2s.php || Exit 1
 LC_ALL=C tr -d '\r' < xg-ph-2s.tmp.po > xg-ph-2s.po || Exit 1
 
-cat <<EOF > xg-ph-2.ok
+cat <<\EOF > xg-ph-2.ok
 msgid "Egyptians"
 msgstr ""
 
@@ -70,7 +84,31 @@ msgstr ""
 msgid "Romans"
 msgstr ""
 
+msgid "Goths"
+msgstr ""
+
 msgid "Franks"
+msgstr ""
+
+msgid ""
+"Chlodovechus Rex Francorum\n"
+"Carolus Rex Francorum et Langobardorum, Magnus Imperator Romanorum"
+msgstr ""
+
+msgid "Hohenstaufens"
+msgstr ""
+
+msgid ""
+" Fridericus Imperator Romani Imperii\n"
+"   Fridericus II Imperator"
+msgstr ""
+
+msgid "French"
+msgstr ""
+
+msgid ""
+"Louis XIV\n"
+"Napoleon Bonaparte"
 msgstr ""
 EOF
 

@@ -31,7 +31,7 @@ rm po/Rules-quot
 rm po/boldquot.sed
 rm po/en@boldquot.header
 rm po/en@quot.header
-rm po/insert-header.sin
+rm po/insert-header.sed
 rm po/quot.sed
 
 aclocal -I m4

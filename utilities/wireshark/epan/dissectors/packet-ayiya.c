@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  *
  * ref: http://unfix.org/~jeroen/archive/drafts/draft-massar-v6ops-ayiya-02.html#anchor4
  */
@@ -33,19 +21,21 @@ void proto_reg_handoff_ayiya(void);
 
 static dissector_table_t ip_dissector_table;
 
-static int proto_ayiya = -1;
-static int hf_id_len = -1;
-static int hf_id_type = -1;
-static int hf_sig_len = -1;
-static int hf_hash_method = -1;
-static int hf_auth_method = -1;
-static int hf_opcode = -1;
-static int hf_next_header = -1;
-static int hf_epoch = -1;
-static int hf_identity = -1;
-static int hf_signature = -1;
+static int proto_ayiya;
+static int hf_id_len;
+static int hf_id_type;
+static int hf_sig_len;
+static int hf_hash_method;
+static int hf_auth_method;
+static int hf_opcode;
+static int hf_next_header;
+static int hf_epoch;
+static int hf_identity;
+static int hf_signature;
 
-static gint ett_ayiya = -1;
+static int ett_ayiya;
+
+static dissector_handle_t ayiya_handle;
 
 static const value_string identity_types[] = {
     { 0x0, "None" },
@@ -90,13 +80,13 @@ dissect_ayiya(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
     proto_tree *ayiya_tree;
     int offset = 0;
     int idlen, siglen, ayiya_len;
-    guint8 next_header, opcode;
+    uint8_t next_header, opcode;
     tvbuff_t *payload;
 
     idlen = 1 << tvb_get_bits8(tvb, 0, 4);
     siglen = tvb_get_bits8(tvb, 8, 4) * 4;
     opcode = tvb_get_bits8(tvb, 20, 4);
-    next_header = tvb_get_guint8(tvb, 3);
+    next_header = tvb_get_uint8(tvb, 3);
 
     ayiya_len = 8+idlen+siglen;
 
@@ -104,7 +94,6 @@ dissect_ayiya(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
 
     if (tree) {
         proto_item *ti;
-        nstime_t tv;
         ti = proto_tree_add_protocol_format( tree, proto_ayiya, tvb,
                                              offset, ayiya_len, "AYIYA" );
         ayiya_tree = proto_item_add_subtree(ti, ett_ayiya);
@@ -119,9 +108,7 @@ dissect_ayiya(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U
                                    3, 1, next_header,
                                    "%s (0x%02x)",
                                    ipprotostr(next_header), next_header);
-        tv.secs = tvb_get_ntohl(tvb, 4);
-        tv.nsecs = 0;
-        proto_tree_add_time(ayiya_tree, hf_epoch, tvb, 4, 4, &tv);
+        proto_tree_add_item(ayiya_tree, hf_epoch, tvb, 4, 4, ENC_TIME_SECS|ENC_BIG_ENDIAN);
         proto_tree_add_item(ayiya_tree, hf_identity, tvb, 8, idlen, ENC_NA);
         proto_tree_add_item(ayiya_tree, hf_signature, tvb, 8+idlen, siglen, ENC_NA);
     }
@@ -191,13 +178,13 @@ proto_register_ayiya(void)
           }
         },
     };
-    static gint *ett[] = {
+    static int *ett[] = {
         &ett_ayiya,
     };
 
     proto_ayiya = proto_register_protocol("Anything in Anything Protocol",
                           "AYIYA", "ayiya");
-    register_dissector("ayiya", dissect_ayiya, proto_ayiya);
+    ayiya_handle = register_dissector("ayiya", dissect_ayiya, proto_ayiya);
     proto_register_field_array(proto_ayiya, hf, array_length(hf));
     proto_register_subtree_array(ett, array_length(ett));
 }
@@ -205,16 +192,13 @@ proto_register_ayiya(void)
 void
 proto_reg_handoff_ayiya(void)
 {
-    dissector_handle_t ayiya_handle;
-
-    ayiya_handle = find_dissector("ayiya");
-    dissector_add_uint("udp.port", UDP_PORT_AYIYA, ayiya_handle);
+    dissector_add_uint_with_preference("udp.port", UDP_PORT_AYIYA, ayiya_handle);
 
     ip_dissector_table = find_dissector_table("ip.proto");
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

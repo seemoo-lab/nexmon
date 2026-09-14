@@ -4,19 +4,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 #ifndef __PACKET_MTP3_H__
 #define __PACKET_MTP3_H__
@@ -31,8 +19,8 @@ typedef enum {
 } Standard_Type;
 #define HEURISTIC_FAILED_STANDARD 0xffff
 
-extern gint mtp3_standard;
-extern gboolean mtp3_heuristic_standard;
+extern int mtp3_standard;
+extern bool mtp3_heuristic_standard;
 
 WS_DLL_PUBLIC const value_string mtp3_standard_vals[];
 
@@ -46,15 +34,15 @@ typedef enum {
 
 typedef struct _mtp3_addr_pc_t {
   Standard_Type		type;
-  guint32		pc;
-  guint8		ni;
+  uint32_t		pc;
+  uint8_t		ni;
 } mtp3_addr_pc_t;
 
 typedef struct _mtp3_tap_rec_t {
   mtp3_addr_pc_t	addr_opc;
   mtp3_addr_pc_t	addr_dpc;
-  guint8		mtp3_si_code;
-  guint16		size;
+  uint8_t		mtp3_si_code;
+  uint16_t		size;
 } mtp3_tap_rec_t;
 
 #define ITU_PC_LENGTH     2
@@ -78,30 +66,22 @@ typedef struct _mtp3_tap_rec_t {
 extern "C" {
 #endif /* __cplusplus */
 
-extern gchar*   mtp3_pc_to_str(const guint32 pc);
-extern gboolean mtp3_pc_structured(void);
-extern guint32  mtp3_pc_hash(const mtp3_addr_pc_t *addr_pc_p);
-extern int mtp3_addr_len(void);
+extern char* mtp3_pc_to_str(wmem_allocator_t* allocator, const uint32_t pc);
+extern bool mtp3_pc_structured(void);
+extern uint32_t mtp3_pc_hash(const mtp3_addr_pc_t *addr_pc_p);
 
-#ifdef __PROTO_H__
-/* epan/to_str.c includes this file, but it does not include proto.h so
- * it doesn't know about things like proto_tree.  This function is not
- * needed by to_str.c, so just don't prototype it there (or anywhere
- * without proto.h).
- */
-extern void dissect_mtp3_3byte_pc(tvbuff_t *tvb, guint offset,
-				  proto_tree *tree, gint ett_pc,
-				  int hf_pc, int hf_pc_network,
+extern void dissect_mtp3_3byte_pc(tvbuff_t *tvb, packet_info* pinfo, unsigned offset,
+				  proto_tree *tree, int ett_pc,
+				  int hf_pc_string, int hf_pc_network,
 				  int hf_pc_cluster, int hf_pc_member,
-				  int hf_dpc, int pc);
-#endif
+				  int hf_dpc, int hf_pc);
 
 /*
  * the following allows TAP code access to the messages
  * without having to duplicate it. With MSVC and a
  * libwireshark.dll, we need a special declaration.
  */
-WS_DLL_PUBLIC const value_string mtp3_service_indicator_code_short_vals[];
+extern const value_string mtp3_service_indicator_code_short_vals[];
 
 #define MTP_SI_SNM	0x0
 #define MTP_SI_MTN	0x1

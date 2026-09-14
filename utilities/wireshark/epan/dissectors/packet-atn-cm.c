@@ -1,11 +1,8 @@
 /* Do not modify this file. Changes will be overwritten.                      */
 /* Generated automatically by the ASN.1 to Wireshark dissector compiler       */
 /* packet-atn-cm.c                                                            */
-/* asn2wrs.py -u -L -p atn-cm -c ./atn-cm.cnf -s ./packet-atn-cm-template -D . -O ../.. atn-cm.asn */
+/* asn2wrs.py -u -q -L -p atn-cm -c ./atn-cm.cnf -s ./packet-atn-cm-template -D . -O ../.. atn-cm.asn */
 
-/* Input file: packet-atn-cm-template.c */
-
-#line 1 "./asn1/atn-cm/packet-atn-cm-template.c"
 /* packet-atn-cm.c
  * By Mathias Guettler <guettler@web.de>
  * Copyright 2013
@@ -13,36 +10,21 @@
  * Routines for ATN context management protocol packet disassembly.
  * ATN context management allows an aircraft
  * to log on to a ground facility.
-
+ *
  * details see:
- * http://en.wikipedia.org/wiki/CPDLC
- * http://members.optusnet.com.au/~cjr/introduction.htm
-
+ * https://en.wikipedia.org/wiki/CPDLC
+ * https://members.optusnet.com.au/~cjr/introduction.htm
+ *
  * standards:
- * http://legacy.icao.int/anb/panels/acp/repository.cfm
-
- * note:
- * We are dealing with ATN/CPDLC aka ICAO Doc 9705 Ed2 here
+ * We are dealing with ATN/CPDLC aka ICAO Doc 9705 Second Edition here
  * (CPDLC may also be transmitted via ACARS/AOA aka "FANS-1/A ").
-
-
+ * https://www.icao.int/safety/acp/repository/_%20Doc9705_ed2_1999.pdf
+ *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -50,6 +32,7 @@
 #include <epan/packet.h>
 #include <epan/exceptions.h>
 #include <epan/conversation.h>
+#include <wsutil/array.h>
 #include "packet-ber.h"
 #include "packet-per.h"
 #include "packet-atn-ulcs.h"
@@ -59,85 +42,71 @@
 void proto_register_atn_cm(void);
 void proto_reg_handoff_atn_cm(void);
 
+static int hf_atn_cm_CMAircraftMessage_PDU;       /* CMAircraftMessage */
+static int hf_atn_cm_CMGroundMessage_PDU;         /* CMGroundMessage */
+static int hf_atn_cm_cmLogonRequest;              /* CMLogonRequest */
+static int hf_atn_cm_cmContactResponse;           /* CMContactResponse */
+static int hf_atn_cm_cmAbortReason;               /* CMAbortReason */
+static int hf_atn_cm_cmLogonResponse;             /* CMLogonResponse */
+static int hf_atn_cm_cmUpdate;                    /* CMUpdate */
+static int hf_atn_cm_cmContactRequest;            /* CMContactRequest */
+static int hf_atn_cm_cmForwardRequest;            /* CMForwardRequest */
+static int hf_atn_cm_cmForwardResponse;           /* CMForwardResponse */
+static int hf_atn_cm_longTsap;                    /* LongTsap */
+static int hf_atn_cm_shortTsap;                   /* ShortTsap */
+static int hf_atn_cm_aeQualifier;                 /* AEQualifier */
+static int hf_atn_cm_apVersion;                   /* VersionNumber */
+static int hf_atn_cm_apAddress;                   /* APAddress */
+static int hf_atn_cm_facilityDesignation;         /* FacilityDesignation */
+static int hf_atn_cm_address;                     /* LongTsap */
+static int hf_atn_cm_aircraftFlightIdentification;  /* AircraftFlightIdentification */
+static int hf_atn_cm_cMLongTSAP;                  /* LongTsap */
+static int hf_atn_cm_groundInitiatedApplications;  /* SEQUENCE_SIZE_1_256_OF_AEQualifierVersionAddress */
+static int hf_atn_cm_groundInitiatedApplications_item;  /* AEQualifierVersionAddress */
+static int hf_atn_cm_airOnlyInitiatedApplications;  /* SEQUENCE_SIZE_1_256_OF_AEQualifierVersion */
+static int hf_atn_cm_airOnlyInitiatedApplications_item;  /* AEQualifierVersion */
+static int hf_atn_cm_airportDeparture;            /* Airport */
+static int hf_atn_cm_airportDestination;          /* Airport */
+static int hf_atn_cm_dateTimeDepartureETD;        /* DateTime */
+static int hf_atn_cm_airInitiatedApplications;    /* SEQUENCE_SIZE_1_256_OF_AEQualifierVersionAddress */
+static int hf_atn_cm_airInitiatedApplications_item;  /* AEQualifierVersionAddress */
+static int hf_atn_cm_groundOnlyInitiatedApplications;  /* SEQUENCE_SIZE_1_256_OF_AEQualifierVersion */
+static int hf_atn_cm_groundOnlyInitiatedApplications_item;  /* AEQualifierVersion */
+static int hf_atn_cm_year;                        /* Year */
+static int hf_atn_cm_month;                       /* Month */
+static int hf_atn_cm_day;                         /* Day */
+static int hf_atn_cm_date;                        /* Date */
+static int hf_atn_cm_time;                        /* Time */
+static int hf_atn_cm_rDP;                         /* OCTET_STRING_SIZE_5 */
+static int hf_atn_cm_aRS;                         /* OCTET_STRING_SIZE_3 */
+static int hf_atn_cm_locSysNselTsel;              /* OCTET_STRING_SIZE_10_11 */
+static int hf_atn_cm_hours;                       /* Timehours */
+static int hf_atn_cm_minutes;                     /* Timeminutes */
 
-/*--- Included file: packet-atn-cm-hf.c ---*/
-#line 1 "./asn1/atn-cm/packet-atn-cm-hf.c"
-static int hf_atn_cm_CMAircraftMessage_PDU = -1;  /* CMAircraftMessage */
-static int hf_atn_cm_CMGroundMessage_PDU = -1;    /* CMGroundMessage */
-static int hf_atn_cm_cmLogonRequest = -1;         /* CMLogonRequest */
-static int hf_atn_cm_cmContactResponse = -1;      /* CMContactResponse */
-static int hf_atn_cm_cmAbortReason = -1;          /* CMAbortReason */
-static int hf_atn_cm_cmLogonResponse = -1;        /* CMLogonResponse */
-static int hf_atn_cm_cmUpdate = -1;               /* CMUpdate */
-static int hf_atn_cm_cmContactRequest = -1;       /* CMContactRequest */
-static int hf_atn_cm_cmForwardRequest = -1;       /* CMForwardRequest */
-static int hf_atn_cm_cmForwardResponse = -1;      /* CMForwardResponse */
-static int hf_atn_cm_longTsap = -1;               /* LongTsap */
-static int hf_atn_cm_shortTsap = -1;              /* ShortTsap */
-static int hf_atn_cm_aeQualifier = -1;            /* AEQualifier */
-static int hf_atn_cm_apVersion = -1;              /* VersionNumber */
-static int hf_atn_cm_apAddress = -1;              /* APAddress */
-static int hf_atn_cm_facilityDesignation = -1;    /* FacilityDesignation */
-static int hf_atn_cm_address = -1;                /* LongTsap */
-static int hf_atn_cm_aircraftFlightIdentification = -1;  /* AircraftFlightIdentification */
-static int hf_atn_cm_cMLongTSAP = -1;             /* LongTsap */
-static int hf_atn_cm_groundInitiatedApplications = -1;  /* SEQUENCE_SIZE_1_256_OF_AEQualifierVersionAddress */
-static int hf_atn_cm_groundInitiatedApplications_item = -1;  /* AEQualifierVersionAddress */
-static int hf_atn_cm_airOnlyInitiatedApplications = -1;  /* SEQUENCE_SIZE_1_256_OF_AEQualifierVersion */
-static int hf_atn_cm_airOnlyInitiatedApplications_item = -1;  /* AEQualifierVersion */
-static int hf_atn_cm_airportDeparture = -1;       /* Airport */
-static int hf_atn_cm_airportDestination = -1;     /* Airport */
-static int hf_atn_cm_dateTimeDepartureETD = -1;   /* DateTime */
-static int hf_atn_cm_airInitiatedApplications = -1;  /* SEQUENCE_SIZE_1_256_OF_AEQualifierVersionAddress */
-static int hf_atn_cm_airInitiatedApplications_item = -1;  /* AEQualifierVersionAddress */
-static int hf_atn_cm_groundOnlyInitiatedApplications = -1;  /* SEQUENCE_SIZE_1_256_OF_AEQualifierVersion */
-static int hf_atn_cm_groundOnlyInitiatedApplications_item = -1;  /* AEQualifierVersion */
-static int hf_atn_cm_year = -1;                   /* Year */
-static int hf_atn_cm_month = -1;                  /* Month */
-static int hf_atn_cm_day = -1;                    /* Day */
-static int hf_atn_cm_date = -1;                   /* Date */
-static int hf_atn_cm_time = -1;                   /* Time */
-static int hf_atn_cm_rDP = -1;                    /* OCTET_STRING_SIZE_5 */
-static int hf_atn_cm_aRS = -1;                    /* OCTET_STRING_SIZE_3 */
-static int hf_atn_cm_locSysNselTsel = -1;         /* OCTET_STRING_SIZE_10_11 */
-static int hf_atn_cm_hours = -1;                  /* Timehours */
-static int hf_atn_cm_minutes = -1;                /* Timeminutes */
+static int ett_atn_cm_CMAircraftMessage;
+static int ett_atn_cm_CMGroundMessage;
+static int ett_atn_cm_APAddress;
+static int ett_atn_cm_AEQualifierVersion;
+static int ett_atn_cm_AEQualifierVersionAddress;
+static int ett_atn_cm_CMContactRequest;
+static int ett_atn_cm_CMLogonRequest;
+static int ett_atn_cm_SEQUENCE_SIZE_1_256_OF_AEQualifierVersionAddress;
+static int ett_atn_cm_SEQUENCE_SIZE_1_256_OF_AEQualifierVersion;
+static int ett_atn_cm_CMLogonResponse;
+static int ett_atn_cm_Date;
+static int ett_atn_cm_DateTime;
+static int ett_atn_cm_LongTsap;
+static int ett_atn_cm_ShortTsap;
+static int ett_atn_cm_Time;
+static int ett_atn_cm;
 
-/*--- End of included file: packet-atn-cm-hf.c ---*/
-#line 55 "./asn1/atn-cm/packet-atn-cm-template.c"
-
-
-/*--- Included file: packet-atn-cm-ett.c ---*/
-#line 1 "./asn1/atn-cm/packet-atn-cm-ett.c"
-static gint ett_atn_cm_CMAircraftMessage = -1;
-static gint ett_atn_cm_CMGroundMessage = -1;
-static gint ett_atn_cm_APAddress = -1;
-static gint ett_atn_cm_AEQualifierVersion = -1;
-static gint ett_atn_cm_AEQualifierVersionAddress = -1;
-static gint ett_atn_cm_CMContactRequest = -1;
-static gint ett_atn_cm_CMLogonRequest = -1;
-static gint ett_atn_cm_SEQUENCE_SIZE_1_256_OF_AEQualifierVersionAddress = -1;
-static gint ett_atn_cm_SEQUENCE_SIZE_1_256_OF_AEQualifierVersion = -1;
-static gint ett_atn_cm_CMLogonResponse = -1;
-static gint ett_atn_cm_Date = -1;
-static gint ett_atn_cm_DateTime = -1;
-static gint ett_atn_cm_LongTsap = -1;
-static gint ett_atn_cm_ShortTsap = -1;
-static gint ett_atn_cm_Time = -1;
-
-/*--- End of included file: packet-atn-cm-ett.c ---*/
-#line 57 "./asn1/atn-cm/packet-atn-cm-template.c"
-static gint ett_atn_cm = -1;
-
-
-/*--- Included file: packet-atn-cm-fn.c ---*/
-#line 1 "./asn1/atn-cm/packet-atn-cm-fn.c"
 
 
 static int
 dissect_atn_cm_AircraftFlightIdentification(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_IA5String(tvb, offset, actx, tree, hf_index,
-                                          2, 8, FALSE);
+                                          2, 8, false,
+                                          NULL);
 
   return offset;
 }
@@ -147,7 +116,7 @@ dissect_atn_cm_AircraftFlightIdentification(tvbuff_t *tvb _U_, int offset _U_, a
 static int
 dissect_atn_cm_OCTET_STRING_SIZE_5(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       5, 5, FALSE, NULL);
+                                       5, 5, false, NULL);
 
   return offset;
 }
@@ -157,7 +126,7 @@ dissect_atn_cm_OCTET_STRING_SIZE_5(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_atn_cm_OCTET_STRING_SIZE_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       3, 3, FALSE, NULL);
+                                       3, 3, false, NULL);
 
   return offset;
 }
@@ -167,7 +136,7 @@ dissect_atn_cm_OCTET_STRING_SIZE_3(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_atn_cm_OCTET_STRING_SIZE_10_11(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_octet_string(tvb, offset, actx, tree, hf_index,
-                                       10, 11, FALSE, NULL);
+                                       10, 11, false, NULL);
 
   return offset;
 }
@@ -207,7 +176,7 @@ dissect_atn_cm_LongTsap(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_,
 static int
 dissect_atn_cm_AEQualifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 255U, NULL, FALSE);
+                                                            0U, 255U, NULL, false);
 
   return offset;
 }
@@ -217,7 +186,7 @@ dissect_atn_cm_AEQualifier(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _
 static int
 dissect_atn_cm_VersionNumber(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 255U, NULL, FALSE);
+                                                            1U, 255U, NULL, false);
 
   return offset;
 }
@@ -269,7 +238,7 @@ static int
 dissect_atn_cm_SEQUENCE_SIZE_1_256_OF_AEQualifierVersionAddress(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cm_SEQUENCE_SIZE_1_256_OF_AEQualifierVersionAddress, SEQUENCE_SIZE_1_256_OF_AEQualifierVersionAddress_sequence_of,
-                                                  1, 256, FALSE);
+                                                  1, 256, false);
 
   return offset;
 }
@@ -298,7 +267,7 @@ static int
 dissect_atn_cm_SEQUENCE_SIZE_1_256_OF_AEQualifierVersion(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_sequence_of(tvb, offset, actx, tree, hf_index,
                                                   ett_atn_cm_SEQUENCE_SIZE_1_256_OF_AEQualifierVersion, SEQUENCE_SIZE_1_256_OF_AEQualifierVersion_sequence_of,
-                                                  1, 256, FALSE);
+                                                  1, 256, false);
 
   return offset;
 }
@@ -308,7 +277,8 @@ dissect_atn_cm_SEQUENCE_SIZE_1_256_OF_AEQualifierVersion(tvbuff_t *tvb _U_, int 
 static int
 dissect_atn_cm_FacilityDesignation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_IA5String(tvb, offset, actx, tree, hf_index,
-                                          4, 8, FALSE);
+                                          4, 8, false,
+                                          NULL);
 
   return offset;
 }
@@ -318,7 +288,8 @@ dissect_atn_cm_FacilityDesignation(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t
 static int
 dissect_atn_cm_Airport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_IA5String(tvb, offset, actx, tree, hf_index,
-                                          4, 4, FALSE);
+                                          4, 4, false,
+                                          NULL);
 
   return offset;
 }
@@ -328,7 +299,7 @@ dissect_atn_cm_Airport(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, 
 static int
 dissect_atn_cm_Year(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1996U, 2095U, NULL, FALSE);
+                                                            1996U, 2095U, NULL, false);
 
   return offset;
 }
@@ -338,7 +309,7 @@ dissect_atn_cm_Year(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 static int
 dissect_atn_cm_Month(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 12U, NULL, FALSE);
+                                                            1U, 12U, NULL, false);
 
   return offset;
 }
@@ -348,7 +319,7 @@ dissect_atn_cm_Month(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pr
 static int
 dissect_atn_cm_Day(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            1U, 31U, NULL, FALSE);
+                                                            1U, 31U, NULL, false);
 
   return offset;
 }
@@ -374,7 +345,7 @@ dissect_atn_cm_Date(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, pro
 static int
 dissect_atn_cm_Timehours(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 23U, NULL, FALSE);
+                                                            0U, 23U, NULL, false);
 
   return offset;
 }
@@ -384,7 +355,7 @@ dissect_atn_cm_Timehours(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_
 static int
 dissect_atn_cm_Timeminutes(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_constrained_integer(tvb, offset, actx, tree, hf_index,
-                                                            0U, 59U, NULL, FALSE);
+                                                            0U, 59U, NULL, false);
 
   return offset;
 }
@@ -451,7 +422,7 @@ static const value_string atn_cm_Response_vals[] = {
 static int
 dissect_atn_cm_Response(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     2, NULL, FALSE, 0, NULL);
+                                     2, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -484,7 +455,7 @@ static const value_string atn_cm_CMAbortReason_vals[] = {
 static int
 dissect_atn_cm_CMAbortReason(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     10, NULL, TRUE, 0, NULL);
+                                     10, NULL, true, 0, NULL);
 
   return offset;
 }
@@ -573,7 +544,7 @@ static const value_string atn_cm_CMForwardResponse_vals[] = {
 static int
 dissect_atn_cm_CMForwardResponse(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *actx _U_, proto_tree *tree _U_, int hf_index _U_) {
   offset = dissect_per_enumerated(tvb, offset, actx, tree, hf_index,
-                                     3, NULL, FALSE, 0, NULL);
+                                     3, NULL, false, 0, NULL);
 
   return offset;
 }
@@ -613,7 +584,7 @@ dissect_atn_cm_CMGroundMessage(tvbuff_t *tvb _U_, int offset _U_, asn1_ctx_t *ac
 static int dissect_CMAircraftMessage_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, FALSE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_atn_cm_CMAircraftMessage(tvb, offset, &asn1_ctx, tree, hf_atn_cm_CMAircraftMessage_PDU);
   offset += 7; offset >>= 3;
   return offset;
@@ -621,16 +592,13 @@ static int dissect_CMAircraftMessage_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _
 static int dissect_CMGroundMessage_PDU(tvbuff_t *tvb _U_, packet_info *pinfo _U_, proto_tree *tree _U_, void *data _U_) {
   int offset = 0;
   asn1_ctx_t asn1_ctx;
-  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, FALSE, pinfo);
+  asn1_ctx_init(&asn1_ctx, ASN1_ENC_PER, false, pinfo);
   offset = dissect_atn_cm_CMGroundMessage(tvb, offset, &asn1_ctx, tree, hf_atn_cm_CMGroundMessage_PDU);
   offset += 7; offset >>= 3;
   return offset;
 }
 
-
-/*--- End of included file: packet-atn-cm-fn.c ---*/
-#line 60 "./asn1/atn-cm/packet-atn-cm-template.c"
-static int proto_atn_cm = -1;
+static int proto_atn_cm;
 
 static int
 dissect_atn_cm(
@@ -670,7 +638,7 @@ dissect_atn_cm(
     return tvb_reported_length_remaining(tvb, 0);
 }
 
-static gboolean
+static bool
 dissect_atn_cm_heur(
     tvbuff_t *tvb,
     packet_info *pinfo,
@@ -678,7 +646,7 @@ dissect_atn_cm_heur(
     void *data _U_)
 {
     atn_conversation_t *volatile atn_cv = NULL;
-    volatile gboolean is_atn_cm = FALSE;
+    volatile bool is_atn_cm = false;
     int type;
 
     /* determine whether it is uplink or downlink */
@@ -693,9 +661,9 @@ dissect_atn_cm_heur(
                   pinfo,
                   NULL, NULL);
                 /* no exception thrown: looks like it is a CM PDU */
-                is_atn_cm = TRUE; }
+                is_atn_cm = true; }
             CATCH_ALL {
-                is_atn_cm = FALSE; }
+                is_atn_cm = false; }
             ENDTRY;
             break;
         case dm:
@@ -705,16 +673,16 @@ dissect_atn_cm_heur(
                     pinfo,
                     NULL, NULL);
                 /* no exception thrown: looks like it is a CM PDU */
-                is_atn_cm = TRUE;}
+                is_atn_cm = true;}
             CATCH_ALL {
-                is_atn_cm = FALSE; }
+                is_atn_cm = false; }
             ENDTRY;
             break;
         default:
             break;
     }
 
-    if (is_atn_cm  == TRUE) {
+    if (is_atn_cm  == true) {
         /* note: */
         /* all subsequent PDU's belonging to this conversation are considered CM */
         /* if the first CM PDU has been decoded successfully */
@@ -764,9 +732,6 @@ dissect_atn_cm_heur(
 void proto_register_atn_cm (void)
 {
     static hf_register_info hf_atn_cm[] = {
-
-/*--- Included file: packet-atn-cm-hfarr.c ---*/
-#line 1 "./asn1/atn-cm/packet-atn-cm-hfarr.c"
     { &hf_atn_cm_CMAircraftMessage_PDU,
       { "CMAircraftMessage", "atn-cm.CMAircraftMessage",
         FT_UINT32, BASE_DEC, VALS(atn_cm_CMAircraftMessage_vals), 0,
@@ -927,14 +892,8 @@ void proto_register_atn_cm (void)
       { "minutes", "atn-cm.minutes",
         FT_UINT32, BASE_DEC, NULL, 0,
         "Timeminutes", HFILL }},
-
-/*--- End of included file: packet-atn-cm-hfarr.c ---*/
-#line 195 "./asn1/atn-cm/packet-atn-cm-template.c"
     };
-    static gint *ett[] = {
-
-/*--- Included file: packet-atn-cm-ettarr.c ---*/
-#line 1 "./asn1/atn-cm/packet-atn-cm-ettarr.c"
+    static int *ett[] = {
     &ett_atn_cm_CMAircraftMessage,
     &ett_atn_cm_CMGroundMessage,
     &ett_atn_cm_APAddress,
@@ -950,17 +909,11 @@ void proto_register_atn_cm (void)
     &ett_atn_cm_LongTsap,
     &ett_atn_cm_ShortTsap,
     &ett_atn_cm_Time,
-
-/*--- End of included file: packet-atn-cm-ettarr.c ---*/
-#line 198 "./asn1/atn-cm/packet-atn-cm-template.c"
       &ett_atn_cm
     };
 
     /* register CM application */
-    proto_atn_cm = proto_register_protocol(
-        ATN_CM_PROTO ,
-        "ATN-CM",
-        "atn-cm");
+    proto_atn_cm = proto_register_protocol(ATN_CM_PROTO, "ATN-CM", "atn-cm");
 
     proto_register_field_array(
         proto_atn_cm,
@@ -989,7 +942,7 @@ void proto_reg_handoff_atn_cm(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

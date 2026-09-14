@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2010 Collabora, Ltd.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -25,7 +27,9 @@
 
 #include "gasyncresult.h"
 #include "ginetaddress.h"
+#include "gioerror.h"
 #include "glibintl.h"
+#include "glib-private.h"
 #include "gnetworkaddress.h"
 #include "gnetworkingprivate.h"
 #include "gproxy.h"
@@ -36,6 +40,21 @@
 #include "gsocketaddress.h"
 #include "gsocketaddressenumerator.h"
 #include "gsocketconnectable.h"
+
+/**
+ * GProxyAddressEnumerator:
+ *
+ * `GProxyAddressEnumerator` is a wrapper around
+ * [class@Gio.SocketAddressEnumerator] which takes the [class@Gio.SocketAddress]
+ * instances returned by the [class@Gio.SocketAddressEnumerator]
+ * and wraps them in [class@Gio.ProxyAddress] instances, using the given
+ * [property@Gio.ProxyAddressEnumerator:proxy-resolver].
+ *
+ * This enumerator will be returned (for example, by
+ * [method@Gio.SocketConnectable.enumerate]) as appropriate when a proxy is
+ * configured; there should be no need to manually wrap a
+ * [class@Gio.SocketAddressEnumerator] instance with one.
+ */
 
 #define GET_PRIVATE(o) (G_PROXY_ADDRESS_ENUMERATOR (o)->priv)
 
@@ -71,45 +90,34 @@ struct _GProxyAddressEnumeratorPrivate
   gboolean                  supports_hostname;
   GList                    *next_dest_ip;
   GError                   *last_error;
+
+  /* ever_enumerated is TRUE after we've returned a result for the first time
+   * via g_proxy_address_enumerator_next() or _next_async(). If FALSE, we have
+   * never returned yet, and should return an error if returning NULL because
+   * it does not make sense for a proxy resolver to return NULL except on error.
+   * (Whereas a DNS resolver would return NULL with no error to indicate "no
+   * results", a proxy resolver would want to return "direct://" instead, so
+   * NULL without error does not make sense for us.)
+   *
+   * But if ever_enumerated is TRUE, then we must not report any further errors
+   * (except for G_IO_ERROR_CANCELLED), because this is an API contract of
+   * GSocketAddressEnumerator.
+   */
+  gboolean                  ever_enumerated;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (GProxyAddressEnumerator, g_proxy_address_enumerator, G_TYPE_SOCKET_ADDRESS_ENUMERATOR)
 
 static void
 save_userinfo (GProxyAddressEnumeratorPrivate *priv,
-	       const gchar *proxy)
+               const gchar *proxy)
 {
-  gchar *userinfo;
+  g_clear_pointer (&priv->proxy_username, g_free);
+  g_clear_pointer (&priv->proxy_password, g_free);
 
-  if (priv->proxy_username)
-    {
-      g_free (priv->proxy_username);
-      priv->proxy_username = NULL;
-    }
-
-  if (priv->proxy_password)
-    {
-      g_free (priv->proxy_password);
-      priv->proxy_password = NULL;
-    }
-  
-  if (_g_uri_parse_authority (proxy, NULL, NULL, &userinfo))
-    {
-      if (userinfo)
-	{
-	  gchar **split = g_strsplit (userinfo, ":", 2);
-
-	  if (split[0] != NULL)
-	    {
-	      priv->proxy_username = g_uri_unescape_string (split[0], NULL);
-	      if (split[1] != NULL)
-		priv->proxy_password = g_uri_unescape_string (split[1], NULL);
-	    }
-
-	  g_strfreev (split);
-	  g_free (userinfo);
-	}
-    }
+  g_uri_split_with_user (proxy, G_URI_FLAGS_HAS_PASSWORD, NULL,
+                         &priv->proxy_username, &priv->proxy_password,
+                         NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 }
 
 static void
@@ -150,9 +158,13 @@ next_enumerator (GProxyAddressEnumeratorPrivate *priv)
       else
 	{
 	  GError *error = NULL;
+	  int default_port;
 
-	  connectable = g_network_address_parse_uri (priv->proxy_uri, 0, &error);
+	  default_port = GLIB_PRIVATE_CALL (g_uri_get_default_scheme_port) (priv->proxy_type);
+	  if (default_port == -1)
+	    default_port = 0;
 
+	  connectable = g_network_address_parse_uri (priv->proxy_uri, default_port, &error);
 	  if (error)
 	    {
 	      g_warning ("Invalid proxy URI '%s': %s",
@@ -180,8 +192,9 @@ g_proxy_address_enumerator_next (GSocketAddressEnumerator  *enumerator,
   GSocketAddress *result = NULL;
   GError *first_error = NULL;
 
-  if (priv->proxies == NULL)
+  if (!priv->ever_enumerated)
     {
+      g_assert (priv->proxies == NULL);
       priv->proxies = g_proxy_resolver_lookup (priv->proxy_resolver,
 					       priv->dest_uri,
 					       cancellable,
@@ -189,7 +202,10 @@ g_proxy_address_enumerator_next (GSocketAddressEnumerator  *enumerator,
       priv->next_proxy = priv->proxies;
 
       if (priv->proxies == NULL)
-	return NULL;
+	{
+	  priv->ever_enumerated = TRUE;
+	  return NULL;
+	}
     }
 
   while (result == NULL && (*priv->next_proxy || priv->addr_enum))
@@ -269,10 +285,10 @@ g_proxy_address_enumerator_next (GSocketAddressEnumerator  *enumerator,
 	{
 	  dest_hostname = g_strdup (priv->dest_hostname);
 	}
+
+      g_assert (G_IS_INET_SOCKET_ADDRESS (priv->proxy_address));
+
       dest_protocol = g_uri_parse_scheme (priv->dest_uri);
-		 		  
-      g_return_val_if_fail (G_IS_INET_SOCKET_ADDRESS (priv->proxy_address),
-			    NULL);
 
       inetsaddr = G_INET_SOCKET_ADDRESS (priv->proxy_address);
       inetaddr = g_inet_socket_address_get_address (inetsaddr);
@@ -299,29 +315,42 @@ g_proxy_address_enumerator_next (GSocketAddressEnumerator  *enumerator,
 	}
     }
 
-  if (result == NULL && first_error)
+  if (result == NULL && first_error && (!priv->ever_enumerated || g_error_matches (first_error, G_IO_ERROR, G_IO_ERROR_CANCELLED)))
     g_propagate_error (error, first_error);
   else if (first_error)
     g_error_free (first_error);
 
+  if (result == NULL && error != NULL && *error == NULL && !priv->ever_enumerated)
+    g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED, _("Unspecified proxy lookup failure"));
+
+  priv->ever_enumerated = TRUE;
+
   return result;
 }
-
-
 
 static void
 complete_async (GTask *task)
 {
   GProxyAddressEnumeratorPrivate *priv = g_task_get_task_data (task);
 
-  if (priv->last_error)
+  if (priv->last_error && (!priv->ever_enumerated || g_error_matches (priv->last_error, G_IO_ERROR, G_IO_ERROR_CANCELLED)))
     {
       g_task_return_error (task, priv->last_error);
       priv->last_error = NULL;
     }
+  else if (!priv->ever_enumerated)
+    {
+      g_task_return_new_error_literal (task, G_IO_ERROR, G_IO_ERROR_FAILED,
+                                       _("Unspecified proxy lookup failure"));
+    }
   else
-    g_task_return_pointer (task, NULL, NULL);
+    {
+      g_task_return_pointer (task, NULL, NULL);
+    }
 
+  priv->ever_enumerated = TRUE;
+
+  g_clear_error (&priv->last_error);
   g_object_unref (task);
 }
 
@@ -361,7 +390,7 @@ return_result (GTask *task)
 	}
       dest_protocol = g_uri_parse_scheme (priv->dest_uri);
 
-      g_return_if_fail (G_IS_INET_SOCKET_ADDRESS (priv->proxy_address));
+      g_assert (G_IS_INET_SOCKET_ADDRESS (priv->proxy_address));
 
       inetsaddr = G_INET_SOCKET_ADDRESS (priv->proxy_address);
       inetaddr = g_inet_socket_address_get_address (inetsaddr);
@@ -388,6 +417,7 @@ return_result (GTask *task)
 	}
     }
 
+  priv->ever_enumerated = TRUE;
   g_task_return_pointer (task, result, g_object_unref);
   g_object_unref (task);
 }
@@ -527,6 +557,7 @@ g_proxy_address_enumerator_next_async (GSocketAddressEnumerator *enumerator,
   GTask *task;
 
   task = g_task_new (enumerator, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_proxy_address_enumerator_next_async);
   g_task_set_task_data (task, priv, NULL);
 
   if (priv->proxies == NULL)
@@ -713,11 +744,14 @@ g_proxy_address_enumerator_class_init (GProxyAddressEnumeratorClass *proxy_enume
   enumerator_class->next_async = g_proxy_address_enumerator_next_async;
   enumerator_class->next_finish = g_proxy_address_enumerator_next_finish;
 
+  /**
+   * GProxyAddressEnumerator:uri:
+   *
+   * The destination URI. Use `none://` for a generic socket.
+   */
   g_object_class_install_property (object_class,
 				   PROP_URI,
-				   g_param_spec_string ("uri",
-							P_("URI"),
-							P_("The destination URI, use none:// for generic socket"),
+				   g_param_spec_string ("uri", NULL, NULL,
 							NULL,
 							G_PARAM_READWRITE |
 							G_PARAM_CONSTRUCT_ONLY |
@@ -733,19 +767,20 @@ g_proxy_address_enumerator_class_init (GProxyAddressEnumeratorClass *proxy_enume
    */
   g_object_class_install_property (object_class,
 				   PROP_DEFAULT_PORT,
-				   g_param_spec_uint ("default-port",
-                                                      P_("Default port"),
-                                                      P_("The default port to use if uri does not specify one"),
+				   g_param_spec_uint ("default-port", NULL, NULL,
                                                       0, 65535, 0,
                                                       G_PARAM_READWRITE |
                                                       G_PARAM_CONSTRUCT_ONLY |
                                                       G_PARAM_STATIC_STRINGS));
 
+  /**
+   * GProxyAddressEnumerator:connectable:
+   *
+   * The connectable being enumerated.
+   */
   g_object_class_install_property (object_class,
 				   PROP_CONNECTABLE,
-				   g_param_spec_object ("connectable",
-							P_("Connectable"),
-							P_("The connectable being enumerated."),
+				   g_param_spec_object ("connectable", NULL, NULL,
 							G_TYPE_SOCKET_CONNECTABLE,
 							G_PARAM_READWRITE |
 							G_PARAM_CONSTRUCT_ONLY |
@@ -760,9 +795,7 @@ g_proxy_address_enumerator_class_init (GProxyAddressEnumeratorClass *proxy_enume
    */
   g_object_class_install_property (object_class,
                                    PROP_PROXY_RESOLVER,
-                                   g_param_spec_object ("proxy-resolver",
-                                                        P_("Proxy resolver"),
-                                                        P_("The proxy resolver to use."),
+                                   g_param_spec_object ("proxy-resolver", NULL, NULL,
                                                         G_TYPE_PROXY_RESOLVER,
                                                         G_PARAM_READWRITE |
                                                         G_PARAM_CONSTRUCT |

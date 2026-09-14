@@ -3,7 +3,7 @@
 
 # Check for duplicates with identical translations
 
-cat <<EOF > mf-test7.in1
+cat <<\EOF > mf-test7.in1
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
@@ -26,7 +26,7 @@ EOF
 : ${MSGFMT=msgfmt}
 LC_MESSAGES=C LC_ALL= \
 ${MSGFMT} --verbose --check mf-test7.in1 -o /dev/null \
-    2>&1 | grep -v '^==' | sed -e 's|[^ ]*\\msgfmt\.exe|msgfmt|' -e 's|^msgfmt\.exe|msgfmt|' | LC_ALL=C tr -d '\r' > mf-test7.err
+    2>&1 | grep -v '^==' | sed -e 's|[^ ]*\\msgfmt\.exe|msgfmt|' -e 's|^msgfmt\.exe|msgfmt|' -e 's|^/cygdrive/[^ ]*/msgfmt|msgfmt|' | LC_ALL=C tr -d '\r' > mf-test7.err
 
 cat << EOF > mf-test7.ok
 mf-test7.in1:17: duplicate message definition...

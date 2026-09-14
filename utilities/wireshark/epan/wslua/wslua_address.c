@@ -12,19 +12,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -39,12 +27,12 @@
 WSLUA_CLASS_DEFINE(Address,FAIL_ON_NULL("Address")); /* Represents an address. */
 
 WSLUA_CONSTRUCTOR Address_ip(lua_State* L) {
-    /* Creates an Address Object representing an IP address. */
+    /* Creates an Address Object representing an IPv4 address. */
 
 #define WSLUA_ARG_Address_ip_HOSTNAME 1 /* The address or name of the IP host. */
     Address addr = (Address)g_malloc(sizeof(address));
-    guint32 ip_addr;
-    const gchar* name = luaL_checkstring(L,WSLUA_ARG_Address_ip_HOSTNAME);
+    uint32_t ip_addr;
+    const char* name = luaL_checkstring(L,WSLUA_ARG_Address_ip_HOSTNAME);
 
     if (! get_host_ipaddr(name, &ip_addr)) {
         ip_addr = 0;
@@ -55,25 +43,42 @@ WSLUA_CONSTRUCTOR Address_ip(lua_State* L) {
     WSLUA_RETURN(1); /* The Address object. */
 }
 
+WSLUA_CONSTRUCTOR Address_ipv6(lua_State* L) {
+    /* Creates an Address Object representing an IPv6 address. */
+
+#define WSLUA_ARG_Address_ipv6_HOSTNAME 1 /* The address or name of the IP host. */
+    Address addr = (Address)g_malloc(sizeof(address));
+    ws_in6_addr ip_addr;
+    const char* name = luaL_checkstring(L,WSLUA_ARG_Address_ipv6_HOSTNAME);
+
+    if (!get_host_ipaddr6(name, &ip_addr)) {
+        memset(&ip_addr, 0, sizeof(ip_addr));
+    }
+
+    alloc_address_wmem(NULL, addr, AT_IPv6, sizeof(ip_addr.bytes), &ip_addr.bytes);
+    pushAddress(L,addr);
+    WSLUA_RETURN(1); /* The Address object */
+}
+
+WSLUA_CONSTRUCTOR Address_ether(lua_State *L) {
+    /* Creates an Address Object representing an Ethernet address. */
+
+#define WSLUA_ARG_Address_ether_ETH 1 /* The Ethernet address. */
+    Address addr = (Address)g_malloc(sizeof(address));
+    const char *name = luaL_checkstring(L, WSLUA_ARG_Address_ether_ETH);
+    uint8_t eth_buf[6];
+
+    if(!str_to_eth(name, eth_buf))
+        memset(eth_buf, 0, sizeof(eth_buf));
+
+    alloc_address_wmem(NULL, addr, AT_ETHER, sizeof(eth_buf), eth_buf);
+    pushAddress(L, addr);
+    WSLUA_RETURN(1); /* The Address object. */
+}
+
 #if 0
 /* TODO */
-static int Address_ipv6(lua_State* L) {
-    Address addr = g_malloc(sizeof(address));
-
-    /* alloc_address() */
-
-    pushAddress(L,addr);
-    return 1;
-}
 static int Address_ss7(lua_State* L) {
-    Address addr = g_malloc(sizeof(address));
-
-    /* alloc_address() */
-
-    pushAddress(L,addr);
-    return 1;
-}
-static int Address_eth(lua_State* L) {
     Address addr = g_malloc(sizeof(address));
 
     /* alloc_address() */
@@ -166,10 +171,10 @@ static int Address_tipc(lua_State* L) {
 WSLUA_METHODS Address_methods[] = {
     WSLUA_CLASS_FNREG(Address,ip),
     WSLUA_CLASS_FNREG_ALIAS(Address,ipv4,ip),
-#if 0
     WSLUA_CLASS_FNREG(Address,ipv6),
+    WSLUA_CLASS_FNREG(Address,ether),
+#if 0
     WSLUA_CLASS_FNREG_ALIAS(Address,ss7pc,ss7),
-    WSLUA_CLASS_FNREG(Address,eth),
     WSLUA_CLASS_FNREG(Address,sna},
     WSLUA_CLASS_FNREG(Address,atalk),
     WSLUA_CLASS_FNREG(Address,vines),
@@ -186,7 +191,7 @@ WSLUA_METHODS Address_methods[] = {
 
 WSLUA_METAMETHOD Address__tostring(lua_State* L) {
     Address addr = checkAddress(L,1);
-    gchar *str = address_to_display(NULL, addr);
+    char *str = address_to_display(NULL, addr);
 
     lua_pushstring(L, str);
 
@@ -210,10 +215,10 @@ static int Address__gc(lua_State* L) {
 WSLUA_METAMETHOD Address__eq(lua_State* L) { /* Compares two Addresses. */
     Address addr1 = checkAddress(L,1);
     Address addr2 = checkAddress(L,2);
-    gboolean result = FALSE;
+    bool result = false;
 
     if (addresses_equal(addr1, addr2))
-        result = TRUE;
+        result = true;
 
     lua_pushboolean(L,result);
 
@@ -223,10 +228,10 @@ WSLUA_METAMETHOD Address__eq(lua_State* L) { /* Compares two Addresses. */
 WSLUA_METAMETHOD Address__le(lua_State* L) { /* Compares two Addresses. */
     Address addr1 = checkAddress(L,1);
     Address addr2 = checkAddress(L,2);
-    gboolean result = FALSE;
+    bool result = false;
 
     if (cmp_address(addr1, addr2) <= 0)
-        result = TRUE;
+        result = true;
 
     lua_pushboolean(L,result);
 
@@ -236,10 +241,10 @@ WSLUA_METAMETHOD Address__le(lua_State* L) { /* Compares two Addresses. */
 WSLUA_METAMETHOD Address__lt(lua_State* L) { /* Compares two Addresses. */
     Address addr1 = checkAddress(L,1);
     Address addr2 = checkAddress(L,2);
-    gboolean result = FALSE;
+    bool result = false;
 
     if (cmp_address(addr1, addr2) < 0)
-        result = TRUE;
+        result = true;
 
     lua_pushboolean(L,result);
 
@@ -262,7 +267,7 @@ int Address_register(lua_State *L) {
 
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

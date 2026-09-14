@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2008 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -20,17 +22,9 @@
 #define __G_NETWORKINGPRIVATE_H__
 
 #include "gnetworking.h"
+#include "gresolver.h"
 
 G_BEGIN_DECLS
-
-gboolean _g_uri_parse_authority            (const char       *uri,
-					    char            **host,
-					    guint16          *port,
-					    char            **userinfo);
-gchar *  _g_uri_from_authority             (const gchar      *protocol,
-					    const gchar      *host,
-					    guint             port,
-					    const gchar      *userinfo);
 
 guint64  g_resolver_get_serial             (GResolver        *resolver);
 
@@ -38,6 +32,8 @@ gint g_socket (gint     domain,
                gint     type,
                gint     protocol,
                GError **error);
+
+gboolean g_getservbyname_ntohs (const char *name, const char *proto, guint16 *out_port);
 
 G_END_DECLS
 

@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,6 +16,8 @@
 #include <epan/expert.h>
 #include <epan/oids.h>
 #include <epan/asn1.h>
+#include <epan/proto_data.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-acse.h"
@@ -53,22 +43,17 @@
 void proto_register_dap(void);
 void proto_reg_handoff_dap(void);
 
-static guint global_dap_tcp_port = 102;
-static dissector_handle_t tpkt_handle;
-static void prefs_register_dap(void); /* forward declaration for use in preferences registration */
-
-
 /* Initialize the protocol and registered fields */
-static int proto_dap = -1;
+static int proto_dap;
 
 
 #include "packet-dap-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_dap = -1;
+static int ett_dap;
 #include "packet-dap-ett.c"
 
-static expert_field ei_dap_anonymous = EI_INIT;
+static expert_field ei_dap_anonymous;
 
 #include "packet-dap-val.h"
 
@@ -100,7 +85,7 @@ void proto_register_dap(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_dap,
 #include "packet-dap-ettarr.c"
   };
@@ -123,13 +108,13 @@ void proto_register_dap(void) {
 
   /* Register our configuration options for DAP, particularly our port */
 
-  dap_module = prefs_register_protocol_subtree("OSI/X.500", proto_dap, prefs_register_dap);
+  dap_module = prefs_register_protocol_subtree("OSI/X.500", proto_dap, NULL);
 
-  prefs_register_uint_preference(dap_module, "tcp.port", "DAP TCP Port",
-				 "Set the port for DAP operations (if other"
-				 " than the default of 102)",
-				 10, &global_dap_tcp_port);
+  prefs_register_obsolete_preference(dap_module, "tcp.port");
 
+  prefs_register_static_text_preference(dap_module, "tcp_port_info",
+            "The TCP ports used by the DAP protocol should be added to the TPKT preference \"TPKT TCP ports\", or the IDMP preference \"IDMP TCP Port\", or by selecting \"TPKT\" as the \"Transport\" protocol in the \"Decode As\" dialog.",
+            "DAP TCP Port preference moved information");
 }
 
 
@@ -145,12 +130,9 @@ void proto_reg_handoff_dap(void) {
   /* ABSTRACT SYNTAXES */
 
   /* Register DAP with ROS (with no use of RTSE) */
-  register_ros_protocol_info("2.5.9.1", &dap_ros_info, 0, "id-as-directory-access", FALSE);
+  register_ros_protocol_info("2.5.9.1", &dap_ros_info, 0, "id-as-directory-access", false);
 
   register_idmp_protocol_info("2.5.33.0", &dap_ros_info, 0, "dap-ip");
-
-  /* remember the tpkt handler for change in preferences */
-  tpkt_handle = find_dissector("tpkt");
 
   /* AttributeValueAssertions */
   x509if_register_fmt(hf_dap_equality, "=");
@@ -159,24 +141,5 @@ void proto_reg_handoff_dap(void) {
   x509if_register_fmt(hf_dap_approximateMatch, "=~");
   /* AttributeTypes */
   x509if_register_fmt(hf_dap_present, "= *");
-
-}
-
-
-static void
-prefs_register_dap(void)
-{
-  static guint tcp_port = 0;
-
-  /* de-register the old port */
-  /* port 102 is registered by TPKT - don't undo this! */
-  if((tcp_port > 0) && (tcp_port != 102) && tpkt_handle)
-    dissector_delete_uint("tcp.port", tcp_port, tpkt_handle);
-
-  /* Set our port number for future use */
-  tcp_port = global_dap_tcp_port;
-
-  if((tcp_port > 0) && (tcp_port != 102) && tpkt_handle)
-    dissector_add_uint("tcp.port", global_dap_tcp_port, tpkt_handle);
 
 }

@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -72,12 +60,12 @@ time_stat_update(timestat_t *stats, const nstime_t *delta, packet_info *pinfo)
  * get_average - function
  *
  * function to calculate the average
- * returns the average as a gdouble , time base is milli seconds
+ * returns the average as a double , time base is milli seconds
  */
 
-gdouble get_average(const nstime_t *sum, guint32 num)
+double get_average(const nstime_t *sum, uint32_t num)
 {
-	gdouble average;
+	double average;
 
 	if(num > 0) {
 		average = (double)sum->secs*1000 + (double)sum->nsecs/1000000;
@@ -90,7 +78,7 @@ gdouble get_average(const nstime_t *sum, guint32 num)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

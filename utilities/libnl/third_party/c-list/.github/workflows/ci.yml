@@ -1,0 +1,32 @@
+name: Continuous Integration
+
+on:
+  push:
+  pull_request:
+  schedule:
+  - cron:  '0 0 * * *'
+
+jobs:
+  ci-linux:
+    name: Linux CI
+    uses: bus1/cabuild/.github/workflows/ci-c-util.yml@v1
+    with:
+      cabuild_ref: "v1"
+      linux: true
+      m32: true
+      matrixmode: true
+      valgrind: true
+  ci-macos:
+    name: MacOS CI
+    uses: bus1/cabuild/.github/workflows/ci-c-util.yml@v1
+    with:
+      cabuild_ref: "v1"
+      linux: false
+      macos: true
+  ci-windows:
+    name: Windows CI
+    uses: bus1/cabuild/.github/workflows/ci-c-util.yml@v1
+    with:
+      cabuild_ref: "v1"
+      linux: false
+      windows: true

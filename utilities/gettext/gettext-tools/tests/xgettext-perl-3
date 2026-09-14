@@ -13,8 +13,8 @@ EOF
 
 : ${XGETTEXT=xgettext}
 # delete POT-Creation-Date: line because the date depends on local time.
-${XGETTEXT} --output - --from-code=UTF-8 xg-pl-3.pl \
-  | sed '/\"POT-Creation-Date:.*/d' | LC_ALL=C tr -d '\r' > xg-pl-3.po || Exit 1
+${XGETTEXT} --output xg-pl-3.tmp --from-code=UTF-8 xg-pl-3.pl || Exit 1
+sed -e '/\"POT-Creation-Date:.*/d' < xg-pl-3.tmp | LC_ALL=C tr -d '\r' > xg-pl-3.po || Exit 1
 
 cat <<\EOF > xg-pl-3.ok
 # SOME DESCRIPTIVE TITLE.

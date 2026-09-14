@@ -7,19 +7,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -28,6 +16,8 @@
 #include <epan/expert.h>
 
 #define DATA_PACKET 0x01
+
+#define CNIP_UDP_PORT_RANGE "1628-1629" /* Not IANA registered */
 
 static const value_string type_tuple[]=
 {
@@ -51,37 +41,39 @@ static const value_string type_tuple[]=
 void proto_register_cnip(void);
 void proto_reg_handoff_cnip(void);
 
-static gint hf_cnip_len      = -1;
-static gint hf_cnip_ver      = -1;
-static gint hf_cnip_type     = -1;
-static gint hf_cnip_exth     = -1;
-static gint hf_cnip_pf       = -1;
-static gint hf_cnip_pf_sec   = -1;
-static gint hf_cnip_pf_pcode = -1;
-static gint hf_cnip_vcode    = -1;
-static gint hf_cnip_sessid   = -1;
-static gint hf_cnip_seqno    = -1;
-static gint hf_cnip_tstamp   = -1;
+static dissector_handle_t cnip_handle;
 
-static gint proto_cnip       = -1;
+static int hf_cnip_len;
+static int hf_cnip_ver;
+static int hf_cnip_type;
+static int hf_cnip_exth;
+static int hf_cnip_pf;
+static int hf_cnip_pf_sec;
+static int hf_cnip_pf_pcode;
+static int hf_cnip_vcode;
+static int hf_cnip_sessid;
+static int hf_cnip_seqno;
+static int hf_cnip_tstamp;
 
-static gint ett_cnip         = -1;
-static gint ett_pf           = -1;
+static int proto_cnip;
 
-static expert_field ei_cnip_type_unknown = EI_INIT;
+static int ett_cnip;
+static int ett_pf;
+
+static expert_field ei_cnip_type_unknown;
 
 static dissector_table_t cnip_dissector_table;
 
 static int dissect_cnip (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
    tvbuff_t *next_tvb;
-   gint offset;
-   gint type, exth_len, pf_pcode;
+   int offset;
+   int type, exth_len, pf_pcode;
 
    proto_tree *ti;
    proto_tree *cnip_tree;
 
-   static const gint *pf_fields[] = {
+   static int * const pf_fields[] = {
       &hf_cnip_pf_sec,
       &hf_cnip_pf_pcode,
       NULL
@@ -90,13 +82,13 @@ static int dissect_cnip (tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
    col_set_str(pinfo->cinfo, COL_PROTOCOL, "CN/IP");
    col_clear(pinfo->cinfo, COL_INFO);
 
-   type = tvb_get_guint8(tvb, 3);
+   type = tvb_get_uint8(tvb, 3);
    col_add_fstr(pinfo->cinfo, COL_INFO,"Priority: %s Type: %s",
          (pinfo->destport == 1629 )? "urgent":"normal",
          val_to_str_const(type, type_tuple, "Unknown"));
 
-   exth_len = tvb_get_guint8(tvb, 4);
-   pf_pcode = tvb_get_guint8(tvb, 5) & 0x1F;
+   exth_len = tvb_get_uint8(tvb, 4);
+   pf_pcode = tvb_get_uint8(tvb, 5) & 0x1F;
 
    offset = 0;
 
@@ -212,7 +204,7 @@ void proto_register_cnip(void)
       }
    };
 
-   static gint *ett[] =
+   static int *ett[] =
    {
       &ett_cnip,
       &ett_pf
@@ -235,20 +227,17 @@ void proto_register_cnip(void)
    /* Register table for subdissectors */
    cnip_dissector_table = register_dissector_table("cnip.protocol",
          "CN/IP Protocol", proto_cnip, FT_UINT8, BASE_DEC);
+
+   cnip_handle = register_dissector("cnip", dissect_cnip, proto_cnip);
 }
 
 void proto_reg_handoff_cnip(void)
 {
-   dissector_handle_t cnip_handle;
-
-   cnip_handle = create_dissector_handle(dissect_cnip, proto_cnip);
-
-   dissector_add_uint ("udp.port", 1628, cnip_handle);
-   dissector_add_uint ("udp.port", 1629, cnip_handle);
+   dissector_add_uint_range_with_preference("udp.port", CNIP_UDP_PORT_RANGE, cnip_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

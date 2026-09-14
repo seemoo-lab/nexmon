@@ -1,7 +1,7 @@
 2014-3010 Robert McMahon <rjmcmahon@rjmcmahon.com>
 * increased NUN_REPORT_HEADERS to reduce conditional semaphore contention
 * Allowed for small report intervals (5 ms vs 500 ms)
-	
+
 2010-07-08 Jon Dugan <jdugan@x1024.net>
 
 * bumped default TCP send/recv buffer to 128K (this is not the kernel buffer
@@ -88,7 +88,7 @@ autotools generated files.
 2008-03-12 Andrew Gallatin <gallatin@gmail.com>
 
 * Rework threading.  This is done by having a condition variable for the reporting
-thread rather than using sched_yield and/or usleep.  
+thread rather than using sched_yield and/or usleep.
 
 * Address performance issues on non Linux systems by avoiding system calls
 which are expensive on platforms other than Linux.

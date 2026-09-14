@@ -1,0 +1,321 @@
+#! /bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test extraction of POT-Creation-Date from git version-control info.
+
+: ${XGETTEXT=xgettext}
+
+# ==============================================================================
+# Verify that xgettext succeeds when possibly run outside of any git checkout
+# (namely from a tarball, or in a VPATH build in /tmp).
+
+cat <<\EOF > xg-gi-test1-a.c
+gettext ("Hello world!");
+EOF
+
+${XGETTEXT} -o xg-gi-test1-a.tmp1 --no-location xg-gi-test1-a.c
+LC_ALL=C tr -d '\r' < xg-gi-test1-a.tmp1 > xg-gi-test1-a.tmp2 || Exit 1
+sed -e '/POT-Creation-Date/d' < xg-gi-test1-a.tmp2 > xg-gi-test1-a.pot
+
+cat <<\EOF > xg-gi-test1-a.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Hello world!"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-gi-test1-a.ok xg-gi-test1-a.pot || Exit 1
+
+# ==============================================================================
+# Skip the rest of this test if 'git' is not present.
+(git --version) >/dev/null 2>/dev/null \
+  || { echo "Skipping test: git not found"; Exit 77; }
+
+# Unpack a prepared git repository.
+: ${TAR=tar}
+gzip -d -c < "$wabs_srcdir"/testdata/repo.tar.gz | ${TAR} xf -
+cd repo || Exit 1
+git checkout -- . || Exit 1
+cd src || Exit 1
+
+# ==============================================================================
+# Verify the computation of a POT-Creation-Date from 1000 files
+# in a single commit.
+
+case "$host_os" in
+  mingw* | windows*)
+    # The xgettext invocation would fail with error "Argument list too long".
+    # It can be worked around by using the --files-from option.
+    # But this exercise is outside of the scope of this unit test.
+    ;;
+  *)
+TZ=UTC0 \
+${XGETTEXT} -o xg-gi-test1-b.tmp --no-location \
+            'Hadschi Halef Omar/ben/Hadschi Abul Abbas/ibn/Hadschi Dawuhd al Gossarah'/same*.c
+LC_ALL=C tr -d '\r' < xg-gi-test1-b.tmp > xg-gi-test1-b.pot || Exit 1
+
+cat <<\EOF > xg-gi-test1-b.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-05-01 20:47+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Hello, world!"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-gi-test1-b.ok xg-gi-test1-b.pot || Exit 1
+
+    ;;
+esac
+
+# ------------------------------------------------------------------------------
+# Verify the computation of a POT-Creation-Date from 1000 files
+# in different commits.
+
+case "$host_os" in
+  mingw* | windows*)
+    # The xgettext invocation would fail with error "Argument list too long".
+    # It can be worked around by using the --files-from option.
+    # But this exercise is outside of the scope of this unit test.
+    ;;
+  *)
+TZ=UTC0 \
+${XGETTEXT} -o xg-gi-test1-c.tmp --no-location \
+            'Hadschi Halef Omar/ben/Hadschi Abul Abbas/ibn/Hadschi Dawuhd al Gossarah'/sequence*.c
+LC_ALL=C tr -d '\r' < xg-gi-test1-c.tmp > xg-gi-test1-c.pot || Exit 1
+
+cat <<\EOF > xg-gi-test1-c.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-05-01 21:08+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Hello, world!"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-gi-test1-c.ok xg-gi-test1-c.pot || Exit 1
+
+    ;;
+esac
+
+# ------------------------------------------------------------------------------
+# Verify the computation of a POT-Creation-Date from a file
+# outside the current directory.
+
+TZ=UTC0 \
+${XGETTEXT} -o xg-gi-test1-d.tmp --no-location --force-po ../README
+LC_ALL=C tr -d '\r' < xg-gi-test1-d.tmp > xg-gi-test1-d.pot || Exit 1
+
+cat <<\EOF > xg-gi-test1-d.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-05-01 20:44+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-gi-test1-d.ok xg-gi-test1-d.pot || Exit 1
+
+# ------------------------------------------------------------------------------
+# Verify that the computation of a POT-Creation-Date reflects the
+# modification status of a given file.
+
+echo >> ../README
+
+TZ=UTC0 \
+${XGETTEXT} -o xg-gi-test1-e.tmp --no-location --force-po ../README
+LC_ALL=C tr -d '\r' < xg-gi-test1-e.tmp > xg-gi-test1-e.pot || Exit 1
+
+: ${DIFF=diff}
+if ${DIFF} xg-gi-test1-d.ok xg-gi-test1-e.pot; then
+  Exit 1
+fi
+
+# ------------------------------------------------------------------------------
+# Verify that the computation of a POT-Creation-Date does not fail
+# when a given file is outside the git checkout.
+
+cat <<\EOF > ../../xg-gi-test1-f.c
+gettext ("outside");
+EOF
+
+${XGETTEXT} -o xg-gi-test1-f.tmp1 --no-location ../../xg-gi-test1-f.c
+LC_ALL=C tr -d '\r' < xg-gi-test1-f.tmp1 > xg-gi-test1-f.tmp2 || Exit 1
+sed -e '/POT-Creation-Date/d' < xg-gi-test1-f.tmp2 > xg-gi-test1-f.pot
+
+cat <<\EOF > xg-gi-test1-f.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "outside"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-gi-test1-f.ok xg-gi-test1-f.pot || Exit 1
+
+# ------------------------------------------------------------------------------
+# Verify that the computation of a POT-Creation-Date fails
+# when a given file is inside the git checkout but non-existent.
+
+if ${XGETTEXT} -o xg-gi-test1-g.tmp1 --no-location --force-po ../xg-gi-test1-g.c; then
+  Exit 1
+fi
+
+if ${XGETTEXT} -o xg-gi-test1-g.tmp1 --no-location --force-po xg-gi-test1-g.c; then
+  Exit 1
+fi
+
+# ------------------------------------------------------------------------------
+# Verify that the computation of a POT-Creation-Date does not fail
+# when a given file is inside the git checkout but not under version control.
+
+cat <<\EOF > ../xg-gi-test1-h.c
+gettext ("inside");
+EOF
+
+${XGETTEXT} -o xg-gi-test1-h.tmp1 --no-location ../xg-gi-test1-h.c
+LC_ALL=C tr -d '\r' < xg-gi-test1-h.tmp1 > xg-gi-test1-h.tmp2 || Exit 1
+sed -e '/POT-Creation-Date/d' < xg-gi-test1-h.tmp2 > xg-gi-test1-h.pot
+
+cat <<\EOF > xg-gi-test1-h.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "inside"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-gi-test1-h.ok xg-gi-test1-h.pot || Exit 1
+
+# ------------------------------------------------------------------------------
+# Verify that a file specified through --generated is ignored in the
+# POT-Creation-Date computation.
+
+TZ=UTC0 \
+${XGETTEXT} -o xg-gi-test1-i.tmp --no-location \
+            --generated='Hadschi Halef Omar/ben/Hadschi Abul Abbas/ibn/Hadschi Dawuhd al Gossarah'/sequence999.c \
+            'Hadschi Halef Omar/ben/Hadschi Abul Abbas/ibn/Hadschi Dawuhd al Gossarah'/sequence000.c \
+            'Hadschi Halef Omar/ben/Hadschi Abul Abbas/ibn/Hadschi Dawuhd al Gossarah'/sequence999.c
+LC_ALL=C tr -d '\r' < xg-gi-test1-i.tmp > xg-gi-test1-i.pot || Exit 1
+
+cat <<\EOF > xg-gi-test1-i.ok
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-05-01 20:51+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Hello, world!"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-gi-test1-i.ok xg-gi-test1-i.pot || Exit 1

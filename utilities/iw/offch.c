@@ -9,11 +9,14 @@
 #include "nl80211.h"
 #include "iw.h"
 
-static int offchannel(struct nl80211_state *state, struct nl_cb *cb,
+static int offchannel(struct nl80211_state *state,
 		      struct nl_msg *msg, int argc, char **argv,
 		      enum id_input id)
 {
 	char *end;
+
+	if (argc < 2)
+		return 1;
 
 	/* freq */
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_FREQ,

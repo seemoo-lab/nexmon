@@ -10,23 +10,13 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #ifndef PACKET_ENIP_H
 #define PACKET_ENIP_H
+
+#include "packet-cip.h"  // For structs used in this file.
 
 /* Offsets of fields within the DLR Common Frame Header */
 #define DLR_CFH_SUB_TYPE       0
@@ -98,20 +88,50 @@
 
 
 typedef struct {
-   guint32 req_num, rep_num;
+   uint32_t req_num, rep_num;
    nstime_t req_time;
    cip_req_info_t* cip_info;
 } enip_request_info_t;
 
-enum enip_connid_type {ECIDT_UNKNOWN, ECIDT_O2T, ECIDT_T2O};
+// This represents the data direction for connected data.
+enum enip_connid_type {
+   ECIDT_UNKNOWN = 0,
+   ECIDT_O2T = 1,
+   ECIDT_T2O = 2
+};
 
+typedef struct cip_io_data_input {
+   cip_conn_info_t* conn_info;
+   enum enip_connid_type connid_type;
+} cip_io_data_input;
+
+// Per packet data for: ENIP_DATA_RATE_INFO
+struct enip_per_packet_data_t {
+   // Time difference between this message and the previous message in the same connection direction.
+   nstime_t ts_delta;
+};
 /* proto_data types */
 #define ENIP_REQUEST_INFO     0
 #define ENIP_CONNECTION_INFO  1
+#define ENIP_DATA_RATE_INFO   2
 
-void enip_close_cip_connection( packet_info *pinfo, guint16 ConnSerialNumber, guint16 VendorID, guint32 DeviceSerialNumber );
-void enip_mark_connection_triad( packet_info *pinfo, guint16 ConnSerialNumber, guint16 VendorID, guint32 DeviceSerialNumber );
+void display_fwd_open_connection_path(cip_conn_info_t* conn_info, proto_tree* tree, tvbuff_t* tvb, packet_info* pinfo);
+void enip_close_cip_connection(packet_info *pinfo, const cip_connection_triad_t* triad);
+void enip_mark_connection_triad(packet_info *pinfo, const cip_connection_triad_t* triad);
 
-extern attribute_info_t enip_attribute_vals[99];
+cip_service_info_t* cip_get_service_enip(uint32_t class_id, uint8_t service_id);
+
+extern int dissect_ingress_tcp_udp_ports_supported(packet_info *pinfo, proto_tree *tree, proto_item *item,
+   tvbuff_t *tvb, int offset, int total_len);
+extern int dissect_ingress_egress_rules(packet_info *pinfo, proto_tree *tree, proto_item *item,
+   tvbuff_t *tvb, int offset, int total_len);
+extern int dissect_ingress_egress_set_rules(packet_info *pinfo, proto_tree *tree, proto_item *item,
+   tvbuff_t *tvb, int offset, bool request);
+extern int dissect_cip_mac_address(packet_info* pinfo, proto_tree* tree, proto_item* item,
+    tvbuff_t* tvb, int offset, int total_len);
+extern int dissect_lldp_cip_tlv(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
+extern const value_string lldp_cip_subtypes[];
+
+extern const attribute_info_t enip_attribute_vals[133];
 
 #endif /* PACKET_ENIP_H */

@@ -3,36 +3,21 @@
  * Copyright 2013
  *
  * Routines for ATN Cpdlcc protocol packet disassembly
-
+ *
  * details see:
- * http://en.wikipedia.org/wiki/CPDLC
- * http://members.optusnet.com.au/~cjr/introduction.htm
-
+ * https://en.wikipedia.org/wiki/CPDLC
+ * https://members.optusnet.com.au/~cjr/introduction.htm
+ *
  * standards:
- * http://legacy.icao.int/anb/panels/acp/repository.cfm
-
- * note:
- * We are dealing with ATN/CPDLC aka ICAO Doc 9705 Ed2 here
+ * We are dealing with ATN/CPDLC aka ICAO Doc 9705 Second Edition here
  * (CPDLC may also be transmitted via ACARS/AOA aka "FANS-1/A ").
-
+ * https://www.icao.int/safety/acp/repository/_%20Doc9705_ed2_1999.pdf
  *
  * Wireshark - Network traffic analyzer
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -47,6 +32,7 @@
 #include <epan/packet.h>
 #include <epan/exceptions.h>
 #include <epan/conversation.h>
+#include <wsutil/array.h>
 #include "packet-ber.h"
 #include "packet-per.h"
 #include "packet-atn-ulcs.h"
@@ -59,7 +45,7 @@ void proto_reg_handoff_atn_cpdlc(void);
 static const char *object_identifier_id;
 
 /* IA5 charset (7-bit) for PER IA5 decoding */
-static const gchar ia5alpha[] = {
+static const char ia5alpha[] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, \
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, \
     0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, \
@@ -96,12 +82,12 @@ static int dissect_ProtectedAircraftPDUs_PDU(
 #include "packet-atn-cpdlc-hf.c"
 
 #include "packet-atn-cpdlc-ett.c"
-static gint ett_atn_cpdlc = -1;
+static int ett_atn_cpdlc;
 
 #include "packet-atn-cpdlc-fn.c"
 
 /* Wireshark ID of CPDLC protocol */
-static int proto_atn_cpdlc = -1;
+static int proto_atn_cpdlc;
 
 
 static int
@@ -207,7 +193,7 @@ dissect_atn_cpdlc(
     return tvb_reported_length_remaining(tvb, 0);
 }
 
-static gboolean
+static bool
 dissect_atn_cpdlc_heur(
     tvbuff_t *tvb,
     packet_info *pinfo,
@@ -215,8 +201,8 @@ dissect_atn_cpdlc_heur(
     void *data _U_)
 {
     atn_conversation_t *volatile atn_cv = NULL;
-    volatile gboolean is_atn_cpdlc = FALSE;
-    volatile gboolean is_pm = FALSE;
+    volatile bool is_atn_cpdlc = false;
+    volatile bool is_pm = false;
     int type;
 
     type = check_heur_msg_type(pinfo);
@@ -225,43 +211,43 @@ dissect_atn_cpdlc_heur(
       case um:
           TRY {
             dissect_ProtectedGroundPDUs_PDU(tvb, pinfo, NULL, NULL);
-            is_atn_cpdlc = TRUE;
-            is_pm = TRUE;}
+            is_atn_cpdlc = true;
+            is_pm = true;}
           CATCH_ALL{
-            is_atn_cpdlc = FALSE;
-            is_pm = FALSE;}
+            is_atn_cpdlc = false;
+            is_pm = false;}
           ENDTRY;
           if (is_atn_cpdlc) {
             break;
           }
           TRY {
             dissect_GroundPDUs_PDU(tvb, pinfo, NULL, NULL);
-            is_pm = FALSE;
-            is_atn_cpdlc = TRUE;}
+            is_pm = false;
+            is_atn_cpdlc = true;}
           CATCH_ALL{
-            is_atn_cpdlc = FALSE;
-            is_pm = FALSE;}
+            is_atn_cpdlc = false;
+            is_pm = false;}
           ENDTRY;
         break;
     case dm:
           TRY {
             dissect_ProtectedAircraftPDUs_PDU(tvb, pinfo, NULL, NULL);
-            is_atn_cpdlc = TRUE;
-            is_pm = TRUE;}
+            is_atn_cpdlc = true;
+            is_pm = true;}
           CATCH_ALL {
-            is_atn_cpdlc = FALSE;
-            is_pm = FALSE; }
+            is_atn_cpdlc = false;
+            is_pm = false; }
           ENDTRY;
           if (is_atn_cpdlc) {
             break;
           }
           TRY{
             dissect_AircraftPDUs_PDU(tvb, pinfo, NULL, NULL);
-            is_atn_cpdlc = TRUE;
-            is_pm = FALSE;}
+            is_atn_cpdlc = true;
+            is_pm = false;}
           CATCH_ALL{
-            is_atn_cpdlc = FALSE;
-            is_pm = FALSE;}
+            is_atn_cpdlc = false;
+            is_pm = false;}
           ENDTRY;
       break;
     default:
@@ -295,14 +281,14 @@ dissect_atn_cpdlc_heur(
     }
 
     if(atn_cv){ /* atn conversation found */
-      if(is_pm == TRUE) {
+      if(is_pm == true) {
           atn_cv->ae_qualifier =  pmcpdlc; }
       else {
           atn_cv->ae_qualifier =  cpdlc; }
       dissect_atn_cpdlc(tvb, pinfo, tree, NULL);
     }
   }else { /* there should *always* be an atn conversation */
-      is_atn_cpdlc = FALSE;
+      is_atn_cpdlc = false;
   }
 
   return is_atn_cpdlc;
@@ -316,16 +302,13 @@ void proto_register_atn_cpdlc (void)
         #include "packet-atn-cpdlc-hfarr.c"
       };
 
-    static gint *ett[] = {
+    static int *ett[] = {
         #include "packet-atn-cpdlc-ettarr.c"
         &ett_atn_cpdlc
     };
 
     /* register CPDLC */
-    proto_atn_cpdlc = proto_register_protocol(
-        ATN_CPDLC_PROTO ,
-        "ATN-CPDLC",
-        "atn-cpdlc");
+    proto_atn_cpdlc = proto_register_protocol(ATN_CPDLC_PROTO, "ATN-CPDLC", "atn-cpdlc");
 
     proto_register_field_array(
         proto_atn_cpdlc,
@@ -354,7 +337,7 @@ void proto_reg_handoff_atn_cpdlc(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 4

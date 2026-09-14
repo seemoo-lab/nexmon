@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlTextWriterStackEntry" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlTextWriterStackEntry</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlTextWriterStackEntry_1a1ed8962c3c52bc7d9b3f10a3c48aec7e" prot="public" static="no" mutable="no">
+        <type><ref refid="xmlstring_8h_1afb1489b546f7800463867523ffaee1d3" kindref="member">xmlChar</ref> *</type>
+        <definition>xmlChar* name</definition>
+        <argsstring></argsstring>
+        <name>name</name>
+        <qualifiedname>_xmlTextWriterStackEntry::name</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlwriter.c" line="69" column="13" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="69" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlTextWriterStackEntry_1a4e95a86ddcc0268ba398e8b0d4683b1f" prot="public" static="no" mutable="no">
+        <type>xmlTextWriterState</type>
+        <definition>xmlTextWriterState state</definition>
+        <argsstring></argsstring>
+        <name>state</name>
+        <qualifiedname>_xmlTextWriterStackEntry::state</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlwriter.c" line="70" column="24" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="70" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="/builds/GNOME/libxml2/xmlwriter.c" line="68" column="1" bodyfile="/builds/GNOME/libxml2/xmlwriter.c" bodystart="68" bodyend="71"/>
+    <listofallmembers>
+      <member refid="struct__xmlTextWriterStackEntry_1a1ed8962c3c52bc7d9b3f10a3c48aec7e" prot="public" virt="non-virtual"><scope>_xmlTextWriterStackEntry</scope><name>name</name></member>
+      <member refid="struct__xmlTextWriterStackEntry_1a4e95a86ddcc0268ba398e8b0d4683b1f" prot="public" virt="non-virtual"><scope>_xmlTextWriterStackEntry</scope><name>state</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

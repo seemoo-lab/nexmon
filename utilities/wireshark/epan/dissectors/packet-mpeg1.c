@@ -9,19 +9,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 /*
@@ -32,36 +20,38 @@
 #include "config.h"
 
 #include <epan/packet.h>
+#include "packet-rtp_pt.h"
 
-#include <epan/rtp_pt.h>
 
 void proto_register_mpeg1(void);
 void proto_reg_handoff_mpeg1(void);
 
+static dissector_handle_t mpeg1_handle;
+
 /* MPEG1 header fields             */
 
-static int proto_mpg          = -1;
+static int proto_mpg;
 
-static int hf_rtp_mpg_mbz     = -1;
-static int hf_rtp_mpg_T       = -1;
-static int hf_rtp_mpg_tr      = -1;
-static int hf_rtp_mpg_an      = -1;
-static int hf_rtp_mpg_n       = -1;
-static int hf_rtp_mpg_s       = -1;
-static int hf_rtp_mpg_b       = -1;
-static int hf_rtp_mpg_e       = -1;
-static int hf_rtp_mpg_p       = -1;
+static int hf_rtp_mpg_mbz;
+static int hf_rtp_mpg_T;
+static int hf_rtp_mpg_tr;
+static int hf_rtp_mpg_an;
+static int hf_rtp_mpg_n;
+static int hf_rtp_mpg_s;
+static int hf_rtp_mpg_b;
+static int hf_rtp_mpg_e;
+static int hf_rtp_mpg_p;
 
 
-static int hf_rtp_mpg_fbv     = -1;
-static int hf_rtp_mpg_bfc     = -1;
-static int hf_rtp_mpg_ffv     = -1;
-static int hf_rtp_mpg_ffc     = -1;
-static int hf_rtp_mpg_data    = -1;
+static int hf_rtp_mpg_fbv;
+static int hf_rtp_mpg_bfc;
+static int hf_rtp_mpg_ffv;
+static int hf_rtp_mpg_ffc;
+static int hf_rtp_mpg_data;
 
 
 /* MPEG-1 fields defining a sub tree */
-static gint ett_mpg           = -1;
+static int ett_mpg;
 
 static const value_string rtp_mpg_picture_types_vals[] =
 {
@@ -83,13 +73,13 @@ dissect_mpeg1( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 	proto_tree *mpg_tree;
 	unsigned int offset       = 0;
 
-	static const int * mpg_fields1[] = {
+	static int * const mpg_fields1[] = {
 		&hf_rtp_mpg_mbz,
 		&hf_rtp_mpg_T,
 		&hf_rtp_mpg_tr,
 		NULL
 	};
-	static const int * mpg_fields2[] = {
+	static int * const mpg_fields2[] = {
 		&hf_rtp_mpg_an,
 		&hf_rtp_mpg_n,
 		&hf_rtp_mpg_s,
@@ -98,7 +88,7 @@ dissect_mpeg1( tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _
 		&hf_rtp_mpg_p,
 		NULL
 	};
-	static const int * mpg_fields3[] = {
+	static int * const mpg_fields3[] = {
 		&hf_rtp_mpg_fbv,
 		&hf_rtp_mpg_bfc,
 		&hf_rtp_mpg_ffv,
@@ -203,7 +193,7 @@ proto_register_mpeg1(void)
 				FT_BOOLEAN,
 				16,
 				NULL,
-				0x20,
+				0x0020,
 				NULL, HFILL
 			}
 		},
@@ -216,7 +206,7 @@ proto_register_mpeg1(void)
 				FT_BOOLEAN,
 				16,
 				NULL,
-				0x10,
+				0x0010,
 				NULL, HFILL
 			}
 		},
@@ -229,7 +219,7 @@ proto_register_mpeg1(void)
 				FT_BOOLEAN,
 				16,
 				NULL,
-				0x08,
+				0x0008,
 				NULL, HFILL
 			}
 		},
@@ -312,13 +302,14 @@ proto_register_mpeg1(void)
 
 	};
 
-	static gint *ett[] =
+	static int *ett[] =
 	{
 		&ett_mpg,
 	};
 
 
 	proto_mpg = proto_register_protocol("RFC 2250 MPEG1","MPEG1","mpeg1");
+	mpeg1_handle = register_dissector("mpeg1", dissect_mpeg1, proto_mpg);
 	proto_register_field_array(proto_mpg, hf, array_length(hf));
 	proto_register_subtree_array(ett, array_length(ett));
 }
@@ -326,14 +317,11 @@ proto_register_mpeg1(void)
 void
 proto_reg_handoff_mpeg1(void)
 {
-	dissector_handle_t mpeg1_handle;
-
-	mpeg1_handle = create_dissector_handle(dissect_mpeg1, proto_mpg);
 	dissector_add_uint("rtp.pt", PT_MPV, mpeg1_handle);
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

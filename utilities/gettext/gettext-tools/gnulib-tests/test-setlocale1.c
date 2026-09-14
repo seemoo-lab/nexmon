@@ -1,9 +1,9 @@
 /* Test of setting the current locale.
-   Copyright (C) 2011-2016 Free Software Foundation, Inc.
+   Copyright (C) 2011-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3 of the License, or
+   the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
@@ -12,7 +12,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
 
@@ -52,10 +52,13 @@ main (int argc, char *argv[])
 
   name2 = strdup (setlocale (LC_ALL, NULL));
 
+  ASSERT (name1);
+  ASSERT (name2);
+
   /* Test that the two results are the same.  */
   ASSERT (strcmp (name1, name2) == 0);
   free (name1);
   free (name2);
 
-  return 0;
+  return test_exit_status;
 }

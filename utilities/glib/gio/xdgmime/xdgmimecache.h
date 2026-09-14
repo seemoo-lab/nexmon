@@ -5,21 +5,7 @@
  *
  * Copyright (C) 2005  Matthias Clasen <mclasen@redhat.com>
  *
- * Licensed under the Academic Free License version 2.0
- * Or under the following terms:
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, see <http://www.gnu.org/licenses/>.
+ * SPDX-License-Identifier: LGPL-2.1-or-later or AFL-2.0
  */
 
 #ifndef __XDG_MIME_CACHE_H__
@@ -56,30 +42,25 @@ void          _xdg_mime_cache_unref         (XdgMimeCache *cache);
 const char  *_xdg_mime_cache_get_mime_type_for_data       (const void *data,
 		 				           size_t      len,
 							   int        *result_prio);
-#ifdef NOT_USED_IN_GIO
 const char  *_xdg_mime_cache_get_mime_type_for_file       (const char  *file_name,
 							   struct stat *statbuf);
-#endif
 int          _xdg_mime_cache_get_mime_types_from_file_name (const char *file_name,
 							    const char  *mime_types[],
 							    int          n_mime_types);
-#ifdef NOT_USED_IN_GIO
 const char  *_xdg_mime_cache_get_mime_type_from_file_name (const char *file_name);
-#endif
 int          _xdg_mime_cache_is_valid_mime_type           (const char *mime_type);
 int          _xdg_mime_cache_mime_type_equal              (const char *mime_a,
 						           const char *mime_b);
 int          _xdg_mime_cache_media_type_equal             (const char *mime_a,
 							   const char *mime_b);
 int          _xdg_mime_cache_mime_type_subclass           (const char *mime_a,
-							   const char *mime_b);
+							   const char *mime_b,
+							   const char ***seen);
 char       **_xdg_mime_cache_list_mime_parents		  (const char *mime);
 const char  *_xdg_mime_cache_unalias_mime_type            (const char *mime);
 int          _xdg_mime_cache_get_max_buffer_extents       (void);
 const char  *_xdg_mime_cache_get_icon                     (const char *mime);
 const char  *_xdg_mime_cache_get_generic_icon             (const char *mime);
-#ifdef NOT_USED_IN_GIO
 void         _xdg_mime_cache_glob_dump                    (void);
-#endif
 
 #endif /* __XDG_MIME_CACHE_H__ */

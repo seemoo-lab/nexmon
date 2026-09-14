@@ -1,0 +1,138 @@
+#!/bin/sh
+. "${srcdir=.}/init.sh"; path_prepend_ . ../src
+
+# Test Modula-2 support: propagation of modula2-format'.
+
+cat <<\EOF > xg-m2-2.mod
+BEGIN
+  Gettext ("Hello10");
+  (Gettext ("Hello11"));
+  ((Gettext ("Hello12")));
+  Gettext (Gettext ("Hello13"));
+  (Gettext (Gettext ("Hello14")));
+  ((Gettext (Gettext ("Hello15"))));
+  Gettext ((Gettext ("Hello16")));
+  Gettext (((Gettext ("Hello17"))));
+  Gettext (foo(), Gettext ("Hello18"));
+
+  Sprintf0 (Gettext ("Hello20"));
+  Sprintf0 ((Gettext ("Hello21")));
+  Sprintf0 (((Gettext ("Hello22"))));
+  Sprintf0 (Gettext (Gettext ("Hello23")));
+  Sprintf0 ((Gettext (Gettext ("Hello24"))));
+  Sprintf0 (((Gettext (Gettext ("Hello25")))));
+  Sprintf0 (Gettext ((Gettext ("Hello26"))));
+  Sprintf0 (Gettext (((Gettext ("Hello27")))));
+  Sprintf0 (Gettext (foo(), Gettext ("Hello28")));
+
+  WriteString (Gettext ("Hello30"));
+  WriteString ((Gettext ("Hello31")));
+  WriteString (((Gettext ("Hello32"))));
+  WriteString (Gettext (Gettext ("Hello33")));
+  WriteString ((Gettext (Gettext ("Hello34"))));
+  WriteString (((Gettext (Gettext ("Hello35")))));
+  WriteString (Gettext ((Gettext ("Hello36"))));
+  WriteString (Gettext (((Gettext ("Hello37")))));
+  WriteString (Gettext (foo(), Gettext ("Hello38")));
+END;
+EOF
+
+: ${XGETTEXT=xgettext}
+${XGETTEXT} --omit-header --no-location -c -d xg-m2-2.tmp xg-m2-2.mod || Exit 1
+LC_ALL=C tr -d '\r' < xg-m2-2.tmp.po > xg-m2-2.po || Exit 1
+
+cat <<\EOF > xg-m2-2.ok
+msgid "Hello10"
+msgstr ""
+
+msgid "Hello11"
+msgstr ""
+
+msgid "Hello12"
+msgstr ""
+
+msgid "Hello13"
+msgstr ""
+
+msgid "Hello14"
+msgstr ""
+
+msgid "Hello15"
+msgstr ""
+
+msgid "Hello16"
+msgstr ""
+
+msgid "Hello17"
+msgstr ""
+
+msgid "Hello18"
+msgstr ""
+
+#, modula2-format
+msgid "Hello20"
+msgstr ""
+
+#, modula2-format
+msgid "Hello21"
+msgstr ""
+
+#, modula2-format
+msgid "Hello22"
+msgstr ""
+
+#, modula2-format
+msgid "Hello23"
+msgstr ""
+
+#, modula2-format
+msgid "Hello24"
+msgstr ""
+
+#, modula2-format
+msgid "Hello25"
+msgstr ""
+
+#, modula2-format
+msgid "Hello26"
+msgstr ""
+
+#, modula2-format
+msgid "Hello27"
+msgstr ""
+
+msgid "Hello28"
+msgstr ""
+
+msgid "Hello30"
+msgstr ""
+
+msgid "Hello31"
+msgstr ""
+
+msgid "Hello32"
+msgstr ""
+
+msgid "Hello33"
+msgstr ""
+
+msgid "Hello34"
+msgstr ""
+
+msgid "Hello35"
+msgstr ""
+
+msgid "Hello36"
+msgstr ""
+
+msgid "Hello37"
+msgstr ""
+
+msgid "Hello38"
+msgstr ""
+EOF
+
+: ${DIFF=diff}
+${DIFF} xg-m2-2.ok xg-m2-2.po || Exit 1
+
+exit 0

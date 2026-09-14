@@ -3,7 +3,7 @@
 
 # Test that an empty header entry is OK.
 
-cat <<EOF >mf-test3.po
+cat <<\EOF >mf-test3.po
 #
 #       xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 #       xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

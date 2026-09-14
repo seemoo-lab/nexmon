@@ -1,3 +1,22 @@
+#
+# Copyright 2013 Allison Karlitskaya
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# licence, or (at your option) any later version.
+#
+# This is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with this library; if not, see <http://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
+# shellcheck shell=bash
 
 # Check for bash
 [ -z "$BASH_VERSION" ] && return
@@ -5,8 +24,12 @@
 ####################################################################################################
 
 __app() {
+  local gapplication_binary
+  gapplication_binary="$1"
+
   case "${COMP_CWORD}" in
     1)
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -W "help version list-apps launch action list-actions" -- "${COMP_WORDS[1]}"))
       return 0
       ;;
@@ -14,7 +37,8 @@ __app() {
     2)
       case "${COMP_WORDS[1]}" in
         launch|action|list-actions)
-          COMPREPLY=($(compgen -W "`gapplication list-apps`" -- "${COMP_WORDS[2]}"))
+          # shellcheck disable=SC2207
+          COMPREPLY=($(compgen -W "$("$gapplication_binary" list-apps)" -- "${COMP_WORDS[2]}"))
           return 0
           ;;
 
@@ -31,7 +55,8 @@ __app() {
     action)
       # Word 3 is the action name.  This is the only one we can help with.
       if [ "${COMP_CWORD}" == 3 ]; then
-        COMPREPLY=($(compgen -W "`gapplication list-actions "${COMP_WORDS[2]}"`" -- "${COMP_WORDS[3]}"))
+        # shellcheck disable=SC2207
+        COMPREPLY=($(compgen -W "$("$gapplication_binary" list-actions "${COMP_WORDS[2]}")" -- "${COMP_WORDS[3]}"))
         return 0
       else
         COMPREPLY=()
@@ -40,6 +65,7 @@ __app() {
       ;;
     launch)
       # Filenames...
+      # shellcheck disable=SC2207
       COMPREPLY=($(compgen -A file "${COMP_WORDS[COMP_CWORD]}"))
       return 0
       ;;

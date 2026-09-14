@@ -1,0 +1,1423 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.15.0" xml:lang="en-US">
+  <compounddef id="struct__xmlSchemaSplitSAXData" kind="struct" language="C++" prot="public">
+    <compoundname>_xmlSchemaSplitSAXData</compoundname>
+    <sectiondef kind="public-attrib">
+      <memberdef kind="variable" id="struct__xmlSchemaSplitSAXData_1a607a688b8a503b6b09bd09b21f33a0c6" prot="public" static="no" mutable="no">
+        <type>xmlSAXHandlerPtr</type>
+        <definition>xmlSAXHandlerPtr user_sax</definition>
+        <argsstring></argsstring>
+        <name>user_sax</name>
+        <qualifiedname>_xmlSchemaSplitSAXData::user_sax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="27771" column="27" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27771" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaSplitSAXData_1a0f53d287ac7c064d1a49d4bd93ca1cb9" prot="public" static="no" mutable="no">
+        <type>void *</type>
+        <definition>void* user_data</definition>
+        <argsstring></argsstring>
+        <name>user_data</name>
+        <qualifiedname>_xmlSchemaSplitSAXData::user_data</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="27772" column="26" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27772" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaSplitSAXData_1a17ae01bd4b3f38628b8a2256f1642008" prot="public" static="no" mutable="no">
+        <type>xmlSchemaValidCtxtPtr</type>
+        <definition>xmlSchemaValidCtxtPtr ctxt</definition>
+        <argsstring></argsstring>
+        <name>ctxt</name>
+        <qualifiedname>_xmlSchemaSplitSAXData::ctxt</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="27773" column="27" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27773" bodyend="-1"/>
+      </memberdef>
+      <memberdef kind="variable" id="struct__xmlSchemaSplitSAXData_1ad492948b3ab7c07c077c22c6fa39b1a5" prot="public" static="no" mutable="no">
+        <type>xmlSAXHandlerPtr</type>
+        <definition>xmlSAXHandlerPtr schemas_sax</definition>
+        <argsstring></argsstring>
+        <name>schemas_sax</name>
+        <qualifiedname>_xmlSchemaSplitSAXData::schemas_sax</qualifiedname>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="/builds/GNOME/libxml2/xmlschemas.c" line="27774" column="27" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27774" bodyend="-1"/>
+      </memberdef>
+    </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <collaborationgraph>
+      <node id="14">
+        <label>_xmlAttr</label>
+        <link refid="struct__xmlAttr"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>ns</edgelabel>
+        </childnode>
+        <childnode refid="15" relation="usage">
+          <edgelabel>id</edgelabel>
+        </childnode>
+      </node>
+      <node id="29">
+        <label>_xmlAttribute</label>
+        <link refid="struct__xmlAttribute"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="29" relation="usage">
+          <edgelabel>nexth</edgelabel>
+        </childnode>
+        <childnode refid="16" relation="usage">
+          <edgelabel>tree</edgelabel>
+        </childnode>
+      </node>
+      <node id="39">
+        <label>_xmlAutomata</label>
+        <childnode refid="31" relation="usage">
+          <edgelabel>end</edgelabel>
+          <edgelabel>start</edgelabel>
+          <edgelabel>state</edgelabel>
+          <edgelabel>states</edgelabel>
+        </childnode>
+        <childnode refid="33" relation="usage">
+          <edgelabel>atom</edgelabel>
+          <edgelabel>atoms</edgelabel>
+        </childnode>
+        <childnode refid="35" relation="usage">
+          <edgelabel>counters</edgelabel>
+        </childnode>
+      </node>
+      <node id="31">
+        <label>_xmlAutomataState</label>
+        <childnode refid="32" relation="usage">
+          <edgelabel>trans</edgelabel>
+        </childnode>
+      </node>
+      <node id="6">
+        <label>_xmlBuf</label>
+      </node>
+      <node id="5">
+        <label>_xmlCharEncodingHandler</label>
+        <link refid="struct__xmlCharEncodingHandler"/>
+      </node>
+      <node id="12">
+        <label>_xmlDict</label>
+        <childnode refid="13" relation="usage">
+          <edgelabel>strings</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>subdict</edgelabel>
+        </childnode>
+      </node>
+      <node id="13">
+        <label>_xmlDictStrings</label>
+        <childnode refid="13" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="9">
+        <label>_xmlDoc</label>
+        <link refid="struct__xmlDoc"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>extSubset</edgelabel>
+          <edgelabel>intSubset</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>oldNs</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="10">
+        <label>_xmlDtd</label>
+        <link refid="struct__xmlDtd"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="28">
+        <label>_xmlElement</label>
+        <link refid="struct__xmlElement"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="17" relation="usage">
+          <edgelabel>content</edgelabel>
+        </childnode>
+        <childnode refid="29" relation="usage">
+          <edgelabel>attributes</edgelabel>
+        </childnode>
+        <childnode refid="30" relation="usage">
+          <edgelabel>contModel</edgelabel>
+        </childnode>
+      </node>
+      <node id="17">
+        <label>_xmlElementContent</label>
+        <link refid="struct__xmlElementContent"/>
+        <childnode refid="17" relation="usage">
+          <edgelabel>c1</edgelabel>
+          <edgelabel>c2</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="7">
+        <label>_xmlEntity</label>
+        <link refid="struct__xmlEntity"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="10" relation="usage">
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>nexte</edgelabel>
+        </childnode>
+      </node>
+      <node id="16">
+        <label>_xmlEnumeration</label>
+        <link refid="struct__xmlEnumeration"/>
+        <childnode refid="16" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="19">
+        <label>_xmlError</label>
+        <link refid="struct__xmlError"/>
+      </node>
+      <node id="23">
+        <label>_xmlHashTable</label>
+        <childnode refid="24" relation="usage">
+          <edgelabel>table</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="15">
+        <label>_xmlID</label>
+        <link refid="struct__xmlID"/>
+        <childnode refid="15" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="8">
+        <label>_xmlNode</label>
+        <link refid="struct__xmlNode"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>last</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+          <edgelabel>prev</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>ns</edgelabel>
+          <edgelabel>nsDef</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>properties</edgelabel>
+        </childnode>
+      </node>
+      <node id="90">
+        <label>_xmlNodeSet</label>
+        <link refid="struct__xmlNodeSet"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>nodeTab</edgelabel>
+        </childnode>
+      </node>
+      <node id="11">
+        <label>_xmlNs</label>
+        <link refid="struct__xmlNs"/>
+        <childnode refid="11" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>context</edgelabel>
+        </childnode>
+      </node>
+      <node id="25">
+        <label>_xmlParserCtxt</label>
+        <link refid="struct__xmlParserCtxt"/>
+        <childnode refid="2" relation="usage">
+          <edgelabel>sax</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>myDoc</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>entity</edgelabel>
+          <edgelabel>input</edgelabel>
+          <edgelabel>inputTab</edgelabel>
+          <edgelabel>resourceLoader</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>freeElems</edgelabel>
+          <edgelabel>node</edgelabel>
+          <edgelabel>nodeTab</edgelabel>
+        </childnode>
+        <childnode refid="26" relation="usage">
+          <edgelabel>vctxt</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="23" relation="usage">
+          <edgelabel>attsDefault</edgelabel>
+          <edgelabel>attsSpecial</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>freeAttrs</edgelabel>
+        </childnode>
+        <childnode refid="19" relation="usage">
+          <edgelabel>errorHandler</edgelabel>
+          <edgelabel>lastError</edgelabel>
+        </childnode>
+        <childnode refid="5" relation="usage">
+          <edgelabel>convImpl</edgelabel>
+        </childnode>
+      </node>
+      <node id="3">
+        <label>_xmlParserInput</label>
+        <link refid="struct__xmlParserInput"/>
+        <childnode refid="4" relation="usage">
+          <edgelabel>buf</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>entity</edgelabel>
+        </childnode>
+      </node>
+      <node id="4">
+        <label>_xmlParserInputBuffer</label>
+        <link refid="struct__xmlParserInputBuffer"/>
+        <childnode refid="5" relation="usage">
+          <edgelabel>encoder</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>buffer</edgelabel>
+          <edgelabel>raw</edgelabel>
+        </childnode>
+      </node>
+      <node id="91">
+        <label>_xmlPattern</label>
+        <childnode refid="12" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="91" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="92" relation="usage">
+          <edgelabel>steps</edgelabel>
+        </childnode>
+        <childnode refid="93" relation="usage">
+          <edgelabel>stream</edgelabel>
+        </childnode>
+      </node>
+      <node id="33">
+        <label>_xmlRegAtom</label>
+        <childnode refid="31" relation="usage">
+          <edgelabel>start</edgelabel>
+          <edgelabel>start0</edgelabel>
+          <edgelabel>stop</edgelabel>
+        </childnode>
+        <childnode refid="34" relation="usage">
+          <edgelabel>ranges</edgelabel>
+        </childnode>
+      </node>
+      <node id="35">
+        <label>_xmlRegCounter</label>
+      </node>
+      <node id="36">
+        <label>_xmlRegExecCtxt</label>
+        <childnode refid="30" relation="usage">
+          <edgelabel>comp</edgelabel>
+        </childnode>
+        <childnode refid="36" relation="usage">
+          <edgelabel>callback</edgelabel>
+        </childnode>
+        <childnode refid="31" relation="usage">
+          <edgelabel>errState</edgelabel>
+          <edgelabel>state</edgelabel>
+        </childnode>
+        <childnode refid="37" relation="usage">
+          <edgelabel>rollbacks</edgelabel>
+        </childnode>
+        <childnode refid="38" relation="usage">
+          <edgelabel>inputStack</edgelabel>
+        </childnode>
+      </node>
+      <node id="37">
+        <label>_xmlRegExecRollback</label>
+        <childnode refid="31" relation="usage">
+          <edgelabel>state</edgelabel>
+        </childnode>
+      </node>
+      <node id="38">
+        <label>_xmlRegInputToken</label>
+      </node>
+      <node id="34">
+        <label>_xmlRegRange</label>
+      </node>
+      <node id="32">
+        <label>_xmlRegTrans</label>
+        <childnode refid="33" relation="usage">
+          <edgelabel>atom</edgelabel>
+        </childnode>
+      </node>
+      <node id="30">
+        <label>_xmlRegexp</label>
+        <childnode refid="31" relation="usage">
+          <edgelabel>states</edgelabel>
+        </childnode>
+        <childnode refid="33" relation="usage">
+          <edgelabel>atoms</edgelabel>
+        </childnode>
+        <childnode refid="35" relation="usage">
+          <edgelabel>counters</edgelabel>
+        </childnode>
+      </node>
+      <node id="74">
+        <label>_xmlRelaxNG</label>
+        <childnode refid="75" relation="usage">
+          <edgelabel>topgrammar</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="23" relation="usage">
+          <edgelabel>defs</edgelabel>
+          <edgelabel>refs</edgelabel>
+        </childnode>
+        <childnode refid="77" relation="usage">
+          <edgelabel>documents</edgelabel>
+        </childnode>
+        <childnode refid="78" relation="usage">
+          <edgelabel>includes</edgelabel>
+        </childnode>
+        <childnode refid="76" relation="usage">
+          <edgelabel>defTab</edgelabel>
+        </childnode>
+      </node>
+      <node id="76">
+        <label>_xmlRelaxNGDefine</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="76" relation="usage">
+          <edgelabel>attrs</edgelabel>
+          <edgelabel>content</edgelabel>
+          <edgelabel>nameClass</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>nextHash</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="30" relation="usage">
+          <edgelabel>contModel</edgelabel>
+        </childnode>
+      </node>
+      <node id="77">
+        <label>_xmlRelaxNGDocument</label>
+        <childnode refid="77" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="76" relation="usage">
+          <edgelabel>content</edgelabel>
+        </childnode>
+        <childnode refid="74" relation="usage">
+          <edgelabel>schema</edgelabel>
+        </childnode>
+      </node>
+      <node id="75">
+        <label>_xmlRelaxNGGrammar</label>
+        <childnode refid="75" relation="usage">
+          <edgelabel>children</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>parent</edgelabel>
+        </childnode>
+        <childnode refid="76" relation="usage">
+          <edgelabel>start</edgelabel>
+          <edgelabel>startList</edgelabel>
+        </childnode>
+        <childnode refid="23" relation="usage">
+          <edgelabel>defs</edgelabel>
+          <edgelabel>refs</edgelabel>
+        </childnode>
+      </node>
+      <node id="78">
+        <label>_xmlRelaxNGInclude</label>
+        <childnode refid="78" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="76" relation="usage">
+          <edgelabel>content</edgelabel>
+        </childnode>
+        <childnode refid="74" relation="usage">
+          <edgelabel>schema</edgelabel>
+        </childnode>
+      </node>
+      <node id="82">
+        <label>_xmlRelaxNGStates</label>
+        <childnode refid="81" relation="usage">
+          <edgelabel>tabState</edgelabel>
+        </childnode>
+      </node>
+      <node id="79">
+        <label>_xmlRelaxNGValidCtxt</label>
+        <childnode refid="19" relation="usage">
+          <edgelabel>serror</edgelabel>
+        </childnode>
+        <childnode refid="74" relation="usage">
+          <edgelabel>schema</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="80" relation="usage">
+          <edgelabel>err</edgelabel>
+          <edgelabel>errTab</edgelabel>
+        </childnode>
+        <childnode refid="81" relation="usage">
+          <edgelabel>state</edgelabel>
+        </childnode>
+        <childnode refid="82" relation="usage">
+          <edgelabel>freeState</edgelabel>
+          <edgelabel>freeStates</edgelabel>
+          <edgelabel>states</edgelabel>
+        </childnode>
+        <childnode refid="36" relation="usage">
+          <edgelabel>elem</edgelabel>
+          <edgelabel>elemTab</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>pnode</edgelabel>
+        </childnode>
+        <childnode refid="76" relation="usage">
+          <edgelabel>pdef</edgelabel>
+        </childnode>
+      </node>
+      <node id="80">
+        <label>_xmlRelaxNGValidError</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+          <edgelabel>seq</edgelabel>
+        </childnode>
+      </node>
+      <node id="81">
+        <label>_xmlRelaxNGValidState</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+          <edgelabel>seq</edgelabel>
+        </childnode>
+        <childnode refid="14" relation="usage">
+          <edgelabel>attrs</edgelabel>
+        </childnode>
+      </node>
+      <node id="2">
+        <label>_xmlSAXHandler</label>
+        <link refid="struct__xmlSAXHandler"/>
+        <childnode refid="3" relation="usage">
+          <edgelabel>resolveEntity</edgelabel>
+        </childnode>
+        <childnode refid="7" relation="usage">
+          <edgelabel>getEntity</edgelabel>
+          <edgelabel>getParameterEntity</edgelabel>
+        </childnode>
+        <childnode refid="16" relation="usage">
+          <edgelabel>attributeDecl</edgelabel>
+        </childnode>
+        <childnode refid="17" relation="usage">
+          <edgelabel>elementDecl</edgelabel>
+        </childnode>
+        <childnode refid="18" relation="usage">
+          <edgelabel>setDocumentLocator</edgelabel>
+        </childnode>
+        <childnode refid="19" relation="usage">
+          <edgelabel>serror</edgelabel>
+        </childnode>
+      </node>
+      <node id="18">
+        <label>_xmlSAXLocator</label>
+        <link refid="struct__xmlSAXLocator"/>
+      </node>
+      <node id="21">
+        <label>_xmlSchema</label>
+        <link refid="struct__xmlSchema"/>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="22" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="23" relation="usage">
+          <edgelabel>attrDecl</edgelabel>
+          <edgelabel>attrgrpDecl</edgelabel>
+          <edgelabel>elemDecl</edgelabel>
+          <edgelabel>groupDecl</edgelabel>
+          <edgelabel>idcDef</edgelabel>
+          <edgelabel>notaDecl</edgelabel>
+          <edgelabel>schemasImports</edgelabel>
+          <edgelabel>typeDecl</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="22">
+        <label>_xmlSchemaAnnot</label>
+        <link refid="struct__xmlSchemaAnnot"/>
+        <childnode refid="22" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>content</edgelabel>
+        </childnode>
+      </node>
+      <node id="95">
+        <label>_xmlSchemaAttrInfo</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="40" relation="usage">
+          <edgelabel>val</edgelabel>
+        </childnode>
+        <childnode refid="54" relation="usage">
+          <edgelabel>typeDef</edgelabel>
+        </childnode>
+        <childnode refid="55" relation="usage">
+          <edgelabel>decl</edgelabel>
+        </childnode>
+        <childnode refid="96" relation="usage">
+          <edgelabel>use</edgelabel>
+        </childnode>
+        <childnode refid="62" relation="usage">
+          <edgelabel>parent</edgelabel>
+        </childnode>
+      </node>
+      <node id="55">
+        <label>_xmlSchemaAttribute</label>
+        <link refid="struct__xmlSchemaAttribute"/>
+        <childnode refid="55" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>refDecl</edgelabel>
+        </childnode>
+        <childnode refid="22" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="54" relation="usage">
+          <edgelabel>base</edgelabel>
+          <edgelabel>subtypes</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="40" relation="usage">
+          <edgelabel>defVal</edgelabel>
+        </childnode>
+      </node>
+      <node id="57">
+        <label>_xmlSchemaAttributeLink</label>
+        <link refid="struct__xmlSchemaAttributeLink"/>
+        <childnode refid="57" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="55" relation="usage">
+          <edgelabel>attr</edgelabel>
+        </childnode>
+      </node>
+      <node id="96">
+        <label>_xmlSchemaAttributeUse</label>
+        <childnode refid="22" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="96" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="55" relation="usage">
+          <edgelabel>attrDecl</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="40" relation="usage">
+          <edgelabel>defVal</edgelabel>
+        </childnode>
+      </node>
+      <node id="53">
+        <label>_xmlSchemaBasicItem</label>
+      </node>
+      <node id="49">
+        <label>_xmlSchemaBucket</label>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="50" relation="usage">
+          <edgelabel>relations</edgelabel>
+        </childnode>
+        <childnode refid="51" relation="usage">
+          <edgelabel>globals</edgelabel>
+          <edgelabel>locals</edgelabel>
+        </childnode>
+      </node>
+      <node id="48">
+        <label>_xmlSchemaConstructionCtxt</label>
+        <childnode refid="21" relation="usage">
+          <edgelabel>mainSchema</edgelabel>
+        </childnode>
+        <childnode refid="49" relation="usage">
+          <edgelabel>bucket</edgelabel>
+          <edgelabel>mainBucket</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="51" relation="usage">
+          <edgelabel>buckets</edgelabel>
+          <edgelabel>pending</edgelabel>
+        </childnode>
+        <childnode refid="23" relation="usage">
+          <edgelabel>substGroups</edgelabel>
+        </childnode>
+        <childnode refid="52" relation="usage">
+          <edgelabel>lastRedef</edgelabel>
+          <edgelabel>redefs</edgelabel>
+        </childnode>
+      </node>
+      <node id="63">
+        <label>_xmlSchemaElement</label>
+        <link refid="struct__xmlSchemaElement"/>
+        <childnode refid="54" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>subtypes</edgelabel>
+        </childnode>
+        <childnode refid="22" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="55" relation="usage">
+          <edgelabel>attributes</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="63" relation="usage">
+          <edgelabel>refDecl</edgelabel>
+        </childnode>
+        <childnode refid="30" relation="usage">
+          <edgelabel>contModel</edgelabel>
+        </childnode>
+        <childnode refid="40" relation="usage">
+          <edgelabel>defVal</edgelabel>
+        </childnode>
+      </node>
+      <node id="56">
+        <label>_xmlSchemaFacet</label>
+        <link refid="struct__xmlSchemaFacet"/>
+        <childnode refid="56" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="22" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="40" relation="usage">
+          <edgelabel>val</edgelabel>
+        </childnode>
+        <childnode refid="30" relation="usage">
+          <edgelabel>regexp</edgelabel>
+        </childnode>
+      </node>
+      <node id="61">
+        <label>_xmlSchemaFacetLink</label>
+        <link refid="struct__xmlSchemaFacetLink"/>
+        <childnode refid="61" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="56" relation="usage">
+          <edgelabel>facet</edgelabel>
+        </childnode>
+      </node>
+      <node id="65">
+        <label>_xmlSchemaIDC</label>
+        <childnode refid="22" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="65" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="66" relation="usage">
+          <edgelabel>fields</edgelabel>
+          <edgelabel>selector</edgelabel>
+        </childnode>
+        <childnode refid="67" relation="usage">
+          <edgelabel>ref</edgelabel>
+        </childnode>
+      </node>
+      <node id="71">
+        <label>_xmlSchemaIDCAug</label>
+        <childnode refid="71" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="65" relation="usage">
+          <edgelabel>def</edgelabel>
+        </childnode>
+      </node>
+      <node id="70">
+        <label>_xmlSchemaIDCMatcher</label>
+        <childnode refid="70" relation="usage">
+          <edgelabel>next</edgelabel>
+          <edgelabel>nextCached</edgelabel>
+        </childnode>
+        <childnode refid="71" relation="usage">
+          <edgelabel>aidc</edgelabel>
+        </childnode>
+        <childnode refid="69" relation="usage">
+          <edgelabel>keySeqs</edgelabel>
+        </childnode>
+        <childnode refid="51" relation="usage">
+          <edgelabel>targets</edgelabel>
+        </childnode>
+        <childnode refid="23" relation="usage">
+          <edgelabel>htab</edgelabel>
+        </childnode>
+      </node>
+      <node id="66">
+        <label>_xmlSchemaIDCSelect</label>
+        <childnode refid="66" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="65" relation="usage">
+          <edgelabel>idc</edgelabel>
+        </childnode>
+      </node>
+      <node id="72">
+        <label>_xmlSchemaIDCStateObj</label>
+        <childnode refid="72" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="70" relation="usage">
+          <edgelabel>matcher</edgelabel>
+        </childnode>
+        <childnode refid="66" relation="usage">
+          <edgelabel>sel</edgelabel>
+        </childnode>
+      </node>
+      <node id="51">
+        <label>_xmlSchemaItemList</label>
+      </node>
+      <node id="62">
+        <label>_xmlSchemaNodeInfo</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="40" relation="usage">
+          <edgelabel>val</edgelabel>
+        </childnode>
+        <childnode refid="54" relation="usage">
+          <edgelabel>typeDef</edgelabel>
+        </childnode>
+        <childnode refid="63" relation="usage">
+          <edgelabel>decl</edgelabel>
+        </childnode>
+        <childnode refid="64" relation="usage">
+          <edgelabel>idcTable</edgelabel>
+        </childnode>
+        <childnode refid="70" relation="usage">
+          <edgelabel>idcMatchers</edgelabel>
+        </childnode>
+        <childnode refid="36" relation="usage">
+          <edgelabel>regexCtxt</edgelabel>
+        </childnode>
+      </node>
+      <node id="64">
+        <label>_xmlSchemaPSVIIDCBinding</label>
+        <childnode refid="64" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="65" relation="usage">
+          <edgelabel>definition</edgelabel>
+        </childnode>
+        <childnode refid="68" relation="usage">
+          <edgelabel>nodeTable</edgelabel>
+        </childnode>
+        <childnode refid="51" relation="usage">
+          <edgelabel>dupls</edgelabel>
+        </childnode>
+      </node>
+      <node id="69">
+        <label>_xmlSchemaPSVIIDCKey</label>
+        <childnode refid="54" relation="usage">
+          <edgelabel>type</edgelabel>
+        </childnode>
+        <childnode refid="40" relation="usage">
+          <edgelabel>val</edgelabel>
+        </childnode>
+      </node>
+      <node id="68">
+        <label>_xmlSchemaPSVIIDCNode</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="69" relation="usage">
+          <edgelabel>keys</edgelabel>
+        </childnode>
+      </node>
+      <node id="47">
+        <label>_xmlSchemaParserCtxt</label>
+        <childnode refid="19" relation="usage">
+          <edgelabel>serror</edgelabel>
+        </childnode>
+        <childnode refid="48" relation="usage">
+          <edgelabel>constructor</edgelabel>
+        </childnode>
+        <childnode refid="21" relation="usage">
+          <edgelabel>schema</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="39" relation="usage">
+          <edgelabel>am</edgelabel>
+        </childnode>
+        <childnode refid="31" relation="usage">
+          <edgelabel>end</edgelabel>
+          <edgelabel>start</edgelabel>
+          <edgelabel>state</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="54" relation="usage">
+          <edgelabel>ctxtType</edgelabel>
+        </childnode>
+        <childnode refid="20" relation="usage">
+          <edgelabel>vctxt</edgelabel>
+        </childnode>
+        <childnode refid="49" relation="usage">
+          <edgelabel>redefined</edgelabel>
+        </childnode>
+        <childnode refid="52" relation="usage">
+          <edgelabel>redef</edgelabel>
+        </childnode>
+        <childnode refid="51" relation="usage">
+          <edgelabel>attrProhibs</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>resourceLoader</edgelabel>
+        </childnode>
+      </node>
+      <node id="67">
+        <label>_xmlSchemaQNameRef</label>
+        <childnode refid="53" relation="usage">
+          <edgelabel>item</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+      </node>
+      <node id="52">
+        <label>_xmlSchemaRedef</label>
+        <childnode refid="52" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="53" relation="usage">
+          <edgelabel>item</edgelabel>
+          <edgelabel>reference</edgelabel>
+          <edgelabel>target</edgelabel>
+        </childnode>
+        <childnode refid="49" relation="usage">
+          <edgelabel>targetBucket</edgelabel>
+        </childnode>
+      </node>
+      <node id="83">
+        <label>_xmlSchemaSAXPlug</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>schemas_sax</edgelabel>
+          <edgelabel>user_sax</edgelabel>
+          <edgelabel>user_sax_ptr</edgelabel>
+        </childnode>
+        <childnode refid="20" relation="usage">
+          <edgelabel>ctxt</edgelabel>
+        </childnode>
+      </node>
+      <node id="50">
+        <label>_xmlSchemaSchemaRelation</label>
+        <childnode refid="50" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="49" relation="usage">
+          <edgelabel>bucket</edgelabel>
+        </childnode>
+      </node>
+      <node id="1">
+        <label>_xmlSchemaSplitSAXData</label>
+        <childnode refid="2" relation="usage">
+          <edgelabel>schemas_sax</edgelabel>
+          <edgelabel>user_sax</edgelabel>
+        </childnode>
+        <childnode refid="20" relation="usage">
+          <edgelabel>ctxt</edgelabel>
+        </childnode>
+      </node>
+      <node id="54">
+        <label>_xmlSchemaType</label>
+        <link refid="struct__xmlSchemaType"/>
+        <childnode refid="54" relation="usage">
+          <edgelabel>baseType</edgelabel>
+          <edgelabel>contentTypeDef</edgelabel>
+          <edgelabel>next</edgelabel>
+          <edgelabel>redef</edgelabel>
+          <edgelabel>subtypes</edgelabel>
+        </childnode>
+        <childnode refid="22" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="55" relation="usage">
+          <edgelabel>attributes</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="56" relation="usage">
+          <edgelabel>facets</edgelabel>
+        </childnode>
+        <childnode refid="57" relation="usage">
+          <edgelabel>attributeUses</edgelabel>
+        </childnode>
+        <childnode refid="58" relation="usage">
+          <edgelabel>attributeWildcard</edgelabel>
+        </childnode>
+        <childnode refid="60" relation="usage">
+          <edgelabel>memberTypes</edgelabel>
+        </childnode>
+        <childnode refid="61" relation="usage">
+          <edgelabel>facetSet</edgelabel>
+        </childnode>
+        <childnode refid="30" relation="usage">
+          <edgelabel>contModel</edgelabel>
+        </childnode>
+      </node>
+      <node id="60">
+        <label>_xmlSchemaTypeLink</label>
+        <link refid="struct__xmlSchemaTypeLink"/>
+        <childnode refid="60" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="54" relation="usage">
+          <edgelabel>type</edgelabel>
+        </childnode>
+      </node>
+      <node id="40">
+        <label>_xmlSchemaVal</label>
+        <childnode refid="40" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+        <childnode refid="41" relation="usage">
+          <edgelabel>decimal</edgelabel>
+        </childnode>
+        <childnode refid="42" relation="usage">
+          <edgelabel>date</edgelabel>
+        </childnode>
+        <childnode refid="43" relation="usage">
+          <edgelabel>dur</edgelabel>
+        </childnode>
+        <childnode refid="44" relation="usage">
+          <edgelabel>qname</edgelabel>
+        </childnode>
+        <childnode refid="45" relation="usage">
+          <edgelabel>hex</edgelabel>
+        </childnode>
+        <childnode refid="46" relation="usage">
+          <edgelabel>base64</edgelabel>
+        </childnode>
+      </node>
+      <node id="46">
+        <label>_xmlSchemaValBase64</label>
+      </node>
+      <node id="42">
+        <label>_xmlSchemaValDate</label>
+      </node>
+      <node id="41">
+        <label>_xmlSchemaValDecimal</label>
+      </node>
+      <node id="43">
+        <label>_xmlSchemaValDuration</label>
+      </node>
+      <node id="45">
+        <label>_xmlSchemaValHex</label>
+      </node>
+      <node id="44">
+        <label>_xmlSchemaValQName</label>
+      </node>
+      <node id="20">
+        <label>_xmlSchemaValidCtxt</label>
+        <childnode refid="19" relation="usage">
+          <edgelabel>serror</edgelabel>
+        </childnode>
+        <childnode refid="21" relation="usage">
+          <edgelabel>schema</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>input</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>sax</edgelabel>
+        </childnode>
+        <childnode refid="25" relation="usage">
+          <edgelabel>parserCtxt</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>cur</edgelabel>
+          <edgelabel>node</edgelabel>
+          <edgelabel>validationRoot</edgelabel>
+        </childnode>
+        <childnode refid="36" relation="usage">
+          <edgelabel>regexp</edgelabel>
+        </childnode>
+        <childnode refid="40" relation="usage">
+          <edgelabel>value</edgelabel>
+        </childnode>
+        <childnode refid="47" relation="usage">
+          <edgelabel>pctxt</edgelabel>
+        </childnode>
+        <childnode refid="62" relation="usage">
+          <edgelabel>elemInfos</edgelabel>
+          <edgelabel>inode</edgelabel>
+        </childnode>
+        <childnode refid="71" relation="usage">
+          <edgelabel>aidcs</edgelabel>
+        </childnode>
+        <childnode refid="72" relation="usage">
+          <edgelabel>xpathStatePool</edgelabel>
+          <edgelabel>xpathStates</edgelabel>
+        </childnode>
+        <childnode refid="70" relation="usage">
+          <edgelabel>idcMatcherCache</edgelabel>
+        </childnode>
+        <childnode refid="68" relation="usage">
+          <edgelabel>idcNodes</edgelabel>
+        </childnode>
+        <childnode refid="69" relation="usage">
+          <edgelabel>idcKeys</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="73" relation="usage">
+          <edgelabel>reader</edgelabel>
+        </childnode>
+        <childnode refid="95" relation="usage">
+          <edgelabel>attrInfos</edgelabel>
+        </childnode>
+        <childnode refid="51" relation="usage">
+          <edgelabel>nodeQNames</edgelabel>
+        </childnode>
+      </node>
+      <node id="58">
+        <label>_xmlSchemaWildcard</label>
+        <link refid="struct__xmlSchemaWildcard"/>
+        <childnode refid="22" relation="usage">
+          <edgelabel>annot</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="59" relation="usage">
+          <edgelabel>negNsSet</edgelabel>
+          <edgelabel>nsSet</edgelabel>
+        </childnode>
+      </node>
+      <node id="59">
+        <label>_xmlSchemaWildcardNs</label>
+        <link refid="struct__xmlSchemaWildcardNs"/>
+        <childnode refid="59" relation="usage">
+          <edgelabel>next</edgelabel>
+        </childnode>
+      </node>
+      <node id="92">
+        <label>_xmlStepOp</label>
+      </node>
+      <node id="93">
+        <label>_xmlStreamComp</label>
+        <childnode refid="12" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="94" relation="usage">
+          <edgelabel>steps</edgelabel>
+        </childnode>
+      </node>
+      <node id="94">
+        <label>_xmlStreamStep</label>
+      </node>
+      <node id="73">
+        <label>_xmlTextReader</label>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="25" relation="usage">
+          <edgelabel>ctxt</edgelabel>
+        </childnode>
+        <childnode refid="2" relation="usage">
+          <edgelabel>sax</edgelabel>
+        </childnode>
+        <childnode refid="4" relation="usage">
+          <edgelabel>input</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>curnode</edgelabel>
+          <edgelabel>ent</edgelabel>
+          <edgelabel>entTab</edgelabel>
+          <edgelabel>faketext</edgelabel>
+          <edgelabel>node</edgelabel>
+          <edgelabel>rngFullNode</edgelabel>
+        </childnode>
+        <childnode refid="6" relation="usage">
+          <edgelabel>buffer</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+        <childnode refid="74" relation="usage">
+          <edgelabel>rngSchemas</edgelabel>
+        </childnode>
+        <childnode refid="79" relation="usage">
+          <edgelabel>rngValidCtxt</edgelabel>
+        </childnode>
+        <childnode refid="21" relation="usage">
+          <edgelabel>xsdSchemas</edgelabel>
+        </childnode>
+        <childnode refid="20" relation="usage">
+          <edgelabel>xsdValidCtxt</edgelabel>
+        </childnode>
+        <childnode refid="83" relation="usage">
+          <edgelabel>xsdPlug</edgelabel>
+        </childnode>
+        <childnode refid="84" relation="usage">
+          <edgelabel>xincctxt</edgelabel>
+        </childnode>
+        <childnode refid="91" relation="usage">
+          <edgelabel>patternTab</edgelabel>
+        </childnode>
+        <childnode refid="19" relation="usage">
+          <edgelabel>sErrorFunc</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>resourceLoader</edgelabel>
+        </childnode>
+      </node>
+      <node id="26">
+        <label>_xmlValidCtxt</label>
+        <link refid="struct__xmlValidCtxt"/>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+          <edgelabel>nodeTab</edgelabel>
+        </childnode>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="27" relation="usage">
+          <edgelabel>vstate</edgelabel>
+          <edgelabel>vstateTab</edgelabel>
+        </childnode>
+        <childnode refid="39" relation="usage">
+          <edgelabel>am</edgelabel>
+        </childnode>
+        <childnode refid="31" relation="usage">
+          <edgelabel>state</edgelabel>
+        </childnode>
+      </node>
+      <node id="27">
+        <label>_xmlValidState</label>
+        <childnode refid="28" relation="usage">
+          <edgelabel>elemDecl</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>node</edgelabel>
+        </childnode>
+        <childnode refid="36" relation="usage">
+          <edgelabel>exec</edgelabel>
+        </childnode>
+      </node>
+      <node id="84">
+        <label>_xmlXIncludeCtxt</label>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="85" relation="usage">
+          <edgelabel>incTab</edgelabel>
+        </childnode>
+        <childnode refid="86" relation="usage">
+          <edgelabel>txtTab</edgelabel>
+        </childnode>
+        <childnode refid="87" relation="usage">
+          <edgelabel>urlTab</edgelabel>
+        </childnode>
+        <childnode refid="88" relation="usage">
+          <edgelabel>xpctxt</edgelabel>
+        </childnode>
+        <childnode refid="19" relation="usage">
+          <edgelabel>errorHandler</edgelabel>
+        </childnode>
+        <childnode refid="3" relation="usage">
+          <edgelabel>resourceLoader</edgelabel>
+        </childnode>
+      </node>
+      <node id="87">
+        <label>_xmlXIncludeDoc</label>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+      </node>
+      <node id="85">
+        <label>_xmlXIncludeRef</label>
+        <childnode refid="8" relation="usage">
+          <edgelabel>elem</edgelabel>
+          <edgelabel>inc</edgelabel>
+        </childnode>
+      </node>
+      <node id="86">
+        <label>_xmlXIncludeTxt</label>
+      </node>
+      <node id="88">
+        <label>_xmlXPathContext</label>
+        <link refid="struct__xmlXPathContext"/>
+        <childnode refid="9" relation="usage">
+          <edgelabel>doc</edgelabel>
+        </childnode>
+        <childnode refid="8" relation="usage">
+          <edgelabel>debugNode</edgelabel>
+          <edgelabel>here</edgelabel>
+          <edgelabel>node</edgelabel>
+          <edgelabel>origin</edgelabel>
+        </childnode>
+        <childnode refid="23" relation="usage">
+          <edgelabel>funcHash</edgelabel>
+          <edgelabel>nsHash</edgelabel>
+          <edgelabel>varHash</edgelabel>
+        </childnode>
+        <childnode refid="11" relation="usage">
+          <edgelabel>namespaces</edgelabel>
+          <edgelabel>tmpNsList</edgelabel>
+        </childnode>
+        <childnode refid="89" relation="usage">
+          <edgelabel>varLookupFunc</edgelabel>
+        </childnode>
+        <childnode refid="19" relation="usage">
+          <edgelabel>error</edgelabel>
+          <edgelabel>lastError</edgelabel>
+        </childnode>
+        <childnode refid="12" relation="usage">
+          <edgelabel>dict</edgelabel>
+        </childnode>
+      </node>
+      <node id="89">
+        <label>_xmlXPathObject</label>
+        <link refid="struct__xmlXPathObject"/>
+        <childnode refid="90" relation="usage">
+          <edgelabel>nodesetval</edgelabel>
+        </childnode>
+      </node>
+      <node id="24">
+        <label>xmlHashEntry</label>
+      </node>
+    </collaborationgraph>
+    <location file="/builds/GNOME/libxml2/xmlschemas.c" line="27770" column="1" bodyfile="/builds/GNOME/libxml2/xmlschemas.c" bodystart="27770" bodyend="27775"/>
+    <listofallmembers>
+      <member refid="struct__xmlSchemaSplitSAXData_1a17ae01bd4b3f38628b8a2256f1642008" prot="public" virt="non-virtual"><scope>_xmlSchemaSplitSAXData</scope><name>ctxt</name></member>
+      <member refid="struct__xmlSchemaSplitSAXData_1ad492948b3ab7c07c077c22c6fa39b1a5" prot="public" virt="non-virtual"><scope>_xmlSchemaSplitSAXData</scope><name>schemas_sax</name></member>
+      <member refid="struct__xmlSchemaSplitSAXData_1a0f53d287ac7c064d1a49d4bd93ca1cb9" prot="public" virt="non-virtual"><scope>_xmlSchemaSplitSAXData</scope><name>user_data</name></member>
+      <member refid="struct__xmlSchemaSplitSAXData_1a607a688b8a503b6b09bd09b21f33a0c6" prot="public" virt="non-virtual"><scope>_xmlSchemaSplitSAXData</scope><name>user_sax</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

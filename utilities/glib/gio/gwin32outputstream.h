@@ -2,10 +2,12 @@
  *
  * Copyright (C) 2006-2010 Red Hat, Inc.
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -33,11 +35,6 @@ G_BEGIN_DECLS
 #define G_IS_WIN32_OUTPUT_STREAM_CLASS(k)  (G_TYPE_CHECK_CLASS_TYPE ((k), G_TYPE_WIN32_OUTPUT_STREAM))
 #define G_WIN32_OUTPUT_STREAM_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), G_TYPE_WIN32_OUTPUT_STREAM, GWin32OutputStreamClass))
 
-/**
- * GWin32OutputStream:
- *
- * Implements #GOutputStream for outputting to Windows file handles
- **/
 typedef struct _GWin32OutputStream         GWin32OutputStream;
 typedef struct _GWin32OutputStreamClass    GWin32OutputStreamClass;
 typedef struct _GWin32OutputStreamPrivate  GWin32OutputStreamPrivate;
@@ -65,18 +62,18 @@ struct _GWin32OutputStreamClass
   void (*_g_reserved5) (void);
 };
 
-GLIB_AVAILABLE_IN_ALL
-GType           g_win32_output_stream_get_type         (void) G_GNUC_CONST;
+GIO_AVAILABLE_IN_ALL
+GType           g_win32_output_stream_get_type         (void);
 
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 GOutputStream * g_win32_output_stream_new              (void               *handle,
 							gboolean            close_handle);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void            g_win32_output_stream_set_close_handle (GWin32OutputStream *stream,
 							gboolean           close_handle);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 gboolean        g_win32_output_stream_get_close_handle (GWin32OutputStream *stream);
-GLIB_AVAILABLE_IN_ALL
+GIO_AVAILABLE_IN_ALL
 void           *g_win32_output_stream_get_handle       (GWin32OutputStream *stream);
 G_END_DECLS
 

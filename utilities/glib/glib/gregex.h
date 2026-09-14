@@ -4,6 +4,8 @@
  * Copyright (C) 2004, Matthias Clasen <mclasen@redhat.com>
  * Copyright (C) 2005 - 2007, Marco Barisione <marco@barisione.org>
  *
+ * SPDX-License-Identifier: LGPL-2.1-or-later
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
@@ -14,9 +16,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __G_REGEX_H__
@@ -36,103 +37,104 @@ G_BEGIN_DECLS
  * @G_REGEX_ERROR_COMPILE: Compilation of the regular expression failed.
  * @G_REGEX_ERROR_OPTIMIZE: Optimization of the regular expression failed.
  * @G_REGEX_ERROR_REPLACE: Replacement failed due to an ill-formed replacement
- *     string.
+ *   string.
  * @G_REGEX_ERROR_MATCH: The match process failed.
  * @G_REGEX_ERROR_INTERNAL: Internal error of the regular expression engine.
- *     Since 2.16
- * @G_REGEX_ERROR_STRAY_BACKSLASH: "\\" at end of pattern. Since 2.16
- * @G_REGEX_ERROR_MISSING_CONTROL_CHAR: "\\c" at end of pattern. Since 2.16
- * @G_REGEX_ERROR_UNRECOGNIZED_ESCAPE: Unrecognized character follows "\\".
- *     Since 2.16
- * @G_REGEX_ERROR_QUANTIFIERS_OUT_OF_ORDER: Numbers out of order in "{}"
- *     quantifier. Since 2.16
- * @G_REGEX_ERROR_QUANTIFIER_TOO_BIG: Number too big in "{}" quantifier.
- *     Since 2.16
- * @G_REGEX_ERROR_UNTERMINATED_CHARACTER_CLASS: Missing terminating "]" for
- *     character class. Since 2.16
+ *   Since 2.16
+ * @G_REGEX_ERROR_STRAY_BACKSLASH: `\` at end of pattern. Since 2.16
+ * @G_REGEX_ERROR_MISSING_CONTROL_CHAR: `\c` at end of pattern. Since 2.16
+ * @G_REGEX_ERROR_UNRECOGNIZED_ESCAPE: Unrecognized character follows `\`.
+ *   Since 2.16
+ * @G_REGEX_ERROR_QUANTIFIERS_OUT_OF_ORDER: Numbers out of order in `{}`
+ *   quantifier. Since 2.16
+ * @G_REGEX_ERROR_QUANTIFIER_TOO_BIG: Number too big in `{}` quantifier.
+ *   Since 2.16
+ * @G_REGEX_ERROR_UNTERMINATED_CHARACTER_CLASS: Missing terminating `]` for
+ *   character class. Since 2.16
  * @G_REGEX_ERROR_INVALID_ESCAPE_IN_CHARACTER_CLASS: Invalid escape sequence
- *     in character class. Since 2.16
+ *   in character class. Since 2.16
  * @G_REGEX_ERROR_RANGE_OUT_OF_ORDER: Range out of order in character class.
- *     Since 2.16
+ *   Since 2.16
  * @G_REGEX_ERROR_NOTHING_TO_REPEAT: Nothing to repeat. Since 2.16
- * @G_REGEX_ERROR_UNRECOGNIZED_CHARACTER: Unrecognized character after "(?",
- *     "(?<" or "(?P". Since 2.16
+ * @G_REGEX_ERROR_UNRECOGNIZED_CHARACTER: Unrecognized character after `(?`,
+ *   `(?<` or `(?P`. Since 2.16
  * @G_REGEX_ERROR_POSIX_NAMED_CLASS_OUTSIDE_CLASS: POSIX named classes are
- *     supported only within a class. Since 2.16
- * @G_REGEX_ERROR_UNMATCHED_PARENTHESIS: Missing terminating ")" or ")"
- *     without opening "(". Since 2.16
+ *   supported only within a class. Since 2.16
+ * @G_REGEX_ERROR_UNMATCHED_PARENTHESIS: Missing terminating `)` or `)`
+ *   without opening `(`. Since 2.16
  * @G_REGEX_ERROR_INEXISTENT_SUBPATTERN_REFERENCE: Reference to non-existent
- *     subpattern. Since 2.16
- * @G_REGEX_ERROR_UNTERMINATED_COMMENT: Missing terminating ")" after comment.
- *     Since 2.16
+ *   subpattern. Since 2.16
+ * @G_REGEX_ERROR_UNTERMINATED_COMMENT: Missing terminating `)` after comment.
+ *   Since 2.16
  * @G_REGEX_ERROR_EXPRESSION_TOO_LARGE: Regular expression too large.
- *     Since 2.16
+ *   Since 2.16
  * @G_REGEX_ERROR_MEMORY_ERROR: Failed to get memory. Since 2.16
  * @G_REGEX_ERROR_VARIABLE_LENGTH_LOOKBEHIND: Lookbehind assertion is not
- *     fixed length. Since 2.16
- * @G_REGEX_ERROR_MALFORMED_CONDITION: Malformed number or name after "(?(".
- *     Since 2.16
+ *   fixed length. Since 2.16
+ * @G_REGEX_ERROR_MALFORMED_CONDITION: Malformed number or name after `(?(`.
+ *   Since 2.16
  * @G_REGEX_ERROR_TOO_MANY_CONDITIONAL_BRANCHES: Conditional group contains
- *     more than two branches. Since 2.16
- * @G_REGEX_ERROR_ASSERTION_EXPECTED: Assertion expected after "(?(".
- *     Since 2.16
+ *   more than two branches. Since 2.16
+ * @G_REGEX_ERROR_ASSERTION_EXPECTED: Assertion expected after `(?(`.
+ *   Since 2.16
  * @G_REGEX_ERROR_UNKNOWN_POSIX_CLASS_NAME: Unknown POSIX class name.
- *     Since 2.16
+ *   Since 2.16
  * @G_REGEX_ERROR_POSIX_COLLATING_ELEMENTS_NOT_SUPPORTED: POSIX collating
- *     elements are not supported. Since 2.16
- * @G_REGEX_ERROR_HEX_CODE_TOO_LARGE: Character value in "\\x{...}" sequence
- *     is too large. Since 2.16
- * @G_REGEX_ERROR_INVALID_CONDITION: Invalid condition "(?(0)". Since 2.16
- * @G_REGEX_ERROR_SINGLE_BYTE_MATCH_IN_LOOKBEHIND: \\C not allowed in
- *     lookbehind assertion. Since 2.16
+ *   elements are not supported. Since 2.16
+ * @G_REGEX_ERROR_HEX_CODE_TOO_LARGE: Character value in `\x{...}` sequence
+ *   is too large. Since 2.16
+ * @G_REGEX_ERROR_INVALID_CONDITION: Invalid condition `(?(0)`. Since 2.16
+ * @G_REGEX_ERROR_SINGLE_BYTE_MATCH_IN_LOOKBEHIND: `\C` not allowed in
+ *   lookbehind assertion. Since 2.16
  * @G_REGEX_ERROR_INFINITE_LOOP: Recursive call could loop indefinitely.
- *     Since 2.16
+ *   Since 2.16
  * @G_REGEX_ERROR_MISSING_SUBPATTERN_NAME_TERMINATOR: Missing terminator
- *     in subpattern name. Since 2.16
+ *   in subpattern name. Since 2.16
  * @G_REGEX_ERROR_DUPLICATE_SUBPATTERN_NAME: Two named subpatterns have
- *     the same name. Since 2.16
- * @G_REGEX_ERROR_MALFORMED_PROPERTY: Malformed "\\P" or "\\p" sequence.
- *     Since 2.16
- * @G_REGEX_ERROR_UNKNOWN_PROPERTY: Unknown property name after "\\P" or
- *     "\\p". Since 2.16
+ *   the same name. Since 2.16
+ * @G_REGEX_ERROR_MALFORMED_PROPERTY: Malformed `\P` or `\p` sequence.
+ *   Since 2.16
+ * @G_REGEX_ERROR_UNKNOWN_PROPERTY: Unknown property name after `\P` or
+ *   `\p`. Since 2.16
  * @G_REGEX_ERROR_SUBPATTERN_NAME_TOO_LONG: Subpattern name is too long
- *     (maximum 32 characters). Since 2.16
+ *   (maximum 32 characters). Since 2.16
  * @G_REGEX_ERROR_TOO_MANY_SUBPATTERNS: Too many named subpatterns (maximum
- *     10,000). Since 2.16
- * @G_REGEX_ERROR_INVALID_OCTAL_VALUE: Octal value is greater than "\\377".
- *     Since 2.16
- * @G_REGEX_ERROR_TOO_MANY_BRANCHES_IN_DEFINE: "DEFINE" group contains more
- *     than one branch. Since 2.16
- * @G_REGEX_ERROR_DEFINE_REPETION: Repeating a "DEFINE" group is not allowed.
- *     This error is never raised. Since: 2.16 Deprecated: 2.34
+ *   10,000). Since 2.16
+ * @G_REGEX_ERROR_INVALID_OCTAL_VALUE: Octal value is greater than `\377`.
+ *   Since 2.16
+ * @G_REGEX_ERROR_TOO_MANY_BRANCHES_IN_DEFINE: `DEFINE` group contains more
+ *   than one branch. Since 2.16
+ * @G_REGEX_ERROR_DEFINE_REPETION: Repeating a `DEFINE` group is not allowed.
+ *   This error is never raised. Since: 2.16 Deprecated: 2.34
  * @G_REGEX_ERROR_INCONSISTENT_NEWLINE_OPTIONS: Inconsistent newline options.
- *     Since 2.16
- * @G_REGEX_ERROR_MISSING_BACK_REFERENCE: "\\g" is not followed by a braced,
- *      angle-bracketed, or quoted name or number, or by a plain number. Since: 2.16
- * @G_REGEX_ERROR_INVALID_RELATIVE_REFERENCE: relative reference must not be zero. Since: 2.34
- * @G_REGEX_ERROR_BACKTRACKING_CONTROL_VERB_ARGUMENT_FORBIDDEN: the backtracing
- *     control verb used does not allow an argument. Since: 2.34
- * @G_REGEX_ERROR_UNKNOWN_BACKTRACKING_CONTROL_VERB: unknown backtracing 
- *     control verb. Since: 2.34
- * @G_REGEX_ERROR_NUMBER_TOO_BIG: number is too big in escape sequence. Since: 2.34
+ *   Since 2.16
+ * @G_REGEX_ERROR_MISSING_BACK_REFERENCE: `\g` is not followed by a braced,
+ *   angle-bracketed, or quoted name or number, or by a plain number. Since: 2.16
+ * @G_REGEX_ERROR_INVALID_RELATIVE_REFERENCE: Relative reference must not be
+ *   zero. Since: 2.34
+ * @G_REGEX_ERROR_BACKTRACKING_CONTROL_VERB_ARGUMENT_FORBIDDEN: The backtracing
+ *   control verb used does not allow an argument. Since: 2.34
+ * @G_REGEX_ERROR_UNKNOWN_BACKTRACKING_CONTROL_VERB: Unknown backtracing
+ *   control verb. Since: 2.34
+ * @G_REGEX_ERROR_NUMBER_TOO_BIG: Number is too big in escape sequence. Since: 2.34
  * @G_REGEX_ERROR_MISSING_SUBPATTERN_NAME: Missing subpattern name. Since: 2.34
  * @G_REGEX_ERROR_MISSING_DIGIT: Missing digit. Since 2.34
  * @G_REGEX_ERROR_INVALID_DATA_CHARACTER: In JavaScript compatibility mode,
- *     "[" is an invalid data character. Since: 2.34
+ *   `[` is an invalid data character. Since: 2.34
  * @G_REGEX_ERROR_EXTRA_SUBPATTERN_NAME: different names for subpatterns of the 
- *     same number are not allowed. Since: 2.34
- * @G_REGEX_ERROR_BACKTRACKING_CONTROL_VERB_ARGUMENT_REQUIRED: the backtracing control
- *     verb requires an argument. Since: 2.34
- * @G_REGEX_ERROR_INVALID_CONTROL_CHAR: "\\c" must be followed by an ASCII 
- *     character. Since: 2.34
- * @G_REGEX_ERROR_MISSING_NAME: "\\k" is not followed by a braced, angle-bracketed, or 
- *     quoted name. Since: 2.34
- * @G_REGEX_ERROR_NOT_SUPPORTED_IN_CLASS: "\\N" is not supported in a class. Since: 2.34
- * @G_REGEX_ERROR_TOO_MANY_FORWARD_REFERENCES: too many forward references. Since: 2.34
- * @G_REGEX_ERROR_NAME_TOO_LONG: the name is too long in "(*MARK)", "(*PRUNE)", 
- *     "(*SKIP)", or "(*THEN)". Since: 2.34
- * @G_REGEX_ERROR_CHARACTER_VALUE_TOO_LARGE: the character value in the \\u sequence is
- *     too large. Since: 2.34
+ *   same number are not allowed. Since: 2.34
+ * @G_REGEX_ERROR_BACKTRACKING_CONTROL_VERB_ARGUMENT_REQUIRED: The backtracing control
+ *   verb requires an argument. Since: 2.34
+ * @G_REGEX_ERROR_INVALID_CONTROL_CHAR: `\c` must be followed by an ASCII
+ *   character. Since: 2.34
+ * @G_REGEX_ERROR_MISSING_NAME: `\k` is not followed by a braced,
+ *   angle-bracketed, or quoted name. Since: 2.34
+ * @G_REGEX_ERROR_NOT_SUPPORTED_IN_CLASS: `\N` is not supported in a class. Since: 2.34
+ * @G_REGEX_ERROR_TOO_MANY_FORWARD_REFERENCES: Too many forward references. Since: 2.34
+ * @G_REGEX_ERROR_NAME_TOO_LONG: The name is too long in `(*MARK)`, `(*PRUNE)`,
+ *   `(*SKIP)`, or `(*THEN)`. Since: 2.34
+ * @G_REGEX_ERROR_CHARACTER_VALUE_TOO_LARGE: The character value in the `\u`
+ *   sequence is too large. Since: 2.34
  *
  * Error codes returned by regular expressions functions.
  *
@@ -204,9 +206,9 @@ typedef enum
 /**
  * G_REGEX_ERROR:
  *
- * Error domain for regular expressions. Errors in this domain will be
- * from the #GRegexError enumeration. See #GError for information on
- * error domains.
+ * Error domain for regular expressions.
+ *
+ * Errors in this domain will be from the [error@GLib.RegexError] enumeration.
  *
  * Since: 2.14
  */
@@ -218,74 +220,79 @@ GQuark g_regex_error_quark (void);
 /**
  * GRegexCompileFlags:
  * @G_REGEX_CASELESS: Letters in the pattern match both upper- and
- *     lowercase letters. This option can be changed within a pattern
- *     by a "(?i)" option setting.
- * @G_REGEX_MULTILINE: By default, GRegex treats the strings as consisting
- *     of a single line of characters (even if it actually contains
- *     newlines). The "start of line" metacharacter ("^") matches only
- *     at the start of the string, while the "end of line" metacharacter
- *     ("$") matches only at the end of the string, or before a terminating
- *     newline (unless #G_REGEX_DOLLAR_ENDONLY is set). When
- *     #G_REGEX_MULTILINE is set, the "start of line" and "end of line"
- *     constructs match immediately following or immediately before any
- *     newline in the string, respectively, as well as at the very start
- *     and end. This can be changed within a pattern by a "(?m)" option
- *     setting.
- * @G_REGEX_DOTALL: A dot metacharater (".") in the pattern matches all
- *     characters, including newlines. Without it, newlines are excluded.
- *     This option can be changed within a pattern by a ("?s") option setting.
+ *   lowercase letters. This option can be changed within a pattern
+ *   by a `(?i)` option setting.
+ * @G_REGEX_MULTILINE: By default, [type@GLib.Regex] treats the strings as consisting
+ *   of a single line of characters (even if it actually contains
+ *   newlines). The ‘start of line’ metacharacter (`^`) matches only
+ *   at the start of the string, while the ‘end of line’ metacharacter
+ *   (`$`) matches only at the end of the string, or before a terminating
+ *   newline (unless [flags@GLib.RegexCompileFlags.DOLLAR_ENDONLY] is set). When
+ *   [flags@GLib.RegexCompileFlags.MULTILINE] is set, the ‘start of line’ and
+ *   ‘end of line’ constructs match immediately following or immediately before
+ *   any newline in the string, respectively, as well as at the very start
+ *   and end. This can be changed within a pattern by a `(?m)` option
+ *   setting.
+ * @G_REGEX_DOTALL: A dot metacharacter (`.`) in the pattern matches all
+ *   characters, including newlines. Without it, newlines are excluded.
+ *   This option can be changed within a pattern by a `(?s)` option setting.
  * @G_REGEX_EXTENDED: Whitespace data characters in the pattern are
- *     totally ignored except when escaped or inside a character class.
- *     Whitespace does not include the VT character (code 11). In addition,
- *     characters between an unescaped "#" outside a character class and
- *     the next newline character, inclusive, are also ignored. This can
- *     be changed within a pattern by a "(?x)" option setting.
- * @G_REGEX_ANCHORED: The pattern is forced to be "anchored", that is,
- *     it is constrained to match only at the first matching point in the
- *     string that is being searched. This effect can also be achieved by
- *     appropriate constructs in the pattern itself such as the "^"
- *     metacharater.
- * @G_REGEX_DOLLAR_ENDONLY: A dollar metacharacter ("$") in the pattern
- *     matches only at the end of the string. Without this option, a
- *     dollar also matches immediately before the final character if
- *     it is a newline (but not before any other newlines). This option
- *     is ignored if #G_REGEX_MULTILINE is set.
- * @G_REGEX_UNGREEDY: Inverts the "greediness" of the quantifiers so that
- *     they are not greedy by default, but become greedy if followed by "?".
- *     It can also be set by a "(?U)" option setting within the pattern.
+ *   totally ignored except when escaped or inside a character class.
+ *   Whitespace does not include the VT character (code 11). In addition,
+ *   characters between an unescaped `#` outside a character class and
+ *   the next newline character, inclusive, are also ignored. This can
+ *   be changed within a pattern by a `(?x)` option setting.
+ * @G_REGEX_ANCHORED: The pattern is forced to be ‘anchored’, that is,
+ *   it is constrained to match only at the first matching point in the
+ *   string that is being searched. This effect can also be achieved by
+ *   appropriate constructs in the pattern itself such as the `^`
+ *   metacharacter.
+ * @G_REGEX_DOLLAR_ENDONLY: A dollar metacharacter (`$`) in the pattern
+ *   matches only at the end of the string. Without this option, a
+ *   dollar also matches immediately before the final character if
+ *   it is a newline (but not before any other newlines). This option
+ *   is ignored if [flags@GLib.RegexCompileFlags.MULTILINE] is set.
+ * @G_REGEX_UNGREEDY: Inverts the ‘greediness’ of the quantifiers so that
+ *   they are not greedy by default, but become greedy if followed by `?`.
+ *   It can also be set by a `(?U)` option setting within the pattern.
  * @G_REGEX_RAW: Usually strings must be valid UTF-8 strings, using this
- *     flag they are considered as a raw sequence of bytes.
+ *   flag they are considered as a raw sequence of bytes.
  * @G_REGEX_NO_AUTO_CAPTURE: Disables the use of numbered capturing
- *     parentheses in the pattern. Any opening parenthesis that is not
- *     followed by "?" behaves as if it were followed by "?:" but named
- *     parentheses can still be used for capturing (and they acquire numbers
- *     in the usual way).
- * @G_REGEX_OPTIMIZE: Optimize the regular expression. If the pattern will
- *     be used many times, then it may be worth the effort to optimize it
- *     to improve the speed of matches.
+ *   parentheses in the pattern. Any opening parenthesis that is not
+ *   followed by `?` behaves as if it were followed by `?:` but named
+ *   parentheses can still be used for capturing (and they acquire numbers
+ *   in the usual way).
+ * @G_REGEX_OPTIMIZE: Since 2.74 and the port to pcre2, requests JIT
+ *   compilation, which, if the just-in-time compiler is available, further
+ *   processes a compiled pattern into machine code that executes much
+ *   faster. However, it comes at the cost of extra processing before the
+ *   match is performed, so it is most beneficial to use this when the same
+ *   compiled pattern is used for matching many times. Before 2.74 this
+ *   option used the built-in non-JIT optimizations in pcre1.
  * @G_REGEX_FIRSTLINE: Limits an unanchored pattern to match before (or at) the
- *     first newline. Since: 2.34
+ *   first newline. Since: 2.34
  * @G_REGEX_DUPNAMES: Names used to identify capturing subpatterns need not
- *     be unique. This can be helpful for certain types of pattern when it
- *     is known that only one instance of the named subpattern can ever be
- *     matched.
+ *   be unique. This can be helpful for certain types of pattern when it
+ *   is known that only one instance of the named subpattern can ever be
+ *   matched.
  * @G_REGEX_NEWLINE_CR: Usually any newline character or character sequence is
- *     recognized. If this option is set, the only recognized newline character
- *     is '\r'.
+ *   recognized. If this option is set, the only recognized newline character
+ *   is `\r`.
  * @G_REGEX_NEWLINE_LF: Usually any newline character or character sequence is
- *     recognized. If this option is set, the only recognized newline character
- *     is '\n'.
+ *   recognized. If this option is set, the only recognized newline character
+ *   is `\n`.
  * @G_REGEX_NEWLINE_CRLF: Usually any newline character or character sequence is
- *     recognized. If this option is set, the only recognized newline character
- *     sequence is '\r\n'.
+ *   recognized. If this option is set, the only recognized newline character
+ *   sequence is `\r\n`.
  * @G_REGEX_NEWLINE_ANYCRLF: Usually any newline character or character sequence
- *     is recognized. If this option is set, the only recognized newline character
- *     sequences are '\r', '\n', and '\r\n'. Since: 2.34
+ *   is recognized. If this option is set, the only recognized newline character
+ *   sequences are `\r`, `\n`, and `\r\n`. Since: 2.34
  * @G_REGEX_BSR_ANYCRLF: Usually any newline character or character sequence
- *     is recognised. If this option is set, then "\R" only recognizes the newline
- *    characters '\r', '\n' and '\r\n'. Since: 2.34
+ *   is recognised. If this option is set, then `\R` only recognizes the newline
+ *   characters `\r`, `\n` and `\r\n`. Since: 2.34
  * @G_REGEX_JAVASCRIPT_COMPAT: Changes behaviour so that it is compatible with
- *     JavaScript rather than PCRE. Since: 2.34
+ *   JavaScript rather than PCRE. Since GLib 2.74 this is no longer supported,
+ *   as libpcre2 does not support it. Since: 2.34 Deprecated: 2.74
  *
  * Flags specifying compile-time options.
  *
@@ -296,6 +303,14 @@ GQuark g_regex_error_quark (void);
  */
 typedef enum
 {
+  /**
+   * G_REGEX_DEFAULT:
+   *
+   * No special options set.
+   *
+   * Since: 2.74
+   */
+  G_REGEX_DEFAULT GLIB_AVAILABLE_ENUMERATOR_IN_2_74 = 0,
   G_REGEX_CASELESS          = 1 << 0,
   G_REGEX_MULTILINE         = 1 << 1,
   G_REGEX_DOTALL            = 1 << 2,
@@ -310,73 +325,81 @@ typedef enum
   G_REGEX_DUPNAMES          = 1 << 19,
   G_REGEX_NEWLINE_CR        = 1 << 20,
   G_REGEX_NEWLINE_LF        = 1 << 21,
+  G_REGEX_NEWLINE_RESERVED1 = 1 << 22,  /*< private >*/
   G_REGEX_NEWLINE_CRLF      = G_REGEX_NEWLINE_CR | G_REGEX_NEWLINE_LF,
-  G_REGEX_NEWLINE_ANYCRLF   = G_REGEX_NEWLINE_CR | 1 << 22,
+  G_REGEX_NEWLINE_ANYCRLF   = G_REGEX_NEWLINE_CR | G_REGEX_NEWLINE_RESERVED1,
   G_REGEX_BSR_ANYCRLF       = 1 << 23,
-  G_REGEX_JAVASCRIPT_COMPAT = 1 << 25
-} GRegexCompileFlags;
+  G_REGEX_JAVASCRIPT_COMPAT GLIB_DEPRECATED_ENUMERATOR_IN_2_74 = 1 << 25
+} G_GNUC_FLAG_ENUM GRegexCompileFlags;
 
 /**
  * GRegexMatchFlags:
- * @G_REGEX_MATCH_ANCHORED: The pattern is forced to be "anchored", that is,
- *     it is constrained to match only at the first matching point in the
- *     string that is being searched. This effect can also be achieved by
- *     appropriate constructs in the pattern itself such as the "^"
- *     metacharater.
+ * @G_REGEX_MATCH_ANCHORED: The pattern is forced to be ‘anchored’, that is,
+ *   it is constrained to match only at the first matching point in the
+ *   string that is being searched. This effect can also be achieved by
+ *   appropriate constructs in the pattern itself such as the `^`
+ *   metacharacter.
  * @G_REGEX_MATCH_NOTBOL: Specifies that first character of the string is
- *     not the beginning of a line, so the circumflex metacharacter should
- *     not match before it. Setting this without #G_REGEX_MULTILINE (at
- *     compile time) causes circumflex never to match. This option affects
- *     only the behaviour of the circumflex metacharacter, it does not
- *     affect "\A".
+ *   not the beginning of a line, so the circumflex metacharacter should
+ *   not match before it. Setting this without
+ *   [flags@GLib.RegexCompileFlags.MULTILINE] (at
+ *   compile time) causes circumflex never to match. This option affects
+ *   only the behaviour of the circumflex metacharacter, it does not
+ *   affect `\A`.
  * @G_REGEX_MATCH_NOTEOL: Specifies that the end of the subject string is
- *     not the end of a line, so the dollar metacharacter should not match
- *     it nor (except in multiline mode) a newline immediately before it.
- *     Setting this without #G_REGEX_MULTILINE (at compile time) causes
- *     dollar never to match. This option affects only the behaviour of
- *     the dollar metacharacter, it does not affect "\Z" or "\z".
+ *   not the end of a line, so the dollar metacharacter should not match
+ *   it nor (except in multiline mode) a newline immediately before it.
+ *   Setting this without [flags@GLib.RegexCompileFlags.MULTILINE]
+ *   (at compile time) causes dollar never to match. This option affects only
+ *   the behaviour of the dollar metacharacter, it does not affect `\Z` or `\z`.
  * @G_REGEX_MATCH_NOTEMPTY: An empty string is not considered to be a valid
- *     match if this option is set. If there are alternatives in the pattern,
- *     they are tried. If all the alternatives match the empty string, the
- *     entire match fails. For example, if the pattern "a?b?" is applied to
- *     a string not beginning with "a" or "b", it matches the empty string
- *     at the start of the string. With this flag set, this match is not
- *     valid, so GRegex searches further into the string for occurrences
- *     of "a" or "b".
+ *   match if this option is set. If there are alternatives in the pattern,
+ *   they are tried. If all the alternatives match the empty string, the
+ *   entire match fails. For example, if the pattern `a?b?` is applied to
+ *   a string not beginning with `a` or `b`, it matches the empty string
+ *   at the start of the string. With this flag set, this match is not
+ *   valid, so [type@GLib.Regex] searches further into the string for
+ *   occurrences of `a` or `b`.
  * @G_REGEX_MATCH_PARTIAL: Turns on the partial matching feature, for more
- *     documentation on partial matching see g_match_info_is_partial_match().
+ *   documentation on partial matching see
+ *   [method@GLib.MatchInfo.is_partial_match].
  * @G_REGEX_MATCH_NEWLINE_CR: Overrides the newline definition set when
- *     creating a new #GRegex, setting the '\r' character as line terminator.
+ *   creating a new [type@GLib.Regex], setting the `\r` character as line
+ *   terminator.
  * @G_REGEX_MATCH_NEWLINE_LF: Overrides the newline definition set when
- *     creating a new #GRegex, setting the '\n' character as line terminator.
+ *   creating a new [type@GLib.Regex], setting the `\n` character as line
+ *   terminator.
  * @G_REGEX_MATCH_NEWLINE_CRLF: Overrides the newline definition set when
- *     creating a new #GRegex, setting the '\r\n' characters sequence as line terminator.
+ *   creating a new [type@GLib.Regex], setting the `\r\n` character sequence as
+ *   line terminator.
  * @G_REGEX_MATCH_NEWLINE_ANY: Overrides the newline definition set when
- *     creating a new #GRegex, any Unicode newline sequence
- *     is recognised as a newline. These are '\r', '\n' and '\rn', and the
- *     single characters U+000B LINE TABULATION, U+000C FORM FEED (FF),
- *     U+0085 NEXT LINE (NEL), U+2028 LINE SEPARATOR and
- *     U+2029 PARAGRAPH SEPARATOR.
+ *   creating a new [type@GLib.Regex], any Unicode newline sequence
+ *   is recognised as a newline. These are `\r`, `\n` and `\r\n`, and the
+ *   single characters U+000B LINE TABULATION, U+000C FORM FEED (FF),
+ *   U+0085 NEXT LINE (NEL), U+2028 LINE SEPARATOR and
+ *   U+2029 PARAGRAPH SEPARATOR.
  * @G_REGEX_MATCH_NEWLINE_ANYCRLF: Overrides the newline definition set when
- *     creating a new #GRegex; any '\r', '\n', or '\r\n' character sequence
- *     is recognized as a newline. Since: 2.34
- * @G_REGEX_MATCH_BSR_ANYCRLF: Overrides the newline definition for "\R" set when
- *     creating a new #GRegex; only '\r', '\n', or '\r\n' character sequences
- *     are recognized as a newline by "\R". Since: 2.34
- * @G_REGEX_MATCH_BSR_ANY: Overrides the newline definition for "\R" set when
- *     creating a new #GRegex; any Unicode newline character or character sequence
- *     are recognized as a newline by "\R". These are '\r', '\n' and '\rn', and the
- *     single characters U+000B LINE TABULATION, U+000C FORM FEED (FF),
- *     U+0085 NEXT LINE (NEL), U+2028 LINE SEPARATOR and
- *     U+2029 PARAGRAPH SEPARATOR. Since: 2.34
- * @G_REGEX_MATCH_PARTIAL_SOFT: An alias for #G_REGEX_MATCH_PARTIAL. Since: 2.34
- * @G_REGEX_MATCH_PARTIAL_HARD: Turns on the partial matching feature. In contrast to
- *     to #G_REGEX_MATCH_PARTIAL_SOFT, this stops matching as soon as a partial match
- *     is found, without continuing to search for a possible complete match. See
- *     g_match_info_is_partial_match() for more information. Since: 2.34
- * @G_REGEX_MATCH_NOTEMPTY_ATSTART: Like #G_REGEX_MATCH_NOTEMPTY, but only applied to
- *     the start of the matched string. For anchored
- *     patterns this can only happen for pattern containing "\K". Since: 2.34
+ *   creating a new [type@GLib.Regex]; any `\r`, `\n`, or `\r\n` character
+ *   sequence is recognized as a newline. Since: 2.34
+ * @G_REGEX_MATCH_BSR_ANYCRLF: Overrides the newline definition for `\R` set when
+ *   creating a new [type@GLib.Regex]; only `\r`, `\n`, or `\r\n` character
+ *   sequences are recognized as a newline by `\R`. Since: 2.34
+ * @G_REGEX_MATCH_BSR_ANY: Overrides the newline definition for `\R` set when
+ *   creating a new [type@GLib.Regex]; any Unicode newline characters or
+ *   character sequences are recognized as a newline by `\R`. These are `\r`,
+ *   `\n` and `\r\n`, and the single characters U+000B LINE TABULATION,
+ *   U+000C FORM FEED (FF), U+0085 NEXT LINE (NEL), U+2028 LINE SEPARATOR and
+ *   U+2029 PARAGRAPH SEPARATOR. Since: 2.34
+ * @G_REGEX_MATCH_PARTIAL_SOFT: An alias for [flags@GLib.RegexMatchFlags.PARTIAL].
+ *   Since: 2.34
+ * @G_REGEX_MATCH_PARTIAL_HARD: Turns on the partial matching feature. In
+ *   contrast to [flags@GLib.RegexMatchFlags.PARTIAL_SOFT], this stops matching
+ *   as soon as a partial match is found, without continuing to search for a
+ *   possible complete match. See [method@GLib.MatchInfo.is_partial_match] for
+ *   more information. Since: 2.34
+ * @G_REGEX_MATCH_NOTEMPTY_ATSTART: Like [flags@GLib.RegexMatchFlags.NOTEMPTY],
+ *   but only applied to the start of the matched string. For anchored
+ *   patterns this can only happen for pattern containing `\K`. Since: 2.34
  *
  * Flags specifying match-time options.
  *
@@ -386,6 +409,14 @@ typedef enum
  * adding a new flag. */
 typedef enum
 {
+  /**
+   * G_REGEX_MATCH_DEFAULT:
+   *
+   * No special options set.
+   *
+   * Since: 2.74
+   */
+  G_REGEX_MATCH_DEFAULT GLIB_AVAILABLE_ENUMERATOR_IN_2_74 = 0,
   G_REGEX_MATCH_ANCHORED         = 1 << 4,
   G_REGEX_MATCH_NOTBOL           = 1 << 7,
   G_REGEX_MATCH_NOTEOL           = 1 << 8,
@@ -401,42 +432,35 @@ typedef enum
   G_REGEX_MATCH_PARTIAL_SOFT     = G_REGEX_MATCH_PARTIAL,
   G_REGEX_MATCH_PARTIAL_HARD     = 1 << 27,
   G_REGEX_MATCH_NOTEMPTY_ATSTART = 1 << 28
-} GRegexMatchFlags;
+} G_GNUC_FLAG_ENUM GRegexMatchFlags;
 
-/**
- * GRegex:
- *
- * A GRegex is the "compiled" form of a regular expression pattern.
- * This structure is opaque and its fields cannot be accessed directly.
- *
- * Since: 2.14
- */
 typedef struct _GRegex		GRegex;
 
 
 /**
  * GMatchInfo:
  *
- * A GMatchInfo is an opaque struct used to return information about
- * matches.
+ * An opaque struct used to return information about matches to a
+ * [type@GLib.Regex].
  */
 typedef struct _GMatchInfo	GMatchInfo;
 
 /**
  * GRegexEvalCallback:
- * @match_info: the #GMatchInfo generated by the match.
- *     Use g_match_info_get_regex() and g_match_info_get_string() if you
- *     need the #GRegex or the matched string.
- * @result: a #GString containing the new string
- * @user_data: user data passed to g_regex_replace_eval()
+ * @match_info: the [struct@GLib.MatchInfo] generated by the match
+ * @result: the new string
+ * @user_data: user data passed to [method@GLib.Regex.replace_eval]
  *
- * Specifies the type of the function passed to g_regex_replace_eval().
+ * A callback passed to [method@GLib.Regex.replace_eval].
+ *
  * It is called for each occurrence of the pattern in the string passed
- * to g_regex_replace_eval(), and it should append the replacement to
+ * to [method@GLib.Regex.replace_eval], and it should append the replacement to
  * @result.
  *
- * Returns: %FALSE to continue the replacement process, %TRUE to stop it
+ * Use [method@GLib.MatchInfo.get_regex] and [method@GLib.MatchInfo.get_string]
+ * if you need the regex object itself, or the matched string.
  *
+ * Returns: false to continue the replacement process; true to stop it
  * Since: 2.14
  */
 typedef gboolean (*GRegexEvalCallback)		(const GMatchInfo *match_info,

@@ -1,7 +1,5 @@
 /* PO/POT file timestamps.
-   Copyright (C) 1995-1998, 2000-2003, 2006, 2015-2016 Free Software
-   Foundation, Inc.
-   Written by Ulrich Drepper <drepper@gnu.ai.mit.edu>, April 1995.
+   Copyright (C) 1995-2026 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -14,11 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+/* Written by Ulrich Drepper.  */
+
+#include <config.h>
 
 /* Specification.  */
 #include "po-time.h"
@@ -54,18 +52,17 @@ difftm (const struct tm *a, const struct tm *b)
 char *
 po_strftime (const time_t *tp)
 {
-  struct tm local_time;
-  char tz_sign;
-  long tz_min;
+  struct tm local_time = *localtime (tp);
 
-  local_time = *localtime (tp);
-  tz_sign = '+';
-  tz_min = difftm (&local_time, gmtime (tp)) / 60;
+  long tz_min = difftm (&local_time, gmtime (tp)) / 60;
+
+  char tz_sign = '+';
   if (tz_min < 0)
     {
       tz_min = -tz_min;
       tz_sign = '-';
     }
+
   return xasprintf ("%d-%02d-%02d %02d:%02d%c%02ld%02ld",
                     local_time.tm_year + TM_YEAR_ORIGIN,
                     local_time.tm_mon + 1,

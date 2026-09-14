@@ -5,40 +5,35 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
 
 #include "packet-rpc.h"
-#include "packet-spray.h"
 
 void proto_register_spray(void);
 void proto_reg_handoff_spray(void);
 
-static int proto_spray = -1;
-static int hf_spray_procedure_v1 = -1;
-static int hf_spray_sprayarr = -1;
-static int hf_spray_counter = -1;
-static int hf_spray_clock = -1;
-static int hf_spray_sec = -1;
-static int hf_spray_usec = -1;
+static int proto_spray;
+static int hf_spray_procedure_v1;
+static int hf_spray_sprayarr;
+static int hf_spray_counter;
+static int hf_spray_clock;
+static int hf_spray_sec;
+static int hf_spray_usec;
 
-static gint ett_spray = -1;
-static gint ett_spray_clock = -1;
+static int ett_spray;
+static int ett_spray_clock;
 
+#define PACKET_SPRAY_H
+
+#define SPRAYPROC_NULL	0
+#define SPRAYPROC_SPRAY	1
+#define SPRAYPROC_GET	2
+#define SPRAYPROC_CLEAR	3
+
+#define SPRAY_PROGRAM 100012
 
 static int
 dissect_get_reply(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
@@ -65,9 +60,9 @@ dissect_get_reply(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void*
 }
 
 static int
-dissect_spray_call(tvbuff_t *tvb, packet_info *pinfo _U_, proto_tree *tree, void* data _U_)
+dissect_spray_call(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* data _U_)
 {
-	return dissect_rpc_data(tvb, tree, hf_spray_sprayarr, 0);
+	return dissect_rpc_data(tvb, pinfo, tree, hf_spray_sprayarr, 0);
 }
 
 /* proc number, "proc name", dissect_request, dissect_reply */
@@ -123,7 +118,7 @@ proto_register_spray(void)
 
 	};
 
-	static gint *ett[] = {
+	static int *ett[] = {
 		&ett_spray,
 		&ett_spray_clock,
 	};
@@ -142,7 +137,7 @@ proto_reg_handoff_spray(void)
 }
 
 /*
- * Editor modelines  -  http://www.wireshark.org/tools/modelines.html
+ * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
  * Local variables:
  * c-basic-offset: 8

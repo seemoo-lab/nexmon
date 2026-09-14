@@ -6,19 +6,7 @@
  * By Gerald Combs <gerald@wireshark.org>
  * Copyright 1998 Gerald Combs
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "config.h"
@@ -27,6 +15,8 @@
 #include <epan/prefs.h>
 #include <epan/oids.h>
 #include <epan/asn1.h>
+#include <epan/proto_data.h>
+#include <wsutil/array.h>
 
 #include "packet-ber.h"
 #include "packet-acse.h"
@@ -44,22 +34,17 @@
 void proto_register_p7(void);
 void proto_reg_handoff_p7(void);
 
-static guint global_p7_tcp_port = 102;
-static dissector_handle_t tpkt_handle;
-static int seqno = 0;
-
-static void prefs_register_p7(void); /* forward declaration for use in preferences registration */
-
+static int seqno;
 
 /* Initialize the protocol and registered fields */
-static int proto_p7 = -1;
+static int proto_p7;
 
 #include "packet-p7-val.h"
 
 #include "packet-p7-hf.c"
 
 /* Initialize the subtree pointers */
-static gint ett_p7 = -1;
+static int ett_p7;
 #include "packet-p7-ett.c"
 
 #include "packet-p7-table.c"   /* operation and error codes */
@@ -90,7 +75,7 @@ void proto_register_p7(void) {
   };
 
   /* List of subtrees */
-  static gint *ett[] = {
+  static int *ett[] = {
     &ett_p7,
 #include "packet-p7-ettarr.c"
   };
@@ -105,13 +90,13 @@ void proto_register_p7(void) {
 
   /* Register our configuration options for P7, particularly our port */
 
-  p7_module = prefs_register_protocol_subtree("OSI/X.400", proto_p7, prefs_register_p7);
+  p7_module = prefs_register_protocol_subtree("OSI/X.400", proto_p7, NULL);
 
-  prefs_register_uint_preference(p7_module, "tcp.port", "P7 TCP Port",
-				 "Set the port for P7 operations (if other"
-				 " than the default of 102)",
-				 10, &global_p7_tcp_port);
+  prefs_register_obsolete_preference(p7_module, "tcp.port");
 
+  prefs_register_static_text_preference(p7_module, "tcp_port_info",
+            "The TCP ports used by the P7 protocol should be added to the TPKT preference \"TPKT TCP ports\", or by selecting \"TPKT\" as the \"Transport\" protocol in the \"Decode As\" dialog.",
+            "P7 TCP Port preference moved information");
 }
 
 
@@ -128,29 +113,7 @@ void proto_reg_handoff_p7(void) {
   /* ABSTRACT SYNTAXES */
 
   /* Register P7 with ROS (with no use of RTSE) */
-  register_ros_protocol_info("2.6.0.2.9", &p7_ros_info, 0, "id-as-ms", FALSE);
-  register_ros_protocol_info("2.6.0.2.5", &p7_ros_info, 0, "id-as-mrse", FALSE);
-  register_ros_protocol_info("2.6.0.2.1", &p7_ros_info, 0, "id-as-msse", FALSE);
-
-  /* remember the tpkt handler for change in preferences */
-  tpkt_handle = find_dissector("tpkt");
-}
-
-
-static void
-prefs_register_p7(void)
-{
-  static guint tcp_port = 0;
-
-  /* de-register the old port */
-  /* port 102 is registered by TPKT - don't undo this! */
-  if((tcp_port > 0) && (tcp_port != 102) && tpkt_handle)
-    dissector_delete_uint("tcp.port", tcp_port, tpkt_handle);
-
-  /* Set our port number for future use */
-  tcp_port = global_p7_tcp_port;
-
-  if((tcp_port > 0) && (tcp_port != 102) && tpkt_handle)
-    dissector_add_uint("tcp.port", global_p7_tcp_port, tpkt_handle);
-
+  register_ros_protocol_info("2.6.0.2.9", &p7_ros_info, 0, "id-as-ms", false);
+  register_ros_protocol_info("2.6.0.2.5", &p7_ros_info, 0, "id-as-mrse", false);
+  register_ros_protocol_info("2.6.0.2.1", &p7_ros_info, 0, "id-as-msse", false);
 }
