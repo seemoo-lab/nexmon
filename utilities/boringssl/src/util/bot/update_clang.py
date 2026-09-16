@@ -60,7 +60,26 @@ def main(args):
   with tempfile.NamedTemporaryFile() as temp:
     DownloadFile(cds_full_url, temp.name)
     with tarfile.open(temp.name, "r:gz") as tar_file:
-      tar_file.extractall(LLVM_BUILD_DIR)
+      def is_within_directory(directory, target):
+          
+          abs_directory = os.path.abspath(directory)
+          abs_target = os.path.abspath(target)
+      
+          prefix = os.path.commonprefix([abs_directory, abs_target])
+          
+          return prefix == abs_directory
+      
+      def safe_extract(tar, path=".", members=None, *, numeric_owner=False):
+      
+          for member in tar.getmembers():
+              member_path = os.path.join(path, member.name)
+              if not is_within_directory(path, member_path):
+                  raise Exception("Attempted Path Traversal in Tar File")
+      
+          tar.extractall(path, members, numeric_owner=numeric_owner) 
+          
+      
+      safe_extract(tar_file, LLVM_BUILD_DIR)
 
   with open(STAMP_FILE, "wb") as stamp_file:
     stamp_file.write(PACKAGE_VERSION)
