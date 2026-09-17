@@ -32,78 +32,58 @@
  *                                                                         *
  **************************************************************************/
 
+/*
+ * Classic (bcm43430a1) frame-injection TX path, ported to bcm43439a0.
+ * Ported from patches/bcm43430a1/7_45_41_46/nexmon/src/sendframe.c.
+ *
+ * Symbols used here are all already resolved for the 43439 in
+ * patches/common/wrapper.c:
+ *   wlc_d11hdrs       @ 0x8929FC   build the d11 TX descriptor
+ *   wlc_get_txh_info  @ 0x82B8FC   read the tx header info into a scratch blob
+ *   wlc_txfifo        @ 0x834194   enqueue into TX DMA FIFO 1
+ *   pkt_buf_free_skb  @ 0x80C144   free on the error path
+ *
+ * The two struct fields touched here (wlc->band->hwrs_scb at band+0x018 and
+ * wlc->hw->up at hw+0x006) were resolved against the 43439 ROM/RAM dump; see
+ * structs.common.h.
+ */
+
 #pragma NEXMON targetregion "patch"
 
 #include <firmware_version.h>   // definition of firmware version macros
+#include <debug.h>              // contains macros to access the debug hardware
 #include <wrapper.h>            // wrapper definitions for functions that already exist in the firmware
 #include <structs.h>            // structures that are used by the code in the firmware
 #include <helper.h>             // useful helper functions
 #include <patcher.h>            // macros used to create patches such as BLPatch, BPatch, ...
+#include <rates.h>              // rates used to build the ratespec for frame injection
 #include <nexioctls.h>          // ioctls added in the nexmon patch
 #include <capabilities.h>       // capabilities included in a nexmon patch
-#include <sendframe.h>          // sendframe functionality
-#include <argprintf.h>
 
-// Defined in injection.c.  Parses the radiotap header off an skb and hands the
-// bare 802.11 frame to sendframe(); consumes (tx) or frees the skb on error.
-int inject_frame(struct wlc_info *wlc, struct sk_buff *p);
-
-// Headroom reserved in front of the injected frame so wlc_d11hdrs() can prepend
-// the d11 TX header (PLCP + d11txh) without reallocating.  Borrowed from the
-// bcm43455 ioctl-driven injection path.  The 43439 d11 tx header tops out near
-// 0xb0 bytes (per wlc_get_txh_info), so 202 over-reserves it.
-#define INJECT_HEADROOM 202
-
-int
-wlc_ioctl_hook(struct wlc_info *wlc, int cmd, char *arg, int len, void *wlc_if)
+void
+sendframe(struct wlc_info *wlc, struct sk_buff *p, unsigned int fifo, unsigned int rate)
 {
-    argprintf_init(arg, len);
-    int ret = IOCTL_ERROR;
+    int short_preamble = 0;
+    struct wlc_txh_info txh = {0};
 
-    switch (cmd) {
-        case NEX_GET_CAPABILITIES:
-            if (len == 4) {
-                memcpy(arg, &capabilities, 4);
-                ret = IOCTL_SUCCESS;
-            }
-            break;
-
-        case NEX_WRITE_TO_CONSOLE:
-            if (len > 0) {
-                arg[len-1] = 0;
-                printf("ioctl: %s\n", arg);
-                ret = IOCTL_SUCCESS;
-            }
-            break;
-
-        case NEX_INJECT_FRAME:
-            // arg is a single radiotap-prefixed 802.11 frame of length len,
-            // fired by the host with cyw43_ioctl(IOCTL_CMD_SET(408), len, frame, ...)
-            if (len > 0) {
-                struct sk_buff *p = pkt_buf_get_skb(wlc->osh, len + INJECT_HEADROOM);
-
-                if (p != 0) {
-                    skb_pull(p, INJECT_HEADROOM);
-                    memcpy(p->data, arg, len);
-                    // Do not report success for a frame we never queued: a
-                    // malformed radiotap header makes inject_frame return -1
-                    // (and free the skb). The host must not read ret==0 as
-                    // "transmitted". Note the wlc-down / no-scb drops still
-                    // return 0 via the void sendframe; the over-the-air witness,
-                    // not this ret, is the proof of transmission.
-                    ret = inject_frame(wlc, p) == 0 ? IOCTL_SUCCESS : IOCTL_ERROR;
-                } else {
-                    ret = IOCTL_ERROR;
-                }
-            }
-            break;
-
-        default:
-            ret = wlc_ioctl(wlc, cmd, arg, len, wlc_if);
+    // hwrs_scb is the hardware-rate-set scb the firmware uses as the TX scb for
+    // self-originated frames; hw->up gates TX on the MAC being up.  Both offsets
+    // are from the ROM/RAM dump (see structs.common.h).
+    if (wlc->band->hwrs_scb) {
+        if (wlc->hw->up) {
+            wlc_d11hdrs(wlc, p, wlc->band->hwrs_scb, short_preamble, 0, 1, 1, 0, 0, rate);
+            p->scb = wlc->band->hwrs_scb;
+            wlc_get_txh_info(wlc, p, &txh);
+            wlc_txfifo(wlc, fifo, p, &txh, 1, 1);
+        } else {
+            // MAC is down: nothing will transmit. Free the skb instead of
+            // leaking it; the ioctl trigger fires at 1 Hz, so a leak here
+            // exhausts the packet pool and wedges the chip.
+            printf("ERR: wlc down\n");
+            pkt_buf_free_skb(wlc->osh, p, 0);
+        }
+    } else {
+        printf("ERR: no scb found, discarding packet!\n");
+        pkt_buf_free_skb(wlc->osh, p, 0);
     }
-
-    return ret;
 }
-
-__attribute__((at(0x1EFC4, "", CHIP_VER_BCM43439a0, FW_VER_7_95_49_2271bb6)))
-GenericPatch4(wlc_ioctl_hook, wlc_ioctl_hook + 1);
