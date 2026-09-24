@@ -1,0 +1,24 @@
+This is a set of tools for debugging the b43 driver and/or firmware.
+Note that it is licensed under the GNU GPL version 3 ONLY!
+
+*******************************************************************************
+*  b43-beautifier                                                             *
+*******************************************************************************
+
+b43-beautifier is a tool to replace constant expressions in raw disassembled
+firmware code with human-readable #defined names.
+
+The tool requires either the disassembled source code or a binary (which it
+will disassemble then) to start with. See the --asmfile and --binfile
+parameters.
+It also requires a path to the directory containing the hardware definitions.
+This is the "common" subdirectory found in the b43-ucode GIT repository.
+See the --defs parameter.
+
+
+
+
+Please be careful when using these tools. Some of them have direct access to
+the hardware, so you can easily crash something.
+
+	Michael

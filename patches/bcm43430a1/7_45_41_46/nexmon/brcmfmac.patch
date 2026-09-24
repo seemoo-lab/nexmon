@@ -1,0 +1,1622 @@
+diff --git a/data/linux-rpi-4.10.y/drivers/net/wireless/broadcom/brcm80211/brcmfmac/.core.h.swp b/data/linux-rpi-4.10.y/drivers/net/wireless/broadcom/brcm80211/brcmfmac/.core.h.swp
+deleted file mode 100644
+index 2b0426f..0000000
+Binary files a/data/linux-rpi-4.10.y/drivers/net/wireless/broadcom/brcm80211/brcmfmac/.core.h.swp and /dev/null differ
+diff --git a/data/linux-rpi-4.10.y/drivers/net/wireless/broadcom/brcm80211/brcmfmac/Makefile b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/Makefile
+index 0383ba5..adc13fa 100644
+--- a/data/linux-rpi-4.10.y/drivers/net/wireless/broadcom/brcm80211/brcmfmac/Makefile
++++ b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/Makefile
+@@ -16,8 +16,8 @@
+ # CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ 
+ ccflags-y += \
+-	-Idrivers/net/wireless/broadcom/brcm80211/brcmfmac	\
+-	-Idrivers/net/wireless/broadcom/brcm80211/include
++	-Idrivers/net/wireless/brcm80211/brcmfmac	\
++	-I$(NEXMON_ROOT)/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include
+ 
+ obj-$(CONFIG_BRCMFMAC) += brcmfmac.o
+ brcmfmac-objs += \
+diff --git a/data/linux-rpi-4.10.y/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/core.c
+index da8aad4..733673d 100644
+--- a/data/linux-rpi-4.10.y/drivers/net/wireless/broadcom/brcm80211/brcmfmac/core.c
++++ b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/core.c
+@@ -17,6 +17,9 @@
+ #include <linux/kernel.h>
+ #include <linux/etherdevice.h>
+ #include <linux/module.h>
++/* NEXMON */
++#include <linux/if_arp.h>
++#include <linux/netlink.h>
+ #include <linux/inetdevice.h>
+ #include <net/cfg80211.h>
+ #include <net/rtnetlink.h>
+@@ -37,11 +40,121 @@
+ #include "proto.h"
+ #include "pcie.h"
+ #include "common.h"
++/* NEXMON */
++#include "nexmon_procfs.h"
++#include "nexmon_ioctls.h"
++
+ 
+ #define MAX_WAIT_FOR_8021X_TX			msecs_to_jiffies(950)
+ 
+ #define BRCMF_BSSIDX_INVALID			-1
+ 
++/* Nexmon */
++#define NETLINK_USER                     31
++#define NEXUDP_IOCTL                      0
++
++#define MONITOR_DISABLED  0
++#define MONITOR_IEEE80211 1
++#define MONITOR_RADIOTAP  2
++#define MONITOR_LOG_ONLY  3
++#define MONITOR_DROP_FRM  4
++#define MONITOR_IPV4_UDP  5
++
++static struct netlink_kernel_cfg cfg = {0};
++static struct sock *nl_sock = NULL;
++static struct net_device *ndev_global = NULL;
++
++struct nexudp_header {
++    char nex[3];
++    char type;
++    int securitycookie;
++} __attribute__((packed));
++
++struct nexudp_ioctl_header {
++    struct nexudp_header nexudphdr;
++    unsigned int cmd;
++    unsigned int set;
++    char payload[1];
++} __attribute__((packed));
++
++static void
++nexmon_nl_ioctl_handler(struct sk_buff *skb)
++{
++    struct nlmsghdr *nlh = (struct nlmsghdr *) skb->data;
++    struct nexudp_ioctl_header *frame = (struct nexudp_ioctl_header *) nlmsg_data(nlh);
++    struct brcmf_if *ifp = netdev_priv(ndev_global);
++    struct sk_buff *skb_out;
++    struct nlmsghdr *nlh_tx;
++
++    brcmf_err("NEXMON: %s: Enter\n", __FUNCTION__);
++
++    brcmf_err("NEXMON: %s: %08x %d %d\n", __FUNCTION__, *(int *) frame->nexudphdr.nex, nlmsg_len(nlh), skb->len);
++
++    if (memcmp(frame->nexudphdr.nex, "NEX", 3)) {
++        brcmf_err("NEXMON: %s: invalid nexudp_ioctl_header\n", __FUNCTION__);
++        return;
++    }
++
++    if (frame->nexudphdr.type != NEXUDP_IOCTL) {
++        brcmf_err("NEXMON: %s: invalid frame type\n", __FUNCTION__);
++        return;
++    }
++
++    if (ifp == NULL) {
++        brcmf_err("NEXMON: %s: ifp is NULL\n", __FUNCTION__);
++        return;
++    }
++
++    if (frame->set) {
++        brcmf_err("NEXMON: %s: calling brcmf_fil_cmd_data_set, cmd: %d\n", __FUNCTION__, frame->cmd);
++        brcmf_fil_cmd_data_set(ifp, frame->cmd, frame->payload, nlmsg_len(nlh) - sizeof(struct nexudp_ioctl_header) + sizeof(char));
++
++        if (frame->cmd == 108) { // WLC_SET_MONITOR
++            brcmf_err("NEXMON: %s: WLC_SET_MONITOR = %d\n", __FUNCTION__, *(unsigned int *) frame->payload);
++            switch(*(unsigned int *) frame->payload) {
++                case MONITOR_IEEE80211:
++                    ndev_global->type = ARPHRD_IEEE80211;
++                    ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
++                    ndev_global->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
++                    break;
++
++                case MONITOR_RADIOTAP:
++                    ndev_global->type = ARPHRD_IEEE80211_RADIOTAP;
++                    ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
++                    ndev_global->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_MONITOR);
++                    break;
++
++                case MONITOR_DISABLED:
++                case MONITOR_LOG_ONLY:
++                case MONITOR_DROP_FRM:
++                case MONITOR_IPV4_UDP:
++                default:
++                    ndev_global->type = ARPHRD_ETHER;
++                    ndev_global->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
++                    ndev_global->ieee80211_ptr->wiphy->interface_modes = BIT(NL80211_IFTYPE_STATION);
++                    break;
++            }
++        }
++
++	skb_out = nlmsg_new(4, 0);
++        nlh_tx = nlmsg_put(skb_out, 0, 0, NLMSG_DONE, 4, 0);
++        NETLINK_CB(skb_out).dst_group = 0; /* not in mcast group */
++        memcpy(nlmsg_data(nlh_tx), "ACK", 4);
++        nlmsg_unicast(nl_sock, skb_out, nlh->nlmsg_pid);
++    } else {
++        brcmf_err("NEXMON: %s: calling brcmf_fil_cmd_data_get, cmd: %d\n", __FUNCTION__, frame->cmd);
++        brcmf_fil_cmd_data_get(ifp, frame->cmd, frame->payload, nlmsg_len(nlh) - sizeof(struct nexudp_ioctl_header) + sizeof(char));
++
++        skb_out = nlmsg_new(nlmsg_len(nlh), 0);
++        nlh_tx = nlmsg_put(skb_out, 0, 0, NLMSG_DONE, nlmsg_len(nlh), 0);
++        NETLINK_CB(skb_out).dst_group = 0; /* not in mcast group */
++        memcpy(nlmsg_data(nlh_tx), frame, nlmsg_len(nlh));
++        nlmsg_unicast(nl_sock, skb_out, nlh->nlmsg_pid);
++    }
++
++    brcmf_err("NEXMON: %s: Exit\n", __FUNCTION__);
++}
++
+ char *brcmf_ifname(struct brcmf_if *ifp)
+ {
+ 	if (!ifp)
+@@ -501,6 +614,9 @@ int brcmf_net_attach(struct brcmf_if *ifp, bool rtnl_locked)
+ 		  ifp->mac_addr);
+ 	ndev = ifp->ndev;
+ 
++	/* NEXMON */
++	ndev_global = ndev;
++
+ 	/* set appropriate operations */
+ 	ndev->netdev_ops = &brcmf_netdev_ops_pri;
+ 
+@@ -1197,9 +1313,20 @@ static DECLARE_WORK(brcmf_driver_work, brcmf_driver_register);
+ 
+ int __init brcmf_core_init(void)
+ {
++	/* NEXMON procfs */
++	proc_create("nexmon_consoledump", 0, NULL, &rom_proc_dump_fops);
++
+ 	if (!schedule_work(&brcmf_driver_work))
+ 		return -EBUSY;
+ 
++	/* NEXMON netlink init */
++	cfg.input = nexmon_nl_ioctl_handler;
++	nl_sock = netlink_kernel_create(&init_net, NETLINK_USER, &cfg);
++	if (!nl_sock) {
++		brcmf_err("NEXMON: %s: Error creating netlink socket, &init_net: 0x%x, &cfg: 0x%x\n", __FUNCTION__, &init_net, &cfg);
++		return -1;
++	}
++
+ 	return 0;
+ }
+ 
+diff --git a/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/brcm_hw_ids.h b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/brcm_hw_ids.h
+new file mode 100644
+index 0000000..f1fb8a3
+--- /dev/null
++++ b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/brcm_hw_ids.h
+@@ -0,0 +1,102 @@
++/*
++ * Copyright (c) 2010 Broadcom Corporation
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
++ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
++ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
++ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++#ifndef	_BRCM_HW_IDS_H_
++#define	_BRCM_HW_IDS_H_
++
++#include <linux/pci_ids.h>
++#include <linux/mmc/sdio_ids.h>
++
++#define BRCM_USB_VENDOR_ID_BROADCOM	0x0a5c
++#define BRCM_USB_VENDOR_ID_LG		0x043e
++#define BRCM_USB_VENDOR_ID_LINKSYS	0x13b1
++#define BRCM_PCIE_VENDOR_ID_BROADCOM	PCI_VENDOR_ID_BROADCOM
++
++/* Chipcommon Core Chip IDs */
++#define BRCM_CC_43143_CHIP_ID		43143
++#define BRCM_CC_43235_CHIP_ID		43235
++#define BRCM_CC_43236_CHIP_ID		43236
++#define BRCM_CC_43238_CHIP_ID		43238
++#define BRCM_CC_43241_CHIP_ID		0x4324
++#define BRCM_CC_43242_CHIP_ID		43242
++#define BRCM_CC_4329_CHIP_ID		0x4329
++#define BRCM_CC_4330_CHIP_ID		0x4330
++#define BRCM_CC_4334_CHIP_ID		0x4334
++#define BRCM_CC_43340_CHIP_ID		43340
++#define BRCM_CC_43341_CHIP_ID		43341
++#define BRCM_CC_43362_CHIP_ID		43362
++#define BRCM_CC_4335_CHIP_ID		0x4335
++#define BRCM_CC_4339_CHIP_ID		0x4339
++#define BRCM_CC_43430_CHIP_ID		43430
++#define BRCM_CC_4345_CHIP_ID		0x4345
++#define BRCM_CC_43465_CHIP_ID		43465
++#define BRCM_CC_4350_CHIP_ID		0x4350
++#define BRCM_CC_43525_CHIP_ID		43525
++#define BRCM_CC_4354_CHIP_ID		0x4354
++#define BRCM_CC_4356_CHIP_ID		0x4356
++#define BRCM_CC_43566_CHIP_ID		43566
++#define BRCM_CC_43567_CHIP_ID		43567
++#define BRCM_CC_43569_CHIP_ID		43569
++#define BRCM_CC_43570_CHIP_ID		43570
++#define BRCM_CC_4358_CHIP_ID		0x4358
++#define BRCM_CC_4359_CHIP_ID		0x4359
++#define BRCM_CC_43602_CHIP_ID		43602
++#define BRCM_CC_4365_CHIP_ID		0x4365
++#define BRCM_CC_4366_CHIP_ID		0x4366
++#define BRCM_CC_4371_CHIP_ID		0x4371
++
++/* USB Device IDs */
++#define BRCM_USB_43143_DEVICE_ID	0xbd1e
++#define BRCM_USB_43235_LINKSYS_DEVICE_ID	0x0039
++#define BRCM_USB_43236_DEVICE_ID	0xbd17
++#define BRCM_USB_43242_DEVICE_ID	0xbd1f
++#define BRCM_USB_43242_LG_DEVICE_ID	0x3101
++#define BRCM_USB_43569_DEVICE_ID	0xbd27
++#define BRCM_USB_BCMFW_DEVICE_ID	0x0bdc
++
++/* PCIE Device IDs */
++#define BRCM_PCIE_4350_DEVICE_ID	0x43a3
++#define BRCM_PCIE_4354_DEVICE_ID	0x43df
++#define BRCM_PCIE_4356_DEVICE_ID	0x43ec
++#define BRCM_PCIE_43567_DEVICE_ID	0x43d3
++#define BRCM_PCIE_43570_DEVICE_ID	0x43d9
++#define BRCM_PCIE_4358_DEVICE_ID	0x43e9
++#define BRCM_PCIE_4359_DEVICE_ID	0x43ef
++#define BRCM_PCIE_43602_DEVICE_ID	0x43ba
++#define BRCM_PCIE_43602_2G_DEVICE_ID	0x43bb
++#define BRCM_PCIE_43602_5G_DEVICE_ID	0x43bc
++#define BRCM_PCIE_43602_RAW_DEVICE_ID	43602
++#define BRCM_PCIE_4365_DEVICE_ID	0x43ca
++#define BRCM_PCIE_4365_2G_DEVICE_ID	0x43cb
++#define BRCM_PCIE_4365_5G_DEVICE_ID	0x43cc
++#define BRCM_PCIE_4366_DEVICE_ID	0x43c3
++#define BRCM_PCIE_4366_2G_DEVICE_ID	0x43c4
++#define BRCM_PCIE_4366_5G_DEVICE_ID	0x43c5
++#define BRCM_PCIE_4371_DEVICE_ID	0x440d
++
++
++/* brcmsmac IDs */
++#define BCM4313_D11N2G_ID	0x4727	/* 4313 802.11n 2.4G device */
++#define BCM43224_D11N_ID	0x4353	/* 43224 802.11n dualband device */
++#define BCM43224_D11N_ID_VEN1	0x0576	/* Vendor specific 43224 802.11n db */
++#define BCM43225_D11N2G_ID	0x4357	/* 43225 802.11n 2.4GHz device */
++#define BCM43236_D11N_ID	0x4346	/* 43236 802.11n dualband device */
++#define BCM43236_D11N2G_ID	0x4347	/* 43236 802.11n 2.4GHz device */
++
++#define BCM4313_CHIP_ID		0x4313
++#define BCM43224_CHIP_ID	43224
++
++#endif				/* _BRCM_HW_IDS_H_ */
+diff --git a/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/brcmu_d11.h b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/brcmu_d11.h
+new file mode 100644
+index 0000000..8b8b2ec
+--- /dev/null
++++ b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/brcmu_d11.h
+@@ -0,0 +1,167 @@
++/*
++ * Copyright (c) 2010 Broadcom Corporation
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
++ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
++ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
++ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++#ifndef	_BRCMU_D11_H_
++#define	_BRCMU_D11_H_
++
++/* d11 io type */
++#define BRCMU_D11N_IOTYPE		1
++#define BRCMU_D11AC_IOTYPE		2
++
++/* A chanspec (channel specification) holds the channel number, band,
++ * bandwidth and control sideband
++ */
++
++/* chanspec binary format */
++
++#define BRCMU_CHSPEC_INVALID		255
++/* bit 0~7 channel number
++ * for 80+80 channels: bit 0~3 low channel id, bit 4~7 high channel id
++ */
++#define BRCMU_CHSPEC_CH_MASK		0x00ff
++#define BRCMU_CHSPEC_CH_SHIFT		0
++#define BRCMU_CHSPEC_CHL_MASK		0x000f
++#define BRCMU_CHSPEC_CHL_SHIFT		0
++#define BRCMU_CHSPEC_CHH_MASK		0x00f0
++#define BRCMU_CHSPEC_CHH_SHIFT		4
++
++/* bit 8~16 for dot 11n IO types
++ * bit 8~9 sideband
++ * bit 10~11 bandwidth
++ * bit 12~13 spectral band
++ * bit 14~15 not used
++ */
++#define BRCMU_CHSPEC_D11N_SB_MASK	0x0300
++#define BRCMU_CHSPEC_D11N_SB_SHIFT	8
++#define  BRCMU_CHSPEC_D11N_SB_L		0x0100	/* control lower */
++#define  BRCMU_CHSPEC_D11N_SB_U		0x0200	/* control upper */
++#define  BRCMU_CHSPEC_D11N_SB_N		0x0300	/* none */
++#define BRCMU_CHSPEC_D11N_BW_MASK	0x0c00
++#define BRCMU_CHSPEC_D11N_BW_SHIFT	10
++#define  BRCMU_CHSPEC_D11N_BW_10	0x0400
++#define  BRCMU_CHSPEC_D11N_BW_20	0x0800
++#define  BRCMU_CHSPEC_D11N_BW_40	0x0c00
++#define BRCMU_CHSPEC_D11N_BND_MASK	0x3000
++#define BRCMU_CHSPEC_D11N_BND_SHIFT	12
++#define  BRCMU_CHSPEC_D11N_BND_5G	0x1000
++#define  BRCMU_CHSPEC_D11N_BND_2G	0x2000
++
++/* bit 8~16 for dot 11ac IO types
++ * bit 8~10 sideband
++ * bit 11~13 bandwidth
++ * bit 14~15 spectral band
++ */
++#define BRCMU_CHSPEC_D11AC_SB_MASK	0x0700
++#define BRCMU_CHSPEC_D11AC_SB_SHIFT	8
++#define  BRCMU_CHSPEC_D11AC_SB_LLL	0x0000
++#define  BRCMU_CHSPEC_D11AC_SB_LLU	0x0100
++#define  BRCMU_CHSPEC_D11AC_SB_LUL	0x0200
++#define  BRCMU_CHSPEC_D11AC_SB_LUU	0x0300
++#define  BRCMU_CHSPEC_D11AC_SB_ULL	0x0400
++#define  BRCMU_CHSPEC_D11AC_SB_ULU	0x0500
++#define  BRCMU_CHSPEC_D11AC_SB_UUL	0x0600
++#define  BRCMU_CHSPEC_D11AC_SB_UUU	0x0700
++#define  BRCMU_CHSPEC_D11AC_SB_LL	BRCMU_CHSPEC_D11AC_SB_LLL
++#define  BRCMU_CHSPEC_D11AC_SB_LU	BRCMU_CHSPEC_D11AC_SB_LLU
++#define  BRCMU_CHSPEC_D11AC_SB_UL	BRCMU_CHSPEC_D11AC_SB_LUL
++#define  BRCMU_CHSPEC_D11AC_SB_UU	BRCMU_CHSPEC_D11AC_SB_LUU
++#define  BRCMU_CHSPEC_D11AC_SB_L	BRCMU_CHSPEC_D11AC_SB_LLL
++#define  BRCMU_CHSPEC_D11AC_SB_U	BRCMU_CHSPEC_D11AC_SB_LLU
++#define BRCMU_CHSPEC_D11AC_BW_MASK	0x3800
++#define BRCMU_CHSPEC_D11AC_BW_SHIFT	11
++#define  BRCMU_CHSPEC_D11AC_BW_5	0x0000
++#define  BRCMU_CHSPEC_D11AC_BW_10	0x0800
++#define  BRCMU_CHSPEC_D11AC_BW_20	0x1000
++#define  BRCMU_CHSPEC_D11AC_BW_40	0x1800
++#define  BRCMU_CHSPEC_D11AC_BW_80	0x2000
++#define  BRCMU_CHSPEC_D11AC_BW_160	0x2800
++#define  BRCMU_CHSPEC_D11AC_BW_8080	0x3000
++#define BRCMU_CHSPEC_D11AC_BND_MASK	0xc000
++#define BRCMU_CHSPEC_D11AC_BND_SHIFT	14
++#define  BRCMU_CHSPEC_D11AC_BND_2G	0x0000
++#define  BRCMU_CHSPEC_D11AC_BND_3G	0x4000
++#define  BRCMU_CHSPEC_D11AC_BND_4G	0x8000
++#define  BRCMU_CHSPEC_D11AC_BND_5G	0xc000
++
++#define BRCMU_CHAN_BAND_2G		0
++#define BRCMU_CHAN_BAND_5G		1
++
++enum brcmu_chan_bw {
++	BRCMU_CHAN_BW_20,
++	BRCMU_CHAN_BW_40,
++	BRCMU_CHAN_BW_80,
++	BRCMU_CHAN_BW_80P80,
++	BRCMU_CHAN_BW_160,
++};
++
++enum brcmu_chan_sb {
++	BRCMU_CHAN_SB_NONE = -1,
++	BRCMU_CHAN_SB_LLL,
++	BRCMU_CHAN_SB_LLU,
++	BRCMU_CHAN_SB_LUL,
++	BRCMU_CHAN_SB_LUU,
++	BRCMU_CHAN_SB_ULL,
++	BRCMU_CHAN_SB_ULU,
++	BRCMU_CHAN_SB_UUL,
++	BRCMU_CHAN_SB_UUU,
++	BRCMU_CHAN_SB_L = BRCMU_CHAN_SB_LLL,
++	BRCMU_CHAN_SB_U = BRCMU_CHAN_SB_LLU,
++	BRCMU_CHAN_SB_LL = BRCMU_CHAN_SB_LLL,
++	BRCMU_CHAN_SB_LU = BRCMU_CHAN_SB_LLU,
++	BRCMU_CHAN_SB_UL = BRCMU_CHAN_SB_LUL,
++	BRCMU_CHAN_SB_UU = BRCMU_CHAN_SB_LUU,
++};
++
++/**
++ * struct brcmu_chan - stores channel formats
++ *
++ * This structure can be used with functions translating chanspec into generic
++ * channel info and the other way.
++ *
++ * @chspec: firmware specific format
++ * @chnum: center channel number
++ * @control_ch_num: control channel number
++ * @band: frequency band
++ * @bw: channel width
++ * @sb: control sideband (location of control channel against the center one)
++ */
++struct brcmu_chan {
++	u16 chspec;
++	u8 chnum;
++	u8 control_ch_num;
++	u8 band;
++	enum brcmu_chan_bw bw;
++	enum brcmu_chan_sb sb;
++};
++
++/**
++ * struct brcmu_d11inf - provides functions translating channel format
++ *
++ * @io_type: determines version of channel format used by firmware
++ * @encchspec: encodes channel info into a chanspec, requires center channel
++ *	number, ignores control one
++ * @decchspec: decodes chanspec into generic info
++ */
++struct brcmu_d11inf {
++	u8 io_type;
++
++	void (*encchspec)(struct brcmu_chan *ch);
++	void (*decchspec)(struct brcmu_chan *ch);
++};
++
++void brcmu_d11_attach(struct brcmu_d11inf *d11inf);
++
++#endif	/* _BRCMU_CHANNELS_H_ */
+diff --git a/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/brcmu_utils.h b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/brcmu_utils.h
+new file mode 100644
+index 0000000..4196952
+--- /dev/null
++++ b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/brcmu_utils.h
+@@ -0,0 +1,227 @@
++/*
++ * Copyright (c) 2010 Broadcom Corporation
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
++ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
++ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
++ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++#ifndef	_BRCMU_UTILS_H_
++#define	_BRCMU_UTILS_H_
++
++#include <linux/skbuff.h>
++
++/*
++ * Spin at most 'us' microseconds while 'exp' is true.
++ * Caller should explicitly test 'exp' when this completes
++ * and take appropriate error action if 'exp' is still true.
++ */
++#define SPINWAIT(exp, us) { \
++	uint countdown = (us) + 9; \
++	while ((exp) && (countdown >= 10)) {\
++		udelay(10); \
++		countdown -= 10; \
++	} \
++}
++
++/* osl multi-precedence packet queue */
++#define PKTQ_LEN_DEFAULT        128	/* Max 128 packets */
++#define PKTQ_MAX_PREC           16	/* Maximum precedence levels */
++
++#define BCME_STRLEN		64	/* Max string length for BCM errors */
++
++/* the largest reasonable packet buffer driver uses for ethernet MTU in bytes */
++#define	PKTBUFSZ	2048
++
++#ifndef setbit
++#ifndef NBBY			/* the BSD family defines NBBY */
++#define	NBBY	8		/* 8 bits per byte */
++#endif				/* #ifndef NBBY */
++#define	setbit(a, i)	(((u8 *)a)[(i)/NBBY] |= 1<<((i)%NBBY))
++#define	clrbit(a, i)	(((u8 *)a)[(i)/NBBY] &= ~(1<<((i)%NBBY)))
++#define	isset(a, i)	(((const u8 *)a)[(i)/NBBY] & (1<<((i)%NBBY)))
++#define	isclr(a, i)	((((const u8 *)a)[(i)/NBBY] & (1<<((i)%NBBY))) == 0)
++#endif				/* setbit */
++
++#define	NBITS(type)	(sizeof(type) * 8)
++#define NBITVAL(nbits)	(1 << (nbits))
++#define MAXBITVAL(nbits)	((1 << (nbits)) - 1)
++#define	NBITMASK(nbits)	MAXBITVAL(nbits)
++#define MAXNBVAL(nbyte)	MAXBITVAL((nbyte) * 8)
++
++/* crc defines */
++#define CRC16_INIT_VALUE 0xffff	/* Initial CRC16 checksum value */
++#define CRC16_GOOD_VALUE 0xf0b8	/* Good final CRC16 checksum value */
++
++/* 18-bytes of Ethernet address buffer length */
++#define ETHER_ADDR_STR_LEN	18
++
++struct pktq_prec {
++	struct sk_buff_head skblist;
++	u16 max;		/* maximum number of queued packets */
++};
++
++/* multi-priority pkt queue */
++struct pktq {
++	u16 num_prec;	/* number of precedences in use */
++	u16 hi_prec;	/* rapid dequeue hint (>= highest non-empty prec) */
++	u16 max;	/* total max packets */
++	u16 len;	/* total number of packets */
++	/*
++	 * q array must be last since # of elements can be either
++	 * PKTQ_MAX_PREC or 1
++	 */
++	struct pktq_prec q[PKTQ_MAX_PREC];
++};
++
++/* operations on a specific precedence in packet queue */
++
++static inline int pktq_plen(struct pktq *pq, int prec)
++{
++	return pq->q[prec].skblist.qlen;
++}
++
++static inline int pktq_pavail(struct pktq *pq, int prec)
++{
++	return pq->q[prec].max - pq->q[prec].skblist.qlen;
++}
++
++static inline bool pktq_pfull(struct pktq *pq, int prec)
++{
++	return pq->q[prec].skblist.qlen >= pq->q[prec].max;
++}
++
++static inline bool pktq_pempty(struct pktq *pq, int prec)
++{
++	return skb_queue_empty(&pq->q[prec].skblist);
++}
++
++static inline struct sk_buff *pktq_ppeek(struct pktq *pq, int prec)
++{
++	return skb_peek(&pq->q[prec].skblist);
++}
++
++static inline struct sk_buff *pktq_ppeek_tail(struct pktq *pq, int prec)
++{
++	return skb_peek_tail(&pq->q[prec].skblist);
++}
++
++struct sk_buff *brcmu_pktq_penq(struct pktq *pq, int prec, struct sk_buff *p);
++struct sk_buff *brcmu_pktq_penq_head(struct pktq *pq, int prec,
++				     struct sk_buff *p);
++struct sk_buff *brcmu_pktq_pdeq(struct pktq *pq, int prec);
++struct sk_buff *brcmu_pktq_pdeq_tail(struct pktq *pq, int prec);
++struct sk_buff *brcmu_pktq_pdeq_match(struct pktq *pq, int prec,
++				      bool (*match_fn)(struct sk_buff *p,
++						       void *arg),
++				      void *arg);
++
++/* packet primitives */
++struct sk_buff *brcmu_pkt_buf_get_skb(uint len);
++void brcmu_pkt_buf_free_skb(struct sk_buff *skb);
++
++/* Empty the queue at particular precedence level */
++/* callback function fn(pkt, arg) returns true if pkt belongs to if */
++void brcmu_pktq_pflush(struct pktq *pq, int prec, bool dir,
++		       bool (*fn)(struct sk_buff *, void *), void *arg);
++
++/* operations on a set of precedences in packet queue */
++
++int brcmu_pktq_mlen(struct pktq *pq, uint prec_bmp);
++struct sk_buff *brcmu_pktq_mdeq(struct pktq *pq, uint prec_bmp, int *prec_out);
++
++/* operations on packet queue as a whole */
++
++static inline int pktq_len(struct pktq *pq)
++{
++	return (int)pq->len;
++}
++
++static inline int pktq_max(struct pktq *pq)
++{
++	return (int)pq->max;
++}
++
++static inline int pktq_avail(struct pktq *pq)
++{
++	return (int)(pq->max - pq->len);
++}
++
++static inline bool pktq_full(struct pktq *pq)
++{
++	return pq->len >= pq->max;
++}
++
++static inline bool pktq_empty(struct pktq *pq)
++{
++	return pq->len == 0;
++}
++
++void brcmu_pktq_init(struct pktq *pq, int num_prec, int max_len);
++/* prec_out may be NULL if caller is not interested in return value */
++struct sk_buff *brcmu_pktq_peek_tail(struct pktq *pq, int *prec_out);
++void brcmu_pktq_flush(struct pktq *pq, bool dir,
++		      bool (*fn)(struct sk_buff *, void *), void *arg);
++
++/* externs */
++/* ip address */
++struct ipv4_addr;
++
++/*
++ * bitfield macros using masking and shift
++ *
++ * remark: the mask parameter should be a shifted mask.
++ */
++static inline void brcmu_maskset32(u32 *var, u32 mask, u8 shift, u32 value)
++{
++	value = (value << shift) & mask;
++	*var = (*var & ~mask) | value;
++}
++static inline u32 brcmu_maskget32(u32 var, u32 mask, u8 shift)
++{
++	return (var & mask) >> shift;
++}
++static inline void brcmu_maskset16(u16 *var, u16 mask, u8 shift, u16 value)
++{
++	value = (value << shift) & mask;
++	*var = (*var & ~mask) | value;
++}
++static inline u16 brcmu_maskget16(u16 var, u16 mask, u8 shift)
++{
++	return (var & mask) >> shift;
++}
++
++/* externs */
++/* format/print */
++#ifdef DEBUG
++void brcmu_prpkt(const char *msg, struct sk_buff *p0);
++#else
++#define brcmu_prpkt(a, b)
++#endif				/* DEBUG */
++
++#ifdef DEBUG
++__printf(3, 4)
++void brcmu_dbg_hex_dump(const void *data, size_t size, const char *fmt, ...);
++#else
++__printf(3, 4)
++static inline
++void brcmu_dbg_hex_dump(const void *data, size_t size, const char *fmt, ...)
++{
++}
++#endif
++
++#define BRCMU_BOARDREV_LEN	8
++#define BRCMU_DOTREV_LEN	16
++
++char *brcmu_boardrev_str(u32 brev, char *buf);
++char *brcmu_dotrev_str(u32 dotrev, char *buf);
++
++#endif				/* _BRCMU_UTILS_H_ */
+diff --git a/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/brcmu_wifi.h b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/brcmu_wifi.h
+new file mode 100644
+index 0000000..7b9a779
+--- /dev/null
++++ b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/brcmu_wifi.h
+@@ -0,0 +1,253 @@
++/*
++ * Copyright (c) 2010 Broadcom Corporation
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
++ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
++ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
++ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++#ifndef	_BRCMU_WIFI_H_
++#define	_BRCMU_WIFI_H_
++
++#include <linux/if_ether.h>		/* for ETH_ALEN */
++#include <linux/ieee80211.h>		/* for WLAN_PMKID_LEN */
++
++/*
++ * A chanspec (u16) holds the channel number, band, bandwidth and control
++ * sideband
++ */
++
++/* channel defines */
++#define CH_UPPER_SB			0x01
++#define CH_LOWER_SB			0x02
++#define CH_EWA_VALID			0x04
++#define CH_30MHZ_APART			6
++#define CH_20MHZ_APART			4
++#define CH_10MHZ_APART			2
++#define CH_5MHZ_APART			1 /* 2G band channels are 5 Mhz apart */
++#define CH_MIN_2G_CHANNEL		1
++#define CH_MAX_2G_CHANNEL		14	/* Max channel in 2G band */
++#define CH_MIN_5G_CHANNEL		34
++
++/* bandstate array indices */
++#define BAND_2G_INDEX		0	/* wlc->bandstate[x] index */
++#define BAND_5G_INDEX		1	/* wlc->bandstate[x] index */
++
++/*
++ * max # supported channels. The max channel no is 216, this is that + 1
++ * rounded up to a multiple of NBBY (8). DO NOT MAKE it > 255: channels are
++ * u8's all over
++*/
++#define	MAXCHANNEL		224
++
++#define WL_CHANSPEC_CHAN_MASK		0x00ff
++#define WL_CHANSPEC_CHAN_SHIFT		0
++
++#define WL_CHANSPEC_CTL_SB_MASK		0x0300
++#define WL_CHANSPEC_CTL_SB_SHIFT	     8
++#define WL_CHANSPEC_CTL_SB_LOWER	0x0100
++#define WL_CHANSPEC_CTL_SB_UPPER	0x0200
++#define WL_CHANSPEC_CTL_SB_NONE		0x0300
++
++#define WL_CHANSPEC_BW_MASK		0x0C00
++#define WL_CHANSPEC_BW_SHIFT		    10
++#define WL_CHANSPEC_BW_10		0x0400
++#define WL_CHANSPEC_BW_20		0x0800
++#define WL_CHANSPEC_BW_40		0x0C00
++#define WL_CHANSPEC_BW_80		0x2000
++
++#define WL_CHANSPEC_BAND_MASK		0xf000
++#define WL_CHANSPEC_BAND_SHIFT		12
++#define WL_CHANSPEC_BAND_5G		0x1000
++#define WL_CHANSPEC_BAND_2G		0x2000
++#define INVCHANSPEC			255
++
++#define WL_CHAN_VALID_HW		(1 << 0) /* valid with current HW */
++#define WL_CHAN_VALID_SW		(1 << 1) /* valid with country sett. */
++#define WL_CHAN_BAND_5G			(1 << 2) /* 5GHz-band channel */
++#define WL_CHAN_RADAR			(1 << 3) /* radar sensitive  channel */
++#define WL_CHAN_INACTIVE		(1 << 4) /* inactive due to radar */
++#define WL_CHAN_PASSIVE			(1 << 5) /* channel in passive mode */
++#define WL_CHAN_RESTRICTED		(1 << 6) /* restricted use channel */
++
++/* values for band specific 40MHz capabilities  */
++#define WLC_N_BW_20ALL			0
++#define WLC_N_BW_40ALL			1
++#define WLC_N_BW_20IN2G_40IN5G		2
++
++#define WLC_BW_20MHZ_BIT		BIT(0)
++#define WLC_BW_40MHZ_BIT		BIT(1)
++#define WLC_BW_80MHZ_BIT		BIT(2)
++#define WLC_BW_160MHZ_BIT		BIT(3)
++
++/* Bandwidth capabilities */
++#define WLC_BW_CAP_20MHZ		(WLC_BW_20MHZ_BIT)
++#define WLC_BW_CAP_40MHZ		(WLC_BW_40MHZ_BIT|WLC_BW_20MHZ_BIT)
++#define WLC_BW_CAP_80MHZ		(WLC_BW_80MHZ_BIT|WLC_BW_40MHZ_BIT| \
++					 WLC_BW_20MHZ_BIT)
++#define WLC_BW_CAP_160MHZ		(WLC_BW_160MHZ_BIT|WLC_BW_80MHZ_BIT| \
++					 WLC_BW_40MHZ_BIT|WLC_BW_20MHZ_BIT)
++#define WLC_BW_CAP_UNRESTRICTED		0xFF
++
++/* band types */
++#define	WLC_BAND_AUTO			0	/* auto-select */
++#define	WLC_BAND_5G			1	/* 5 Ghz */
++#define	WLC_BAND_2G			2	/* 2.4 Ghz */
++#define	WLC_BAND_ALL			3	/* all bands */
++
++#define CHSPEC_CHANNEL(chspec)	((u8)((chspec) & WL_CHANSPEC_CHAN_MASK))
++#define CHSPEC_BAND(chspec)	((chspec) & WL_CHANSPEC_BAND_MASK)
++
++#define CHSPEC_CTL_SB(chspec)	((chspec) & WL_CHANSPEC_CTL_SB_MASK)
++#define CHSPEC_BW(chspec)	((chspec) & WL_CHANSPEC_BW_MASK)
++
++#define CHSPEC_IS10(chspec) \
++	(((chspec) & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_10)
++
++#define CHSPEC_IS20(chspec) \
++	(((chspec) & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_20)
++
++#define CHSPEC_IS40(chspec) \
++	(((chspec) & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_40)
++
++#define CHSPEC_IS80(chspec) \
++	(((chspec) & WL_CHANSPEC_BW_MASK) == WL_CHANSPEC_BW_80)
++
++#define CHSPEC_IS5G(chspec) \
++	(((chspec) & WL_CHANSPEC_BAND_MASK) == WL_CHANSPEC_BAND_5G)
++
++#define CHSPEC_IS2G(chspec) \
++	(((chspec) & WL_CHANSPEC_BAND_MASK) == WL_CHANSPEC_BAND_2G)
++
++#define CHSPEC_SB_NONE(chspec) \
++	(((chspec) & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_NONE)
++
++#define CHSPEC_SB_UPPER(chspec) \
++	(((chspec) & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_UPPER)
++
++#define CHSPEC_SB_LOWER(chspec) \
++	(((chspec) & WL_CHANSPEC_CTL_SB_MASK) == WL_CHANSPEC_CTL_SB_LOWER)
++
++#define CHSPEC_CTL_CHAN(chspec) \
++	((CHSPEC_SB_LOWER(chspec)) ? \
++	(lower_20_sb(((chspec) & WL_CHANSPEC_CHAN_MASK))) : \
++	(upper_20_sb(((chspec) & WL_CHANSPEC_CHAN_MASK))))
++
++#define CHSPEC2BAND(chspec) (CHSPEC_IS5G(chspec) ? BRCM_BAND_5G : BRCM_BAND_2G)
++
++#define CHANSPEC_STR_LEN    8
++
++static inline int lower_20_sb(int channel)
++{
++	return channel > CH_10MHZ_APART ? (channel - CH_10MHZ_APART) : 0;
++}
++
++static inline int upper_20_sb(int channel)
++{
++	return (channel < (MAXCHANNEL - CH_10MHZ_APART)) ?
++	       channel + CH_10MHZ_APART : 0;
++}
++
++static inline int chspec_bandunit(u16 chspec)
++{
++	return CHSPEC_IS5G(chspec) ? BAND_5G_INDEX : BAND_2G_INDEX;
++}
++
++static inline u16 ch20mhz_chspec(int channel)
++{
++	u16 rc = channel <= CH_MAX_2G_CHANNEL ?
++		 WL_CHANSPEC_BAND_2G : WL_CHANSPEC_BAND_5G;
++
++	return	(u16)((u16)channel | WL_CHANSPEC_BW_20 |
++		      WL_CHANSPEC_CTL_SB_NONE | rc);
++}
++
++static inline int next_20mhz_chan(int channel)
++{
++	return channel < (MAXCHANNEL - CH_20MHZ_APART) ?
++	       channel + CH_20MHZ_APART : 0;
++}
++
++/* defined rate in 500kbps */
++#define BRCM_MAXRATE	108	/* in 500kbps units */
++#define BRCM_RATE_1M	2	/* in 500kbps units */
++#define BRCM_RATE_2M	4	/* in 500kbps units */
++#define BRCM_RATE_5M5	11	/* in 500kbps units */
++#define BRCM_RATE_11M	22	/* in 500kbps units */
++#define BRCM_RATE_6M	12	/* in 500kbps units */
++#define BRCM_RATE_9M	18	/* in 500kbps units */
++#define BRCM_RATE_12M	24	/* in 500kbps units */
++#define BRCM_RATE_18M	36	/* in 500kbps units */
++#define BRCM_RATE_24M	48	/* in 500kbps units */
++#define BRCM_RATE_36M	72	/* in 500kbps units */
++#define BRCM_RATE_48M	96	/* in 500kbps units */
++#define BRCM_RATE_54M	108	/* in 500kbps units */
++
++#define BRCM_2G_25MHZ_OFFSET		5	/* 2.4GHz band channel offset */
++
++#define MCSSET_LEN	16
++
++static inline bool ac_bitmap_tst(u8 bitmap, int prec)
++{
++	return (bitmap & (1 << (prec))) != 0;
++}
++
++/* Enumerate crypto algorithms */
++#define	CRYPTO_ALGO_OFF			0
++#define	CRYPTO_ALGO_WEP1		1
++#define	CRYPTO_ALGO_TKIP		2
++#define	CRYPTO_ALGO_WEP128		3
++#define CRYPTO_ALGO_AES_CCM		4
++#define CRYPTO_ALGO_AES_RESERVED1	5
++#define CRYPTO_ALGO_AES_RESERVED2	6
++#define CRYPTO_ALGO_NALG		7
++
++/* wireless security bitvec */
++
++#define WEP_ENABLED		0x0001
++#define TKIP_ENABLED		0x0002
++#define AES_ENABLED		0x0004
++#define WSEC_SWFLAG		0x0008
++/* to go into transition mode without setting wep */
++#define SES_OW_ENABLED		0x0040
++/* MFP */
++#define MFP_CAPABLE		0x0200
++#define MFP_REQUIRED		0x0400
++
++/* WPA authentication mode bitvec */
++#define WPA_AUTH_DISABLED	0x0000	/* Legacy (i.e., non-WPA) */
++#define WPA_AUTH_NONE		0x0001	/* none (IBSS) */
++#define WPA_AUTH_UNSPECIFIED	0x0002	/* over 802.1x */
++#define WPA_AUTH_PSK		0x0004	/* Pre-shared key */
++#define WPA_AUTH_RESERVED1	0x0008
++#define WPA_AUTH_RESERVED2	0x0010
++
++#define WPA2_AUTH_RESERVED1	0x0020
++#define WPA2_AUTH_UNSPECIFIED	0x0040	/* over 802.1x */
++#define WPA2_AUTH_PSK		0x0080	/* Pre-shared key */
++#define WPA2_AUTH_RESERVED3	0x0200
++#define WPA2_AUTH_RESERVED4	0x0400
++#define WPA2_AUTH_RESERVED5	0x0800
++#define WPA2_AUTH_1X_SHA256	0x1000  /* 1X with SHA256 key derivation */
++#define WPA2_AUTH_PSK_SHA256	0x8000	/* PSK with SHA256 key derivation */
++
++#define DOT11_DEFAULT_RTS_LEN		2347
++#define DOT11_DEFAULT_FRAG_LEN		2346
++
++#define DOT11_ICV_AES_LEN		8
++#define DOT11_QOS_LEN			2
++#define DOT11_IV_MAX_LEN		8
++#define DOT11_A4_HDR_LEN		30
++
++#define HT_CAP_RX_STBC_NO		0x0
++#define HT_CAP_RX_STBC_ONE_STREAM	0x1
++
++#endif				/* _BRCMU_WIFI_H_ */
+diff --git a/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/chipcommon.h b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/chipcommon.h
+new file mode 100644
+index 0000000..e1fd499
+--- /dev/null
++++ b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/chipcommon.h
+@@ -0,0 +1,303 @@
++/*
++ * Copyright (c) 2010 Broadcom Corporation
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
++ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
++ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
++ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++#ifndef	_SBCHIPC_H
++#define	_SBCHIPC_H
++
++#include "defs.h"		/* for PAD macro */
++
++#define CHIPCREGOFFS(field)	offsetof(struct chipcregs, field)
++
++struct chipcregs {
++	u32 chipid;		/* 0x0 */
++	u32 capabilities;
++	u32 corecontrol;	/* corerev >= 1 */
++	u32 bist;
++
++	/* OTP */
++	u32 otpstatus;	/* 0x10, corerev >= 10 */
++	u32 otpcontrol;
++	u32 otpprog;
++	u32 otplayout;	/* corerev >= 23 */
++
++	/* Interrupt control */
++	u32 intstatus;	/* 0x20 */
++	u32 intmask;
++
++	/* Chip specific regs */
++	u32 chipcontrol;	/* 0x28, rev >= 11 */
++	u32 chipstatus;	/* 0x2c, rev >= 11 */
++
++	/* Jtag Master */
++	u32 jtagcmd;		/* 0x30, rev >= 10 */
++	u32 jtagir;
++	u32 jtagdr;
++	u32 jtagctrl;
++
++	/* serial flash interface registers */
++	u32 flashcontrol;	/* 0x40 */
++	u32 flashaddress;
++	u32 flashdata;
++	u32 PAD[1];
++
++	/* Silicon backplane configuration broadcast control */
++	u32 broadcastaddress;	/* 0x50 */
++	u32 broadcastdata;
++
++	/* gpio - cleared only by power-on-reset */
++	u32 gpiopullup;	/* 0x58, corerev >= 20 */
++	u32 gpiopulldown;	/* 0x5c, corerev >= 20 */
++	u32 gpioin;		/* 0x60 */
++	u32 gpioout;		/* 0x64 */
++	u32 gpioouten;	/* 0x68 */
++	u32 gpiocontrol;	/* 0x6C */
++	u32 gpiointpolarity;	/* 0x70 */
++	u32 gpiointmask;	/* 0x74 */
++
++	/* GPIO events corerev >= 11 */
++	u32 gpioevent;
++	u32 gpioeventintmask;
++
++	/* Watchdog timer */
++	u32 watchdog;	/* 0x80 */
++
++	/* GPIO events corerev >= 11 */
++	u32 gpioeventintpolarity;
++
++	/* GPIO based LED powersave registers corerev >= 16 */
++	u32 gpiotimerval;	/* 0x88 */
++	u32 gpiotimeroutmask;
++
++	/* clock control */
++	u32 clockcontrol_n;	/* 0x90 */
++	u32 clockcontrol_sb;	/* aka m0 */
++	u32 clockcontrol_pci;	/* aka m1 */
++	u32 clockcontrol_m2;	/* mii/uart/mipsref */
++	u32 clockcontrol_m3;	/* cpu */
++	u32 clkdiv;		/* corerev >= 3 */
++	u32 gpiodebugsel;	/* corerev >= 28 */
++	u32 capabilities_ext;	/* 0xac  */
++
++	/* pll delay registers (corerev >= 4) */
++	u32 pll_on_delay;	/* 0xb0 */
++	u32 fref_sel_delay;
++	u32 slow_clk_ctl;	/* 5 < corerev < 10 */
++	u32 PAD;
++
++	/* Instaclock registers (corerev >= 10) */
++	u32 system_clk_ctl;	/* 0xc0 */
++	u32 clkstatestretch;
++	u32 PAD[2];
++
++	/* Indirect backplane access (corerev >= 22) */
++	u32 bp_addrlow;	/* 0xd0 */
++	u32 bp_addrhigh;
++	u32 bp_data;
++	u32 PAD;
++	u32 bp_indaccess;
++	u32 PAD[3];
++
++	/* More clock dividers (corerev >= 32) */
++	u32 clkdiv2;
++	u32 PAD[2];
++
++	/* In AI chips, pointer to erom */
++	u32 eromptr;		/* 0xfc */
++
++	/* ExtBus control registers (corerev >= 3) */
++	u32 pcmcia_config;	/* 0x100 */
++	u32 pcmcia_memwait;
++	u32 pcmcia_attrwait;
++	u32 pcmcia_iowait;
++	u32 ide_config;
++	u32 ide_memwait;
++	u32 ide_attrwait;
++	u32 ide_iowait;
++	u32 prog_config;
++	u32 prog_waitcount;
++	u32 flash_config;
++	u32 flash_waitcount;
++	u32 SECI_config;	/* 0x130 SECI configuration */
++	u32 PAD[3];
++
++	/* Enhanced Coexistence Interface (ECI) registers (corerev >= 21) */
++	u32 eci_output;	/* 0x140 */
++	u32 eci_control;
++	u32 eci_inputlo;
++	u32 eci_inputmi;
++	u32 eci_inputhi;
++	u32 eci_inputintpolaritylo;
++	u32 eci_inputintpolaritymi;
++	u32 eci_inputintpolarityhi;
++	u32 eci_intmasklo;
++	u32 eci_intmaskmi;
++	u32 eci_intmaskhi;
++	u32 eci_eventlo;
++	u32 eci_eventmi;
++	u32 eci_eventhi;
++	u32 eci_eventmasklo;
++	u32 eci_eventmaskmi;
++	u32 eci_eventmaskhi;
++	u32 PAD[3];
++
++	/* SROM interface (corerev >= 32) */
++	u32 sromcontrol;	/* 0x190 */
++	u32 sromaddress;
++	u32 sromdata;
++	u32 PAD[17];
++
++	/* Clock control and hardware workarounds (corerev >= 20) */
++	u32 clk_ctl_st;	/* 0x1e0 */
++	u32 hw_war;
++	u32 PAD[70];
++
++	/* UARTs */
++	u8 uart0data;	/* 0x300 */
++	u8 uart0imr;
++	u8 uart0fcr;
++	u8 uart0lcr;
++	u8 uart0mcr;
++	u8 uart0lsr;
++	u8 uart0msr;
++	u8 uart0scratch;
++	u8 PAD[248];		/* corerev >= 1 */
++
++	u8 uart1data;	/* 0x400 */
++	u8 uart1imr;
++	u8 uart1fcr;
++	u8 uart1lcr;
++	u8 uart1mcr;
++	u8 uart1lsr;
++	u8 uart1msr;
++	u8 uart1scratch;
++	u32 PAD[62];
++
++	/* save/restore, corerev >= 48 */
++	u32 sr_capability;          /* 0x500 */
++	u32 sr_control0;            /* 0x504 */
++	u32 sr_control1;            /* 0x508 */
++	u32 gpio_control;           /* 0x50C */
++	u32 PAD[60];
++
++	/* PMU registers (corerev >= 20) */
++	u32 pmucontrol;	/* 0x600 */
++	u32 pmucapabilities;
++	u32 pmustatus;
++	u32 res_state;
++	u32 res_pending;
++	u32 pmutimer;
++	u32 min_res_mask;
++	u32 max_res_mask;
++	u32 res_table_sel;
++	u32 res_dep_mask;
++	u32 res_updn_timer;
++	u32 res_timer;
++	u32 clkstretch;
++	u32 pmuwatchdog;
++	u32 gpiosel;		/* 0x638, rev >= 1 */
++	u32 gpioenable;	/* 0x63c, rev >= 1 */
++	u32 res_req_timer_sel;
++	u32 res_req_timer;
++	u32 res_req_mask;
++	u32 pmucapabilities_ext; /* 0x64c, pmurev >=15 */
++	u32 chipcontrol_addr;	/* 0x650 */
++	u32 chipcontrol_data;	/* 0x654 */
++	u32 regcontrol_addr;
++	u32 regcontrol_data;
++	u32 pllcontrol_addr;
++	u32 pllcontrol_data;
++	u32 pmustrapopt;	/* 0x668, corerev >= 28 */
++	u32 pmu_xtalfreq;	/* 0x66C, pmurev >= 10 */
++	u32 retention_ctl;          /* 0x670, pmurev >= 15 */
++	u32 PAD[3];
++	u32 retention_grpidx;       /* 0x680 */
++	u32 retention_grpctl;       /* 0x684 */
++	u32 PAD[94];
++	u16 sromotp[768];
++};
++
++/* chipid */
++#define	CID_ID_MASK		0x0000ffff	/* Chip Id mask */
++#define	CID_REV_MASK		0x000f0000	/* Chip Revision mask */
++#define	CID_REV_SHIFT		16	/* Chip Revision shift */
++#define	CID_PKG_MASK		0x00f00000	/* Package Option mask */
++#define	CID_PKG_SHIFT		20	/* Package Option shift */
++#define	CID_CC_MASK		0x0f000000	/* CoreCount (corerev >= 4) */
++#define CID_CC_SHIFT		24
++#define	CID_TYPE_MASK		0xf0000000	/* Chip Type */
++#define CID_TYPE_SHIFT		28
++
++/* capabilities */
++#define	CC_CAP_UARTS_MASK	0x00000003	/* Number of UARTs */
++#define CC_CAP_MIPSEB		0x00000004	/* MIPS is in big-endian mode */
++#define CC_CAP_UCLKSEL		0x00000018	/* UARTs clock select */
++/* UARTs are driven by internal divided clock */
++#define CC_CAP_UINTCLK		0x00000008
++#define CC_CAP_UARTGPIO		0x00000020	/* UARTs own GPIOs 15:12 */
++#define CC_CAP_EXTBUS_MASK	0x000000c0	/* External bus mask */
++#define CC_CAP_EXTBUS_NONE	0x00000000	/* No ExtBus present */
++#define CC_CAP_EXTBUS_FULL	0x00000040	/* ExtBus: PCMCIA, IDE & Prog */
++#define CC_CAP_EXTBUS_PROG	0x00000080	/* ExtBus: ProgIf only */
++#define	CC_CAP_FLASH_MASK	0x00000700	/* Type of flash */
++#define	CC_CAP_PLL_MASK		0x00038000	/* Type of PLL */
++#define CC_CAP_PWR_CTL		0x00040000	/* Power control */
++#define CC_CAP_OTPSIZE		0x00380000	/* OTP Size (0 = none) */
++#define CC_CAP_OTPSIZE_SHIFT	19	/* OTP Size shift */
++#define CC_CAP_OTPSIZE_BASE	5	/* OTP Size base */
++#define CC_CAP_JTAGP		0x00400000	/* JTAG Master Present */
++#define CC_CAP_ROM		0x00800000	/* Internal boot rom active */
++#define CC_CAP_BKPLN64		0x08000000	/* 64-bit backplane */
++#define	CC_CAP_PMU		0x10000000	/* PMU Present, rev >= 20 */
++#define	CC_CAP_SROM		0x40000000	/* Srom Present, rev >= 32 */
++/* Nand flash present, rev >= 35 */
++#define	CC_CAP_NFLASH		0x80000000
++
++#define	CC_CAP2_SECI		0x00000001	/* SECI Present, rev >= 36 */
++/* GSIO (spi/i2c) present, rev >= 37 */
++#define	CC_CAP2_GSIO		0x00000002
++
++/* pmucapabilities */
++#define PCAP_REV_MASK	0x000000ff
++#define PCAP_RC_MASK	0x00001f00
++#define PCAP_RC_SHIFT	8
++#define PCAP_TC_MASK	0x0001e000
++#define PCAP_TC_SHIFT	13
++#define PCAP_PC_MASK	0x001e0000
++#define PCAP_PC_SHIFT	17
++#define PCAP_VC_MASK	0x01e00000
++#define PCAP_VC_SHIFT	21
++#define PCAP_CC_MASK	0x1e000000
++#define PCAP_CC_SHIFT	25
++#define PCAP5_PC_MASK	0x003e0000	/* PMU corerev >= 5 */
++#define PCAP5_PC_SHIFT	17
++#define PCAP5_VC_MASK	0x07c00000
++#define PCAP5_VC_SHIFT	22
++#define PCAP5_CC_MASK	0xf8000000
++#define PCAP5_CC_SHIFT	27
++/* pmucapabilites_ext PMU rev >= 15 */
++#define PCAPEXT_SR_SUPPORTED_MASK	(1 << 1)
++/* retention_ctl PMU rev >= 15 */
++#define PMU_RCTL_MACPHY_DISABLE_MASK        (1 << 26)
++#define PMU_RCTL_LOGIC_DISABLE_MASK         (1 << 27)
++
++
++/*
++* Maximum delay for the PMU state transition in us.
++* This is an upper bound intended for spinwaits etc.
++*/
++#define PMU_MAX_TRANSITION_DLY	15000
++
++#endif				/* _SBCHIPC_H */
+diff --git a/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/defs.h b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/defs.h
+new file mode 100644
+index 0000000..8d1e85e
+--- /dev/null
++++ b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/defs.h
+@@ -0,0 +1,105 @@
++/*
++ * Copyright (c) 2010 Broadcom Corporation
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
++ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
++ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
++ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++#ifndef	_BRCM_DEFS_H_
++#define	_BRCM_DEFS_H_
++
++#include <linux/types.h>
++
++#define	SI_BUS			0
++#define	PCI_BUS			1
++#define	PCMCIA_BUS		2
++#define SDIO_BUS		3
++#define JTAG_BUS		4
++#define USB_BUS			5
++#define SPI_BUS			6
++
++#define	OFF	0
++#define	ON	1		/* ON = 1 */
++#define	AUTO	(-1)		/* Auto = -1 */
++
++/*
++ * Priority definitions according 802.1D
++ */
++#define	PRIO_8021D_NONE		2
++#define	PRIO_8021D_BK		1
++#define	PRIO_8021D_BE		0
++#define	PRIO_8021D_EE		3
++#define	PRIO_8021D_CL		4
++#define	PRIO_8021D_VI		5
++#define	PRIO_8021D_VO		6
++#define	PRIO_8021D_NC		7
++
++#define	MAXPRIO			7
++#define NUMPRIO			(MAXPRIO + 1)
++
++#define WL_NUMRATES		16	/* max # of rates in a rateset */
++
++#define BRCM_CNTRY_BUF_SZ	4	/* Country string is 3 bytes + NUL */
++
++#define BRCM_SET_CHANNEL	30
++#define BRCM_SET_SRL		32
++#define BRCM_SET_LRL		34
++#define BRCM_SET_BCNPRD		76
++
++#define BRCM_GET_CURR_RATESET	114	/* current rateset */
++#define BRCM_GET_PHYLIST	180
++
++/* Bit masks for radio disabled status - returned by WL_GET_RADIO */
++
++#define WL_RADIO_SW_DISABLE		(1<<0)
++#define WL_RADIO_HW_DISABLE		(1<<1)
++/* some countries don't support any channel */
++#define WL_RADIO_COUNTRY_DISABLE	(1<<3)
++
++/* Override bit for SET_TXPWR.  if set, ignore other level limits */
++#define WL_TXPWR_OVERRIDE	(1U<<31)
++
++/* band types */
++#define	BRCM_BAND_AUTO		0	/* auto-select */
++#define	BRCM_BAND_5G		1	/* 5 Ghz */
++#define	BRCM_BAND_2G		2	/* 2.4 Ghz */
++#define	BRCM_BAND_ALL		3	/* all bands */
++
++/* Debug levels */
++#define BRCM_DL_INFO		0x00000001
++#define BRCM_DL_MAC80211	0x00000002
++#define BRCM_DL_RX		0x00000004
++#define BRCM_DL_TX		0x00000008
++#define BRCM_DL_INT		0x00000010
++#define BRCM_DL_DMA		0x00000020
++#define BRCM_DL_HT		0x00000040
++
++/* Values for PM */
++#define PM_OFF	0
++#define PM_MAX	1
++#define PM_FAST 2
++
++/*
++ * Sonics Configuration Space Registers.
++ */
++
++/* core sbconfig regs are top 256bytes of regs */
++#define	SBCONFIGOFF		0xf00
++
++/* cpp contortions to concatenate w/arg prescan */
++#ifndef	PAD
++#define	_PADLINE(line)	pad ## line
++#define	_XSTR(line)	_PADLINE(line)
++#define	PAD		_XSTR(__LINE__)
++#endif
++
++#endif				/* _BRCM_DEFS_H_ */
+diff --git a/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/soc.h b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/soc.h
+new file mode 100644
+index 0000000..123cfa8
+--- /dev/null
++++ b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/include/soc.h
+@@ -0,0 +1,36 @@
++/*
++ * Copyright (c) 2010 Broadcom Corporation
++ *
++ * Permission to use, copy, modify, and/or distribute this software for any
++ * purpose with or without fee is hereby granted, provided that the above
++ * copyright notice and this permission notice appear in all copies.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
++ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
++ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
++ * SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
++ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION
++ * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
++ * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
++ */
++
++#ifndef	_BRCM_SOC_H
++#define	_BRCM_SOC_H
++
++#define SI_ENUM_BASE		0x18000000	/* Enumeration space base */
++
++/* Common core control flags */
++#define	SICF_BIST_EN		0x8000
++#define	SICF_PME_EN		0x4000
++#define	SICF_CORE_BITS		0x3ffc
++#define	SICF_FGC		0x0002
++#define	SICF_CLOCK_EN		0x0001
++
++/* Common core status flags */
++#define	SISF_BIST_DONE		0x8000
++#define	SISF_BIST_ERROR		0x4000
++#define	SISF_GATED_CLK		0x2000
++#define	SISF_DMA64		0x1000
++#define	SISF_CORE_BITS		0x0fff
++
++#endif				/* _BRCM_SOC_H */
+diff --git a/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/nexmon_ioctls.h b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/nexmon_ioctls.h
+new file mode 100644
+index 0000000..587b45d
+--- /dev/null
++++ b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/nexmon_ioctls.h
+@@ -0,0 +1,15 @@
++#ifndef NEXMON_IOCTLS_H
++#define NEXMON_IOCTLS_H
++
++/* see include/dhdioctl.h in bcmdhd driver */
++typedef struct nex_ioctl {
++    uint cmd;   /* common ioctl definition */
++    void *buf;  /* pointer to user buffer */
++    uint len;   /* length of user buffer */
++    bool set;   /* get or set request (optional) */
++    uint used;  /* bytes read or written (optional) */
++    uint needed;    /* bytes needed (optional) */
++    uint driver;    /* to identify target driver */
++} nex_ioctl_t;
++
++#endif /* NEXMON_IOCTLS_H */
+diff --git a/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/nexmon_procfs.h b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/nexmon_procfs.h
+new file mode 100644
+index 0000000..1389bff
+--- /dev/null
++++ b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/nexmon_procfs.h
+@@ -0,0 +1,18 @@
++#ifndef NEXMON_PROCFS_H
++#define NEXMON_PROCFS_H
++
++#include <linux/kernel.h>
++#include <linux/proc_fs.h>
++#include <linux/seq_file.h>
++
++extern int procfs_dump_open(struct inode *inode, struct file *file);
++extern ssize_t procfs_dump_read(struct file *file, char *buffer, size_t len, loff_t * off);
++
++static const struct file_operations
++rom_proc_dump_fops = {
++    .owner      = THIS_MODULE,
++    .open       = procfs_dump_open,
++    .read       = procfs_dump_read,
++};
++
++#endif /* NEXMON_PROCFS_H */
+diff --git a/data/linux-rpi-4.10.y/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/sdio.c
+index d138260..77a3c41 100644
+--- a/data/linux-rpi-4.10.y/drivers/net/wireless/broadcom/brcm80211/brcmfmac/sdio.c
++++ b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/sdio.c
+@@ -44,6 +44,8 @@
+ #include "firmware.h"
+ #include "core.h"
+ #include "common.h"
++/* NEXMON */
++#include "nexmon_procfs.h"
+ 
+ #define DCMD_RESP_TIMEOUT	msecs_to_jiffies(2500)
+ #define CTL_DONE_TIMEOUT	msecs_to_jiffies(2500)
+@@ -2847,6 +2849,13 @@ break2:
+ }
+ #endif				/* DEBUG */
+ 
++/* NEXMON */
++#define MY_ROM_BUFFER_MAX 0x1fffff
++int my_rom_buffer_len = 0;
++u8 my_rom_buffer[0x1fffff];
++struct brcmf_sdio *my_sdio = NULL;
++struct brcmf_bus *my_bus = NULL;
++
+ static int
+ brcmf_sdio_bus_txctl(struct device *dev, unsigned char *msg, uint msglen)
+ {
+@@ -3248,6 +3257,8 @@ static int brcmf_sdio_download_code_file(struct brcmf_sdio *bus,
+ 	int err;
+ 
+ 	brcmf_dbg(TRACE, "Enter\n");
++        /*NEXMON*/
++	my_sdio = bus;
+ 
+ 	err = brcmf_sdiod_ramrw(bus->sdiodev, true, bus->ci->rambase,
+ 				(u8 *)fw->data, fw->size);
+@@ -3404,6 +3415,9 @@ static int brcmf_sdio_bus_preinit(struct device *dev)
+ 	u32 value;
+ 	int err;
+ 
++	/* NEXMON */
++	my_bus = bus_if;
++
+ 	/* the commands below use the terms tx and rx from
+ 	 * a device perspective, ie. bus:txglom affects the
+ 	 * bus transfers from device to host.
+@@ -4305,3 +4319,62 @@ int brcmf_sdio_sleep(struct brcmf_sdio *bus, bool sleep)
+ 	return ret;
+ }
+ 
++/* NEXMON */
++int
++write_ram_to_buffer(void) {
++    //Console start and end, size: 0x400
++    u32 start_addr = 0x6dab4;
++    u32 end_addr =   0x6deb4;
++
++    u32 address = start_addr;
++    u32 chunk_sz = 0x100;
++    u8 data[0x100];
++
++    brcmf_err("NEXMON, enter\n");
++
++	my_sdio->alp_only = true;
++    //Reset buffer
++    my_rom_buffer[0] = 0;
++    my_rom_buffer_len = 0;
++	
++	sdio_claim_host(my_sdio->sdiodev->func[1]);
++	brcmf_sdio_bus_sleep(my_sdio, false, false);
++    brcmf_sdio_clkctl(my_sdio, CLK_AVAIL, false);
++   
++    while(address >= start_addr && address < end_addr) {
++        brcmf_err("NEXMON rom loop, current address: 0x%x, my_rom_buffer_len: %d\n", address, my_rom_buffer_len);
++
++        brcmf_sdiod_ramrw(my_sdio->sdiodev, false, address, data, chunk_sz);
++
++        memcpy(&(my_rom_buffer[my_rom_buffer_len]), data, (size_t) chunk_sz);
++                
++        my_rom_buffer_len += chunk_sz;
++        address += chunk_sz;
++
++    }
++    
++    print_hex_dump_bytes("", DUMP_PREFIX_NONE, my_rom_buffer, 0x100);
++	
++    my_sdio->alp_only = false;
++    sdio_release_host(my_sdio->sdiodev->func[1]);
++    
++    return 0;
++
++}
++
++int
++procfs_dump_open(struct inode *inode, struct file *file) {
++    brcmf_err("NEXMON, enter\n");
++    if(my_bus != NULL) {
++        write_ram_to_buffer();
++    } else {
++        brcmf_err("NEXMON error, no my_sdio_bus = NULL!\n");
++    }
++    return 0;
++}
++
++ssize_t
++procfs_dump_read(struct file *filp, char *buffer, size_t length, loff_t *offset) {
++    return simple_read_from_buffer(buffer, length, offset, my_rom_buffer, my_rom_buffer_len);
++}
++
+diff --git a/data/linux-rpi-4.9.y/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/cfg80211.c
+index e2a459f..64131ac 100644
+--- a/data/linux-rpi-4.9.y/drivers/net/wireless/broadcom/brcm80211/brcmfmac/cfg80211.c
++++ b/data/nexmon/patches/bcm43438/7_45_41_26/nexmon/brcmfmac/cfg80211.c
+@@ -658,6 +658,24 @@ static bool brcmf_is_ibssmode(struct brcmf_cfg80211_vif *vif)
+ 	return vif->wdev.iftype == NL80211_IFTYPE_ADHOC;
+ }
+ 
++/* NEXMON */
++static s32
++brcmf_cfg80211_nexmon_set_channel(struct wiphy *wiphy,struct cfg80211_chan_def *chandef) {
++    struct brcmf_cfg80211_info *cfg = wiphy_to_cfg(wiphy);
++    struct brcmf_if *ifp = netdev_priv(cfg_to_ndev(cfg));
++    s32 err = 0;
++    u16 chanspec;
++
++    //brcmf_err("DEBUG NexMon: brcmf_cfg80211_nexmon_set_channel() called!\n");
++    chanspec = chandef_to_chanspec(&cfg->d11inf, chandef);
++    err = brcmf_fil_iovar_int_set(ifp, "chanspec", chanspec);
++    if (err < 0) {
++        brcmf_err("Set Channel failed: chspec=%d, %d\n",
++              chanspec, err);
++    }
++    return 0;
++}
++
+ static struct wireless_dev *brcmf_cfg80211_add_iface(struct wiphy *wiphy,
+ 						     const char *name,
+ 						     unsigned char name_assign_type,
+@@ -917,6 +935,9 @@ brcmf_cfg80211_change_iface(struct wiphy *wiphy, struct net_device *ndev,
+ 	}
+ 	switch (type) {
+ 	case NL80211_IFTYPE_MONITOR:
++		/* NEXMON */
++		infra = 1;
++		break;
+ 	case NL80211_IFTYPE_WDS:
+ 		brcmf_err("type (%d) : currently we do not support this type\n",
+ 			  type);
+@@ -5232,6 +5253,7 @@ static struct cfg80211_ops brcmf_cfg80211_ops = {
+ 	.crit_proto_start = brcmf_cfg80211_crit_proto_start,
+ 	.crit_proto_stop = brcmf_cfg80211_crit_proto_stop,
+ 	.tdls_oper = brcmf_cfg80211_tdls_oper,
++	.set_monitor_channel = brcmf_cfg80211_nexmon_set_channel,
+ };
+ 
+ struct brcmf_cfg80211_vif *brcmf_alloc_vif(struct brcmf_cfg80211_info *cfg,

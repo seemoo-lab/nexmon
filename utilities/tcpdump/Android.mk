@@ -1,9 +1,12 @@
 LOCAL_PATH:= $(call my-dir)
 
 tcpdump_src_files := \
+  setsignal.c \
+  tcpdump.c \
   addrtoname.c \
+  addrtostr.c \
   af.c \
-  bpf_dump.c \
+  ascii_strcasecmp.c \
   checksum.c \
   cpack.c \
   gmpls.c \
@@ -15,6 +18,7 @@ tcpdump_src_files := \
   nlpid.c \
   oui.c \
   parsenfsfh.c \
+  print.c \
   print-802_11.c \
   print-802_15_4.c \
   print-ah.c \
@@ -54,21 +58,22 @@ tcpdump_src_files := \
   print-ether.c \
   print-fddi.c \
   print-forces.c \
-  print-frag6.c \
   print-fr.c \
+  print-frag6.c \
   print-ftp.c \
   print-geneve.c \
   print-geonet.c \
   print-gre.c \
+  print-hncp.c \
   print-hsrp.c \
   print-http.c \
-  print-icmp6.c \
   print-icmp.c \
+  print-icmp6.c \
   print-igmp.c \
   print-igrp.c \
+  print-ip.c \
   print-ip6.c \
   print-ip6opts.c \
-  print-ip.c \
   print-ipcomp.c \
   print-ipfc.c \
   print-ipnet.c \
@@ -80,6 +85,7 @@ tcpdump_src_files := \
   print-l2tp.c \
   print-lane.c \
   print-ldp.c \
+  print-lisp.c \
   print-llc.c \
   print-lldp.c \
   print-lmp.c \
@@ -88,6 +94,7 @@ tcpdump_src_files := \
   print-lwapp.c \
   print-lwres.c \
   print-m3ua.c \
+  print-medsa.c \
   print-mobile.c \
   print-mobility.c \
   print-mpcp.c \
@@ -97,13 +104,14 @@ tcpdump_src_files := \
   print-msnlb.c \
   print-nflog.c \
   print-nfs.c \
+  print-nsh.c \
   print-ntp.c \
   print-null.c \
   print-olsr.c \
   print-openflow-1.0.c \
   print-openflow.c \
-  print-ospf6.c \
   print-ospf.c \
+  print-ospf6.c \
   print-otv.c \
   print-pgm.c \
   print-pim.c \
@@ -114,6 +122,7 @@ tcpdump_src_files := \
   print-pptp.c \
   print-radius.c \
   print-raw.c \
+  print-resp.c \
   print-rip.c \
   print-ripng.c \
   print-rpki-rtr.c \
@@ -128,7 +137,6 @@ tcpdump_src_files := \
   print-sl.c \
   print-sll.c \
   print-slow.c \
-  print-smb.c \
   print-smtp.c \
   print-snmp.c \
   print-stp.c \
@@ -150,21 +158,23 @@ tcpdump_src_files := \
   print-vrrp.c \
   print-vtp.c \
   print-vxlan.c \
+  print-vxlan-gpe.c \
   print-wb.c \
   print-zephyr.c \
   print-zeromq.c \
-  setsignal.c \
+  netdissect.c \
   signature.c \
+  strtoaddr.c \
+  util-print.c \
+  print-smb.c \
   smbutil.c \
-  tcpdump.c \
-  util.c \
   version.c \
 
 include $(CLEAR_VARS)
 LOCAL_SRC_FILES := $(tcpdump_src_files)
 LOCAL_CFLAGS += -DHAVE_CONFIG_H
 LOCAL_CFLAGS += -D_U_="__attribute__((unused))"
-LOCAL_CFLAGS += -Werror
+#LOCAL_CFLAGS += -Werror
 LOCAL_STATIC_LIBRARIES += libpcap libssl libcrypto
 LOCAL_MODULE_PATH := $(TARGET_OUT_OPTIONAL_EXECUTABLES)
 LOCAL_MODULE_TAGS := debug

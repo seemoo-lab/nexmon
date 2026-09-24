@@ -20,6 +20,7 @@ package de.tu_darmstadt.seemoo.nexmon.sharky;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.io.DataOutputStream;
@@ -44,7 +45,7 @@ public class Packet implements Parcelable {
         }
     };
     public int _number;
-    public int _encap;
+    public LinkType _encap;
     public int _headerLen;
     public int _dataLen;
     public byte[] _rawHeader;
@@ -55,13 +56,59 @@ public class Packet implements Parcelable {
     private Hashtable<String, ProtoNode> table = null;
     public static AtomicBoolean blocked = new AtomicBoolean(false);
 
-    public final static int WTAP_LINKTYPE_RADIOTAP = 23;
-    public final static int WTAP_LINKTYPE_ETHERNET = 1;
-    public final static int PCAP_LINKTYPE_RADIOTAP = 127;
-    public final static int PCAP_LINKTYPE_ETHERNET = 1;
+    public enum LinkType {
+        IEEE_802_11(20, 105),
+        IEEE_802_11_WLAN_RADIOTAP(23, 127),
+        IEEE_ETHERNET(1, 1);
+
+        private int wtap;
+        private int pcap;
+
+        private LinkType(int wtap, int pcap) {
+            this.wtap = wtap;
+            this.pcap = pcap;
+        }
+
+        public int getWtapLinktype() {
+            return wtap;
+        }
+
+        public int getPcapLinktype() {
+            return pcap;
+        }
+
+        @Nullable
+        public static LinkType getLinktypeFromPcapValue(int pcapLinktype) {
+            for (LinkType l : LinkType.values()) {
+                if (l.getPcapLinktype() == pcapLinktype) {
+                    return l;
+                }
+            }
+
+            return null;
+        }
+
+        @Nullable
+        public static LinkType getLinktypeFromWtapValue(int wtapLinktype) {
+            for (LinkType l : LinkType.values()) {
+                if (l.getWtapLinktype() == wtapLinktype) {
+                    return l;
+                }
+            }
+
+            return null;
+        }
+    }
+
+//    public final static int WTAP_ENCAP_IEEE_802_11 = 20;
+//    public final static int WTAP_ENCAP_IEEE_802_11_WLAN_RADIOTAP = 23;
+//    public final static int WTAP_ENCAP_ETHERNET = 1;
+//    public final static int PCAP_LINKTYPE_IEEE802_11 = 105;
+//    public final static int PCAP_LINKTYPE_RADIOTAP = 127;
+//    public final static int PCAP_LINKTYPE_ETHERNET = 1;
 
 
-    public Packet(int encap) {
+    public Packet(LinkType encap) {
         _rawHeader = null;
         _rawData = null;
         _encap = encap;
@@ -71,7 +118,7 @@ public class Packet implements Parcelable {
     }
 
     private Packet(Parcel in) {
-        _encap = in.readInt();
+        _encap = LinkType.getLinktypeFromWtapValue(in.readInt());
         _headerLen = in.readInt();
         _dataLen = in.readInt();
 
@@ -90,7 +137,7 @@ public class Packet implements Parcelable {
     }
 
     public void writeToParcel(Parcel out, int flags) {
-        out.writeInt(_encap);
+        out.writeInt(_encap.getWtapLinktype());
         out.writeInt(_headerLen);
         out.writeInt(_dataLen);
         out.writeByteArray(_rawHeader);
@@ -111,7 +158,8 @@ public class Packet implements Parcelable {
         if (_dissection_ptr != -1)  // packet is already dissected
             return true;
 
-        _dissection_ptr = dissectPacket(_rawHeader, _rawData, _encap);
+        //Log.d("PKT", _rawHeader + " " + _rawData + " " + _encap);
+        _dissection_ptr = dissectPacket(_rawHeader, _rawData, _encap.getWtapLinktype());
 
 
         if (_dissection_ptr == -1)

@@ -45,8 +45,15 @@ extern const struct ieee80211_radiotap_namespace radiotap_ns;
 #define PKTHDR_RADIOTAP_VERSION     0
 
 struct tsf {
-    unsigned int tsf_l;
-    unsigned int tsf_h;
+    uint32 tsf_l;
+    uint32 tsf_h;
+} __attribute__((packed));
+
+struct xchan {
+    uint32 xchannel_flags;
+    uint16 xchannel_freq;
+    uint8 xchannel_channel;
+    uint8 xchannel_maxpower;
 } __attribute__((packed));
 
 /* A generic radio capture format is desirable. There is one for
@@ -185,6 +192,17 @@ struct ieee80211_radiotap_header {
  *
  *     Number of unicast retries a transmitted frame used.
  *
+ * IEEE80211_RADIOTAP_XCHANNEL          uint32_t        bitmap
+ *                                      uint16_t        MHz
+ *                                      uint8_t         channel number
+ *                                      int8_t          .5 dBm
+ *
+ *      Extended channel specification: flags (see below) followed by
+ *      frequency in MHz, the corresponding IEEE channel number, and
+ *      finally the maximum regulatory transmit power cap in .5 dBm
+ *      units.  This property supersedes IEEE80211_RADIOTAP_CHANNEL
+ *      and only one of the two should be present.
+ *
  * IEEE80211_RADIOTAP_MCS               u8, u8, u8      unitless
  *
  *     Contains a bitmap of known fields/flags, the flags, and
@@ -221,11 +239,12 @@ enum ieee80211_radiotap_type {
     IEEE80211_RADIOTAP_TX_FLAGS = 15,
     IEEE80211_RADIOTAP_RTS_RETRIES = 16,
     IEEE80211_RADIOTAP_DATA_RETRIES = 17,
-
+    IEEE80211_RADIOTAP_XCHANNEL = 18,    
     IEEE80211_RADIOTAP_MCS = 19,
     IEEE80211_RADIOTAP_AMPDU_STATUS = 20,
     IEEE80211_RADIOTAP_VHT = 21,
     IEEE80211_RADIOTAP_TIMESTAMP = 22,
+    IEEE80211_RADIOTAP_HE = 23,
 
     /* valid in every it_present bitmap, even vendor namespaces */
     IEEE80211_RADIOTAP_RADIOTAP_NAMESPACE = 29,
@@ -234,18 +253,36 @@ enum ieee80211_radiotap_type {
 };
 
 /* Channel flags. */
-#define IEEE80211_CHAN_TURBO    0x0010  /* Turbo channel */
-#define IEEE80211_CHAN_CCK  0x0020  /* CCK channel */
-#define IEEE80211_CHAN_OFDM 0x0040  /* OFDM channel */
-#define IEEE80211_CHAN_2GHZ 0x0080  /* 2 GHz spectrum channel. */
-#define IEEE80211_CHAN_5GHZ 0x0100  /* 5 GHz spectrum channel */
-#define IEEE80211_CHAN_PASSIVE  0x0200  /* Only passive scan allowed */
-#define IEEE80211_CHAN_DYN  0x0400  /* Dynamic CCK-OFDM channel */
-#define IEEE80211_CHAN_GFSK 0x0800  /* GFSK channel (FHSS PHY) */
-#define IEEE80211_CHAN_GSM  0x1000  /* GSM (900 MHz) */
-#define IEEE80211_CHAN_STURBO   0x2000  /* Static Turbo */
-#define IEEE80211_CHAN_HALF 0x4000  /* Half channel (10 MHz wide) */
-#define IEEE80211_CHAN_QUARTER  0x8000  /* Quarter channel (5 MHz wide) */
+#define IEEE80211_CHAN_PRIV0    0x00000001 /* driver private bit 0 */
+#define IEEE80211_CHAN_PRIV1    0x00000002 /* driver private bit 1 */
+#define IEEE80211_CHAN_PRIV2    0x00000004 /* driver private bit 2 */
+#define IEEE80211_CHAN_PRIV3    0x00000008 /* driver private bit 3 */
+#define IEEE80211_CHAN_TURBO    0x00000010 /* Turbo channel */
+#define IEEE80211_CHAN_CCK  0x00000020 /* CCK channel */
+#define IEEE80211_CHAN_OFDM 0x00000040 /* OFDM channel */
+#define IEEE80211_CHAN_2GHZ 0x00000080 /* 2 GHz spectrum channel. */
+#define IEEE80211_CHAN_5GHZ 0x00000100 /* 5 GHz spectrum channel */
+#define IEEE80211_CHAN_PASSIVE  0x00000200 /* Only passive scan allowed */
+#define IEEE80211_CHAN_DYN  0x00000400 /* Dynamic CCK-OFDM channel */
+#define IEEE80211_CHAN_GFSK 0x00000800 /* GFSK channel (FHSS PHY) */
+#define IEEE80211_CHAN_GSM  0x00001000 /* 900 MHz spectrum channel */
+#define IEEE80211_CHAN_STURBO   0x00002000 /* 11a static turbo channel only */
+#define IEEE80211_CHAN_HALF 0x00004000 /* Half rate channel */
+#define IEEE80211_CHAN_QUARTER  0x00008000 /* Quarter rate channel */
+#define IEEE80211_CHAN_HT20 0x00010000 /* HT 20 channel */
+#define IEEE80211_CHAN_HT40U    0x00020000 /* HT 40 channel w/ ext above */
+#define IEEE80211_CHAN_HT40D    0x00040000 /* HT 40 channel w/ ext below */
+#define IEEE80211_CHAN_DFS  0x00080000 /* DFS required */
+#define IEEE80211_CHAN_4MSXMIT  0x00100000 /* 4ms limit on frame length */
+#define IEEE80211_CHAN_NOADHOC  0x00200000 /* adhoc mode not allowed */
+#define IEEE80211_CHAN_NOHOSTAP 0x00400000 /* hostap mode not allowed */
+#define IEEE80211_CHAN_11D  0x00800000 /* 802.11d required */
+#define IEEE80211_CHAN_VHT20    0x01000000 /* VHT20 channel */
+#define IEEE80211_CHAN_VHT40U   0x02000000 /* VHT40 channel, ext above */
+#define IEEE80211_CHAN_VHT40D   0x04000000 /* VHT40 channel, ext below */
+#define IEEE80211_CHAN_VHT80    0x08000000 /* VHT80 channel */
+#define IEEE80211_CHAN_VHT80_80 0x10000000 /* VHT80+80 channel */
+#define IEEE80211_CHAN_VHT160   0x20000000 /* VHT160 channel */
 
 /* For IEEE80211_RADIOTAP_FLAGS */
 #define IEEE80211_RADIOTAP_F_CFP    0x01    /* sent/received

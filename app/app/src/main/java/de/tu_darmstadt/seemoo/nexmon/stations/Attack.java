@@ -4,9 +4,6 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.text.SpannableStringBuilder;
 
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.analytics.Tracker;
-
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,11 +30,6 @@ public abstract class Attack implements Runnable {
     public static final String ATTACK_UPC = "Upc";
     public static final String ATTACK_REAVER = "Reaver";
     public static final String ATTACK_WPA_DICT = "WpaDict";
-
-
-
-
-
 
     public static final String ATTACK_ID = "attack_id";
     public static final String ATTACK_UPDATE_REASON = "attack_update_reason";
@@ -169,8 +161,6 @@ public abstract class Attack implements Runnable {
         intent.putExtra("status", STATUS_RUNNING);
         MyApplication.getAppContext().sendBroadcast(intent);
 
-        trackAttack();
-
         doAttack();
 
         finishTime = System.currentTimeMillis();
@@ -180,16 +170,6 @@ public abstract class Attack implements Runnable {
         intent.putExtra("text", "Attack is finished!");
         intent.putExtra("status", STATUS_FINISHED);
         MyApplication.getAppContext().sendBroadcast(intent);
-    }
-
-    private void trackAttack() {
-        // Get tracker.
-        Tracker t = MyApplication.getDefaultTracker();
-        // Build and send an Event.
-        t.send(new HitBuilders.EventBuilder()
-                .setCategory("Attack")
-                .setAction(getName())
-                .build());
     }
 
     public int getGuid() {

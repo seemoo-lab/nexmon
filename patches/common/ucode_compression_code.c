@@ -46,6 +46,10 @@
 #include <patcher.h>            // macros used to craete patches such as BLPatch, BPatch, ...
 #include <objmem.h>             // Functions to access object memory
 
+#define OBJADDR_UCM_SEL   0x00000000
+#define OBJADDR_UCMX_SEL  0x00080000
+
+
 extern unsigned char ucode_compressed_bin[];
 extern unsigned int ucode_compressed_bin_len;
 
@@ -56,7 +60,7 @@ extern unsigned int ucode_compressed_bin_len;
 void
 tinflate_write_objmem(void *out_base, unsigned long idx, unsigned char value)
 {
-    wlc_bmac_write_objmem_byte((struct wlc_hw_info *) out_base, idx, value, 0);
+    wlc_bmac_write_objmem_byte((struct wlc_hw_info *) out_base, idx, value, OBJADDR_UCM_SEL);
 }
 
 /**
@@ -66,9 +70,28 @@ tinflate_write_objmem(void *out_base, unsigned long idx, unsigned char value)
 unsigned char
 tinflate_read_objmem(void *out_base, unsigned long idx)
 {
-    return wlc_bmac_read_objmem_byte((struct wlc_hw_info *) out_base, idx, 0);
+    return wlc_bmac_read_objmem_byte((struct wlc_hw_info *) out_base, idx, OBJADDR_UCM_SEL);
 }
 
+/**
+ *  Function used by tinflate_partial to write a byte to an address in the output buffer
+ *  here it is implemented to directly write to the object memory of the d11 core
+ */
+void
+tinflate_write_objmemx(void *out_base, unsigned long idx, unsigned char value)
+{
+    wlc_bmac_write_objmem_byte((struct wlc_hw_info *) out_base, idx, value, OBJADDR_UCMX_SEL);
+}
+
+/**
+ *  Function used by tinflate_partial to read a byte from an address in the output buffer
+ *  here it is implemented to directly read from the object memory of the d11 core
+ */
+unsigned char
+tinflate_read_objmemx(void *out_base, unsigned long idx)
+{
+    return wlc_bmac_read_objmem_byte((struct wlc_hw_info *) out_base, idx, OBJADDR_UCMX_SEL);
+}
 
 /*
  * tinflate.c -- tiny inflate library
@@ -949,6 +972,33 @@ wlc_ucode_write_compressed(struct wlc_hw_info *wlc_hw, const int ucode[], const 
 {
     /* state: Decompression state buffer to pass to tinflate_block(). */
     DecompressionState state;
+    printf("Decompressing ucode at %p (len: %d) at %p\n", ucode_compressed_bin, ucode_compressed_bin_len, wlc_hw);
+    /**** Clear decompression state buffer. ****/
+    state.state     = INITIAL;
+    state.out_ofs   = 0;
+    state.bit_accum = 0;
+    state.num_bits  = 0;
+    state.final     = 0;
+    /* No other fields need to be cleared. */
+
+    /**** Call tinflate_partial() to do the actual decompression. ****/
+    int res = tinflate_partial(ucode_compressed_bin, ucode_compressed_bin_len,
+        wlc_hw,
+#ifdef TINFLATE_OUTPUT_SIZE
+        TINFLATE_OUTPUT_SIZE,
+#else
+        100000,
+#endif
+        0, &state, sizeof(state), tinflate_write_objmem, tinflate_read_objmem);
+    printf("Decompression res:%d\n", res);
+    
+}
+
+void
+wlc_ucode_write_compressed_args(struct wlc_hw_info *wlc_hw, const int ucode[], const unsigned int nbytes)
+{
+    /* state: Decompression state buffer to pass to tinflate_block(). */
+    DecompressionState state;
 
     /**** Clear decompression state buffer. ****/
     state.state     = INITIAL;
@@ -959,6 +1009,37 @@ wlc_ucode_write_compressed(struct wlc_hw_info *wlc_hw, const int ucode[], const 
     /* No other fields need to be cleared. */
 
     /**** Call tinflate_partial() to do the actual decompression. ****/
-    tinflate_partial(ucode_compressed_bin, ucode_compressed_bin_len,
-        wlc_hw, 100000, 0, &state, sizeof(state), tinflate_write_objmem, tinflate_read_objmem);
+    tinflate_partial(ucode, nbytes,
+        wlc_hw,
+#ifdef TINFLATE_OUTPUT_SIZE
+        TINFLATE_OUTPUT_SIZE,
+#else
+        100000,
+#endif
+        0, &state, sizeof(state), tinflate_write_objmem, tinflate_read_objmem);
+}
+
+void
+wlc_ucodex_write_compressed_args(struct wlc_hw_info *wlc_hw, const int ucodex[], const unsigned int nbytes)
+{
+    /* state: Decompression state buffer to pass to tinflate_block(). */
+    DecompressionState state;
+
+    /**** Clear decompression state buffer. ****/
+    state.state     = INITIAL;
+    state.out_ofs   = 0;
+    state.bit_accum = 0;
+    state.num_bits  = 0;
+    state.final     = 0;
+    /* No other fields need to be cleared. */
+
+    /**** Call tinflate_partial() to do the actual decompression. ****/
+    tinflate_partial(ucodex, nbytes,
+        wlc_hw,
+#ifdef TINFLATE_OUTPUT_SIZE
+        TINFLATE_OUTPUT_SIZE,
+#else
+        100000,
+#endif
+        0, &state, sizeof(state), tinflate_write_objmemx, tinflate_read_objmemx);
 }

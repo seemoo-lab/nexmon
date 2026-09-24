@@ -10,8 +10,6 @@ import android.content.IntentFilter;
 import android.graphics.drawable.Icon;
 import android.os.IBinder;
 
-import com.google.android.gms.analytics.HitBuilders;
-import com.google.android.gms.analytics.Tracker;
 import com.google.gson.Gson;
 
 import java.util.HashMap;
@@ -81,25 +79,12 @@ public class AttackService extends Service {
                         showNotification(attack, attack.getTypeString(), attackText);
 
                         if(status == Attack.STATUS_FINISHED) {
-                            Tracker tracker = MyApplication.getDefaultTracker();
-
-                            tracker.send(new HitBuilders.TimingBuilder()
-                                    .setCategory("Runtime")
-                                    .setVariable(attack.getName())
-                                    .setValue(attack.getFinishTime() - attack.getStartTime())
-                                    .build());
-
 
                             attacks.remove(attackId);
                             broadcastInstances();
                             evaluateMonitorModeNeed();
                             if(attack.isCanceled) {
                                 MyApplication.getNotificationManager().cancel(attackId);
-                                tracker.send(new HitBuilders.TimingBuilder()
-                                        .setCategory("Cancel Duration")
-                                        .setVariable(attack.getName())
-                                        .setValue(attack.getFinishTime() - attack.getCancelTime())
-                                        .build());
                             }
                         }
                     }
