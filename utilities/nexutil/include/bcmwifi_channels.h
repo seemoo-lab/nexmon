@@ -669,6 +669,11 @@ char * wf_chspec_ntoa(chanspec_t chspec, char *buf);
 chanspec_t wf_chspec_aton(const char *a);
 
 /**
+ * Verify if the chanspec primary 20MHz channel is a 6GHz Preferred Scanning Channel (PSC).
+ */
+bool wf_chspec_is_6g_psc(chanspec_t chspec);
+
+/**
  * Verify the chanspec fields are valid for a chanspec_t
  */
 bool wf_chspec_malformed(chanspec_t chanspec);

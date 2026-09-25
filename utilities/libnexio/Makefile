@@ -22,13 +22,14 @@ ifeq ($(USE_VENDOR_CMD),1)
 	gcc -c libnexio.c -o libnexio.o -DUSE_VENDOR_CMD -DVERSION=\"$(GIT_VERSION)\" -I../../patches/include $(shell pkg-config --cflags --libs libnl-3.0 libnl-genl-3.0)
 else
 	gcc -std=gnu11 -fcommon -c libnexio.c -o libnexio.o -DBUILD_ON_RPI -DVERSION=\"$(GIT_VERSION)\" -I../../patches/include
+	gcc -shared -fPIC -std=gnu11 -fcommon -DBUILD_ON_RPI -DVERSION=\"$(GIT_VERSION)\" -I../nexutil/include -I../../patches/include libnexio.c ../nexutil/bcmwifi_channels.c ../nexutil/bcmutils.c -o libnexio.so
 endif
 	ar rcs libnexio.a libnexio.o
 endif
 
 clean:
 	rm -Rf libs
-	rm -Rf local libnexio.o libnexio.a
+	rm -Rf local libnexio.o libnexio.a libnexio.so
 
 install:
 	@echo "nothing to install ..."

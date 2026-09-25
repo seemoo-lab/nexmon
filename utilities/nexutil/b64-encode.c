@@ -30,6 +30,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "b64.h"
 
 char *
@@ -38,15 +39,29 @@ b64_encode (const unsigned char *src, size_t len) {
   int j = 0;
   char *enc = NULL;
   size_t size = 0;
+  size_t out_len;
   unsigned char buf[4];
   unsigned char tmp[3];
 
-  // alloc
-  enc = (char *) b64_malloc(1);
-  if (NULL == enc) { return NULL; }
+  if (NULL == src) {
+    return NULL;
+  }
+
+  /* Prevent integer overflow when computing output length */
+  if (len > (SIZE_MAX - 4) / 4 * 3) {
+    return NULL;
+  }
+
+  /* Exact base64 output size: 4 chars per 3 input bytes, plus 1 null terminator */
+  out_len = 4 * ((len + 2) / 3) + 1;
+  enc = (char *) b64_malloc(out_len);
+  if (NULL == enc) {
+    return NULL;
+  }
 
   // parse until end of source
-  while (len--) {
+  while (len > 0) {
+    len--;
     // read up to 3 bytes at a time into `tmp'
     tmp[i++] = *(src++);
 
@@ -57,11 +72,6 @@ b64_encode (const unsigned char *src, size_t len) {
       buf[2] = ((tmp[1] & 0x0f) << 2) + ((tmp[2] & 0xc0) >> 6);
       buf[3] = tmp[2] & 0x3f;
 
-      // allocate 4 new byts for `enc` and
-      // then translate each encoded buffer
-      // part by index from the base 64 index table
-      // into `enc' unsigned char array
-      enc = (char *) b64_realloc(enc, size + 4);
       for (i = 0; i < 4; ++i) {
         enc[size++] = b64_table[buf[i]];
       }
@@ -84,22 +94,19 @@ b64_encode (const unsigned char *src, size_t len) {
     buf[2] = ((tmp[1] & 0x0f) << 2) + ((tmp[2] & 0xc0) >> 6);
     buf[3] = tmp[2] & 0x3f;
 
-    // perform same write to `enc` with new allocation
+    // perform same write to `enc`
     for (j = 0; (j < i + 1); ++j) {
-      enc = (char *) b64_realloc(enc, size + 1);
       enc[size++] = b64_table[buf[j]];
     }
 
     // while there is still a remainder
     // append `=' to `enc'
     while ((i++ < 3)) {
-      enc = (char *) b64_realloc(enc, size + 1);
       enc[size++] = '=';
     }
   }
 
-  // Make sure we have enough space to add '\0' character at end.
-  enc = (char *) b64_realloc(enc, size + 1);
+  // Add '\0' character at end.
   enc[size] = '\0';
 
   return enc;

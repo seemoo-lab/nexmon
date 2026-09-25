@@ -46,12 +46,25 @@ b64_decode_ex (const char *src, size_t len, size_t *decsize) {
   int l = 0;
   size_t size = 0;
   unsigned char *dec = NULL;
+  unsigned char *new_dec = NULL;
   unsigned char buf[3];
   unsigned char tmp[4];
 
+  if (NULL == src) {
+    if (decsize != NULL) {
+      *decsize = 0;
+    }
+    return NULL;
+  }
+
   // alloc
   dec = (unsigned char *) b64_malloc(1);
-  if (NULL == dec) { return NULL; }
+  if (NULL == dec) {
+    if (decsize != NULL) {
+      *decsize = 0;
+    }
+    return NULL;
+  }
 
   // parse until end of source
   while (len--) {
@@ -81,12 +94,17 @@ b64_decode_ex (const char *src, size_t len, size_t *decsize) {
       buf[2] = ((tmp[2] & 0x3) << 6) + tmp[3];
 
       // write decoded buffer to `dec'
-      dec = (unsigned char *) b64_realloc(dec, size + 3);
-      if (dec != NULL){
+      new_dec = (unsigned char *) b64_realloc(dec, size + 3);
+      if (new_dec != NULL) {
+        dec = new_dec;
         for (i = 0; i < 3; ++i) {
           dec[size++] = buf[i];
         }
       } else {
+        b64_free(dec);
+        if (decsize != NULL) {
+          *decsize = 0;
+        }
         return NULL;
       }
 
@@ -119,21 +137,31 @@ b64_decode_ex (const char *src, size_t len, size_t *decsize) {
     buf[2] = ((tmp[2] & 0x3) << 6) + tmp[3];
 
     // write remainer decoded buffer to `dec'
-    dec = (unsigned char *) b64_realloc(dec, size + (i - 1));
-    if (dec != NULL){
+    new_dec = (unsigned char *) b64_realloc(dec, size + (i - 1));
+    if (new_dec != NULL) {
+      dec = new_dec;
       for (j = 0; (j < i - 1); ++j) {
         dec[size++] = buf[j];
       }
     } else {
+      b64_free(dec);
+      if (decsize != NULL) {
+        *decsize = 0;
+      }
       return NULL;
     }
   }
 
   // Make sure we have enough space to add '\0' character at end.
-  dec = (unsigned char *) b64_realloc(dec, size + 1);
-  if (dec != NULL){
+  new_dec = (unsigned char *) b64_realloc(dec, size + 1);
+  if (new_dec != NULL) {
+    dec = new_dec;
     dec[size] = '\0';
   } else {
+    b64_free(dec);
+    if (decsize != NULL) {
+      *decsize = 0;
+    }
     return NULL;
   }
 
