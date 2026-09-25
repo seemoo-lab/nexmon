@@ -178,7 +178,9 @@ endif
 
 backup-firmware:
 ifeq ($(shell uname -m),$(filter $(shell uname -m), armv6l armv7l aarch64))
-	cp /lib/firmware/brcm/$(RAM_FILE) $(RAM_FILE).orig
+#	cp /lib/firmware/brcm/$(RAM_FILE) $(RAM_FILE).orig
+	cp /lib/firmware/brcm/brcmfmac43455-sdio.raspberrypi,5-model-b.bin brcmfmac43455-sdio.raspberrypi,5-model-b.bin.orig
+
 else
 	$(warning Warning: Cannot backup the original firmware on this arch.)
 endif
