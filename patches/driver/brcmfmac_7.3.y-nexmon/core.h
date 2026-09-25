@@ -128,6 +128,13 @@ struct brcmf_pub {
 	s32 if2bss[BRCMF_MAX_IFS];
 	struct brcmf_if *mon_if;
 
+	bool nexmon_saved_pm_valid;
+	bool nexmon_saved_txpwr_valid;
+	bool nexmon_saved_mpc_valid;
+	u32 nexmon_saved_pm;
+	u32 nexmon_saved_txpwr;
+	u32 nexmon_saved_mpc;
+
 	struct mutex proto_block;
 	unsigned char proto_buf[BRCMF_DCMD_MAXLEN];
 
@@ -149,6 +156,7 @@ struct brcmf_pub {
 	struct brcmf_mp_device *settings;
 
 	struct work_struct bus_reset;
+	struct work_struct mon_restore_work;
 
 	u8 clmver[BRCMF_DCMD_SMLEN];
 };
@@ -228,6 +236,9 @@ void brcmf_netif_mon_rx(struct brcmf_if *ifp, struct sk_buff *skb);
 void brcmf_net_detach(struct net_device *ndev, bool locked);
 int brcmf_net_mon_attach(struct brcmf_if *ifp);
 void brcmf_net_setcarrier(struct brcmf_if *ifp, bool on);
+bool brcmf_nexmon_monitor_running(struct brcmf_pub *drvr);
+void nexmon_mon_restore_set_chanspec(u16 chanspec);
+u16 nexmon_mon_restore_get_chanspec(void);
 int __init brcmf_core_init(void);
 void __exit brcmf_core_exit(void);
 

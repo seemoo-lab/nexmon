@@ -87,6 +87,7 @@
 
 #define BRCMU_CHAN_BAND_2G		0
 #define BRCMU_CHAN_BAND_5G		1
+#define BRCMU_CHAN_BAND_6G		2
 
 enum brcmu_chan_bw {
 	BRCMU_CHAN_BW_20,

@@ -720,6 +720,7 @@ static struct wireless_dev *brcmf_mon_add_vif(struct wiphy *wiphy, const char *n
 	err = brcmf_net_mon_attach(ifp);
 	if (err) {
 		brcmf_err("Registering netdevice failed\n");
+		free_netdev(ifp->ndev);
 		goto fail;
 	}
 
@@ -731,6 +732,8 @@ static struct wireless_dev *brcmf_mon_add_vif(struct wiphy *wiphy, const char *n
 	return &ifp->vif->wdev;
 
  fail:
+	if (vif->ifp)
+		cfg->pub->iflist[vif->ifp->bsscfgidx] = NULL;
 	brcmf_free_vif(vif);
 	return ERR_PTR(err);
 }
@@ -817,6 +820,10 @@ brcmf_cfg80211_nexmon_set_channel(struct wiphy *wiphy, struct net_device *, stru
 	}
 
 	chanspec = chandef_to_chanspec(&cfg->d11inf, chandef);
+	if (chanspec == INVCHANSPEC || chanspec == 0) {
+		brcmf_err("Set Channel rejected: invalid chanspec (0x%04x)\n", chanspec);
+		return -EINVAL;
+	}
 
 	/* Propagate the real result: this used to return 0 unconditionally, so
 	 * a caller like bettercap's channel hopper had no way to know a hop
@@ -885,6 +892,21 @@ void brcmf_set_mpc(struct brcmf_if *ifp, int mpc)
 		}
 		brcmf_dbg(INFO, "MPC : %d\n", mpc);
 	}
+}
+
+bool brcmf_is_apmode_operating(struct wiphy *wiphy)
+{
+	struct brcmf_cfg80211_info *cfg = wiphy_to_cfg(wiphy);
+	struct brcmf_cfg80211_vif *vif;
+	bool ret = false;
+
+	list_for_each_entry(vif, &cfg->vif_list, list) {
+		if (brcmf_is_apmode(vif) &&
+		    test_bit(BRCMF_VIF_STATUS_AP_CREATED, &vif->sme_state))
+			ret = true;
+	}
+
+	return ret;
 }
 
 s32 brcmf_notify_escan_complete(struct brcmf_cfg80211_info *cfg,
@@ -1953,6 +1975,10 @@ brcmf_set_key_mgmt(struct net_device *ndev, struct cfg80211_connect_params *sme)
 			if (sme->crypto.sae_pwd) {
 				brcmf_dbg(INFO, "using SAE offload\n");
 				profile->use_fwsup = BRCMF_PROFILE_FWSUP_SAE;
+			} else if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_FWSUP) &&
+				   brcmf_feat_is_enabled(ifp, BRCMF_FEAT_SAE_EXT)) {
+				brcmf_dbg(INFO, "using EXTSAE with PSK offload\n");
+				profile->use_fwsup = BRCMF_PROFILE_FWSUP_PSK;
 			}
 			break;
 		case WLAN_AKM_SUITE_FT_OVER_SAE:
@@ -5160,8 +5186,8 @@ static int brcmf_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *ndev,
 			bphy_err(drvr, "bss_enable config failed %d\n", err);
 	}
 	brcmf_set_mpc(ifp, 1);
-	brcmf_configure_arp_nd_offload(ifp, true);
 	clear_bit(BRCMF_VIF_STATUS_AP_CREATED, &ifp->vif->sme_state);
+	brcmf_configure_arp_nd_offload(ifp, true);
 	brcmf_net_setcarrier(ifp, false);
 
 	return err;
@@ -5489,6 +5515,12 @@ static int brcmf_cfg80211_get_channel(struct wiphy *wiphy,
 	case BRCMU_CHAN_BAND_5G:
 		band = NL80211_BAND_5GHZ;
 		break;
+	case BRCMU_CHAN_BAND_6G:
+		band = NL80211_BAND_6GHZ;
+		break;
+	default:
+		brcmf_err("invalid channel band: %u\n", ch.band);
+		return -EINVAL;
 	}
 
 	switch (ch.bw) {
@@ -7409,6 +7441,8 @@ static int brcmf_setup_wiphy(struct wiphy *wiphy, struct brcmf_if *ifp)
 			wiphy_ext_feature_set(wiphy,
 					      NL80211_EXT_FEATURE_SAE_OFFLOAD_AP);
 	}
+	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_SAE_EXT))
+		wiphy->features |= NL80211_FEATURE_SAE;
 	wiphy->mgmt_stypes = brcmf_txrx_stypes;
 	wiphy->max_remain_on_channel_duration = 5000;
 	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_PNO)) {

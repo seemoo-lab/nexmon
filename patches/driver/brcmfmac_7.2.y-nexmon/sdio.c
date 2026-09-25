@@ -1779,10 +1779,13 @@ static int brcmf_sdio_dcmd_resp_wait(struct brcmf_sdio *bus, uint *condition,
 	 * DCMD_RESP_TIMEOUT regardless.
 	 */
 	add_wait_queue(&bus->dcmd_resp_wait, &wait);
-	set_current_state(TASK_KILLABLE);
 
-	while (!(*condition) && (!fatal_signal_pending(current) && timeout))
+	while (!(*condition) && !fatal_signal_pending(current) && timeout) {
+		set_current_state(TASK_KILLABLE);
+		if (*condition || fatal_signal_pending(current))
+			break;
 		timeout = schedule_timeout(timeout);
+	}
 
 	if (fatal_signal_pending(current))
 		*pending = true;
@@ -1795,7 +1798,7 @@ static int brcmf_sdio_dcmd_resp_wait(struct brcmf_sdio *bus, uint *condition,
 
 static int brcmf_sdio_dcmd_resp_wake(struct brcmf_sdio *bus)
 {
-	wake_up_interruptible(&bus->dcmd_resp_wait);
+	wake_up(&bus->dcmd_resp_wait);
 
 	return 0;
 }
@@ -2126,7 +2129,7 @@ static uint brcmf_sdio_readframes(struct brcmf_sdio *bus, uint maxframes)
 static void
 brcmf_sdio_wait_event_wakeup(struct brcmf_sdio *bus)
 {
-	wake_up_interruptible(&bus->ctrl_wait);
+	wake_up(&bus->ctrl_wait);
 	return;
 }
 
@@ -4704,6 +4707,12 @@ struct brcmf_sdio *brcmf_sdio_probe(struct brcmf_sdio_dev *sdiodev)
 fail:
 	brcmf_sdio_remove(bus);
 	return NULL;
+}
+
+void brcmf_sdio_cancel_datawork(struct brcmf_sdio *bus)
+{
+	if (bus)
+		cancel_work_sync(&bus->datawork);
 }
 
 /* Detach and free everything */

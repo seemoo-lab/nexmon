@@ -61,6 +61,27 @@
  * well clear of the odd isolated timeout. */
 #define BRCMF_SDIO_CTL_TIMEOUT_CASCADE	4
 
+/*
+ * Dump the control-path state on every ctrl_frame timeout. The one-line summary
+ * cannot distinguish "the DPC never wrote the frame to the device" from "the
+ * frame went out and the firmware never answered", and those have completely
+ * different causes - the first points at the host-side transmit path (flow
+ * control, clock, DPC scheduling), the second at the firmware or the bus.
+ * txctl_ok() is (tx_max - tx_seq) != 0 with bit 7 clear, so tx_max == tx_seq
+ * means the frame was never transmitted at all.
+ *
+ * Everything dumped is in-memory driver state. Reading SDIO registers here
+ * would risk hanging on the very bus being reported as wedged.
+ *
+ * Default on: this is a rare error path that already prints unconditionally,
+ * and the point is that the next wedge is self-documenting. Writable at
+ * runtime via /sys/module/brcmfmac/parameters/txctl_timeout_dump.
+ */
+static bool txctl_timeout_dump = true;
+module_param(txctl_timeout_dump, bool, 0644);
+MODULE_PARM_DESC(txctl_timeout_dump,
+	"Dump SDIO control-path state on every ctrl_frame timeout (default on)");
+
 /* watermark expressed in number of words */
 #define DEFAULT_F2_WATERMARK    0x8
 #define CY_4373_F2_WATERMARK    0x40
@@ -701,15 +722,10 @@ static void pkt_align(struct sk_buff *p, int len, int align)
 /* To check if there's window offered */
 static bool data_ok(struct brcmf_sdio *bus)
 {
-	u8 tx_rsv = 0;
-
-	/* Reserve TXCTL_CREDITS credits for txctl when it is ready to send */
-	if (bus->ctrl_frame_stat)
-		tx_rsv = TXCTL_CREDITS;
-
-	return (bus->tx_max - bus->tx_seq - tx_rsv) != 0 &&
-	       ((bus->tx_max - bus->tx_seq - tx_rsv) & 0x80) == 0;
-
+	/* Unconditionally reserve TXCTL_CREDITS credits for control frames
+	 * so data frames can never starve the control path of SDPCM credits. */
+	return (bus->tx_max - bus->tx_seq) > TXCTL_CREDITS &&
+	       ((bus->tx_max - bus->tx_seq) & 0x80) == 0;
 }
 
 /* To check if there's window offered */
@@ -1756,6 +1772,9 @@ static int brcmf_sdio_dcmd_resp_wait(struct brcmf_sdio *bus, uint *condition,
 	DECLARE_WAITQUEUE(wait, current);
 	int timeout = DCMD_RESP_TIMEOUT;
 
+	if (pending)
+		*pending = false;
+
 	/* Wait uninterruptibly for the response.
 	 *
 	 * This used to be TASK_INTERRUPTIBLE and bail out via *pending as soon
@@ -1779,10 +1798,13 @@ static int brcmf_sdio_dcmd_resp_wait(struct brcmf_sdio *bus, uint *condition,
 	 * DCMD_RESP_TIMEOUT regardless.
 	 */
 	add_wait_queue(&bus->dcmd_resp_wait, &wait);
-	set_current_state(TASK_KILLABLE);
 
-	while (!(*condition) && (!fatal_signal_pending(current) && timeout))
+	while (!(*condition) && !fatal_signal_pending(current) && timeout) {
+		set_current_state(TASK_KILLABLE);
+		if (*condition || fatal_signal_pending(current))
+			break;
 		timeout = schedule_timeout(timeout);
+	}
 
 	if (fatal_signal_pending(current))
 		*pending = true;
@@ -1795,7 +1817,7 @@ static int brcmf_sdio_dcmd_resp_wait(struct brcmf_sdio *bus, uint *condition,
 
 static int brcmf_sdio_dcmd_resp_wake(struct brcmf_sdio *bus)
 {
-	wake_up_interruptible(&bus->dcmd_resp_wait);
+	wake_up(&bus->dcmd_resp_wait);
 
 	return 0;
 }
@@ -2128,7 +2150,7 @@ static uint brcmf_sdio_readframes(struct brcmf_sdio *bus, uint maxframes)
 static void
 brcmf_sdio_wait_event_wakeup(struct brcmf_sdio *bus)
 {
-	wake_up_interruptible(&bus->ctrl_wait);
+	wake_up(&bus->ctrl_wait);
 	return;
 }
 
@@ -2397,9 +2419,14 @@ static uint brcmf_sdio_sendfromq(struct brcmf_sdio *bus, uint maxframes)
 	/* Send frames until the limit or some other event */
 	for (cnt = 0; (cnt < maxframes) && data_ok(bus);) {
 		pkt_num = 1;
-		if (bus->txglom)
-			pkt_num = min_t(u8, bus->tx_max - bus->tx_seq,
-					bus->sdiodev->txglomsz);
+		if (bus->txglom) {
+			u8 avail = bus->tx_max - bus->tx_seq;
+			if (avail > TXCTL_CREDITS)
+				avail -= TXCTL_CREDITS;
+			else
+				avail = 0;
+			pkt_num = min_t(u8, avail, bus->sdiodev->txglomsz);
+		}
 		pkt_num = min_t(u32, pkt_num,
 				brcmu_pktq_mlen(&bus->txq, ~bus->flowcontrol));
 		__skb_queue_head_init(&pktq);
@@ -2748,21 +2775,29 @@ static void brcmf_sdio_dpc(struct brcmf_sdio *bus)
 
 	brcmf_sdio_clrintr(bus);
 
-	if (bus->ctrl_frame_stat && (bus->clkstate == CLK_AVAIL) &&
-	    txctl_ok(bus)) {
-		sdio_claim_host(bus->sdiodev->func1);
-		if (bus->ctrl_frame_stat) {
-			err = brcmf_sdio_tx_ctrlframe(bus,  bus->ctrl_frame_buf,
-						      bus->ctrl_frame_len);
-			bus->ctrl_frame_err = err;
-			wmb();
-			bus->ctrl_frame_stat = false;
-			if (err)
-				brcmf_err("sdio ctrlframe tx failed err=%d\n",
-					  err);
+	if (bus->ctrl_frame_stat && (bus->clkstate == CLK_AVAIL)) {
+		if (!txctl_ok(bus)) {
+			sdio_claim_host(bus->sdiodev->func1);
+			err = brcmf_sdio_intr_rstatus(bus);
+			sdio_release_host(bus->sdiodev->func1);
+			if (atomic_read(&bus->intstatus) & I_HMB_FRAME_IND)
+				brcmf_sdio_readframes(bus, bus->rxbound);
 		}
-		sdio_release_host(bus->sdiodev->func1);
-		brcmf_sdio_wait_event_wakeup(bus);
+		if (txctl_ok(bus)) {
+			sdio_claim_host(bus->sdiodev->func1);
+			if (bus->ctrl_frame_stat) {
+				err = brcmf_sdio_tx_ctrlframe(bus,  bus->ctrl_frame_buf,
+							      bus->ctrl_frame_len);
+				bus->ctrl_frame_err = err;
+				wmb();
+				bus->ctrl_frame_stat = false;
+				if (err)
+					brcmf_err("sdio ctrlframe tx failed err=%d\n",
+						  err);
+			}
+			sdio_release_host(bus->sdiodev->func1);
+			brcmf_sdio_wait_event_wakeup(bus);
+		}
 	}
 	/* Send queued frames (limit 1 if rx may still be pending) */
 	if ((bus->clkstate == CLK_AVAIL) && !atomic_read(&bus->fcstate) &&
@@ -2788,6 +2823,7 @@ static void brcmf_sdio_dpc(struct brcmf_sdio *bus)
 		}
 	} else if (atomic_read(&bus->intstatus) ||
 		   atomic_read(&bus->ipend) > 0 ||
+		   bus->ctrl_frame_stat ||
 		   (!atomic_read(&bus->fcstate) &&
 		    brcmu_pktq_mlen(&bus->txq, ~bus->flowcontrol) &&
 		    data_ok(bus))) {
@@ -3024,6 +3060,31 @@ brcmf_sdio_bus_txctl(struct device *dev, unsigned char *msg, uint msglen)
 	if (sdiodev->state != BRCMF_SDIOD_DATA)
 		return -EIO;
 
+	/*
+	 * Wake the bus before queueing a control frame. Without this the frame
+	 * is queued and the DPC is triggered, but the DPC will not transmit
+	 * while bus->sleeping is set, so the frame sits queued until
+	 * CTL_DONE_TIMEOUT expires. Four of those in a row trip
+	 * brcmf_sdio_ctl_watchdog and force a bus reset.
+	 *
+	 * Captured live by the txctl_timeout_dump instrumentation:
+	 *   tx_max=207 tx_seq=207 txctl_ok=0  -> frame never written
+	 *   ctrl frame: err=0 len=29 buf=still queued
+	 *   dpc: triggered=0 running=0 sleeping=1 clkstate=3 (CLK_AVAIL)
+	 * The clock was up and nothing had failed - the driver simply believed
+	 * the chip was asleep and never sent it. Every other transmit path
+	 * wakes first (brcmf_sdio_dpc, brcmf_sdio_readshared); this one did not.
+	 *
+	 * Only claim the host when actually asleep: brcmf_sdio_bus_sleep()
+	 * re-checks under the claim and returns early if already awake, so the
+	 * unsynchronised read here is a benign optimisation, not a race.
+	 */
+	if (bus->sleeping) {
+		sdio_claim_host(sdiodev->func1);
+		brcmf_sdio_bus_sleep(bus, false, false);
+		sdio_release_host(sdiodev->func1);
+	}
+
 	/* Clear any stale rxctl buffer from a previously cancelled or timed-out dcmd */
 	spin_lock_bh(&bus->rxctl_lock);
 	if (bus->rxctl) {
@@ -3061,7 +3122,39 @@ brcmf_sdio_bus_txctl(struct device *dev, unsigned char *msg, uint msglen)
 	if (bus->ctrl_frame_stat) {
 		sdio_claim_host(bus->sdiodev->func1);
 		if (bus->ctrl_frame_stat) {
-			brcmf_dbg(SDIO, "ctrl_frame timeout\n");
+			u8 pending = bus->tx_max - bus->tx_seq;
+
+			brcmf_err("ctrl_frame timeout: clk=%u tx_max=%u tx_seq=%u txctl_ok=%d dpc=%d\n",
+				  bus->clkstate, bus->tx_max, bus->tx_seq, txctl_ok(bus), bus->dpc_triggered);
+			if (txctl_timeout_dump) {
+				brcmf_err("  tx: tx_max-tx_seq=%u (0x%02x) -> %s\n",
+					  (unsigned int)pending, (unsigned int)pending,
+					  pending == 0 ?
+						"frame NEVER written to the device (host-side tx path stalled)" :
+					  (pending & 0x80) ?
+						"sequence gap has bit7 set (wrap or lost update)" :
+						"frame written, no firmware ack");
+				brcmf_err("  ctrl frame: err=%d len=%u buf=%s\n",
+					  bus->ctrl_frame_err,
+					  (unsigned int)bus->ctrl_frame_len,
+					  bus->ctrl_frame_buf ? "still queued" : "cleared");
+				brcmf_err("  dpc: triggered=%d running=%d sleeping=%d clkstate=%u\n",
+					  bus->dpc_triggered, bus->dpc_running,
+					  bus->sleeping, bus->clkstate);
+				brcmf_err("  rx: rxctl=%s rxlen=%u\n",
+					  bus->rxctl ?
+						"PENDING - a reply arrived but was not matched" : "none",
+					  (unsigned int)bus->rxlen);
+				brcmf_err("  flow: fcstate=%d txbound=%u rxbound=%u txminmax=%u\n",
+					  atomic_read(&bus->fcstate),
+					  (unsigned int)bus->txbound,
+					  (unsigned int)bus->rxbound,
+					  (unsigned int)bus->txminmax);
+				brcmf_err("  watchdog: ctl_err_count=%u/%u before forced reset, sdiodev state=%d\n",
+					  bus->ctl_err_count,
+					  (unsigned int)BRCMF_SDIO_CTL_TIMEOUT_CASCADE,
+					  (int)bus->sdiodev->state);
+			}
 			bus->ctrl_frame_stat = false;
 			ret = -ETIMEDOUT;
 		}
@@ -3353,7 +3446,7 @@ brcmf_sdio_bus_rxctl(struct device *dev, unsigned char *msg, uint msglen)
 	int timeleft;
 	int ret;
 	uint rxlen = 0;
-	bool pending;
+	bool pending = false;
 	u8 *buf;
 	struct brcmf_bus *bus_if = dev_get_drvdata(dev);
 	struct brcmf_sdio_dev *sdiodev = bus_if->bus_priv.sdio;
@@ -3835,7 +3928,7 @@ static void brcmf_sdio_bus_watchdog(struct brcmf_sdio *bus)
 #endif				/* DEBUG */
 
 	/* On idle timeout clear activity flag and/or turn off clock */
-	if (!bus->dpc_triggered) {
+	if (!bus->dpc_triggered && !bus->ctrl_frame_stat) {
 		rmb();
 		if ((!bus->dpc_running) && (bus->idletime > 0) &&
 		    (bus->clkstate == CLK_AVAIL)) {
@@ -4706,6 +4799,12 @@ struct brcmf_sdio *brcmf_sdio_probe(struct brcmf_sdio_dev *sdiodev)
 fail:
 	brcmf_sdio_remove(bus);
 	return NULL;
+}
+
+void brcmf_sdio_cancel_datawork(struct brcmf_sdio *bus)
+{
+	if (bus)
+		cancel_work_sync(&bus->datawork);
 }
 
 /* Detach and free everything */

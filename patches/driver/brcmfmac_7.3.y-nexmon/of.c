@@ -5,6 +5,7 @@
 #include <linux/init.h>
 #include <linux/of.h>
 #include <linux/of_irq.h>
+#include <linux/of_net.h>
 
 #include <defs.h>
 #include "debug.h"
@@ -81,12 +82,14 @@ void brcmf_of_probe(struct device *dev, enum brcmf_bus_type bus_type,
 		/* get rid of '/' in the compatible string to be able to find the FW */
 		len = strlen(tmp) + 1;
 		board_type = devm_kzalloc(dev, len, GFP_KERNEL);
-		strscpy(board_type, tmp, len);
-		for (i = 0; i < board_type[i]; i++) {
-			if (board_type[i] == '/')
-				board_type[i] = '-';
+		if (board_type) {
+			strscpy(board_type, tmp, len);
+			for (i = 0; board_type[i] != '\0'; i++) {
+				if (board_type[i] == '/')
+					board_type[i] = '-';
+			}
+			settings->board_type = board_type;
 		}
-		settings->board_type = board_type;
 
 		of_node_put(root);
 	}
@@ -97,6 +100,13 @@ void brcmf_of_probe(struct device *dev, enum brcmf_bus_type bus_type,
 	err = brcmf_of_get_country_codes(dev, settings);
 	if (err)
 		brcmf_err("failed to get OF country code map (err=%d)\n", err);
+
+	err = of_get_mac_address(np, settings->mac);
+	if (err) {
+		if (err == -EPROBE_DEFER)
+			brcmf_dbg(INFO, "MAC address provider deferred\n");
+		/* Do not abort; continue parsing SDIO drive-strength and interrupts */
+	}
 
 	if (bus_type != BRCMF_BUSTYPE_SDIO)
 		return;

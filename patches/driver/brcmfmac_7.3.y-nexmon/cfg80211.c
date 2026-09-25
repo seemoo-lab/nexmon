@@ -10,6 +10,7 @@
 #include <linux/kernel.h>
 #include <linux/version.h>
 #include <linux/etherdevice.h>
+#include <linux/rtnetlink.h>
 #include <linux/module.h>
 #include <linux/vmalloc.h>
 #include <linux/ctype.h>
@@ -720,6 +721,7 @@ static struct wireless_dev *brcmf_mon_add_vif(struct wiphy *wiphy, const char *n
 	err = brcmf_net_mon_attach(ifp);
 	if (err) {
 		brcmf_err("Registering netdevice failed\n");
+		free_netdev(ifp->ndev);
 		goto fail;
 	}
 
@@ -728,13 +730,82 @@ static struct wireless_dev *brcmf_mon_add_vif(struct wiphy *wiphy, const char *n
 	ifp->ndev->type = ARPHRD_IEEE80211_RADIOTAP;
 	ifp->ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_MONITOR;
 
-	cfg->pub->mon_if = ifp;
+	WRITE_ONCE(cfg->pub->mon_if, ifp);
 
 	return &ifp->vif->wdev;
 
  fail:
+	if (vif->ifp)
+		cfg->pub->iflist[vif->ifp->bsscfgidx] = NULL;
 	brcmf_free_vif(vif);
 	return ERR_PTR(err);
+}
+
+/* Recreate and bring up the monitor vif after a wedge-reset re-probe.
+ *
+ * The SDIO control-DCMD wedge recovery (brcmf_sdio_ctl_watchdog -> bus_reset)
+ * runs brcmf_detach(), which frees the whole stack including the nl80211-added
+ * monitor vif; the card then re-enumerates and re-probes from scratch. This
+ * replays that vif from the driver side once the stack is back, so a name-based
+ * channel hopper (airodump-ng, bettercap) keeps working across recovery instead
+ * of polling an ifidx/netdev that no longer exists.
+ *
+ * It mirrors the nl80211 add_virtual_intf(MONITOR)+link-up path and therefore
+ * takes the same rtnl lock nl80211 would hold: brcmf_mon_add_vif() registers
+ * the netdev (rtnl required) and waits for the firmware BRCMF_E_IF_ADD event,
+ * then dev_open() drives ndo_open -> brcmf_net_mon_open(), which re-applies
+ * MONITOR/PROMISC/PM/qtxpower/mpc on the fresh firmware. Called only from
+ * brcmf_core_mon_restore() (workqueue context, no locks held).
+ */
+int brcmf_mon_restore_vif(struct brcmf_pub *drvr, const char *name)
+{
+	struct brcmf_cfg80211_info *cfg = drvr->config;
+	struct vif_params params = {};
+	struct wireless_dev *wdev;
+	struct brcmf_if *pri_ifp;
+	u16 chspec;
+	int err;
+
+	if (!cfg || !cfg->wiphy)
+		return -ENODEV;
+
+	rtnl_lock();
+
+	/* Userspace (e.g. pwnlib's reload_brcm) may have already recreated the
+	 * monitor interface after seeing wlan0 disappear; don't add a second. */
+	if (READ_ONCE(drvr->mon_if)) {
+		rtnl_unlock();
+		return 0;
+	}
+
+	/* Bring down primary STA interface if an agent (udev/NetworkManager) re-upped it
+	 * during re-probe, so cfg80211 permits channel hopping on the restored monitor vif. */
+	pri_ifp = drvr->iflist[0];
+	if (pri_ifp && pri_ifp->ndev && (pri_ifp->ndev->flags & IFF_UP)) {
+		dev_close(pri_ifp->ndev);
+		wiphy_info(cfg->wiphy, "mon restore: brought primary %s down to allow channel hops\n",
+			   pri_ifp->ndev->name);
+	}
+
+	wdev = brcmf_mon_add_vif(cfg->wiphy, name, &params);
+	if (IS_ERR(wdev)) {
+		err = PTR_ERR(wdev);
+		rtnl_unlock();
+		return err;
+	}
+
+	err = dev_open(wdev->netdev, NULL);
+	if (!err) {
+		chspec = nexmon_mon_restore_get_chanspec();
+		if (chspec && pri_ifp) {
+			s32 set_err = brcmf_fil_iovar_int_set(pri_ifp, "chanspec", chspec);
+			if (!set_err)
+				wiphy_info(cfg->wiphy, "mon restore: restored channel chanspec 0x%04x\n", chspec);
+		}
+	}
+	rtnl_unlock();
+
+	return err;
 }
 
 static struct wireless_dev *brcmf_cfg80211_add_iface(struct wiphy *wiphy,
@@ -819,6 +890,17 @@ brcmf_cfg80211_nexmon_set_channel(struct wiphy *wiphy, struct net_device *, stru
 	}
 
 	chanspec = chandef_to_chanspec(&cfg->d11inf, chandef);
+	if (chanspec == INVCHANSPEC || chanspec == 0) {
+		brcmf_err("Set Channel rejected: invalid chanspec (0x%04x)\n", chanspec);
+		return -EINVAL;
+	}
+
+	if (chandef->chan->flags & IEEE80211_CHAN_DISABLED) {
+		bphy_err_ratelimited(cfg->pub,
+			"Set Channel rejected: chspec 0x%04x (%d MHz) disabled by regulatory domain (check 'iw reg set <country>')\n",
+			chanspec, chandef->chan->center_freq);
+		return -EBADE;
+	}
 
 	/* Propagate the real result: this used to return 0 unconditionally, so
 	 * a caller like bettercap's channel hopper had no way to know a hop
@@ -835,9 +917,18 @@ brcmf_cfg80211_nexmon_set_channel(struct wiphy *wiphy, struct net_device *, stru
 	 */
 	err = brcmf_fil_iovar_int_set(ifp, "chanspec", chanspec);
 	if (err) {
-		brcmf_err("Set Channel failed: chspec=%d, %d\n", chanspec, err);
+		if (err == -EBADE)
+			bphy_err_ratelimited(cfg->pub,
+				"Set Channel failed: chspec=%d, -52 (-EBADE: disallowed by firmware regulatory CLM; check 'iw reg set <country>')\n",
+				chanspec);
+		else if (err != -ERESTARTSYS && err != -EINTR)
+			brcmf_err("Set Channel failed: chspec=%d, %d\n", chanspec, err);
+		else
+			brcmf_dbg(INFO, "Set Channel interrupted by signal: chspec=%d\n", chanspec);
 		return err;
 	}
+
+	nexmon_mon_restore_set_chanspec(chanspec);
 
 	/* PM and mpc are already forced off once in brcmf_net_mon_open() when
 	 * monitor mode is enabled, and nothing on the hop path turns them back
@@ -887,6 +978,21 @@ void brcmf_set_mpc(struct brcmf_if *ifp, int mpc)
 		}
 		brcmf_dbg(INFO, "MPC : %d\n", mpc);
 	}
+}
+
+bool brcmf_is_apmode_operating(struct wiphy *wiphy)
+{
+	struct brcmf_cfg80211_info *cfg = wiphy_to_cfg(wiphy);
+	struct brcmf_cfg80211_vif *vif;
+	bool ret = false;
+
+	list_for_each_entry(vif, &cfg->vif_list, list) {
+		if (brcmf_is_apmode(vif) &&
+		    test_bit(BRCMF_VIF_STATUS_AP_CREATED, &vif->sme_state))
+			ret = true;
+	}
+
+	return ret;
 }
 
 s32 brcmf_notify_escan_complete(struct brcmf_cfg80211_info *cfg,
@@ -1016,7 +1122,7 @@ int brcmf_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	if (ndev) {
 		if (cfg->pub->mon_if && cfg->pub->mon_if->ndev == ndev)
-			cfg->pub->mon_if = NULL;
+			WRITE_ONCE(cfg->pub->mon_if, NULL);
 
 		if (test_bit(BRCMF_SCAN_STATUS_BUSY, &cfg->scan_status) &&
 		    cfg->escan_info.ifp == netdev_priv(ndev))
@@ -1321,6 +1427,28 @@ brcmf_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request)
 	if (test_bit(BRCMF_VIF_STATUS_CONNECTING, &vif->sme_state)) {
 		bphy_err(drvr, "Connecting: status (%lu)\n", vif->sme_state);
 		return -EAGAIN;
+	}
+
+	/* NEXMON: reject scans while a monitor vif is up. brcmf_net_mon_open()
+	 * puts the chip into MONITOR+PROMISC globally on the primary BSS, so an
+	 * "escan" DCMD never gets a control response and times out (-110). Four
+	 * such timeouts trip the SDIO control-DCMD wedge watchdog
+	 * (brcmf_sdio_ctl_watchdog) and force a bus reset, which re-probes and
+	 * replays the monitor vif (brcmf_mon_restore_vif) - so the next scan
+	 * from wpa_supplicant/NetworkManager repeats it in a reset loop. Bail
+	 * out here, before any control traffic, so the wedge counter never arms.
+	 * Gate on netif_running (not drvr->mon_if, which stays set while the
+	 * monitor netdev merely exists) so a created-but-down mon vif still
+	 * allows scanning. */
+	if (brcmf_nexmon_monitor_running(drvr)) {
+		/* Ratelimited and above brcmf_dbg level on purpose: this is the
+		 * expected answer while a capture runs, but it is invisible at
+		 * SCAN debug level, so wpa_supplicant/NetworkManager just look
+		 * like they stopped finding networks. Say so once per interval.
+		 */
+		bphy_err_ratelimited(drvr,
+			"scan rejected: a monitor vif is running (MONITOR+PROMISC is global, so escan would never complete and would trip the control-DCMD watchdog). Tear down the monitor vif to scan.\n");
+		return -EBUSY;
 	}
 
 	/* If scan req comes for p2p0, send it over primary I/F */
@@ -1958,6 +2086,10 @@ brcmf_set_key_mgmt(struct net_device *ndev, struct cfg80211_connect_params *sme)
 			if (sme->crypto.sae_pwd) {
 				brcmf_dbg(INFO, "using SAE offload\n");
 				profile->use_fwsup = BRCMF_PROFILE_FWSUP_SAE;
+			} else if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_FWSUP) &&
+				   brcmf_feat_is_enabled(ifp, BRCMF_FEAT_SAE_EXT)) {
+				brcmf_dbg(INFO, "using EXTSAE with PSK offload\n");
+				profile->use_fwsup = BRCMF_PROFILE_FWSUP_PSK;
 			}
 			break;
 		case WLAN_AKM_SUITE_FT_OVER_SAE:
@@ -5165,8 +5297,8 @@ static int brcmf_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *ndev,
 			bphy_err(drvr, "bss_enable config failed %d\n", err);
 	}
 	brcmf_set_mpc(ifp, 1);
-	brcmf_configure_arp_nd_offload(ifp, true);
 	clear_bit(BRCMF_VIF_STATUS_AP_CREATED, &ifp->vif->sme_state);
+	brcmf_configure_arp_nd_offload(ifp, true);
 	brcmf_net_setcarrier(ifp, false);
 
 	return err;
@@ -5478,7 +5610,11 @@ static int brcmf_cfg80211_get_channel(struct wiphy *wiphy,
 	if (!ndev || drvr->bus_if->state != BRCMF_BUS_UP)
 		return -ENODEV;
 
-	err = brcmf_fil_iovar_int_get(netdev_priv(ndev), "chanspec", &chanspec);
+	struct brcmf_if *ifp = drvr->iflist[0];
+	if (!ifp)
+		ifp = netdev_priv(ndev);
+
+	err = brcmf_fil_iovar_int_get(ifp, "chanspec", &chanspec);
 	if (err) {
 		bphy_err_ratelimited(drvr, "chanspec failed (%d)\n", err);
 		return err;
@@ -5499,6 +5635,12 @@ static int brcmf_cfg80211_get_channel(struct wiphy *wiphy,
 	case BRCMU_CHAN_BAND_5G:
 		band = NL80211_BAND_5GHZ;
 		break;
+	case BRCMU_CHAN_BAND_6G:
+		band = NL80211_BAND_6GHZ;
+		break;
+	default:
+		brcmf_err("invalid channel band: %u\n", ch.band);
+		return -EINVAL;
 	}
 
 	switch (ch.bw) {
@@ -7419,6 +7561,8 @@ static int brcmf_setup_wiphy(struct wiphy *wiphy, struct brcmf_if *ifp)
 			wiphy_ext_feature_set(wiphy,
 					      NL80211_EXT_FEATURE_SAE_OFFLOAD_AP);
 	}
+	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_SAE_EXT))
+		wiphy->features |= NL80211_FEATURE_SAE;
 	wiphy->mgmt_stypes = brcmf_txrx_stypes;
 	wiphy->max_remain_on_channel_duration = 5000;
 	if (brcmf_feat_is_enabled(ifp, BRCMF_FEAT_PNO)) {
@@ -7760,9 +7904,12 @@ static void brcmf_cfg80211_reg_notifier(struct wiphy *wiphy,
 
 	err = brcmf_fil_iovar_data_set(ifp, "country", &ccreq, sizeof(ccreq));
 	if (err) {
-		bphy_err(drvr, "Firmware rejected country setting\n");
+		bphy_err(drvr, "Firmware rejected country setting '%c%c' (err=%d)\n",
+			 alpha2[0], alpha2[1], err);
 		return;
 	}
+	wiphy_info(drvr->wiphy, "Firmware regulatory country set to '%c%c'\n",
+		   alpha2[0], alpha2[1]);
 	brcmf_setup_wiphybands(cfg);
 }
 

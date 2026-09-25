@@ -147,6 +147,11 @@ static int brcmf_proto_bcdc_cmplt(struct brcmf_pub *drvr, u32 id, u32 len)
 				      len);
 		if (ret < 0)
 			break;
+		if (ret < (int)sizeof(struct brcmf_proto_bcdc_dcmd)) {
+			bphy_err(drvr, "truncated rxctl header (%d bytes)\n", ret);
+			ret = -EPROTO;
+			break;
+		}
 	} while (BCDC_DCMD_ID(le32_to_cpu(bcdc->msg.flags)) != id);
 
 	return ret;
@@ -178,6 +183,11 @@ retry:
 	if (ret < 0)
 		goto done;
 
+	if (ret < (int)sizeof(*msg)) {
+		ret = -EPROTO;
+		goto done;
+	}
+
 	flags = le32_to_cpu(msg->flags);
 	id = (flags & BCDC_DCMD_ID_MASK) >> BCDC_DCMD_ID_SHIFT;
 
@@ -191,13 +201,48 @@ retry:
 		goto done;
 	}
 
+	if (le32_to_cpu(msg->cmd) != cmd) {
+		bphy_err(drvr, "%s: unexpected cmd %d (expected %d)\n",
+			 brcmf_ifname(brcmf_get_ifp(drvr, ifidx)),
+			 le32_to_cpu(msg->cmd), cmd);
+		ret = -EPROTO;
+		goto done;
+	}
+
+	if (((flags & BCDC_DCMD_IF_MASK) >> BCDC_DCMD_IF_SHIFT) != (u32)ifidx &&
+	    ((flags & BCDC_DCMD_IF_MASK) >> BCDC_DCMD_IF_SHIFT) != 0) {
+		bphy_err(drvr, "%s: unexpected ifidx %d (expected %d)\n",
+			 brcmf_ifname(brcmf_get_ifp(drvr, ifidx)),
+			 (flags & BCDC_DCMD_IF_MASK) >> BCDC_DCMD_IF_SHIFT,
+			 ifidx);
+		ret = -EPROTO;
+		goto done;
+	}
+
+	if (!(flags & BCDC_DCMD_ERROR)) {
+		size_t dlen = le32_to_cpu(msg->len) & 0xffff;
+
+		if ((size_t)(ret - sizeof(*msg)) < dlen) {
+			bphy_err(drvr, "%s: truncated payload (%zu < %zu)\n",
+				 brcmf_ifname(brcmf_get_ifp(drvr, ifidx)),
+				 (size_t)(ret - sizeof(*msg)), dlen);
+			ret = -EPROTO;
+			goto done;
+		}
+	}
+
 	/* Check info buffer */
 	info = (void *)&bcdc->buf[0];
 
 	/* Copy info buffer */
 	if (buf) {
-		if (ret < (int)len)
-			len = ret;
+		size_t dlen = le32_to_cpu(msg->len) & 0xffff;
+		size_t wire_payload = (size_t)(ret - sizeof(*msg));
+
+		if (len > wire_payload)
+			len = wire_payload;
+		if (!(flags & BCDC_DCMD_ERROR) && len > dlen)
+			len = dlen;
 		memcpy(buf, info, len);
 	}
 
@@ -230,6 +275,13 @@ brcmf_proto_bcdc_set_dcmd(struct brcmf_pub *drvr, int ifidx, uint cmd,
 	if (ret < 0)
 		goto done;
 
+	if (ret < (int)sizeof(*msg)) {
+		bphy_err(drvr, "%s: truncated response header (%d bytes)\n",
+			 brcmf_ifname(brcmf_get_ifp(drvr, ifidx)), ret);
+		ret = -EPROTO;
+		goto done;
+	}
+
 	flags = le32_to_cpu(msg->flags);
 	id = (flags & BCDC_DCMD_ID_MASK) >> BCDC_DCMD_ID_SHIFT;
 
@@ -238,6 +290,24 @@ brcmf_proto_bcdc_set_dcmd(struct brcmf_pub *drvr, int ifidx, uint cmd,
 			 brcmf_ifname(brcmf_get_ifp(drvr, ifidx)), id,
 			 bcdc->reqid);
 		ret = -EINVAL;
+		goto done;
+	}
+
+	if (le32_to_cpu(msg->cmd) != cmd) {
+		bphy_err(drvr, "%s: unexpected cmd %d (expected %d)\n",
+			 brcmf_ifname(brcmf_get_ifp(drvr, ifidx)),
+			 le32_to_cpu(msg->cmd), cmd);
+		ret = -EPROTO;
+		goto done;
+	}
+
+	if (((flags & BCDC_DCMD_IF_MASK) >> BCDC_DCMD_IF_SHIFT) != (u32)ifidx &&
+	    ((flags & BCDC_DCMD_IF_MASK) >> BCDC_DCMD_IF_SHIFT) != 0) {
+		bphy_err(drvr, "%s: unexpected ifidx %d (expected %d)\n",
+			 brcmf_ifname(brcmf_get_ifp(drvr, ifidx)),
+			 (flags & BCDC_DCMD_IF_MASK) >> BCDC_DCMD_IF_SHIFT,
+			 ifidx);
+		ret = -EPROTO;
 		goto done;
 	}
 
@@ -296,7 +366,8 @@ brcmf_proto_bcdc_hdrpull(struct brcmf_pub *drvr, bool do_fws,
 
 	tmp_if = brcmf_get_ifp(drvr, BCDC_GET_IF_IDX(h));
 	if (!tmp_if) {
-		brcmf_dbg(INFO, "no matching ifp found\n");
+		brcmf_dbg(INFO, "no matching ifp found (ifidx=%d flags2=0x%02x)\n",
+			  BCDC_GET_IF_IDX(h), h->flags2);
 		return -EBADE;
 	}
 	if (((h->flags & BCDC_FLAG_VER_MASK) >> BCDC_FLAG_VER_SHIFT) !=
