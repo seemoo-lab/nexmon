@@ -1,2 +1,2 @@
 #!/bin/bash
-$CC"objdump" -j $1 -t $2 | sed -e '5q;d' | awk '{ print $1; }'
+${CC}objdump -j "$1" -t "$2" | awk -v sec="$1" '$0 ~ sec { print $1; exit }'

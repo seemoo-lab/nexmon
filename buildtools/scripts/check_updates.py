@@ -90,6 +90,10 @@ def compare_versions(local_ver: str, upstream_ver: str) -> str:
         return "UNKNOWN"
     if not upstream_ver or upstream_ver in ("UNKNOWN", "LOCAL", "N/A", "[Error]", "[Offline]"):
         return "LOCAL / EMBEDDED" if upstream_ver == "LOCAL" else "UNKNOWN"
+    # Any bracketed sentinel (e.g. "[Offline / Error]", "[Not Found]") means the
+    # upstream lookup did not yield a real version, so it is not comparable.
+    if upstream_ver.strip().startswith("["):
+        return "UNKNOWN"
 
     # Clean versions for comparison
     lv = re.sub(r'^v', '', local_ver.strip(), flags=re.I)
@@ -303,9 +307,9 @@ COMPONENTS: List[Dict[str, Any]] = [
         "name": "boringssl",
         "category": "Library",
         "path": "utilities/boringssl",
-        "extract_local": lambda root: safe_read(os.path.join(root, "utilities/boringssl/BORINGSSL_REVISION"))[:8] or "9d908ba5",
+        "extract_local": lambda root: safe_read(os.path.join(root, "utilities/boringssl/BORINGSSL_REVISION")).strip() or "0.20260813.0",
         "upstream_type": "pinned",
-        "pinned_ref": "pinned (2016 AOSP-layout vendor)",
+        "pinned_ref": "pinned (release 0.20260813.0, C++ gen/ layout)",
         "upstream_url": "https://github.com/google/boringssl.git",
         "website": "https://boringssl.googlesource.com/boringssl"
     },
@@ -379,6 +383,18 @@ COMPONENTS: List[Dict[str, Any]] = [
         "website": "https://sourceforge.net/projects/iperf2/"
     },
     {
+        "name": "iperf3",
+        "category": "Utility",
+        "path": "utilities/iperf3",
+        "extract_local": lambda root: (
+            (re.search(r'AC_INIT\s*\(\s*\[?iperf\]?\s*,\s*\[?([0-9\.]+)\]?', safe_read(os.path.join(root, "utilities/iperf3/configure.ac"))) or [None, "3.21"])[1]
+        ),
+        "upstream_type": "git_tags",
+        "upstream_url": "https://github.com/esnet/iperf.git",
+        "tag_prefix": None,
+        "website": "https://github.com/esnet/iperf/tags"
+    },
+    {
         "name": "iw",
         "category": "Utility",
         "path": "utilities/iw",
@@ -394,11 +410,13 @@ COMPONENTS: List[Dict[str, Any]] = [
         "name": "libargp",
         "category": "Library",
         "path": "utilities/libargp",
-        "extract_local": lambda root: "1.5.0",
-        "upstream_type": "git_tags",
-        "upstream_url": "https://github.com/argp-standalone/argp-standalone.git",
-        "tag_prefix": None,
-        "website": "https://github.com/argp-standalone/argp-standalone"
+        "extract_local": lambda root: (
+            (re.search(r'libargp\s+([0-9]{8})', safe_read(os.path.join(root, "utilities/libargp/config.h"))) or [None, "20260115"])[1]
+        ),
+        "upstream_type": "web_regex",
+        "upstream_url": "https://mirror.yandex.ru/mirrors/msys2/msys/sources/",
+        "pattern": r'libargp-([0-9]+)-\d+\.src\.tar\.zst',
+        "website": "https://www.gnu.org/software/gnulib/"
     },
     {
         "name": "libcrypto",
@@ -594,7 +612,7 @@ COMPONENTS: List[Dict[str, Any]] = [
         "name": "netcat",
         "category": "Utility",
         "path": "utilities/netcat",
-        "extract_local": lambda root: "OpenBSD 1.103",
+        "extract_local": lambda root: "OpenBSD 1.238",
         "upstream_type": "local",
         "upstream_url": "OpenBSD netcat",
         "website": "https://www.openbsd.org"
@@ -698,24 +716,23 @@ COMPONENTS: List[Dict[str, Any]] = [
     {
         "name": "isl",
         "category": "Build Tool",
-        "path": "buildtools/isl-0.10",
+        "path": "buildtools/isl-0.28",
         "extract_local": lambda root: (
-            (re.search(r'AC_INIT\s*\(\s*\[?isl\]?\s*,\s*\[?([0-9\.]+)\]?', safe_read(os.path.join(root, "buildtools/isl-0.10/configure.ac"))) or [None, "0.10"])[1]
+            (re.search(r'AC_INIT\s*\(\s*\[?isl\]?\s*,\s*\[?([0-9\.]+)\]?', safe_read(os.path.join(root, "buildtools/isl-0.28/configure.ac"))) or [None, "UNKNOWN"])[1]
         ),
-        "upstream_type": "pinned",
-        "pinned_ref": "pinned (companion to gcc-arm-none-eabi 5.4-2016q2)",
-        "upstream_url": "https://repo.or.cz/isl.git",
-        "tag_prefix": "isl-",
+        "upstream_type": "web_regex",
+        "upstream_url": "https://libisl.sourceforge.io/",
+        "pattern": r'isl-([0-9]+\.[0-9]+(?:\.[0-9]+)?)\.tar\.xz',
         "website": "https://libisl.sourceforge.io"
     },
     {
         "name": "mpfr",
         "category": "Build Tool",
-        "path": "buildtools/mpfr-3.1.4",
-        "extract_local": lambda root: safe_read(os.path.join(root, "buildtools/mpfr-3.1.4/VERSION")) or "3.1.4",
-        "upstream_type": "pinned",
-        "pinned_ref": "pinned (companion to gcc-arm-none-eabi 5.4-2016q2)",
+        "path": "buildtools/mpfr-4.2.2",
+        "extract_local": lambda root: safe_read(os.path.join(root, "buildtools/mpfr-4.2.2/VERSION")) or "UNKNOWN",
+        "upstream_type": "web_regex",
         "upstream_url": "https://ftp.gnu.org/gnu/mpfr/",
+        "pattern": r'mpfr-([0-9]+\.[0-9]+\.[0-9]+)\.tar\.xz',
         "website": "https://www.mpfr.org"
     },
     {
